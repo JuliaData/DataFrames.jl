@@ -522,7 +522,7 @@ end
     @test levels(df.c4) == levels(v)
     @test levels(df.c4) !== levels(v)
     df[:c5] .= (x->v[1]).(v)
-    @test unique(df.c5) == [get(v[1]]
+    @test unique(df.c5) == [get(v[1])]
     @test df.c5 isa CategoricalVector
     @test length(levels(df.c5)) == 1
 end
