@@ -297,13 +297,11 @@ function Base.getindex(df::DataFrame, col_ind::Symbol)
 end
 
 # df[MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, col_inds::AbstractVector)
+function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex})
     selected_columns = index(df)[col_inds]
     new_columns = _columns(df)[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
-
-Base.getindex(df::AbstractDataFrame, col_inds::Regex) = getindex(df, index(df)[col_inds])
 
 # df[:] => DataFrame
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
@@ -346,7 +344,8 @@ end
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector,
+                               col_inds::Union{AbstractVector, Regex})
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -363,14 +362,11 @@ function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
 end
 
 # df[:, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
+function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex})
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
-
-Base.getindex(df::AbstractDataFrame, row_ind, col_inds::Regex) =
-    getindex(df, row_ind, index(df)[col_inds])
 
 # df[MultiRowIndex, :] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
