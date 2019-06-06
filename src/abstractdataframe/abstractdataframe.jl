@@ -894,9 +894,7 @@ Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
-    df[(!).(nonunique(df, cols)), :]
-Base.unique(df::AbstractDataFrame, cols::Regex) =
+Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
     df[(!).(nonunique(df, cols)), :]
 Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     df[(!).(nonunique(df, cols)), :]
