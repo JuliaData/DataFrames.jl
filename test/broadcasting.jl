@@ -497,34 +497,38 @@ end
 end
 
 @testset "test categorical values" begin
-    df = copy(refdf)
-    v = categorical([1,2,3])
-    df[:c1] .= v
-    @test df.c1 == v
-    @test df.c1 !== v
-    @test df.c1 isa CategoricalVector
-    @test levels(df.c1) == levels(v)
-    @test levels(df.c1) !== levels(v)
-    df[:c2] .= v[1]
-    @test df.c2 == [1,1,1]
-    @test df.c2 isa CategoricalVector
-    @test levels(df.c2) != levels(v)
-    df[:c3] .= (x->x).(v)
-    @test df.c3 == v
-    @test df.c3 !== v
-    @test df.c3 isa CategoricalVector
-    @test levels(df.c3) == levels(v)
-    @test levels(df.c3) !== levels(v)
-    df[:c4] .= identity.(v)
-    @test df.c4 == v
-    @test df.c4 !== v
-    @test df.c4 isa CategoricalVector
-    @test levels(df.c4) == levels(v)
-    @test levels(df.c4) !== levels(v)
-    df[:c5] .= (x->v[1]).(v)
-    @test unique(df.c5) == [get(v[1])]
-    @test df.c5 isa CategoricalVector
-    @test length(levels(df.c5)) == 1
+    for v in [categorical([1,2,3]), categorical([1,2,3, missing]),
+              categorical([missing, 1,2,3]),
+              categorical(["1","2","3"]), categorical(["1","2","3", missing]),
+              categorical([missing, "1","2","3"])]
+        df = copy(refdf)
+        df[:c1] .= v
+        @test df.c1 == v
+        @test df.c1 !== v
+        @test df.c1 isa CategoricalVector
+        @test levels(df.c1) == levels(v)
+        @test levels(df.c1) !== levels(v)
+        df[:c2] .= v[2]
+        @test df.c2 == get.v[2], v[2], v[2]]
+        @test df.c2 isa CategoricalVector
+        @test levels(df.c2) != levels(v)
+        df[:c3] .= (x->x).(v)
+        @test df.c3 == v
+        @test df.c3 !== v
+        @test df.c3 isa CategoricalVector
+        @test levels(df.c3) == levels(v)
+        @test levels(df.c3) !== levels(v)
+        df[:c4] .= identity.(v)
+        @test df.c4 == v
+        @test df.c4 !== v
+        @test df.c4 isa CategoricalVector
+        @test levels(df.c4) == levels(v)
+        @test levels(df.c4) !== levels(v)
+        df[:c5] .= (x->v[1]).(v)
+        @test unique(df.c5) == [get(v[1])]
+        @test df.c5 isa CategoricalVector
+        @test length(levels(df.c5)) == 1
+    end
 end
 
 end # module

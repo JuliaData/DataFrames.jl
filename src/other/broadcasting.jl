@@ -33,18 +33,8 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
         T = typeof(bc.args[1][])
         col = Tables.allocatecolumn(T, nrow(lazydf.df))
         copyto!(col, bc)
-    elseif bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{1}} &&
-        bc.f === identity && bc.args isa Tuple{CategoricalVector} && Base.Broadcast.isflat(bc)
-        col = copy(bc.args[1])
     else
-        tmpcol = Base.Broadcast.materialize(bc)
-        T = eltype(tmpcol)
-        if Missings.T(T) <: Union{CategoricalValue, CategoricalString}
-            col = Tables.allocatecolumn(T, nrow(lazydf.df))
-            copyto!(col, tmpcol)
-        else
-            col = tmpcol
-        end
+        col = copy(bc)
     end
     lazydf.df[lazydf.col] = col
 end
