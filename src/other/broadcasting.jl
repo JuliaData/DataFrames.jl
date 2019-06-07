@@ -31,7 +31,7 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}} &&
        bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         T = typeof(bc.args[1][])
-        col = similar(T, nrow(lazydf.df))
+        col = similar(Vector{T}, nrow(lazydf.df))
         copyto!(col, bc)
     else
         col = Base.Broadcast.materialize(bc)
