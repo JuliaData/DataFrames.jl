@@ -420,6 +420,29 @@ end
     res = map(df -> sum(df.x), gd)
     @test length(res) == 0
     @test res.parent == DataFrame(x=[])
+
+    # Test with zero groups in output
+    df = DataFrame(A = [1, 2])
+    gd = groupby_checked(df, :A)
+    gd2 = map(d -> DataFrame(), gd)
+    @test length(gd2) == 0
+    @test gd.cols == [1]
+    @test isempty(gd2.groups)
+    @test isempty(gd2.idx)
+    @test isempty(gd2.starts)
+    @test isempty(gd2.ends)
+    @test parent(gd2) == DataFrame(A=[])
+    @test eltypes(parent(gd2)) == [Int]
+
+    gd2 = map(d -> DataFrame(X=Int[]), gd)
+    @test length(gd2) == 0
+    @test gd.cols == [1]
+    @test isempty(gd2.groups)
+    @test isempty(gd2.idx)
+    @test isempty(gd2.starts)
+    @test isempty(gd2.ends)
+    @test parent(gd2) == DataFrame(A=[], X=[])
+    @test eltypes(parent(gd2)) == [Int, Int]
 end
 
 @testset "grouping with missings" begin

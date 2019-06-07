@@ -1,6 +1,6 @@
 name = "DataFrames"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "0.18.2"
+version = "0.18.3"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
@@ -35,7 +35,7 @@ Missings = ">= 0.2.3"
 CategoricalArrays = ">= 0.5.4"
 StatsBase = ">= 0.11.0"
 Compat = ">= 0.59.0"
-Tables = ">= 0.1.15"
-IteratorInterfaceExtensions = ">= 0.1.1"
-TableTraits = ">= 0.4.0"
+Tables = ">= 0.2.3"
+IteratorInterfaceExtensions = "0.1.1, 1"
+TableTraits = "0.4, 1"
 PooledArrays = ">= 0.5.0"

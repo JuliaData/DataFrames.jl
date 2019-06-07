@@ -13,7 +13,7 @@ type in that it allows indexing by a key (the columns).
 The following are normally implemented for AbstractDataFrames:
 
 * [`describe`](@ref) : summarize columns
-* [`dump`](@ref) : show structure
+* [`summary`](@ref) : show number of rows and columns
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
 * [`repeat`](@ref) : repeat rows
@@ -217,6 +217,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
+Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
+
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
@@ -278,16 +280,6 @@ end
 
 ##############################################################################
 ##
-## Associative methods
-##
-##############################################################################
-
-Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
-Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
-
-##############################################################################
-##
 ## Description
 ##
 ##############################################################################
@@ -319,16 +311,6 @@ Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 Get a data frame with the `n` last rows of `df`.
 """
 Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), :]
-
-# get the structure of a df
-function Base.dump(io::IOContext, df::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
-    if n > 0
-        for (name, col) in eachcol(df, true)
-            println(io, indent, "  ", name, ": ", col)
-        end
-    end
-end
 
 
 """
@@ -1150,7 +1132,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
-            if haskey(df, name)
+            if haskey(index(df), name)
                 return df[name]
             else
                 Iterators.repeated(missing, nrow(df))

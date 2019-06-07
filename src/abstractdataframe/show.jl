@@ -516,7 +516,11 @@ function _show(io::IO,
                rowid=nothing)
     nrows = size(df, 1)
     if rowid !== nothing
-        nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        if size(df, 2) == 0
+            rowid = nothing
+        else
+            nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        end
     end
     dsize = displaysize(io)
     availableheight = dsize[1] - 7

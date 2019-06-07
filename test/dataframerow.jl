@@ -179,7 +179,7 @@ end
     df = deepcopy(ref_df)
     r = DataFrameRow(df, 1, :)
 
-    @test keys(r) == names(df)
+    @test keys(r) == Tuple(names(df))
     @test values(r) == (df[1, 1], df[1, 2], df[1, 3], df[1, 4])
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
 
@@ -205,11 +205,23 @@ end
     @test size(r) == (4,)
     @test size(r, 1) == 4
     @test_throws BoundsError size(r, 2)
-    @test keys(r) == [:x8, :x5, :x1, :x3]
+    @test keys(r) == (:x8, :x5, :x1, :x3)
     r[:] = 0.0
     r[1:2] = 2.0
     @test values(r) == (2.0, 2.0, 0.0, 0.0)
     @test collect(pairs(r)) == [:x8 => 2.0, :x5 => 2.0, :x1 => 0.0, :x3 => 0.0]
+
+    r = deepcopy(ref_df)[1, :]
+    @test map(identity, r[1:3]) == (a = 1, b = 2.0, c = "A")
+    @test map((a,b) -> (a,b), r[1:3], r[1:3]) == (a = (1, 1), b = (2.0, 2.0), c = ("A", "A"))
+    @test get(r, 1, 100) == 1
+    @test get(r, :a, 100) == 1
+    @test get(r, 10, 100) == 100
+    @test get(r, :z, 100) == 100
+    @test get(() -> 100,r, 1) == 1
+    @test get(() -> 100,r, :a) == 1
+    @test get(() -> 100,r, 10) == 100
+    @test get(() -> 100,r, :z) == 100
 end
 
 @testset "convert and copy" begin

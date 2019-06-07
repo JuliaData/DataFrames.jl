@@ -11,6 +11,11 @@ Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
+# note that copycols is ignored in this definition (Tables.CopiedColumns implies copies have already been made)
+fromcolumns(x::Tables.CopiedColumns; copycols::Bool=true) =
+    DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)],
+              Index(collect(Symbol, propertynames(x))),
+              copycols=false)
 fromcolumns(x; copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)],
               Index(collect(Symbol, propertynames(x))),
@@ -20,20 +25,13 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
         return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
     end
-    if Tables.istable(T)
-        return fromcolumns(Tables.columns(x), copycols=copycols)
-    end
     if x isa AbstractVector || x isa Tuple
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
                              copycols=copycols)
         end
     end
-    try
-        return fromcolumns(Tables.columns(x), copycols=copycols)
-    catch e
-        throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
-    end
+    return fromcolumns(Tables.columns(x), copycols=copycols)
 end
 
 Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))

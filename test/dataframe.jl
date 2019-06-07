@@ -67,17 +67,9 @@ end
 
 @testset "Associative methods" begin
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test haskey(df, :a)
-    @test !haskey(df, :c)
-    @test haskey(df, 1)
-    @test_throws MethodError haskey(df, 1.5)
-    @test_throws ArgumentError haskey(df, true)
-    @test get(df, :a, -1) === eachcol(df)[1]
-    @test get(df, :c, -1) == -1
     @test !isempty(df)
 
     dfv = view(df, 1:2, 1:2)
-    @test get(df, :a, -1) === eachcol(df)[1]
 
     @test empty!(df) === df
     @test isempty(eachcol(df))
@@ -774,6 +766,10 @@ DRT = CategoricalArrays.DefaultRefType
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
+
+    df = DataFrame([["a", missing]])
+    categorical!(df)
+    @test df.x1 isa CategoricalVector{Union{Missing, String}}
 end
 
 @testset "unstack promotion to support missing values" begin
@@ -901,13 +897,6 @@ end
     @test first(df, 1) == DataFrame(A = 1)
     @test last(df, 6) == DataFrame(A = 5:10)
     @test last(df, 1) == DataFrame(A = 10)
-end
-
-@testset "misc" begin
-    df = DataFrame([collect('A':'C')])
-    @test sprint(dump, df) == "DataFrame  3 observations of 1 variables\n  x1: ['A', 'B', 'C']\n\n"
-    df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
-    # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
 end
 
 @testset "column conversions" begin

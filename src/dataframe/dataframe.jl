@@ -70,8 +70,7 @@ df = DataFrame()
 v = ["x","y","z"][rand(1:3, 10)]
 df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
 df2 = DataFrame(A = 1:10, B = v, C = rand(10))
-dump(df1)
-dump(df2)
+summary(df1)
 describe(df2)
 first(df1, 10)
 df1[:A] + df2[:C]
@@ -768,14 +767,14 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 2) == 0 || error("number of rows does not match")
 
-    if haskey(df, name)
+    if haskey(index(df), name)
         if makeunique
             k = 1
             while true
                 # we only make sure that new column name is unique
                 # if df originally had duplicates in names we do not fix it
                 nn = Symbol("$(name)_$k")
-                if !haskey(df, nn)
+                if !haskey(index(df), nn)
                     name = nn
                     break
                 end
@@ -1205,8 +1204,8 @@ end
     categorical!(df::DataFrame; compress::Bool=false)
 
 Change columns selected by `cname` or `cnames` in data frame `df`
-to `CategoricalVector`. If no columns are indicated then all columns that have
-an `AbstractString` element type type will be converted to categorical.
+to `CategoricalVector`. If no columns are indicated then all columns whose element type
+is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
 will be compressed.
@@ -1279,7 +1278,7 @@ end
 
 function categorical!(df::DataFrame; compress::Bool=false)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: AbstractString
+        if eltype(df[i]) <: Union{AbstractString, Missing}
             df[i] = categorical(df[i], compress)
         end
     end
@@ -1499,7 +1498,7 @@ function Base.push!(df::DataFrame, row::Any)
             for j in 1:(i - 1)
                 pop!(_columns(df)[j])
             end
-            msg = "Error adding $t to column :$(_names(df)[i]). Possible type mis-match."
+            msg = "Error adding $(repr(t)) to column :$(_names(df)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
         end
         i += 1

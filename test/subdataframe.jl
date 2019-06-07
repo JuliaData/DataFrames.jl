@@ -161,15 +161,6 @@ end
     @test names(df) == names(x)[[4,2]]
 end
 
-@testset "dump" begin
-    y = 1.0:10.0
-    df = view(DataFrame(y=y), 2:6, :)
-    refstr = string("SubDataFrame{DataFrame,DataFrames.Index,",
-                    "UnitRange{$Int}}  5 observations of 1 variables\n",
-                    "  y: [2.0, 3.0, 4.0, 5.0, 6.0]\n\n")
-    @test sprint(dump, df) == refstr
-end
-
 @testset "deleterows!" begin
     y = 1.0:10.0
     df = view(DataFrame(y=y), 2:6, :)
