@@ -24,7 +24,7 @@ function copyto_widen!(res::AbstractVector{T},
         if S <: T || promote_type(S, T) <: T
             res[i] = val
         else
-            newres = Tables.allocatecolumn(promote_type(S, T), length(res))
+            newres = similar(Vector{promote_type(S, T)}, length(res))
             copyto!(newres, 1, res, 1, i-1)
             newres[i] = val
             return copyto_widen!(newres, bc, i + 1, 2)
@@ -46,7 +46,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
             col = Any[]
         else
             v1 = bc[CartesianIndex(1, i)]
-            startcol = Tables.allocatecolumn(typeof(v1), nrows)
+            startcol = similar(Vector{typeof(v1)}, nrows)
             startcol[1] = v1
             col = copyto_widen!(startcol, bc, 2, i)
         end

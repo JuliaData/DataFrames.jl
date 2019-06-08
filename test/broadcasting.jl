@@ -67,7 +67,7 @@ end
     end
     df4 = (x -> df[1,1]).(df)
     @test names(df4) == names(df)
-    @test all(isa.(eachcol(df4), CategoricalArray))
+    @test all(isa.(eachcol(df4), Ref(CategoricalArray)))
     @test all(eachcol(df4) .== Ref(categorical(["a", "a"])))
 
     df5 = DataFrame(x = Any[1, 2, 3], y = Any[1, 2.0, big(3)])
