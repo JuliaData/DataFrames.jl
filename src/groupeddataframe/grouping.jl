@@ -49,7 +49,7 @@ A `GroupedDataFrame` : a grouped view into `df`
 
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
-Each grouping preserves the order of rows in `df`.
+Within each group, the order of rows in `df` is preserved.
 
 A `GroupedDataFrame` also supports
 indexing by groups, `map` (which applies a function to each group)
