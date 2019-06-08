@@ -88,21 +88,21 @@ abstract type AbstractDataFrame end
 names(df::DataFrame)
 ```
 
-Get column names.
+Return a vector of the column names of data frame `df`.
 
 **Arguments**
 
 * `df` : the AbstractDataFrame
 
 **Examples**
-```jldoctst
+```jldoctest
 julia> names(DataFrame(A=[], B=[]))
 2-element Array{Symbol,1}:
  :A
  :B
 ```
 
-See also [`names!`](@ref), [`rename!`](@ref).
+See also: [`names!`](@ref), [`rename!`](@ref), [`rename`](@ref)
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
@@ -232,16 +232,15 @@ eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 size(df::AbstractDataFrame[, i::Integer])
 ```
 
-Get the dimensions of `df`.
+Return the number of rows and/or columns in data frame `df`.
 
 **Arguments**
 
 * `df` : the `AbstractDataFrame`
-* `i` (option): the dimension of interest.
+* `i` (optional): the dimension of interest (1 for rows and 2 for columns)
 
 **Returns**
 If `i` is not given, `(nrows, ncols)`, otherwise the size of `df` in the dimension corresponding to `i`.
-
 
 **Examples**
 ```jldoctest
@@ -252,7 +251,6 @@ julia> size(df)
 
 julia> size(df, 1)
 10
-
 ```
 """
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
