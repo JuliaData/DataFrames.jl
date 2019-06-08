@@ -21,12 +21,21 @@ end
 
 # This is exported, and lets a user define orderings for a particular column
 """
+    order(col::Union{Integer, Symbol};
+          lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
-    order(col; rev=true, ...)
+Use a custom ordering for column `col` when sorting a data frame.
+Used in conjuction with [`sort`](@ref) and [`sort!`](@ref).
 
-User defined order for a particular column.  Used in conjuction with [`sort!`](@ref)
+The `by` keyword lets you provide a function that will be applied to each
+element before comparison; the `lt` keyword allows providing a custom "less
+than" function; use `rev=true` to reverse the sorting order. These options are
+independent and can be used together in all possible combinations: if both
+`by` and `lt` are specified, the `lt` function is applied to the result of the `by`
+function; `rev=true` reverses whatever ordering specified via the `by` and `lt`
+keywords.
 
-###Example
+# Examples
 ```
 sort!(iris, (order(:Species, rev=true), :PetalLength))
 ```
