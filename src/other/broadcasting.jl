@@ -1,3 +1,63 @@
+### Broadcasting
+
+Base.getindex(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx[1], idx[2]]
+Base.setindex!(df::AbstractDataFrame, val, idx::CartesianIndex{2}) =
+    (df[idx[1], idx[2]] = val)
+
+Base.broadcastable(df::AbstractDataFrame) = df
+
+struct DataFrameStyle <: Base.Broadcast.BroadcastStyle end
+
+Base.Broadcast.BroadcastStyle(::Type{<:AbstractDataFrame}) =
+    DataFrameStyle()
+
+Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle) = DataFrameStyle()
+Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) = DataFrameStyle()
+Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::DataFrameStyle) = DataFrameStyle()
+
+function copyto_widen!(res::AbstractVector{T},
+                       bc::Base.Broadcast.Broadcasted{DataFrameStyle},
+                       pos, col) where T
+    for i in pos:length(axes(bc)[1])
+        val = bc[CartesianIndex(i, col)]
+        S = typeof(val)
+        if S <: T || promote_type(S, T) <: T
+            res[i] = val
+        else
+            newres = similar(Vector{promote_type(S, T)}, length(res))
+            copyto!(newres, 1, res, 1, i-1)
+            newres[i] = val
+            return copyto_widen!(newres, bc, i + 1, 2)
+        end
+    end
+    return res
+end
+
+function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
+    bcf = Base.Broadcast.flatten(bc)
+    colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
+    if length(colnames) != 1
+        throw(ArgumentError("Column names in broadcasted data frames must match"))
+    end
+    nrows = length(axes(bc)[1])
+    df = DataFrame()
+    for i in axes(bc)[2]
+        if nrows == 0
+            col = Any[]
+        else
+            v1 = bc[CartesianIndex(1, i)]
+            startcol = similar(Vector{typeof(v1)}, nrows)
+            startcol[1] = v1
+            col = copyto_widen!(startcol, bc, 2, i)
+        end
+        df[colnames[1][i]] = col
+    end
+    return df
+end
+
+
+### Broadcasting assignment
+
 struct LazyNewColDataFrame
     df::DataFrame
     col::Symbol

@@ -1,10 +1,83 @@
 module TestBroadcasting
 
-using Test, DataFrames
+using Test, DataFrames, PooledArrays
 
 const ≅ = isequal
 
 refdf = DataFrame(reshape(1.5:15.5, (3,5)))
+
+@testset "broadcasting of AbstractDataFrame objects" begin
+    for df in (copy(refdf), view(copy(refdf), :, :))
+        @test identity.(df) == refdf
+        @test (x->x).(df) == refdf
+        @test (df .+ df) ./ 2 == refdf
+        @test df .+ Matrix(df) == 2 .* df
+        @test Matrix(df) .+ df == 2 .* df
+        @test (Matrix(df) .+ df .== 2 .* df) == DataFrame(trues(size(df)), names(df))
+        @test df .+ 1 == df .+ ones(size(df))
+        @test df .+ axes(df, 1) == DataFrame(Matrix(df) .+ axes(df, 1), names(df))
+        @test df .+ permutedims(axes(df, 2)) == DataFrame(Matrix(df) .+ permutedims(axes(df, 2)), names(df))
+    end
+end
+
+@testset "broadcasting of AbstractDataFrame objects errors" begin
+    df = copy(refdf)
+    dfv = view(df, :, 2:ncol(df))
+
+    @test_throws DimensionMismatch df .+ dfv
+    @test_throws DimensionMismatch df .+ df[2:end, :]
+
+    @test_throws DimensionMismatch df .+ [1, 2]
+    @test_throws DimensionMismatch df .+ [1 2]
+    @test_throws DimensionMismatch df .+ rand(2,2)
+    @test_throws DimensionMismatch dfv .+ [1, 2]
+    @test_throws DimensionMismatch dfv .+ [1 2]
+    @test_throws DimensionMismatch dfv .+ rand(2,2)
+
+    df2 = copy(df)
+    names!(df2, [:x1, :x2, :x3, :x4, :y])
+    @test_throws ArgumentError df .+ df2
+    @test_throws ArgumentError df .+ 1 .+ df2
+end
+
+@testset "broadcasting of AbstractDataFrame objects corner cases" begin
+    df = DataFrame(c11 = categorical(["a", "b"]), c12 = categorical([missing, "b"]), c13 = categorical(["a", missing]),
+                   c21 = categorical([1, 2]), c22 = categorical([missing, 2]), c23 = categorical([1, missing]),
+                   p11 = PooledArray(["a", "b"]), p12 = PooledArray([missing, "b"]), p13 = PooledArray(["a", missing]),
+                   p21 = PooledArray([1, 2]), p22 = PooledArray([missing, 2]), p23 = PooledArray([1, missing]),
+                   b1 = [true, false], b2 = [missing, false], b3 = [true, missing],
+                   f1 = [1.0, 2.0], f2 = [missing, 2.0], f3 = [1.0, missing],
+                   s1 = ["a", "b"], s2 = [missing, "b"], s3 = ["a", missing])
+
+    df2 = DataFrame(c11 = categorical(["a", "b"]), c12 = [nothing, "b"], c13 = ["a", nothing],
+                    c21 = categorical([1, 2]), c22 = [nothing, 2], c23 = [1, nothing],
+                    p11 = ["a", "b"], p12 = [nothing, "b"], p13 = ["a", nothing],
+                    p21 = [1, 2], p22 = [nothing, 2], p23 = [1, nothing],
+                    b1 = [true, false], b2 = [nothing, false], b3 = [true, nothing],
+                    f1 = [1.0, 2.0], f2 = [nothing, 2.0], f3 = [1.0, nothing],
+                    s1 = ["a", "b"], s2 = [nothing, "b"], s3 = ["a", nothing])
+
+    @test df ≅ identity.(df)
+    @test df ≅ (x->x).(df)
+    df3 = coalesce.(df, nothing)
+    @test df2 == df3
+    @test eltypes(df2) == eltypes(df3)
+    for i in axes(df, 2)
+        @test typeof(df2[i]) == typeof(df3[i])
+    end
+    df4 = (x -> df[1,1]).(df)
+    @test names(df4) == names(df)
+    @test all(isa.(eachcol(df4), CategoricalArray))
+    @test all(eachcol(df4) .== Ref(categorical(["a", "a"])))
+
+    df5 = DataFrame(x = Any[1, 2, 3], y = Any[1, 2.0, big(3)])
+    @test identity.(df5) == df5
+    @test (x->x).(df5) == df5
+    @test df5 .+ 1 == DataFrame(Matrix(df5) .+ 1, names(df5))
+    @test eltypes(identity.(df5)) == [Int, BigFloat]
+    @test eltypes((x->x).(df5)) == [Int, BigFloat]
+    @test eltypes(df5 .+ 1) == [Int, BigFloat]
+end
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
     df = copy(refdf)
