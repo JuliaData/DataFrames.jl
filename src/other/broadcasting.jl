@@ -24,7 +24,7 @@ function copyto_widen!(res::AbstractVector{T},
         if S <: T || promote_type(S, T) <: T
             res[i] = val
         else
-            newres = similar(Vector{promote_type(S, T)}, length(res))
+            newres = Tables.allocatecolumn(promote_type(S, T), length(res))
             copyto!(newres, 1, res, 1, i-1)
             newres[i] = val
             return copyto_widen!(newres, bc, i + 1, 2)
