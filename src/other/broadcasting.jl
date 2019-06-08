@@ -46,7 +46,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
             col = Any[]
         else
             v1 = bc[CartesianIndex(1, i)]
-            startcol = similar(Vector{typeof(v1)}, nrows)
+            startcol = Tables.allocatecolumn(typeof(v1), nrows)
             startcol[1] = v1
             col = copyto_widen!(startcol, bc, 2, i)
         end
