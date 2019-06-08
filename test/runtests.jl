@@ -27,6 +27,7 @@ my_tests = ["utils.jl",
             "tables.jl",
             "tabletraits.jl",
             "indexing.jl",
+            "broadcasting.jl",
             "deprecated.jl"]
 
 println("Running tests:")

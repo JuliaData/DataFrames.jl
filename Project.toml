@@ -32,7 +32,7 @@ test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Random", "Test
 [compat]
 julia = "1"
 Missings = ">= 0.2.3"
-CategoricalArrays = ">= 0.5.2"
+CategoricalArrays = ">= 0.5.4"
 StatsBase = ">= 0.11.0"
 Compat = ">= 0.59.0"
 Tables = ">= 0.2.3"

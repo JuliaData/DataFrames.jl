@@ -83,6 +83,8 @@ include("dataframerow/dataframerow.jl")
 include("groupeddataframe/grouping.jl")
 include("dataframerow/utils.jl")
 
+include("other/broadcasting.jl")
+
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
