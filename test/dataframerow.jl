@@ -1,6 +1,8 @@
 module TestDataFrameRow
 
 using Test, DataFrames, Random
+const ≅ = isequal
+const ≇ = !isequal
 
 ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
@@ -13,13 +15,18 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
 
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
     @test DataFrameRow(df, 1) == DataFrameRow(df, 1, :)
+    @test DataFrameRow(df, 1) == DataFrameRow(df, 1, r"")
     @test names(DataFrameRow(df, 3, [3, 2])) == [:c, :b]
     @test copy(DataFrameRow(df, 3, [3, 2])) == (c = "C", b = 1.2)
+    @test copy(DataFrameRow(df, 3, r"[bc]")) == (b = 1.2, c = "C")
     @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b = 1.2, a = 3)
+    @test copy(DataFrameRow(sdf, 2, r"[bc]")) == (c = "C", b = 1.2)
     @test copy(DataFrameRow(sdf, 2, :)) == (c = "C", a = 3, b = 1.2)
     @test DataFrameRow(sdf, 2) == DataFrameRow(sdf, 2, :)
     @test DataFrameRow(df, 3, [3, 2]) == df[3, [3, 2]] == view(df, 3, [3, 2])
+    @test DataFrameRow(df, 3, r"[bc]") == df[3, [2, 3]] == df[3, r"[bc]"]
     @test DataFrameRow(sdf, 2, [3, 2]) == sdf[2, [3, 2]] == view(sdf, 2, [3, 2])
+    @test DataFrameRow(sdf, 2, r"[bc]") == sdf[2, [1, 3]] == sdf[2, r"[bc]"]
     @test DataFrameRow(sdf, 2, :) == sdf[2, :] == view(sdf, 2, :)
     @test DataFrameRow(df, 3, 2:3) === df[3, 2:3]
     @test view(df, 3, 2:3) === df[3, 2:3]
@@ -42,16 +49,29 @@ end
 
     r = DataFrameRow(df, 2, :)
     @test r[:] === r
+    @test r[r""] ≅ r
     @test view(r, :) === r
+    @test view(r, r"") ≅ r
     @test r[3] == "B"
+    @test r[r"c"] == r[[3]]
     @test_throws BoundsError r[5]
     @test view(r, 3)[] == "B"
+    @test view(r, r"c")[1] == "B"
+    @test view(r, r"c") == view(r, [3])
     view(r, 3)[] = "BB"
     @test df.c[2] == "BB"
     @test_throws MethodError r[true]
     @test_throws MethodError view(r, true)
     @test copy(r[[:c,:a]]) == (c = "BB", a = 2)
+    @test copy(r[r"[ac]"]) == (a = 2, c = "BB")
+    @test copy(r[r"x"]) == NamedTuple()
+    @test copy(r[2:1]) == NamedTuple()
+    @test copy(r[Symbol[]]) == NamedTuple()
     @test copy(view(r, [:c,:a])) == (c = "BB", a = 2)
+    @test copy(view(r, r"[ac]")) == (a = 2, c = "BB")
+    @test copy(view(r, r"x")) == NamedTuple()
+    @test copy(view(r, 2:1)) == NamedTuple()
+    @test copy(view(r, Symbol[])) == NamedTuple()
     @test copy(r[[true, false, true, false]]) == (a = 2, c = "BB")
     r.c = "B"
     @test df.c[2] == "B"
@@ -59,10 +79,15 @@ end
 
     r = DataFrameRow(sdf, 2, [3, 1])
     @test r[:] == r
+    @test r[r""] == r
     @test view(r, :) === r
+    @test view(r, r"") == r
     @test r[2] == "C"
+    @test r[r"c"] == r[[2]]
+    @test r[2:1] == r[r"x"]
     @test_throws BoundsError r[4]
     @test view(r, 2)[] == "C"
+    @test view(r, r"c") == view(r, [2])
     view(r, 2)[] = "CC"
     @test df.c[3] == "CC"
     @test_throws MethodError r[true]
@@ -71,8 +96,25 @@ end
     @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
     @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
     @test copy(r[[false, true]]) == (c = "CC",)
+    @test copy(r[r"[cb]"]) == (b = 1.2, c = "CC")
+    @test copy(view(r, r"[cb]")) == (b = 1.2, c = "CC")
+    @test copy(view(r, r"[cb]")) == (b = 1.2, c = "CC")
+    @test copy(r[r"b"]) == (b = 1.2,)
+    @test copy(view(r, r"b")) == (b = 1.2,)
+    @test copy(view(r, r"b")) == (b = 1.2,)
     r.c = "C"
     @test df.c[3] == "C"
+
+    df = DataFrame([1 2 3 4
+                    5 6 7 8])
+    r = df[1, r"[1-3]"]
+    @test names(r) == [:x1, :x2, :x3]
+    r[:] = 10
+    @test df == DataFrame([10 10 10 4
+                            5  6  7 8])
+    r[r"[2-3]"] = 20
+    @test df == DataFrame([10 20 20 4
+                            5  6  7 8])
 end
 
 @testset "equality" begin
@@ -86,9 +128,9 @@ end
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
     @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)
     @test ismissing(DataFrameRow(df, 2, :) == DataFrameRow(df, 5, :))
-    @test isequal(DataFrameRow(df, 2, :), DataFrameRow(df, 5, :))
+    @test DataFrameRow(df, 2, :) ≅ DataFrameRow(df, 5, :)
     @test ismissing(DataFrameRow(df, 2, :) != DataFrameRow(df, 6, :))
-    @test !isequal(DataFrameRow(df, 2, :), DataFrameRow(df, 6, :))
+    @test DataFrameRow(df, 2, :) ≇ DataFrameRow(df, 6, :)
 
     dc_df = deepcopy(df)
     @test DataFrameRow(df, 1, :) == DataFrameRow(dc_df, 1, :)
@@ -235,19 +277,46 @@ end
 
     df = deepcopy(ref_df)[1:3]
     @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
-    @test isequal(copy(DataFrameRow(df, 2, :)), (a = 2, b = missing, c = "B"))
+    @test copy(DataFrameRow(df, 2, :)) ≅ (a = 2, b = missing, c = "B")
 end
 
 @testset "parent and parentindices" begin
     df = deepcopy(ref_df)[1:3]
 
     @test parent(df[2, :]) === df
+    @test parentindices(df[2, []]) == (2, Int[])
     @test parentindices(df[2, :]) == (2, Base.OneTo(3))
+    @test parentindices(df[2, r""]) == (2, [1,2,3])
+    @test parentindices(df[2, r"[ab]"]) == (2, [1,2])
+    @test parentindices(df[2, r"x"]) == (2, Int[])
     @test parent(df[1, 1:3]) === df
     @test parentindices(df[1, [3,2]]) == (1, [3, 2])
     sdf = view(df, [4,3], [:c, :a])
     @test parent(sdf[2, :]) === df
     @test parentindices(sdf[2, :]) == (3, [3, 1])
+    @test parentindices(sdf[2, r""]) == (3, [3, 1])
+    @test parentindices(sdf[2, r"a"]) == (3, [1])
+    @test parentindices(sdf[2, r"x"]) == (3, Int[])
+    @test parent(sdf[1, 1:2]) === df
+    @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
+    @test parent(df[2, r""]) === df
+    @test parent(df[2, r"a"]) === df
+    @test parent(df[2, r"x"]) === df
+    @test parentindices(df[2, :]) == (2, Base.OneTo(3))
+    @test parentindices(df[2, r""]) == (2, [1, 2, 3])
+    @test parentindices(df[2, r"a"]) == (2, [1])
+    @test parentindices(df[2, r"x"]) == (2, Int[])
+    @test parent(df[1, 1:3]) === df
+    @test parentindices(df[1, [3,2]]) == (1, [3, 2])
+    sdf = view(df, [4,3], [:c, :a])
+    @test parent(sdf[2, :]) === df
+    @test parent(sdf[2, r""]) === df
+    @test parent(sdf[2, r"a"]) === df
+    @test parent(sdf[2, r"x"]) === df
+    @test parentindices(sdf[2, :]) == (3, [3, 1])
+    @test parentindices(sdf[2, r""]) == (3, [3, 1])
+    @test parentindices(sdf[2, r"a"]) == (3, [1])
+    @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
     @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
 end

@@ -20,8 +20,9 @@ The rules for a valid type of index into a column are the following:
 * a vector, later denoted as `cols`:
     * a vector of `Symbol` (does not have to be a subtype of `AbstractVector{Symbol}`);
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of `AbstractVector{<:Integer}`);
-    * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`.
-    * a colon.
+    * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
+    * a colon;
+    * a regular expression, which gets expanded to a vector of matching column names.
 
 The rules for a valid type of index into a row are the following:
 * a value, later denoted as `row`:

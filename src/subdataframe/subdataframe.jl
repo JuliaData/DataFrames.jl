@@ -84,7 +84,8 @@ Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds, colind::Colu
     view(adf[colind], rowinds)
 @inline Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
     throw(ArgumentError("invalid column index $colind of type `Bool`"))
-Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds, colinds) =
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds,
+                                   colinds::Union{Colon, AbstractVector, Regex}) =
     SubDataFrame(adf, rowinds, colinds)
 
 ##############################################################################
@@ -100,7 +101,7 @@ ncol(sdf::SubDataFrame) = length(index(sdf))
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
     view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colinds::Union{AbstractVector, Regex}) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), colinds))
 @inline Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
@@ -109,9 +110,11 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVecto
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colind)]
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon,
+                                       colinds::Union{AbstractVector, Regex}) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector,
+                                       colinds::Union{AbstractVector, Regex}) =
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), :)]

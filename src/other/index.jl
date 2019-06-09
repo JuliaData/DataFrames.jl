@@ -201,7 +201,11 @@ end
     end
     idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
     throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
-                        "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
+                        "Only Integer or Symbol values allowed when indexing by vector"))
+end
+
+@inline function Base.getindex(x::AbstractIndex, rx::Regex)
+    getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
 end
 
 # Helpers
@@ -273,6 +277,9 @@ end
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) =
     [parentcols(ind, i) for i in idx]
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
+    [parentcols(ind, i) for i in _names(ind) if occursin(idx, String(i))]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
 

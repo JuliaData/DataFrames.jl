@@ -161,7 +161,7 @@ end
     @test dropmissing!(df1b) === df1b
     @test df1b == df1
 
-    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true])
+    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true], r"x2", r"x")
         @test df2[completecases(df2, cols), :] == df2[[1, 2, 4], :]
         @test dropmissing(df2, cols) == df2[[1, 2, 4], :]
         returned = dropmissing(df1, cols)
@@ -219,9 +219,12 @@ end
 
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
+    @test d1s == stack(d1, r"[ab]")
     d1s2 = stack(d1, [:c, :d])
+    @test d1s2 == stack(d1, r"[cd]")
     d1s3 = stack(d1)
     d1m = melt(d1, [:c, :d, :e])
+    @test d1m == melt(d1, r"[cde]")
     @test d1s[1:12, :c] == d1[:c]
     @test d1s[13:24, :c] == d1[:c]
     @test d1s2 == d1s3
@@ -232,21 +235,26 @@ end
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
+    @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
     d1m_named = melt(d1[[1,3,4]], :a, variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :a]
 
     # test empty measures or ids
     dx = stack(d1, [], [:a])
+    @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
     @test names(dx) == [:variable, :value, :a]
     dx = stack(d1, :a, [])
+    @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
     @test names(dx) == [:variable, :value]
     dx = melt(d1, [], [:a])
+    @test dx == melt(d1, r"xxx", r"a")
     @test size(dx) == (12, 2)
     @test names(dx) == [:variable, :value]
     dx = melt(d1, :a, [])
+    @test dx == melt(d1, r"a", r"xxx")
     @test size(dx) == (0, 3)
     @test names(dx) == [:variable, :value, :a]
 
@@ -254,6 +262,7 @@ end
 
     # Tests of RepeatedVector and StackedVector indexing
     d1s = stackdf(d1, [:a, :b])
+    @test d1s == stackdf(d1, r"[ab]")
     @test d1s[1] isa DataFrames.RepeatedVector
     @test ndims(d1s[1]) == 1
     @test ndims(typeof(d1s[1])) == 1
@@ -278,8 +287,10 @@ end
     @test [d1s[2][1:12]; d1s[2][13:24]] == d1s[2]
 
     d1s2 = stackdf(d1, [:c, :d])
+    @test d1s2 == stackdf(d1, r"[cd]")
     d1s3 = stackdf(d1)
     d1m = meltdf(d1, [:c, :d, :e])
+    @test d1m == meltdf(d1, r"[cde]")
     @test d1s[1:12, :c] == d1[:c]
     @test d1s[13:24, :c] == d1[:c]
     @test d1s2 == d1s3
@@ -289,8 +300,10 @@ end
     @test names(d1m) == [:variable, :value, :a]
 
     d1s_named = stackdf(d1, [:a, :b], variable_name=:letter, value_name=:someval)
+    @test d1s_named == stackdf(d1, r"[ab]", variable_name=:letter, value_name=:someval)
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
     d1m_named = meltdf(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval)
+    @test d1m_named == meltdf(d1, r"[cde]", variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
     d1s[:id] = Union{Int, Missing}[1:12; 1:12]
@@ -423,6 +436,7 @@ df = vcat(df1, df1)
 @test findall(nonunique(df, Colon())) == collect(7:12)
 @test findall(nonunique(df, :a)) == collect(3:12)
 @test findall(nonunique(df, [:a, :c])) == collect(7:12)
+@test findall(nonunique(df, r"[ac]")) == collect(7:12)
 @test findall(nonunique(df, [1, 3])) == collect(7:12)
 @test findall(nonunique(df, 1)) == collect(3:12)
 
@@ -434,10 +448,17 @@ df = vcat(df1, df1)
 @test unique(df, 3) == df1[1:3,:]
 @test unique(df, [1, 3]) == df1
 @test unique(df, [:a, :c]) == df1
+@test unique(df, r"[ac]") == df1
 @test unique(df, :a) == df1[1:2,:]
+@test_throws ArgumentError unique(DataFrame())
+@test_throws ArgumentError nonunique(DataFrame())
 
 #test unique!() with extra argument
 unique!(df, [1, 3])
+@test df == df1
+
+df = vcat(df1, df1)
+unique!(df, r"[ac]")
 @test df == df1
 
 #test filter() and filter!()
