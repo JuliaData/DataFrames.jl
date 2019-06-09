@@ -36,19 +36,22 @@ groupby(cols; sort = false, skipmissing = false)
 
 ### Arguments
 
-* `d` : an `AbstractDataFrame` to split (optional, see [Returns](#returns))
+* `df` : an `AbstractDataFrame` to split (optional, see [Returns](#returns))
 * `cols` : data table columns to group by
 * `sort` : whether to sort rows according to the values of the grouping columns `cols`
 * `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
 ### Returns
 
-A `GroupedDataFrame` : a grouped view into `d`
+A `GroupedDataFrame` : a grouped view into `df`
 
 ### Details
 
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
-for each grouping into `d`. A `GroupedDataFrame` also supports
+for each grouping into `df`.
+Within each group, the order of rows in `df` is preserved.
+
+A `GroupedDataFrame` also supports
 indexing by groups, `map` (which applies a function to each group)
 and `combine` (which applies a function to each group
 and combines the result into a data frame).
@@ -921,12 +924,12 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-    by(d::AbstractDataFrame, keys, cols => f...; sort::Bool = false)
-    by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
-    by(d::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, d::AbstractDataFrame, keys; sort::Bool = false)
+    by(df::AbstractDataFrame, keys, cols => f...; sort::Bool = false)
+    by(df::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
+    by(df::AbstractDataFrame, keys, f; sort::Bool = false)
+    by(f, df::AbstractDataFrame, keys; sort::Bool = false)
 
-Split-apply-combine in one step: apply `f` to each grouping in `d`
+Split-apply-combine in one step: apply `f` to each grouping in `df`
 based on grouping columns `keys`, and return a `DataFrame`.
 
 `keys` can be either a single column index, or a vector thereof.
@@ -1078,13 +1081,13 @@ Split-apply-combine that applies a set of functions over columns of an
 `AbstractDataFrame` or [`GroupedDataFrame`](@ref)
 
 ```julia
-aggregate(d::AbstractDataFrame, cols, fs)
+aggregate(df::AbstractDataFrame, cols, fs)
 aggregate(gd::GroupedDataFrame, fs)
 ```
 
 ### Arguments
 
-* `d` : an `AbstractDataFrame`
+* `df` : an `AbstractDataFrame`
 * `gd` : a `GroupedDataFrame`
 * `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
 * `fs` : a function or vector of functions to be applied to vectors
