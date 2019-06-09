@@ -37,7 +37,10 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
     if length(colnames) != 1
-        throw(ArgumentError("Column names in broadcasted data frames must match"))
+        wrongnames = setdiff(union(colnames...), intersect(colnames...))
+        msg = join(wrongnames, ", ", " and ")
+        throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                            "Non matching column names are $msg"))
     end
     nrows = length(axes(bc)[1])
     df = DataFrame()

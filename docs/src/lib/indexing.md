@@ -84,7 +84,7 @@ Under construction
 ## Broadcasting
 
 The following broadcasting rules apply to `AbstractDataFrame` objects:
-* `AbstractDataFrame` behaves in broadcasting like a matrix.
+* `AbstractDataFrame` behaves in broadcasting like a two-dimensional collection compatible with matrices.
 * If an `AbstractDataFrame` takes part in broadcasting then a `DataFrame` is always produced as a result.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 

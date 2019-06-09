@@ -9,8 +9,11 @@ refdf = DataFrame(reshape(1.5:15.5, (3,5)))
 @testset "broadcasting of AbstractDataFrame objects" begin
     for df in (copy(refdf), view(copy(refdf), :, :))
         @test identity.(df) == refdf
+        @test identity.(df) !== df
         @test (x->x).(df) == refdf
+        @test (x->x).(df) !== df
         @test (df .+ df) ./ 2 == refdf
+        @test (df .+ df) ./ 2 !== df
         @test df .+ Matrix(df) == 2 .* df
         @test Matrix(df) .+ df == 2 .* df
         @test (Matrix(df) .+ df .== 2 .* df) == DataFrame(trues(size(df)), names(df))
@@ -18,6 +21,13 @@ refdf = DataFrame(reshape(1.5:15.5, (3,5)))
         @test df .+ axes(df, 1) == DataFrame(Matrix(df) .+ axes(df, 1), names(df))
         @test df .+ permutedims(axes(df, 2)) == DataFrame(Matrix(df) .+ permutedims(axes(df, 2)), names(df))
     end
+
+    df1 = copy(refdf)
+    df2 = view(copy(refdf), :, :)
+    @test (df1 .+ df2) ./ 2 == refdf
+    @test (df1 .- df2) == DataFrame(zeros(size(df)))
+    @test (df1 .* df2) == refdf .^ 2
+    @test (df1 ./ df2) == DataFrame(ones(size(df)))
 end
 
 @testset "broadcasting of AbstractDataFrame objects errors" begin
