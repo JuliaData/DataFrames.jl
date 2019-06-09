@@ -25,9 +25,9 @@ refdf = DataFrame(reshape(1.5:15.5, (3,5)))
     df1 = copy(refdf)
     df2 = view(copy(refdf), :, :)
     @test (df1 .+ df2) ./ 2 == refdf
-    @test (df1 .- df2) == DataFrame(zeros(size(df)))
+    @test (df1 .- df2) == DataFrame(zeros(size(refdf)))
     @test (df1 .* df2) == refdf .^ 2
-    @test (df1 ./ df2) == DataFrame(ones(size(df)))
+    @test (df1 ./ df2) == DataFrame(ones(size(refdf)))
 end
 
 @testset "broadcasting of AbstractDataFrame objects errors" begin
