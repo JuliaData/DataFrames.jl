@@ -143,6 +143,7 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
+@inline Base.getindex(x::AbstractIndex, notidx::Not) = setdiff(1:length(x), getindex(x, notidx.skip))
 
 # Fuzzy matching rules:
 # 1. ignore case
