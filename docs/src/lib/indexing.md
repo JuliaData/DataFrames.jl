@@ -85,7 +85,7 @@ Under construction
 
 The following broadcasting rules apply to `AbstractDataFrame` objects:
 * `AbstractDataFrame` behaves in broadcasting like a matrix.
-* If an `AbstractDataFrame` take part in broadcasting then always a `DataFrame` is produced as a result.
+* If an `AbstractDataFrame` takes part in broadcasting then a `DataFrame` is always produced as a result.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 
 It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
