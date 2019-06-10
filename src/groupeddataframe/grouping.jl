@@ -952,13 +952,13 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-    by(d::AbstractDataFrame, keys, (cols => f)...; sort::Bool = false)
-    by(d::AbstractDataFrame, keys, [cols1 => f1, cols2 => f2]...; sort::Bool = false)
-    by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
-    by(d::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, d::AbstractDataFrame, keys; sort::Bool = false)
+    by(df::AbstractDataFrame, keys, (cols => f)...; sort::Bool = false)
+    by(df::AbstractDataFrame, keys, [cols1 => f1, cols2 => f2]...; sort::Bool = false)
+    by(df::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
+    by(df::AbstractDataFrame, keys, f; sort::Bool = false)
+    by(f, df::AbstractDataFrame, keys; sort::Bool = false)
 
-Split-apply-combine in one step: apply `f` to each grouping in `d`
+Split-apply-combine in one step: apply `f` to each grouping in `df`
 based on grouping columns `keys`, and return a `DataFrame`.
 
 `keys` can be either a single column index, or a vector thereof.
