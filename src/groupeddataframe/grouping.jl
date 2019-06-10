@@ -711,7 +711,6 @@ function _combine(f::Union{AbstractVector{<:Pair},
                            Tuple{Vararg{Pair}},
                            NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
-    @show f
     res = map(f) do p
         # Narrow the type of p
         p = Pair(first(p), last(p))
