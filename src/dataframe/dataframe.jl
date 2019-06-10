@@ -930,7 +930,7 @@ select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 
 """
     select(df::DataFrame, inds, copycols::Bool=true)
-    select(dfv::SubDataFrame, inds)
+    select(dfv::SubDataFrame, inds, copycols::Bool=true)
     select(dfr::DataFrameRow, inds)
 
 If `df` is a `DataFrame` create a new `DataFrame` that contains columns from `df`
@@ -939,8 +939,11 @@ If `copycols=true` (the default), then returned `DataFrame` holds
 copies of column vectors in `df`.
 If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
 
-If `select` is called on `SubDataFrame` or `DataFrameRow` then respectively
-`SubDataFrame` or `DataFrameRow` is always returned.
+If `select` is called on `SubDataFrame` then
+`SubDataFrame` is returned if `copycols=false` and `DataFrame` with freshly allocated columns otherwise.
+
+If `select` is called on `DataFrameRow` then
+`DataFrameRow` is always returned.
 
 Argument `inds` can be any index that is allowed for column indexing.
 
