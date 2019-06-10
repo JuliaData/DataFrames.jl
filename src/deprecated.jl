@@ -1400,3 +1400,6 @@ import Base: get
 
 import Base: haskey
 @deprecate haskey(df::AbstractDataFrame, key::Any) key in names(df)
+
+@deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
+@deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)

@@ -513,8 +513,7 @@ function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:Colu
 end
 
 # df[Regex] = value
-# df[Not] = value
-Base.setindex!(df::DataFrame, v::Any, col_inds::Union{Regex, Not}) =
+Base.setindex!(df::DataFrame, v::Any, col_inds::Regex) =
     setindex!(df, v, index(df)[col_inds])
 
 # df[:] = AbstractVector or Single Item
@@ -677,8 +676,7 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[rows, Regex] = value
-# df[rows, Not] = value
-Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Union{Regex, Not}) =
+Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Regex) =
     setindex!(df, v, row_inds, index(df)[col_inds])
 
 # df[:] = DataFrame, df[:, :] = DataFrame
@@ -828,105 +826,6 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
 end
 
 """
-    deletecols!(df::DataFrame, inds)
-
-Delete columns specified by `inds` from a `DataFrame` `df` in place and return it.
-
-Argument `inds` can be any index that is allowed for column indexing of
-a `DataFrame` provided that the columns requested to be removed are unique.
-
-### Examples
-
-```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-
-julia> deletecols!(d, 1)
-3×1 DataFrame
-│ Row │ b     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 4     │
-│ 2   │ 5     │
-│ 3   │ 6     │
-```
-
-"""
-function deletecols!(df::DataFrame, inds::AbstractVector{Int})
-    sorted_inds = sort(inds, rev=true)
-    for i in 2:length(sorted_inds)
-        if sorted_inds[i] == sorted_inds[i-1]
-            indpos = join(findall(==(sorted_inds[i]), inds), ", ", " and ")
-            throw(ArgumentError("Duplicate values in inds found at positions" *
-                                " $indpos."))
-        end
-    end
-    for ind in sorted_inds
-        if 1 <= ind <= ncol(df)
-            splice!(_columns(df), ind)
-            delete!(index(df), ind)
-        else
-            throw(ArgumentError("Can't delete a non-existent DataFrame column"))
-        end
-    end
-    return df
-end
-deletecols!(df::DataFrame, c::Int) = deletecols!(df, [c])
-deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
-
-"""
-    deletecols(df::DataFrame, inds, copycols::Bool=true)
-
-Create a new `DataFrame` based on `df ` deleting columns specified by `inds`.
-
-Argument `inds` can be any index that is allowed for column indexing of
-a `DataFrame` provided that the columns requested to be removed are unique.
-
-If `copycols=true` (the default), then returned `DataFrame` holds
-copies of column vectors in `df`.
-If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
-
-### Examples
-
-```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-
-julia> deletecols(d, 1)
-3×1 DataFrame
-│ Row │ b     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 4     │
-│ 2   │ 5     │
-│ 3   │ 6     │
-```
-
-"""
-function deletecols(df::DataFrame, inds; copycols::Bool=true)
-    newdf = copy(df, copycols=false)
-    deletecols!(newdf, inds)
-    if copycols
-        for i in axes(newdf, 2)
-            newdf[i] = copy(newdf[i])
-        end
-    end
-    return newdf
-end
-
-"""
     deleterows!(df::DataFrame, inds)
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
@@ -1006,6 +905,11 @@ julia> select!(d, 2)
 
 """
 function select!(df::DataFrame, inds::AbstractVector{Int})
+    if isempty(inds)
+        empty!(_columns(df))
+        empty!(index(df))
+        return df
+    end
     indmin, indmax = extrema(inds)
     if indmin < 1
         throw(ArgumentError("indices must be positive"))
@@ -1026,14 +930,19 @@ select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 
 """
     select(df::DataFrame, inds, copycols::Bool=true)
+    select(dfv::SubDataFrame, inds)
+    select(dfr::DataFrameRow, inds)
 
-Create a new `DataFrame` that contains columns from `df` specified by `inds` and return it.
-
-Argument `inds` can be any index that is allowed for column indexing of a `DataFrame`.
-
+If `df` is a `DataFrame` create a new `DataFrame` that contains columns from `df`
+specified by `inds` and return it.
 If `copycols=true` (the default), then returned `DataFrame` holds
 copies of column vectors in `df`.
 If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
+
+If `select` is called on `SubDataFrame` or `DataFrameRow` then respectively
+`SubDataFrame` or `DataFrameRow` is always returned.
+
+Argument `inds` can be any index that is allowed for column indexing.
 
 ### Examples
 
@@ -1148,7 +1057,7 @@ function allowmissing!(df::DataFrame, col::ColumnIndex)
     df
 end
 
-function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex}=1:size(df, 2))
+function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         allowmissing!(df, col)
     end
@@ -1162,6 +1071,12 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     end
     df
 end
+
+disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+    allowmissing!(df, index(df)[cols])
+
+allowmissing!(df::DataFrame, cols::Colon=:) =
+    allowmissing!(df, axes(df, 2))
 
 """
     disallowmissing!(df::DataFrame)
@@ -1186,7 +1101,7 @@ function disallowmissing!(df::DataFrame, col::ColumnIndex)
     df
 end
 
-function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex}=1:size(df, 2))
+function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         disallowmissing!(df, col)
     end
@@ -1203,6 +1118,9 @@ end
 
 disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
     disallowmissing!(df, index(df)[cols])
+
+disallowmissing!(df::DataFrame, cols::Colon=:) =
+    disallowmissing!(df, axes(df, 2))
 
 ##############################################################################
 ##
@@ -1284,7 +1202,7 @@ function categorical!(df::DataFrame, cname::Union{Integer, Symbol};
     df
 end
 
-function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
+function categorical!(df::DataFrame, cnames::AbstratVector{<:Union{Integer, Symbol}};
                       compress::Bool=false)
     for cname in cnames
         df[cname] = categorical(df[cname], compress)
@@ -1295,7 +1213,7 @@ end
 categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame; compress::Bool=false)
+function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
     for i in 1:size(df, 2)
         if eltype(df[i]) <: Union{AbstractString, Missing}
             df[i] = categorical(df[i], compress)

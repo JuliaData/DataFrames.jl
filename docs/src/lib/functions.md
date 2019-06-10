@@ -35,8 +35,6 @@ completecases
 copy
 DataFrame
 DataFrame!
-deletecols!
-deletecols
 deleterows!
 describe
 disallowmissing!
