@@ -748,6 +748,17 @@ end
     end
 end
 
+# Test that multiple tuples in by and combine throw errs
+@testset "Tuple errors" begin
+    df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
+                   b = repeat([2, 1], outer=[4]))
+
+    @test_throws MethodError by(df, :a, (:b => first, ), (:b => last))
+    @test_throws MethodError by(df, :a, (:b => first, ), :b => last)
+    @test_throws MethodError by(df, :a, (:b => first, ), [:b => last])
+end
+
+
 struct TestType end
 Base.isless(::TestType, ::Int) = true
 Base.isless(::Int, ::TestType) = false
