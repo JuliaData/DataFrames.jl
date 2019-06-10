@@ -752,10 +752,11 @@ end
 @testset "Tuple errors" begin
     df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]))
-
-    @test_throws MethodError by(df, :a, (:b => first, ), (:b => last))
-    @test_throws MethodError by(df, :a, (:b => first, ), :b => last)
-    @test_throws MethodError by(df, :a, (:b => first, ), [:b => last])
+    gd = groupby(df, :a)
+    @test_throws MethodError combine(gd, (:b => first, ), (:b => last))
+    @test_throws MethodError combine(gd, (:b => first, ), :b => last)
+    @test_throws MethodError combine(gd, (:b => first, ), [:b => last])
+    @test_throws MethodError combine(gd, (:b => first, ), [:b => last], :b => length)
 end
 
 
