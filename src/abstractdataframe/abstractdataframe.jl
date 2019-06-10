@@ -521,7 +521,8 @@ end
 
 """
     completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex})
+    completecases(df::AbstractDataFrame, ::Colon)
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -573,7 +574,7 @@ julia> completecases(df, [:x, :y])
 ```
 
 """
-function completecases(df::AbstractDataFrame)
+function completecases(df::AbstractDataFrame, col::Colon=:)
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
         _nonmissing!(res, df[i])
@@ -587,13 +588,12 @@ function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
     res
 end
 
-completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
-    completecases(df[cols])
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
+    completecases(select(df, cols, copycols=false))
 
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -654,8 +654,7 @@ julia> dropmissing(df, [:x, :y])
 ```
 
 """
-function dropmissing(df::AbstractDataFrame,
-                     cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
+function dropmissing(df::AbstractDataFrame, cols=1:size(df, 2);
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -664,8 +663,7 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -724,8 +722,7 @@ julia> dropmissing!(df3, [:x, :y])
 ```
 
 """
-function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
+function dropmissing!(df::AbstractDataFrame, cols=1:size(df, 2);
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -863,22 +860,17 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[cols]])
-nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
+nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
     deleterows!(df, findall(nonunique(df, cols)))
-Base.unique!(df::AbstractDataFrame, cols::Regex) =
-    deleterows!(df, findall(nonunique(df, cols)))
-Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+Base.unique!(df::AbstractDataFrame, cols) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
-    df[(!).(nonunique(df, cols)), :]
-Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+Base.unique(df::AbstractDataFrame, cols) =
     df[(!).(nonunique(df, cols)), :]
 
 """

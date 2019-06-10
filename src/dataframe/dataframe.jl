@@ -296,7 +296,7 @@ function Base.getindex(df::DataFrame, col_ind::Symbol)
 end
 
 # df[MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex})
+function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex, Not})
     selected_columns = index(df)[col_inds]
     new_columns = _columns(df)[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -333,7 +333,7 @@ end
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
+@inline function Base.getindex(df::DataFrame, row_inds::Union{AbstractVector, Not}, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
@@ -343,8 +343,8 @@ end
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector,
-                               col_inds::Union{AbstractVector, Regex})
+@inline function Base.getindex(df::DataFrame, row_inds::Union{AbstractVector, Not},
+                               col_inds::Union{AbstractVector, Regex, Not})
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -361,14 +361,14 @@ function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
 end
 
 # df[:, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex})
+function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not})
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
 # df[MultiRowIndex, :] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+@inline function Base.getindex(df::DataFrame, row_inds::Union{AbstractVector, Not}, ::Colon)
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -513,7 +513,8 @@ function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:Colu
 end
 
 # df[Regex] = value
-Base.setindex!(df::DataFrame, v::Any, col_inds::Regex) =
+# df[Not] = value
+Base.setindex!(df::DataFrame, v::Any, col_inds::Union{Regex, Not}) =
     setindex!(df, v, index(df)[col_inds])
 
 # df[:] = AbstractVector or Single Item
@@ -676,7 +677,8 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[rows, Regex] = value
-Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Regex) =
+# df[rows, Not] = value
+Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Union{Regex, Not}) =
     setindex!(df, v, row_inds, index(df)[col_inds])
 
 # df[:] = DataFrame, df[:, :] = DataFrame
@@ -1172,7 +1174,7 @@ Convert all columns of a `df` from element type `Union{T, Missing}` to
 Convert a single column of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
-    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex})
+    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
 Convert multiple columns of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
@@ -1199,7 +1201,8 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-disallowmissing!(df::DataFrame, cols::Regex) = disallowmissing!(df, index(df)[cols])
+disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+    disallowmissing!(df, index(df)[cols])
 
 ##############################################################################
 ##
@@ -1212,7 +1215,7 @@ disallowmissing!(df::DataFrame, cols::Regex) = disallowmissing!(df, index(df)[co
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
                  compress::Bool=false)
-    categorical!(df::DataFrame, cnames::Regex;
+    categorical!(df::DataFrame, cnames::Union{Regex, Not};
                  compress::Bool=false)
     categorical!(df::DataFrame; compress::Bool=false)
 
@@ -1289,7 +1292,7 @@ function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
     df
 end
 
-categorical!(df::DataFrame, cnames::Regex; compress::Bool=false) =
+categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
 function categorical!(df::DataFrame; compress::Bool=false)
