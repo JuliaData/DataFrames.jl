@@ -694,11 +694,9 @@ Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
 
 ##############################################################################
 ##
-## Mutating AbstractDict methods
+## Mutating methods
 ##
 ##############################################################################
-
-Base.empty!(df::DataFrame) = (empty!(_columns(df)); empty!(index(df)); df)
 
 """
 Insert a column into a data frame in place.

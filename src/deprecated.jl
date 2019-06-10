@@ -1400,3 +1400,6 @@ import Base: get
 
 import Base: haskey
 @deprecate haskey(df::AbstractDataFrame, key::Any) key in names(df)
+
+import Base: empty!
+@deprecate empty!(df::DataFrame) deletecols!(df, 1:ncol(df))
