@@ -103,57 +103,6 @@ end
         """
 end
 
-@testset "DataStreams" begin
-    using DataStreams
-    I = DataFrame(id = Int64[1, 2, 3, 4, 5],
-        firstname = Union{String, Missing}["Benjamin", "Wayne", "Sean", "Charles", missing],
-        lastname = String["Chavez", "Burke", "Richards", "Long", "Rose"],
-        salary = Union{Float64, Missing}[missing, 46134.1, 45046.2, 30555.6, 88894.1],
-        rate = Float64[39.44, 33.8, 15.64, 17.67, 34.6],
-        hired = Union{Date, Missing}[Date("2011-07-07"), Date("2016-02-19"), missing,
-                                     Date("2002-01-05"), Date("2008-05-15")],
-        fired = DateTime[DateTime("2016-04-07T14:07:00"), DateTime("2015-03-19T15:01:00"),
-                         DateTime("2006-11-18T05:07:00"), DateTime("2002-07-18T06:24:00"),
-                         DateTime("2007-09-29T12:09:00")],
-        reserved = missings(5)
-    )
-    sink = DataStreams.Data.close!(DataStreams.Data.stream!(I, deepcopy(I)))
-    sch = DataStreams.Data.schema(sink)
-    @test size(sch) == (5, 8)
-    @test DataStreams.Data.header(sch) == ["id", "firstname", "lastname", "salary",
-                                           "rate", "hired", "fired", "reserved"]
-    @test DataStreams.Data.types(sch) == (Int64, Union{String, Missing}, String,
-                                          Union{Float64, Missing}, Float64,
-                                          Union{Date, Missing}, DateTime, Missing)
-    @test sink[:id] == [1:5;]
-
-    transforms = Dict(1=>x->x+1)
-    sink = DataStreams.Data.close!(DataStreams.Data.stream!(I, deepcopy(I);
-                                                            append=true, transforms=transforms))
-    sch = DataStreams.Data.schema(sink)
-    @test size(sch) == (10, 8)
-    @test DataStreams.Data.header(sch) == ["id", "firstname", "lastname", "salary",
-                                           "rate", "hired", "fired", "reserved"]
-    @test DataStreams.Data.types(sch) == (Int64, Union{String, Missing}, String,
-                                          Union{Float64, Missing}, Float64,
-                                          Union{Date, Missing}, DateTime, Missing)
-    @test sink[:id] == [1:5; 2:6]
-
-    sink = DataStreams.Data.close!(Data.stream!(I, DataFrame, deepcopy(I)))
-    sch = DataStreams.Data.schema(sink)
-    @test size(sch) == (5, 8)
-    @test DataStreams.Data.header(sch) == ["id", "firstname", "lastname", "salary",
-                                           "rate", "hired", "fired", "reserved"]
-    @test DataStreams.Data.types(sch) == (Int64, Union{String, Missing}, String,
-                                          Union{Float64, Missing}, Float64,
-                                          Union{Date, Missing}, DateTime, Missing)
-    @test sink[:id] == [1:5;]
-
-    # test DataFrameStream creation
-    dfs = DataFrame(sch)
-    DataStreams.Data.close!(dfs)
-end
-
 @testset "csv/tsv output" begin
     df = DataFrame(a = [1,2], b = [1.0, 2.0])
     @test sprint(show, "text/csv", df) == """
@@ -166,6 +115,34 @@ end
     1\t1.0
     2\t2.0
     """
+end
+
+@testset "empty data frame and DataFrameRow" begin
+    df = DataFrame(a = [1,2], b = [1.0, 2.0])
+
+    @test sprint(show, "text/csv", df[2:1]) == ""
+    @test sprint(show, "text/tab-separated-values", df[2:1]) == ""
+    @test sprint(show, "text/html", df[2:1]) ==
+          "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
+          "</thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+    @test sprint(show, "text/latex", df[2:1]) ==
+          "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
+
+    @test sprint(show, "text/csv", @view df[2:1]) == ""
+    @test sprint(show, "text/tab-separated-values", @view df[2:1]) == ""
+    @test sprint(show, "text/html", @view df[2:1]) ==
+          "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
+          "</thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+    @test sprint(show, "text/latex", @view df[2:1]) ==
+          "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
+
+    @test sprint(show, "text/csv", df[1, 2:1]) == ""
+    @test sprint(show, "text/tab-separated-values", df[1, 2:1]) == ""
+    @test sprint(show, "text/html", df[1, 2:1]) ==
+          "<p>DataFrameRow</p><table class=\"data-frame\"><thead><tr><th></th></tr>" *
+          "<tr><th></th></tr></thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+    @test sprint(show, "text/latex", df[1, 2:1]) ==
+          "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 end
 
 end # module

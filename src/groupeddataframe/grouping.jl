@@ -36,19 +36,22 @@ groupby(cols; sort = false, skipmissing = false)
 
 ### Arguments
 
-* `d` : an `AbstractDataFrame` to split (optional, see [Returns](#returns))
+* `df` : an `AbstractDataFrame` to split (optional, see [Returns](#returns))
 * `cols` : data table columns to group by
 * `sort` : whether to sort rows according to the values of the grouping columns `cols`
 * `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
 ### Returns
 
-A `GroupedDataFrame` : a grouped view into `d`
+A `GroupedDataFrame` : a grouped view into `df`
 
 ### Details
 
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
-for each grouping into `d`. A `GroupedDataFrame` also supports
+for each grouping into `df`.
+Within each group, the order of rows in `df` is preserved.
+
+A `GroupedDataFrame` also supports
 indexing by groups, `map` (which applies a function to each group)
 and `combine` (which applies a function to each group
 and combines the result into a data frame).
@@ -291,6 +294,10 @@ function Base.map(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         parent = hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
+        if length(idx) == 0
+            return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
+                                    Int[], Int[], Int[])
+        end
         starts = Vector{Int}(undef, length(gd))
         ends = Vector{Int}(undef, length(gd))
         starts[1] = 1
@@ -739,7 +746,7 @@ function _combine(f::Union{AbstractVector{<:Pair},
                     Symbol('x', i)
                 for i in 1:length(f)]
     end
-    valscat = DataFrame(collect(outcols), nams, makeunique=true)
+    valscat = DataFrame(collect(AbstractVector, outcols), nams, makeunique=true)
     return idx, valscat
 end
 
@@ -769,7 +776,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
     end
-    valscat = DataFrame(collect(outcols), collect(Symbol, nms))
+    valscat = DataFrame(collect(AbstractVector, outcols), collect(Symbol, nms))
     return idx, valscat
 end
 
@@ -1129,13 +1136,13 @@ Split-apply-combine that applies a set of functions over columns of an
 `AbstractDataFrame` or [`GroupedDataFrame`](@ref)
 
 ```julia
-aggregate(d::AbstractDataFrame, cols, fs)
+aggregate(df::AbstractDataFrame, cols, fs)
 aggregate(gd::GroupedDataFrame, fs)
 ```
 
 ### Arguments
 
-* `d` : an `AbstractDataFrame`
+* `df` : an `AbstractDataFrame`
 * `gd` : a `GroupedDataFrame`
 * `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
 * `fs` : a function or vector of functions to be applied to vectors
@@ -1227,7 +1234,11 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
     res
 end
 
-function DataFrame(gd::GroupedDataFrame)
+function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
+    if !copycols
+        throw(ArgumentError("It is not possible to construct a `DataFrame`" *
+                            "from GroupedDataFrame with `copycols=false`"))
+    end
     length(gd) == 0 && return similar(parent(gd), 0)
     idx = similar(gd.idx)
     doff = 1

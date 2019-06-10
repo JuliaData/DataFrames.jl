@@ -11,7 +11,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
     keys = join(string.(keynames), ", ")
 
     keystr = length(gd.cols) > 1 ? "keys" : "key"
-    groupstr = N > 1 ? "groups" : "group"
+    groupstr = N == 1 ? "group" : "groups"
     summary && print(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys")
     if allgroups
         for i = 1:N

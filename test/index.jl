@@ -178,4 +178,53 @@ end
     @test isempty(fuzzymatch(i.lookup, :abcd))
 end
 
+@testset "Regex indexing" begin
+    i = Index()
+    push!(i, :x1)
+    push!(i, :x12)
+    push!(i, :x131)
+    push!(i, :y13)
+    push!(i, :yy13)
+    @test i[r"x1."] == [2, 3]
+    @test isempty(i[r"xx"])
+    @test i[r""] == 1:5
+    @test names(SubIndex(i, r"x1.")) == [:x12, :x131]
+    @test isempty(names(SubIndex(i, r"xx")))
+    @test names(SubIndex(i, r"")) == names(i)
+    @test DataFrames._names(SubIndex(i, r"x1.")) == [:x12, :x131]
+    @test isempty(DataFrames._names(SubIndex(i, r"xx")))
+    @test DataFrames._names(SubIndex(i, r"")) == names(i)
+    @test DataFrames.parentcols(SubIndex(i, r"x1.")) == [2, 3]
+    @test isempty(DataFrames.parentcols(SubIndex(i, r"xx")))
+    @test DataFrames.parentcols(SubIndex(i, r"")) == 1:5
+
+    i2 = SubIndex(i, r"")
+    @test i2[r"x1."] == [2, 3]
+    @test isempty(i2[r"xx"])
+    @test i2[r""] == 1:5
+    @test names(SubIndex(i2, r"x1.")) == [:x12, :x131]
+    @test isempty(names(SubIndex(i2, r"xx")))
+    @test names(SubIndex(i2, r"")) == names(i)
+    @test DataFrames._names(SubIndex(i2, r"x1.")) == [:x12, :x131]
+    @test isempty(DataFrames._names(SubIndex(i2, r"xx")))
+    @test DataFrames._names(SubIndex(i2, r"")) == names(i2)
+    @test DataFrames.parentcols(SubIndex(i2, r"x1.")) == [2, 3]
+    @test isempty(DataFrames.parentcols(SubIndex(i2, r"xx")))
+    @test DataFrames.parentcols(SubIndex(i2, r"")) == 1:5
+
+    i3 = SubIndex(i, r"x1.")
+    @test i3[r"x1.$"] == [1]
+    @test isempty(i3[r"xx"])
+    @test i3[r""] == 1:2
+    @test names(SubIndex(i3, r"x1.$")) == [:x12]
+    @test isempty(names(SubIndex(i3, r"xx")))
+    @test names(SubIndex(i3, r"")) == names(i3)
+    @test DataFrames._names(SubIndex(i3, r"x1.$")) == [:x12]
+    @test isempty(DataFrames._names(SubIndex(i3, r"xx")))
+    @test DataFrames._names(SubIndex(i3, r"")) == names(i3)
+    @test DataFrames.parentcols(SubIndex(i3, r"x1.$")) == [1]
+    @test isempty(DataFrames.parentcols(SubIndex(i3, r"xx")))
+    @test DataFrames.parentcols(SubIndex(i3, r"")) == 1:2
+end
+
 end # module

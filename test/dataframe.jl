@@ -1,6 +1,6 @@
 module TestDataFrame
 
-using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
+using Dates, DataFrames, Statistics, Random, Test
 using DataFrames: _columns
 const ≅ = isequal
 const ≇ = !isequal
@@ -67,17 +67,9 @@ end
 
 @testset "Associative methods" begin
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test haskey(df, :a)
-    @test !haskey(df, :c)
-    @test haskey(df, 1)
-    @test_throws MethodError haskey(df, 1.5)
-    @test_throws ArgumentError haskey(df, true)
-    @test get(df, :a, -1) === eachcol(df)[1]
-    @test get(df, :c, -1) == -1
     @test !isempty(df)
 
     dfv = view(df, 1:2, 1:2)
-    @test get(df, :a, -1) === eachcol(df)[1]
 
     @test empty!(df) === df
     @test isempty(eachcol(df))
@@ -273,18 +265,16 @@ end
     @test d == DataFrame(d=4)
 
     d = copy(df)
+    deletecols!(d, r"[aec]")
+    @test names(d) == [:b, :d]
+    deletecols!(d, r"b")
+    @test d == DataFrame(d=4)
+
+    d = copy(df)
     deletecols!(d, [2, 5, 3])
     @test names(d) == [:a, :d]
     deletecols!(d, 2)
     @test d == DataFrame(a=1)
-
-    d = copy(df)
-    deletecols!(d, 2:3)
-    @test d == DataFrame(a=1, d=4, e=5)
-
-    d = copy(df)
-    deletecols!(d, 2:3)
-    @test d == DataFrame(a=1, d=4, e=5)
 
     d = copy(df)
     deletecols!(d, 2:3)
@@ -307,6 +297,15 @@ end
     d = deletecols(df, [:a, :e, :c])
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
+    @test d.b !== df.b
+    @test d.d !== df.d
+    @test df == df2
+
+    df2 = copy(df)
+    d = deletecols(df, r"[aec]")
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d == df[r"[bd]"]
     @test d.b !== df.b
     @test d.d !== df.d
     @test df == df2
@@ -341,6 +340,14 @@ end
     d = deletecols(df, [:a, :e, :c], copycols=false)
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
+    @test d.b === df.b
+    @test d.d === df.d
+    @test df == df2
+
+    d = deletecols(df, r"[aec]", copycols=false)
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d == df[r"[bd]"]
     @test d.b === df.b
     @test d.d === df.d
     @test df == df2
@@ -383,6 +390,13 @@ end
     d = copy(df, copycols=false)
     select!(d, [:a, :e, :c])
     @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = copy(df, copycols=false)
+    select!(d, r"[aec]")
+    @test names(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
@@ -437,6 +451,15 @@ end
     @test d.e == df.e
     @test d.c == df.c
 
+    d = select(df, r"[aec]")
+    @test names(d) == [:a, :c, :e]
+    @test d.a !== df.a
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.a == df.a
+    @test d.e == df.e
+    @test d.c == df.c
+
     d = select(df, [true, false, true, false, true])
     @test names(d) == [:a, :c, :e]
     @test d.a !== df.a
@@ -469,6 +492,12 @@ end
 
     d = select(df, [:a, :e, :c], copycols=false)
     @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, r"[aec]", copycols=false)
+    @test names(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
@@ -690,6 +719,7 @@ df4[2,:Mass] = missing
 
 # test empty set of grouping variables
 @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
+@test_throws ArgumentError unstack(df, r"xxxxx", :Key, :Value)
 @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
 @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))),
                               :id, :variable, :value)
@@ -708,6 +738,9 @@ wide = DataFrame(id = 1:12,
 
 long = stack(wide)
 wide3 = unstack(long, [:id, :a], :variable, :value)
+@test wide3 == wide[[1, 2, 4, 5]]
+
+wide3 = unstack(long, r"^[ia]", :variable, :value)
 @test wide3 == wide[[1, 2, 4, 5]]
 
 df = DataFrame(A = 1:10, B = 'A':'J')
@@ -774,6 +807,10 @@ DRT = CategoricalArrays.DefaultRefType
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
+
+    df = DataFrame([["a", missing]])
+    categorical!(df)
+    @test df.x1 isa CategoricalVector{Union{Missing, String}}
 end
 
 @testset "unstack promotion to support missing values" begin
@@ -847,6 +884,7 @@ end
     allowmissing!(x, :x1)
     x[1, :x1] = missing
     y = melt(x, [:id, :id2])
+    @test y ≅ melt(x, r"id")
     z = unstack(y, :id, :variable, :value)
     @test all(isequal(z[n], x[n]) for n in names(z))
     z = unstack(y, :variable, :value)
@@ -901,13 +939,6 @@ end
     @test first(df, 1) == DataFrame(A = 1)
     @test last(df, 6) == DataFrame(A = 5:10)
     @test last(df, 1) == DataFrame(A = 10)
-end
-
-@testset "misc" begin
-    df = DataFrame([collect('A':'C')])
-    @test sprint(dump, df) == "DataFrame  3 observations of 1 variables\n  x1: ['A', 'B', 'C']\n\n"
-    df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
-    # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
 end
 
 @testset "column conversions" begin
@@ -1025,9 +1056,13 @@ end
     @test df[:y] === y
     @test df[1] === x
     @test df[1:1][1] == x
+    @test df[r"x"][1] == x
     @test df[1:1][1] !== x
+    @test df[r"x"][1] !== x
     @test df[1:2][:y] == y
     @test df[1:2][:y] !== y
+    @test df[r""][:y] == y
+    @test df[r""][:y] !== y
     @test df[:][:x] == x
     @test df[:][:x] !== x
     @test df[[:y,:x]][:x] == x
@@ -1037,6 +1072,7 @@ end
 @testset "test corner case of getindex" begin
     df = DataFrame(x=[1], y=[1])
     @test_throws MethodError df[true, 1:2]
+    @test_throws MethodError df[true, r""]
 end
 
 @testset "empty data frame getindex" begin
@@ -1049,6 +1085,7 @@ end
     @test_throws BoundsError DataFrame(x=[1])[2, [false]]
     #but this is OK:
     @test DataFrame(x=[1])[1:1, [false]] == DataFrame()
+    @test DataFrame(x=[1])[1:1, r"xx"] == DataFrame()
 end
 
 @testset "handling of end in indexing" begin
@@ -1219,6 +1256,18 @@ end
     @test axes(x, 2) === Base.OneTo(2)
     @test_throws ArgumentError axes(x, 3)
     @test size(DataFrame()) == (0,0)
+end
+
+@testset "0-row DataFrame corner cases" begin
+    df = DataFrame(a=1:0)
+    @test df.a isa Vector{Int}
+    v = Int[]
+    df = DataFrame(a=v, b=v)
+    @test df.a !== df.b
+    df = DataFrame(a=v, b=v, copycols=true)
+    @test df.a !== df.b
+    df = DataFrame(a=v, b=v, copycols=false)
+    @test df.a === df.b
 end
 
 end # module

@@ -146,4 +146,23 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
     end
 end
 
+@testset "DataFrame!" begin
+    nt = (a=Int64[1, 2, 3], b=[:a, :b, :c])
+    df1 = DataFrame!(nt)
+    df2 = DataFrame!(df1)
+    df3 = DataFrame(nt)
+    @test Tables.columntable(df1) === nt
+    @test Tables.columntable(df2) === nt
+    @test Tables.columntable(df3) == nt
+    @test Tables.columntable(df3) !== nt
+
+    v = [(a=1,b=2), (a=3, b=4)]
+    df = DataFrame(v)
+    @test size(df) == (2, 2)
+    @test df.a == [1, 3]
+    @test df.b == [2, 4]
+    @test_throws ArgumentError DataFrame!(v)
+    @test_throws ArgumentError DataFrame(v, copycols=false)
+end
+
 end # module

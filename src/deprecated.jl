@@ -29,26 +29,8 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
     return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
 end
 
-@deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
-@deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
-
-@deprecate nullable!(df::AbstractDataFrame, col::ColumnIndex) allowmissing!(df, col)
-@deprecate nullable!(df::AbstractDataFrame, cols::Vector{<:ColumnIndex}) allowmissing!(df, cols)
-@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) allowmissing!(df, colnames)
-@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) allowmissing!(df, colnums)
-
-import Base: keys, values, insert!
-@deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) eachcol(df)
+import Base: insert!
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
-
-@deprecate pool categorical
-@deprecate pool! categorical!
-
-@deprecate complete_cases! dropmissing!
-@deprecate complete_cases completecases
-
-@deprecate sub(df::AbstractDataFrame, rows) view(df, rows, :)
 
 ## write.table
 export writetable
@@ -1341,16 +1323,6 @@ macro tsv_str(s, flags...)
     inlinetable(s, flags...; separator='\t')
 end
 
-@deprecate rename!(x::AbstractDataFrame, from::AbstractArray, to::AbstractArray) rename!(x, [f=>t for (f, t) in zip(from, to)])
-@deprecate rename!(x::AbstractDataFrame, from::Symbol, to::Symbol) rename!(x, from => to)
-@deprecate rename!(x::Index, f::Function) rename!(f, x)
-@deprecate rename(x::AbstractDataFrame, from::AbstractArray, to::AbstractArray) rename(x, [f=>t for (f, t) in zip(from, to)])
-@deprecate rename(x::AbstractDataFrame, from::Symbol, to::Symbol) rename(x, from => to)
-@deprecate rename(x::Index, f::Function) rename(f, x)
-
-import Base: vcat
-@deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
-
 @deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, :eltype, :nmissing, :first, :last)
 @deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, :eltype, :nmissing, :first, :last), all)
 function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
@@ -1422,3 +1394,9 @@ import Base: convert
 @deprecate colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) [f(col) for f in fns, col in eachcol(d)]
 @deprecate colwise(f, gd::GroupedDataFrame) [[f(col) for col in eachcol(d)] for d in gd]
 @deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]
+
+import Base: get
+@deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[key] : default
+
+import Base: haskey
+@deprecate haskey(df::AbstractDataFrame, key::Any) key in names(df)

@@ -20,8 +20,9 @@ The rules for a valid type of index into a column are the following:
 * a vector, later denoted as `cols`:
     * a vector of `Symbol` (does not have to be a subtype of `AbstractVector{Symbol}`);
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of `AbstractVector{<:Integer}`);
-    * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`.
-    * a colon.
+    * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
+    * a colon;
+    * a regular expression, which gets expanded to a vector of matching column names.
 
 The rules for a valid type of index into a row are the following:
 * a value, later denoted as `row`:
@@ -79,3 +80,20 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 ## `setindex!`
 
 Under construction
+
+## Broadcasting
+
+It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
+In such an operation `AbstractDataFrame` is considered as two-dimensional and `DataFrameRow` as single-dimensional.
+
+!!! note
+
+    The rule above means that, similar to single-dimensional objects in Base (e.g. vectors),
+    `DataFrameRow` is considered to be column-oriented.
+
+If column indexing using `Symbol` names is performed the order of columns in the operation is specified
+by the order of names.
+
+`df[col] .= value` is allowed when `col` is a `Symbol` even if `col` is not present in the `DataFrame`
+under the condition that `df` is not empty: a new column will be created.
+On the contrary, `df.col .= value` is not allowed if `col` is not present in `df`.

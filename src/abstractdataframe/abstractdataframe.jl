@@ -13,7 +13,7 @@ type in that it allows indexing by a key (the columns).
 The following are normally implemented for AbstractDataFrames:
 
 * [`describe`](@ref) : summarize columns
-* [`dump`](@ref) : show structure
+* [`summary`](@ref) : show number of rows and columns
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
 * [`repeat`](@ref) : repeat rows
@@ -217,6 +217,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
+Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
+
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
@@ -278,16 +280,6 @@ end
 
 ##############################################################################
 ##
-## Associative methods
-##
-##############################################################################
-
-Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
-Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
-
-##############################################################################
-##
 ## Description
 ##
 ##############################################################################
@@ -319,16 +311,6 @@ Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 Get a data frame with the `n` last rows of `df`.
 """
 Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), :]
-
-# get the structure of a df
-function Base.dump(io::IOContext, df::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
-    if n > 0
-        for (name, col) in eachcol(df, true)
-            println(io, indent, "  ", name, ": ", col)
-        end
-    end
-end
 
 
 """
@@ -539,7 +521,7 @@ end
 
 """
     completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, cols::AbstractVector)
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -605,12 +587,12 @@ function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
     res
 end
 
-completecases(df::AbstractDataFrame, cols::AbstractVector) =
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
     completecases(df[cols])
 
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
@@ -673,7 +655,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                     cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -682,7 +664,7 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
     dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
@@ -743,7 +725,7 @@ julia> dropmissing!(df3, [:x, :y])
 
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                      cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -868,6 +850,9 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
+    if ncol(df) == 0
+        throw(ArgumentError("finding duplicate rows in data frame with no columns is not allowed"))
+    end
     gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
@@ -884,12 +869,14 @@ nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
     deleterows!(df, findall(nonunique(df, cols)))
+Base.unique!(df::AbstractDataFrame, cols::Regex) =
+    deleterows!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
+Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
     df[(!).(nonunique(df, cols)), :]
 Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     df[(!).(nonunique(df, cols)), :]
@@ -907,7 +894,7 @@ unique!(df::AbstractDataFrame, cols)
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, etc.)
+* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
 specifying the column(s) to compare.
 
 **Result**
@@ -1017,19 +1004,40 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
           makeunique=makeunique, copycols=copycols)
 
 """
-    vcat(dfs::AbstractDataFrame...)
+    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
 
-Vertically concatenate `AbstractDataFrames`.
+Vertically concatenate `AbstractDataFrame`s.
 
-Column names in all passed data frames must be the same, but they can have
-different order. In such cases the order of names in the first passed
-`DataFrame` is used.
+The `cols` keyword argument determines the columns of the returned data frame:
+
+* `:equal` (the default): require all data frames to have the same column names.
+  If they appear in different orders, the order of the first provided data frame is used.
+* `:intersect`: only the columns present in *all* provided data frames are kept.
+  If the intersection is empty, an empty data frame is returned.
+* `:union`: columns present in *at least one* of the provided data frames are kept.
+  Columns not present in some data frames are filled with `missing` where necessary.
+* A vector of `Symbol`s: only listed columns are kept.
+  Columns not present in some data frames are filled with `missing` where necessary.
+
+The order of columns is determined by the order they appear in the included
+data frames, searching through the header of the first data frame, then the
+second, etc.
+
+The element types of columns are determined using `promote_type`,
+as with `vcat` for `AbstractVector`s.
+
+`vcat` ignores empty data frames, making it possible to initialize an empty
+data frame at the beginning of a loop and `vcat` onto it.
 
 # Example
 ```jldoctest
 julia> df1 = DataFrame(A=1:3, B=1:3);
 
 julia> df2 = DataFrame(A=4:6, B=4:6);
+
+julia> df3 = DataFrame(A=7:9, C=7:9);
+
+julia> d4 = DataFrame();
 
 julia> vcat(df1, df2)
 6×2 DataFrame
@@ -1042,51 +1050,110 @@ julia> vcat(df1, df2)
 │ 4   │ 4     │ 4     │
 │ 5   │ 5     │ 5     │
 │ 6   │ 6     │ 6     │
-```
-"""
-Base.vcat(df::AbstractDataFrame) = DataFrame(df)
-Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
-    isempty(dfs) && return DataFrame()
-    allheaders = map(names, dfs)
-    uniqueheaders = unique(allheaders)
-    unionunique = union(uniqueheaders...)
-    intersectunique = intersect(uniqueheaders...)
-    coldiff = setdiff(unionunique, intersectunique)
 
-    if !isempty(coldiff)
-        # if any DataFrames are a full superset of names, skip them
-        filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
-        estrings = Vector{String}(undef, length(uniqueheaders))
-        for (i, u) in enumerate(uniqueheaders)
-            matching = findall(h -> u == h, allheaders)
-            headerdiff = setdiff(coldiff, u)
-            cols = join(headerdiff, ", ", " and ")
-            args = join(matching, ", ", " and ")
-            estrings[i] = "column(s) $cols are missing from argument(s) $args"
-        end
+julia> vcat(df1, df3, cols=:union)
+6×3 DataFrame
+│ Row │ A     │ B       │ C       │
+│     │ Int64 │ Int64⍰  │ Int64⍰  │
+├─────┼───────┼─────────┼─────────┤
+│ 1   │ 1     │ 1       │ missing │
+│ 2   │ 2     │ 2       │ missing │
+│ 3   │ 3     │ 3       │ missing │
+│ 4   │ 7     │ missing │ 7       │
+│ 5   │ 8     │ missing │ 8       │
+│ 6   │ 9     │ missing │ 9       │
+
+julia> vcat(df1, df3, cols=:intersect)
+6×1 DataFrame
+│ Row │ A     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+│ 4   │ 7     │
+│ 5   │ 8     │
+│ 6   │ 9     │
+
+julia> vcat(d4, df1)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+```
+
+"""
+Base.vcat(dfs::AbstractDataFrame...;
+          cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+    reduce(vcat, dfs; cols=cols)
+
+Base.reduce(::typeof(vcat),
+            dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
+            cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+    _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
+
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
+               cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
+
+    isempty(dfs) && return DataFrame()
+    # Array of all headers
+    allheaders = map(names, dfs)
+    # Array of unique headers across all data frames
+    uniqueheaders = unique(allheaders)
+    # All symbols present across all headers
+    unionunique = union(uniqueheaders...)
+    # List of symbols present in all dataframes
+    intersectunique = intersect(uniqueheaders...)
+
+    if cols === :equal
+        header = unionunique
+        coldiff = setdiff(unionunique, intersectunique)
+
+        if !isempty(coldiff)
+            # if any DataFrames are a full superset of names, skip them
+            filter!(u -> !issetequal(u, header), uniqueheaders)
+            estrings = map(enumerate(uniqueheaders)) do (i, head)
+                matching = findall(h -> head == h, allheaders)
+                headerdiff = setdiff(coldiff, head)
+                cols = join(headerdiff, ", ", " and ")
+                args = join(matching, ", ", " and ")
+                return "column(s) $cols are missing from argument(s) $args"
+            end
         throw(ArgumentError(join(estrings, ", ", ", and ")))
+        end
+
+    elseif cols === :intersect
+        header = intersectunique
+    elseif cols === :union
+        header = unionunique
+    else
+        header = cols
     end
 
-    header = allheaders[1]
     length(header) == 0 && return DataFrame()
-    cols = Vector{AbstractVector}(undef, length(header))
+    all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
-        data = [df[name] for df in dfs]
-        lens = map(length, data)
-        T = mapreduce(eltype, promote_type, data)
-        cols[i] = Tables.allocatecolumn(T, sum(lens))
+        newcols = map(dfs) do df
+            if haskey(index(df), name)
+                return df[name]
+            else
+                Iterators.repeated(missing, nrow(df))
+            end
+        end
+
+        lens = map(length, newcols)
+        T = mapreduce(eltype, promote_type, newcols)
+        all_cols[i] = Tables.allocatecolumn(T, sum(lens))
         offset = 1
-        for j in 1:length(data)
-            copyto!(cols[i], offset, data[j])
+        for j in 1:length(newcols)
+            copyto!(all_cols[i], offset, newcols[j])
             offset += lens[j]
         end
     end
-    return DataFrame(cols, header, copycols=false)
-end
-
-function Base.reduce(::typeof(vcat), dfs::AbstractVector{<:AbstractDataFrame})
-    return _vcat(dfs)
+    return DataFrame(all_cols, header, copycols=false)
 end
 
 """

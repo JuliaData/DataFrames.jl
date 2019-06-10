@@ -33,6 +33,8 @@ allowmissing!
 categorical!
 completecases
 copy
+DataFrame
+DataFrame!
 deletecols!
 deletecols
 deleterows!

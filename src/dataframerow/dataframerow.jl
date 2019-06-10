@@ -73,21 +73,18 @@ row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
-Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
-    DataFrameRow(adf, rowind, :)
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
-                                   colinds::AbstractVector) =
+                                   colinds::Union{Colon, AbstractVector, Regex}) =
     DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::AbstractVector) =
+                                       colinds::Union{AbstractVector, Regex}) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
-
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
@@ -120,7 +117,7 @@ Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::AbstractVector) =
+Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
@@ -141,7 +138,7 @@ end
 
 # Computing the element type requires going over all columns,
 # so better let collect() do it only if necessary (widening)
-Base.IteratorEltype(::DataFrameRow) = Base.EltypeUnknown()
+Base.IteratorEltype(::Type{<:DataFrameRow}) = Base.EltypeUnknown()
 
 function Base.convert(::Type{Vector}, dfr::DataFrameRow)
     T = reduce(promote_type, eltypes(parent(dfr)))
@@ -152,9 +149,15 @@ Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
 Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
-Base.keys(r::DataFrameRow) = names(r)
+Base.keys(r::DataFrameRow) = Tuple(_names(r))
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
+Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
+Base.get(dfr::DataFrameRow, key::Union{Integer, Symbol}, default) =
+    haskey(dfr, key) ? dfr[key] : default
+Base.get(f::Base.Callable, dfr::DataFrameRow, key::Union{Integer, Symbol}) =
+    haskey(dfr, key) ? dfr[key] : f()
+Base.broadcastable(::DataFrameRow) = throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 """
     copy(dfr::DataFrameRow)

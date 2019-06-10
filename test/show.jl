@@ -359,4 +359,11 @@ end
         │ 1   │ 3.141592653589793 │"""
 end
 
+@testset "Test empty data frame and DataFrameRow" begin
+    df = DataFrame(x = [float(pi)])
+    @test sprint(show, df[2:1]) == "0×0 DataFrame\n"
+    @test sprint(show, @view df[2:1]) == "0×0 SubDataFrame\n"
+    @test sprint(show, df[1, 2:1]) == "DataFrameRow"
+end
+
 end # module

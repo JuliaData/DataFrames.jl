@@ -11,6 +11,21 @@ Pkg.add("DataFrames")
 
 Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
+!!! note
+
+    By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly
+    fit the screen size (like in the REPL).
+
+    You can override this behavior by setting the `ENV["COLUMNS"]` or `ENV["LINES"]` variables to hold the maximum
+    width and height of output in characters respectively before using the `notebook` function.
+
+    Alternatively, you may want to set the maximum number of data frame rows to print to `100` and the maximum
+    output width in characters to `1000` for every Julia session using some Jupyter kernel file (numbers `100`
+    and `1000` are only examples and can be adjusted). In such case add a `"COLUMNS": "1000", "LINES": "100"`
+    entry to the `"env"` variable in this Jupyter kernel file.
+    See [here](https://jupyter-client.readthedocs.io/en/stable/kernels.html) for information about location
+    and specification of Jupyter kernels.
+
 ## The `DataFrame` Type
 
 Objects of the `DataFrame` type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a `DataFrame` is to pass column vectors using keyword arguments or pairs:
@@ -356,6 +371,23 @@ true
 
 In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
 
+It is also possible to use a regular expression as a selector of columns matching it:
+```jldoctest dataframe
+julia> df = DataFrame(x1=1, x2=2, y=3)
+1×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> df[r"x"]
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+```
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
@@ -526,13 +558,14 @@ julia> x
 
 In-place functions are safe to call, except when a view of the `DataFrame`
 (created via a `view`, `@view` or [`groupby`](@ref))
-or when a `DataFrame` created with `copycols=false` are in use.
+or when a `DataFrame` created with `copycols=false` (or with the `DataFrame!` function)
+are in use.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,
 by accessing a `parent` of a `view` of a column of a `DataFrame`,
 or simply by storing the reference to the column vector before the `DataFrame`
-was created with `copycols=false`.
+was created with `copycols=false` (or with the `DataFrame!` function).
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
