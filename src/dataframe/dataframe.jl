@@ -351,7 +351,7 @@ end
     end
     selected_columns = index(df)[col_inds]
     # Computing integer indices once for all columns is faster
-    selected_rows = T === Bool ? selected_rows = findall(row_inds) : row_inds
+    selected_rows = T === Bool ? findall(row_inds) : row_inds
     new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
@@ -376,7 +376,7 @@ end
                           "rows at index $row_inds"))
     end
     # Computing integer indices once for all columns is faster
-    selected_rows = T === Bool ? selected_rows = findall(row_inds) : row_inds
+    selected_rows = T === Bool ? findall(row_inds) : row_inds
     new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
