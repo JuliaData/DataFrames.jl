@@ -929,23 +929,25 @@ select!(df::DataFrame, c::Int) = select!(df, [c])
 select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 
 """
-    select(df::DataFrame, inds, copycols::Bool=true)
-    select(dfv::SubDataFrame, inds, copycols::Bool=true)
+    select(df::AbstractDataFrame, inds, copycols::Bool=true)
     select(dfr::DataFrameRow, inds)
 
-If `df` is a `DataFrame` return a new `DataFrame` that contains columns from `df`
+If `df` is a data frame create a new data frame that contains columns from `df`
 specified by `inds` and return it.
+
+If `dfr` is a `DataFrameRow` then a `DataFrameRow` pointing to the same parent data
+frame is returned. `copycols` keyword argument is not supported.
+
+Argument `inds` can be any index that is allowed for column indexing.
+
+If `df` is a `DataFrame` return a new `DataFrame` that contains columns from `df`
+specified by `inds`.
 If `copycols=true` (the default), then returned `DataFrame` holds
 copies of column vectors in `df`.
 If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
 
-If `df` is a `SubDataFrame` then
-`SubDataFrame` is returned if `copycols=false` and `DataFrame` with freshly allocated columns otherwise.
-
-If `df` is a `DataFrameRow` then a `DataFrameRow` pointing to the same parent data frame is returned.
-`DataFrameRow` is always returned.
-
-Argument `inds` can be any index that is allowed for column indexing.
+If `df` is a `SubDataFrame` then `SubDataFrame` is returned if `copycols=false`
+and `DataFrame` with freshly allocated columns otherwise.
 
 ### Examples
 
