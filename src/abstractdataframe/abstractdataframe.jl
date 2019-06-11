@@ -654,7 +654,8 @@ julia> dropmissing(df, [:x, :y])
 ```
 
 """
-function dropmissing(df::AbstractDataFrame, cols=1:size(df, 2);
+function dropmissing(df::AbstractDataFrame,
+                     cols::Union{Integer, Symbol, AbstractVector, Regex, Not, Colon}=:;
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
