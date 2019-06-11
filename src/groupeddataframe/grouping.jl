@@ -713,7 +713,7 @@ function _combine(f::Union{AbstractVector{<:Pair},
                   gd::GroupedDataFrame)
     res = map(f) do p
         # Narrow the type of p
-        p = Pair(first(p), last(p))
+        p = Pair(p...)
 
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:Union{Symbol,Integer}}
@@ -744,7 +744,7 @@ function _combine(f::Union{AbstractVector{<:Pair},
         nams = collect(Symbol, propertynames(f))
     else
         # TODO: fix this in a similar way as above
-        nams = [f[i] isa Pair{<:Union{Symbol,Integer}} ?
+        nams = [Pair(f[i]...) isa Pair{<:Union{Symbol,Integer}} ?
                     Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
                            '_', funname(last(f[i]))) :
                     Symbol('x', i)
