@@ -930,13 +930,9 @@ select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 
 """
     select(df::AbstractDataFrame, inds, copycols::Bool=true)
-    select(dfr::DataFrameRow, inds)
 
 If `df` is a data frame create a new data frame that contains columns from `df`
 specified by `inds` and return it.
-
-If `dfr` is a `DataFrameRow` then a `DataFrameRow` pointing to the same parent data
-frame is returned. `copycols` keyword argument is not supported.
 
 Argument `inds` can be any index that is allowed for column indexing.
 
@@ -1201,13 +1197,13 @@ julia> eltypes(df)
 """
 function categorical! end
 
-function categorical!(df::DataFrame, cname::Union{Integer, Symbol};
+function categorical!(df::DataFrame, cname::ColumnIndex;
                       compress::Bool=false)
     df[cname] = categorical(df[cname], compress)
     df
 end
 
-function categorical!(df::DataFrame, cnames::AbstractVector{<:Union{Integer, Symbol}};
+function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
                       compress::Bool=false)
     for cname in cnames
         df[cname] = categorical(df[cname], compress)

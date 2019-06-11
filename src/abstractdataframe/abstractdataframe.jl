@@ -582,7 +582,7 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
     res
 end
 
-function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
+function completecases(df::AbstractDataFrame, col::ColumnIndex)
     res = trues(size(df, 1))
     _nonmissing!(res, df[col])
     res
@@ -655,7 +655,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{Integer, Symbol, AbstractVector, Regex, Not, Colon}=:;
+                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)

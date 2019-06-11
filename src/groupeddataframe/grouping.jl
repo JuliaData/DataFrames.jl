@@ -678,14 +678,14 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
-        if agg isa AbstractAggregate && p isa Pair{<:Union{Symbol,Integer}}
+        if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
             incol = gd.parent[first(p)]
             idx = gd.idx[gd.starts]
             outcol = agg(incol, gd)
             return idx, outcol
         else
             fun = do_f(last(p))
-            if p isa Pair{<:Union{Symbol,Integer}}
+            if p isa Pair{<:ColumnIndex}
                 incols = gd.parent[first(p)]
             else
                 df = gd.parent[collect(first(p))]
@@ -705,7 +705,7 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     if f isa NamedTuple
         nams = collect(Symbol, propertynames(f))
     else
-        nams = [f[i] isa Pair{<:Union{Symbol,Integer}} ?
+        nams = [f[i] isa Pair{<:ColumnIndex} ?
                     Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
                            '_', funname(last(f[i]))) :
                     Symbol('x', i)
@@ -716,7 +716,7 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
 end
 
 function _combine(f::Any, gd::GroupedDataFrame)
-    if f isa Pair{<:Union{Symbol,Integer}}
+    if f isa Pair{<:ColumnIndex}
         incols = gd.parent[first(f)]
         fun = last(f)
     elseif f isa Pair
@@ -728,7 +728,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         fun = f
     end
     agg = check_aggregate(fun)
-    if agg isa AbstractAggregate && f isa Pair{<:Union{Symbol,Integer}}
+    if agg isa AbstractAggregate && f isa Pair{<:ColumnIndex}
         idx = gd.idx[gd.starts]
         outcols = (agg(incols, gd),)
         # nms is set below
@@ -736,7 +736,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         firstres = do_call(fun, gd, incols, 1)
         idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols)
     end
-    if f isa Pair{<:Union{Symbol,Integer}} &&
+    if f isa Pair{<:ColumnIndex} &&
         (agg isa AbstractAggregate ||
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]

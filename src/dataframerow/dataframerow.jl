@@ -153,9 +153,9 @@ Base.keys(r::DataFrameRow) = Tuple(_names(r))
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
-Base.get(dfr::DataFrameRow, key::Union{Integer, Symbol}, default) =
+Base.get(dfr::DataFrameRow, key::ColumnIndex, default) =
     haskey(dfr, key) ? dfr[key] : default
-Base.get(f::Base.Callable, dfr::DataFrameRow, key::Union{Integer, Symbol}) =
+Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
     haskey(dfr, key) ? dfr[key] : f()
 Base.broadcastable(::DataFrameRow) = throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
@@ -273,6 +273,3 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
     end
     df
 end
-
-select(dfr::DataFrameRow, inds) = dfr[inds]
-select(dfr::SubDataFrame, inds::ColumnIndex) = view(dfr, :, [inds])
