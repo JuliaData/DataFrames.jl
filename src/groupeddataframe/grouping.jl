@@ -743,7 +743,6 @@ function _combine(f::Union{AbstractVector{<:Pair},
     if f isa NamedTuple
         nams = collect(Symbol, propertynames(f))
     else
-        # TODO: fix this in a similar way as above
         nams = [Pair(f[i]...) isa Pair{<:Union{Symbol,Integer}} ?
                     Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
                            '_', funname(last(f[i]))) :

@@ -782,17 +782,17 @@ end
     @test_throws MethodError combine(gd, (:b => first, ), [:b => last], :b => length)
 end
 
-@testset "Symble argument and typle argument" begin
+@testset "Symbol argument and typle argument" begin
     df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]))
     gd = groupby(df, :a)
 
     function bar(x)
-        (first(x.a)
+        first(x.a)
     end
 
     @test combine(gd, :b => first, (:a, :b) => bar) ==
-        combine(gd; x1 = :b => first, x2 = :a => first)
+        combine(gd; b_first = :b => first, x2 = :a => first)
 end
 
 
