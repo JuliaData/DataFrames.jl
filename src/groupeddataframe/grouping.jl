@@ -713,14 +713,14 @@ function _combine(f::Union{AbstractVector{<:Pair},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
-        if (agg isa AbstractAggregate) && (p isa Pair) & (first(p) isa Union{Symbol,Integer})
+        if agg isa AbstractAggregate && p isa Pair && first(p) isa Union{Symbol,Integer}
             incol = gd.parent[first(p)]
             idx = gd.idx[gd.starts]
             outcol = agg(incol, gd)
             return idx, outcol
         else
             fun = do_f(last(p))
-            if (p isa Pair) & (first(p) isa Union{Symbol,Integer})
+            if p isa Pair && first(p) isa Union{Symbol,Integer}
                 incols = gd.parent[first(p)]
             else
                 df = gd.parent[collect(first(p))]
@@ -740,7 +740,7 @@ function _combine(f::Union{AbstractVector{<:Pair},
     if f isa NamedTuple
         nams = collect(Symbol, propertynames(f))
     else
-        nams = [(f[i] isa Pair) & (first(f[i]) isa Union{Symbol,Integer}) ?
+        nams = [f[i] isa Pair && first(f[i]) isa Union{Symbol,Integer} ?
                     Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
                            '_', funname(last(f[i]))) :
                     Symbol('x', i)
