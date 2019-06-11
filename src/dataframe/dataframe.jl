@@ -933,16 +933,16 @@ select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
     select(dfv::SubDataFrame, inds, copycols::Bool=true)
     select(dfr::DataFrameRow, inds)
 
-If `df` is a `DataFrame` create a new `DataFrame` that contains columns from `df`
+If `df` is a `DataFrame` return a new `DataFrame` that contains columns from `df`
 specified by `inds` and return it.
 If `copycols=true` (the default), then returned `DataFrame` holds
 copies of column vectors in `df`.
 If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
 
-If `select` is called on `SubDataFrame` then
+If `df` is a `SubDataFrame` then
 `SubDataFrame` is returned if `copycols=false` and `DataFrame` with freshly allocated columns otherwise.
 
-If `select` is called on `DataFrameRow` then
+If `df` is a `DataFrameRow` then a `DataFrameRow` pointing to the same parent data frame is returned.
 `DataFrameRow` is always returned.
 
 Argument `inds` can be any index that is allowed for column indexing.
@@ -1205,7 +1205,7 @@ function categorical!(df::DataFrame, cname::Union{Integer, Symbol};
     df
 end
 
-function categorical!(df::DataFrame, cnames::AbstratVector{<:Union{Integer, Symbol}};
+function categorical!(df::DataFrame, cnames::AbstractVector{<:Union{Integer, Symbol}};
                       compress::Bool=false)
     for cname in cnames
         df[cname] = categorical(df[cname], compress)
