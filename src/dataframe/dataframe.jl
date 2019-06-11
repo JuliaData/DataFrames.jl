@@ -343,14 +343,16 @@ end
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector,
-                               col_inds::Union{AbstractVector, Regex})
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
+                               col_inds::Union{AbstractVector, Regex}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
     end
     selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
+    # Computing integer indices once for all columns is faster
+    selected_rows = T === Bool ? selected_rows = findall(row_inds) : row_inds
+    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
@@ -368,12 +370,14 @@ function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVe
 end
 
 # df[MultiRowIndex, :] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
     end
-    new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
+    # Computing integer indices once for all columns is faster
+    selected_rows = T === Bool ? selected_rows = findall(row_inds) : row_inds
+    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
 
