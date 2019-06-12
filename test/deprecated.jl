@@ -203,4 +203,16 @@ df = DataFrame(Union{Int, Missing}, 2, 2)
     end
 end
 
+@testset "empty!" begin
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test !isempty(df)
+
+    dfv = view(df, 1:2, 1:2)
+
+    @test empty!(df) === df
+    @test isempty(eachcol(df))
+    @test isempty(df)
+    @test isempty(DataFrame(a=[], b=[]))
+end
+
 end # module
