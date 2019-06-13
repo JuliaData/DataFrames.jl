@@ -343,16 +343,22 @@ end
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::Union{AbstractVector, Not},
-                               col_inds::Union{AbstractVector, Regex, Not})
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
+                               col_inds::Union{AbstractVector, Regex, Not}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
     end
     selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
+    # Computing integer indices once for all columns is faster
+    selected_rows = T === Bool ? findall(row_inds) : row_inds
+    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
+
+@inline Base.getindex(df::DataFrame, row_inds::Not,
+                      col_inds::Union{AbstractVector, Regex, Not}) =
+    df[axes(df, 1)[row_inds], col_inds]
 
 # df[:, SingleColumnIndex] => AbstractVector
 function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
@@ -368,14 +374,19 @@ function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVe
 end
 
 # df[MultiRowIndex, :] => DataFrame
-@inline function Base.getindex(df::DataFrame, row_inds::Union{AbstractVector, Not}, ::Colon)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
     end
-    new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
+    # Computing integer indices once for all columns is faster
+    selected_rows = T === Bool ? findall(row_inds) : row_inds
+    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
+
+@inline Base.getindex(df::DataFrame, row_inds::Not, ::Colon) =
+    df[axes(df, 1)[row_inds], :]
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
@@ -703,11 +714,9 @@ Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
 
 ##############################################################################
 ##
-## Mutating AbstractDict methods
+## Mutating methods
 ##
 ##############################################################################
-
-Base.empty!(df::DataFrame) = (empty!(_columns(df)); empty!(index(df)); df)
 
 """
 Insert a column into a data frame in place.

@@ -65,17 +65,7 @@ end
     @test size(similar(df, 2)) == size(missingdf)
 end
 
-@testset "Associative methods" begin
-    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test !isempty(df)
-
-    dfv = view(df, 1:2, 1:2)
-
-    @test empty!(df) === df
-    @test isempty(eachcol(df))
-    @test isempty(df)
-    @test isempty(DataFrame(a=[], b=[]))
-
+@testset "insertcols!" begin
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test_throws BoundsError insertcols!(df, 5, :newcol => ["a", "b"], )
     @test_throws ErrorException insertcols!(df, 1, :newcol => ["a"])
