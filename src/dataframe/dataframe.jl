@@ -929,8 +929,12 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
     if !allunique(inds)
         throw(ArgumentError("indices must not contain duplicates"))
     end
+
     targetnames = _names(df)[inds]
-    deletecols!(df, setdiff(axes(df, 2), inds))
+    for i in setdiff(ncol(df):-1:1, inds)
+        splice!(_columns(df), i)
+        delete!(index(df), i)
+    end
     permutecols!(df, targetnames)
 end
 
