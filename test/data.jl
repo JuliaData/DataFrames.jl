@@ -185,7 +185,7 @@ end
     @test eltype(dropmissing(sdf, disallowmissing=true).a) == Int
     @test df ≅ DataFrame(a=[1, missing, 3]) # make sure we did not mutate df
 
-    @test_throws ArgumentError dropmissing!(sdf)
+    @test_throws MethodError dropmissing!(sdf)
 
     df2 = copy(df)
     @test dropmissing!(df, disallowmissing=true) === df
