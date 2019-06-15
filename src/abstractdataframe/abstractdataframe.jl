@@ -575,6 +575,9 @@ julia> completecases(df, [:x, :y])
 
 """
 function completecases(df::AbstractDataFrame, col::Colon=:)
+    if ncol(df) == 0
+        throw(ArgumentError("Unable to compute complete cases of a data frame with no columns"))
+    end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
         _nonmissing!(res, df[i])
@@ -723,7 +726,7 @@ julia> dropmissing!(df3, [:x, :y])
 ```
 
 """
-function dropmissing!(df::AbstractDataFrame, cols=1:size(df, 2);
+function dropmissing!(df::AbstractDataFrame, cols=:;
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)

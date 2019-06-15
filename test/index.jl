@@ -42,6 +42,18 @@ end
 @test_throws ArgumentError i[1.0:1.0]
 @test_throws ArgumentError i[[1.0]]
 @test_throws ArgumentError i[Any[1.0]]
+@test_throws BoundsError i[0]
+@test_throws BoundsError i[10]
+@test_throws ArgumentError i[:x]
+@test_throws BoundsError i[1:3]
+@test_throws ArgumentError i[[1,1]]
+@test_throws ArgumentError i[[:A,:A]]
+@test_throws BoundsError i[Not(0)]
+@test_throws BoundsError i[Not(10)]
+@test_throws ArgumentError i[Not(:x)]
+@test_throws BoundsError i[Not(1:3)]
+@test_throws ArgumentError i[Not([1,1])]
+@test_throws ArgumentError i[Not([:A,:A])]
 
 @test i[1:1] == 1:1
 
@@ -55,6 +67,9 @@ end
 @test i[[]] == Int[]
 @test i[Int[]] == Int[]
 @test i[Symbol[]] == Int[]
+@test i[:] == 1:length(i)
+@test i[Not(Not(:))] == 1:length(i)
+@test i[Not(1:0)] == 1:length(i)
 
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
@@ -87,12 +102,16 @@ si2 = SubIndex(i, 3:5)
 si3 = SubIndex(i, [3,4,5])
 si4 = SubIndex(i, [false, false, true, true, true])
 si5 = SubIndex(i, [:C, :D, :E])
+si6 = SubIndex(i, Not(Not([:C, :D, :E])))
+si7 = SubIndex(i, Not(1:2))
 
 @test copy(si1) == i
 @test copy(si2) == Index([:C, :D, :E])
 @test copy(si3) == Index([:C, :D, :E])
 @test copy(si4) == Index([:C, :D, :E])
 @test copy(si5) == Index([:C, :D, :E])
+@test copy(si6) == Index([:C, :D, :E])
+@test copy(si7) == Index([:C, :D, :E])
 
 @test_throws ArgumentError SubIndex(i, 1)
 @test_throws ArgumentError SubIndex(i, :A)
@@ -112,18 +131,30 @@ si5 = SubIndex(i, [:C, :D, :E])
 @test si5.remap == Int[]
 @test !haskey(si5, :A)
 @test si5.remap == [0, 0, 1, 2, 3]
+@test si6.cols == 3:5
+@test si6.remap == Int[]
+@test !haskey(si6, :A)
+@test si6.remap == [0, 0, 1, 2, 3]
+@test si7.cols == 3:5
+@test si7.remap == Int[]
+@test !haskey(si7, :A)
+@test si7.remap == [0, 0, 1, 2, 3]
 
 @test length(si1) == 5
 @test length(si2) == 3
 @test length(si3) == 3
 @test length(si4) == 3
 @test length(si5) == 3
+@test length(si6) == 3
+@test length(si7) == 3
 
 @test names(si1) == keys(si1) == [:A, :B, :C, :D, :E]
 @test names(si2) == keys(si2) == [:C, :D, :E]
 @test names(si3) == keys(si3) == [:C, :D, :E]
 @test names(si4) == keys(si4) == [:C, :D, :E]
 @test names(si5) == keys(si5) == [:C, :D, :E]
+@test names(si6) == keys(si5) == [:C, :D, :E]
+@test names(si7) == keys(si5) == [:C, :D, :E]
 
 @test_throws ArgumentError haskey(si3, true)
 @test haskey(si3, 1)
@@ -225,6 +256,55 @@ end
     @test DataFrames.parentcols(SubIndex(i3, r"x1.$")) == [1]
     @test isempty(DataFrames.parentcols(SubIndex(i3, r"xx")))
     @test DataFrames.parentcols(SubIndex(i3, r"")) == 1:2
+end
+
+@testset "Not indexing" begin
+    i = Index()
+    push!(i, :x1)
+    push!(i, :x12)
+    push!(i, :x131)
+    push!(i, :y13)
+    push!(i, :yy13)
+    @test i[Not(Not(r"x1."))] == [2, 3]
+    @test isempty(i[Not(Not(r"xx"))])
+    @test i[Not(Not(r""))] == 1:5
+    @test names(SubIndex(i, Not(Not(r"x1.")))) == [:x12, :x131]
+    @test isempty(names(SubIndex(i, Not(Not(r"xx")))))
+    @test names(SubIndex(i, Not(Not(r"")))) == names(i)
+    @test DataFrames._names(SubIndex(i, Not(Not(r"x1.")))) == [:x12, :x131]
+    @test isempty(DataFrames._names(SubIndex(i, Not(Not(r"xx")))))
+    @test DataFrames._names(SubIndex(i, Not(Not(r"")))) == names(i)
+    @test DataFrames.parentcols(SubIndex(i, Not(Not(r"x1.")))) == [2, 3]
+    @test isempty(DataFrames.parentcols(SubIndex(i, Not(Not(r"xx")))))
+    @test DataFrames.parentcols(SubIndex(i, Not(Not(r"")))) == 1:5
+
+    i2 = SubIndex(i, Not(Not(r"")))
+    @test i2[Not(Not(r"x1."))] == [2, 3]
+    @test isempty(i2[Not(Not(r"xx"))])
+    @test i2[Not(Not(r""))] == 1:5
+    @test names(SubIndex(i2, Not(Not(r"x1.")))) == [:x12, :x131]
+    @test isempty(names(SubIndex(i2, Not(Not(r"xx")))))
+    @test names(SubIndex(i2, Not(Not(r"")))) == names(i)
+    @test DataFrames._names(SubIndex(i2, Not(Not(r"x1.")))) == [:x12, :x131]
+    @test isempty(DataFrames._names(SubIndex(i2, Not(Not(r"xx")))))
+    @test DataFrames._names(SubIndex(i2, Not(Not(r"")))) == names(i2)
+    @test DataFrames.parentcols(SubIndex(i2, Not(Not(r"x1.")))) == [2, 3]
+    @test isempty(DataFrames.parentcols(SubIndex(i2, Not(Not(r"xx")))))
+    @test DataFrames.parentcols(SubIndex(i2, Not(Not(r"")))) == 1:5
+
+    i3 = SubIndex(i, Not(Not(r"x1.")))
+    @test i3[Not(Not(r"x1.$"))] == [1]
+    @test isempty(i3[Not(Not(r"xx"))])
+    @test i3[Not(Not(r""))] == 1:2
+    @test names(SubIndex(i3, Not(Not(r"x1.$")))) == [:x12]
+    @test isempty(names(SubIndex(i3, Not(Not(r"xx")))))
+    @test names(SubIndex(i3, Not(Not(r"")))) == names(i3)
+    @test DataFrames._names(SubIndex(i3, Not(Not(r"x1.$")))) == [:x12]
+    @test isempty(DataFrames._names(SubIndex(i3, Not(Not(r"xx")))))
+    @test DataFrames._names(SubIndex(i3, Not(Not(r"")))) == names(i3)
+    @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"x1.$")))) == [1]
+    @test isempty(DataFrames.parentcols(SubIndex(i3, Not(Not(r"xx")))))
+    @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"")))) == 1:2
 end
 
 end # module

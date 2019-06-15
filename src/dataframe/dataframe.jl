@@ -333,7 +333,7 @@ end
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
-@inline function Base.getindex(df::DataFrame, row_inds::Union{AbstractVector, Not}, col_ind::ColumnIndex)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
@@ -341,6 +341,9 @@ end
     end
     @inbounds return _columns(df)[selected_column][row_inds]
 end
+
+@inline Base.getindex(df::DataFrame, row_inds::Not, col_ind::ColumnIndex) =
+    df[axes(df, 1)[row_inds], col_ind]
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
@@ -1086,7 +1089,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+allowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
     allowmissing!(df, index(df)[cols])
 
 allowmissing!(df::DataFrame, cols::Colon=:) =

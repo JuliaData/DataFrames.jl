@@ -152,7 +152,7 @@ end
     if minidx < 1
         throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $minidx"))
     end
-    if maxidx < 1
+    if maxidx > length(x)
         throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $maxidx"))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
@@ -165,7 +165,7 @@ end
     if minidx < 1
         throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $minidx"))
     end
-    if maxidx < 1
+    if maxidx > length(x)
         throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $maxidx"))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
@@ -281,7 +281,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
 end
 
 @inline parentcols(ind::Index) = Base.OneTo(length(ind))
-@inline parentcols(ind::Index, cols) = cols
+@inline parentcols(ind::Index, cols) = ind[cols]
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
@@ -317,6 +317,8 @@ Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
     [parentcols(ind, i) for i in _names(ind) if occursin(idx, String(i))]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Not) = parentcols(ind, ind[idx])
 
 Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
