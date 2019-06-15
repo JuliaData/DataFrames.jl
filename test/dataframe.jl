@@ -242,8 +242,8 @@ end
 
 @testset "deletecols!" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError deletecols!(df, 0)
-    @test_throws ArgumentError deletecols!(df, 6)
+    @test_throws BoundsError deletecols!(df, 0)
+    @test_throws BoundsError deletecols!(df, 6)
     @test_throws ArgumentError deletecols!(df, [1, 1])
     @test_throws ArgumentError deletecols!(df, :f)
     @test_throws BoundsError deletecols!(df, [true, false])
@@ -277,8 +277,8 @@ end
 
 @testset "deletecols" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError deletecols(df, 0)
-    @test_throws ArgumentError deletecols(df, 6)
+    @test_throws BoundsError deletecols(df, 0)
+    @test_throws BoundsError deletecols(df, 6)
     @test_throws ArgumentError deletecols(df, [1, 1])
     @test_throws ArgumentError deletecols(df, :f)
     @test_throws BoundsError deletecols(df, [true, false])
