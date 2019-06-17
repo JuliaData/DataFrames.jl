@@ -86,6 +86,8 @@ abstract type AbstractDataFrame end
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
+Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
+
 """
 Set column names
 
@@ -1137,7 +1139,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
-            if haskey(index(df), name)
+            if hasproperty(df, name)
                 return df[name]
             else
                 Iterators.repeated(missing, nrow(df))
