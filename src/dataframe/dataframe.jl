@@ -395,11 +395,11 @@ end
 
 function nextcolname(df::DataFrame)
     col = Symbol(string("x", ncol(df) + 1))
-    haskey(index(df), col) || return col
+    hasproperty(df, col) || return col
     i = 1
     while true
         col = Symbol(string("x", ncol(df) + 1, "_", i))
-        haskey(index(df), col) || return col
+        hasproperty(df, col) || return col
         i += 1
     end
 end
@@ -417,7 +417,7 @@ function insert_single_column!(df::DataFrame,
         j = index(df)[col_ind]
         _columns(df)[j] = dv
     else
-        if typeof(col_ind) <: Symbol
+        if col_ind isa Symbol
             push!(index(df), col_ind)
             push!(_columns(df), dv)
         else
@@ -778,14 +778,14 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 2) == 0 || error("number of rows does not match")
 
-    if haskey(index(df), name)
+    if hasproperty(df, name)
         if makeunique
             k = 1
             while true
                 # we only make sure that new column name is unique
                 # if df originally had duplicates in names we do not fix it
                 nn = Symbol("$(name)_$k")
-                if !haskey(index(df), nn)
+                if !hasproperty(df, nn)
                     name = nn
                     break
                 end

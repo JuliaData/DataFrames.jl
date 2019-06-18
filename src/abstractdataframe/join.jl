@@ -299,8 +299,8 @@ function Base.join(df1::AbstractDataFrame,
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
         for i in 1:2
-            while (haskey(index(df1), Symbol(indicator_cols[i])) ||
-                   haskey(index(df2), Symbol(indicator_cols[i])) ||
+            while (hasproperty(df1, Symbol(indicator_cols[i])) ||
+                   hasproperty(df2, Symbol(indicator_cols[i])) ||
                    Symbol(indicator_cols[i]) == indicator)
                  indicator_cols[i] *= 'X'
             end
@@ -400,7 +400,7 @@ function Base.join(df1::AbstractDataFrame,
         indicatorcol = CategoricalArray{String,1}(refs, CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]))
         unique_indicator = indicator
         try_idx = 0
-        while haskey(index(joined), unique_indicator)
+        while hasproperty(joined, unique_indicator)
             try_idx += 1
             unique_indicator = Symbol(string(indicator, "_", try_idx))
         end

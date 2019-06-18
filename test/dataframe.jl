@@ -65,6 +65,15 @@ end
     @test size(similar(df, 2)) == size(missingdf)
 end
 
+@testset "hasproperty" begin
+    df = DataFrame(a=[1, 2])
+    @test hasproperty(df, :a)
+    @test !hasproperty(df, :c)
+    @test_throws MethodError hasproperty(df, 1)
+    @test_throws MethodError hasproperty(df, 1.5)
+    @test_throws MethodError hasproperty(df, true)
+end
+
 @testset "insertcols!" begin
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test_throws BoundsError insertcols!(df, 5, :newcol => ["a", "b"], )

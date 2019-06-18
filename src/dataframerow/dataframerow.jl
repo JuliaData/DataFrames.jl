@@ -100,7 +100,7 @@ Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
-    haskey(parent(r), key) || return false
+    hasproperty(parent(r), key) || return false
     index(r) isa Index && return true
     # here index(r) is a SubIndex
     pos = index(parent(r))[key]
