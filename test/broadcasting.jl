@@ -622,6 +622,12 @@ end
     df .= y
     @test df.x == [2, 1]
 
+    df = DataFrame(x=[1, 2])
+    y = view(df.x, [2, 1])
+    dfv = view(df, :, :)
+    dfv .= y
+    @test df.x == [2, 1]
+
     df = DataFrame(x=2, y=1, z=1)
     dfr = df[1, :]
     y = view(df.x, 1)

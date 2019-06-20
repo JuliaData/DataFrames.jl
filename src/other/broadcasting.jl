@@ -114,7 +114,7 @@ function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, 
 end
 
 function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
-    for col in _columns(dest)
+    for col in eachcol(dest)
         col === src || (src = Base.Broadcast.unalias(col, src))
     end
     src
