@@ -128,21 +128,22 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
 end
 
 function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::AbstractDataFrame)
+    println("AAA")
     if size(dest) != size(src)
         throw(ArgumentError("Dimension mismatch in broadcasting."))
     end
-    for col in axes(dest, 2)
-        dcol = dest[col]
-        scol = src[col]
-        if dcol !== scol && Base.mightalias(dcol, scol)
+    for col1 in axes(dest, 2), col2 in axes(src, 2)
+        dcol = dest[col1]
+        scol = src[col2]
+        if Base.mightalias(dcol, scol)
             if src isa SubDataFrame
                 src = SubDataFrame(copy(parent(src), copycols=false),
                                    index(src), rows(src))
-                parentidx = parentcols(index(src), col)
+                parentidx = parentcols(index(src), col2)
                 parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
             else
                 src = copy(src, copycols=false)
-                src[col] = Base.unaliascopy(scol)
+                src[col2] = Base.unaliascopy(scol)
             end
         end
     end

@@ -633,6 +633,14 @@ end
     y = view(df.x, 1)
     dfr .= 2 .* y
     @test Vector(dfr) == [4, 4, 4]
+
+    df = DataFrame(x=[1, 2], y=[11,12])
+    df2 = DataFrame()
+    df2.x = [-1, -2]
+    df2.y = df.x
+    df3 = copy(df2)
+    df .= df2
+    @test df == df3
 end
 
 end # module
