@@ -147,8 +147,7 @@ end
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
-    colnames = unique(colnames, _names(df))
-    if length(colnames) != 1
+    if length(colnames) > 1 || (length(colnames) == 1 && _names(df) != colnames[1])
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         msg = join(wrongnames, ", ", " and ")
         throw(ArgumentError("Column names in broadcasted data frames must match. " *
@@ -178,7 +177,7 @@ Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
     Base.Broadcast.broadcast_unalias(parent(dest), src)
 
 function Base.copyto!(dfr::DataFrameRow, bc::Base.Broadcast.Broadcasted)
-    bc′ = Base.Broadcast.preprocess(df, bc)
+    bc′ = Base.Broadcast.preprocess(dfr, bc)
     for I in eachindex(bc′)
         dfr[I] = bc′[I]
     end

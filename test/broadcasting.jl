@@ -616,7 +616,7 @@ end
     end
 end
 
-@testset "aliasing test"
+@testset "aliasing test" begin
     df = DataFrame(x=[1, 2])
     y = view(df.x, [2, 1])
     df .= y
