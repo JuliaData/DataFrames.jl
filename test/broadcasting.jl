@@ -50,7 +50,7 @@ end
     @test_throws ArgumentError df .+ 1 .+ df2
 end
 
-@testset "broadcasting expansion"
+@testset "broadcasting expansion" begin
     df1 = DataFrame(x=1, y=2)
     df2 = DataFrame(x=[1,11], y=[2,12])
     @test df1 .+ df2 == DataFrame(x=[2,12], y=[4,14])
@@ -63,6 +63,11 @@ end
     @test df2.x === x
     @test df2.y === y
     @test df2 == DataFrame(x=[2,12], y=[4,14])
+
+    df = DataFrame(x=[1,11], y=[2,12])
+    dfv = view(df, 1:1, 1:2)
+    df .-= dfv
+    @test df == DataFrame(x=[0,10], y=[0,10])
 end
 
 @testset "broadcasting of AbstractDataFrame objects corner cases" begin
@@ -673,6 +678,30 @@ end
     for i in 1:10
         df1 = DataFrame(rand(100, 100))
         df2 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+        end
+        df3 = copy(df2)
+        df1 .= view(df2, :, :)
+        @test df1 == df3
+        @test df2 != df3
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+        end
+        df3 = copy(df2)
+        view(df1, :, :) .= df2
+        @test df1 == df3
+        @test df2 != df3
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
             df2[rand(1:100)] = df1[i]
@@ -683,6 +712,42 @@ end
         df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
         df5 = sin.(view(df1,1,1) .+ df1[1] .+ df2 ./ df3)
         df1 .= sin.(view(df1,1,1) .+ df1[1] .+ df2 ./ df3)
+        @test df1 == df4 == df5
+        @test df2 != df6
+        @test df3 != df7
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        df3 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+            df3[rand(1:100)] = df1[i]
+        end
+        df6 = copy(df2)
+        df7 = copy(df3)
+        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
+        df5 = sin.(view(df1,1,1) .+ df1[1] .+ view(df2, :, :) ./ df3)
+        df1 .= sin.(view(df1[1],1) .+ view(df1[1], :) .+ df2 ./ view(df3, :, :))
+        @test df1 == df4 == df5
+        @test df2 != df6
+        @test df3 != df7
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        df3 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+            df3[rand(1:100)] = df1[i]
+        end
+        df6 = copy(df2)
+        df7 = copy(df3)
+        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
+        df5 = sin.(view(df1,1,1) .+ df1[1] .+ view(df2, :, :) ./ df3)
+        view(df1, :, :) .= sin.(view(df1[1],1) .+ view(df1[1], :) .+ df2 ./ view(df3, :, :))
         @test df1 == df4 == df5
         @test df2 != df6
         @test df3 != df7
