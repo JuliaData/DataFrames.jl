@@ -616,4 +616,17 @@ end
     end
 end
 
+@testset "aliasing test"
+    df = DataFrame(x=[1, 2])
+    y = view(df.x, [2, 1])
+    df .= y
+    @test df.x == [2, 1]
+
+    df = DataFrame(x=2, y=1, z=1)
+    dfr = df[1, :]
+    y = view(df.x, 1)
+    dfr .= 2 .* y
+    @test Vector(dfr) == [4, 4, 4]
+end
+
 end # module

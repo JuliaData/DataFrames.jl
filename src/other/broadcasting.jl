@@ -113,9 +113,17 @@ function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, 
     end
 end
 
+function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
+    for col in _columns(dest)
+        col === src || (src = Base.Broadcast.unalias(col, src))
+    end
+    src
+end
+
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
+    bc′ = Base.Broadcast.preprocess(df, bc)
     for col in axes(df, 2)
-        _copyto_helper!(df[col], bc, col)
+        _copyto_helper!(df[col], bc′, col)
     end
     df
 end
@@ -132,9 +140,13 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     end
 end
 
+Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
+    Base.Broadcast.broadcast_unalias(parent(dest), src)
+
 function Base.copyto!(dfr::DataFrameRow, bc::Base.Broadcast.Broadcasted)
-    for I in eachindex(bc)
-        dfr[I] = bc[I]
+    bc′ = Base.Broadcast.preprocess(df, bc)
+    for I in eachindex(bc′)
+        dfr[I] = bc′[I]
     end
     dfr
 end
