@@ -33,6 +33,13 @@ function copyto_widen!(res::AbstractVector{T},
     return res
 end
 
+function getcolbc(bcf::Base.Broadcast.Broadcasted{Style}, colind) where {Style}
+    # we assume that bcf is already flattened and unaliased
+    Base.Broadcast.Broadcasted{Style}(bcf.f,
+        map(x->Base.Broadcast.extrude(x isa AbstractDataFrame ? x[colind] : x),
+            bcf.args), bcf.axes)
+end
+
 function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
@@ -42,23 +49,22 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         throw(ArgumentError("Column names in broadcasted data frames must match. " *
                             "Non matching column names are $msg"))
     end
-    nrows = length(axes(bc)[1])
+    nrows = length(axes(bcf)[1])
     df = DataFrame()
-    for i in axes(bc)[2]
+    for i in axes(bcf)[2]
         if nrows == 0
             col = Any[]
         else
-            # TODO optimize this as `bc` can contain AbstractDataFrame
-            v1 = bc[CartesianIndex(1, i)]
+            bcf′ = getcolbc(bcf, i)
+            v1 = bcf′[CartesianIndex(1, i)]
             startcol = similar(Vector{typeof(v1)}, nrows)
             startcol[1] = v1
-            col = copyto_widen!(startcol, bc, 2, i)
+            col = copyto_widen!(startcol, bcf′, 2, i)
         end
         df[colnames[1][i]] = col
     end
     return df
 end
-
 
 ### Broadcasting assignment
 
@@ -109,7 +115,6 @@ function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, 
         throw(ArgumentError("Dimension mismatch in broadcasting. " *
                             "The updated data frame is invalid and should not be used"))
     end
-    # TODO optimize this as `bc` can contain AbstractDataFrame
     @inbounds for row in eachindex(dfcol)
         dfcol[row] = bc[CartesianIndex(row, col)]
     end
@@ -154,9 +159,9 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
                             "Non matching column names are $msg"))
     end
 
-    bc′ = Base.Broadcast.preprocess(df, bc)
-    for col in axes(df, 2)
-        _copyto_helper!(df[col], bc′, col)
+    bcf′ = Base.Broadcast.preprocess(df, bcf)
+    for i in axes(df, 2)
+        _copyto_helper!(df[i], getcolbc(bcf′, i), i)
     end
     df
 end
