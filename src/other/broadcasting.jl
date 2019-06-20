@@ -48,6 +48,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         if nrows == 0
             col = Any[]
         else
+            # TODO optimize this as `bc` can contain AbstractDataFrame
             v1 = bc[CartesianIndex(1, i)]
             startcol = similar(Vector{typeof(v1)}, nrows)
             startcol[1] = v1
@@ -108,6 +109,7 @@ function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, 
         throw(ArgumentError("Dimension mismatch in broadcasting. " *
                             "The updated data frame is invalid and should not be used"))
     end
+    # TODO optimize this as `bc` can contain AbstractDataFrame
     @inbounds for row in eachindex(dfcol)
         dfcol[row] = bc[CartesianIndex(row, col)]
     end
@@ -120,7 +122,39 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     src
 end
 
+function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::AbstractDataFrame)
+    if size(dest) != size(src)
+        throw(ArgumentError("Dimension mismatch in broadcasting."))
+    end
+    for col in axes(dest, 2)
+        dcol = dest[col]
+        scol = src[col]
+        if dcol !== scol && Base.mightalias(dcol, scol)
+            if src isa SubDataFrame
+                src = SubDataFrame(copy(parent(src), copycols=false),
+                                   index(src), rows(src))
+                parentidx = parentcols(index(src), col)
+                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+            else
+                src = copy(src, copycols=false)
+                src[col] = Base.unaliascopy(scol)
+            end
+        end
+    end
+    src
+end
+
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
+    bcf = Base.Broadcast.flatten(bc)
+    colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
+    colnames = unique(colnames, _names(df))
+    if length(colnames) != 1
+        wrongnames = setdiff(union(colnames...), intersect(colnames...))
+        msg = join(wrongnames, ", ", " and ")
+        throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                            "Non matching column names are $msg"))
+    end
+
     bc′ = Base.Broadcast.preprocess(df, bc)
     for col in axes(df, 2)
         _copyto_helper!(df[col], bc′, col)
