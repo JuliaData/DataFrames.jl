@@ -122,13 +122,13 @@ end
 
 function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     for col in eachcol(dest)
-        col === src || (src = Base.Broadcast.unalias(col, src))
+        src = Base.Broadcast.unalias(col, src)
     end
     src
 end
 
 function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::AbstractDataFrame)
-    if size(dest) != size(src)
+    if size(dest, 2) != size(src, 2)
         throw(ArgumentError("Dimension mismatch in broadcasting."))
     end
     # col2 can be checked from col1 point as we are writing broadcasting

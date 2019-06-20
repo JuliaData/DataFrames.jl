@@ -1,6 +1,6 @@
 module TestBroadcasting
 
-using Test, DataFrames, PooledArrays
+using Test, DataFrames, PooledArrays, Random
 
 const ≅ = isequal
 
@@ -48,6 +48,21 @@ end
     names!(df2, [:x1, :x2, :x3, :x4, :y])
     @test_throws ArgumentError df .+ df2
     @test_throws ArgumentError df .+ 1 .+ df2
+end
+
+@testset "broadcasting expansion"
+    df1 = DataFrame(x=1, y=2)
+    df2 = DataFrame(x=[1,11], y=[2,12])
+    @test df1 .+ df2 == DataFrame(x=[2,12], y=[4,14])
+
+    df1 = DataFrame(x=1, y=2)
+    df2 = DataFrame(x=[1,11], y=[2,12])
+    x = df2.x
+    y = df2.y
+    df2 .+= df1
+    @test df2.x === x
+    @test df2.y === y
+    @test df2 == DataFrame(x=[2,12], y=[4,14])
 end
 
 @testset "broadcasting of AbstractDataFrame objects corner cases" begin
@@ -641,6 +656,37 @@ end
     df3 = copy(df2)
     df .= df2
     @test df == df3
+
+    Random.seed!(1234)
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+        end
+        df3 = copy(df2)
+        df1 .= df2
+        @test df1 == df3
+        @test df2 != df3
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        df3 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+            df3[rand(1:100)] = df1[i]
+        end
+        df6 = copy(df2)
+        df7 = copy(df3)
+        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
+        df5 = sin.(view(df1,1,1) .+ df1[1] .+ df2 ./ df3)
+        df1 .= sin.(view(df1,1,1) .+ df1[1] .+ df2 ./ df3)
+        @test df1 == df4 == df5
+        @test df2 != df6
+        @test df3 != df7
+    end
 end
 
 end # module
