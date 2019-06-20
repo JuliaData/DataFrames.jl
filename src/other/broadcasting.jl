@@ -128,24 +128,33 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
 end
 
 function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::AbstractDataFrame)
-    println("AAA")
     if size(dest) != size(src)
         throw(ArgumentError("Dimension mismatch in broadcasting."))
     end
     # col2 can be checked from col1 point as we are writing broadcasting
     # results from 1 to ncol
-    for col1 in axes(dest, 2), col2 in col1:ncol(src)
-        dcol = dest[col1]
-        scol = src[col2]
-        if Base.mightalias(dcol, scol)
-            if src isa SubDataFrame
-                src = SubDataFrame(copy(parent(src), copycols=false),
-                                   index(src), rows(src))
-                parentidx = parentcols(index(src), col2)
-                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
-            else
-                src = copy(src, copycols=false)
-                src[col2] = Base.unaliascopy(scol)
+    wascopied = false
+    for col1 in axes(dest, 2)
+        for col2 in col1:ncol(src)
+            dcol = dest[col1]
+            scol = src[col2]
+            if Base.mightalias(dcol, scol)
+                if src isa SubDataFrame
+                    if !wascopied
+                        src = SubDataFrame(copy(parent(src), copycols=false),
+                                           index(src), rows(src))
+                        wascopied = true
+                    end
+                    parentidx = parentcols(index(src), col2)
+                    parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+                else
+                    if !wascopied
+                        src = copy(src, copycols=false)
+                        wascopied = true
+                    end
+                    src[col2] = Base.unaliascopy(scol)
+                end
+                break
             end
         end
     end
