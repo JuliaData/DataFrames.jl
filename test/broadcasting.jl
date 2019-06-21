@@ -841,4 +841,33 @@ end
     @test df == DataFrame(dfm)
 end
 
+@testset "test common cases" begin
+    m = rand(1000, 10)
+    df = DataFrame(m)
+    @test df .+ 1 == DataFrame(m .+ 1)
+    @test df .+ transpose(1:10) == DataFrame(m .+ transpose(1:10))
+    @test df .+ (1:1000) == DataFrame(m .+ (1:1000))
+    @test df .+ m == DataFrame(m .+ m)
+    @test m .+ df == DataFrame(m .+ m)
+    @test df .+ df == DataFrame(m .+ m)
+
+    df .+= 1
+    m .+= 1
+    @test df == DataFrame(m)
+    df .+= transpose(1:10)
+    m .+= transpose(1:10)
+    @test df == DataFrame(m)
+    df .+= (1:1000)
+    m .+= (1:1000)
+    @test df == DataFrame(m)
+    df .+= df
+    m .+= m
+    @test df == DataFrame(m)
+    df2 = copy(df)
+    m2 = copy(m)
+    df .+= df .+ df2 .+ m2 .+ 1
+    m .+= m .+ df2 .+ m2 .+ 1
+    @test df == DataFrame(m)
+end
+
 end # module
