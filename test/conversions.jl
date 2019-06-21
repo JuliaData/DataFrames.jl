@@ -1,6 +1,6 @@
 module TestConversions
 
-using Test, DataFrames, InteractiveUtils
+using Test, DataFrames
 using DataStructures: OrderedDict, SortedDict
 const ≅ = isequal
 
