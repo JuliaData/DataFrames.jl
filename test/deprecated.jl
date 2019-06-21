@@ -232,4 +232,15 @@ end
     @test deletecols(df, Not([])) == DataFrame()
 end
 
+@testset "haskey" begin
+    df = DataFrame(x=1:3)
+    @test haskey(df, 1)
+    @test !haskey(DataFrame(), 1)
+    @test !haskey(df, 2)
+    @test !haskey(df, 0)
+    @test haskey(df, :x)
+    @test !haskey(df, :a)
+    @test !haskey(df, "a")
+end
+
 end # module

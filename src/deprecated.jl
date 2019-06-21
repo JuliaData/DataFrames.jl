@@ -1399,7 +1399,9 @@ import Base: get
 @deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[key] : default
 
 import Base: haskey
-@deprecate haskey(df::AbstractDataFrame, key::Any) key in names(df)
+@deprecate haskey(df::AbstractDataFrame, key::Symbol) hasproperty(df, key)
+@deprecate haskey(df::AbstractDataFrame, key::Integer) key in 1:ncol(df)
+@deprecate haskey(df::AbstractDataFrame, key::Any) key in 1:ncol(df) || key in names(df)
 
 import Base: empty!
 @deprecate empty!(df::DataFrame) deletecols!(df, 1:ncol(df))

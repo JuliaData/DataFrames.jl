@@ -13,7 +13,7 @@ function Base.maybeview(df::AbstractDataFrame, idxs)
         throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
     end
     if idxs isa Symbol
-        if !haskey(index(df), idxs)
+        if !hasproperty(df, idxs)
             if !(df isa DataFrame)
                 # this will throw an appropriate error message
                 df[idxs]
