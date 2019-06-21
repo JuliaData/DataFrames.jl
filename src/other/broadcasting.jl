@@ -35,10 +35,9 @@ end
 
 function getcolbc(bcf::Base.Broadcast.Broadcasted{Style}, colind) where {Style}
     # we assume that bcf is already flattened and unaliased
-    function dfextruder(x)
+    newargs = map(bcf.args) do x
         Base.Broadcast.extrude(x isa AbstractDataFrame ? x[colind] : x)
     end
-    newargs = map(dfextruder, bcf.args)
     Base.Broadcast.Broadcasted{Style}(bcf.f, newargs, bcf.axes)
 end
 
