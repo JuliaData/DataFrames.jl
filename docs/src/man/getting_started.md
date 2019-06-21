@@ -371,6 +371,23 @@ true
 
 In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
 
+It is also possible to use a regular expression as a selector of columns matching it:
+```jldoctest dataframe
+julia> df = DataFrame(x1=1, x2=2, y=3)
+1×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> df[r"x"]
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+```
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe

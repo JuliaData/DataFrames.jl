@@ -86,6 +86,8 @@ abstract type AbstractDataFrame end
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
+Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
+
 """
 Set column names
 
@@ -521,7 +523,7 @@ end
 
 """
     completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, cols::AbstractVector)
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -587,12 +589,12 @@ function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
     res
 end
 
-completecases(df::AbstractDataFrame, cols::AbstractVector) =
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
     completecases(df[cols])
 
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
@@ -655,7 +657,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                     cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -664,7 +666,7 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
     dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
@@ -725,7 +727,7 @@ julia> dropmissing!(df3, [:x, :y])
 
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                      cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -850,6 +852,9 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
+    if ncol(df) == 0
+        throw(ArgumentError("finding duplicate rows in data frame with no columns is not allowed"))
+    end
     gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
@@ -866,12 +871,14 @@ nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
     deleterows!(df, findall(nonunique(df, cols)))
+Base.unique!(df::AbstractDataFrame, cols::Regex) =
+    deleterows!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
+Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
     df[(!).(nonunique(df, cols)), :]
 Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     df[(!).(nonunique(df, cols)), :]
@@ -889,7 +896,7 @@ unique!(df::AbstractDataFrame, cols)
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, etc.)
+* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
 specifying the column(s) to compare.
 
 **Result**
@@ -1132,7 +1139,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
-            if haskey(index(df), name)
+            if hasproperty(df, name)
                 return df[name]
             else
                 Iterators.repeated(missing, nrow(df))

@@ -65,17 +65,16 @@ end
     @test size(similar(df, 2)) == size(missingdf)
 end
 
-@testset "Associative methods" begin
-    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test !isempty(df)
+@testset "hasproperty" begin
+    df = DataFrame(a=[1, 2])
+    @test hasproperty(df, :a)
+    @test !hasproperty(df, :c)
+    @test_throws MethodError hasproperty(df, 1)
+    @test_throws MethodError hasproperty(df, 1.5)
+    @test_throws MethodError hasproperty(df, true)
+end
 
-    dfv = view(df, 1:2, 1:2)
-
-    @test empty!(df) === df
-    @test isempty(eachcol(df))
-    @test isempty(df)
-    @test isempty(DataFrame(a=[], b=[]))
-
+@testset "insertcols!" begin
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test_throws BoundsError insertcols!(df, 5, :newcol => ["a", "b"], )
     @test_throws ErrorException insertcols!(df, 1, :newcol => ["a"])
@@ -265,18 +264,16 @@ end
     @test d == DataFrame(d=4)
 
     d = copy(df)
+    deletecols!(d, r"[aec]")
+    @test names(d) == [:b, :d]
+    deletecols!(d, r"b")
+    @test d == DataFrame(d=4)
+
+    d = copy(df)
     deletecols!(d, [2, 5, 3])
     @test names(d) == [:a, :d]
     deletecols!(d, 2)
     @test d == DataFrame(a=1)
-
-    d = copy(df)
-    deletecols!(d, 2:3)
-    @test d == DataFrame(a=1, d=4, e=5)
-
-    d = copy(df)
-    deletecols!(d, 2:3)
-    @test d == DataFrame(a=1, d=4, e=5)
 
     d = copy(df)
     deletecols!(d, 2:3)
@@ -299,6 +296,15 @@ end
     d = deletecols(df, [:a, :e, :c])
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
+    @test d.b !== df.b
+    @test d.d !== df.d
+    @test df == df2
+
+    df2 = copy(df)
+    d = deletecols(df, r"[aec]")
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d == df[r"[bd]"]
     @test d.b !== df.b
     @test d.d !== df.d
     @test df == df2
@@ -333,6 +339,14 @@ end
     d = deletecols(df, [:a, :e, :c], copycols=false)
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
+    @test d.b === df.b
+    @test d.d === df.d
+    @test df == df2
+
+    d = deletecols(df, r"[aec]", copycols=false)
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d == df[r"[bd]"]
     @test d.b === df.b
     @test d.d === df.d
     @test df == df2
@@ -375,6 +389,13 @@ end
     d = copy(df, copycols=false)
     select!(d, [:a, :e, :c])
     @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = copy(df, copycols=false)
+    select!(d, r"[aec]")
+    @test names(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
@@ -429,6 +450,15 @@ end
     @test d.e == df.e
     @test d.c == df.c
 
+    d = select(df, r"[aec]")
+    @test names(d) == [:a, :c, :e]
+    @test d.a !== df.a
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.a == df.a
+    @test d.e == df.e
+    @test d.c == df.c
+
     d = select(df, [true, false, true, false, true])
     @test names(d) == [:a, :c, :e]
     @test d.a !== df.a
@@ -461,6 +491,12 @@ end
 
     d = select(df, [:a, :e, :c], copycols=false)
     @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, r"[aec]", copycols=false)
+    @test names(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
@@ -682,6 +718,7 @@ df4[2,:Mass] = missing
 
 # test empty set of grouping variables
 @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
+@test_throws ArgumentError unstack(df, r"xxxxx", :Key, :Value)
 @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
 @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))),
                               :id, :variable, :value)
@@ -700,6 +737,9 @@ wide = DataFrame(id = 1:12,
 
 long = stack(wide)
 wide3 = unstack(long, [:id, :a], :variable, :value)
+@test wide3 == wide[[1, 2, 4, 5]]
+
+wide3 = unstack(long, r"^[ia]", :variable, :value)
 @test wide3 == wide[[1, 2, 4, 5]]
 
 df = DataFrame(A = 1:10, B = 'A':'J')
@@ -843,6 +883,7 @@ end
     allowmissing!(x, :x1)
     x[1, :x1] = missing
     y = melt(x, [:id, :id2])
+    @test y ≅ melt(x, r"id")
     z = unstack(y, :id, :variable, :value)
     @test all(isequal(z[n], x[n]) for n in names(z))
     z = unstack(y, :variable, :value)
@@ -1014,9 +1055,13 @@ end
     @test df[:y] === y
     @test df[1] === x
     @test df[1:1][1] == x
+    @test df[r"x"][1] == x
     @test df[1:1][1] !== x
+    @test df[r"x"][1] !== x
     @test df[1:2][:y] == y
     @test df[1:2][:y] !== y
+    @test df[r""][:y] == y
+    @test df[r""][:y] !== y
     @test df[:][:x] == x
     @test df[:][:x] !== x
     @test df[[:y,:x]][:x] == x
@@ -1026,6 +1071,7 @@ end
 @testset "test corner case of getindex" begin
     df = DataFrame(x=[1], y=[1])
     @test_throws MethodError df[true, 1:2]
+    @test_throws MethodError df[true, r""]
 end
 
 @testset "empty data frame getindex" begin
@@ -1038,6 +1084,7 @@ end
     @test_throws BoundsError DataFrame(x=[1])[2, [false]]
     #but this is OK:
     @test DataFrame(x=[1])[1:1, [false]] == DataFrame()
+    @test DataFrame(x=[1])[1:1, r"xx"] == DataFrame()
 end
 
 @testset "handling of end in indexing" begin

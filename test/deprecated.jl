@@ -203,4 +203,27 @@ df = DataFrame(Union{Int, Missing}, 2, 2)
     end
 end
 
+@testset "empty!" begin
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test !isempty(df)
+
+    dfv = view(df, 1:2, 1:2)
+
+    @test empty!(df) === df
+    @test isempty(eachcol(df))
+    @test isempty(df)
+    @test isempty(DataFrame(a=[], b=[]))
+end
+
+@testset "haskey" begin
+    df = DataFrame(x=1:3)
+    @test haskey(df, 1)
+    @test !haskey(DataFrame(), 1)
+    @test !haskey(df, 2)
+    @test !haskey(df, 0)
+    @test haskey(df, :x)
+    @test !haskey(df, :a)
+    @test !haskey(df, "a")
+end
+
 end # module
