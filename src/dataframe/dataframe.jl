@@ -1056,10 +1056,10 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
     allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
     allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
-Convert columns `cols` of a `df` from element type `T` to
+Convert columns `cols` of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
 
-If `cols` is ommited all columns in the data frame are converted.
+If `cols` is omitted all columns in the data frame are converted.
 """
 function allowmissing! end
 
@@ -1094,10 +1094,10 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
     disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
     disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
-Convert columns `cols` of a `df` from element type `Union{T, Missing}` to
+Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
-If `cols` is ommited all columns in the data frame are converted.
+If `cols` is omitted all columns in the data frame are converted.
 """
 function disallowmissing! end
 
