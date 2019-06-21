@@ -112,7 +112,7 @@ end
     @test copy(erv[1]) == (y3=33, y1=53, y4=43)
     df.z = 1
     @test length(erd[1]) == 5 # the added column is reflected
-    deletecols!(df, [4,5])
+    select!(df, Not([4,5]))
     @test copy(erd[1]) == (y1 = 51, y2 = 21, y3 = 31) # the removed columns are reflected
 end
 

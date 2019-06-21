@@ -122,7 +122,7 @@ end
 Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
-function melt(df::AbstractDataFrame, id_vars::Union{Int,Symbol};
+function melt(df::AbstractDataFrame, id_vars::ColumnIndex;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     melt(df, [id_vars]; variable_name=variable_name, value_name=value_name)
 end
@@ -150,12 +150,12 @@ melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=
 Unstacks a DataFrame; convert from a long to wide format
 
 ```julia
-unstack(df::AbstractDataFrame, rowkeys::Union{Symbol, Integer},
-        colkey::Union{Symbol, Integer}, value::Union{Symbol, Integer})
-unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Symbol, Integer}},
-        colkey::Union{Symbol, Integer}, value::Union{Symbol, Integer})
-unstack(df::AbstractDataFrame, colkey::Union{Symbol, Integer},
-        value::Union{Symbol, Integer})
+unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
+        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol})
+unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Integer, Symbol}},
+        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol})
+unstack(df::AbstractDataFrame, colkey::Union{Integer, Symbol},
+        value::Union{Integer, Symbol})
 unstack(df::AbstractDataFrame)
 ```
 

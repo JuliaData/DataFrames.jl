@@ -249,51 +249,51 @@ end
     @test df == DataFrame(a=1, b=true)
 end
 
-@testset "deletecols!" begin
+@testset "select! Not" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError deletecols!(df, 0)
-    @test_throws ArgumentError deletecols!(df, 6)
-    @test_throws ArgumentError deletecols!(df, [1, 1])
-    @test_throws ArgumentError deletecols!(df, :f)
-    @test_throws BoundsError deletecols!(df, [true, false])
+    @test_throws BoundsError select!(df, Not(0))
+    @test_throws BoundsError select!(df, Not(6))
+    @test_throws ArgumentError select!(df, Not([1, 1]))
+    @test_throws ArgumentError select!(df, Not(:f))
+    @test_throws BoundsError select!(df, Not([true, false]))
 
     d = copy(df)
-    deletecols!(d, [:a, :e, :c])
+    select!(d, Not([:a, :e, :c]))
     @test names(d) == [:b, :d]
-    deletecols!(d, :b)
+    select!(d, Not(:b))
     @test d == DataFrame(d=4)
 
     d = copy(df)
-    deletecols!(d, r"[aec]")
+    select!(d, Not(r"[aec]"))
     @test names(d) == [:b, :d]
-    deletecols!(d, r"b")
+    select!(d, Not(r"b"))
     @test d == DataFrame(d=4)
 
     d = copy(df)
-    deletecols!(d, [2, 5, 3])
+    select!(d, Not([2, 5, 3]))
     @test names(d) == [:a, :d]
-    deletecols!(d, 2)
+    select!(d, Not(2))
     @test d == DataFrame(a=1)
 
     d = copy(df)
-    deletecols!(d, 2:3)
+    select!(d, Not(2:3))
     @test d == DataFrame(a=1, d=4, e=5)
 
     d = copy(df)
-    deletecols!(d, [false, true, true, false, false])
+    select!(d, Not([false, true, true, false, false]))
     @test d == DataFrame(a=1, d=4, e=5)
 end
 
-@testset "deletecols" begin
+@testset "select Not" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError deletecols(df, 0)
-    @test_throws ArgumentError deletecols(df, 6)
-    @test_throws ArgumentError deletecols(df, [1, 1])
-    @test_throws ArgumentError deletecols(df, :f)
-    @test_throws BoundsError deletecols(df, [true, false])
+    @test_throws BoundsError select(df, Not(0))
+    @test_throws BoundsError select(df, Not(6))
+    @test_throws ArgumentError select(df, Not([1, 1]))
+    @test_throws ArgumentError select(df, Not(:f))
+    @test_throws BoundsError select(df, Not([true, false]))
 
     df2 = copy(df)
-    d = deletecols(df, [:a, :e, :c])
+    d = select(df, Not([:a, :e, :c]))
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
     @test d.b !== df.b
@@ -301,7 +301,7 @@ end
     @test df == df2
 
     df2 = copy(df)
-    d = deletecols(df, r"[aec]")
+    d = select(df, Not(r"[aec]"))
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
     @test d == df[r"[bd]"]
@@ -309,41 +309,41 @@ end
     @test d.d !== df.d
     @test df == df2
 
-    d = deletecols(df, [2, 5, 3])
+    d = select(df, Not([2, 5, 3]))
     @test names(d) == [:a, :d]
     @test d.a !== df.a
     @test d.d !== df.d
     @test d == df[[:a, :d]]
     @test df == df2
 
-    d = deletecols(df, 2:3)
+    d = select(df, Not(2:3))
     @test d == DataFrame(a=1, d=4, e=5)
     @test d.a !== df.a
     @test d.d !== df.d
     @test d.e !== df.e
     @test df == df2
 
-    d = deletecols(df, [false, true, true, false, false])
+    d = select(df, Not([false, true, true, false, false]))
     @test d == DataFrame(a=1, d=4, e=5)
     @test d.a !== df.a
     @test d.d !== df.d
     @test d.e !== df.e
     @test df == df2
 
-    d = deletecols(df, 1)
+    d = select(df, Not(1))
     @test d == DataFrame(b=2,c=3,d=4,e=5)
     @test d.b !== df.b
     @test d.b == df.b
     @test df == df2
 
-    d = deletecols(df, [:a, :e, :c], copycols=false)
+    d = select(df, Not([:a, :e, :c]), copycols=false)
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
     @test d.b === df.b
     @test d.d === df.d
     @test df == df2
 
-    d = deletecols(df, r"[aec]", copycols=false)
+    d = select(df, Not(r"[aec]"), copycols=false)
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
     @test d == df[r"[bd]"]
@@ -351,28 +351,134 @@ end
     @test d.d === df.d
     @test df == df2
 
-    d = deletecols(df, [2, 5, 3], copycols=false)
+    d = select(df, Not([2, 5, 3]), copycols=false)
     @test names(d) == [:a, :d]
     @test d.a === df.a
     @test d.d === df.d
     @test d == df[[:a, :d]]
     @test df == df2
 
-    d = deletecols(df, 2:3, copycols=false)
+    d = select(df, Not(2:3), copycols=false)
     @test d == DataFrame(a=1, d=4, e=5)
     @test d.a === df.a
     @test d.d === df.d
     @test d.e === df.e
     @test df == df2
 
-    d = deletecols(df, [false, true, true, false, false], copycols=false)
+    d = select(df, Not([false, true, true, false, false]), copycols=false)
     @test d == DataFrame(a=1, d=4, e=5)
     @test d.a === df.a
     @test d.d === df.d
     @test d.e === df.e
     @test df == df2
 
-    d = deletecols(df, 1, copycols=false)
+    d = select(df, Not(1), copycols=false)
+    @test d == DataFrame(b=2,c=3,d=4,e=5)
+    @test d.b === df.b
+    @test df == df2
+end
+
+@testset "select Not view" begin
+    df = view(DataFrame(a=1, b=2, c=3, d=4, e=5), :, :)
+    @test_throws BoundsError select(df, Not(0))
+    @test_throws BoundsError select(df, Not(6))
+    @test_throws ArgumentError select(df, Not([1, 1]))
+    @test_throws ArgumentError select(df, Not(:f))
+    @test_throws BoundsError select(df, Not([true, false]))
+
+    df2 = copy(df)
+    d = select(df, Not([:a, :e, :c]))
+    @test d isa DataFrame
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d.b !== df.b
+    @test d.d !== df.d
+    @test df == df2
+
+    df2 = copy(df)
+    d = select(df, Not(r"[aec]"))
+    @test d isa DataFrame
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d == df[r"[bd]"]
+    @test d.b !== df.b
+    @test d.d !== df.d
+    @test df == df2
+
+    d = select(df, Not([2, 5, 3]))
+    @test d isa DataFrame
+    @test names(d) == [:a, :d]
+    @test d.a !== df.a
+    @test d.d !== df.d
+    @test d == df[[:a, :d]]
+    @test df == df2
+
+    d = select(df, Not(2:3))
+    @test d isa DataFrame
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a !== df.a
+    @test d.d !== df.d
+    @test d.e !== df.e
+    @test df == df2
+
+    d = select(df, Not([false, true, true, false, false]))
+    @test d isa DataFrame
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a !== df.a
+    @test d.d !== df.d
+    @test d.e !== df.e
+    @test df == df2
+
+    d = select(df, Not(1))
+    @test d isa DataFrame
+    @test d == DataFrame(b=2,c=3,d=4,e=5)
+    @test d.b !== df.b
+    @test d.b == df.b
+    @test df == df2
+
+    d = select(df, Not([:a, :e, :c]), copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d.b === df.b
+    @test d.d === df.d
+    @test df == df2
+
+    d = select(df, Not(r"[aec]"), copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d == df[r"[bd]"]
+    @test d.b === df.b
+    @test d.d === df.d
+    @test df == df2
+
+    d = select(df, Not([2, 5, 3]), copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:a, :d]
+    @test d.a === df.a
+    @test d.d === df.d
+    @test d == df[[:a, :d]]
+    @test df == df2
+
+    d = select(df, Not(2:3), copycols=false)
+    @test d isa SubDataFrame
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a === df.a
+    @test d.d === df.d
+    @test d.e === df.e
+    @test df == df2
+
+    d = select(df, Not([false, true, true, false, false]), copycols=false)
+    @test d isa SubDataFrame
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a === df.a
+    @test d.d === df.d
+    @test d.e === df.e
+    @test df == df2
+
+    d = select(df, Not(1), copycols=false)
+    @test d isa SubDataFrame
     @test d == DataFrame(b=2,c=3,d=4,e=5)
     @test d.b === df.b
     @test df == df2
@@ -385,6 +491,12 @@ end
     @test_throws ArgumentError select!(df, [1, 1])
     @test_throws ArgumentError select!(df, :f)
     @test_throws BoundsError select!(df, [true, false])
+
+    @test_throws MethodError select!(view(df, :, :), 1:2)
+
+    d = copy(df, copycols=false)
+    @test select!(d, 1:0) == DataFrame()
+    @test select!(d, Not(r"")) == DataFrame()
 
     d = copy(df, copycols=false)
     select!(d, [:a, :e, :c])
@@ -440,6 +552,11 @@ end
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
     @test_throws BoundsError select!(df, [true, false])
+
+    @test select(df, 1:0) == DataFrame()
+    @test select(df, Not(r"")) == DataFrame()
+    @test select(df, 1:0, copycols=false) == DataFrame()
+    @test select(df, Not(r""), copycols=false) == DataFrame()
 
     d = select(df, [:a, :e, :c])
     @test names(d) == [:a, :e, :c]
@@ -519,6 +636,113 @@ end
     @test d.c === df.c
 
     d = select(df, 2, copycols=false)
+    @test names(d) == [:b]
+    @test d.b === df.b
+end
+
+@testset "select view" begin
+    df = view(DataFrame(a=1, b=2, c=3, d=4, e=5), :, :)
+    @test_throws BoundsError select(df, 0)
+    @test_throws BoundsError select(df, 6)
+    @test_throws ArgumentError select(df, [1, 1])
+    @test_throws ArgumentError select(df, :f)
+    @test_throws MethodError select!(df, [true, false])
+
+    @test select(df, 1:0) == DataFrame()
+    @test select(df, Not(r"")) == DataFrame()
+    @test select(df, 1:0, copycols=false) == DataFrame()
+    @test select(df, Not(r""), copycols=false) == DataFrame()
+
+    d = select(df, [:a, :e, :c])
+    @test d isa DataFrame
+    @test names(d) == [:a, :e, :c]
+    @test d.a !== df.a
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.a == df.a
+    @test d.e == df.e
+    @test d.c == df.c
+
+    d = select(df, r"[aec]")
+    @test d isa DataFrame
+    @test names(d) == [:a, :c, :e]
+    @test d.a !== df.a
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.a == df.a
+    @test d.e == df.e
+    @test d.c == df.c
+
+    d = select(df, [true, false, true, false, true])
+    @test d isa DataFrame
+    @test names(d) == [:a, :c, :e]
+    @test d.a !== df.a
+    @test d.c !== df.c
+    @test d.e !== df.e
+    @test d.a == df.a
+    @test d.c == df.c
+    @test d.e == df.e
+
+    d = select(df, [2, 5, 3])
+    @test d isa DataFrame
+    @test names(d) == [:b, :e, :c]
+    @test d.b !== df.b
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.b == df.b
+    @test d.e == df.e
+    @test d.c == df.c
+
+    d = select(df, 2:3)
+    @test d isa DataFrame
+    @test names(d) == [:b, :c]
+    @test d.b !== df.b
+    @test d.c !== df.c
+    @test d.b == df.b
+    @test d.c == df.c
+
+    d = select(df, 2)
+    @test d isa DataFrame
+    @test names(d) == [:b]
+    @test d.b !== df.b
+    @test d.b == df.b
+
+    d = select(df, [:a, :e, :c], copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, r"[aec]", copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:a, :c, :e]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, [true, false, true, false, true], copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:a, :c, :e]
+    @test d.a === df.a
+    @test d.c === df.c
+    @test d.e === df.e
+
+    d = select(df, [2, 5, 3], copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:b, :e, :c]
+    @test d.b === df.b
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, 2:3, copycols=false)
+    @test d isa SubDataFrame
+    @test names(d) == [:b, :c]
+    @test d.b === df.b
+    @test d.c === df.c
+
+    d = select(df, 2, copycols=false)
+    @test d isa SubDataFrame
     @test names(d) == [:b]
     @test d.b === df.b
 end
@@ -727,6 +951,8 @@ df4[2,:Mass] = missing
 mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
 @test unstack(melt(mdf, :id), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
 @test unstack(melt(mdf, :id), :id, :variable, :value)[2:3] == sort(mdf)[2:3]
+@test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+@test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[2:3] == sort(mdf)[2:3]
 
 # test more than one grouping column
 wide = DataFrame(id = 1:12,
@@ -784,9 +1010,27 @@ DRT = CategoricalArrays.DefaultRefType
 @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
                 _columns(categorical!(deepcopy(df), 1))) == 1
 
+@test all(c -> isa(c, Vector{Union{Int, Missing}}), eachcol(categorical!(deepcopy(df))))
+@test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
+          eachcol(categorical!(deepcopy(df), Not(Not([1,2])))))
+@test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
+          eachcol(categorical!(deepcopy(df), Not(Not([:A,:B])))))
+@test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
+                _columns(categorical!(deepcopy(df), Not(Not([:A]))))) == 1
+@test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
+                _columns(categorical!(deepcopy(df), Not(Not(:A))))) == 1
+@test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
+                _columns(categorical!(deepcopy(df), Not(Not([1]))))) == 1
+@test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
+                _columns(categorical!(deepcopy(df), Not(Not(1))))) == 1
+
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
     @test all(map(<:, eltypes(categorical!(deepcopy(df))),
+                  [CategoricalArrays.CategoricalString{UInt32},
+                   Char, Bool, Int,
+                   CategoricalArrays.CategoricalString{UInt32}]))
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), :)),
                   [CategoricalArrays.CategoricalString{UInt32},
                    Char, Bool, Int,
                    CategoricalArrays.CategoricalString{UInt32}]))
@@ -794,13 +1038,25 @@ DRT = CategoricalArrays.DefaultRefType
                   [CategoricalArrays.CategoricalString{UInt8},
                    Char, Bool, Int,
                    CategoricalArrays.CategoricalString{UInt8}]))
-    @test all(map(<:, eltypes(categorical!(df, names(df))),
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), names(df))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(df, names(df), compress=true)),
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), names(df), compress=true)),
+                  [CategoricalArrays.CategoricalString{UInt8},
+                   CategoricalArrays.CategoricalValue{Char,UInt8},
+                   CategoricalArrays.CategoricalValue{Bool,UInt8},
+                   CategoricalArrays.CategoricalValue{Int,UInt8},
+                   CategoricalArrays.CategoricalString{UInt8}]))
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), Not(1:0))),
+                  [CategoricalArrays.CategoricalString{UInt32},
+                   CategoricalArrays.CategoricalValue{Char,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
+                   CategoricalArrays.CategoricalString{UInt32}]))
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), Not(1:0), compress=true)),
                   [CategoricalArrays.CategoricalString{UInt8},
                    CategoricalArrays.CategoricalValue{Char,UInt8},
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
@@ -884,6 +1140,7 @@ end
     x[1, :x1] = missing
     y = melt(x, [:id, :id2])
     @test y ≅ melt(x, r"id")
+    @test y ≅ melt(x, Not(Not(r"id")))
     z = unstack(y, :id, :variable, :value)
     @test all(isequal(z[n], x[n]) for n in names(z))
     z = unstack(y, :variable, :value)
@@ -953,9 +1210,26 @@ end
     @test isa(df[1], Vector{Int})
 
     df = DataFrame([collect(1:10), collect(1:10)])
+    @test !isa(df[1], Vector{Union{Int, Missing}})
+    @test allowmissing!(df, Not(Not(1))) === df
+    @test isa(df[1], Vector{Union{Int, Missing}})
+    @test !isa(df[2], Vector{Union{Int, Missing}})
+    df[1,1] = missing
+    @test_throws MethodError disallowmissing!(df, Not(Not(1)))
+    df[1,1] = 1
+    @test disallowmissing!(df, Not(Not(1))) === df
+    @test isa(df[1], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
     @test allowmissing!(df, [1,2]) === df
     @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
     @test disallowmissing!(df, [1,2]) === df
+    @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
+    @test allowmissing!(df, Not(Not([1,2]))) === df
+    @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+    @test disallowmissing!(df, Not(Not([1,2]))) === df
     @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
     df = DataFrame([collect(1:10), collect(1:10)])
@@ -970,6 +1244,24 @@ end
     @test allowmissing!(df) === df
     @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
     @test disallowmissing!(df) === df
+    @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
+    @test allowmissing!(df, :) === df
+    @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+    @test disallowmissing!(df, :) === df
+    @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
+    @test allowmissing!(df, r"") === df
+    @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+    @test disallowmissing!(df, r"") === df
+    @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
+    @test allowmissing!(df, Not(1:0)) === df
+    @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+    @test disallowmissing!(df, Not(1:0)) === df
     @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
     df = DataFrame([CategoricalArray(1:10),
