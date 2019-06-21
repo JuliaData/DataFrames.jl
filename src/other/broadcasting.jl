@@ -186,7 +186,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
         end
         df
     else
-        copyto!(df, convert(Broadcasted{Nothing}, bc))
+        copyto!(df, convert(Base.Broadcast.Broadcasted{Nothing}, bc))
     end
 end
 

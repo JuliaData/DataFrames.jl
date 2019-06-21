@@ -6,6 +6,29 @@ const ≅ = isequal
 
 refdf = DataFrame(reshape(1.5:15.5, (3,5)))
 
+@testset "CartesianIndex" begin
+    df = DataFrame(rand(2, 3))
+    for i in axes(df, 1), j in axes(df, 2)
+        @test df[i,j] == df[CartesianIndex(i,j)]
+        r = rand()
+        df[CartesianIndex(i,j)] = r
+        @test df[i,j] == r
+    end
+    @test_throws BoundsError df[CartesianIndex(0,1)]
+    @test_throws BoundsError df[CartesianIndex(0,0)]
+    @test_throws BoundsError df[CartesianIndex(1,0)]
+    @test_throws BoundsError df[CartesianIndex(5,1)]
+    @test_throws BoundsError df[CartesianIndex(5,5)]
+    @test_throws BoundsError df[CartesianIndex(1,5)]
+
+    @test_throws BoundsError df[CartesianIndex(0,1)] = 1
+    @test_throws ArgumentError df[CartesianIndex(0,0)] = 1
+    @test_throws ArgumentError df[CartesianIndex(1,0)] = 1
+    @test_throws BoundsError df[CartesianIndex(5,1)] = 1
+    @test_throws ArgumentError df[CartesianIndex(5,5)] = 1
+    @test_throws ArgumentError df[CartesianIndex(1,5)] = 1
+end
+
 @testset "broadcasting of AbstractDataFrame objects" begin
     for df in (copy(refdf), view(copy(refdf), :, :))
         @test identity.(df) == refdf
@@ -636,6 +659,55 @@ end
     end
 end
 
+@testset "scalar broadcasting" begin
+    a = DataFrame(x = zeros(2))
+    a .= 1 ./ (1 + 2)
+    @test a.x == [1/3, 1/3]
+    a .= 1 ./ (1 .+ 3)
+    @test a.x == [1/4, 1/4]
+    a .= sqrt.(1 ./ 2)
+    @test a.x == [sqrt(1/2), sqrt(1/2)]
+end
+
+@testset "tuple broadcasting" begin
+    X = DataFrame(zeros(2, 3))
+    X .= (1, 2)
+    @test X == DataFrame([1 1 1; 2 2 2])
+
+    X = DataFrame(zeros(2, 3))
+    X .= (1, 2) .+ 10 .- X
+    @test X == DataFrame([11 11 11; 12 12 12])
+
+    X = DataFrame(zeros(2, 3))
+    X .+= (1, 2) .+ 10
+    @test X == DataFrame([11 11 11; 12 12 12])
+
+    df = DataFrame(rand(2, 3))
+    @test floor.(Int, df ./ (1,)) == DataFrame(zeros(Int, 2, 3))
+    df .= floor.(Int, df ./ (1,))
+    @test df == DataFrame(zeros(2, 3))
+
+    df = DataFrame(rand(2, 3))
+    @test_throws InexactError convert.(Int, df)
+    df2 = convert.(Int, floor.(df))
+    @test df2 == DataFrame(zeros(Int, 2, 3))
+    @test eltypes(df2) == [Int, Int, Int]
+end
+
+@testset "scalar on assignment side" begin
+    df = DataFrame(rand(2, 3))
+    df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test df[1, 1] == 0
+    df[1, 2] .-= df[1, 2]
+    @test df[1, 2] == 0
+end
+
+@testset "nothing test" begin
+    X = DataFrame(Any[1 2; 3 4])
+    X .= nothing
+    @test (X .== nothing) == DataFrame(trues(2, 2))
+end
+
 @testset "aliasing test" begin
     df = DataFrame(x=[1, 2])
     y = view(df.x, [2, 1])
@@ -752,6 +824,21 @@ end
         @test df2 != df6
         @test df3 != df7
     end
+end
+
+@testset "@. test" begin
+    df = DataFrame(rand(2, 3))
+    sdf = view(df, 1:1, :)
+    dfm = Matrix(df)
+    sdfm = Matrix(sdf)
+
+    r1 = @. (df + sdf + 5) / sdf
+    r2 = @. (df + sdf + 5) / sdf
+    @test r1 == DataFrame(r2)
+
+    @. df = sin(sdf / (df + 1))
+    @. dfm = sin(sdfm / (dfm + 1))
+    @test df == DataFrame(dfm)
 end
 
 end # module
