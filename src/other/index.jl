@@ -141,7 +141,7 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, idx::Integer)
     if !(1 <= idx <= length(x))
-        throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $idx"))
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $idx"))
     end
     Int(idx)
 end
@@ -150,10 +150,10 @@ end
     isempty(idx) && return idx
     minidx, maxidx = extrema(idx)
     if minidx < 1
-        throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $minidx"))
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $minidx"))
     end
     if maxidx > length(x)
-        throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $maxidx"))
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $maxidx"))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     idx
@@ -163,10 +163,10 @@ end
     isempty(idx) && return idx
     minidx, maxidx = extrema(idx)
     if minidx < 1
-        throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $minidx"))
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $minidx"))
     end
     if maxidx > length(x)
-        throw(BoundsError("attempt to access $(length(x))-element AbstractIndex at index $maxidx"))
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $maxidx"))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     idx

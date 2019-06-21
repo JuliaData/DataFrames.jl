@@ -947,7 +947,7 @@ select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 """
     select(df::AbstractDataFrame, inds, copycols::Bool=true)
 
-If `df` is a data frame create a new data frame that contains columns from `df`
+Create a new data frame that contains columns from `df`
 specified by `inds` and return it.
 
 Argument `inds` can be any index that is allowed for column indexing.
@@ -1053,19 +1053,14 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 ##############################################################################
 """
     allowmissing!(df::DataFrame)
+    allowmissing!(df::DataFrame, cols::Colon)
+    allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
+    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
-Convert all columns of a `df` from element type `T` to
+Convert columns `cols` of a `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
 
-    allowmissing!(df::DataFrame, col::Union{Integer, Symbol})
-
-Convert a single column of a `df` from element type `T` to
-`Union{T, Missing}` to support missing values.
-
-    allowmissing!(df::DataFrame, cols::AbstractVector})
-
-Convert multiple columns of a `df` from element type `T` to
-`Union{T, Missing}` to support missing values.
+If `cols` is ommited all columns in the data frame are converted.
 """
 function allowmissing! end
 
@@ -1097,19 +1092,14 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
 
 """
     disallowmissing!(df::DataFrame)
-
-Convert all columns of a `df` from element type `Union{T, Missing}` to
-`T` to drop support for missing values.
-
-    disallowmissing!(df::DataFrame, col::Union{Integer, Symbol})
-
-Convert a single column of a `df` from element type `Union{T, Missing}` to
-`T` to drop support for missing values.
-
+    disallowmissing!(df::DataFrame, cols::Colon)
+    disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
     disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
-Convert multiple columns of a `df` from element type `Union{T, Missing}` to
+Convert columns `cols` of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
+
+If `cols` is ommited all columns in the data frame are converted.
 """
 function disallowmissing! end
 

@@ -596,7 +596,9 @@ completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
 
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, ::Colon; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -667,7 +669,9 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, ::Colon; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -726,7 +730,8 @@ julia> dropmissing!(df3, [:x, :y])
 ```
 
 """
-function dropmissing!(df::AbstractDataFrame, cols=:;
+function dropmissing!(df::AbstractDataFrame,
+                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
