@@ -31,9 +31,9 @@ const ≅ = isequal
     @test_throws ArgumentError unique(df, true)
 
      pdf = view(DataFrame(a = CategoricalArray(["a", "a", missing, missing, "b", missing, "a", missing]),
-                         b = CategoricalArray(["a", "b", missing, missing, "b", "a", "a", "a"])), :,  :)
+                          b = CategoricalArray(["a", "b", missing, missing, "b", "a", "a", "a"])), :,  :)
     updf = DataFrame(a = CategoricalArray(["a", "a", missing, "b", missing]),
-                    b = CategoricalArray(["a", "b", missing, "b", "a"]))
+                     b = CategoricalArray(["a", "b", missing, "b", "a"]))
     @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
     @test nonunique(updf) == falses(5)
     @test updf ≅ unique(pdf)

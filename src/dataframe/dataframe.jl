@@ -958,8 +958,8 @@ If `copycols=true` (the default), then returned `DataFrame` holds
 copies of column vectors in `df`.
 If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
 
-If `df` is a `SubDataFrame` then `SubDataFrame` is returned if `copycols=false`
-and `DataFrame` with freshly allocated columns otherwise.
+If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
+and a `DataFrame` with freshly allocated columns otherwise.
 
 ### Examples
 
