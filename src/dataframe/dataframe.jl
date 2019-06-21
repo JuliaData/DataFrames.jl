@@ -1052,8 +1052,7 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 ##
 ##############################################################################
 """
-    allowmissing!(df::DataFrame)
-    allowmissing!(df::DataFrame, cols::Colon)
+    allowmissing!(df::DataFrame, cols::Colon=:)
     allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
     allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
@@ -1091,8 +1090,7 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
     allowmissing!(df, axes(df, 2))
 
 """
-    disallowmissing!(df::DataFrame)
-    disallowmissing!(df::DataFrame, cols::Colon)
+    disallowmissing!(df::DataFrame, cols::Colon=:)
     disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
     disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 

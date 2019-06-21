@@ -1408,3 +1408,4 @@ import Base: empty!
 
 @deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
 @deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)
+@deprecate deletecols(df::DataFrame, inds) select(df, Not(inds))

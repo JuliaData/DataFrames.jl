@@ -522,8 +522,7 @@ end
 
 
 """
-    completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, ::Colon)
+    completecases(df::AbstractDataFrame, cols::Colon=:)
     completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
@@ -597,10 +596,11 @@ completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
     completecases(select(df, cols, copycols=false))
 
 """
-    dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, ::Colon; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+                disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol};
+                disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -670,10 +670,11 @@ function dropmissing(df::AbstractDataFrame,
 end
 
 """
-    dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, ::Colon; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+                 disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol};
+                 disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
 If `cols` is provided, only missing values in the corresponding columns are considered.
