@@ -128,7 +128,8 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     src
 end
 
-function _broadcast_unalias_helper(dest, scol, src, col2, wascopied)
+function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector,
+                                   src::AbstractDataFrame, col2::Int, wascopied::Bool)
     # col1 can be checked till col2 point as we are writing broadcasting
     # results from 1 to ncol
     # we go downwards because aliasing when col1 == col2 is most probable
