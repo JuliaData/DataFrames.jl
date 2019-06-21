@@ -215,6 +215,23 @@ end
     @test isempty(DataFrame(a=[], b=[]))
 end
 
+@testset "deletecols and deletecols!" begin
+    df = DataFrame(a=[1,2], b=[3.0, 4.0])
+    @test deletecols(df, :a) == DataFrame(b=[3.0, 4.0])
+    deletecols!(df, :a)
+    @test df == DataFrame(b=[3.0, 4.0])
+
+    df = DataFrame(a=[1,2], b=[3.0, 4.0])
+    @test deletecols(df, Not(2)) == DataFrame(b=[3.0, 4.0])
+    deletecols!(df, Not(2))
+    @test df == DataFrame(b=[3.0, 4.0])
+
+    df = DataFrame(a=[1,2], b=[3.0, 4.0])
+    @test deletecols(df, :a, copycols=false)[1] === df.b
+    @test deletecols(df, []) == df
+    @test deletecols(df, Not([])) == DataFrame()
+end
+
 @testset "haskey" begin
     df = DataFrame(x=1:3)
     @test haskey(df, 1)

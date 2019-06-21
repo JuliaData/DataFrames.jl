@@ -522,8 +522,8 @@ end
 
 
 """
-    completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex})
+    completecases(df::AbstractDataFrame, cols::Colon=:)
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -575,7 +575,10 @@ julia> completecases(df, [:x, :y])
 ```
 
 """
-function completecases(df::AbstractDataFrame)
+function completecases(df::AbstractDataFrame, col::Colon=:)
+    if ncol(df) == 0
+        throw(ArgumentError("Unable to compute complete cases of a data frame with no columns"))
+    end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
         _nonmissing!(res, df[i])
@@ -583,19 +586,21 @@ function completecases(df::AbstractDataFrame)
     res
 end
 
-function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
+function completecases(df::AbstractDataFrame, col::ColumnIndex)
     res = trues(size(df, 1))
     _nonmissing!(res, df[col])
     res
 end
 
-completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
-    completecases(df[cols])
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
+    completecases(select(df, cols, copycols=false))
 
 """
-    dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+                disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol};
+                disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -657,7 +662,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
+                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -665,9 +670,11 @@ function dropmissing(df::AbstractDataFrame,
 end
 
 """
-    dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+                 disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol};
+                 disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
 If `cols` is provided, only missing values in the corresponding columns are considered.
@@ -727,7 +734,7 @@ julia> dropmissing!(df3, [:x, :y])
 
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
+                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -865,22 +872,17 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[cols]])
-nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
+nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
     deleterows!(df, findall(nonunique(df, cols)))
-Base.unique!(df::AbstractDataFrame, cols::Regex) =
-    deleterows!(df, findall(nonunique(df, cols)))
-Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+Base.unique!(df::AbstractDataFrame, cols) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
-    df[(!).(nonunique(df, cols)), :]
-Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+Base.unique(df::AbstractDataFrame, cols) =
     df[(!).(nonunique(df, cols)), :]
 
 """

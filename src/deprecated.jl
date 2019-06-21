@@ -1405,3 +1405,7 @@ import Base: haskey
 
 import Base: empty!
 @deprecate empty!(df::DataFrame) deletecols!(df, 1:ncol(df))
+
+@deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
+@deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)
+@deprecate deletecols(df::DataFrame, inds) select(df, Not(inds))

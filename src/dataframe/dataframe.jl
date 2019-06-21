@@ -296,7 +296,7 @@ function Base.getindex(df::DataFrame, col_ind::Symbol)
 end
 
 # df[MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex})
+function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex, Not})
     selected_columns = index(df)[col_inds]
     new_columns = _columns(df)[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -342,9 +342,12 @@ end
     @inbounds return _columns(df)[selected_column][row_inds]
 end
 
+@inline Base.getindex(df::DataFrame, row_inds::Not, col_ind::ColumnIndex) =
+    df[axes(df, 1)[row_inds], col_ind]
+
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
-                               col_inds::Union{AbstractVector, Regex}) where T
+                               col_inds::Union{AbstractVector, Regex, Not}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -356,6 +359,10 @@ end
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
+@inline Base.getindex(df::DataFrame, row_inds::Not,
+                      col_inds::Union{AbstractVector, Regex, Not}) =
+    df[axes(df, 1)[row_inds], col_inds]
+
 # df[:, SingleColumnIndex] => AbstractVector
 function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
@@ -363,7 +370,7 @@ function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
 end
 
 # df[:, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex})
+function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not})
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
@@ -380,6 +387,9 @@ end
     new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
+
+@inline Base.getindex(df::DataFrame, row_inds::Not, ::Colon) =
+    df[axes(df, 1)[row_inds], :]
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
@@ -828,105 +838,6 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
 end
 
 """
-    deletecols!(df::DataFrame, inds)
-
-Delete columns specified by `inds` from a `DataFrame` `df` in place and return it.
-
-Argument `inds` can be any index that is allowed for column indexing of
-a `DataFrame` provided that the columns requested to be removed are unique.
-
-### Examples
-
-```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-
-julia> deletecols!(d, 1)
-3×1 DataFrame
-│ Row │ b     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 4     │
-│ 2   │ 5     │
-│ 3   │ 6     │
-```
-
-"""
-function deletecols!(df::DataFrame, inds::AbstractVector{Int})
-    sorted_inds = sort(inds, rev=true)
-    for i in 2:length(sorted_inds)
-        if sorted_inds[i] == sorted_inds[i-1]
-            indpos = join(findall(==(sorted_inds[i]), inds), ", ", " and ")
-            throw(ArgumentError("Duplicate values in inds found at positions" *
-                                " $indpos."))
-        end
-    end
-    for ind in sorted_inds
-        if 1 <= ind <= ncol(df)
-            splice!(_columns(df), ind)
-            delete!(index(df), ind)
-        else
-            throw(ArgumentError("Can't delete a non-existent DataFrame column"))
-        end
-    end
-    return df
-end
-deletecols!(df::DataFrame, c::Int) = deletecols!(df, [c])
-deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
-
-"""
-    deletecols(df::DataFrame, inds, copycols::Bool=true)
-
-Create a new `DataFrame` based on `df ` deleting columns specified by `inds`.
-
-Argument `inds` can be any index that is allowed for column indexing of
-a `DataFrame` provided that the columns requested to be removed are unique.
-
-If `copycols=true` (the default), then returned `DataFrame` holds
-copies of column vectors in `df`.
-If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
-
-### Examples
-
-```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-
-julia> deletecols(d, 1)
-3×1 DataFrame
-│ Row │ b     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 4     │
-│ 2   │ 5     │
-│ 3   │ 6     │
-```
-
-"""
-function deletecols(df::DataFrame, inds; copycols::Bool=true)
-    newdf = copy(df, copycols=false)
-    deletecols!(newdf, inds)
-    if copycols
-        for i in axes(newdf, 2)
-            newdf[i] = copy(newdf[i])
-        end
-    end
-    return newdf
-end
-
-"""
     deleterows!(df::DataFrame, inds)
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
@@ -1006,6 +917,11 @@ julia> select!(d, 2)
 
 """
 function select!(df::DataFrame, inds::AbstractVector{Int})
+    if isempty(inds)
+        empty!(_columns(df))
+        empty!(index(df))
+        return df
+    end
     indmin, indmax = extrema(inds)
     if indmin < 1
         throw(ArgumentError("indices must be positive"))
@@ -1016,8 +932,12 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
     if !allunique(inds)
         throw(ArgumentError("indices must not contain duplicates"))
     end
+
     targetnames = _names(df)[inds]
-    deletecols!(df, setdiff(axes(df, 2), inds))
+    for i in setdiff(ncol(df):-1:1, inds)
+        splice!(_columns(df), i)
+        delete!(index(df), i)
+    end
     permutecols!(df, targetnames)
 end
 
@@ -1025,15 +945,21 @@ select!(df::DataFrame, c::Int) = select!(df, [c])
 select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 
 """
-    select(df::DataFrame, inds, copycols::Bool=true)
+    select(df::AbstractDataFrame, inds, copycols::Bool=true)
 
-Create a new `DataFrame` that contains columns from `df` specified by `inds` and return it.
+Create a new data frame that contains columns from `df`
+specified by `inds` and return it.
 
-Argument `inds` can be any index that is allowed for column indexing of a `DataFrame`.
+Argument `inds` can be any index that is allowed for column indexing.
 
+If `df` is a `DataFrame` return a new `DataFrame` that contains columns from `df`
+specified by `inds`.
 If `copycols=true` (the default), then returned `DataFrame` holds
 copies of column vectors in `df`.
 If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
+
+If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
+and a `DataFrame` with freshly allocated columns otherwise.
 
 ### Examples
 
@@ -1126,20 +1052,14 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 ##
 ##############################################################################
 """
-    allowmissing!(df::DataFrame)
+    allowmissing!(df::DataFrame, cols::Colon=:)
+    allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
+    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
-Convert all columns of a `df` from element type `T` to
+Convert columns `cols` of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
 
-    allowmissing!(df::DataFrame, col::Union{Integer, Symbol})
-
-Convert a single column of a `df` from element type `T` to
-`Union{T, Missing}` to support missing values.
-
-    allowmissing!(df::DataFrame, cols::AbstractVector})
-
-Convert multiple columns of a `df` from element type `T` to
-`Union{T, Missing}` to support missing values.
+If `cols` is omitted all columns in the data frame are converted.
 """
 function allowmissing! end
 
@@ -1148,7 +1068,7 @@ function allowmissing!(df::DataFrame, col::ColumnIndex)
     df
 end
 
-function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex}=1:size(df, 2))
+function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         allowmissing!(df, col)
     end
@@ -1163,21 +1083,21 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
+allowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+    allowmissing!(df, index(df)[cols])
+
+allowmissing!(df::DataFrame, cols::Colon=:) =
+    allowmissing!(df, axes(df, 2))
+
 """
-    disallowmissing!(df::DataFrame)
+    disallowmissing!(df::DataFrame, cols::Colon=:)
+    disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
+    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
 
-Convert all columns of a `df` from element type `Union{T, Missing}` to
+Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
-    disallowmissing!(df::DataFrame, col::Union{Integer, Symbol})
-
-Convert a single column of a `df` from element type `Union{T, Missing}` to
-`T` to drop support for missing values.
-
-    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex})
-
-Convert multiple columns of a `df` from element type `Union{T, Missing}` to
-`T` to drop support for missing values.
+If `cols` is omitted all columns in the data frame are converted.
 """
 function disallowmissing! end
 
@@ -1186,7 +1106,7 @@ function disallowmissing!(df::DataFrame, col::ColumnIndex)
     df
 end
 
-function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex}=1:size(df, 2))
+function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         disallowmissing!(df, col)
     end
@@ -1201,7 +1121,11 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-disallowmissing!(df::DataFrame, cols::Regex) = disallowmissing!(df, index(df)[cols])
+disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+    disallowmissing!(df, index(df)[cols])
+
+disallowmissing!(df::DataFrame, cols::Colon=:) =
+    disallowmissing!(df, axes(df, 2))
 
 ##############################################################################
 ##
@@ -1214,7 +1138,7 @@ disallowmissing!(df::DataFrame, cols::Regex) = disallowmissing!(df, index(df)[co
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
                  compress::Bool=false)
-    categorical!(df::DataFrame, cnames::Regex;
+    categorical!(df::DataFrame, cnames::Union{Regex, Not};
                  compress::Bool=false)
     categorical!(df::DataFrame; compress::Bool=false)
 
@@ -1277,13 +1201,13 @@ julia> eltypes(df)
 """
 function categorical! end
 
-function categorical!(df::DataFrame, cname::Union{Integer, Symbol};
+function categorical!(df::DataFrame, cname::ColumnIndex;
                       compress::Bool=false)
     df[cname] = categorical(df[cname], compress)
     df
 end
 
-function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
+function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
                       compress::Bool=false)
     for cname in cnames
         df[cname] = categorical(df[cname], compress)
@@ -1291,10 +1215,10 @@ function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
     df
 end
 
-categorical!(df::DataFrame, cnames::Regex; compress::Bool=false) =
+categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame; compress::Bool=false)
+function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
     for i in 1:size(df, 2)
         if eltype(df[i]) <: Union{AbstractString, Missing}
             df[i] = categorical(df[i], compress)

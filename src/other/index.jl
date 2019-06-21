@@ -138,11 +138,75 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
 end
 
 @inline Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
-@inline Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
-@inline Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
-@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
-@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+
+@inline function Base.getindex(x::AbstractIndex, idx::Integer)
+    if !(1 <= idx <= length(x))
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $idx"))
+    end
+    Int(idx)
+end
+
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Int})
+    isempty(idx) && return idx
+    minidx, maxidx = extrema(idx)
+    if minidx < 1
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $minidx"))
+    end
+    if maxidx > length(x)
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $maxidx"))
+    end
+    allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
+    idx
+end
+
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractRange{Int})
+    isempty(idx) && return idx
+    minidx, maxidx = extrema(idx)
+    if minidx < 1
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $minidx"))
+    end
+    if maxidx > length(x)
+        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $maxidx"))
+    end
+    allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
+    idx
+end
+
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = getindex(x, collect(Int, idx))
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
+@inline Base.getindex(x::AbstractIndex, notidx::Not) = setdiff(1:length(x), getindex(x, notidx.skip))
+
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
+    if any(v -> v isa Bool, idx)
+        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
+    end
+    getindex(x, Vector{Int}(idx))
+end
+
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
+
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
+    length(x) == length(idx) || throw(BoundsError(x, idx))
+    findall(idx)
+end
+
+# catch all method handling cases when type of idx is not narrowest possible, Any in particular
+@inline function Base.getindex(x::AbstractIndex, idxs::AbstractVector)
+    isempty(idxs) && return Int[] # special case of empty idxs
+    if idxs[1] isa Real
+        if !all(v -> v isa Integer && !(v isa Bool), idxs)
+            throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
+        end
+        return getindex(x, convert(Vector{Int}, idxs))
+    end
+    idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
+    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
+                        "Only Integer or Symbol values allowed when indexing by vector"))
+end
+
+@inline function Base.getindex(x::AbstractIndex, rx::Regex)
+    getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
+end
 
 # Fuzzy matching rules:
 # 1. ignore case
@@ -174,38 +238,9 @@ end
 end
 
 @inline Base.getindex(x::Index, idx::Symbol) = lookupname(x.lookup, idx)
-@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) =
+@inline function Base.getindex(x::Index, idx::AbstractVector{Symbol})
+    allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     [lookupname(x.lookup, i) for i in idx]
-
-@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
-    if any(v -> v isa Bool, idx)
-        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
-    end
-    Vector{Int}(idx)
-end
-
-@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
-@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
-    length(x) == length(idx) || throw(BoundsError(x, idx))
-    findall(idx)
-end
-
-# catch all method handling cases when type of idx is not narrowest possible, Any in particular
-@inline function Base.getindex(x::AbstractIndex, idxs::AbstractVector)
-    length(idxs) == 0 && return Int[] # special case of empty idxs
-    if idxs[1] isa Real
-        if !all(v -> v isa Integer && !(v isa Bool), idxs)
-            throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
-        end
-        return convert(Vector{Int}, idxs)
-    end
-    idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
-    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
-                        "Only Integer or Symbol values allowed when indexing by vector"))
-end
-
-@inline function Base.getindex(x::AbstractIndex, rx::Regex)
-    getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
 end
 
 # Helpers
@@ -246,7 +281,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
 end
 
 @inline parentcols(ind::Index) = Base.OneTo(length(ind))
-@inline parentcols(ind::Index, cols) = cols
+@inline parentcols(ind::Index, cols) = ind[cols]
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
@@ -282,6 +317,8 @@ Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
     [parentcols(ind, i) for i in _names(ind) if occursin(idx, String(i))]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Not) = parentcols(ind, ind[idx])
 
 Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
@@ -346,4 +383,8 @@ function Base.getindex(x::SubIndex, idx::Symbol)
     length(remap) == 0 && lazyremap!(x)
     remap[x.parent[idx]]
 end
-Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]
+
+function Base.getindex(x::SubIndex, idx::AbstractVector{Symbol})
+    allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
+    [x[i] for i in idx]
+end

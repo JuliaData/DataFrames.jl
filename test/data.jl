@@ -40,7 +40,7 @@ const ≅ = isequal
     @test df6[1,2] == 4
     df6[:D] = [true, false, true, false]
     @test df6[1,4]
-    deletecols!(df6, :D)
+    select!(df6, Not(:D))
     @test names(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
 
@@ -161,7 +161,12 @@ end
     @test dropmissing!(df1b) === df1b
     @test df1b == df1
 
-    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true], r"x2", r"x")
+    @test_throws ArgumentError completecases(DataFrame())
+    @test_throws MethodError completecases(DataFrame(x=1), true)
+
+    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true], :,
+                 r"x2", r"x", Not(1), Not([1]), Not(Int[]), Not([]), Not(Symbol[]),
+                 Not(1:0), Not([true, false]), Not(:x1), Not([:x1]))
         @test df2[completecases(df2, cols), :] == df2[[1, 2, 4], :]
         @test dropmissing(df2, cols) == df2[[1, 2, 4], :]
         returned = dropmissing(df1, cols)
@@ -220,8 +225,11 @@ end
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
     @test d1s == stack(d1, r"[ab]")
+    @test d1s == stack(d1, Not(r"[cde]"))
+    @test d1s == stack(d1, Not(Not(r"[ab]")))
     d1s2 = stack(d1, [:c, :d])
     @test d1s2 == stack(d1, r"[cd]")
+    @test d1s2 == stack(d1, Not([1, 2, 5]))
     d1s3 = stack(d1)
     d1m = melt(d1, [:c, :d, :e])
     @test d1m == melt(d1, r"[cde]")
@@ -437,6 +445,11 @@ df = vcat(df1, df1)
 @test findall(nonunique(df, :a)) == collect(3:12)
 @test findall(nonunique(df, [:a, :c])) == collect(7:12)
 @test findall(nonunique(df, r"[ac]")) == collect(7:12)
+@test findall(nonunique(df, Not(2))) == collect(7:12)
+@test findall(nonunique(df, Not([2]))) == collect(7:12)
+@test findall(nonunique(df, Not(:b))) == collect(7:12)
+@test findall(nonunique(df, Not([:b]))) == collect(7:12)
+@test findall(nonunique(df, Not([false, true, false]))) == collect(7:12)
 @test findall(nonunique(df, [1, 3])) == collect(7:12)
 @test findall(nonunique(df, 1)) == collect(3:12)
 
@@ -449,6 +462,11 @@ df = vcat(df1, df1)
 @test unique(df, [1, 3]) == df1
 @test unique(df, [:a, :c]) == df1
 @test unique(df, r"[ac]") == df1
+@test unique(df, Not(2)) == df1
+@test unique(df, Not([2])) == df1
+@test unique(df, Not(:b)) == df1
+@test unique(df, Not([:b])) == df1
+@test unique(df, Not([false, true, false])) == df1
 @test unique(df, :a) == df1[1:2,:]
 @test_throws ArgumentError unique(DataFrame())
 @test_throws ArgumentError nonunique(DataFrame())
@@ -457,9 +475,11 @@ df = vcat(df1, df1)
 unique!(df, [1, 3])
 @test df == df1
 
-df = vcat(df1, df1)
-unique!(df, r"[ac]")
-@test df == df1
+for cols in (r"[ac]", Not(:b), Not(2), Not([:b]), Not([2]), Not([false, true, false]))
+    df = vcat(df1, df1)
+    unique!(df, cols)
+    @test df == df1
+end
 
 #test filter() and filter!()
 df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
