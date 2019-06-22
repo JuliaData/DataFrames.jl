@@ -42,6 +42,10 @@ function getcolbc(bcf::Base.Broadcast.Broadcasted{Style}, colind) where {Style}
 end
 
 function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
+    ndim = length(axes(bc))
+    if ndim != 2
+        throw(DimensionMismatch("cannot broadcast a data frame into $ndim dimensions"))
+    end
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
     if length(colnames) != 1
@@ -128,6 +132,29 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     src
 end
 
+function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
+    wascopied = false
+    for (i, col) in enumerate(eachcol(src))
+        if Base.mightalias(dest, col)
+            if src isa SubDataFrame
+                if !wascopied
+                    src =SubDataFrame(copy(parent(src), copycols=false),
+                                      index(src), rows(src))
+                end
+                parentidx = parentcols(index(src), i)
+                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+            else
+                if !wascopied
+                    src = copy(src, copycols=false)
+                end
+                src[i] = Base.unaliascopy(col)
+            end
+            wascopied = true
+        end
+    end
+    src
+end
+
 function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector,
                                    src::AbstractDataFrame, col2::Int, wascopied::Bool)
     # col1 can be checked till col2 point as we are writing broadcasting
@@ -143,7 +170,6 @@ function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector
                 end
                 parentidx = parentcols(index(src), col2)
                 parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
-
             else
                 if !wascopied
                     src = copy(src, copycols=false)
