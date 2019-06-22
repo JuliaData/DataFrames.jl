@@ -870,4 +870,65 @@ end
     @test df == DataFrame(m)
 end
 
+@testset "data frame only on left hand side broadcasting assignment" begin
+    Random.seed!(1234)
+
+    m = rand(3,4);
+    m2 = copy(m);
+    m3 = copy(m);
+    df = DataFrame(a=view(m, :, 1), b=view(m, :, 1),
+                   c=view(m, :, 1), d=view(m, :, 1), copycols=false);
+    df2 = copy(df)
+    mdf = Matrix(df)
+
+    @test m .+ df == m2 .+ df
+    @test Matrix(m .+ df) == m .+ mdf
+    @test sin.(m .+ df) .+ 1 .+ m2 == sin.(m2 .+ df) .+ 1 .+ m
+    @test Matrix(m .+ df ./ 2 .* df2) == m .+ mdf ./ 2 .* mdf
+
+    m2 .+= df .+ 1 ./ df2
+    m .+= df .+ 1 ./ df2
+    @test m2 == m
+    for col in eachcol(df)
+        @test col == m[:, 1]
+    end
+    for col in eachcol(df2)
+        @test col == m3[:, 1]
+    end
+
+    m = rand(3,4);
+    m2 = copy(m);
+    m3 = copy(m);
+    df = view(DataFrame(a=view(m, :, 1), b=view(m, :, 1),
+                        c=view(m, :, 1), d=view(m, :, 1), copycols=false),
+              [3,2,1], :)
+    df2 = copy(df)
+    mdf = Matrix(df)
+
+    @test m .+ df == m2 .+ df
+    @test Matrix(m .+ df) == m .+ mdf
+    @test sin.(m .+ df) .+ 1 .+ m2 == sin.(m2 .+ df) .+ 1 .+ m
+    @test Matrix(m .+ df ./ 2 .* df2) == m .+ mdf ./ 2 .* mdf
+
+    m2 .+= df .+ 1 ./ df2
+    m .+= df .+ 1 ./ df2
+    @test m2 == m
+    for col in eachcol(df)
+        @test col == m[3:-1:1, 1]
+    end
+    for col in eachcol(df2)
+        @test col == m3[3:-1:1, 1]
+    end
+end
+
+@testset "broadcasting with 3-dimensional object" begin
+    y = zeros(4,3,2)
+    df = DataFrame(ones(4,3))
+    @test_throws DimensionMismatch df .+ y
+    @test_throws DimensionMismatch y .+ df
+    @test_throws DimensionMismatch df .+= y
+    y .+= df
+    @test all(y .== 1)
+end
+
 end # module
