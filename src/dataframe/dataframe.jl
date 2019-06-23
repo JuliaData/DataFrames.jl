@@ -287,12 +287,12 @@ ncol(df::DataFrame) = length(index(df))
         throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
                           "columns at index $col_ind"))
     end
-    @inbounds cols[col_ind]
+    @inbounds view(cols[col_ind], :)
 end
 
 function Base.getindex(df::DataFrame, col_ind::Symbol)
     selected_column = index(df)[col_ind]
-    return _columns(df)[selected_column]
+    return view(_columns(df)[selected_column], :)
 end
 
 # df[MultiColumnIndex] => DataFrame

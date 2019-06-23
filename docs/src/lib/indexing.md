@@ -44,7 +44,7 @@ If it is performed a description explicitly mentions that the data is *copied*.
 For performance reasons, accessing, via `getindex` or `view`, a single `row` and multiple `cols` of a `DataFrame`, a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view-like type).
 
 `DataFrame`:
-* `df[col]` -> the vector contained in column `col`;
+* `df[col]` -> a view of the vector contained in column `col`;
 * `df[cols]` -> a freshly allocated `DataFrame` containing the copies of vectors contained in columns `cols`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[col][row]`;
 * `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;

@@ -49,7 +49,7 @@ Columns can be accessed via `df.col` or `df[:col]`. The latter syntax is more fl
 
 ```jldoctest dataframe
 julia> df.A
-4-element Array{Int64,1}:
+4-element view(::Array{Int64,1}, :) with eltype Int64:
  1
  2
  3
@@ -273,7 +273,7 @@ we can observe that:
 
 ### Taking a Subset
 
-Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
+Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained, `Not` can be used for negation, and also regular expressions can be used for column selection:
 
 ```jldoctest dataframe
 julia> df[1:3, :]
@@ -328,7 +328,7 @@ julia> df[[3, 1], [:C]]
 │ 2   │ 1     │
 ```
 
-Do note that `df[[:A]]` and `df[:, [:A]]` return a `DataFrame` object, while `df[:A]` and `df[:, :A]` return a vector:
+Do note that `df[[:A]]` and `df[:, [:A]]` return a `DataFrame` object, while `df[:A]` and `df[:, :A]` return a vector view:
 
 ```jldoctest dataframe
 julia> df[[:A]]
@@ -351,7 +351,7 @@ julia> df[[:A]] == df[:, [:A]]
 true
 
 julia> df[:A]
-500-element Array{Int64,1}:
+500-element view(::Array{Int64,1}, :) with eltype Int64:
    1
    3
    5
@@ -369,23 +369,35 @@ julia> df[:A] == df[:, :A]
 true
 ```
 
-In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
+In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a view of a single column vector should be extracted.
 
-It is also possible to use a regular expression as a selector of columns matching it:
+It is also possible to use a regular expression as a selector of columns matching it. Finally you can use `Not` to negate any column or row selection (here we give an example of negating selection of columns and of rows).
 ```jldoctest dataframe
-julia> df = DataFrame(x1=1, x2=2, y=3)
-1×3 DataFrame
+julia> df = DataFrame(x1=1:3, x2=11:13, y=21:23)
+3×3 DataFrame
 │ Row │ x1    │ x2    │ y     │
 │     │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+│ 1   │ 1     │ 11    │ 21    │
+│ 2   │ 2     │ 12    │ 22    │
+│ 3   │ 3     │ 13    │ 23    │
 
 julia> df[r"x"]
-1×2 DataFrame
+3×2 DataFrame
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+
+julia> df[Not(2), Not(r"y")]
+2×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 3     │ 13    │
 ```
 
 The indexing syntax can also be used to select rows based on conditions on variables:
@@ -513,7 +525,7 @@ On the other hand, in-place functions, whose names end with `!`, may mutate the 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
 
-julia> df = DataFrame(x=x)
+julia> df = DataFrame(x=x, copycols=false)
 3×1 DataFrame
 │ Row │ x     │
 │     │ Int64 │
@@ -562,7 +574,7 @@ or when a `DataFrame` created with `copycols=false` (or with the `DataFrame!` fu
 are in use.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
-using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,
+using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function
 by accessing a `parent` of a `view` of a column of a `DataFrame`,
 or simply by storing the reference to the column vector before the `DataFrame`
 was created with `copycols=false` (or with the `DataFrame!` function).

@@ -44,10 +44,10 @@ The return value can have two concrete types:
 
 * If the `eachcol` function is called with the `names` argument set to `true` then it returns a value of the
   `DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}` type, which is an
-  iterator returning a pair containing the column name and the column vector.
+  iterator returning a pair containing the column name and the veiw of a column vector.
 * If the `eachcol` function is called with `names` argument set to `false` (the default) then it returns a value of the
   `DataFrameColumns{<:AbstractDataFrame, AbstractVector}` type, which is an
-  iterator returning the column vector only.
+  iterator returning the view of a column vector only.
 
 The `DataFrameRows` and `DataFrameColumns` types are subtypes of `AbstractVector` and support its interface
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,

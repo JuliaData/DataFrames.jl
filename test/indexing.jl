@@ -6,6 +6,7 @@ using Test, DataFrames
     df = DataFrame(a=1:3, b=4:6, c=7:9)
 
     @test df[1] == [1, 2, 3]
+    @test df[1] isa SubArray
     @test df[1] === eachcol(df)[1]
     @test df[1:2] == DataFrame(a=1:3, b=4:6)
     @test df[r"[ab]"] == DataFrame(a=1:3, b=4:6)
