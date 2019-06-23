@@ -139,7 +139,7 @@ function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
             if src isa SubDataFrame
                 if !wascopied
                     src = SubDataFrame(copy(parent(src), copycols=false),
-                                      index(src), rows(src))
+                                       index(src), rows(src))
                 end
                 parentidx = parentcols(index(src), i)
                 parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
