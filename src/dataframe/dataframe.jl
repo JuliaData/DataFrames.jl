@@ -1012,8 +1012,11 @@ end
 # definition required to avoid hcat! ambiguity
 function hcat!(df1::DataFrame, df2::DataFrame;
                makeunique::Bool=false, copycols::Bool=true)
-    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2,
-           makeunique=makeunique, copycols=copycols)::DataFrame
+    u = add_names(index(df1), index(df2), makeunique=makeunique)
+    for i in 1:length(u)
+        df1[u[i]] = copycols ? copy(_columns(df2)) : _columns(df2)[i]
+    end
+    return df1
 end
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
