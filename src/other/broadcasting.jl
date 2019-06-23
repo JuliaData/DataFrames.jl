@@ -138,7 +138,7 @@ function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
         if Base.mightalias(dest, col)
             if src isa SubDataFrame
                 if !wascopied
-                    src =SubDataFrame(copy(parent(src), copycols=false),
+                    src = SubDataFrame(copy(parent(src), copycols=false),
                                       index(src), rows(src))
                 end
                 parentidx = parentcols(index(src), i)

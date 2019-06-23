@@ -87,10 +87,9 @@ Under construction
 The following broadcasting rules apply to `AbstractDataFrame` objects:
 * `AbstractDataFrame` behaves in broadcasting like a two-dimensional collection compatible with matrices.
 * If an `AbstractDataFrame` takes part in broadcasting then a `DataFrame` is always produced as a result.
-  In this case the requested broadcasting operation must produce exactly two dimensional object.
+  In this case the requested broadcasting operation produce an object with exactly two dimensions.
   An exception is when an `AbstractDataFrame` is used only as a source of broadcast assignment into an object
-  of dimensionality higher than two. In such a case this is allowed and a data frame is treated as two-dimensional
-  collection compatible with matrices.
+  of dimensionality higher than two.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 
 It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
