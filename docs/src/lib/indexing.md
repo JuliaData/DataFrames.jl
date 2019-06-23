@@ -47,6 +47,7 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 * `df[col]` -> the vector contained in column `col`;
 * `df[cols]` -> a freshly allocated `DataFrame` containing the copies of vectors contained in columns `cols`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[col][row]`;
+* `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
 * `df[rows, col]` -> a copy of the vector `df[col]` with only the entries corresponding to `rows` selected, the same as `df[col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected.
@@ -82,6 +83,14 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 Under construction
 
 ## Broadcasting
+
+The following broadcasting rules apply to `AbstractDataFrame` objects:
+* `AbstractDataFrame` behaves in broadcasting like a two-dimensional collection compatible with matrices.
+* If an `AbstractDataFrame` takes part in broadcasting then a `DataFrame` is always produced as a result.
+  In this case the requested broadcasting operation produce an object with exactly two dimensions.
+  An exception is when an `AbstractDataFrame` is used only as a source of broadcast assignment into an object
+  of dimensionality higher than two.
+* If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 
 It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
 In such an operation `AbstractDataFrame` is considered as two-dimensional and `DataFrameRow` as single-dimensional.

@@ -1,10 +1,136 @@
 module TestBroadcasting
 
-using Test, DataFrames
+using Test, DataFrames, PooledArrays, Random
 
 const ≅ = isequal
 
 refdf = DataFrame(reshape(1.5:15.5, (3,5)))
+
+@testset "CartesianIndex" begin
+    df = DataFrame(rand(2, 3))
+    for i in axes(df, 1), j in axes(df, 2)
+        @test df[i,j] == df[CartesianIndex(i,j)]
+        r = rand()
+        df[CartesianIndex(i,j)] = r
+        @test df[i,j] == r
+    end
+    @test_throws BoundsError df[CartesianIndex(0,1)]
+    @test_throws BoundsError df[CartesianIndex(0,0)]
+    @test_throws BoundsError df[CartesianIndex(1,0)]
+    @test_throws BoundsError df[CartesianIndex(5,1)]
+    @test_throws BoundsError df[CartesianIndex(5,5)]
+    @test_throws BoundsError df[CartesianIndex(1,5)]
+
+    @test_throws BoundsError df[CartesianIndex(0,1)] = 1
+    @test_throws ArgumentError df[CartesianIndex(0,0)] = 1
+    @test_throws ArgumentError df[CartesianIndex(1,0)] = 1
+    @test_throws BoundsError df[CartesianIndex(5,1)] = 1
+    @test_throws ArgumentError df[CartesianIndex(5,5)] = 1
+    @test_throws ArgumentError df[CartesianIndex(1,5)] = 1
+end
+
+@testset "broadcasting of AbstractDataFrame objects" begin
+    for df in (copy(refdf), view(copy(refdf), :, :))
+        @test identity.(df) == refdf
+        @test identity.(df) !== df
+        @test (x->x).(df) == refdf
+        @test (x->x).(df) !== df
+        @test (df .+ df) ./ 2 == refdf
+        @test (df .+ df) ./ 2 !== df
+        @test df .+ Matrix(df) == 2 .* df
+        @test Matrix(df) .+ df == 2 .* df
+        @test (Matrix(df) .+ df .== 2 .* df) == DataFrame(trues(size(df)), names(df))
+        @test df .+ 1 == df .+ ones(size(df))
+        @test df .+ axes(df, 1) == DataFrame(Matrix(df) .+ axes(df, 1), names(df))
+        @test df .+ permutedims(axes(df, 2)) == DataFrame(Matrix(df) .+ permutedims(axes(df, 2)), names(df))
+    end
+
+    df1 = copy(refdf)
+    df2 = view(copy(refdf), :, :)
+    @test (df1 .+ df2) ./ 2 == refdf
+    @test (df1 .- df2) == DataFrame(zeros(size(refdf)))
+    @test (df1 .* df2) == refdf .^ 2
+    @test (df1 ./ df2) == DataFrame(ones(size(refdf)))
+end
+
+@testset "broadcasting of AbstractDataFrame objects errors" begin
+    df = copy(refdf)
+    dfv = view(df, :, 2:ncol(df))
+
+    @test_throws DimensionMismatch df .+ dfv
+    @test_throws DimensionMismatch df .+ df[2:end, :]
+
+    @test_throws DimensionMismatch df .+ [1, 2]
+    @test_throws DimensionMismatch df .+ [1 2]
+    @test_throws DimensionMismatch df .+ rand(2,2)
+    @test_throws DimensionMismatch dfv .+ [1, 2]
+    @test_throws DimensionMismatch dfv .+ [1 2]
+    @test_throws DimensionMismatch dfv .+ rand(2,2)
+
+    df2 = copy(df)
+    names!(df2, [:x1, :x2, :x3, :x4, :y])
+    @test_throws ArgumentError df .+ df2
+    @test_throws ArgumentError df .+ 1 .+ df2
+end
+
+@testset "broadcasting expansion" begin
+    df1 = DataFrame(x=1, y=2)
+    df2 = DataFrame(x=[1,11], y=[2,12])
+    @test df1 .+ df2 == DataFrame(x=[2,12], y=[4,14])
+
+    df1 = DataFrame(x=1, y=2)
+    df2 = DataFrame(x=[1,11], y=[2,12])
+    x = df2.x
+    y = df2.y
+    df2 .+= df1
+    @test df2.x === x
+    @test df2.y === y
+    @test df2 == DataFrame(x=[2,12], y=[4,14])
+
+    df = DataFrame(x=[1,11], y=[2,12])
+    dfv = view(df, 1:1, 1:2)
+    df .-= dfv
+    @test df == DataFrame(x=[0,10], y=[0,10])
+end
+
+@testset "broadcasting of AbstractDataFrame objects corner cases" begin
+    df = DataFrame(c11 = categorical(["a", "b"]), c12 = categorical([missing, "b"]), c13 = categorical(["a", missing]),
+                   c21 = categorical([1, 2]), c22 = categorical([missing, 2]), c23 = categorical([1, missing]),
+                   p11 = PooledArray(["a", "b"]), p12 = PooledArray([missing, "b"]), p13 = PooledArray(["a", missing]),
+                   p21 = PooledArray([1, 2]), p22 = PooledArray([missing, 2]), p23 = PooledArray([1, missing]),
+                   b1 = [true, false], b2 = [missing, false], b3 = [true, missing],
+                   f1 = [1.0, 2.0], f2 = [missing, 2.0], f3 = [1.0, missing],
+                   s1 = ["a", "b"], s2 = [missing, "b"], s3 = ["a", missing])
+
+    df2 = DataFrame(c11 = categorical(["a", "b"]), c12 = [nothing, "b"], c13 = ["a", nothing],
+                    c21 = categorical([1, 2]), c22 = [nothing, 2], c23 = [1, nothing],
+                    p11 = ["a", "b"], p12 = [nothing, "b"], p13 = ["a", nothing],
+                    p21 = [1, 2], p22 = [nothing, 2], p23 = [1, nothing],
+                    b1 = [true, false], b2 = [nothing, false], b3 = [true, nothing],
+                    f1 = [1.0, 2.0], f2 = [nothing, 2.0], f3 = [1.0, nothing],
+                    s1 = ["a", "b"], s2 = [nothing, "b"], s3 = ["a", nothing])
+
+    @test df ≅ identity.(df)
+    @test df ≅ (x->x).(df)
+    df3 = coalesce.(df, nothing)
+    @test df2 == df3
+    @test eltypes(df2) == eltypes(df3)
+    for i in axes(df, 2)
+        @test typeof(df2[i]) == typeof(df3[i])
+    end
+    df4 = (x -> df[1,1]).(df)
+    @test names(df4) == names(df)
+    @test all(isa.(eachcol(df4), Ref(CategoricalArray)))
+    @test all(eachcol(df4) .== Ref(categorical(["a", "a"])))
+
+    df5 = DataFrame(x = Any[1, 2, 3], y = Any[1, 2.0, big(3)])
+    @test identity.(df5) == df5
+    @test (x->x).(df5) == df5
+    @test df5 .+ 1 == DataFrame(Matrix(df5) .+ 1, names(df5))
+    @test eltypes(identity.(df5)) == [Int, BigFloat]
+    @test eltypes((x->x).(df5)) == [Int, BigFloat]
+    @test eltypes(df5 .+ 1) == [Int, BigFloat]
+end
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
     df = copy(refdf)
@@ -531,6 +657,278 @@ end
         @test df.c5 isa CategoricalVector
         @test length(levels(df.c5)) == 1
     end
+end
+
+@testset "scalar broadcasting" begin
+    a = DataFrame(x = zeros(2))
+    a .= 1 ./ (1 + 2)
+    @test a.x == [1/3, 1/3]
+    a .= 1 ./ (1 .+ 3)
+    @test a.x == [1/4, 1/4]
+    a .= sqrt.(1 ./ 2)
+    @test a.x == [sqrt(1/2), sqrt(1/2)]
+end
+
+@testset "tuple broadcasting" begin
+    X = DataFrame(zeros(2, 3))
+    X .= (1, 2)
+    @test X == DataFrame([1 1 1; 2 2 2])
+
+    X = DataFrame(zeros(2, 3))
+    X .= (1, 2) .+ 10 .- X
+    @test X == DataFrame([11 11 11; 12 12 12])
+
+    X = DataFrame(zeros(2, 3))
+    X .+= (1, 2) .+ 10
+    @test X == DataFrame([11 11 11; 12 12 12])
+
+    df = DataFrame(rand(2, 3))
+    @test floor.(Int, df ./ (1,)) == DataFrame(zeros(Int, 2, 3))
+    df .= floor.(Int, df ./ (1,))
+    @test df == DataFrame(zeros(2, 3))
+
+    df = DataFrame(rand(2, 3))
+    @test_throws InexactError convert.(Int, df)
+    df2 = convert.(Int, floor.(df))
+    @test df2 == DataFrame(zeros(Int, 2, 3))
+    @test eltypes(df2) == [Int, Int, Int]
+end
+
+@testset "scalar on assignment side" begin
+    df = DataFrame(rand(2, 3))
+    df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test df[1, 1] == 0
+    df[1, 2] .-= df[1, 2]
+    @test df[1, 2] == 0
+end
+
+@testset "nothing test" begin
+    X = DataFrame(Any[1 2; 3 4])
+    X .= nothing
+    @test (X .== nothing) == DataFrame(trues(2, 2))
+end
+
+@testset "aliasing test" begin
+    df = DataFrame(x=[1, 2])
+    y = view(df.x, [2, 1])
+    df .= y
+    @test df.x == [2, 1]
+
+    df = DataFrame(x=[1, 2])
+    y = view(df.x, [2, 1])
+    dfv = view(df, :, :)
+    dfv .= y
+    @test df.x == [2, 1]
+
+    df = DataFrame(x=2, y=1, z=1)
+    dfr = df[1, :]
+    y = view(df.x, 1)
+    dfr .= 2 .* y
+    @test Vector(dfr) == [4, 4, 4]
+
+    df = DataFrame(x=[1, 2], y=[11,12])
+    df2 = DataFrame()
+    df2.x = [-1, -2]
+    df2.y = df.x
+    df3 = copy(df2)
+    df .= df2
+    @test df == df3
+
+    Random.seed!(1234)
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+        end
+        df3 = copy(df2)
+        df1 .= df2
+        @test df1 == df3
+        @test df2 != df3
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+        end
+        df3 = copy(df2)
+        df1 .= view(df2, :, :)
+        @test df1 == df3
+        @test df2 != df3
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+        end
+        df3 = copy(df2)
+        view(df1, :, :) .= df2
+        @test df1 == df3
+        @test df2 != df3
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        df3 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+            df3[rand(1:100)] = df1[i]
+        end
+        df6 = copy(df2)
+        df7 = copy(df3)
+        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
+        df5 = sin.(view(df1,1,1) .+ df1[1] .+ df2 ./ df3)
+        df1 .= sin.(view(df1,1,1) .+ df1[1] .+ df2 ./ df3)
+        @test df1 == df4 == df5
+        @test df2 != df6
+        @test df3 != df7
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        df3 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+            df3[rand(1:100)] = df1[i]
+        end
+        df6 = copy(df2)
+        df7 = copy(df3)
+        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
+        df5 = sin.(view(df1,1,1) .+ df1[1] .+ view(df2, :, :) ./ df3)
+        df1 .= sin.(view(df1[1],1) .+ view(df1[1], :) .+ df2 ./ view(df3, :, :))
+        @test df1 == df4 == df5
+        @test df2 != df6
+        @test df3 != df7
+    end
+
+    for i in 1:10
+        df1 = DataFrame(rand(100, 100))
+        df2 = copy(df1)
+        df3 = copy(df1)
+        for i in 1:100
+            df2[rand(1:100)] = df1[i]
+            df3[rand(1:100)] = df1[i]
+        end
+        df6 = copy(df2)
+        df7 = copy(df3)
+        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[1]) .+ Matrix(df2) ./ Matrix(df3)))
+        df5 = sin.(view(df1,1,1) .+ df1[1] .+ view(df2, :, :) ./ df3)
+        view(df1, :, :) .= sin.(view(df1[1],1) .+ view(df1[1], :) .+ df2 ./ view(df3, :, :))
+        @test df1 == df4 == df5
+        @test df2 != df6
+        @test df3 != df7
+    end
+end
+
+@testset "@. test" begin
+    df = DataFrame(rand(2, 3))
+    sdf = view(df, 1:1, :)
+    dfm = Matrix(df)
+    sdfm = Matrix(sdf)
+
+    r1 = @. (df + sdf + 5) / sdf
+    r2 = @. (df + sdf + 5) / sdf
+    @test r1 == DataFrame(r2)
+
+    @. df = sin(sdf / (df + 1))
+    @. dfm = sin(sdfm / (dfm + 1))
+    @test df == DataFrame(dfm)
+end
+
+@testset "test common cases" begin
+    m = rand(1000, 10)
+    df = DataFrame(m)
+    @test df .+ 1 == DataFrame(m .+ 1)
+    @test df .+ transpose(1:10) == DataFrame(m .+ transpose(1:10))
+    @test df .+ (1:1000) == DataFrame(m .+ (1:1000))
+    @test df .+ m == DataFrame(m .+ m)
+    @test m .+ df == DataFrame(m .+ m)
+    @test df .+ df == DataFrame(m .+ m)
+
+    df .+= 1
+    m .+= 1
+    @test df == DataFrame(m)
+    df .+= transpose(1:10)
+    m .+= transpose(1:10)
+    @test df == DataFrame(m)
+    df .+= (1:1000)
+    m .+= (1:1000)
+    @test df == DataFrame(m)
+    df .+= df
+    m .+= m
+    @test df == DataFrame(m)
+    df2 = copy(df)
+    m2 = copy(m)
+    df .+= df .+ df2 .+ m2 .+ 1
+    m .+= m .+ df2 .+ m2 .+ 1
+    @test df == DataFrame(m)
+end
+
+@testset "data frame only on left hand side broadcasting assignment" begin
+    Random.seed!(1234)
+
+    m = rand(3,4);
+    m2 = copy(m);
+    m3 = copy(m);
+    df = DataFrame(a=view(m, :, 1), b=view(m, :, 1),
+                   c=view(m, :, 1), d=view(m, :, 1), copycols=false);
+    df2 = copy(df)
+    mdf = Matrix(df)
+
+    @test m .+ df == m2 .+ df
+    @test Matrix(m .+ df) == m .+ mdf
+    @test sin.(m .+ df) .+ 1 .+ m2 == sin.(m2 .+ df) .+ 1 .+ m
+    @test Matrix(m .+ df ./ 2 .* df2) == m .+ mdf ./ 2 .* mdf
+
+    m2 .+= df .+ 1 ./ df2
+    m .+= df .+ 1 ./ df2
+    @test m2 == m
+    for col in eachcol(df)
+        @test col == m[:, 1]
+    end
+    for col in eachcol(df2)
+        @test col == m3[:, 1]
+    end
+
+    m = rand(3,4);
+    m2 = copy(m);
+    m3 = copy(m);
+    df = view(DataFrame(a=view(m, :, 1), b=view(m, :, 1),
+                        c=view(m, :, 1), d=view(m, :, 1), copycols=false),
+              [3,2,1], :)
+    df2 = copy(df)
+    mdf = Matrix(df)
+
+    @test m .+ df == m2 .+ df
+    @test Matrix(m .+ df) == m .+ mdf
+    @test sin.(m .+ df) .+ 1 .+ m2 == sin.(m2 .+ df) .+ 1 .+ m
+    @test Matrix(m .+ df ./ 2 .* df2) == m .+ mdf ./ 2 .* mdf
+
+    m2 .+= df .+ 1 ./ df2
+    m .+= df .+ 1 ./ df2
+    @test m2 == m
+    for col in eachcol(df)
+        @test col == m[3:-1:1, 1]
+    end
+    for col in eachcol(df2)
+        @test col == m3[3:-1:1, 1]
+    end
+end
+
+@testset "broadcasting with 3-dimensional object" begin
+    y = zeros(4,3,2)
+    df = DataFrame(ones(4,3))
+    @test_throws DimensionMismatch df .+ y
+    @test_throws DimensionMismatch y .+ df
+    @test_throws DimensionMismatch df .+= y
+    y .+= df
+    @test y == ones(4,3,2)
 end
 
 end # module
