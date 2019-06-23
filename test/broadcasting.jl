@@ -928,7 +928,7 @@ end
     @test_throws DimensionMismatch y .+ df
     @test_throws DimensionMismatch df .+= y
     y .+= df
-    @test all(y .== 1)
+    @test y == ones(4,3,2)
 end
 
 end # module
