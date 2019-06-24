@@ -160,7 +160,9 @@ end
     df3 = hcat(df1, dfv, copycols=false)
     @test names(df3) == [:a, :b]
     @test df3.a === df1.a
-    @test df3.b === dfv.b
+    @test df3.b == dfv.b
+    @test df3.b isa SubArray
+    @test parent(df3.b) == parent(dfv.b)
 
     df3 = hcat(df1, x)
     @test names(df3) == [:a, :x1]
@@ -177,7 +179,8 @@ end
     df3 = hcat(df1, x, copycols=false)
     @test names(df3) == [:a, :x1]
     @test df3.a === df1.a
-    @test df3.x1 === x
+    @test df3.x1 == x
+    @test parent(df3.x1) === x
 
     df3 = hcat(x, df1)
     @test names(df3) == [:x1, :a]
@@ -194,7 +197,8 @@ end
     df3 = hcat(x, df1, copycols=false)
     @test names(df3) == [:x1, :a]
     @test df3.a === df1.a
-    @test df3.x1 === x
+    @test df3.x1 == x
+    @test parent(df3.x1) === x
 
     df3 = hcat(dfv, x, df1)
     @test names(df3) == [:b, :x1, :a]
@@ -215,8 +219,11 @@ end
     df3 = hcat(dfv, x, df1, copycols=false)
     @test names(df3) == [:b, :x1, :a]
     @test df3.a === df1.a
-    @test df3.b === dfv.b
-    @test df3.x1 === x
+    @test df3.b == dfv.b
+    @test df3.b isa SubArray
+    @test parent(df3.b) == parent(dfv.b)
+    @test df3.x1 == x
+    @test parent(df3.x1) === x
 end
 #
 # vcat
