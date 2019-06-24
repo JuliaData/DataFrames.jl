@@ -30,8 +30,8 @@ export AbstractDataFrame,
        categorical!,
        combine,
        completecases,
-       deletecols!,
-       deletecols,
+       deletecols!, # TODO: remove export after deprecation period
+       deletecols,  # TODO: remove export after deprecation period
        deleterows!,
        describe,
        disallowmissing!,
