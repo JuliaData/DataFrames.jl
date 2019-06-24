@@ -239,7 +239,7 @@ appended to the input column name; for other functions, columns are called `x1`,
 and so on.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
-`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
 are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
@@ -372,7 +372,7 @@ and so on. The resulting data frame will be sorted if `sort=true` was passed to 
 is undefined.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
-`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
 are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
