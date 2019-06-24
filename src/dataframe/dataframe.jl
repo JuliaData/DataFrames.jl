@@ -1014,7 +1014,7 @@ function hcat!(df1::DataFrame, df2::DataFrame;
                makeunique::Bool=false, copycols::Bool=true)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
-        df1[u[i]] = copycols ? copy(_columns(df2)) : _columns(df2)[i]
+        df1[u[i]] = copycols ? copy(_columns(df2)[i]) : _columns(df2)[i]
     end
     return df1
 end
