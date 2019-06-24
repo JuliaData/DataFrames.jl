@@ -1362,14 +1362,6 @@ import Base: show
 @deprecate showall(io::IO, df::GroupedDataFrame) show(io, df, allgroups=true)
 @deprecate showall(df::GroupedDataFrame) show(df, allgroups=true)
 
-import Base: delete!, insert!, merge!
-@deprecate delete!(df::AbstractDataFrame, cols::Any) deletecols!(df, cols)
-@deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcols!(df, col_ind, name => item; makeunique=makeunique)
-@deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[col] = df2[col], names(df2)); df1)
-
-import Base: setindex!
-@deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) deletecols!(df, col_ind)
-
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
 @deprecate map(f::Union{Function,Type}, dfc::DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)
@@ -1404,7 +1396,7 @@ import Base: haskey
 @deprecate haskey(df::AbstractDataFrame, key::Any) key in 1:ncol(df) || key in names(df)
 
 import Base: empty!
-@deprecate empty!(df::DataFrame) deletecols!(df, 1:ncol(df))
+@deprecate empty!(df::DataFrame) select!(df, Int[])
 
 @deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
 @deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)

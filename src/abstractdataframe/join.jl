@@ -406,8 +406,11 @@ function Base.join(df1::AbstractDataFrame,
         end
         joined[unique_indicator] = indicatorcol
 
-        deletecols!(joined, Symbol(indicator_cols[1]))
-        deletecols!(joined, Symbol(indicator_cols[2]))
+        for colname in indicator_cols
+            i = index(joined)[Symbol(colname)]
+            splice!(_columns(joined), i)
+            delete!(index(joined), i)
+        end
     end
 
     return joined
