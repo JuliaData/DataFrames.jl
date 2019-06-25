@@ -1,6 +1,6 @@
 import Base: @deprecate
 
-@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(Matrix{t}(undef, nrows, ncols))
+@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame([Vector{t}(undef, nrows) for i in 1:ncols])
 
 @deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
                      nrows::Integer) DataFrame(column_eltypes, Symbol.('x' .* string.(1:length(column_eltypes))), nrows)
