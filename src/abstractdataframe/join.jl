@@ -397,8 +397,8 @@ function Base.join(df1::AbstractDataFrame,
     if indicator !== nothing
         refs = UInt8.(coalesce.(joined[df1_ind], false) .+
                       2 .* coalesce.(joined[df2_ind], false))
-        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]
-        indicatorcol = CategoricalArray{String,1}(refs, pool))
+        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
+        indicatorcol = CategoricalArray{String,1}(refs, pool)
         unique_indicator = indicator
         try_idx = 0
         while hasproperty(joined, unique_indicator)
