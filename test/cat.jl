@@ -336,24 +336,24 @@ end
 @testset "vcat mixed coltypes" begin
     df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
     @test df == DataFrame([[1.0, 1.0]], [:x])
-    @test typeof.(eachcol(df)) == [Vector{Float64}]
+    @test all(isa.(eachcol(df), SubArray{Float64, 1}))
     df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
-    @test typeof.(eachcol(df)) == [Vector{Any}]
+    @test all(isa.(eachcol(df), SubArray{Any, 1}))
     df = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
-    @test typeof.(eachcol(df)) == [Vector{Union{Missing, Int}}]
+    @test all(isa.(eachcol(df), SubArray{Union{Missing, Int}, 1}))
     df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
-    @test df[:x] isa Vector{Int}
+    @test df.x isa SubArray{Int, 1}
     df = vcat(DataFrame([CategoricalArray([1])], [:x]),
               DataFrame([Union{Missing, Int}[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
-    @test df[:x] isa Vector{Union{Int, Missing}}
+    @test df.x isa SubArray{Union{Int, Missing}, 1}
     df = vcat(DataFrame([CategoricalArray([1])], [:x]),
               DataFrame([CategoricalArray{Union{Int, Missing}}([1])], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
-    @test df[:x] isa CategoricalVector{Union{Int, Missing}}
+    @test df.x isa CategoricalVector{Union{Int, Missing}}
     df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
               DataFrame([["1"]], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
