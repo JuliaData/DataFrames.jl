@@ -1368,7 +1368,7 @@ import Base: delete!, insert!, merge!
 @deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcols!(df, col_ind, name => item; makeunique=makeunique)
 @deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[col] = df2[col], names(df2)); df1)
 
- import Base: setindex!
+import Base: setindex!
 @deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) select!(df, Not(col_ind))
 
 import Base: map
