@@ -306,9 +306,11 @@ function Base.join(df1::AbstractDataFrame,
             end
         end
         df1 = copy(df1, copycols=false)
-        df1[Symbol(indicator_cols[1])] = trues(nrow(df1))
+        df1_ind = Symbol(indicator_cols[1])
+        df1[df1_ind] = trues(nrow(df1))
         df2 = copy(df2, copycols=false)
-        df2[Symbol(indicator_cols[2])] = trues(nrow(df2))
+        df2_ind = Symbol(indicator_cols[2])
+        df2[df2_ind] = trues(nrow(df2))
     end
 
     if kind == :cross
@@ -393,11 +395,10 @@ function Base.join(df1::AbstractDataFrame,
     end
 
     if indicator !== nothing
-        left = joined[Symbol(indicator_cols[1])]
-        right = joined[Symbol(indicator_cols[2])]
-
-        refs = UInt8[coalesce(l, false) + 2 * coalesce(r, false) for (l, r) in zip(left, right)]
-        indicatorcol = CategoricalArray{String,1}(refs, CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]))
+        refs = UInt8.(coalesce.(joined[df1_ind], false) .+
+                      2 .* coalesce.(joined[df2_ind], false))
+        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
+        indicatorcol = CategoricalArray{String,1}(refs, pool)
         unique_indicator = indicator
         try_idx = 0
         while hasproperty(joined, unique_indicator)
@@ -405,9 +406,7 @@ function Base.join(df1::AbstractDataFrame,
             unique_indicator = Symbol(string(indicator, "_", try_idx))
         end
         joined[unique_indicator] = indicatorcol
-
-        deletecols!(joined, Symbol(indicator_cols[1]))
-        deletecols!(joined, Symbol(indicator_cols[2]))
+        select!(joined, Not([df1_ind, df2_ind]))
     end
 
     return joined
