@@ -1508,3 +1508,63 @@ end
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
     permutecols!(df, index(df)[p])
 end
+
+##############################################################################
+##
+## Expand & Complete dataframes
+##
+##############################################################################
+
+
+function expanddf(df::AbstractDataFrame, indexcols::Array{Symbol,1})
+    colnames = names(df)
+    # Check to make sure the symbols in indexcols are in the df
+    for i in indexcols
+        if i ∉ colnames
+            throw(ArgumentError(":$i is not in dataframe"))
+        end
+    end
+    dummydf = similar(df[indexcols],0)
+
+    # Create a dictionary of symbol=>vector of unique values
+    uniqueVals = Dict{Symbol, Array{Any,1}}()
+    for col in indexcols
+        uniqueVals[col] = unique(df[col])
+    end
+
+    # Get a long vector of every possible combination
+    collected = collect(flatten(product(values(uniqueVals)...)))
+    dfsize = div(length(collected),length(indexcols))
+
+    # Re-format to dataframe
+    for i in 1:length(indexcols):length(collected)
+        push!(dummydf, collected[i:(i+length(indexcols)-1)])
+    end
+
+    return dummydf
+end
+
+function completedf(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missing::Any)
+    colnames = names(df)
+    # Check to make sure the symbols in indexcols are in the df
+    for i in indexcols
+        if i ∉ colnames
+            throw(ArgumentError(":$i is not in dataframe"))
+        end
+    end
+
+    # Expand the input df and left join
+    expanded = expanddf(df, indexcols)
+    expanded = join(expanded, df; on = indexcols, kind = :left)
+
+    # Replace missing values with the fill
+    if !ismissing(fill)
+        for i in names(expanded)
+            if i ∉ indexcols
+                expanded[i] = coalesce.(expanded[i],fill)
+            end
+        end
+    end
+
+    return expanded
+end
