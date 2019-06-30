@@ -591,7 +591,7 @@ function groupreduce!(res, f, op, condf, adjust,
     @inbounds for i in eachindex(incol, gd.groups)
         gix = gd.groups[i]
         x = incol[i]
-        if condf === nothing || condf(x)
+        if gix > 0 && (condf === nothing || condf(x))
             res[gix] = op(res[gix], f(x, gix))
             adjust !== nothing && (counts[gix] += 1)
         end
