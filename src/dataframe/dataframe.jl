@@ -280,8 +280,8 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-# df[SingleColumnIndex] => AbstractVector, the same vector
-@inline function Base.getindex(df::DataFrame, col_ind::Union{Signed, Unsigned})
+# df[!, SingleColumnIndex] => AbstractVector, the same vector
+@inline function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Signed, Unsigned})
     cols = _columns(df)
     @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
         throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
@@ -290,20 +290,17 @@ ncol(df::DataFrame) = length(index(df))
     @inbounds cols[col_ind]
 end
 
-function Base.getindex(df::DataFrame, col_ind::Symbol)
+function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Symbol)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
 
-# df[MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex, Not})
-    selected_columns = index(df)[col_inds]
-    new_columns = _columns(df)[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
-end
+# df[!, MultiColumnIndex] => DataFrame
+Base.getindex(df::DataFrame, ::typeof(!), col_inds::Union{AbstractVector, Regex, Not}) =
+    select(df, col_inds, copycols=false)
 
-# df[:] => DataFrame
-Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
+# df[!, :] => DataFrame
+Base.getindex(df::DataFrame, ::typeof(!), col_inds::Colon) = copy(df, copycols=false)
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 @inline function Base.getindex(df::DataFrame, row_ind::Integer,

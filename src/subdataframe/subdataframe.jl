@@ -79,9 +79,11 @@ rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
 Base.parentindices(sdf::SubDataFrame) = (rows(sdf), parentcols(index(sdf)))
 
-Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, ::typeof(!), colinds) = view(adf, :, colinds)
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
-    view(adf[colind], rowinds)
+    view(adf[!, colind], rowinds)
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, ::typeof(!), colind::ColumnIndex) =
+    view(adf[!, colind], :)
 @inline Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
     throw(ArgumentError("invalid column index $colind of type `Bool`"))
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds,
@@ -102,11 +104,13 @@ index(sdf::SubDataFrame) = getfield(sdf, :colindex)
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!), colind::ColumnIndex) =
     view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colinds::Union{AbstractVector, Regex, Not}) =
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!),
+                                       colinds::Union{AbstractVector, Regex, Not}) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), colinds))
-@inline Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
+@inline Base.getindex(sdf::SubDataFrame, ::typeof(!), ::Colon) = sdf
+
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{AbstractVector, Not},

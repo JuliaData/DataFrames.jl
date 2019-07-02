@@ -30,7 +30,8 @@ The rules for a valid type of index into a row are the following:
 * a vector, later denoted as `rows`:
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of `AbstractVector{<:Integer}`);
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
-    * a colon.
+    * a colon `:`
+    * an exclamation mark `!`
 
 In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFrame` and `dfr` is a `DataFrameRow`.
 
@@ -44,32 +45,32 @@ If it is performed a description explicitly mentions that the data is *copied*.
 For performance reasons, accessing, via `getindex` or `view`, a single `row` and multiple `cols` of a `DataFrame`, a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view-like type).
 
 `DataFrame`:
-* `df[col]` -> the vector contained in column `col`;
-* `df[cols]` -> a freshly allocated `DataFrame` containing the copies of vectors contained in columns `cols`;
+* `df[!, col]` -> the vector contained in column `col`;
+* `df[!, cols]` -> a freshly allocated `DataFrame` containing vectors contained in columns `cols` (without copying of the vectors);
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[col][row]`;
 * `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
-* `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
-* `df[rows, col]` -> a copy of the vector `df[col]` with only the entries corresponding to `rows` selected, the same as `df[col][rows]`;
-* `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected.
-* `@view df[col]` -> the vector contained in column `col` (this is equivalent to `df[col]`);
-* `@view df[cols]` -> a `SubDataFrame` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
+* `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[!, cols]` otherwise;
+* `df[rows, col]` -> a copy of the vector `df[col]` with only the entries corresponding to `rows` selected, the same as `df[!, col][rows]`;
+* `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected;
+* `@view df[!, col]` -> the same as `view(adf[!, col], :)`;
+* `@view df[!, cols]` -> the same as `view(adf, :, cols)`;
 * `@view df[row, col]` -> a `0`-dimensional view into `df[col]`, the same as `view(df[col], row)`;
 * `@view df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
 * `@view df[rows, col]` -> a view into `df[col]` with `rows` selected, the same as `view(df[col], rows)`;
 * `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df` if `cols` is a colon and `df[cols]` otherwise.
 
 `SubDataFrame`:
-* `sdf[col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector;
-* `sdf[cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
+* `sdf[!, col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector;
+* `sdf[!, cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
 * `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `sdf[rows, col]` -> a copy of a vector `sdf[col]` with only rows `rows` selected;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `df[rows, col]` as a vector in each `col` in `cols`.
-* `@view sdf[col]` -> a view of vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as selector;
-* `@view sdf[cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
-* `@view sdf[row, col]` -> translates to `view(sdf[col], row)` (a `0`-dimensional view into `df[col]`);
-* `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
-* `@view sdf[rows, col]` -> translates to `view(sdf[col], rows)` (a standard view into `sdf[col]` vector);
+* `@view sdf[!, col]` -> the same as `sdf[:, col]`;
+* `@view sdf[!, cols]` -> the same as `sdf[:, cols]`;
+* `@view sdf[row, col]` -> translates to `view(sdf[!, col], row)` (a `0`-dimensional view into `df[!, col]`);
+* `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
+* `@view sdf[rows, col]` -> translates to `view(sdf[!, col], rows)` (a standard view into `sdf[!, col]` vector);
 * `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `sdf[cols]` otherwise.
 
 `DataFrameRow`:
@@ -103,6 +104,9 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
 If column indexing using `Symbol` names is performed the order of columns in the operation is specified
 by the order of names.
 
-`df[col] .= value` is allowed when `col` is a `Symbol` even if `col` is not present in the `DataFrame`
-under the condition that `df` is not empty: a new column will be created.
+In the `df[!, col] .= value` and `df[!, cols] .= value` syntaxes the assignment to `df` is performed in-place.
+In the `df[:, col] .= value` and `df[:, cols] .= value` syntaxes the assignment to `df` is performed by allocation of fresh columns.
+
+`df[!, col] .= value` and `df[:, col] .= value` is allowed when `col` is a `Symbol` even if `col` is not present
+in the `DataFrame` under the condition that `df` is not empty: a new column will be created.
 On the contrary, `df.col .= value` is not allowed if `col` is not present in `df`.

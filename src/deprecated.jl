@@ -1409,3 +1409,15 @@ import Base: empty!
 
 @deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
 @deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)
+
+import Base: getindex
+@deprecate getindex(df::DataFrame, col_ind::ColumnIndex) df[!, col_ind]
+@deprecate getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex, Not}) df[:, col_inds]
+@deprecate getindex(df::DataFrame, ::Colon) df[:, :]
+@deprecate getindex(sdf::SubDataFrame, colind::ColumnIndex) sdf[!, colind]
+@deprecate getindex(sdf::SubDataFrame, colinds::Union{AbstractVector, Regex, Not}) sdf[!, :]
+@deprecate getindex(sdf::SubDataFrame, ::Colon) sdf[!, :]
+
+import Base: view
+@deprecate view(adf::AbstractDataFrame, colinds) view(adf, :, colinds)
+@deprecate view(adf::AbstractDataFrame, colind::ColumnIndex) = view(adf, :, colind)

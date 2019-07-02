@@ -66,24 +66,32 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
             startcol[1] = v1
             col = copyto_widen!(startcol, bcf′, 2, i)
         end
-        df[colnames[1][i]] = col
+        df[:, colnames[1][i]] = col
     end
     return df
 end
 
 ### Broadcasting assignment
 
-struct LazyNewColDataFrame
+struct LazyNewColDataFrame{T}
     df::DataFrame
-    col::Symbol
+    col::T
 end
 
 # we allow LazyNewColDataFrame only for data frames with at least one column
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
+# ColonDataFrame allows for column replacement in broadcasting
+struct ColonDataFrame
+    df::DataFrame
+    cols::Vector{Int}
+end
+
+Base.axes(x::ColonDataFrame) = axes(x.df)
+
 Base.maybeview(df::AbstractDataFrame, idxs...) = view(df, idxs...)
 
-function Base.maybeview(df::AbstractDataFrame, idxs)
+function Base.maybeview(df::AbstractDataFrame, ::typeof(!), idxs)
     if ncol(df) == 0
         throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
     end
@@ -91,13 +99,22 @@ function Base.maybeview(df::AbstractDataFrame, idxs)
         if !hasproperty(df, idxs)
             if !(df isa DataFrame)
                 # this will throw an appropriate error message
-                df[idxs]
+                df[!, idxs]
             end
             return LazyNewColDataFrame(df, idxs)
         end
     end
-    view(df, idxs)
+    view(df, !, idxs)
 end
+
+function Base.maybeview(df::DataFrame, ::Colon, idxs)
+    if ncol(df) == 0
+        throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
+    end
+    idxs isa ColumnIndex ? LazyNewColDataFrame(df, idxs) : ColonDataFrame(df, index(df)[idxs])
+end
+
+Base.maybeview(df::SubDataFrame, ::Colon, idxs) = view(df, !, idxs)
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted)
     if isempty(lazydf.df)
@@ -111,7 +128,7 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     else
         col = Base.Broadcast.materialize(bc)
     end
-    lazydf.df[lazydf.col] = col
+    lazydf.df[!, lazydf.col] = col
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
@@ -196,7 +213,7 @@ end
 
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
+    colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && _names(df) != colnames[1])
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         msg = join(wrongnames, ", ", " and ")
@@ -221,6 +238,28 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     else
         copyto!(df, convert(Base.Broadcast.Broadcasted{Nothing}, bc))
     end
+end
+
+function Base.copyto!(df::ColonDataFrame, bc::Base.Broadcast.Broadcasted)
+    bcf = Base.Broadcast.flatten(bc)
+    colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+    if length(colnames) > 1 || (length(colnames) == 1 && view(_names(df.df), df.cols) != colnames[1])
+        wrongnames = setdiff(union(colnames...), intersect(colnames...))
+        msg = join(wrongnames, ", ", " and ")
+        throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                            "Non matching column names are $msg"))
+    end
+
+    nrows = length(axes(bcf)[1])
+    for (i, colidx) in enumerate(df.cols)
+        bcf′ = getcolbc(bcf, i)
+        v1 = bcf′[CartesianIndex(1, i)]
+        startcol = similar(Vector{typeof(v1)}, nrows)
+        startcol[1] = v1
+        col = copyto_widen!(startcol, bcf′, 2, i)
+        df.df[:, colidx] = col
+    end
+    df.df
 end
 
 Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
