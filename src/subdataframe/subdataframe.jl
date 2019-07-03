@@ -129,8 +129,13 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{Abstrac
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 
-Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
+Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)] = val
+    return sdf
+end
+
+Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
+    sdf[:, colinds] = val
     return sdf
 end
 

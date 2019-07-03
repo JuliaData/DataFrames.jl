@@ -232,7 +232,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     # special case of fast approach when bc is providing an untransformed scalar
     if bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         for col in axes(df, 2)
-            fill!(df[col], bc.args[1][])
+            fill!(df[!, col], bc.args[1][])
         end
         df
     else

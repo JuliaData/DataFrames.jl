@@ -114,13 +114,13 @@ end
 ## Case 2a: The column is given directly
 ######
 ordering(df::AbstractDataFrame, col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    Perm(Order.ord(lt, by, rev, order), df[col])
+    Perm(Order.ord(lt, by, rev, order), df[!, col])
 
 ######
 ## Case 2b: The column is given as a UserColOrdering
 ######
 ordering(df::AbstractDataFrame, col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    Perm(ordering(col_ord, lt, by, rev, order), df[col_ord.col])
+    Perm(ordering(col_ord, lt, by, rev, order), df[!, col_ord.col])
 
 ################
 ## Case 3:  General case: cols is an iterable of a combination of ColumnIndexes and UserColOrderings

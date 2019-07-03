@@ -82,8 +82,8 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
     DataFrame(AbstractVector[repeat(_names(df)[measure_vars], inner=nrow(df)), # variable
-                             vcat([df[c] for c in measure_vars]...),           # value
-                             [repeat(df[c], outer=N) for c in id_vars]...],    # id_var columns
+                             vcat([df[!, c] for c in measure_vars]...),           # value
+                             [repeat(df[!, c], outer=N) for c in id_vars]...],    # id_var columns
               cnames, copycols=false)
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
@@ -198,11 +198,11 @@ wide3 = unstack(long, [:id, :a], :variable, :value)
 Note that there are some differences between the widened results above.
 """
 function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
-    refkeycol = categorical(df[rowkey])
+    refkeycol = categorical(df[!, rowkey])
     droplevels!(refkeycol)
-    keycol = categorical(df[colkey])
+    keycol = categorical(df[!, colkey])
     droplevels!(keycol)
-    valuecol = df[value]
+    valuecol = df[!, value]
     _unstack(df, rowkey, colkey, value, keycol, valuecol, refkeycol)
 end
 
@@ -250,7 +250,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     end
     levs = levels(refkeycol)
     # we have to handle a case with missings in refkeycol as levs will skip missing
-    col = similar(df[rowkey], length(levs) + hadmissing)
+    col = similar(df[!, rowkey], length(levs) + hadmissing)
     copyto!(col, levs)
     hadmissing && (col[end] = missing)
     df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)), copycols=false)
@@ -281,9 +281,9 @@ function unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol}, colkey:
     length(rowkeys) == 0 && throw(ArgumentError("No key column found"))
     length(rowkeys) == 1 && return unstack(df, rowkeys[1], colkey, value)
     g = groupby(df, rowkeys, sort=true)
-    keycol = categorical(df[colkey])
+    keycol = categorical(df[!, colkey])
     droplevels!(keycol)
-    valuecol = df[value]
+    valuecol = df[!, value]
     _unstack(df, rowkeys, colkey, value, keycol, valuecol, g)
 end
 
@@ -515,8 +515,8 @@ function stackdf(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
     DataFrame(AbstractVector[RepeatedVector(_names(df)[measure_vars], nrow(df), 1), # variable
-                             StackedVector(Any[df[c] for c in measure_vars]),       # value
-                             [RepeatedVector(df[c], 1, N) for c in id_vars]...],    # id_var columns
+                             StackedVector(Any[df[!, c] for c in measure_vars]),       # value
+                             [RepeatedVector(df[!, c], 1, N) for c in id_vars]...],    # id_var columns
               cnames, copycols=false)
 end
 function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int;

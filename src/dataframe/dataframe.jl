@@ -429,6 +429,8 @@ function insert_single_column!(df::DataFrame,
             push!(_columns(df), dv)
         else
             if ncol(df) + 1 == Int(col_ind)
+                Base.depwarn("In the future setindex! will disallow adding columns" *
+                             "to a DataFrame using integer index", :setindex!)
                 push!(index(df), nextcolname(df))
                 push!(_columns(df), dv)
             else
@@ -469,13 +471,22 @@ function upgrade_scalar(df::DataFrame, v::Any)
     fill(v, n)
 end
 
-# df[SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
+# df[:, SingleColumnIndex] = AbstractVector
+function Base.setindex!(df::DataFrame, v::AbstractVector, ::Colon, col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
+    return df
+end
+
+# df[!, SingleColumnIndex] = AbstractVector
+function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::ColumnIndex)
+    df[!, col_ind] .= v
+    return df
 end
 
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
 function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
+    Base.depwarn("Implicit broadcasting in DataFrame assignment is deprecated." *
+                 "Use an explicit broadcast with df[:, col_ind] .= v.", :setindex!)
     if haskey(index(df), col_ind)
         fill!(df[col_ind], v)
     else
@@ -486,11 +497,14 @@ end
 
 # df[MultiColumnIndex] = DataFrame
 function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
+    length(cols) == size(df, 2) || throw(BoundsError(df, cols))
     setindex!(df, new_df, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("Implicit broadcasting in DataFrame assignment is deprecated." *
+                 "Use an explicit broadcast with df[:, col_ind] .= v.", :setindex!)
     for j in 1:length(col_inds)
         insert_single_column!(df, new_df[j], col_inds[j])
     end

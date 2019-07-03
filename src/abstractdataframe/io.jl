@@ -106,7 +106,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "<tr>")
     write(io, "<th></th>")
     for j in 1:mxcol
-        s = html_escape(compacttype(eltype(df[j])))
+        s = html_escape(compacttype(eltype(df[!, j])))
         write(io, "<th>$s</th>")
     end
     write(io, "</tr>")
@@ -128,7 +128,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
             write(io, "<th>$rowid</th>")
         end
         for column_name in cnames
-            if isassigned(df[column_name], row)
+            if isassigned(df[!, column_name], row)
                 cell = sprint(ourshow, df[row, column_name])
             else
                 cell = sprint(ourshow, Base.undef_ref_str)
@@ -250,7 +250,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         write(io, @sprintf("%d", rowid === nothing ? row : rowid))
         for col in 1:mxcol
             write(io, " & ")
-            cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
+            cell = isassigned(df[!, col], row) ? df[row,col] : Base.undef_ref_str
             if !ismissing(cell)
                 if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
@@ -353,7 +353,7 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !ismissing(df[j][i])
+            if !ismissing(df[i, j])
                 if ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], quotestr)

@@ -259,11 +259,11 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
         i = 1
         for nm in _names(df)
             try
-                push!(df[i], dfr[nm])
+                push!(df[!, i], dfr[nm])
             catch
                 #clean up partial row
                 for j in 1:(i - 1)
-                    pop!(df[j])
+                    pop!(df[!, j])
                 end
                 msg = "Error adding value to column :$nm."
                 throw(ArgumentError(msg))
