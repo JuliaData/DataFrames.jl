@@ -73,7 +73,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df` if `cols` is a colon and `df[!, cols]` otherwise;
 * `@view df[:, col]` -> a view into `df[!, col]`, the same as `view(df[!, col], :)`;
 * `@view df[:, cols]` -> a `SubDataFrame` with all rows selected with parent `df` if `cols` is a colon and `df[!, cols]` otherwise;
-* `@view df[!, col]` -> the same as `view(df, :, col)`;
+* `@view df[!, col]` -> the same as `@view df[:, col]`;
 * `@view df[!, cols]` -> the same as `view(df, :, cols)`.
 
 `getindex` on `SubDataFrame`:
