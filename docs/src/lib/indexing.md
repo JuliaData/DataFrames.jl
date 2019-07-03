@@ -50,7 +50,7 @@ The following list specifies return types of `getindex` and `view` operations de
 In particular a description explicitly mentions that the data is *copied* or *reused without copying*.
 
 For performance reasons, accessing, via `getindex` or `view`, a single `row` and multiple `cols` of a `DataFrame`,
-a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view-like type).
+a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view type).
 
 `getindex` on `DataFrame`:
 * `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
@@ -62,7 +62,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `df[:, col]` -> a copy of vector contained in column `col` of `df`;
 * `df[:, cols]` -> a `DataFrame` containing copies of columns `cols`; the same as `select(df, cols)`;
 * `df[!, col]` -> the vector contained in column `col` returned without copying; the same as `df.col` if `col` is a valid identifier;
-* `df[!, cols]` -> a freshly allocated `DataFrame` containing vectors contained in columns `cols` (without copying of the vectors);
+* `df[!, cols]` -> a freshly allocated `DataFrame` holding column vectors corresponding to `cols` (without copying);
                    the same as `select(df, cols, copycols=false)`;
 
 `view` on `DataFrame`:
@@ -80,19 +80,19 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row,col]`;
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
 * `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
-* `sdf[rows, col]` -> a copy of a vector `sdf[!, col]` with only rows `rows` selected;
+* `sdf[rows, col]` -> a copy of a vector `sdf[!, col]` with only rows `rows` selected, the same as `sdf[!, col][rows]`;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;
-* `sdf[:, col]` -> a copy of a vector `sdf[!, col]`;
+* `sdf[:, col]` -> a copy of `sdf[!, col]`;
 * `sdf[:, cols]` -> a `DataFrame` containing columns `cols` and `df[:, col]` as a vector for each `col` in `cols`;
-* `sdf[!, col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector;
+* `sdf[!, col]` -> a view of entries corresponding to `sdf` in the vector `parent(sdf)[!, col]`;
                    the same as `sdf.col` if `col` is a valid identifier;
 * `sdf[!, cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
 
 `view` on `SubDataFrame`:
 * `@view sdf[CartesianIndex(row, col)]` -> the same as `@view sdf[row, col]`;
-* `@view sdf[row, col]` -> translates to `view(sdf[!, col], row)` (a `0`-dimensional view into `df[!, col]` at row `row`);
+* `@view sdf[row, col]` -> a `0`-dimensional view into `df[!, col]` at row `row`, the same as `view(sdf[!, col], row)`;
 * `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
-* `@view sdf[rows, col]` -> translates to `view(sdf[!, col], rows)` (a standard view into `sdf[!, col]` vector);
+* `@view sdf[rows, col]` -> a view into `sdf[!, col]` vector, the same as `view(sdf[!, col], rows)`;
 * `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
 * `@view sdf[:, col]` -> the same as `sdf[!, col]`;
 * `@view sdf[:, cols]` -> the same as `sdf[!, cols]`;
@@ -107,26 +107,26 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `@view dfr[col]` -> a `0`-dimensional view into `parent(dfr)[DataFrames.row(dfr), col]`;
 * `@view dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)` if `cols` is a colon and `parent(dfr)[cols]` otherwise;
 
-Note that when views are created with columns selector set to `:` then the view produced dynamically changes its columns'
-names and count if columns of parents are added/removed/renamed;
+Note that views created with columns selector set to `:` change their columns'
+names and count if columns are added/removed/renamed in the parent;
 
 ## `setindex!`
 
 The following list specifies return types of `setindex!` operations depending on argument types.
 
 In particular a description explicitly mentions if the assignment is *in-place*,
-*replaces old vectors without copying source* or *replaces old vectors with copying source*.
+*replaces old vectors without copying source* or *replaces old vectors copying source*.
 
 `setindex!` on `DataFrame`:
 * `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
-* `df[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
-* `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` can be an abstract vector;
-* `df[rows, cols]` -> set rows `rows` of columns `cols` in-place; `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame`
+* `df[row, cols] = v` -> set row `row` of columns `cols` in-place; the same as `dfr = df[row, cols]; dfr[:] = v`;
+* `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
+* `df[rows, cols]` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                       (in this case column names must match);
-* `df[:, col] = v` -> the same as `df[1:nrow(df), col] = v` but replaces old vectors with a copy of source;
+* `df[:, col] = v` -> similar to `df[1:nrow(df), col] = v` but replaces old vector with a copy of `v`;
                       the same as `df.col = v` if `col` is a valid identifier;
-                      also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created;
+                      if `col` is a `Symbol` that is not present in `df` then a new column is added to `df`;
 * `df[:, cols] = v` -> the same as `df[1:nrow(df), cols] = v` but replaces old vectors with a copy of source;
 * `df[!, col] = v` -> the same as `df[1:nrow(df), col] = v` but replaces old vectors without copying source;
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created without copying of source;
@@ -159,7 +159,7 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
   of dimensionality higher than two.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 
-Broadcasting `DataFrameRow` is currently not allowed.
+Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
 
 It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
 In such an operation `AbstractDataFrame` is considered as two-dimensional and `DataFrameRow` as single-dimensional.
