@@ -45,7 +45,7 @@ as it is typically what is expected.
 
 ## `getindex` and `view`
 
-The following list specifies return types of `getindex` and `view` operations depending on argument types.
+The following list specifies the behavior of `getindex` and `view` operations depending on argument types.
 
 In particular a description explicitly mentions that the data is *copied* or *reused without copying*.
 
@@ -53,8 +53,8 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view type).
 
 `getindex` on `DataFrame`:
-* `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[!, col][row]`;
+* `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon or with parent `df[!, cols]` otherwise;
 * `df[rows, col]` -> a copy of the vector `df[!, col]` with only the entries corresponding to `rows` selected,
                      the same as `df[!, col][rows]`;
@@ -66,8 +66,8 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
                    the same as `select(df, cols, copycols=false)`;
 
 `view` on `DataFrame`:
-* `@view df[CartesianIndex(row, col)]` -> the same as `@view df[row, col]`;
 * `@view df[row, col]` -> a `0`-dimensional view into `df[!, col]` in row `row`, the same as `view(df[!, col], row)`;
+* `@view df[CartesianIndex(row, col)]` -> the same as `@view df[row, col]`;
 * `@view df[row, cols]` -> the same as `df[row, cols]`;
 * `@view df[rows, col]` -> a view into `df[!, col]` with `rows` selected, the same as `view(df[!, col], rows)`;
 * `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df` if `cols` is a colon and `df[!, cols]` otherwise;
@@ -77,10 +77,10 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `@view df[!, cols]` -> the same as `@view df[:, cols]`.
 
 `getindex` on `SubDataFrame`:
-* `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row,col]`;
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
+* `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row,col]`;
 * `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
-* `sdf[rows, col]` -> a copy of a vector `sdf[!, col]` with only rows `rows` selected, the same as `sdf[!, col][rows]`;
+* `sdf[rows, col]` -> a copy of `sdf[!, col]` with only rows `rows` selected, the same as `sdf[!, col][rows]`;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;
 * `sdf[:, col]` -> a copy of `sdf[!, col]`;
 * `sdf[:, cols]` -> a `DataFrame` containing columns `cols` and `df[:, col]` as a vector for each `col` in `cols`;
@@ -89,8 +89,8 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `sdf[!, cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
 
 `view` on `SubDataFrame`:
-* `@view sdf[CartesianIndex(row, col)]` -> the same as `@view sdf[row, col]`;
 * `@view sdf[row, col]` -> a `0`-dimensional view into `df[!, col]` at row `row`, the same as `view(sdf[!, col], row)`;
+* `@view sdf[CartesianIndex(row, col)]` -> the same as `@view sdf[row, col]`;
 * `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
 * `@view sdf[rows, col]` -> a view into `sdf[!, col]` vector, the same as `view(sdf[!, col], rows)`;
 * `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[!, cols]` otherwise;
@@ -112,14 +112,14 @@ names and count if columns are added/removed/renamed in the parent;
 
 ## `setindex!`
 
-The following list specifies return types of `setindex!` operations depending on argument types.
+The following list specifies the behavior of `setindex!` operations depending on argument types.
 
 In particular a description explicitly mentions if the assignment is *in-place*,
 *replaces old vectors without copying source* or *replaces old vectors copying source*.
 
 `setindex!` on `DataFrame`:
-* `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
+* `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
 * `df[row, cols] = v` -> set row `row` of columns `cols` in-place; the same as `dfr = df[row, cols]; dfr[:] = v`;
 * `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
 * `df[rows, cols]` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
@@ -127,16 +127,16 @@ In particular a description explicitly mentions if the assignment is *in-place*,
 * `df[:, col] = v` -> similar to `df[1:nrow(df), col] = v` but replaces old vector with a copy of `v`;
                       the same as `df.col = v` if `col` is a valid identifier;
                       if `col` is a `Symbol` that is not present in `df` then a new column is added to `df`;
-* `df[:, cols] = v` -> the same as `df[1:nrow(df), cols] = v` but replaces old vectors with a copy of source;
-* `df[!, col] = v` -> the same as `df[1:nrow(df), col] = v` but replaces old vectors without copying source;
+* `df[:, cols] = v` -> similar to `df[1:nrow(df), cols] = v` but replaces old vectors with a copy of source;
+* `df[!, col] = v` -> similar to `df[1:nrow(df), col] = v` but replaces old vectors without copying source;
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created without copying of source;
-* `df[!, cols] = v` -> the same as `df[1:nrow(df), cols] = v` but replaces old vectors without copying source if `v` is an `AbstractDataFrame`.
+* `df[!, cols] = v` -> similar to `df[1:nrow(df), cols] = v` but replaces old vectors without copying source if `v` is an `AbstractDataFrame`.
 
 `setindex!` on `SubDataFrame`:
-* `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, col]` -> set value of `col` in row `row` to `v` in-place;
+* `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, cols]` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
-* `sdf[rows, col]` -> set rows `rows` of column `col` in-place; `v` can be an abstract vector;
+* `sdf[rows, col]` -> set rows `rows` of column `col`, in-place; `v` can be an abstract vector;
 * `sdf[rows, cols]` -> set rows `rows` of columns `cols` in-place;
                        `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 * `sdf[:, col]` -> the same as `sdf[1:nrow(df), col] = v`; the same as `sdf.col = v` if `col` is a valid identifier;
