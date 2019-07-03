@@ -55,7 +55,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 `getindex` on `DataFrame`:
 * `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[!, col][row]`;
-* `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and parent `df[!, cols]` otherwise;
+* `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon or with parent `df[!, cols]` otherwise;
 * `df[rows, col]` -> a copy of the vector `df[!, col]` with only the entries corresponding to `rows` selected,
                      the same as `df[!, col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected;
