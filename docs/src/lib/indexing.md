@@ -41,7 +41,7 @@ In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFram
 
 Note that `df.col` works like `df[!, col]` when getting column from an `AbstractDataFrame` or broadcasting into `df.col`,
 but it works like `df[:, col]` when used in setting column context. This behavior was chosen
-as this kind of behavior is typically expected as a reasonable default.
+as it is typically what is expected.
 
 ## `getindex` and `view`
 
