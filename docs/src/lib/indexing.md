@@ -35,7 +35,7 @@ The rules for a valid type of index into a row are the following:
 * a colon `:`;
 * an exclamation mark `!`.
 
-Additionally it is allowed to index into an `AbstractDataFrame` using a two dimensional `CartesianIndex`.
+Additionally it is allowed to index into an `AbstractDataFrame` using a two-dimensional `CartesianIndex`.
 
 In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFrame` and `dfr` is a `DataFrameRow`.
 
