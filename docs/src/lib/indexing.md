@@ -41,7 +41,7 @@ In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFram
 
 `:` always exapnds to `axes(df, 1)` or `axes(sdf, 1)`.
 
-`df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all cases except that `df.col .= v` and `sdf.col .= v` are allowed for broadcasting if `col` is present in `df`/`sdf` and is a valid identifier.
+`df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all cases except that `df.col .= v` and `sdf.col .= v` perform in-place broadcasting if `col` is present in `df`/`sdf` and is a valid identifier.
 
 ## `getindex` and `view`
 
@@ -112,10 +112,11 @@ or *replaces old vectors copying source*.
 * `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
 * `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                       (in this case column names must match);
-* `df[!, col] = v` -> replaces `col` with `copy(v)`;
-                      also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `copy(v)`;
+* `df[!, col] = v` -> replaces `col` with `v`;
+                      also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
-* `df[!, cols] = v` -> replaces old vectors with columns of `v` (copying source if `v` is an `AbstractDataFrame`).
+* `df[!, cols] = v` -> replaces old vectors with freshly allocated columns of `v`
+                       (in particular copying source if `v` is an `AbstractDataFrame`).
 
 `setindex!` on `SubDataFrame`:
 * `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -153,6 +154,8 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
 Additional rules:
 * in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` and `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
+* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added
+* in the `df[!, cols] .= v` syntax columns `cols` are replaced by freshly allocated vectors;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
@@ -160,11 +163,3 @@ Additional rules:
 
 If column indexing using `Symbol` names in `cols` is performed the order of columns in the operation is specified
 by the order of names.
-
-## Special cases
-
-A `setcol!(::DataFrame, ::ColumnIndex, ::AbstractVector)` is provided allowing to replace or create column of a `DataFrame` without copying of source.
-
-You can fill an existing column of a data frame in-place with a scalar using `df.col .= scalar` or `df[:, col] .= scalar` (also works for `sdf`).
-In order to replace a contents of a column with a newly allocated scalar value or create a column filled with a scalar use in a `DataFrame` use
-`df.col = fill(scalar, nrow(df))` or `df[!, col] = fill(scalar, nrow(df))`.
