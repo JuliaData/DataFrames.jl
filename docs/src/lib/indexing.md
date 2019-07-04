@@ -122,7 +122,7 @@ In particular a description explicitly mentions if the assignment is *in-place*,
 * `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
 * `df[row, cols] = v` -> set row `row` of columns `cols` in-place; the same as `dfr = df[row, cols]; dfr[:] = v`;
 * `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
-* `df[rows, cols]` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
+* `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                       (in this case column names must match);
 * `df[:, col] = v` -> similar to `df[1:nrow(df), col] = v` but replaces old vector with a copy of `v`;
                       the same as `df.col = v` if `col` is a valid identifier;
@@ -133,16 +133,16 @@ In particular a description explicitly mentions if the assignment is *in-place*,
 * `df[!, cols] = v` -> similar to `df[1:nrow(df), cols] = v` but replaces old vectors without copying source if `v` is an `AbstractDataFrame`.
 
 `setindex!` on `SubDataFrame`:
-* `sdf[row, col]` -> set value of `col` in row `row` to `v` in-place;
+* `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
-* `sdf[row, cols]` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
-* `sdf[rows, col]` -> set rows `rows` of column `col`, in-place; `v` can be an abstract vector;
-* `sdf[rows, cols]` -> set rows `rows` of columns `cols` in-place;
+* `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
+* `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` can be an abstract vector;
+* `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
                        `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
-* `sdf[:, col]` -> the same as `sdf[1:nrow(df), col] = v`; the same as `sdf.col = v` if `col` is a valid identifier;
-* `sdf[:, cols]` -> the same as `sdf[1:nrow(df), cols] = v`;
-* `sdf[!, col]` -> the same as `sdf[1:nrow(df), col] = v`;
-* `sdf[!, cols]` -> the same as `sdf[1:nrow(df), cols] = v`;
+* `sdf[:, col] = v` -> the same as `sdf[1:nrow(df), col] = v`; the same as `sdf.col = v` if `col` is a valid identifier;
+* `sdf[:, cols] = v` -> the same as `sdf[1:nrow(df), cols] = v`;
+* `sdf[!, col] = v` -> the same as `sdf[1:nrow(df), col] = v`;
+* `sdf[!, cols] = v` -> the same as `sdf[1:nrow(df), cols] = v`;
 
 `setindex!` on `DataFrameRow`:
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
