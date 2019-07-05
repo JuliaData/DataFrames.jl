@@ -158,7 +158,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
 
     # iterate over left rows and compose the left<->right index map
     right_dict_cols = ntuple(i -> right_dict.df[!, i], ncol(right_dict.df))
-    left_table_cols = ntuple(i -> left_table[i], ncol(left_table))
+    left_table_cols = ntuple(i -> left_table[!, i], ncol(left_table))
     next_join_ix = 1
     for l_ix in 1:nrow(left_table)
         r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
@@ -369,7 +369,7 @@ function Base.join(df1::AbstractDataFrame,
         left_ixs = Vector{Int}()
         sizehint!(left_ixs, nrow(joiner.dfl))
         dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
         @inbounds for l_ix in 1:nrow(joiner.dfl_on)
             if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
                 push!(left_ixs, l_ix)
@@ -383,7 +383,7 @@ function Base.join(df1::AbstractDataFrame,
         leftonly_ixs = Vector{Int}()
         sizehint!(leftonly_ixs, nrow(joiner.dfl))
         dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
         @inbounds for l_ix in 1:nrow(joiner.dfl_on)
             if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
                 push!(leftonly_ixs, l_ix)

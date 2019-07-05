@@ -295,13 +295,6 @@ function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Symbol)
     return _columns(df)[selected_column]
 end
 
-# df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, ::typeof(!), col_inds::Union{AbstractVector, Regex, Not}) =
-    select(df, col_inds, copycols=false)
-
-# df[!, :] => DataFrame
-Base.getindex(df::DataFrame, ::typeof(!), col_inds::Colon) = copy(df, copycols=false)
-
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 @inline function Base.getindex(df::DataFrame, row_ind::Integer,
                                col_ind::Union{Signed, Unsigned})
@@ -471,14 +464,14 @@ function upgrade_scalar(df::DataFrame, v::Any)
     fill(v, n)
 end
 
-# df[:, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame, v::AbstractVector, ::Colon, col_ind::ColumnIndex)
+# df[!, SingleColumnIndex] = AbstractVector
+function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
     return df
 end
 
-# df[!, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::ColumnIndex)
+# df[:, SingleColumnIndex] = AbstractVector
+function Base.setindex!(df::DataFrame, v::AbstractVector, ::Colon, col_ind::ColumnIndex)
     df[!, col_ind] .= v
     return df
 end
@@ -725,6 +718,9 @@ Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
 # df[:, Any] = ...
 Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
+
+# df.col = value
+Base.setproperty!(df::DataFrame, col_ind::Symbol, x) = (df[!, col_ind) = x)
 
 ##############################################################################
 ##

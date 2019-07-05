@@ -335,7 +335,7 @@ end
 
 function Base.getindex(gd::RowGroupDict, dfr::DataFrameRow)
     g_row = findrow(gd, parent(dfr), ntuple(i -> gd.df[!, i], ncol(gd.df)),
-                    ntuple(i -> parent(dfr)[i], ncol(parent(dfr))), row(dfr))
+                    ntuple(i -> parent(dfr)[!, i], ncol(parent(dfr))), row(dfr))
     (g_row == 0) && throw(KeyError(dfr))
     gix = gd.groups[g_row]
     return view(gd.rperm, gd.starts[gix]:gd.stops[gix])
