@@ -981,6 +981,8 @@ df = DataFrame(A = 1:10, B = 'A':'J')
     @test df == df2
     @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
     @test df == df2
+    @test_throws ArgumentError append!(df, DataFrame(A = 1:4, C = 1:4))
+    @test df == df2
 
     dfx = DataFrame()
     df3 = append!(dfx, df)
