@@ -786,7 +786,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
                      makeunique::Bool=false)
     name, item = name_col
     if !(0 < col_ind <= ncol(df) + 1)
-        throw(BoundsError("attempt to insert to a data frame with $(ncol(df)) columns at index $col_ind"))
+        throw(BoundsError("attempt to insert a column to a data frame with $(ncol(df)) columns at index $col_ind"))
     end
     size(df, 1) == length(item) || size(df, 2) == 0 || error("number of rows does not match")
 
