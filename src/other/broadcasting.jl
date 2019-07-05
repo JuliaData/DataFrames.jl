@@ -117,8 +117,8 @@ end
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
     if axes(dfcol, 1) != axes(bc)[1]
         # this should never happen unless data frame is corrupted (has unequal column lengths)
-        throw(ArgumentError("Dimension mismatch in broadcasting. " *
-                            "The updated data frame is invalid and should not be used"))
+        throw(DimensionMismatch("Dimension mismatch in broadcasting. " *
+                                "The updated data frame is invalid and should not be used"))
     end
     @inbounds for row in eachindex(dfcol)
         dfcol[row] = bc[CartesianIndex(row, col)]
@@ -184,7 +184,7 @@ end
 
 function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::AbstractDataFrame)
     if size(dest, 2) != size(src, 2)
-        throw(ArgumentError("Dimension mismatch in broadcasting."))
+        throw(DimensionMismatch("Dimension mismatch in broadcasting."))
     end
     wascopied = false
     for col2 in axes(dest, 2)
