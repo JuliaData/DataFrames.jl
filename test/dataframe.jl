@@ -77,7 +77,7 @@ end
 @testset "insertcols!" begin
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test_throws BoundsError insertcols!(df, 5, :newcol => ["a", "b"], )
-    @test_throws ArgumentError insertcols!(df, 1, :newcol => ["a"])
+    @test_throws DimensionMismatch insertcols!(df, 1, :newcol => ["a"])
     @test insertcols!(df, 1, :newcol => ["a", "b"]) == df
     @test names(df) == [:newcol, :a, :b]
     @test df[:a] == [1, 2]

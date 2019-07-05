@@ -789,7 +789,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
         throw(BoundsError("attempt to insert a column to a data frame with $(ncol(df)) columns at index $col_ind"))
     end  
     if !(size(df, 1) == length(item) || size(df, 2) == 0)
-        throw(ArgumentError("length of new column ($(length(item))) must match the number of rows in data frame ($(nrow(df)))"))
+        throw(DimensionMismatch("length of new column ($(length(item))) must match the number of rows in data frame ($(nrow(df)))"))
     end
 
     if hasproperty(df, name)
