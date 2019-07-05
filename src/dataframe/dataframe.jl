@@ -787,7 +787,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
     name, item = name_col
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     if !(size(df, 1) == length(item) || size(df, 2) == 0)
-        throw(ArgumentError("number of rows does not match"))
+        throw(ArgumentError("length of new column ($(length(item))) must match the number of rows in data frame ($(nrow(df)))"))
     end
 
     if hasproperty(df, name)
