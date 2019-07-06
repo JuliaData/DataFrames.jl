@@ -15,8 +15,7 @@ Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle)
 Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) = DataFrameStyle()
 Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::DataFrameStyle) = DataFrameStyle()
 
-function copyto_widen!(res::AbstractVector{T},
-                       bc::Base.Broadcast.Broadcasted{DataFrameStyle},
+function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
                        pos, col) where T
     for i in pos:length(axes(bc)[1])
         val = bc[CartesianIndex(i, col)]
@@ -36,7 +35,7 @@ end
 function getcolbc(bcf::Base.Broadcast.Broadcasted{Style}, colind) where {Style}
     # we assume that bcf is already flattened and unaliased
     newargs = map(bcf.args) do x
-        Base.Broadcast.extrude(x isa AbstractDataFrame ? x[colind] : x)
+        Base.Broadcast.extrude(x isa AbstractDataFrame ? x[!, colind] : x)
     end
     Base.Broadcast.Broadcasted{Style}(bcf.f, newargs, bcf.axes)
 end
@@ -66,7 +65,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
             startcol[1] = v1
             col = copyto_widen!(startcol, bcf′, 2, i)
         end
-        df[:, colnames[1][i]] = col
+        df[!, colnames[1][i]] = col
     end
     return df
 end
@@ -81,40 +80,27 @@ end
 # we allow LazyNewColDataFrame only for data frames with at least one column
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
-# ColonDataFrame allows for column replacement in broadcasting
-struct ColonDataFrame
+# ColReplaceDataFrame allows for column replacement in broadcasting
+struct ColReplaceDataFrame
     df::DataFrame
     cols::Vector{Int}
 end
 
-Base.axes(x::ColonDataFrame) = axes(x.df)
+Base.axes(x::ColReplaceDataFrame) = axes(x.df)
 
 Base.maybeview(df::AbstractDataFrame, idxs...) = view(df, idxs...)
 
-function Base.maybeview(df::AbstractDataFrame, ::typeof(!), idxs)
+function Base.maybeview(df::DataFrame, ::typeof(!), idxs)
     if ncol(df) == 0
         throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
     end
-    if idxs isa Symbol
-        if !hasproperty(df, idxs)
-            if !(df isa DataFrame)
-                # this will throw an appropriate error message
-                df[!, idxs]
-            end
-            return LazyNewColDataFrame(df, idxs)
-        end
+    if idxs isa ColumnIndex
+        LazyNewColDataFrame(df, idxs)
+    else
+        ColReplaceDataFrame(df, index(df)[idxs])
     end
-    view(df, !, idxs)
-end
 
-function Base.maybeview(df::DataFrame, ::Colon, idxs)
-    if ncol(df) == 0
-        throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
-    end
-    idxs isa ColumnIndex ? LazyNewColDataFrame(df, idxs) : ColonDataFrame(df, index(df)[idxs])
 end
-
-Base.maybeview(df::SubDataFrame, ::Colon, idxs) = view(df, !, idxs)
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted)
     if isempty(lazydf.df)
@@ -159,12 +145,12 @@ function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
                                        index(src), rows(src))
                 end
                 parentidx = parentcols(index(src), i)
-                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+                parent(src)[!, parentidx] = Base.unaliascopy(parent(src)[!, parentidx])
             else
                 if !wascopied
                     src = copy(src, copycols=false)
                 end
-                src[i] = Base.unaliascopy(col)
+                src[!, i] = Base.unaliascopy(col)
             end
             wascopied = true
         end
@@ -178,7 +164,7 @@ function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector
     # results from 1 to ncol
     # we go downwards because aliasing when col1 == col2 is most probable
     for col1 in col2:-1:1
-        dcol = dest[col1]
+        dcol = dest[!, col1]
         if Base.mightalias(dcol, scol)
             if src isa SubDataFrame
                 if !wascopied
@@ -186,12 +172,12 @@ function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector
                                       index(src), rows(src))
                 end
                 parentidx = parentcols(index(src), col2)
-                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+                parent(src)[!, parentidx] = Base.unaliascopy(parent(src)[!, parentidx])
             else
                 if !wascopied
                     src = copy(src, copycols=false)
                 end
-                src[col2] = Base.unaliascopy(scol)
+                src[!, col2] = Base.unaliascopy(scol)
             end
             return src, true
         end
@@ -205,7 +191,7 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::Abstract
     end
     wascopied = false
     for col2 in axes(dest, 2)
-        scol = src[col2]
+        scol = src[!, col2]
         src, wascopied = _broadcast_unalias_helper(dest, scol, src, col2, wascopied)
     end
     src
@@ -223,7 +209,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
 
     bcf′ = Base.Broadcast.preprocess(df, bcf)
     for i in axes(df, 2)
-        _copyto_helper!(df[i], getcolbc(bcf′, i), i)
+        _copyto_helper!(df[!, i], getcolbc(bcf′, i), i)
     end
     df
 end
@@ -240,7 +226,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     end
 end
 
-function Base.copyto!(df::ColonDataFrame, bc::Base.Broadcast.Broadcasted)
+function Base.copyto!(df::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && view(_names(df.df), df.cols) != colnames[1])
@@ -257,7 +243,7 @@ function Base.copyto!(df::ColonDataFrame, bc::Base.Broadcast.Broadcasted)
         startcol = similar(Vector{typeof(v1)}, nrows)
         startcol[1] = v1
         col = copyto_widen!(startcol, bcf′, 2, i)
-        df.df[:, colidx] = col
+        df.df[!, colidx] = col
     end
     df.df
 end
