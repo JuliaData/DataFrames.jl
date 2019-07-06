@@ -62,7 +62,11 @@ Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, 
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
     end
-    colindex = SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
+    colindex = if index(sdf) isa Index
+                   SubIndex(index(sdf), cols)
+               else
+                   SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
+               end
     @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
 

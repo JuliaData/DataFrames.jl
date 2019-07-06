@@ -55,47 +55,48 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 `getindex` on `DataFrame`:
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[!, col][row]`;
 * `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
-* `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon or with parent `select(df, cols, copycols=false)` otherwise;
+* `df[row, cols]` -> a `DataFrameRow` with parent `df`;
 * `df[rows, col]` -> a copy of the vector `df[!, col]` with only the entries corresponding to `rows` selected,
                      the same as `df[!, col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected;
-* `df[!, col]` -> the vector contained in column `col` returned without copying; the same as `df.col` if `col` is a valid identifier;
+* `df[!, col]` -> the vector contained in column `col` returned without copying; the same as `df.col` if `col` is a valid identifier.
 
 `view` on `DataFrame`:
 * `@view df[row, col]` -> a `0`-dimensional view into `df[!, col]` in row `row`, the same as `view(df[!, col], row)`;
 * `@view df[CartesianIndex(row, col)]` -> the same as `@view df[row, col]`;
 * `@view df[row, cols]` -> the same as `df[row, cols]`;
 * `@view df[rows, col]` -> a view into `df[!, col]` with `rows` selected, the same as `view(df[!, col], rows)`;
-* `@view df[!, col]` -> a view into `df[!, col]`  with all rows;
-* `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df` if `cols` is a colon and `select(df, cols, copycols=false)` otherwise.
+* `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df`;
+* `@view df[!, col]` -> a view into `df[!, col]`  with all rows.
 
 `getindex` on `SubDataFrame`:
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
 * `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row,col]`;
-* `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
+* `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)`;
 * `sdf[rows, col]` -> a copy of `sdf[!, col]` with only rows `rows` selected, the same as `sdf[!, col][rows]`;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;
 * `sdf[!, col]` -> a view of entries corresponding to `sdf` in the vector `parent(sdf)[!, col]`;
-                   the same as `sdf.col` if `col` is a valid identifier;
+                   the same as `sdf.col` if `col` is a valid identifier.
 
 `view` on `SubDataFrame`:
 * `@view sdf[row, col]` -> a `0`-dimensional view into `df[!, col]` at row `row`, the same as `view(sdf[!, col], row)`;
 * `@view sdf[CartesianIndex(row, col)]` -> the same as `@view sdf[row, col]`;
-* `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `select(parent(sdf), cols, copycols=false)` otherwise;
+* `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)`;
 * `@view sdf[rows, col]` -> a view into `sdf[!, col]` vector with `rows` selected, the same as `view(sdf[!, col], rows)`;
-* `@view sdf[!, col]` -> a view into `sdf[!, col]` vector with all rows;
-* `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `select(parent(sdf), cols, copycols=false)` otherwise.
+* `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)`;
+* `@view sdf[!, col]` -> a view into `sdf[!, col]` vector with all rows.
 
 `getindex` on `DataFrameRow`:
 * `dfr[col]` -> the value contained in column `col` of `dfr`; the same as `dfr.col` is `col` is a valid identifier;
-* `dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)` if `cols` is a colon and `parent(dfr)[cols]` otherwise;
+* `dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)`;
 
 `view` on `DataFrameRow`:
 * `@view dfr[col]` -> a `0`-dimensional view into `parent(dfr)[DataFrames.row(dfr), col]`;
-* `@view dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)` if `cols` is a colon and `parent(dfr)[cols]` otherwise;
+* `@view dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)`;
 
 Note that views created with columns selector set to `:` change their columns'
-names and count if columns are added/removed/renamed in the parent;
+count if columns are added/removed/renamed in the parent; if column selector is other than `:`
+then view points to selected columns by their number at the moment of creation of the view.
 
 ## `setindex!`
 
