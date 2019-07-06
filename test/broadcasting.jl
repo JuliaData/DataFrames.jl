@@ -139,12 +139,7 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    dfv[!, 1] .+= 1
-    @test dfv.x2 == [5.5, 6.5]
-    @test dfv[:, 2:end] == refdf[1:2, 3:end]
-    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
-                         3.5  6.5  8.5  11.5  14.5
-                         4.5  6.5  9.5  12.5  15.5]
+    @test_throws ArgumentError dfv[!, 1] .+= 1
 
     df = copy(refdf)
     df[:, 1] .+= 1
@@ -211,12 +206,7 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    dfv[!, 1] .+= [0, 1] .+ 1
-    @test dfv.x2 == [5.5, 7.5]
-    @test dfv[:, 2:end] == refdf[1:2, 3:end]
-    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
-                         4.5  7.5  8.5  11.5  14.5
-                         6.5  6.5  9.5  12.5  15.5]
+    @test_throws ArgumentError dfv[!, 1] .+= [0, 1] .+ 1
 
     df = copy(refdf)
     df.x1 .+= [0, 1, 2] .+ 1
@@ -255,12 +245,12 @@ end
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
     @test_throws DimensionMismatch df[!, 1] .= rand(3, 1)
-    @test_throws DimensionMismatch dfv[!, 1] .= rand(2, 1)
+    @test_throws ArgumentError dfv[!, 1] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= rand(3, 1)
     @test_throws DimensionMismatch df[:, 1] .= rand(3, 1)
     @test_throws DimensionMismatch dfv[:, 1] .= rand(2, 1)
     @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), :, 1)
-    @test_throws DimensionMismatch dfv[!, 1] .= reshape(rand(2), :, 1)
+    @test_throws ArgumentError dfv[!, 1] .= reshape(rand(2), :, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), :, 1)
@@ -271,18 +261,13 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    dfv[!, :x2] .+= 1
-    @test dfv.x2 == [5.5, 6.5]
-    @test dfv[:, 2:end] == refdf[1:2, 3:end]
-    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
-                         3.5  6.5  8.5  11.5  14.5
-                         4.5  6.5  9.5  12.5  15.5]
+    @test_throws ArgumentError dfv[!, :x2] .+= 1
 
     dfr = df[1, 3:end]
     dfr[[:x4, :x5]] .= 10
     @test Vector(dfr) == [7.5, 10.0, 10.0]
-    @test Matrix(df) == [2.5  5.5  7.5  10.0  10.0
-                         3.5  6.5  8.5  11.5  14.5
+    @test Matrix(df) == [2.5  4.5  7.5  10.0  10.0
+                         3.5  5.5  8.5  11.5  14.5
                          4.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
@@ -304,18 +289,13 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    dfv[!, :x2] .+= [1, 2]
-    @test dfv.x2 == [5.5, 7.5]
-    @test dfv[:, 2:end] == refdf[1:2, 3:end]
-    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
-                         4.5  7.5  8.5  11.5  14.5
-                         6.5  6.5  9.5  12.5  15.5]
+    @test_throws ArgumentError dfv[!, :x2] .+= [1, 2]
 
     dfr = df[1, 3:end]
     dfr[[:x4, :x5]] .= [10, 11]
     @test Vector(dfr) == [7.5, 10.0, 11.0]
-    @test Matrix(df) == [2.5  5.5  7.5  10.0  11.0
-                         4.5  7.5  8.5  11.5  14.5
+    @test Matrix(df) == [2.5  4.5  7.5  10.0  11.0
+                         4.5  5.5  8.5  11.5  14.5
                          6.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
@@ -335,12 +315,12 @@ end
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
     @test_throws DimensionMismatch df[!, :x1] .= rand(3, 1)
-    @test_throws DimensionMismatch dfv[!, :x2] .= rand(2, 1)
+    @test_throws ArgumentError dfv[!, :x2] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[[:x4, :x5]] .= rand(3, 1)
     @test_throws DimensionMismatch df[:, :x1] .= rand(3, 1)
     @test_throws DimensionMismatch dfv[:, :x2] .= rand(2, 1)
     @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), :, 1)
-    @test_throws DimensionMismatch dfv[!, 1] .= reshape(rand(2), :, 1)
+    @test_throws ArgumentError dfv[!, 1] .= reshape(rand(2), :, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), :, 1)
@@ -565,10 +545,10 @@ end
                           10.0    10.0   10.0   10.0  10.0]
 
     df = copy(refdf)
-    df[:] .= 10
+    df[:, :] .= 10
     @test all(Matrix(df) .== 10)
     dfv = view(df, 1:2, 1:4)
-    dfv[:] .= 100
+    dfv[:, :] .= 100
     @test Matrix(df) == [100.0  100.0  100.0  100.0  10.0
                         100.0  100.0  100.0  100.0  10.0
                          10.0   10.0   10.0   10.0  10.0]
@@ -611,7 +591,7 @@ end
     @test df == cdf
 
     dfv = @view df[1:2, 2:end]
-    @test_throws BoundsError dfv[!, 10] .= ones(3)
+    @test_throws ArgumentError dfv[!, 10] .= ones(3)
     @test_throws ArgumentError dfv[!, :z] .= ones(3)
     @test df == cdf
     dfr = df[1, 3:end]
@@ -730,7 +710,7 @@ end
     @test X == DataFrame([1 2; 3 4])
 
     X = DataFrame([1 2; 3 4])
-    X[!, :] .= nothing
+    foreach(i -> X[!, i] .= nothing, axes(X, 2))
     @test (X .== nothing) == DataFrame(trues(2, 2))
 end
 
@@ -955,6 +935,320 @@ end
     @test_throws DimensionMismatch df .+= y
     y .+= df
     @test y == ones(4,3,2)
+end
+
+@testset "additional checks of post-! broadcasting rules" begin
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df[CartesianIndex(1, 1)] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df[1, 1] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws DimensionMismatch df[1, 1] .= [1, 2]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df[1, :x1] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[1, 1:2] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test v2 == [100.0, 5.5, 6.5]
+    @test_throws MethodError df[1, 1:2] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test v2 == [100.0, 5.5, 6.5]
+    df[1, 1:2] .= 'e':'f'
+    @test v1 == [101.0, 2.5, 3.5]
+    @test v2 == [102.0, 5.5, 6.5]
+    @test_throws DimensionMismatch df[1, 1:2] .= ['d' 'd']
+    @test v1 == [101.0, 2.5, 3.5]
+    @test v2 == [102.0, 5.5, 6.5]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df[:, 1] .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df[:, :x1] .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, :x1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, :x1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df[:, 1] .= 'd':'f'
+    @test v1 == [100.0, 101.0, 102.0]
+    @test_throws MethodError df[:, 1] .= ["d", "e", "f"]
+    @test v1 == [100.0, 101.0, 102.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1:2] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1:2] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [100.0, 100.0, 100.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= 'd':'f'
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [100.0, 101.0, 102.0]
+    @test_throws MethodError df[:, 1:2] .= ["d", "e", "f"]
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [100.0, 101.0, 102.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= permutedims('d':'e')
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [101.0, 101.0, 101.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= reshape('d':'i', 3, :)
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [103.0, 104.0, 105.0]
+    @test_throws DimensionMismatch df[:, 1:2] .= reshape('d':'i', 3, :, 1)
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [103.0, 104.0, 105.0]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v1′ = df[:, 1]
+    df[!, 1] .= 100.0
+    @test df.x1 == [100.0, 100.0, 100.0]
+    @test v1 == v1′
+    df[!, 1] .= 'd'
+    @test df.x1 == ['d', 'd', 'd']
+    @test v1 == v1′
+    @test_throws DimensionMismatch df[!, 1] .= [1 2 3]
+    @test df.x1 == ['d', 'd', 'd']
+    @test v1 == v1′
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    v1′ = df[:, 1]
+    df[!, :x1] .= 100.0
+    @test df.x1 == [100.0, 100.0, 100.0]
+    @test v1 == v1′
+    df[!, :x1] .= 'd'
+    @test df.x1 == ['d', 'd', 'd']
+    @test v1 == v1′
+    @test_throws DimensionMismatch df[!, :x1] .= [1 2 3]
+    @test df.x1 == ['d', 'd', 'd']
+    @test v1 == v1′
+
+    df = copy(refdf)
+    df[!, :newcol] .= 100.0
+    @test df.newcol == [100.0, 100.0, 100.0]
+    @test df[:, 1:end-1] == refdf
+
+    df = copy(refdf)
+    df[!, :newcol] .= 'd'
+    @test df.newcol == ['d', 'd', 'd']
+    @test df[:, 1:end-1] == refdf
+
+    df = copy(refdf)
+    @test_throws DimensionMismatch df[!, :newcol] .= [1 2 3]
+    @test df == refdf
+
+    df = copy(refdf)
+    @test_throws ArgumentError df[!, 10] .= 'a'
+    @test df == refdf
+    @test_throws ArgumentError df[!, 10] .= [1,2,3]
+    @test df == refdf
+    @test_throws DimensionMismatch df[!, 10] .= [1 2 3]
+    @test df == refdf
+
+    df = copy(refdf)
+    @test_throws ArgumentError df[!, 1:2] .= 'a'
+    @test df == refdf
+
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df.x1 .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df = copy(refdf)
+    @test_throws ArgumentError df.newcol .= 'd'
+    @test df == refdf
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df[CartesianIndex(1, 1)] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df[1, 1] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws DimensionMismatch df[1, 1] .= [1, 2]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df[1, :x1] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[1, 1:2] .= 'd'
+    @test v1 == [100.0, 2.5, 3.5]
+    @test v2 == [100.0, 5.5, 6.5]
+    @test_throws MethodError df[1, 1:2] .= "d"
+    @test v1 == [100.0, 2.5, 3.5]
+    @test v2 == [100.0, 5.5, 6.5]
+    df[1, 1:2] .= 'e':'f'
+    @test v1 == [101.0, 2.5, 3.5]
+    @test v2 == [102.0, 5.5, 6.5]
+    @test_throws DimensionMismatch df[1, 1:2] .= ['d' 'd']
+    @test v1 == [101.0, 2.5, 3.5]
+    @test v2 == [102.0, 5.5, 6.5]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df[:, 1] .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df[:, :x1] .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, :x1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, :x1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df[:, 1] .= 'd':'f'
+    @test v1 == [100.0, 101.0, 102.0]
+    @test_throws MethodError df[:, 1] .= ["d", "e", "f"]
+    @test v1 == [100.0, 101.0, 102.0]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1:2] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1:2] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [100.0, 100.0, 100.0]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= 'd':'f'
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [100.0, 101.0, 102.0]
+    @test_throws MethodError df[:, 1:2] .= ["d", "e", "f"]
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [100.0, 101.0, 102.0]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= permutedims('d':'e')
+    @test v1 == [100.0, 100.0, 100.0]
+    @test v2 == [101.0, 101.0, 101.0]
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    v2 = df[!, 2]
+    df[:, 1:2] .= reshape('d':'i', 3, :)
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [103.0, 104.0, 105.0]
+    @test_throws DimensionMismatch df[:, 1:2] .= reshape('d':'i', 3, :, 1)
+    @test v1 == [100.0, 101.0, 102.0]
+    @test v2 == [103.0, 104.0, 105.0]
+
+    df = view(copy(refdf), :, :)
+    @test_throws ArgumentError df[!, 1] .= 100.0
+    @test df == refdf
+
+    df = view(copy(refdf), :, :)
+    @test_throws ArgumentError df[!, :x1] .= 100.0
+    @test df == refdf
+
+    df = view(copy(refdf), :, :)
+    @test_throws ArgumentError df[!, :newcol] .= 100.0
+    @test df == refdf
+
+    df = view(copy(refdf), :, :)
+    @test_throws ArgumentError df[!, 10] .= 'a'
+    @test df == refdf
+    @test_throws ArgumentError df[!, 10] .= [1,2,3]
+    @test df == refdf
+    @test_throws ArgumentError df[!, 10] .= [1 2 3]
+    @test df == refdf
+
+    df = view(copy(refdf), :, :)
+    @test_throws ArgumentError df[!, 1:2] .= 'a'
+    @test df == refdf
+
+    df = view(copy(refdf), :, :)
+    v1 = df[!, 1]
+    df.x1 .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df = view(copy(refdf), :, :)
+    @test_throws ArgumentError df.newcol .= 'd'
+    @test df == refdf
 end
 
 end # module

@@ -1,6 +1,7 @@
 ### Broadcasting
 
 Base.getindex(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx[1], idx[2]]
+Base.view(df::AbstractDataFrame, idx::CartesianIndex{2}) = view(df, idx[1], idx[2])
 Base.setindex!(df::AbstractDataFrame, val, idx::CartesianIndex{2}) =
     (df[idx[1], idx[2]] = val)
 
@@ -80,27 +81,32 @@ end
 # we allow LazyNewColDataFrame only for data frames with at least one column
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
-# ColReplaceDataFrame allows for column replacement in broadcasting
-struct ColReplaceDataFrame
-    df::DataFrame
-    cols::Vector{Int}
-end
+# ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
+# # ColReplaceDataFrame allows for column replacement in broadcasting
+# struct ColReplaceDataFrame
+#     df::DataFrame
+#     cols::Vector{Int}
+# end
 
-Base.axes(x::ColReplaceDataFrame) = axes(x.df)
+# Base.axes(x::ColReplaceDataFrame) = axes(x.df)
 
-Base.maybeview(df::AbstractDataFrame, idxs...) = view(df, idxs...)
+Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = view(df, idx[1], idx[2])
+Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
-function Base.maybeview(df::DataFrame, ::typeof(!), idxs)
+function Base.maybeview(df::DataFrame, ::typeof(!), cols)
+    if !(cols isa ColumnIndex)
+        throw(ArgumentError("broadcasting with column replacement is allowed only for single column index"))
+    end
     if ncol(df) == 0
-        throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
+        throw(ArgumentError("broadcasting into a data frame with no columns is not allowed"))
     end
-    if idxs isa ColumnIndex
-        LazyNewColDataFrame(df, idxs)
-    else
-        ColReplaceDataFrame(df, index(df)[idxs])
-    end
-
+    # in the future we might allow cols to target multiple columns
+    # in which case ColReplaceDataFrame(df, index(df)[cols]) will be returned
+    LazyNewColDataFrame(df, cols)
 end
+
+Base.maybeview(df::SubDataFrame, ::typeof(!), idxs) =
+    throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted)
     if isempty(lazydf.df)
@@ -226,27 +232,28 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     end
 end
 
-function Base.copyto!(df::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
-    bcf = Base.Broadcast.flatten(bc)
-    colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
-    if length(colnames) > 1 || (length(colnames) == 1 && view(_names(df.df), df.cols) != colnames[1])
-        wrongnames = setdiff(union(colnames...), intersect(colnames...))
-        msg = join(wrongnames, ", ", " and ")
-        throw(ArgumentError("Column names in broadcasted data frames must match. " *
-                            "Non matching column names are $msg"))
-    end
+# copyto! for ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
+# function Base.copyto!(df::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
+#     bcf = Base.Broadcast.flatten(bc)
+#     colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+#     if length(colnames) > 1 || (length(colnames) == 1 && view(_names(df.df), df.cols) != colnames[1])
+#         wrongnames = setdiff(union(colnames...), intersect(colnames...))
+#         msg = join(wrongnames, ", ", " and ")
+#         throw(ArgumentError("Column names in broadcasted data frames must match. " *
+#                             "Non matching column names are $msg"))
+#     end
 
-    nrows = length(axes(bcf)[1])
-    for (i, colidx) in enumerate(df.cols)
-        bcf′ = getcolbc(bcf, i)
-        v1 = bcf′[CartesianIndex(1, i)]
-        startcol = similar(Vector{typeof(v1)}, nrows)
-        startcol[1] = v1
-        col = copyto_widen!(startcol, bcf′, 2, i)
-        df.df[!, colidx] = col
-    end
-    df.df
-end
+#     nrows = length(axes(bcf)[1])
+#     for (i, colidx) in enumerate(df.cols)
+#         bcf′ = getcolbc(bcf, i)
+#         v1 = bcf′[CartesianIndex(1, i)]
+#         startcol = similar(Vector{typeof(v1)}, nrows)
+#         startcol[1] = v1
+#         col = copyto_widen!(startcol, bcf′, 2, i)
+#         df.df[!, colidx] = col
+#     end
+#     df.df
+# end
 
 Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
     Base.Broadcast.broadcast_unalias(parent(dest), src)
