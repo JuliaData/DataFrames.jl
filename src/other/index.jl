@@ -128,7 +128,9 @@ function Base.empty!(x::Index)
 end
 
 function Base.insert!(x::Index, idx::Integer, nm::Symbol)
-    1 <= idx <= length(x.names)+1 || error(BoundsError())
+    if !(1 <= idx <= length(x.names)+1)
+        throw(BoundsError("attempt to insert a column to a data frame with $(length(x.names)) columns at index $idx"))
+     end
     for i = idx:length(x.names)
         x.lookup[x.names[i]] = i + 1
     end
