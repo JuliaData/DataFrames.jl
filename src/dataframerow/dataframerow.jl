@@ -116,7 +116,7 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
-    view(parent(r)[parentcols(index(r), col)], row(r))
+    view(parent(r)[!, parentcols(index(r), col)], row(r))
 Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r

@@ -297,7 +297,7 @@ function showrowindices(io::IO,
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
-            if isassigned(df[i, j])
+            if isassigned(df[!, j], i)
                 s = df[i, j]
                 strlen = ourstrwidth(io, s)
                 if ismissing(s)

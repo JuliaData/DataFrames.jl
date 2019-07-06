@@ -1416,12 +1416,12 @@ import Base: getindex
 @deprecate getindex(df::DataFrame, ::Colon) df[:, :]
 @deprecate getindex(sdf::SubDataFrame, colind::ColumnIndex) sdf[!, colind]
 @deprecate getindex(sdf::SubDataFrame, colinds::Union{AbstractVector, Regex, Not}) select(sdf, colinds, copycols=false)
-@deprecate getindex(sdf::SubDataFrame, ::Colon) select(sdf, colinds, copycols=false)
+@deprecate getindex(sdf::SubDataFrame, ::Colon) select(sdf, :, copycols=false)
 
 import Base: view
 @deprecate view(adf::AbstractDataFrame, colind::ColumnIndex) view(adf, :, colind)
 @deprecate view(adf::AbstractDataFrame, colinds) view(adf, :, colinds)
 
 import Base: setindex!
-@deprecace setindex!(sdf::SubDataFrame, val::Any, colinds::Any) (sdf[:, colinds] = val; sdf)
-@deprecace setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex) (df[!, col_ind] = val; df)
+@deprecate setindex!(sdf::SubDataFrame, val::Any, colinds::Any) (sdf[:, colinds] = val; sdf)
+@deprecate setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex) (df[!, col_ind] = v; df)

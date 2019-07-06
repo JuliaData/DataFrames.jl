@@ -5,34 +5,20 @@ using Test, DataFrames
 @testset "getindex DataFrame" begin
     df = DataFrame(a=1:3, b=4:6, c=7:9)
 
-    @test df[1] == [1, 2, 3]
-    @test df[1] === eachcol(df)[1]
-    @test df[1:2] == DataFrame(a=1:3, b=4:6)
-    @test df[r"[ab]"] == DataFrame(a=1:3, b=4:6)
-    @test df[Not(Not(r"[ab]"))] == DataFrame(a=1:3, b=4:6)
-    @test df[Not(3)] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df, false)[1] === df[1]
-    @test eachcol(view(df,1:2), false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[1:2], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[r"[ab]"], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[Not(Not(r"[ab]"))], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[Not(r"[c]")], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[1:2], false)[1] !== eachcol(df, false)[1]
-    @test df[:] == df
-    @test df[r""] == df
-    @test df[Not(Not(r""))] == df
-    @test df[Not(1:0)] == df
-    @test df[:] !== df
-    @test df[r""] !== df
-    @test df[Not(Not(r""))] !== df
-    @test df[Not(1:0)] !== df
-    @test eachcol(view(df, :), false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[:], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[r""], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[Not(1:0)], false)[1] == eachcol(df, false)[1]
-    @test eachcol(df[:], false)[1] !== eachcol(df, false)[1]
-    @test eachcol(df[r""], false)[1] !== eachcol(df, false)[1]
-    @test eachcol(df[Not(1:0)], false)[1] !== eachcol(df, false)[1]
+    @test df[!, 1] == [1, 2, 3]
+    @test df[!, 1] === eachcol(df)[1]
+    @test df[!, :a] == [1, 2, 3]
+    @test df[!, :a] === eachcol(df)[1]
+    @test df.a == [1, 2, 3]
+    @test df.a === eachcol(df)[1]
+
+    @test_throws MethodError df[!, 1:2]
+    @test_throws MethodError df[!, r"[ab]"]
+    @test_throws MethodError df[!, Not(Not(r"[ab]"))]
+    @test_throws MethodError df[!, Not(3)]
+    @test_throws MethodError df[!, Not(1:0)]
+    @test_throws MethodError df[!, :]
+
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
 
@@ -71,64 +57,55 @@ using Test, DataFrames
     @test df[Not(Not(1:2)), Not(1:0)] == DataFrame(a=1:2, b=4:5, c=7:8)
 
     @test df[:, 1] == [1, 2, 3]
-    @test df[:, 1] !== df[1]
+    @test df[:, 1] !== df[!, 1]
     @test df[:, 1:2] == DataFrame(a=1:3, b=4:6)
     @test df[:, r"[ab]"] == DataFrame(a=1:3, b=4:6)
     @test df[:, Not(r"c")] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df[:, 1:2])[1] !== df[1]
+    @test eachcol(df[:, 1:2])[1] !== df[!, 1]
     @test df[:, :] == df
     @test df[:, r""] == df
     @test df[:, Not(Not(r""))] == df
-    @test eachcol(df[:, :])[1] !== df[1]
-    @test eachcol(df[:, r""])[1] !== df[1]
-    @test eachcol(df[:, Not([])])[1] !== df[1]
+    @test eachcol(df[:, :])[1] !== df[!, 1]
+    @test eachcol(df[:, r""])[1] !== df[!, 1]
+    @test eachcol(df[:, Not([])])[1] !== df[!, 1]
 
     @test df[Not(Int[]), 1] == [1, 2, 3]
-    @test df[Not(Int[]), 1] !== df[1]
+    @test df[Not(Int[]), 1] !== df[!, 1]
     @test df[Not(Int[]), 1:2] == DataFrame(a=1:3, b=4:6)
     @test df[Not(Int[]), r"[ab]"] == DataFrame(a=1:3, b=4:6)
     @test df[Not(Int[]), Not(r"c")] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df[Not(Int[]), 1:2])[1] !== df[1]
+    @test eachcol(df[Not(Int[]), 1:2])[1] !== df[!, 1]
     @test df[Not(Int[]), :] == df
     @test df[Not(Int[]), r""] == df
     @test df[Not(Int[]), Not(Not(r""))] == df
-    @test eachcol(df[Not(Int[]), :])[1] !== df[1]
-    @test eachcol(df[Not(Int[]), r""])[1] !== df[1]
-    @test eachcol(df[Not(Int[]), Not([])])[1] !== df[1]
+    @test eachcol(df[Not(Int[]), :])[1] !== df[!, 1]
+    @test eachcol(df[Not(Int[]), r""])[1] !== df[!, 1]
+    @test eachcol(df[Not(Int[]), Not([])])[1] !== df[!, 1]
 end
 
-@testset "getindex df[col] and df[cols]" begin
+@testset "getindex df[!, col]" begin
     x = [1, 2, 3]
     df = DataFrame(x=x, copycols=false)
     @test df.x === x
-    @test df[:x] === x
-    @test df[[:x]].x !== x
-    @test df[:].x !== x
-    @test df[r"x"].x !== x
-    @test df[r""].x !== x
-    @test df[Not(1:0)].x !== x
+    @test df[!, :x] === x
+    @test df[!, 1] === x
 end
 
 @testset "view DataFrame" begin
     df = DataFrame(a=1:3, b=4:6, c=7:9)
 
-    @test view(df, 1) == [1, 2, 3]
-    @test view(df, 1) isa SubArray
-    @test view(df, 1:2) isa SubDataFrame
-    @test view(df, 1:2) == df[1:2]
-    @test view(df, r"[ab]") isa SubDataFrame
-    @test view(df, r"[ab]") == df[1:2]
-    @test view(df, Not(Not(r"[ab]"))) isa SubDataFrame
-    @test view(df, Not(Not(r"[ab]"))) == df[1:2]
-    @test view(df, :) isa SubDataFrame
-    @test view(df, :) == df
-    @test parent(view(df, :)) === df
-    @test view(df, r"") isa SubDataFrame
-    @test view(df, r"") == df
-    @test parent(view(df, r"")) === df
-    @test view(df, Not(1:0)) isa SubDataFrame
-    @test view(df, Not(1:0)) == df
-    @test parent(view(df, Not(1:0))) === df
+    @test view(df, !, 1) == [1, 2, 3]
+    @test view(df, !, 1) isa SubArray
+    @test view(df, !, :a) == [1, 2, 3]
+    @test view(df, !, :a) isa SubArray
+
+    @test_throws MethodError view(df, !, 1:2)
+    @test_throws MethodError view(df, !, :)
+    @test_throws MethodError view(df, !, r"ab")
+    @test_throws MethodError view(df, !, Not(1))
+    @test_throws MethodError view(df, !, Not(1:2))
+    @test_throws MethodError view(df, !, Not(r"ab"))
+    @test_throws MethodError view(df, !, Not(Not(r"ab")))
 
     @test view(df, 1, 1) isa SubArray
     @test view(df, 1, 1)[] == 1
@@ -225,23 +202,19 @@ end
     df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
     sdf = view(df, 2:4, 2:4)
 
-    @test sdf[1] == [1, 2, 3]
-    @test sdf[1] isa SubArray
-    @test sdf[1:2] == DataFrame(a=1:3, b=4:6)
-    @test sdf[1:2] isa SubDataFrame
-    @test sdf[r"[ab]"] == DataFrame(a=1:3, b=4:6)
-    @test sdf[r"[ab]"] isa SubDataFrame
-    @test sdf[Not(Not(r"[ab]"))] == DataFrame(a=1:3, b=4:6)
-    @test sdf[Not(Not(r"[ab]"))] isa SubDataFrame
-    @test sdf[:] == df[2:4, 2:4]
-    @test sdf[:] isa SubDataFrame
-    @test sdf[r""] == df[2:4, 2:4]
-    @test sdf[r""] isa SubDataFrame
-    @test sdf[Not(1:0)] == df[2:4, 2:4]
-    @test sdf[Not(1:0)] isa SubDataFrame
-    @test parent(sdf[:]) === parent(sdf)
-    @test parent(sdf[r""]) === parent(sdf)
-    @test parent(sdf[Not([])]) === parent(sdf)
+    @test sdf[!, 1] == [1, 2, 3]
+    @test sdf[!, 1] isa SubArray
+    @test sdf[!, :a] == [1, 2, 3]
+    @test sdf[!, :a] isa SubArray
+    @test sdf.a == [1, 2, 3]
+    @test sdf.a isa SubArray
+
+    @test_throws MethodError sdf[!, 1:2]
+    @test_throws MethodError sdf[!, r"[ab]"]
+    @test_throws MethodError sdf[!, Not(Not(r"[ab]"))]
+    @test_throws MethodError sdf[!, :]
+    @test_throws MethodError sdf[!, r""]
+    @test_throws MethodError sdf[!, Not(1:0)]
 
     @test sdf[1, 1] == 1
     @test sdf[1, 1:2] isa DataFrameRow
@@ -292,7 +265,7 @@ end
 
     @test sdf[:, 1] == [1, 2, 3]
     @test sdf[:, 1] isa Vector
-    @test sdf[:, 1] !== df[1]
+    @test sdf[:, 1] !== df[!, 1]
     @test sdf[:, 1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[:, 1:2] isa DataFrame
     @test sdf[:, r"[ab]"] == DataFrame(a=1:3, b=4:6)
@@ -308,7 +281,7 @@ end
 
     @test sdf[Not(Not(:)), 1] == [1, 2, 3]
     @test sdf[Not(Not(:)), 1] isa Vector
-    @test sdf[Not(Not(:)), 1] !== df[1]
+    @test sdf[Not(Not(:)), 1] !== df[!, 1]
     @test sdf[Not(Not(:)), 1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[Not(Not(:)), 1:2] isa DataFrame
     @test sdf[Not(Not(:)), r"[ab]"] == DataFrame(a=1:3, b=4:6)
@@ -327,23 +300,18 @@ end
     df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
     sdf = view(df, 2:4, 2:4)
 
-    @test view(sdf, 1) == [1, 2, 3]
-    @test view(sdf, 1) isa SubArray
-    @test view(sdf, 1:2) isa SubDataFrame
-    @test view(sdf, 2:3) == df[2:4, 3:4]
-    @test view(sdf, r"[ab]") isa SubDataFrame
-    @test view(sdf, r"[ab]") == df[2:4, r"[ab]"]
-    @test view(sdf, Not(Not(r"[ab]"))) isa SubDataFrame
-    @test view(sdf, Not(Not(r"[ab]"))) == df[2:4, Not(Not(r"[ab]"))]
-    @test view(sdf, :) isa SubDataFrame
-    @test view(sdf, :) == df[2:4, 2:4]
-    @test view(sdf, r"") isa SubDataFrame
-    @test view(sdf, r"") == df[2:4, 2:4]
-    @test view(sdf, Not(1:0)) isa SubDataFrame
-    @test view(sdf, Not(1:0)) == df[2:4, 2:4]
-    @test parent(view(sdf, :)) == parent(sdf)
-    @test parent(view(sdf, r"")) == parent(sdf)
-    @test parent(view(sdf, Not(1:0))) == parent(sdf)
+    @test view(sdf, !, 1) == [1, 2, 3]
+    @test view(sdf, !, 1) isa SubArray
+    @test view(sdf, !, :a) == [1, 2, 3]
+    @test view(sdf, !, :a) isa SubArray
+
+    @test_throws ArgumentError view(sdf, !, 1:2)
+    @test_throws ArgumentError view(sdf, !, r"[ab]")
+    @test_throws ArgumentError view(sdf, !, Not(Not(r"[ab]")))
+    @test_throws ArgumentError view(sdf, !, :)
+    @test_throws ArgumentError view(sdf, !, r"")
+    @test_throws ArgumentError view(sdf, !, Not(1))
+    @test_throws ArgumentError view(sdf, !, Not(1:0))
 
     @test view(sdf, 1, 1) isa SubArray
     @test view(sdf, 1, 1)[] == 1

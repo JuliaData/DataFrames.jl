@@ -79,7 +79,6 @@ rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
 Base.parentindices(sdf::SubDataFrame) = (rows(sdf), parentcols(index(sdf)))
 
-Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, ::typeof(!), colinds) = view(adf, :, colinds)
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
     view(adf[!, colind], rowinds)
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, ::typeof(!), colind::ColumnIndex) =
@@ -106,10 +105,6 @@ ncol(sdf::SubDataFrame) = length(index(sdf))
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!), colind::ColumnIndex) =
     view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!),
-                                       colinds::Union{AbstractVector, Regex, Not}) =
-    SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), colinds))
-@inline Base.getindex(sdf::SubDataFrame, ::typeof(!), ::Colon) = sdf
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
@@ -131,11 +126,6 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)] = val
-    return sdf
-end
-
-Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
-    sdf[:, colinds] = val
     return sdf
 end
 

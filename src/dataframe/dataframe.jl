@@ -720,7 +720,7 @@ Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
 
 # df.col = value
-Base.setproperty!(df::DataFrame, col_ind::Symbol, x) = (df[!, col_ind) = x)
+Base.setproperty!(df::DataFrame, col_ind::Symbol, x) = (df[!, col_ind] = x)
 
 ##############################################################################
 ##
