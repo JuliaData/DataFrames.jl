@@ -30,7 +30,7 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
 end
 
 import Base: insert!
-@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
+@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[!, col] = df2[!, col], names(df2)); df)
 
 ## write.table
 export writetable
@@ -1366,7 +1366,7 @@ import Base: delete!, insert!, merge!
 
 @deprecate delete!(df::AbstractDataFrame, cols::Any) select!(df, Not(cols))
 @deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcols!(df, col_ind, name => item; makeunique=makeunique)
-@deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[col] = df2[col], names(df2)); df1)
+@deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[!, col] = df2[!, col], names(df2)); df1)
 
 import Base: setindex!
 @deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) select!(df, Not(col_ind))
@@ -1397,7 +1397,7 @@ import Base: convert
 @deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]
 
 import Base: get
-@deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[key] : default
+@deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[!, key] : default
 
 import Base: haskey
 @deprecate haskey(df::AbstractDataFrame, key::Symbol) hasproperty(df, key)
@@ -1462,8 +1462,8 @@ end
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
     setindex!(df, v, findall(col_inds))
 end
-setindex!(df::DataFrame, v::AbstractVector,
-          col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[!, c] = copy(v)), col_inds); df)
+@deprecate setindex!(df::DataFrame, v::AbstractVector,
+                     col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[!, c] = copy(v)), col_inds); df)
 
 # df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(df) if NCOL(df) > 0)
 function Base.setindex!(df::DataFrame,
@@ -1492,8 +1492,8 @@ end
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), col_inds); df)
 
 # df[SingleRowIndex, MultiColumnIndex] = Single Item
-@deprecate Base.setindex!(df::DataFrame, v::Any, row_ind::Integer,
-                        col_inds::AbstractVector) (df[row_ind, col_inds] .= Ref(v); df)
+@deprecate setindex!(df::DataFrame, v::Any, row_ind::Integer,
+                     col_inds::AbstractVector) (df[row_ind, col_inds] .= Ref(v); df)
 
 # df[:, SingleColumnIndex] = AbstractVector
 @deprecate setindex!(df::DataFrame, v::AbstractVector, ::Colon,

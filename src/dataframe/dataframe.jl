@@ -73,9 +73,8 @@ df2 = DataFrame(A = 1:10, B = v, C = rand(10))
 summary(df1)
 describe(df2)
 first(df1, 10)
-df1[:A] + df2[:C]
+df1[!, :A] + df2[!, :C]
 df1[1:4, 1:2]
-df1[[:A,:C]]
 df1[1:2, [:A,:C]]
 df1[:, [:A,:C]]
 df1[:, [1,3]]
@@ -816,7 +815,7 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
                makeunique::Bool=false, copycols::Bool=true)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
-        df1[u[i]] = copycols ? copy(df2[i]) : df2[i]
+        df1[!, u[i]] = copycols ? df2[:, i] : df2[!, i]
     end
     return df1
 end
@@ -876,7 +875,7 @@ If `cols` is omitted all columns in the data frame are converted.
 function allowmissing! end
 
 function allowmissing!(df::DataFrame, col::ColumnIndex)
-    df[col] = allowmissing(df[col])
+    df[!, col] = allowmissing(df[!, col])
     df
 end
 
@@ -914,7 +913,7 @@ If `cols` is omitted all columns in the data frame are converted.
 function disallowmissing! end
 
 function disallowmissing!(df::DataFrame, col::ColumnIndex)
-    df[col] = disallowmissing(df[col])
+    df[!, col] = disallowmissing(df[!, col])
     df
 end
 
@@ -1015,14 +1014,14 @@ function categorical! end
 
 function categorical!(df::DataFrame, cname::ColumnIndex;
                       compress::Bool=false)
-    df[cname] = categorical(df[cname], compress)
+    df[!, cname] = categorical(df[!, cname], compress)
     df
 end
 
 function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
                       compress::Bool=false)
     for cname in cnames
-        df[cname] = categorical(df[cname], compress)
+        df[!, cname] = categorical(df[!, cname], compress)
     end
     df
 end
@@ -1032,8 +1031,8 @@ categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
 
 function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: Union{AbstractString, Missing}
-            df[i] = categorical(df[i], compress)
+        if eltype(df[!, i]) <: Union{AbstractString, Missing}
+            df[!, i] = categorical(df[!, i], compress)
         end
     end
     df
@@ -1091,7 +1090,7 @@ julia> df1
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     if ncol(df1) == 0
         for (n, v) in eachcol(df2, true)
-            df1[n] = copy(v) # make sure df1 does not reuse df2
+            df1[!, n] = copy(v) # make sure df1 does not reuse df2
         end
         return df1
     end
@@ -1101,12 +1100,12 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     nrows, ncols = size(df1)
     try
         for j in 1:ncols
-            append!(df1[j], df2[j])
+            append!(df1[!, j], df2[!, j])
         end
     catch err
         # Undo changes in case of error
         for j in 1:ncols
-            resize!(df1[j], nrows)
+            resize!(df1[!, j], nrows)
         end
         rethrow(err)
     end
@@ -1137,11 +1136,11 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
     end
     for nm in _names(df)
         try
-            push!(df[i], row[nm])
+            push!(df[!, i], row[nm])
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df[j])
+                pop!(df[!, j])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))

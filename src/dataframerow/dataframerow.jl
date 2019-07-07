@@ -194,7 +194,7 @@ function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UIn
 end
 
 Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(col -> parent(r)[parentcols(index(r), col)], length(r)), row(r), h)
+    rowhash(ntuple(col -> parent(r)[!, parentcols(index(r), col)], length(r)), row(r), h)
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)

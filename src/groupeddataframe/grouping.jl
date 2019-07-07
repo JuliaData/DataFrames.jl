@@ -679,16 +679,16 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     res = map(f) do p
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
-            incol = gd.parent[first(p)]
+            incol = gd.parent[!, first(p)]
             idx = gd.idx[gd.starts]
             outcol = agg(incol, gd)
             return idx, outcol
         else
             fun = do_f(last(p))
             if p isa Pair{<:ColumnIndex}
-                incols = gd.parent[first(p)]
+                incols = gd.parent[!, first(p)]
             else
-                df = gd.parent[collect(first(p))]
+                df = select(gd.parent, collect(first(p)), copycols=false)
                 incols = NamedTuple{Tuple(names(df))}(eachcol(df))
             end
             firstres = do_call(fun, gd, incols, 1)
@@ -717,10 +717,10 @@ end
 
 function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:ColumnIndex}
-        incols = gd.parent[first(f)]
+        incols = gd.parent[!, first(f)]
         fun = last(f)
     elseif f isa Pair
-        df = gd.parent[collect(first(f))]
+        df = select(gd.parent, collect(first(f)), copycols=false)
         incols = NamedTuple{Tuple(names(df))}(eachcol(df))
         fun = last(f)
     else
@@ -1150,7 +1150,7 @@ end
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
+    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent)[gd.cols]))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
     res
@@ -1174,7 +1174,7 @@ _makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
 
 function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
                     headers::AbstractVector{Symbol}, sort::Bool=false)
-    res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    res = DataFrame(AbstractVector[vcat(f(d[!, i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res
 end
