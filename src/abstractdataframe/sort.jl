@@ -149,10 +149,10 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function, by:
 
     # Simplify ordering when all orderings are the same
     if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DFPerm(ords[1], df[newcols])
+        return DFPerm(ords[1], select(df, newcols, copycols=false))
     end
 
-    return DFPerm(ords, df[newcols])
+    return DFPerm(ords, select(df, newcols, copycols=false))
 end
 
 ######
@@ -190,10 +190,10 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector,
 
     # Simplify ordering when all orderings are the same
     if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DFPerm(ords[1], df[newcols])
+        return DFPerm(ords[1], select(df, newcols, copycols=false))
     end
 
-    return DFPerm(ords, df[newcols])
+    return DFPerm(ords, select(df, newcols, copycols=false))
 end
 
 ######
@@ -236,7 +236,7 @@ function Sort.defalg(df::AbstractDataFrame, ::Type{T}, o::Ordering) where T<:Rea
     end
 end
 Sort.defalg(df::AbstractDataFrame,        ::Type,            o::Ordering) = Sort.defalg(df)
-Sort.defalg(df::AbstractDataFrame, col    ::ColumnIndex,     o::Ordering) = Sort.defalg(df, eltype(df[col]), o)
+Sort.defalg(df::AbstractDataFrame, col    ::ColumnIndex,     o::Ordering) = Sort.defalg(df, eltype(df[!, col]), o)
 Sort.defalg(df::AbstractDataFrame, col_ord::UserColOrdering, o::Ordering) = Sort.defalg(df, col_ord.col, o)
 Sort.defalg(df::AbstractDataFrame, cols,                     o::Ordering) = Sort.defalg(df)
 
@@ -270,9 +270,9 @@ function Base.issorted(df::AbstractDataFrame, cols_new=[]; cols=[],
         cols_new = cols
     end
     if cols_new isa ColumnIndex
-        issorted(df[cols_new], lt=lt, by=by, rev=rev, order=order)
+        issorted(df[!, cols_new], lt=lt, by=by, rev=rev, order=order)
     elseif length(cols_new) == 1
-        issorted(df[cols_new[1]], lt=lt, by=by, rev=rev, order=order)
+        issorted(df[!, cols_new[1]], lt=lt, by=by, rev=rev, order=order)
     else
         issorted(1:nrow(df), ordering(df, cols_new, lt, by, rev, order))
     end

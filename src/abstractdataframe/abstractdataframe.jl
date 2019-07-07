@@ -409,7 +409,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
     # Put the summary stats into the return data frame
     data = DataFrame()
-    data[:variable] = names(df)
+    data.variable = names(df)
 
     # An array of Dicts for summary statistics
     column_stats_dicts = map(eachcol(df)) do col
@@ -440,7 +440,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     for stat in ordered_names
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
-        data[stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
+        data[!, stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
     end
 
     return data
@@ -580,14 +580,14 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
     end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
-        _nonmissing!(res, df[i])
+        _nonmissing!(res, df[!, i])
     end
     res
 end
 
 function completecases(df::AbstractDataFrame, col::ColumnIndex)
     res = trues(size(df, 1))
-    _nonmissing!(res, df[col])
+    _nonmissing!(res, df[!, col])
     res
 end
 
@@ -861,7 +861,7 @@ function nonunique(df::AbstractDataFrame)
     if ncol(df) == 0
         throw(ArgumentError("finding duplicate rows in data frame with no columns is not allowed"))
     end
-    gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
+    gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
     res = fill(true, nrow(df))
@@ -1141,7 +1141,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
             if hasproperty(df, name)
-                return df[name]
+                return df[!, name]
             else
                 Iterators.repeated(missing, nrow(df))
             end
@@ -1240,7 +1240,7 @@ function Base.hash(df::AbstractDataFrame, h::UInt)
     h += hashdf_seed
     h += hash(size(df))
     for i in 1:size(df, 2)
-        h = hash(df[i], h)
+        h = hash(df[!, i], h)
     end
     return h
 end

@@ -202,7 +202,7 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     res = DataFrame()
     for (n, v) in eachcol(df, true)
         fv = f(v)
-        res[n] = fv === v ? copy(v) : fv
+        res[!, n] = fv === v ? copy(v) : fv
     end
     res
 end
