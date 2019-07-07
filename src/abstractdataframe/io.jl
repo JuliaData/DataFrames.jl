@@ -167,7 +167,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[1][col]))))
+        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[1][!, col]))))
                              for col in gd.cols]
 
         write(io, "<p><i>First Group ($nrows $rows): ")
@@ -179,7 +179,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[N][col]))))
+        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[N][!, col]))))
                              for col in gd.cols]
 
         write(io, "<p>&vellip;</p>")
@@ -291,7 +291,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         rows = nrows > 1 ? "rows" : "row"
 
         identified_groups = [latex_escape(string(parent_names[col], " = ",
-                                                 repr(first(gd[1][col]))))
+                                                 repr(first(gd[1][!, col]))))
                              for col in gd.cols]
 
         write(io, "First Group ($nrows $rows): ")
@@ -304,7 +304,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         rows = nrows > 1 ? "rows" : "row"
 
         identified_groups = [latex_escape(string(parent_names[col], " = ",
-                                                 repr(first(gd[N][col]))))
+                                                 repr(first(gd[N][!, col]))))
                              for col in gd.cols]
 
         write(io, "\n\$\\dots\$\n\n")

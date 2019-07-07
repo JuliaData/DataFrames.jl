@@ -404,9 +404,6 @@ end
         # Insert single value
         x[:d] = 3
         @test x[:d] == [3, 3, 3]
-
-        x0[:d] = 3
-        @test x0[:d] == Int[]
     end
 
     @testset "test getindex using df[col] and df[cols] syntax" begin

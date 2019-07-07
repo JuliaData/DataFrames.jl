@@ -906,7 +906,7 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
             local newcols
             let i = i, j = j, outcols=outcols, rows=rows # Workaround for julia#15276
                 newcols = ntuple(length(outcols)) do k
-                    S = eltype(rows[k])
+                    S = eltype(rows isa AbstractDataFrame ? rows[!, k] : rows[k])
                     T = eltype(outcols[k])
                     U = promote_type(S, T)
                     if S <: T || U <: T
