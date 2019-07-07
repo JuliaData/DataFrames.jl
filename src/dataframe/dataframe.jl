@@ -487,7 +487,7 @@ function Base.setindex!(df::DataFrame,
         x = df[!, col_ind]
         x[row_inds] = v
     else
-        depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
+        Base.depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
     return df
@@ -495,12 +495,12 @@ end
 
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
 function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
+                        new_df::AbstractDataFrame,
                         row_inds::Union{AbstractVector, Not},
                         col_inds::Union{AbstractVector, Regex, Not})
     idxs = index(df)[col_inds]
     if names(df)[idxs] != names(new_df)
-        depwarn("in the future column names in source and target will have to match", :setindex!)
+        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
     end
     for (j, col) in enumerate(idxs)
         df[row_inds, col] = new_df[!, j]
