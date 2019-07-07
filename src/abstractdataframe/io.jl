@@ -82,7 +82,8 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         if size(df, 2) == 0
             rowid = nothing
         else
-            size(df, 1) == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+            size(df, 1) == 1 || 
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
 
@@ -215,7 +216,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         if size(df, 2) == 0
             rowid = nothing
         else
-            size(df, 1) == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+            size(df, 1) == 1 || 
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
 

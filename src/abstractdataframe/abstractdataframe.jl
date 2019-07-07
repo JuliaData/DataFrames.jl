@@ -405,7 +405,8 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
     if !allunique(ordered_names)
         duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
-        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(join(duplicate_names, ", "))"))
+        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: " *
+                            ":$(join(duplicate_names, ", "))"))
     end
 
     # Put the summary stats into the return data frame
@@ -816,7 +817,8 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
         catch err
             if err isa MethodError && err.f == convert &&
                !(T >: Missing) && any(ismissing, col)
-                error("cannot convert a DataFrame containing missing values to Matrix{$T} (found for column $name)")
+                error("cannot convert a DataFrame containing missing values to Matrix{$T} " *
+                      "(found for column $name)")
             else
                 rethrow(err)
             end
