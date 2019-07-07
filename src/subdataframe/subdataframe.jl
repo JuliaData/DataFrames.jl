@@ -124,11 +124,16 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{Abstrac
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 
+Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, idx::CartesianIndex{2})
+    setindex!(sdf, val, idx[1], idx[2])
+end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)] = val
     return sdf
 end
-
+Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
+    throw(ArgumentError("setting index of SubDataFrame using ! as row selectior is not allowed"))
+end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)] = val
     return sdf

@@ -445,7 +445,7 @@ end
 
 function insert_multiple_entries!(df::DataFrame,
                                   v::Any,
-                                  row_inds::AbstractVector{<:Integer},
+                                  row_inds,
                                   col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_inds] .= v
@@ -470,257 +470,60 @@ function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::
     return df
 end
 
-# df[:, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame, v::AbstractVector, ::Colon, col_ind::ColumnIndex)
-    df[!, col_ind] .= v
-    return df
-end
-
-# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
-function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
-    Base.depwarn("Implicit broadcasting in DataFrame assignment is deprecated." *
-                 "Use an explicit broadcast with df[:, col_ind] .= v.", :setindex!)
-    if haskey(index(df), col_ind)
-        fill!(df[col_ind], v)
-    else
-        insert_single_column!(df, upgrade_scalar(df, v), col_ind)
-    end
-    return df
-end
-
-# df[MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
-    length(cols) == size(df, 2) || throw(BoundsError(df, cols))
-    setindex!(df, new_df, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    Base.depwarn("Implicit broadcasting in DataFrame assignment is deprecated." *
-                 "Use an explicit broadcast with df[:, col_ind] .= v.", :setindex!)
-    for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
-    end
-    return df
-end
-
-# df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        df[col_ind] = copy(v)
-    end
-    return df
-end
-
-# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(df) if NCOL(df) > 0)
-function Base.setindex!(df::DataFrame,
-                        val::Any,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, val, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        df[col_ind] = val
-    end
-    return df
-end
-
-# df[Regex] = value
-Base.setindex!(df::DataFrame, v::Any, col_inds::Regex) =
-    setindex!(df, v, index(df)[col_inds])
-
-# df[:] = AbstractVector or Single Item
-Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
+# df.col = AbstractVector
+Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) = (df[!, col_ind] = v)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     insert_single_entry!(df, v, row_ind, col_ind)
-end
-
-# df[SingleRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_ind::Real,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_ind, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_ind::Real,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        insert_single_entry!(df, v, row_ind, col_ind)
-    end
-    return df
-end
-
-# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Real,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_ind, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Real,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
-    end
     return df
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
+                        row_inds,
                         col_ind::ColumnIndex)
-    setindex!(df, v, findall(row_inds), col_ind)
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
-                        col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
-end
-
-# df[MultiRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_ind::ColumnIndex)
-    setindex!(df, v, findall(row_inds), col_ind)
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Real},
-                        col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
+    if length(v) == length(df[row_inds, col_ind])
+        x = df[!, col_ind]
+        x[row_inds] = v
+    else
+        depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
+        insert_multiple_entries!(df, v, row_inds, col_ind)
+    end
     return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, new_df, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
+                        row_inds::Union{AbstractVector, Not},
+                        col_inds::Union{AbstractVector, Regex, Not})
+    idxs = index(df)[col_inds]
+    if names(df)[idxs] != names(new_df)
+        depwarn("in the future column names in source and target will have to match", :setindex!)
+    end
+    for (j, col) in enumerate(idxs)
+        df[row_inds, col] = new_df[!, j]
     end
     return df
 end
 
-# df[MultiRowIndex, MultiColumnIndex] = AbstractVector
+# df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
 function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
+                        mx::AbstractMatrix,
+                        row_inds::Union{AbstractVector, Not},
+                        col_inds::Union{AbstractVector, Regex, Not})
+    idxs = index(df)[col_inds]
+    if size(mx, 2) != length(idxs)
+        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and a" *
+                                " matrix ($(size(mx, 2))) do not match"))
+    end
+    for (j, col) in enumerate(idxs)
+        df[row_inds, col] = view(mx, :, j)
     end
     return df
 end
-
-# df[MultiRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
-    end
-    return df
-end
-
-# df[rows, Regex] = value
-Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Regex) =
-    setindex!(df, v, row_inds, index(df)[col_inds])
-
-# df[:] = DataFrame, df[:, :] = DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::Colon,
-                        col_inds::Colon=Colon())
-    setfield!(df, :columns, copy(_columns(new_df)))
-    setfield!(df, :colindex, copy(index(new_df)))
-    df
-end
-
-# df[:, :] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, ::Colon) =
-    (df[1:size(df, 1), 1:size(df, 2)] = v; df)
-
-# df[Any, :] = ...
-Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
-    (df[row_inds, 1:size(df, 2)] = v; df)
-
-# df[:, Any] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
-    (df[col_inds] = v; df)
-
-# df.col = value
-Base.setproperty!(df::DataFrame, col_ind::Symbol, x) = (df[!, col_ind] = x)
 
 ##############################################################################
 ##

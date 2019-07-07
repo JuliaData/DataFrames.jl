@@ -111,7 +111,8 @@ In particular a description explicitly mentions if the assignment is *in-place*.
 * `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
 * `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                       (in this case column names must match);
-* `df[!, col] = v` -> replaces `col` with `v`;
+* `df[!, col] = v` -> replaces `col` with `v` without copying
+                      (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
 
