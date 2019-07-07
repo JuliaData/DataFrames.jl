@@ -240,7 +240,7 @@ Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
 ##############################################################################
 
 """
-    similar(df::DataFrame[, rows::Integer])
+    similar(df::AbstractDataFrame, rows::Integer=nrow(df))
 
 Create a new `DataFrame` with the same column names and column element types
 as `df`. An optional second argument can be provided to request a number of rows
@@ -265,7 +265,7 @@ function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     for idx in 1:size(df1, 2)
         coleq = df1[idx] == df2[idx]
         # coleq could be missing
-        !isequal(coleq, false) || return false
+        isequal(coleq, false) && return false
         eq &= coleq
     end
     return eq
@@ -476,7 +476,6 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
             d[:std] = try std(col, mean = m) catch end
         end
     end
-
 
     if :nunique in stats
         if eltype(col) <: Real
