@@ -1435,7 +1435,11 @@ function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
     else
         Base.depwarn("Implicit broadcasting to a new column in DataFrame assignment is deprecated." *
                      "Use an explicit broadcast with df[!, col_ind] .= v.", :setindex!)
-        df[!, col_ind] .= v
+        if ncol(df) == 0
+            df[!, col_ind] = [v]
+        else
+            df[!, col_ind] .= v
+        end
     end
     return df
 end
@@ -1460,6 +1464,7 @@ end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
+    Base.depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, findall(col_inds))
 end
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
@@ -1472,6 +1477,7 @@ function Base.setindex!(df::DataFrame,
     setindex!(df, val, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     for col_ind in col_inds
         df[col_ind] = val
     end
@@ -1479,13 +1485,16 @@ function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:Colu
 end
 
 # df[:] = AbstractVector or Single Item
-Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
+function Base.setindex!(df::DataFrame, v, ::Colon)
+    Base.depwarn("df[:] = v syntax is deprecated", :setindex!)
+    df[1:size(df, 2)] = v
+    df
+end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Integer,
+function Base.setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
                         col_inds::AbstractVector{Bool})
+    Base.depwarn("assigning a DataFrame to a single row of a DataFrame is deprecated", :setindex!)
     setindex!(df, new_df, row_ind, findall(col_inds))
 end
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
@@ -1504,6 +1513,7 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
@@ -1520,18 +1530,21 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{Bool})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -1550,18 +1563,21 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{Bool})
+    Base.depwarn("implicit broadcasting in in setindex! is deprecated", :setindex!)
     setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -1575,10 +1591,6 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
-# df[rows, Regex] = value
-Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Regex) =
-    setindex!(df, v, row_inds, index(df)[col_inds])
-
 # df[:] = DataFrame, df[:, :] = DataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
@@ -1591,19 +1603,29 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[:, :] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, ::Colon) =
-    (df[1:size(df, 1), 1:size(df, 2)] = v; df)
+function Base.setindex!(df::DataFrame, v, ::Colon, ::Colon)
+    Base.depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
+    df[1:size(df, 1), 1:size(df, 2)] = v
+    df
+end
 
 # df[Any, :] = ...
-Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
-    (df[row_inds, 1:size(df, 2)] = v; df)
+function Base.setindex!(df::DataFrame, v, row_inds, ::Colon)
+    Base.depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
+    df[row_inds, 1:size(df, 2)] = v
+    df
+end
 
 # df[:, Any] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
-    (df[col_inds] = v; df)
+function Base.setindex!(df::DataFrame, v, ::Colon, col_inds)
+    Base.depwarn("implicit vector broadcasting in in setindex! is deprecated", :setindex!)
+    df[col_inds] = v
+    df
+end
 
 import Base: setproperty!
 @deprecate setproperty!(df::DataFrame, col_ind::Symbol, v) (df[!, col_ind] .= v)
+@deprecate setproperty!(df::SubDataFrame, col_ind::Symbol, v) (df[:, col_ind] .= v)
 
 # There methods duplicate functionality but are needed to resolve method call ambiuguities
 
