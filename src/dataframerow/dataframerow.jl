@@ -92,8 +92,13 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVect
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value::Any, idx) =
-    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
+Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
+    col = parentcols(index(r), idx)
+    if !(col isa Int)
+        Base.depwarn("implicit broadcasting in DataFrameRow broadcasting is deprecated", :setindex!)
+    end
+    setindex!(parent(r), value, row(r), col)
+end
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
