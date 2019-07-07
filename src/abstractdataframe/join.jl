@@ -110,7 +110,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
-            copyto!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
+            copyto!(res[!, on_col], offset, view(joiner.dfr_on[!, on_col_ix], rightonly_ixs.orig))
         end
     end
     if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)

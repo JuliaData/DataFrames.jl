@@ -923,7 +923,7 @@ unique!(df)  # modifies df
 
 function without(df::AbstractDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
-    view(df, newcols)
+    view(df, :, newcols)
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
 without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
