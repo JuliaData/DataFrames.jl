@@ -940,7 +940,7 @@ end
 @testset "additional checks of post-! broadcasting rules" begin
     df = copy(refdf)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= 'd'
+    df[CartesianIndex(1, 1)] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
     @test v1 == [100.0, 2.5, 3.5]
@@ -948,7 +948,7 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, 1] .= 'd'
+    df[1, 1] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test_throws MethodError df[1, 1] .= "d"
     @test v1 == [100.0, 2.5, 3.5]
@@ -956,7 +956,7 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, :x1] .= 'd'
+    df[1, :x1] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test_throws MethodError df[1, :x1] .= "d"
     @test v1 == [100.0, 2.5, 3.5]
@@ -965,7 +965,7 @@ end
     df = copy(refdf)
     v1 = df[!, 1]
     v2 = df[!, 2]
-    df[1, 1:2] .= 'd'
+    df[1, 1:2] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test v2 == [100.0, 5.5, 6.5]
     @test_throws MethodError df[1, 1:2] .= "d"
@@ -980,7 +980,7 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[:, 1] .= 'd'
+    df[:, 1] .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, 1] .= "d"
     @test v1 == [100.0, 100.0, 100.0]
@@ -989,7 +989,7 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[:, :x1] .= 'd'
+    df[:, :x1] .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, :x1] .= "d"
     @test v1 == [100.0, 100.0, 100.0]
@@ -1006,7 +1006,7 @@ end
     df = copy(refdf)
     v1 = df[!, 1]
     v2 = df[!, 2]
-    df[:, 1:2] .= 'd'
+    df[:, 1:2] .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test v2 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, 1:2] .= "d"
@@ -1049,7 +1049,7 @@ end
     df[!, 1] .= 100.0
     @test df.x1 == [100.0, 100.0, 100.0]
     @test v1 == v1′
-    df[!, 1] .= 'd'
+    df[!, 1] .= Ref('d')
     @test df.x1 == ['d', 'd', 'd']
     @test v1 == v1′
     @test_throws DimensionMismatch df[!, 1] .= [1 2 3]
@@ -1062,7 +1062,7 @@ end
     df[!, :x1] .= 100.0
     @test df.x1 == [100.0, 100.0, 100.0]
     @test v1 == v1′
-    df[!, :x1] .= 'd'
+    df[!, :x1] .= Ref('d')
     @test df.x1 == ['d', 'd', 'd']
     @test v1 == v1′
     @test_throws DimensionMismatch df[!, :x1] .= [1 2 3]
@@ -1075,7 +1075,7 @@ end
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
-    df[!, :newcol] .= 'd'
+    df[!, :newcol] .= Ref('d')
     @test df.newcol == ['d', 'd', 'd']
     @test df[:, 1:end-1] == refdf
 
@@ -1097,7 +1097,7 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df.x1 .= 'd'
+    df.x1 .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, 1] .= "d"
     @test v1 == [100.0, 100.0, 100.0]
@@ -1110,7 +1110,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= 'd'
+    df[CartesianIndex(1, 1)] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
     @test v1 == [100.0, 2.5, 3.5]
@@ -1118,7 +1118,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, 1] .= 'd'
+    df[1, 1] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test_throws MethodError df[1, 1] .= "d"
     @test v1 == [100.0, 2.5, 3.5]
@@ -1126,7 +1126,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, :x1] .= 'd'
+    df[1, :x1] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test_throws MethodError df[1, :x1] .= "d"
     @test v1 == [100.0, 2.5, 3.5]
@@ -1135,7 +1135,7 @@ end
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
     v2 = df[!, 2]
-    df[1, 1:2] .= 'd'
+    df[1, 1:2] .= Ref('d')
     @test v1 == [100.0, 2.5, 3.5]
     @test v2 == [100.0, 5.5, 6.5]
     @test_throws MethodError df[1, 1:2] .= "d"
@@ -1150,7 +1150,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[:, 1] .= 'd'
+    df[:, 1] .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, 1] .= "d"
     @test v1 == [100.0, 100.0, 100.0]
@@ -1159,7 +1159,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[:, :x1] .= 'd'
+    df[:, :x1] .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, :x1] .= "d"
     @test v1 == [100.0, 100.0, 100.0]
@@ -1176,7 +1176,7 @@ end
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
     v2 = df[!, 2]
-    df[:, 1:2] .= 'd'
+    df[:, 1:2] .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test v2 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, 1:2] .= "d"
@@ -1239,7 +1239,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df.x1 .= 'd'
+    df.x1 .= Ref('d')
     @test v1 == [100.0, 100.0, 100.0]
     @test_throws MethodError df[:, 1] .= "d"
     @test v1 == [100.0, 100.0, 100.0]
