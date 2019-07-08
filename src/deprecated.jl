@@ -1591,17 +1591,6 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
-# df[:] = DataFrame, df[:, :] = DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::Colon,
-                        col_inds::Colon=Colon())
-    Base.depwarn("replicating all df columns with copies of new_df is deprecated", :setindex!)
-    setfield!(df, :columns, copy(_columns(new_df)))
-    setfield!(df, :colindex, copy(index(new_df)))
-    df
-end
-
 # df[:, :] = ...
 function Base.setindex!(df::DataFrame, v, ::Colon, ::Colon)
     Base.depwarn("implicit vector broadcasting in setindex! is deprecated", :setindex!)

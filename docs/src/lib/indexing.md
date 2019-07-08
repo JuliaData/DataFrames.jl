@@ -11,7 +11,8 @@ Pages = ["indexing.md"]
 
 ## General rules
 
-The following rules explain target functionality of how `getindex`, `setindex!`, `view`, and broadcasting are intended to work with `DataFrame`, `SubDataFrame` and `DataFrameRow` objects.
+The following rules explain target functionality of how `getindex`, `setindex!`, `view`,
+and broadcasting are intended to work with `DataFrame`, `SubDataFrame` and `DataFrameRow` objects.
 
 The rules for a valid type of index into a column are the following:
 * a value, later denoted as `col`:
@@ -41,7 +42,8 @@ In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFram
 
 `:` always exapnds to `axes(df, 1)` or `axes(sdf, 1)`.
 
-`df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all cases except that `df.col .= v` and `sdf.col .= v` perform in-place broadcasting if `col` is present in `df`/`sdf` and is a valid identifier.
+`df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all cases except that
+`df.col .= v` and `sdf.col .= v` perform in-place broadcasting if `col` is present in `df`/`sdf` and is a valid identifier.
 
 ## `getindex` and `view`
 
@@ -121,7 +123,7 @@ In particular a description explicitly mentions if the assignment is *in-place*.
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
 
-Note in particular that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
+Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
 In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
 (an error is thrown if such operation is attempted).
 

@@ -481,7 +481,7 @@ end
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds,
+                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
                         col_ind::ColumnIndex)
     if length(v) == length(df[row_inds, col_ind])
         x = df[!, col_ind]
@@ -496,8 +496,8 @@ end
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::AbstractDataFrame,
-                        row_inds::Union{AbstractVector, Not},
-                        col_inds::Union{AbstractVector, Regex, Not})
+                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
+                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
     idxs = index(df)[col_inds]
     if names(df)[idxs] != names(new_df)
         Base.depwarn("in the future column names in source and target will have to match", :setindex!)
@@ -511,8 +511,8 @@ end
 # df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
 function Base.setindex!(df::DataFrame,
                         mx::AbstractMatrix,
-                        row_inds::Union{AbstractVector, Not},
-                        col_inds::Union{AbstractVector, Regex, Not})
+                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
+                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
     idxs = index(df)[col_inds]
     if size(mx, 2) != length(idxs)
         throw(DimensionMismatch("number of selected columns ($(length(idxs))) and a" *
