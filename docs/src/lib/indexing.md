@@ -22,8 +22,8 @@ The rules for a valid type of index into a column are the following:
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of `AbstractVector{<:Integer}`);
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
     * a regular expression, which gets expanded to a vector of matching column names;
-    * a `Not` expression;
-    * a colon `:`.
+    * a `Not` expression (see [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl));
+    * a colon literal `:`.
 
 The rules for a valid type of index into a row are the following:
 * a value, later denoted as `row`:
@@ -87,7 +87,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `@view sdf[!, col]` -> a view into `sdf[!, col]` vector with all rows.
 
 `getindex` on `DataFrameRow`:
-* `dfr[col]` -> the value contained in column `col` of `dfr`; the same as `dfr.col` is `col` is a valid identifier;
+* `dfr[col]` -> the value contained in column `col` of `dfr`; the same as `dfr.col` if `col` is a valid identifier;
 * `dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)`;
 
 `view` on `DataFrameRow`:
@@ -165,5 +165,5 @@ Additional rules:
 
 Note that `sdf[!, col] .= v` syntax is not allowed as `sdf` can be only modified in-place.
 
-If column indexing using `Symbol` names in `cols` is performed the order of columns in the operation is specified
+If column indexing using `Symbol` names in `cols` is performed, the order of columns in the operation is specified
 by the order of names.
