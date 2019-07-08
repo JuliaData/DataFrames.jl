@@ -518,8 +518,7 @@ function _show(io::IO,
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        else
-            nrows == 1 || 
+        elseif nrows != 1 
                 throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
