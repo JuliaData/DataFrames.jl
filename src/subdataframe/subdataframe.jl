@@ -70,7 +70,11 @@ end
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, cols) =
     SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), cols))
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, ::Colon) =
-    SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), :))
+    if index(sdf) isa Index # sdf was created using : as row selector
+        SubDataFrame(parent(sdf), rows(sdf)[rowind], :)
+    else
+        SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), :))
+    end
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), cols))
 @inline SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf

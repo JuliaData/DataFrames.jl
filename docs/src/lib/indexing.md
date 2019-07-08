@@ -32,7 +32,7 @@ The rules for a valid type of index into a row are the following:
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of `AbstractVector{<:Integer}`);
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
     * a `Not` expression;
-    * a colon `:`;
+    * a colon literal `:`;
 * an exclamation mark `!`.
 
 Additionally it is allowed to index into an `AbstractDataFrame` using a two-dimensional `CartesianIndex`.
@@ -100,7 +100,12 @@ then view points to selected columns by their number at the moment of creation o
 
 ## `setindex!`
 
-The following list specifies the behavior of `setindex!` operations depending on argument types.
+The following list specifies the **target** behavior of `setindex!` operations depending on argument types.
+
+In the current release of DataFrames.jl we are in the transition period when an old, undocumented, behavior
+of `setindex!` is still supported, but throws deprecation warnings.
+
+The behavior described below will be fully implemented in the next major release of DataFrames.jl.
 
 In particular a description explicitly mentions if the assignment is *in-place*.
 
@@ -117,13 +122,14 @@ In particular a description explicitly mentions if the assignment is *in-place*.
                       equivalent to `df.col = v` if `col` is a valid identifier;
 
 Note in particular that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
-In particular `df[:, col] = v` does not add a column `v` to a `DataFrame` as it is in-place operation.
+In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
+(an error is thrown if such operation is attempted).
 
 `setindex!` on `SubDataFrame`:
 * `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
-* `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` can be an abstract vector;
+* `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
                            `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 
