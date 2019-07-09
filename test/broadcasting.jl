@@ -1251,7 +1251,7 @@ end
     @test df == refdf
 end
 
-testset "DataFrameRow getproperty broadcasted assignment" begin
+@testset "DataFrameRow getproperty broadcasted assignment" begin
     df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
     dfr = df[1, :]
     dfr.a .= 10

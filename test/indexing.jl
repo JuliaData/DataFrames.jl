@@ -785,11 +785,11 @@ end
     @test_throws ArgumentError df[1:3, :z] = ["a", "b", "c"]
     @test_throws BoundsError df[1:3, 4] = ["a", "b", "c"]
 
-    df = DataFrame(a=1:3, b=4:6, c=7:9)
-    x = df.a
-    df[:, 1] = 10:12
-    @test df == DataFrame(a=10:12, b=4:6, c=7:9)
     # TODO: enable these tests after deprecation period
+    # df = DataFrame(a=1:3, b=4:6, c=7:9)
+    # x = df.a
+    # df[:, 1] = 10:12
+    # @test df == DataFrame(a=10:12, b=4:6, c=7:9)
     # @test df.a === x
     # @test_throws MethodError df[:, 1] = ["a", "b", "c"]
     # @test_throws ArgumentError df[:, 1] = [1]
@@ -944,11 +944,14 @@ end
     end
 
     # Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
-
-    @test_throws ArgumentError sdf[!, 1] = [1,2,3]
-    @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
-    # TODO: add this test after deprecation period
-    # @test_throw ArgumentError sdf[!, 1] = [1,2,3]
+    for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :), (1:3, 1:3)]
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        sdf = view(df, row_sel, col_sel)
+        @test_throws ArgumentError sdf[!, 1] = [1,2,3]
+        @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
+        # TODO: add this test after deprecation period
+        # @test_throw ArgumentError sdf[!, 1] = [1,2,3]
+    end
 end
 
 @testset "setindex! on DataFrameRow" begin

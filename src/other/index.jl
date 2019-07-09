@@ -301,6 +301,8 @@ Base.copy(x::SubIndex) = Index(_names(x))
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer,AbstractVector{<:Integer}}) =
     ind.cols[idx]
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Bool) =
+    throw(ArgumentError("column indexing with Bool is not allowed"))
 
 Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     parentcol = ind.parent[idx]
