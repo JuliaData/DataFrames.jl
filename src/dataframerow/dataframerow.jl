@@ -57,6 +57,9 @@ Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
 
+Base.@propagate_inbounds DataFrameRow(df::DataFrame, row::Bool, cols) =
+    throw(ArgumentError("invalid row index of type Bool"))
+
 Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(sdf, 1), row)
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
@@ -69,6 +72,9 @@ Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, 
                end
     @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
+
+Base.@propagate_inbounds DataFrameRow(df::SubDataFrame, row::Bool, cols) =
+    throw(ArgumentError("invalid row index of type Bool"))
 
 Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
     DataFrameRow(df, row, :)

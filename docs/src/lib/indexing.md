@@ -139,6 +139,7 @@ Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be on
 
 `setindex!` on `DataFrameRow`:
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
+                    equivalent to `dfr.col = v` if `col` is a valid identifier;
 * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
                      `v` can be an `AbstractVector` or `v` can be a `NamedTuple` or `DataFrameRow` when column names must match;
 
@@ -170,6 +171,7 @@ Additional rules:
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * `sdf.col .= v` syntax is allowed and performs in-place assignment to an existing vector `sdf.col`.
+* `dfr.col .= v` syntax is allowed and performs in-place assignment to a value extracted by `dfr.col`.
 
 Note that `sdf[!, col] .= v` syntax is not allowed as `sdf` can be only modified in-place.
 

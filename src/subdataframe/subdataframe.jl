@@ -69,12 +69,16 @@ end
 
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, cols) =
     SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), cols))
+Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind::Bool, cols) =
+    throw(ArgumentError("invalid row index of type Bool"))
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, ::Colon) =
     if index(sdf) isa Index # sdf was created using : as row selector
         SubDataFrame(parent(sdf), rows(sdf)[rowind], :)
     else
         SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), :))
     end
+Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind::Bool, ::Colon) =
+    throw(ArgumentError("invalid row index of type Bool"))
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), cols))
 @inline SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
@@ -112,6 +116,8 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!), colind::C
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Bool, colind::ColumnIndex) =
+    throw(ArgumentError("invalid row index of type Bool"))
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{AbstractVector, Not},
                                        colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colind)]
@@ -142,6 +148,8 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ro
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)] = val
     return sdf
 end
+Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bool, colinds::Any) =
+    throw(ArgumentError("invalid row index of type Bool"))
 
 ##############################################################################
 ##

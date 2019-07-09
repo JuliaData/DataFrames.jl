@@ -1251,4 +1251,18 @@ end
     @test df == refdf
 end
 
+testset "DataFrameRow getproperty broadcasted assignment" begin
+    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    dfr = df[1, :]
+    dfr.a .= 10
+    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test_throws MethodError dfr.a .= ["a", "b"]
+
+    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    dfr = df[1, 1:1]
+    dfr.a .= 10
+    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test_throws MethodError dfr.a .= ["a", "b"]
+end
+
 end # module

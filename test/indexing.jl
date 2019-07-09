@@ -39,6 +39,8 @@ using Test, DataFrames
     @test df[1, Not([])] isa DataFrameRow
     @test copy(df[1, Not([])]) == (a=1, b=4, c=7)
     @test parent(df[1, Not([])]) === df
+    @test_throws ArgumentError df[true, 1]
+    @test_throws ArgumentError df[true, 1:2]
 
     @test df[1:2, 1] == [1, 2]
     @test df[1:2, 1:2] == DataFrame(a=1:2, b=4:5)
@@ -232,6 +234,8 @@ end
     @test parent(sdf[1, :]) === parent(sdf)
     @test parent(sdf[1, r""]) === parent(sdf)
     @test parent(sdf[1, Not(1:0)]) === parent(sdf)
+    @test_throws ArgumentError sdf[true, 1]
+    @test_throws ArgumentError sdf[true, 1:2]
 
     @test sdf[1:2, 1] == [1, 2]
     @test sdf[1:2, 1] isa Vector
@@ -754,7 +758,7 @@ end
     # `df[row, cols] = v` -> set row `row` of columns `cols` in-place;
     # the same as `dfr = df[row, cols]; dfr[:] = v`
 
-    # TODO: add these tests after deprecation perios
+    # TODO: add these tests after deprecation period
     # here is the example current behavior (that we have to keep) that disallows any tests:
     #
     # julia> df = DataFrame(a=[[1,2]],b=[[1,2]]);
@@ -836,9 +840,151 @@ end
     @test df == DataFrame(a=["aaa", "bbb", 1], b=4:6, c=7:9)
     df.z = 11:13
     @test df == DataFrame(a=["aaa", "bbb", 1], b=4:6, c=7:9, z=11:13)
+
     # TODO: add the following tests after deprecation
     # 1. if `df[:, col] = v` an error is thrown if such operation is attempted).
     # 2. it is not allowed to add a column with column index `ncol(df)+1`
+end
+
+@testset "setindex! on SubDataFrame" begin
+    # `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:2), view(df, 1:2, :), view(df, 1:2, 1:2)]
+        df.a = [1,2,3] # make sure we have a fresh first column in each iteration
+        x = df.a
+        sdf[1, 1] = 10
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+        @test x === df.a
+        @test_throws BoundsError sdf[0, 1] = 100
+        @test_throws BoundsError sdf[1, 0] = 100
+        @test_throws ArgumentError sdf[1, true] = 100
+        @test_throws ArgumentError sdf[true, 1] = 100
+        @test_throws MethodError sdf[1, 1] = "a"
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+    end
+
+    # `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:2), view(df, 1:2, :), view(df, 1:2, 1:2)]
+        df.a = [1,2,3] # make sure we have a fresh first column in each iteration
+        x = df.a
+        sdf[CartesianIndex(1, 1)] = 10
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+        @test x === df.a
+        @test_throws BoundsError sdf[CartesianIndex(0, 1)] = 100
+        @test_throws BoundsError sdf[CartesianIndex(1, 0)] = 100
+        @test_throws MethodError sdf[CartesianIndex(1, 1)] = "a"
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+    end
+
+    # `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
+
+    # TODO: add these tests after deprecation period. Same issues as with DataFrame case
+
+    # `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:3), view(df, 1:3, :), view(df, 1:3, 1:3)]
+        df.a = [1,2,3]
+        x = df.a
+        sdf[1:3, 1] = 10:12
+        @test sdf == DataFrame(a=10:12, b=4:6, c=7:9)
+        @test df.a === x
+        @test_throws MethodError sdf[1:3, 1] = ["a", "b", "c"]
+        # TODO: enable these tests after deprecation period
+        # @test_throws ArgumentError sdf[1:3, 1] = [1]
+        # @test_throws ArgumentError sdf[1:3, 1] = 1
+        @test_throws ArgumentError sdf[1:3, :z] = ["a", "b", "c"]
+        @test_throws BoundsError sdf[1:3, 4] = ["a", "b", "c"]
+    end
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:3), view(df, 1:3, :), view(df, 1:3, 1:3)]
+        df.a = [1,2,3]
+        x = df.a
+        sdf[:, 1] = 10:12
+        @test df == DataFrame(a=10:12, b=4:6, c=7:9)
+        @test_throws MethodError sdf[:, 1] = ["a", "b", "c"]
+        @test_throws ArgumentError sdf[:, :z] = ["a", "b", "c"]
+        @test_throws BoundsError sdf[:, 4] = ["a", "b", "c"]
+        # TODO: enable these tests after deprecation period
+        # @test_throws ArgumentError sdf[:, 1] = [1]
+        # @test_throws ArgumentError sdf[:, 1] = 1
+    end
+
+    # `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
+    #                          `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
+
+    for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :), (1:3, 1:3)]
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        sdf = view(df, row_sel, col_sel)
+        df2 = DataFrame(a=11:13, b=14:16, c=17:19)
+        x = df.a
+        sdf[1:3, 1:3] = df2
+        @test sdf == df2
+        @test df.a == x
+        @test_throws DimensionMismatch sdf[1:2, 1:2] = df2
+
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        sdf = view(df, row_sel, col_sel)
+        df2 = DataFrame(a=11:13, b=14:16, c=17:19)
+        m = Matrix(df2)
+        x = df.a
+        sdf[1:3, 1:3] = m
+        @test sdf == df2
+        @test sdf.a == x
+        @test_throws DimensionMismatch df[1:2, 1:2] = m
+
+        # TODO: add these tests after deprecation period
+        # 1. tests for LHS requiring broadcasting
+        # 2. tests for LHS data frame with right size but wrong columns
+        # 3. tests with : for rows and/or columns
+    end
+
+    # Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
+
+    @test_throws ArgumentError sdf[!, 1] = [1,2,3]
+    @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
+    # TODO: add this test after deprecation period
+    # @test_throw ArgumentError sdf[!, 1] = [1,2,3]
+end
+
+@testset "setindex! on DataFrameRow" begin
+    # `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
+    #                   equivalent to `dfr.col = v` if `col` is a valid identifier;
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for dfr in [df[1, :], df[1, 1:2]]
+        df.a = 1:3
+        x = df.a
+        dfr = df[1, :]
+        dfr[1] = 10
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+        @test df.a === x
+        @test_throws BoundsError dfr[10] = 10
+        @test_throws ArgumentError dfr[true] = 10
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+        dfr[BigInt(1)] = 100
+        @test df == DataFrame(a=[100, 2, 3], b=4:6, c=7:9)
+        dfr[:a] = 'a'
+        @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
+        @test_throws ArgumentError dfr[:z] = 'z'
+        @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
+        dfr.a = 'b'
+        @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+        @test_throws ArgumentError dfr.z = 'z'
+        @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+        @test_throws MethodError dfr.a = "a"
+        @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+    end
+
+    # `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
+    #                    `v` can be an `AbstractVector` or `v` can be a `NamedTuple` or `DataFrameRow`
+    #                    when column names must match;
+
+    # TODO: add these tests after deprecation period. Same issues as with DataFrame case
 end
 
 end # module
