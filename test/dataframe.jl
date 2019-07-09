@@ -1332,8 +1332,8 @@ end
 
 @testset "test corner case of getindex" begin
     df = DataFrame(x=[1], y=[1])
-    @test_throws MethodError df[true, 1:2]
-    @test_throws MethodError df[true, r""]
+    @test_throws ArgumentError df[true, 1:2]
+    @test_throws ArgumentError df[true, r""]
 end
 
 @testset "empty data frame getindex" begin

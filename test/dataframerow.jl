@@ -38,8 +38,8 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
     @test_throws BoundsError DataFrameRow(df, 100, :)
     @test_throws BoundsError DataFrameRow(df, 100)
-    @test_throws MethodError DataFrameRow(df, true, 1:2)
-    @test_throws MethodError DataFrameRow(df, true)
+    @test_throws ArgumentError DataFrameRow(df, true, 1:2)
+    @test_throws ArgumentError DataFrameRow(df, true)
     @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
 end
 
