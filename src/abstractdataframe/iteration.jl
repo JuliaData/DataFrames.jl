@@ -200,23 +200,23 @@ julia> mapcols(x -> x.^2, df)
 function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     vs = AbstractVector[]
-    wasscalar = false
-    wasassigned = false
+    seenscalar = false
+    seenvector = false
     for v in eachcol(df)
         fv = f(v)
         if fv isa AbstractVector
-            if wasscalar
+            if seenscalar
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
             end
+            seenvector = true
             push!(vs, fv)
         else
-            if wasassigned && !wasscalar
+            if seenvector
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
             end
-            wasscalar = true
+            seenscalar = true
             push!(vs, [fv])
         end
-        wasassigned = true
     end
     DataFrame(vs, _names(df), copycols = false)
 end

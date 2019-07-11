@@ -73,9 +73,13 @@ df2 = DataFrame(A = 1:10, B = v, C = rand(10))
 summary(df1)
 describe(df2)
 first(df1, 10)
-df1[!, :A] + df2[!, :C]
+df1.B
+df2[!, :C]
+df1[:, :A]
 df1[1:4, 1:2]
+df1[Not(1:4), Not(1:2)]
 df1[1:2, [:A,:C]]
+df1[1:2, r"[AC]"]
 df1[:, [:A,:C]]
 df1[:, [1,3]]
 df1[1:4, :]

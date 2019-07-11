@@ -344,46 +344,46 @@ end
     A = DataFrame(a = [1, 2, 3], b = ["a", "b", "c"])
     B = DataFrame(b = ["a", "b", "c"], c = CategoricalVector(["a", "b", "b"]))
     levels!(B.c, ["b", "a"])
-    @test levels(join(A, B, on=:b, kind=:inner)[!, :c]) == ["b", "a"]
-    @test levels(join(B, A, on=:b, kind=:inner)[!, :c]) == ["b", "a"]
-    @test levels(join(A, B, on=:b, kind =:left)[!, :c]) == ["b", "a"]
-    @test levels(join(A, B, on=:b, kind=:right)[!, :c]) == ["b", "a"]
-    @test levels(join(A, B, on=:b, kind=:outer)[!, :c]) == ["b", "a"]
-    @test levels(join(B, A, on=:b, kind =:semi)[!, :c]) == ["b", "a"]
+    @test levels(join(A, B, on=:b, kind=:inner).c) == ["b", "a"]
+    @test levels(join(B, A, on=:b, kind=:inner).c) == ["b", "a"]
+    @test levels(join(A, B, on=:b, kind =:left).c) == ["b", "a"]
+    @test levels(join(A, B, on=:b, kind=:right).c) == ["b", "a"]
+    @test levels(join(A, B, on=:b, kind=:outer).c) == ["b", "a"]
+    @test levels(join(B, A, on=:b, kind =:semi).c) == ["b", "a"]
 end
 
 @testset "maintain CategoricalArray levels ordering on join - ordering conflicts" begin
     A = DataFrame(a = [1, 2, 3, 4], b = CategoricalVector(["a", "b", "c", "d"]))
-    levels!(A[!, :b], ["d", "c", "b", "a"])
+    levels!(A.b, ["d", "c", "b", "a"])
     B = DataFrame(b = CategoricalVector(["a", "b", "c"]), c = [5, 6, 7])
-    @test levels(join(A, B, on=:b, kind=:inner)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:inner)[!, :b]) == ["a", "b", "c"]
-    @test levels(join(A, B, on=:b, kind=:left)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:left)[!, :b]) == ["a", "b", "c"]
-    @test levels(join(A, B, on=:b, kind=:right)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:right)[!, :b]) == ["a", "b", "d", "c"]
-    @test levels(join(B, A, on=:b, kind=:outer)[!, :b]) == ["a", "b", "d", "c"]
-    @test levels(join(A, B, on=:b, kind=:outer)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(A, B, on=:b, kind = :semi)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind = :semi)[!, :b]) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b, kind=:inner).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:inner).b) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b, kind=:left).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:left).b) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b, kind=:right).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:right).b) == ["a", "b", "d", "c"]
+    @test levels(join(B, A, on=:b, kind=:outer).b) == ["a", "b", "d", "c"]
+    @test levels(join(A, B, on=:b, kind=:outer).b) == ["d", "c", "b", "a"]
+    @test levels(join(A, B, on=:b, kind = :semi).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind = :semi).b) == ["a", "b", "c"]
 end
 
 @testset "maintain CategoricalArray levels ordering on join - left is categorical" begin
     A = DataFrame(a = [1, 2, 3, 4], b = CategoricalVector(["a", "b", "c", "d"]))
-    levels!(A[!, :b], ["d", "c", "b", "a"])
+    levels!(A.b, ["d", "c", "b", "a"])
     B = DataFrame(b = ["a", "b", "c"], c = [5, 6, 7])
-    @test levels(join(A, B, on=:b)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b)[!, :b]) == ["a", "b", "c"]
-    @test levels(join(A, B, on=:b, kind=:inner)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:inner)[!, :b]) == ["a", "b", "c"]
-    @test levels(join(A, B, on=:b, kind=:left)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:left)[!, :b]) == ["a", "b", "c"]
-    @test levels(join(A, B, on=:b, kind=:right)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:right)[!, :b]) == ["a", "b", "c", "d"]
-    @test levels(join(A, B, on=:b, kind=:outer)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind=:outer)[!, :b]) == ["a", "b", "c", "d"]
-    @test levels(join(A, B, on=:b, kind = :semi)[!, :b]) == ["d", "c", "b", "a"]
-    @test levels(join(B, A, on=:b, kind = :semi)[!, :b]) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b).b) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b, kind=:inner).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:inner).b) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b, kind=:left).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:left).b) == ["a", "b", "c"]
+    @test levels(join(A, B, on=:b, kind=:right).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:right).b) == ["a", "b", "c", "d"]
+    @test levels(join(A, B, on=:b, kind=:outer).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind=:outer).b) == ["a", "b", "c", "d"]
+    @test levels(join(A, B, on=:b, kind = :semi).b) == ["d", "c", "b", "a"]
+    @test levels(join(B, A, on=:b, kind = :semi).b) == ["a", "b", "c"]
 end
 
 @testset "join on columns with different left/right names" begin
@@ -521,63 +521,63 @@ end
     nl = size(l, 1)
     nr = size(r, 1)
 
-    CS = eltype(l[!, :b])
+    CS = eltype(l.b)
 
     # joins by a and b
-    @test join(l, r, on=[:a, :b], kind=:inner) ≅ DataFrame(a=Int[], b=similar(l[!, :a], 0))
+    @test join(l, r, on=[:a, :b], kind=:inner) ≅ DataFrame(a=Int[], b=similar(l.a, 0))
     @test eltypes(join(l, r, on=[:a, :b], kind=:inner)) == [Int, CS]
 
-    @test join(l, r, on=[:a, :b], kind=:left) ≅ DataFrame(a=l[!, :a], b=l[!, :b])
+    @test join(l, r, on=[:a, :b], kind=:left) ≅ DataFrame(a=l.a, b=l.b)
     @test eltypes(join(l, r, on=[:a, :b], kind=:left)) == [Int, CS]
 
-    @test join(l, r, on=[:a, :b], kind=:right) ≅ DataFrame(a=r[!, :a], b=r[!, :b])
+    @test join(l, r, on=[:a, :b], kind=:right) ≅ DataFrame(a=r.a, b=r.b)
     @test eltypes(join(l, r, on=[:a, :b], kind=:right)) == [Int, CS]
 
     @test join(l, r, on=[:a, :b], kind=:outer) ≅
-        DataFrame(a=vcat(l[!, :a], r[!, :a]), b=vcat(l[!, :b], r[!, :b]))
+        DataFrame(a=vcat(l.a, r.a), b=vcat(l.b, r.b))
     @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Int, CS]
 
     # joins by a
     @test join(l, r, on=:a, kind=:inner, makeunique=true) ≅
-        DataFrame(a=Int[], b=similar(l[!, :b], 0), b_1=similar(r[!, :b], 0))
+        DataFrame(a=Int[], b=similar(l.b, 0), b_1=similar(r.b, 0))
     @test eltypes(join(l, r, on=:a, kind=:inner, makeunique=true)) == [Int, CS, CS]
 
     @test join(l, r, on=:a, kind=:left, makeunique=true) ≅
-        DataFrame(a=l[!, :a], b=l[!, :b], b_1=similar_missing(r[!, :b], nl))
+        DataFrame(a=l.a, b=l.b, b_1=similar_missing(r.b, nl))
     @test eltypes(join(l, r, on=:a, kind=:left, makeunique=true)) ==
         [Int, CS, Union{CS, Missing}]
 
     @test join(l, r, on=:a, kind=:right, makeunique=true) ≅
-        DataFrame(a=r[!, :a], b=similar_missing(l[!, :b], nr), b_1=r[!, :b])
+        DataFrame(a=r.a, b=similar_missing(l.b, nr), b_1=r.b)
     @test eltypes(join(l, r, on=:a, kind=:right, makeunique=true)) ==
         [Int, Union{CS, Missing}, CS]
 
     @test join(l, r, on=:a, kind=:outer, makeunique=true) ≅
-        DataFrame(a=vcat(l[!, :a], r[!, :a]),
-                  b=vcat(l[!, :b], fill(missing, nr)),
-                  b_1=vcat(fill(missing, nl), r[!, :b]))
+        DataFrame(a=vcat(l.a, r.a),
+                  b=vcat(l.b, fill(missing, nr)),
+                  b_1=vcat(fill(missing, nl), r.b))
     @test eltypes(join(l, r, on=:a, kind=:outer, makeunique=true)) ==
         [Int, Union{CS, Missing}, Union{CS, Missing}]
 
     # joins by b
     @test join(l, r, on=:b, kind=:inner, makeunique=true) ≅
-        DataFrame(a=Int[], b=similar(l[!, :b], 0), a_1=similar(r[!, :b], 0))
+        DataFrame(a=Int[], b=similar(l.b, 0), a_1=similar(r.b, 0))
     @test eltypes(join(l, r, on=:b, kind=:inner, makeunique=true)) == [Int, CS, Int]
 
     @test join(l, r, on=:b, kind=:left, makeunique=true) ≅
-        DataFrame(a=l[!, :a], b=l[!, :b], a_1=fill(missing, nl))
+        DataFrame(a=l.a, b=l.b, a_1=fill(missing, nl))
     @test eltypes(join(l, r, on=:b, kind=:left, makeunique=true)) ==
         [Int, CS, Union{Int, Missing}]
 
     @test join(l, r, on=:b, kind=:right, makeunique=true) ≅
-        DataFrame(a=fill(missing, nr), b=r[!, :b], a_1=r[!, :a])
+        DataFrame(a=fill(missing, nr), b=r.b, a_1=r.a)
     @test eltypes(join(l, r, on=:b, kind=:right, makeunique=true)) ==
         [Union{Int, Missing}, CS, Int]
 
     @test join(l, r, on=:b, kind=:outer, makeunique=true) ≅
-        DataFrame(a=vcat(l[!, :a], fill(missing, nr)),
-                  b=vcat(l[!, :b], r[!, :b]),
-                  a_1=vcat(fill(missing, nl), r[!, :a]))
+        DataFrame(a=vcat(l.a, fill(missing, nr)),
+                  b=vcat(l.b, r.b),
+                  a_1=vcat(fill(missing, nl), r.a))
     @test eltypes(join(l, r, on=:b, kind=:outer, makeunique=true)) ==
         [Union{Int, Missing}, CS, Union{Int, Missing}]
 end
