@@ -13,7 +13,7 @@ using Test, DataFrames
     @test df.a === eachcol(df)[1]
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
-        dfx = df[!, 1:2]
+        dfx = df[!, selector]
         @test dfx == select(df, selector, copycols=false)
         @test dfx isa DataFrame
         @test dfx[!, 1] === df[!, names(dfx)[1]]
@@ -102,7 +102,7 @@ end
     @test view(df, !, :a) isa SubArray
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
-        dfx = @view df[!, 1:2]
+        dfx = @view df[!, selector]
         @test dfx == select(df, selector, copycols=false)
         @test dfx isa SubDataFrame
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
@@ -211,7 +211,7 @@ end
     @test sdf.a isa SubArray
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
-        dfx = @view sdf[!, 1:2]
+        dfx = @view sdf[!, selector]
         @test dfx == select(sdf, selector, copycols=false)
         @test dfx isa SubDataFrame
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
@@ -316,7 +316,7 @@ end
     @test view(sdf, !, :a) isa SubArray
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
-        dfx = @view sdf[!, 1:2]
+        dfx = @view sdf[!, selector]
         @test dfx == select(sdf, selector, copycols=false)
         @test dfx isa SubDataFrame
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
