@@ -519,7 +519,7 @@ function _show(io::IO,
         if size(df, 2) == 0
             rowid = nothing
         elseif nrows != 1 
-                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
     dsize = displaysize(io)
