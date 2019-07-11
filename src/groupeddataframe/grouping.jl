@@ -872,7 +872,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
         cn = colnames[j]
         local vals
         try
-            vals = rows isa AbstractDataFrame ? rows[!, cn] : rows[cn]
+            vals = getproperty(rows, cn)
         catch
             throw(ArgumentError("return value must have the same column names " *
                                 "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))

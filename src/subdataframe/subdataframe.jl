@@ -142,7 +142,7 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::
     return sdf
 end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
-    throw(ArgumentError("setting index of SubDataFrame using ! as row selectior is not allowed"))
+    throw(ArgumentError("setting index of SubDataFrame using ! as row selector is not allowed"))
 end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)] = val

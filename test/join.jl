@@ -343,7 +343,7 @@ end
 @testset "maintain CategoricalArray levels ordering on join - non-`on` cols" begin
     A = DataFrame(a = [1, 2, 3], b = ["a", "b", "c"])
     B = DataFrame(b = ["a", "b", "c"], c = CategoricalVector(["a", "b", "b"]))
-    levels!(B[!, :c], ["b", "a"])
+    levels!(B.c, ["b", "a"])
     @test levels(join(A, B, on=:b, kind=:inner)[!, :c]) == ["b", "a"]
     @test levels(join(B, A, on=:b, kind=:inner)[!, :c]) == ["b", "a"]
     @test levels(join(A, B, on=:b, kind =:left)[!, :c]) == ["b", "a"]

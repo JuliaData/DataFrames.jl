@@ -101,7 +101,7 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
     col = parentcols(index(r), idx)
     if !(col isa Int)
-        Base.depwarn("implicit broadcasting in DataFrameRow broadcasting is deprecated", :setindex!)
+        Base.depwarn("implicit broadcasting in DataFrameRow assignment is deprecated", :setindex!)
     end
     setindex!(parent(r), value, row(r), col)
 end
