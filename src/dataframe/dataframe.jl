@@ -499,7 +499,7 @@ function Base.setindex!(df::DataFrame,
                         row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
                         col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
     idxs = index(df)[col_inds]
-    if names(df)[idxs] != names(new_df)
+    if view(_names(df), idxs) != _names(new_df)
         Base.depwarn("in the future column names in source and target will have to match", :setindex!)
     end
     for (j, col) in enumerate(idxs)
@@ -515,7 +515,7 @@ function Base.setindex!(df::DataFrame,
                         col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
     idxs = index(df)[col_inds]
     if size(mx, 2) != length(idxs)
-        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and a" *
+        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
                                 " matrix ($(size(mx, 2))) do not match"))
     end
     for (j, col) in enumerate(idxs)
