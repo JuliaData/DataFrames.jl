@@ -440,7 +440,7 @@ end
 
 function insert_multiple_entries!(df::DataFrame,
                                   v::Any,
-                                  row_inds,
+                                  row_inds::AbstractVector,
                                   col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_inds] .= v
