@@ -592,7 +592,7 @@ function completecases(df::AbstractDataFrame, col::ColumnIndex)
 end
 
 completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
-    completecases(select(df, cols, copycols=false))
+    completecases(df[!, cols])
 
 """
     dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)

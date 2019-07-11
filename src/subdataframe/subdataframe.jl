@@ -133,7 +133,7 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{Abstrac
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon,
                                        colinds::Union{AbstractVector, Regex, Not, Colon}) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
-Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof{!},
+Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof(!),
                                        col_inds::Union{AbstractVector, Regex, Not, Colon}) =
     select(df, col_inds, copycols=false)
 
