@@ -378,7 +378,7 @@ Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Reg
     select(df, col_inds, copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::typeof{!}, col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Colon}) =
     select(df, col_inds, copycols=false)
 
 ##############################################################################
