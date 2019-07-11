@@ -28,8 +28,7 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
             left_on = [first(x) for x in on_cols]
             right_on = [last(x) for x in on_cols]
         end
-        new(dfl, dfr, select(dfl, left_on, copycols=false),
-            select(dfr, right_on, copycols=false), left_on, right_on)
+        new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
     end
 end
 

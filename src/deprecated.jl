@@ -1415,8 +1415,8 @@ import Base: getindex
 @deprecate getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex, Not}) df[:, col_inds]
 @deprecate getindex(df::DataFrame, ::Colon) df[:, :]
 @deprecate getindex(sdf::SubDataFrame, colind::ColumnIndex) sdf[!, colind]
-@deprecate getindex(sdf::SubDataFrame, colinds::Union{AbstractVector, Regex, Not}) select(sdf, colinds, copycols=false)
-@deprecate getindex(sdf::SubDataFrame, ::Colon) select(sdf, :, copycols=false)
+@deprecate getindex(sdf::SubDataFrame, colinds::Union{AbstractVector, Regex, Not}) sdf[!, colinds]
+@deprecate getindex(sdf::SubDataFrame, ::Colon) sdf[!, :]
 
 import Base: view
 @deprecate view(adf::AbstractDataFrame, colind::ColumnIndex) view(adf, :, colind)

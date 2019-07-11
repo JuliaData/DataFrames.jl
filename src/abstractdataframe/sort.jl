@@ -149,10 +149,10 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function, by:
 
     # Simplify ordering when all orderings are the same
     if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DFPerm(ords[1], select(df, newcols, copycols=false))
+        return DFPerm(ords[1], df[!, newcols])
     end
 
-    return DFPerm(ords, select(df, newcols, copycols=false))
+    return DFPerm(ords, df[!, newcols])
 end
 
 ######
@@ -190,10 +190,10 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector,
 
     # Simplify ordering when all orderings are the same
     if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DFPerm(ords[1], select(df, newcols, copycols=false))
+        return DFPerm(ords[1], df[!, newcols])
     end
 
-    return DFPerm(ords, select(df, newcols, copycols=false))
+    return DFPerm(ords, df[!, newcols])
 end
 
 ######

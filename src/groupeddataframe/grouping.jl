@@ -135,7 +135,7 @@ julia> for g in gd
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
     intcols = convert(Vector{Int}, index(df)[cols])
-    sdf = select(df, intcols, copycols=false)
+    sdf = df[!, intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)
     GroupedDataFrame(df, intcols, df_groups.groups, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
@@ -688,7 +688,7 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
             if p isa Pair{<:ColumnIndex}
                 incols = gd.parent[!, first(p)]
             else
-                df = select(gd.parent, collect(first(p)), copycols=false)
+                df = gd.parent[!, collect(first(p))]
                 incols = NamedTuple{Tuple(names(df))}(eachcol(df))
             end
             firstres = do_call(fun, gd, incols, 1)
@@ -720,7 +720,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         incols = gd.parent[!, first(f)]
         fun = last(f)
     elseif f isa Pair
-        df = select(gd.parent, collect(first(f)), copycols=false)
+        df = gd.parent[! , collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(eachcol(df))
         fun = last(f)
     else

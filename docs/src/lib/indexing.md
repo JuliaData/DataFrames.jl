@@ -62,7 +62,8 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
                      the same as `df[!, col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected;
 * `df[!, col]` -> the vector contained in column `col` returned without copying; the same as `df.col` if `col` is a valid identifier.
-* `df[!, cols]` -> the same as `select(df, cols, copycols=false)`.
+* `df[!, cols]` -> create a new `DataFrame` with columns `cols` without copying of columns;
+                   the same as `select(df, cols, copycols=false)`.
 
 `view` on `DataFrame`:
 * `@view df[row, col]` -> a `0`-dimensional view into `df[!, col]` in row `row`, the same as `view(df[!, col], row)`;
@@ -81,7 +82,8 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;
 * `sdf[!, col]` -> a view of entries corresponding to `sdf` in the vector `parent(sdf)[!, col]`;
                    the same as `sdf.col` if `col` is a valid identifier.
-* `sdf[!, cols]` -> the same as `select(sdf, cols, copycols=false)`.
+* `sdf[!, cols]` -> create a new `SubDataFrame` with columns `cols`, the same parent as `sdf`, and the same rows selected;
+                    the same as `select(sdf, cols, copycols=false)`.
 
 
 `view` on `SubDataFrame`:
