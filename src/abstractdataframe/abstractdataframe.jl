@@ -239,7 +239,7 @@ Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
 ##############################################################################
 
 """
-    similar(df::DataFrame[, rows::Integer])
+    similar(df::AbstractDataFrame, rows::Integer=nrow(df))
 
 Create a new `DataFrame` with the same column names and column element types
 as `df`. An optional second argument can be provided to request a number of rows
@@ -264,7 +264,7 @@ function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     for idx in 1:size(df1, 2)
         coleq = df1[!, idx] == df2[!, idx]
         # coleq could be missing
-        !isequal(coleq, false) || return false
+        isequal(coleq, false) && return false
         eq &= coleq
     end
     return eq
@@ -404,7 +404,8 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
     if !allunique(ordered_names)
         duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
-        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(join(duplicate_names, ", "))"))
+        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: " *
+                            ":$(join(duplicate_names, ", "))"))
     end
 
     # Put the summary stats into the return data frame
@@ -475,7 +476,6 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
             d[:std] = try std(col, mean = m) catch end
         end
     end
-
 
     if :nunique in stats
         if eltype(col) <: Real
@@ -815,7 +815,8 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
         catch err
             if err isa MethodError && err.f == convert &&
                !(T >: Missing) && any(ismissing, col)
-                error("cannot convert a DataFrame containing missing values to Matrix{$T} (found for column $name)")
+                throw(ArgumentError("cannot convert a DataFrame containing missing values to Matrix{$T} " *
+                                    "(found for column $name)"))
             else
                 rethrow(err)
             end

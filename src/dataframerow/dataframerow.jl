@@ -172,7 +172,8 @@ Base.get(dfr::DataFrameRow, key::ColumnIndex, default) =
     haskey(dfr, key) ? dfr[key] : default
 Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
     haskey(dfr, key) ? dfr[key] : f()
-Base.broadcastable(::DataFrameRow) = throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
+Base.broadcastable(::DataFrameRow) = 
+    throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 """
     copy(dfr::DataFrameRow)
