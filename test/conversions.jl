@@ -39,7 +39,7 @@ const ≅ = isequal
     @test ai == Matrix{Int}(df)
 
     df[1,1] = missing
-    @test_throws ErrorException convert(Matrix{Float64}, df)
+    @test_throws ArgumentError convert(Matrix{Float64}, df)
     na = convert(Matrix{Union{Float64, Missing}}, df)
     naa = convert(Matrix{Any}, df)
     nai = convert(Matrix{Union{Int, Missing}}, df)

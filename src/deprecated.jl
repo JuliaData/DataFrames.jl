@@ -996,7 +996,8 @@ function readtable(io::IO,
     if !isempty(eltypes)
         for j in 1:length(eltypes)
             if !(eltypes[j] in [String, Bool, Float64, Int64])
-                throw(ArgumentError("Invalid eltype $(eltypes[j]) encountered.\nValid eltypes: $(String), Bool, Float64 or Int64"))
+                throw(ArgumentError("Invalid eltype $(eltypes[j]) encountered.\n" *
+                                    "Valid eltypes: $(String), Bool, Float64 or Int64"))
             end
         end
     end

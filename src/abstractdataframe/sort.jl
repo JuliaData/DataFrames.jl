@@ -171,7 +171,8 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector,
     end
 
     if length(lt) != length(cols)
-        throw(ArgumentError("All ordering arguments must be 1 or the same length as the number of columns requested."))
+        throw(ArgumentError("All ordering arguments must be 1 or the same length " *
+                            "as the number of columns requested."))
     end
 
     if length(cols) == 1
