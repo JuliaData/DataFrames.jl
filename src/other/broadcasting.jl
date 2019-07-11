@@ -95,7 +95,7 @@ Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
 function Base.maybeview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
-        throw(ArgumentError("broadcasting with column replacement is allowed only for single column index"))
+        throw(ArgumentError("broadcasting with column replacement is currently allowed only for single column index"))
     end
     if ncol(df) == 0
         throw(ArgumentError("broadcasting into a data frame with no columns is not allowed"))

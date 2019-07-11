@@ -283,21 +283,6 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-# df[!, SingleColumnIndex] => AbstractVector, the same vector
-@inline function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Signed, Unsigned})
-    cols = _columns(df)
-    @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
-        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                          "columns at index $col_ind"))
-    end
-    @inbounds cols[col_ind]
-end
-
-function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Symbol)
-    selected_column = index(df)[col_ind]
-    return _columns(df)[selected_column]
-end
-
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 @inline function Base.getindex(df::DataFrame, row_ind::Integer,
                                col_ind::Union{Signed, Unsigned})
@@ -338,6 +323,27 @@ end
 @inline Base.getindex(df::DataFrame, row_inds::Not, col_ind::ColumnIndex) =
     df[axes(df, 1)[row_inds], col_ind]
 
+# df[:, SingleColumnIndex] => AbstractVector
+function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
+    selected_column = index(df)[col_ind]
+    copy(_columns(df)[selected_column])
+end
+
+# df[!, SingleColumnIndex] => AbstractVector, the same vector
+@inline function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Signed, Unsigned})
+    cols = _columns(df)
+    @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
+        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
+                          "columns at index $col_ind"))
+    end
+    @inbounds cols[col_ind]
+end
+
+function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Symbol)
+    selected_column = index(df)[col_ind]
+    return _columns(df)[selected_column]
+end
+
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
                                col_inds::Union{AbstractVector, Regex, Not}) where T
@@ -352,24 +358,6 @@ end
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
-@inline Base.getindex(df::DataFrame, row_inds::Not,
-                      col_inds::Union{AbstractVector, Regex, Not}) =
-    df[axes(df, 1)[row_inds], col_inds]
-
-# df[:, SingleColumnIndex] => AbstractVector
-function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    copy(_columns(df)[selected_column])
-end
-
-# df[:, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not})
-    selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
-end
-
-# df[MultiRowIndex, :] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
@@ -381,14 +369,17 @@ end
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
 
-@inline Base.getindex(df::DataFrame, row_inds::Not, ::Colon) =
-    df[axes(df, 1)[row_inds], :]
+@inline Base.getindex(df::DataFrame, row_inds::Not,
+                      col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+    df[axes(df, 1)[row_inds], col_inds]
 
-# df[:, :] => DataFrame
-function Base.getindex(df::DataFrame, ::Colon, ::Colon)
-    new_columns = AbstractVector[copy(dv) for dv in _columns(df)]
-    return DataFrame(new_columns, Index(_names(df)), copycols=false)
-end
+# df[:, MultiColumnIndex] => DataFrame
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+    select(df, col_inds, copycols=true)
+
+# df[!, MultiColumnIndex] => DataFrame
+Base.getindex(df::DataFrame, row_ind::typeof{!}, col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+    select(df, col_inds, copycols=false)
 
 ##############################################################################
 ##
@@ -497,7 +488,7 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
-# df[MultiRowIndex, MultiColumnIndex] = DataFrame
+# df[MultiRowIndex, MultiColumnIndex] = AbstractDataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::AbstractDataFrame,
                         row_inds::Union{AbstractVector, Not}, # add Colon after deprecation

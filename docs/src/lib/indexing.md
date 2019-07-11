@@ -62,6 +62,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
                      the same as `df[!, col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected;
 * `df[!, col]` -> the vector contained in column `col` returned without copying; the same as `df.col` if `col` is a valid identifier.
+* `df[!, cols]` -> the same as `select(df, cols, copycols=false)`.
 
 `view` on `DataFrame`:
 * `@view df[row, col]` -> a `0`-dimensional view into `df[!, col]` in row `row`, the same as `view(df[!, col], row)`;
@@ -70,6 +71,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `@view df[rows, col]` -> a view into `df[!, col]` with `rows` selected, the same as `view(df[!, col], rows)`;
 * `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df`;
 * `@view df[!, col]` -> a view into `df[!, col]`  with all rows.
+* `@view df[!, cols]` -> the same as `@view df[:, cols]`.
 
 `getindex` on `SubDataFrame`:
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
@@ -79,6 +81,8 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;
 * `sdf[!, col]` -> a view of entries corresponding to `sdf` in the vector `parent(sdf)[!, col]`;
                    the same as `sdf.col` if `col` is a valid identifier.
+* `sdf[!, cols]` -> the same as `select(sdf, cols, copycols=false)`.
+
 
 `view` on `SubDataFrame`:
 * `@view sdf[row, col]` -> a `0`-dimensional view into `df[!, col]` at row `row`, the same as `view(sdf[!, col], row)`;
@@ -87,6 +91,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 * `@view sdf[rows, col]` -> a view into `sdf[!, col]` vector with `rows` selected, the same as `view(sdf[!, col], rows)`;
 * `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)`;
 * `@view sdf[!, col]` -> a view into `sdf[!, col]` vector with all rows.
+* `@view sdf[!, cols]` -> the same as `@view sdf[:, cols]`.
 
 `getindex` on `DataFrameRow`:
 * `dfr[col]` -> the value contained in column `col` of `dfr`; the same as `dfr.col` if `col` is a valid identifier;
@@ -122,6 +127,7 @@ In particular a description explicitly mentions if the assignment is *in-place*.
                       (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
+* `df[!, cols] = v` -> currently is disallowed, but its support is planned do be added in the future;
 
 Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
 In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
@@ -135,7 +141,7 @@ In particular as `df[:, col] = v` is an in-place operation it does not add a col
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
                            `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 
-Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
+Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
 
 `setindex!` on `DataFrameRow`:
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -167,13 +173,14 @@ Additional rules:
 * in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` and `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added;
+* `df[!, cols] = v` syntax currently is disallowed, but its support is planned do be added in the future;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * `sdf.col .= v` syntax is allowed and performs in-place assignment to an existing vector `sdf.col`.
 * `dfr.col .= v` syntax is allowed and performs in-place assignment to a value extracted by `dfr.col`.
 
-Note that `sdf[!, col] .= v` syntax is not allowed as `sdf` can be only modified in-place.
+Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as `sdf` can be only modified in-place.
 
 If column indexing using `Symbol` names in `cols` is performed, the order of columns in the operation is specified
 by the order of names.

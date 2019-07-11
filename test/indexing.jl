@@ -12,12 +12,12 @@ using Test, DataFrames
     @test df.a == [1, 2, 3]
     @test df.a === eachcol(df)[1]
 
-    @test_throws MethodError df[!, 1:2]
-    @test_throws MethodError df[!, r"[ab]"]
-    @test_throws MethodError df[!, Not(Not(r"[ab]"))]
-    @test_throws MethodError df[!, Not(3)]
-    @test_throws MethodError df[!, Not(1:0)]
-    @test_throws MethodError df[!, :]
+    for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
+        dfx = df[!, 1:2]
+        @test dfx == select(df, selector, copycols=false)
+        @test dfx isa DataFrame
+        @test dfx[!, 1] === df[!, names(dfx)[1]]
+    end
 
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
@@ -101,13 +101,12 @@ end
     @test view(df, !, :a) == [1, 2, 3]
     @test view(df, !, :a) isa SubArray
 
-    @test_throws MethodError view(df, !, 1:2)
-    @test_throws MethodError view(df, !, :)
-    @test_throws MethodError view(df, !, r"ab")
-    @test_throws MethodError view(df, !, Not(1))
-    @test_throws MethodError view(df, !, Not(1:2))
-    @test_throws MethodError view(df, !, Not(r"ab"))
-    @test_throws MethodError view(df, !, Not(Not(r"ab")))
+    for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
+        dfx = @view df[!, 1:2]
+        @test dfx == select(df, selector, copycols=false)
+        @test dfx isa SubDataFrame
+        @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
+    end
 
     @test view(df, 1, 1) isa SubArray
     @test view(df, 1, 1)[] == 1
@@ -211,6 +210,13 @@ end
     @test sdf.a == [1, 2, 3]
     @test sdf.a isa SubArray
 
+    for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
+        dfx = @view sdf[!, 1:2]
+        @test dfx == select(sdf, selector, copycols=false)
+        @test dfx isa SubDataFrame
+        @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
+    end
+
     @test_throws MethodError sdf[!, 1:2]
     @test_throws MethodError sdf[!, r"[ab]"]
     @test_throws MethodError sdf[!, Not(Not(r"[ab]"))]
@@ -309,13 +315,12 @@ end
     @test view(sdf, !, :a) == [1, 2, 3]
     @test view(sdf, !, :a) isa SubArray
 
-    @test_throws ArgumentError view(sdf, !, 1:2)
-    @test_throws ArgumentError view(sdf, !, r"[ab]")
-    @test_throws ArgumentError view(sdf, !, Not(Not(r"[ab]")))
-    @test_throws ArgumentError view(sdf, !, :)
-    @test_throws ArgumentError view(sdf, !, r"")
-    @test_throws ArgumentError view(sdf, !, Not(1))
-    @test_throws ArgumentError view(sdf, !, Not(1:0))
+    for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
+        dfx = @view sdf[!, 1:2]
+        @test dfx == select(sdf, selector, copycols=false)
+        @test dfx isa SubDataFrame
+        @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
+    end
 
     @test view(sdf, 1, 1) isa SubArray
     @test view(sdf, 1, 1)[] == 1
