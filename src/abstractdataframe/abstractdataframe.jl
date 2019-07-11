@@ -817,7 +817,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
             if err isa MethodError && err.f == convert &&
                !(T >: Missing) && any(ismissing, col)
                 throw(ArgumentError("cannot convert a DataFrame containing missing values to Matrix{$T} " *
-                      "(found for column $name)"))
+                                     "(found for column $name)"))
             else
                 rethrow(err)
             end
