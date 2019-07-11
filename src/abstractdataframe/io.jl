@@ -82,7 +82,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         if size(df, 2) == 0
             rowid = nothing
         elseif size(df, 1) != 1 
-                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
 
