@@ -217,13 +217,6 @@ end
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
     end
 
-    @test_throws MethodError sdf[!, 1:2]
-    @test_throws MethodError sdf[!, r"[ab]"]
-    @test_throws MethodError sdf[!, Not(Not(r"[ab]"))]
-    @test_throws MethodError sdf[!, :]
-    @test_throws MethodError sdf[!, r""]
-    @test_throws MethodError sdf[!, Not(1:0)]
-
     @test sdf[1, 1] == 1
     @test sdf[1, 1:2] isa DataFrameRow
     @test copy(sdf[1, 1:2]) == (a=1, b=4)
@@ -509,7 +502,6 @@ end
 
     @test df[!, :x2] === df.x2 === DataFrames._columns(df)[2]
     @test_throws ArgumentError df[!, :x]
-    @test_throws MethodError df[!, 1:2]
 
     v = @view df[2,2]
     @test v isa SubArray
@@ -573,7 +565,6 @@ end
     @test @view(df[!, :x2]) isa SubArray
     @test parent(@view(df[!, :x2])) === df.x2
     @test_throws ArgumentError @view df[!, :x]
-    @test_throws MethodError @view df[!, 1:2]
 
     sdf = @view df[Not(1:0), Not(r"zzz")]
 
@@ -631,7 +622,6 @@ end
     @test sdf[!, :x2] isa SubArray
 
     @test_throws ArgumentError sdf[!, :x]
-    @test_throws MethodError sdf[!, 1:2]
 
     v = @view sdf[2,2]
     @test v isa SubArray

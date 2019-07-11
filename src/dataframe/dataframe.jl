@@ -417,7 +417,8 @@ function insert_single_column!(df::DataFrame,
         else
             if ncol(df) + 1 == Int(col_ind)
                 Base.depwarn("In the future setindex! will disallow adding columns" *
-                             "to a DataFrame using integer index", :setindex!)
+                             "to a DataFrame using integer index. " *
+                             "Use a Symbol to specify a column name instead.", :setindex!)
                 push!(index(df), nextcolname(df))
                 push!(_columns(df), dv)
             else
