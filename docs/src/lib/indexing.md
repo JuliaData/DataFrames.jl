@@ -40,7 +40,7 @@ Additionally it is allowed to index into an `AbstractDataFrame` using a two-dime
 
 In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFrame` and `dfr` is a `DataFrameRow`.
 
-`:` always exapnds to `axes(df, 1)` or `axes(sdf, 1)`.
+`:` always expands to `axes(df, 1)` or `axes(sdf, 1)`.
 
 `df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all cases except that
 `df.col .= v` and `sdf.col .= v` perform in-place broadcasting if `col` is present in `df`/`sdf` and is a valid identifier.
