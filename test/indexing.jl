@@ -759,7 +759,7 @@ end
     @test sdf[!, :x2] isa SubArray
     @test parent(sdf[!, :x2]) === df.x2
     @test_throws ArgumentError @view sdf[!, :x]
-    @test_throws select(sdf, 1:2, copycols=false) == @view sdf[!, 1:2]
+    @test select(sdf, 1:2, copycols=false) == @view sdf[!, 1:2]
 
     dfr = df[2, :]
     @test dfr[2] == dfr.x2 == 6.5
