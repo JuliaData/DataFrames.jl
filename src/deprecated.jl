@@ -1464,7 +1464,7 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-@deprecate Base.setindex!(df::DataFrame, v::AbstractVector,
+@deprecate setindex!(df::DataFrame, v::AbstractVector,
                           col_inds::AbstractVector{Bool}) (foreach(c -> (df[!, c] = copy(v)), findall(col_inds)); df)
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[!, c] = copy(v)), col_inds); df)
@@ -1492,7 +1492,7 @@ function Base.setindex!(df::DataFrame, v, ::Colon)
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-@deprecate Base.setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
+@deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
                         col_inds::AbstractVector{Bool}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), findall(col_inds)); df)
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), col_inds); df)
