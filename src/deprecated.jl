@@ -1449,23 +1449,12 @@ end
 function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
     setindex!(df, new_df, findall(col_inds))
 end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    Base.depwarn("Syntax `df[col_inds] = new_df` is deprecated." *
-                 "Use an explicit assignment of individual columns", :setindex!)
-    # the function has a different behavior when passed a vector of Symbols than
-    # a vector of integers; therefore it is deprecated without giving
-    # a single replacement syntax
-    for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
-    end
-    return df
-end
+@deprecate setindex!(df::DataFrame, new_df::DataFrame,
+                     col_inds::AbstractVector{<:ColumnIndex}) foreach((j, colind) -> (df[!, colind] = new_df[!, j]), enumerate(colinds))
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
-                          col_inds::AbstractVector{Bool}) (foreach(c -> (df[!, c] = copy(v)), findall(col_inds)); df)
+                     col_inds::AbstractVector{Bool}) (foreach(c -> (df[!, c] = copy(v)), findall(col_inds)); df)
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[!, c] = copy(v)), col_inds); df)
 

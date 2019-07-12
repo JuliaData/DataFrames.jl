@@ -97,10 +97,10 @@ end
     @test df[:, r""].x !== x
     @test df[:, Not(1:0)].x !== x
     @test df[!, [:x]].x === x
-    @test df[!, :].x !== x
-    @test df[!, r"x"].x !== x
-    @test df[!, r""].x !== x
-    @test df[!, Not(1:0)].x !== x
+    @test df[!, :].x === x
+    @test df[!, r"x"].x === x
+    @test df[!, r""].x === x
+    @test df[!, Not(1:0)].x === x
 end
 
 @testset "view DataFrame" begin
