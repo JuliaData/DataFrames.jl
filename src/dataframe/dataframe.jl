@@ -240,6 +240,7 @@ julia> df2 = DataFrame!(df1)
 
 julia> df1.a === df2.a
 true
+```
 """
 function DataFrame!(args...; kwargs...)
     if :copycols in keys(kwargs)
