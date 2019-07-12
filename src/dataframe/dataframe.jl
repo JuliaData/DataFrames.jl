@@ -479,11 +479,12 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
                         col_ind::ColumnIndex)
-    if length(v) == length(df[row_inds, col_ind])
-        x = df[!, col_ind]
+    x = df[!, col_ind]
+    try
         x[row_inds] = v
-    else
-        Base.depwarn("implicit vector broadcasting in setindex! is deprecated", :setindex!)
+    catch
+        Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
+                     "write `df[row_inds, col_ind] .= v` instead", :setindex!)
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
     return df

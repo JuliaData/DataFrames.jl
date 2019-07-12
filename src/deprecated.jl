@@ -1464,10 +1464,8 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
-    Base.depwarn("implicit vector broadcasting in setindex! is deprecated", :setindex!)
-    setindex!(df, v, findall(col_inds))
-end
+@deprecate Base.setindex!(df::DataFrame, v::AbstractVector,
+                          col_inds::AbstractVector{Bool}) (foreach(c -> (df[!, c] = copy(v)), findall(col_inds)); df)
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[!, c] = copy(v)), col_inds); df)
 
@@ -1478,7 +1476,8 @@ function Base.setindex!(df::DataFrame,
     setindex!(df, val, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
-    Base.depwarn("implicit broadcasting in setindex! is deprecated", :setindex!)
+    Base.depwarn("implicit broadcasting in setindex! is deprecated; " *
+                 "It is recommended to switch to `.=` broadcasting assignment", :setindex!)
     for col_ind in col_inds
         df[col_ind] = val
     end
@@ -1487,17 +1486,14 @@ end
 
 # df[:] = AbstractVector or Single Item
 function Base.setindex!(df::DataFrame, v, ::Colon)
-    Base.depwarn("`df[:] = v` syntax is deprecated", :setindex!)
+    Base.depwarn("`df[:] = v` syntax is deprecated; use `.=` broadcasting assignment", :setindex!)
     df[1:size(df, 2)] = v
     df
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function Base.setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
-                        col_inds::AbstractVector{Bool})
-    Base.depwarn("assigning a DataFrame to a single row of a DataFrame is deprecated", :setindex!)
-    setindex!(df, new_df, row_ind, findall(col_inds))
-end
+@deprecate Base.setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
+                        col_inds::AbstractVector{Bool}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), findall(col_inds)); df)
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), col_inds); df)
 

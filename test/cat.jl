@@ -228,6 +228,7 @@ end
                     2.0  2.0  2.0
                     3.0  1.0  2.0
                     3.0  3.0  3.0])
+    df[!, 3] = Int.(df[!, 3])
 
     @test vcat(missing_df) == DataFrame()
     @test vcat(missing_df, missing_df) == DataFrame()
@@ -235,13 +236,13 @@ end
     @test vcat(missing_df, missing_df) == DataFrame()
     @test vcat(missing_df, df) == df
     @test vcat(df, missing_df) == df
-    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Float64]
+    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
     @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
     res = vcat(df, df)
     @test res[1:size(df, 1), :] == df
     @test res[(1+size(df, 1)):end, :] == df
     res = vcat(df, df, df)
-    @test eltypes(res) == Type[Float64, Float64, Float64]
+    @test eltypes(res) == Type[Float64, Float64, Int]
     @test size(res) == (size(df, 1) * 3, size(df, 2))
 
     s = size(df, 1)

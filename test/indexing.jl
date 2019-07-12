@@ -91,6 +91,16 @@ end
     @test df.x === x
     @test df[!, :x] === x
     @test df[!, 1] === x
+    @test df[:, [:x]].x !== x
+    @test df[:, :].x !== x
+    @test df[:, r"x"].x !== x
+    @test df[:, r""].x !== x
+    @test df[:, Not(1:0)].x !== x
+    @test df[!, [:x]].x === x
+    @test df[!, :].x !== x
+    @test df[!, r"x"].x !== x
+    @test df[!, r""].x !== x
+    @test df[!, Not(1:0)].x !== x
 end
 
 @testset "view DataFrame" begin
@@ -107,6 +117,24 @@ end
         @test dfx isa SubDataFrame
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
     end
+
+    @test view(df, :, :) == df
+    @test parent(view(df, :, :)) === df
+    @test view(df, :, r"") isa SubDataFrame
+    @test view(df, :, r"") == df
+    @test parent(view(df, :, r"")) === df
+    @test view(df, :, Not(1:0)) isa SubDataFrame
+    @test view(df, :, Not(1:0)) == df
+    @test parent(view(df, :, Not(1:0))) === df
+
+    @test view(df, !, :) == df
+    @test parent(view(df, !, :)) === df
+    @test view(df, !, r"") isa SubDataFrame
+    @test view(df, !, r"") == df
+    @test parent(view(df, !, r"")) === df
+    @test view(df, !, Not(1:0)) isa SubDataFrame
+    @test view(df, !, Not(1:0)) == df
+    @test parent(view(df, !, Not(1:0))) === df
 
     @test view(df, 1, 1) isa SubArray
     @test view(df, 1, 1)[] == 1
@@ -217,6 +245,35 @@ end
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
     end
 
+    @test sdf[:, 1:2] == DataFrame(a=1:3, b=4:6)
+    @test sdf[:, 1:2] isa DataFrame
+    @test sdf[:, r"[ab]"] == DataFrame(a=1:3, b=4:6)
+    @test sdf[:, r"[ab]"] isa DataFrame
+    @test sdf[:, Not(Not(r"[ab]"))] == DataFrame(a=1:3, b=4:6)
+    @test sdf[:, Not(Not(r"[ab]"))] isa DataFrame
+    @test sdf[:, :] == df[2:4, 2:4]
+    @test sdf[:, :] isa DataFrame
+    @test sdf[:, r""] == df[2:4, 2:4]
+    @test sdf[:, r""] isa DataFrame
+    @test sdf[:, Not(1:0)] == df[2:4, 2:4]
+    @test sdf[:, Not(1:0)] isa DataFrame
+
+    @test sdf[!, 1:2] == DataFrame(a=1:3, b=4:6)
+    @test sdf[!, 1:2] isa SubDataFrame
+    @test sdf[!, r"[ab]"] == DataFrame(a=1:3, b=4:6)
+    @test sdf[!, r"[ab]"] isa SubDataFrame
+    @test sdf[!, Not(Not(r"[ab]"))] == DataFrame(a=1:3, b=4:6)
+    @test sdf[!, Not(Not(r"[ab]"))] isa SubDataFrame
+    @test sdf[!, :] == df[2:4, 2:4]
+    @test sdf[!, :] isa SubDataFrame
+    @test sdf[!, r""] == df[2:4, 2:4]
+    @test sdf[!, r""] isa SubDataFrame
+    @test sdf[!, Not(1:0)] == df[2:4, 2:4]
+    @test sdf[!, Not(1:0)] isa SubDataFrame
+    @test parent(sdf[!, :]) === parent(sdf)
+    @test parent(sdf[!, r""]) === parent(sdf)
+    @test parent(sdf[!, Not([])]) === parent(sdf)
+
     @test sdf[1, 1] == 1
     @test sdf[1, 1:2] isa DataFrameRow
     @test copy(sdf[1, 1:2]) == (a=1, b=4)
@@ -314,6 +371,23 @@ end
         @test dfx isa SubDataFrame
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
     end
+
+    @test view(sdf, :, :) isa DataFrame
+    @test view(sdf, :, :) == df[2:4, 2:4]
+    @test view(sdf, :, r"") isa DataFrame
+    @test view(sdf, :, r"") == df[2:4, 2:4]
+    @test view(sdf, :, Not(1:0)) isa DataFrame
+    @test view(sdf, :, Not(1:0)) == df[2:4, 2:4]
+
+    @test view(sdf, !, :) isa SubDataFrame
+    @test view(sdf, !, :) == df[2:4, 2:4]
+    @test view(sdf, !, r"") isa SubDataFrame
+    @test view(sdf, !, r"") == df[2:4, 2:4]
+    @test view(sdf, !, Not(1:0)) isa SubDataFrame
+    @test view(sdf, !, Not(1:0)) == df[2:4, 2:4]
+    @test parent(view(sdf, !, :)) == parent(sdf)
+    @test parent(view(sdf, !, r"")) == parent(sdf)
+    @test parent(view(sdf, !, Not(1:0))) == parent(sdf)
 
     @test view(sdf, 1, 1) isa SubArray
     @test view(sdf, 1, 1)[] == 1

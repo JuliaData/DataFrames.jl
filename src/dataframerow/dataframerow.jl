@@ -65,11 +65,11 @@ Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, 
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
     end
-    colindex = if index(sdf) isa Index # sdf was created using : as row selector
-                   SubIndex(index(sdf), cols)
-               else
-                   SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
-               end
+    if index(sdf) isa Index # sdf was created using : as row selector
+        colindex = SubIndex(index(sdf), cols)
+    else
+        colindex = SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
+    end
     @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
 
@@ -172,7 +172,7 @@ Base.get(dfr::DataFrameRow, key::ColumnIndex, default) =
     haskey(dfr, key) ? dfr[key] : default
 Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
     haskey(dfr, key) ? dfr[key] : f()
-Base.broadcastable(::DataFrameRow) = 
+Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 """
