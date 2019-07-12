@@ -372,11 +372,11 @@ end
         @test parent(dfx[!, 1]) === df[!, names(dfx)[1]]
     end
 
-    @test view(sdf, :, :) isa DataFrame
+    @test view(sdf, :, :) isa SubDataFrame
     @test view(sdf, :, :) == df[2:4, 2:4]
-    @test view(sdf, :, r"") isa DataFrame
+    @test view(sdf, :, r"") isa SubDataFrame
     @test view(sdf, :, r"") == df[2:4, 2:4]
-    @test view(sdf, :, Not(1:0)) isa DataFrame
+    @test view(sdf, :, Not(1:0)) isa SubDataFrame
     @test view(sdf, :, Not(1:0)) == df[2:4, 2:4]
 
     @test view(sdf, !, :) isa SubDataFrame

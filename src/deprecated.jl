@@ -1450,7 +1450,7 @@ function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVect
     setindex!(df, new_df, findall(col_inds))
 end
 @deprecate setindex!(df::DataFrame, new_df::DataFrame,
-                     col_inds::AbstractVector{<:ColumnIndex}) foreach((j, colind) -> (df[!, colind] = new_df[!, j]), enumerate(colinds))
+                     col_inds::AbstractVector{<:ColumnIndex}) foreach(((j, colind),) -> (df[!, colind] = new_df[!, j]), enumerate(col_inds))
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
