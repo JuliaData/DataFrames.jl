@@ -73,10 +73,13 @@ df2 = DataFrame(A = 1:10, B = v, C = rand(10))
 summary(df1)
 describe(df2)
 first(df1, 10)
-df1[:A] + df2[:C]
+df1.B
+df2[!, :C]
+df1[:, :A]
 df1[1:4, 1:2]
-df1[[:A,:C]]
+df1[Not(1:4), Not(1:2)]
 df1[1:2, [:A,:C]]
+df1[1:2, r"[AC]"]
 df1[:, [:A,:C]]
 df1[:, [1,3]]
 df1[1:4, :]
@@ -281,31 +284,6 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-# df[SingleColumnIndex] => AbstractVector, the same vector
-@inline function Base.getindex(df::DataFrame, col_ind::Union{Signed, Unsigned})
-    cols = _columns(df)
-    @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
-        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                          "columns at index $col_ind"))
-    end
-    @inbounds cols[col_ind]
-end
-
-function Base.getindex(df::DataFrame, col_ind::Symbol)
-    selected_column = index(df)[col_ind]
-    return _columns(df)[selected_column]
-end
-
-# df[MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, col_inds::Union{AbstractVector, Regex, Not})
-    selected_columns = index(df)[col_inds]
-    new_columns = _columns(df)[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
-end
-
-# df[:] => DataFrame
-Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
-
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 @inline function Base.getindex(df::DataFrame, row_ind::Integer,
                                col_ind::Union{Signed, Unsigned})
@@ -346,6 +324,27 @@ end
 @inline Base.getindex(df::DataFrame, row_inds::Not, col_ind::ColumnIndex) =
     df[axes(df, 1)[row_inds], col_ind]
 
+# df[:, SingleColumnIndex] => AbstractVector
+function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
+    selected_column = index(df)[col_ind]
+    copy(_columns(df)[selected_column])
+end
+
+# df[!, SingleColumnIndex] => AbstractVector, the same vector
+@inline function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Signed, Unsigned})
+    cols = _columns(df)
+    @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
+        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
+                          "columns at index $col_ind"))
+    end
+    @inbounds cols[col_ind]
+end
+
+function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Symbol)
+    selected_column = index(df)[col_ind]
+    return _columns(df)[selected_column]
+end
+
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
                                col_inds::Union{AbstractVector, Regex, Not}) where T
@@ -360,24 +359,6 @@ end
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
-@inline Base.getindex(df::DataFrame, row_inds::Not,
-                      col_inds::Union{AbstractVector, Regex, Not}) =
-    df[axes(df, 1)[row_inds], col_inds]
-
-# df[:, SingleColumnIndex] => AbstractVector
-function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    copy(_columns(df)[selected_column])
-end
-
-# df[:, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not})
-    selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
-end
-
-# df[MultiRowIndex, :] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
@@ -389,14 +370,17 @@ end
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
 
-@inline Base.getindex(df::DataFrame, row_inds::Not, ::Colon) =
-    df[axes(df, 1)[row_inds], :]
+@inline Base.getindex(df::DataFrame, row_inds::Not,
+                      col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+    df[axes(df, 1)[row_inds], col_inds]
 
-# df[:, :] => DataFrame
-function Base.getindex(df::DataFrame, ::Colon, ::Colon)
-    new_columns = AbstractVector[copy(dv) for dv in _columns(df)]
-    return DataFrame(new_columns, Index(_names(df)), copycols=false)
-end
+# df[:, MultiColumnIndex] => DataFrame
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+    select(df, col_inds, copycols=true)
+
+# df[!, MultiColumnIndex] => DataFrame
+Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+    select(df, col_inds, copycols=false)
 
 ##############################################################################
 ##
@@ -433,6 +417,9 @@ function insert_single_column!(df::DataFrame,
             push!(_columns(df), dv)
         else
             if ncol(df) + 1 == Int(col_ind)
+                Base.depwarn("In the future setindex! will disallow adding columns" *
+                             "to a DataFrame using integer index. " *
+                             "Use a Symbol to specify a column name instead.", :setindex!)
                 push!(index(df), nextcolname(df))
                 push!(_columns(df), dv)
             else
@@ -454,7 +441,7 @@ end
 
 function insert_multiple_entries!(df::DataFrame,
                                   v::Any,
-                                  row_inds::AbstractVector{<:Integer},
+                                  row_inds::AbstractVector,
                                   col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_inds] .= v
@@ -473,248 +460,67 @@ function upgrade_scalar(df::DataFrame, v::Any)
     fill(v, n)
 end
 
-# df[SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
+# df[!, SingleColumnIndex] = AbstractVector
+function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
-end
-
-# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
-function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        fill!(df[col_ind], v)
-    else
-        insert_single_column!(df, upgrade_scalar(df, v), col_ind)
-    end
     return df
 end
 
-# df[MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
-    end
-    return df
-end
-
-# df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        df[col_ind] = copy(v)
-    end
-    return df
-end
-
-# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(df) if NCOL(df) > 0)
-function Base.setindex!(df::DataFrame,
-                        val::Any,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, val, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        df[col_ind] = val
-    end
-    return df
-end
-
-# df[Regex] = value
-Base.setindex!(df::DataFrame, v::Any, col_inds::Regex) =
-    setindex!(df, v, index(df)[col_inds])
-
-# df[:] = AbstractVector or Single Item
-Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
+# df.col = AbstractVector
+Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) = (df[!, col_ind] = v)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     insert_single_entry!(df, v, row_ind, col_ind)
-end
-
-# df[SingleRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_ind::Real,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_ind, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_ind::Real,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        insert_single_entry!(df, v, row_ind, col_ind)
-    end
-    return df
-end
-
-# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Real,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_ind, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Real,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
-    end
     return df
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
+                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
                         col_ind::ColumnIndex)
-    setindex!(df, v, findall(row_inds), col_ind)
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
-                        col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
-end
-
-# df[MultiRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_ind::ColumnIndex)
-    setindex!(df, v, findall(row_inds), col_ind)
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Real},
-                        col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
-end
-
-# df[MultiRowIndex, MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, new_df, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
-    end
-    return df
-end
-
-# df[MultiRowIndex, MultiColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
+    x = df[!, col_ind]
+    try
+        x[row_inds] = v
+    catch
+        Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
+                     "write `df[row_inds, col_ind] .= v` instead", :setindex!)
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
     return df
 end
 
-# df[MultiRowIndex, MultiColumnIndex] = Single Item
+# df[MultiRowIndex, MultiColumnIndex] = AbstractDataFrame
 function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
+                        new_df::AbstractDataFrame,
+                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
+                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
+    idxs = index(df)[col_inds]
+    if view(_names(df), idxs) != _names(new_df)
+        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
+    end
+    for (j, col) in enumerate(idxs)
+        df[row_inds, col] = new_df[!, j]
     end
     return df
 end
 
-# df[rows, Regex] = value
-Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Regex) =
-    setindex!(df, v, row_inds, index(df)[col_inds])
-
-# df[:] = DataFrame, df[:, :] = DataFrame
+# df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
 function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_inds::Colon,
-                        col_inds::Colon=Colon())
-    setfield!(df, :columns, copy(_columns(new_df)))
-    setfield!(df, :colindex, copy(index(new_df)))
-    df
+                        mx::AbstractMatrix,
+                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
+                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
+    idxs = index(df)[col_inds]
+    if size(mx, 2) != length(idxs)
+        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
+                                " matrix ($(size(mx, 2))) do not match"))
+    end
+    for (j, col) in enumerate(idxs)
+        df[row_inds, col] = view(mx, :, j)
+    end
+    return df
 end
-
-# df[:, :] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, ::Colon) =
-    (df[1:size(df, 1), 1:size(df, 2)] = v; df)
-
-# df[Any, :] = ...
-Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
-    (df[row_inds, 1:size(df, 2)] = v; df)
-
-# df[:, Any] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
-    (df[col_inds] = v; df)
 
 ##############################################################################
 ##
@@ -1007,7 +813,7 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
                makeunique::Bool=false, copycols::Bool=true)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
-        df1[u[i]] = copycols ? copy(df2[i]) : df2[i]
+        df1[!, u[i]] = copycols ? df2[:, i] : df2[!, i]
     end
     return df1
 end
@@ -1067,7 +873,7 @@ If `cols` is omitted all columns in the data frame are converted.
 function allowmissing! end
 
 function allowmissing!(df::DataFrame, col::ColumnIndex)
-    df[col] = allowmissing(df[col])
+    df[!, col] = allowmissing(df[!, col])
     df
 end
 
@@ -1105,7 +911,7 @@ If `cols` is omitted all columns in the data frame are converted.
 function disallowmissing! end
 
 function disallowmissing!(df::DataFrame, col::ColumnIndex)
-    df[col] = disallowmissing(df[col])
+    df[!, col] = disallowmissing(df[!, col])
     df
 end
 
@@ -1206,14 +1012,14 @@ function categorical! end
 
 function categorical!(df::DataFrame, cname::ColumnIndex;
                       compress::Bool=false)
-    df[cname] = categorical(df[cname], compress)
+    df[!, cname] = categorical(df[!, cname], compress)
     df
 end
 
 function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
                       compress::Bool=false)
     for cname in cnames
-        df[cname] = categorical(df[cname], compress)
+        df[!, cname] = categorical(df[!, cname], compress)
     end
     df
 end
@@ -1223,8 +1029,8 @@ categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
 
 function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: Union{AbstractString, Missing}
-            df[i] = categorical(df[i], compress)
+        if eltype(df[!, i]) <: Union{AbstractString, Missing}
+            df[!, i] = categorical(df[!, i], compress)
         end
     end
     df
@@ -1282,7 +1088,7 @@ julia> df1
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     if ncol(df1) == 0
         for (n, v) in eachcol(df2, true)
-            df1[n] = copy(v) # make sure df1 does not reuse df2
+            df1[!, n] = copy(v) # make sure df1 does not reuse df2
         end
         return df1
     end
@@ -1292,12 +1098,12 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     nrows, ncols = size(df1)
     try
         for j in 1:ncols
-            append!(df1[j], df2[j])
+            append!(df1[!, j], df2[!, j])
         end
     catch err
         # Undo changes in case of error
         for j in 1:ncols
-            resize!(df1[j], nrows)
+            resize!(df1[!, j], nrows)
         end
         rethrow(err)
     end
@@ -1328,11 +1134,11 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
     end
     for nm in _names(df)
         try
-            push!(df[i], row[nm])
+            push!(df[!, i], row[nm])
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df[j])
+                pop!(df[!, j])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))

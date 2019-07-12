@@ -1,6 +1,7 @@
 ### Broadcasting
 
 Base.getindex(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx[1], idx[2]]
+Base.view(df::AbstractDataFrame, idx::CartesianIndex{2}) = view(df, idx[1], idx[2])
 Base.setindex!(df::AbstractDataFrame, val, idx::CartesianIndex{2}) =
     (df[idx[1], idx[2]] = val)
 
@@ -15,8 +16,7 @@ Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle)
 Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) = DataFrameStyle()
 Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::DataFrameStyle) = DataFrameStyle()
 
-function copyto_widen!(res::AbstractVector{T},
-                       bc::Base.Broadcast.Broadcasted{DataFrameStyle},
+function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
                        pos, col) where T
     for i in pos:length(axes(bc)[1])
         val = bc[CartesianIndex(i, col)]
@@ -36,7 +36,7 @@ end
 function getcolbc(bcf::Base.Broadcast.Broadcasted{Style}, colind) where {Style}
     # we assume that bcf is already flattened and unaliased
     newargs = map(bcf.args) do x
-        Base.Broadcast.extrude(x isa AbstractDataFrame ? x[colind] : x)
+        Base.Broadcast.extrude(x isa AbstractDataFrame ? x[!, colind] : x)
     end
     Base.Broadcast.Broadcasted{Style}(bcf.f, newargs, bcf.axes)
 end
@@ -66,38 +66,47 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
             startcol[1] = v1
             col = copyto_widen!(startcol, bcf′, 2, i)
         end
-        df[colnames[1][i]] = col
+        df[!, colnames[1][i]] = col
     end
     return df
 end
 
 ### Broadcasting assignment
 
-struct LazyNewColDataFrame
+struct LazyNewColDataFrame{T}
     df::DataFrame
-    col::Symbol
+    col::T
 end
 
 # we allow LazyNewColDataFrame only for data frames with at least one column
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
-Base.maybeview(df::AbstractDataFrame, idxs...) = view(df, idxs...)
+# ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
+# # ColReplaceDataFrame allows for column replacement in broadcasting
+# struct ColReplaceDataFrame
+#     df::DataFrame
+#     cols::Vector{Int}
+# end
 
-function Base.maybeview(df::AbstractDataFrame, idxs)
+# Base.axes(x::ColReplaceDataFrame) = axes(x.df)
+
+Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = view(df, idx[1], idx[2])
+Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
+
+function Base.maybeview(df::DataFrame, ::typeof(!), cols)
+    if !(cols isa ColumnIndex)
+        throw(ArgumentError("broadcasting with column replacement is currently allowed only for single column index"))
+    end
     if ncol(df) == 0
-        throw(ArgumentError("Broadcasting into a data frame with no columns is not allowed"))
+        throw(ArgumentError("broadcasting into a data frame with no columns is not allowed"))
     end
-    if idxs isa Symbol
-        if !hasproperty(df, idxs)
-            if !(df isa DataFrame)
-                # this will throw an appropriate error message
-                df[idxs]
-            end
-            return LazyNewColDataFrame(df, idxs)
-        end
-    end
-    view(df, idxs)
+    # in the future we might allow cols to target multiple columns
+    # in which case ColReplaceDataFrame(df, index(df)[cols]) will be returned
+    LazyNewColDataFrame(df, cols)
 end
+
+Base.maybeview(df::SubDataFrame, ::typeof(!), idxs) =
+    throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted)
     if isempty(lazydf.df)
@@ -111,7 +120,7 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     else
         col = Base.Broadcast.materialize(bc)
     end
-    lazydf.df[lazydf.col] = col
+    lazydf.df[!, lazydf.col] = col
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
@@ -142,12 +151,12 @@ function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
                                        index(src), rows(src))
                 end
                 parentidx = parentcols(index(src), i)
-                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+                parent(src)[!, parentidx] = Base.unaliascopy(parent(src)[!, parentidx])
             else
                 if !wascopied
                     src = copy(src, copycols=false)
                 end
-                src[i] = Base.unaliascopy(col)
+                src[!, i] = Base.unaliascopy(col)
             end
             wascopied = true
         end
@@ -161,7 +170,7 @@ function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector
     # results from 1 to ncol
     # we go downwards because aliasing when col1 == col2 is most probable
     for col1 in col2:-1:1
-        dcol = dest[col1]
+        dcol = dest[!, col1]
         if Base.mightalias(dcol, scol)
             if src isa SubDataFrame
                 if !wascopied
@@ -169,12 +178,12 @@ function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector
                                       index(src), rows(src))
                 end
                 parentidx = parentcols(index(src), col2)
-                parent(src)[parentidx] = Base.unaliascopy(parent(src)[parentidx])
+                parent(src)[!, parentidx] = Base.unaliascopy(parent(src)[!, parentidx])
             else
                 if !wascopied
                     src = copy(src, copycols=false)
                 end
-                src[col2] = Base.unaliascopy(scol)
+                src[!, col2] = Base.unaliascopy(scol)
             end
             return src, true
         end
@@ -188,7 +197,7 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::Abstract
     end
     wascopied = false
     for col2 in axes(dest, 2)
-        scol = src[col2]
+        scol = src[!, col2]
         src, wascopied = _broadcast_unalias_helper(dest, scol, src, col2, wascopied)
     end
     src
@@ -196,7 +205,7 @@ end
 
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
+    colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && _names(df) != colnames[1])
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         msg = join(wrongnames, ", ", " and ")
@@ -206,7 +215,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
 
     bcf′ = Base.Broadcast.preprocess(df, bcf)
     for i in axes(df, 2)
-        _copyto_helper!(df[i], getcolbc(bcf′, i), i)
+        _copyto_helper!(df[!, i], getcolbc(bcf′, i), i)
     end
     df
 end
@@ -215,13 +224,36 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     # special case of fast approach when bc is providing an untransformed scalar
     if bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         for col in axes(df, 2)
-            fill!(df[col], bc.args[1][])
+            fill!(df[!, col], bc.args[1][])
         end
         df
     else
         copyto!(df, convert(Base.Broadcast.Broadcasted{Nothing}, bc))
     end
 end
+
+# copyto! for ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
+# function Base.copyto!(df::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
+#     bcf = Base.Broadcast.flatten(bc)
+#     colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+#     if length(colnames) > 1 || (length(colnames) == 1 && view(_names(df.df), df.cols) != colnames[1])
+#         wrongnames = setdiff(union(colnames...), intersect(colnames...))
+#         msg = join(wrongnames, ", ", " and ")
+#         throw(ArgumentError("Column names in broadcasted data frames must match. " *
+#                             "Non matching column names are $msg"))
+#     end
+
+#     nrows = length(axes(bcf)[1])
+#     for (i, colidx) in enumerate(df.cols)
+#         bcf′ = getcolbc(bcf, i)
+#         v1 = bcf′[CartesianIndex(1, i)]
+#         startcol = similar(Vector{typeof(v1)}, nrows)
+#         startcol[1] = v1
+#         col = copyto_widen!(startcol, bcf′, 2, i)
+#         df.df[!, colidx] = col
+#     end
+#     df.df
+# end
 
 Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
     Base.Broadcast.broadcast_unalias(parent(dest), src)

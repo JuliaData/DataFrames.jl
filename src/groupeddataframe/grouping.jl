@@ -135,7 +135,7 @@ julia> for g in gd
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
     intcols = convert(Vector{Int}, index(df)[cols])
-    sdf = df[intcols]
+    sdf = df[!, intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)
     GroupedDataFrame(df, intcols, df_groups.groups, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
@@ -679,16 +679,16 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     res = map(f) do p
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
-            incol = gd.parent[first(p)]
+            incol = gd.parent[!, first(p)]
             idx = gd.idx[gd.starts]
             outcol = agg(incol, gd)
             return idx, outcol
         else
             fun = do_f(last(p))
             if p isa Pair{<:ColumnIndex}
-                incols = gd.parent[first(p)]
+                incols = gd.parent[!, first(p)]
             else
-                df = gd.parent[collect(first(p))]
+                df = gd.parent[!, collect(first(p))]
                 incols = NamedTuple{Tuple(names(df))}(eachcol(df))
             end
             firstres = do_call(fun, gd, incols, 1)
@@ -717,10 +717,10 @@ end
 
 function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:ColumnIndex}
-        incols = gd.parent[first(f)]
+        incols = gd.parent[!, first(f)]
         fun = last(f)
     elseif f isa Pair
-        df = gd.parent[collect(first(f))]
+        df = gd.parent[! , collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(eachcol(df))
         fun = last(f)
     else
@@ -872,7 +872,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
         cn = colnames[j]
         local vals
         try
-            vals = rows[cn]
+            vals = getproperty(rows, cn)
         catch
             throw(ArgumentError("return value must have the same column names " *
                                 "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))
@@ -906,7 +906,7 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
             local newcols
             let i = i, j = j, outcols=outcols, rows=rows # Workaround for julia#15276
                 newcols = ntuple(length(outcols)) do k
-                    S = eltype(rows[k])
+                    S = eltype(rows isa AbstractDataFrame ? rows[!, k] : rows[k])
                     T = eltype(outcols[k])
                     U = promote_type(S, T)
                     if S <: T || U <: T
@@ -1150,7 +1150,7 @@ end
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
+    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent)[gd.cols]))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
     res
@@ -1174,7 +1174,7 @@ _makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
 
 function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
                     headers::AbstractVector{Symbol}, sort::Bool=false)
-    res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    res = DataFrame(AbstractVector[vcat(f(d[!, i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res
 end

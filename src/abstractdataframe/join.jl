@@ -28,7 +28,7 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
             left_on = [first(x) for x in on_cols]
             right_on = [last(x) for x in on_cols]
         end
-        new(dfl, dfr, dfl[left_on], dfr[right_on], left_on, right_on)
+        new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
     end
 end
 
@@ -109,7 +109,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
-            copyto!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
+            copyto!(res[!, on_col], offset, view(joiner.dfr_on[!, on_col_ix], rightonly_ixs.orig))
         end
     end
     if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)
@@ -118,10 +118,10 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         # However, when the right on-column (plus the left one for the outer join)
         # does not allow missing values, the result should also disallow them.
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
-            LT = eltype(joiner.dfl_on[on_col_ix])
-            RT = eltype(joiner.dfr_on[on_col_ix])
+            LT = eltype(joiner.dfl_on[!, on_col_ix])
+            RT = eltype(joiner.dfr_on[!, on_col_ix])
             if !(RT >: Missing) && (kind == :right || !(LT >: Missing))
-                res[on_col] = disallowmissing(res[on_col])
+                res[!, on_col] = disallowmissing(res[!, on_col])
             end
         end
     end
@@ -157,8 +157,8 @@ function update_row_maps!(left_table::AbstractDataFrame,
     @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] .= false)
 
     # iterate over left rows and compose the left<->right index map
-    right_dict_cols = ntuple(i -> right_dict.df[i], ncol(right_dict.df))
-    left_table_cols = ntuple(i -> left_table[i], ncol(left_table))
+    right_dict_cols = ntuple(i -> right_dict.df[!, i], ncol(right_dict.df))
+    left_table_cols = ntuple(i -> left_table[!, i], ncol(left_table))
     next_join_ix = 1
     for l_ix in 1:nrow(left_table)
         r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
@@ -307,10 +307,10 @@ function Base.join(df1::AbstractDataFrame,
         end
         df1 = copy(df1, copycols=false)
         df1_ind = Symbol(indicator_cols[1])
-        df1[df1_ind] = trues(nrow(df1))
+        df1[!, df1_ind] = trues(nrow(df1))
         df2 = copy(df2, copycols=false)
         df2_ind = Symbol(indicator_cols[2])
-        df2[df2_ind] = trues(nrow(df2))
+        df2[!, df2_ind] = trues(nrow(df2))
     end
 
     if kind == :cross
@@ -368,8 +368,8 @@ function Base.join(df1::AbstractDataFrame,
         # iterate over left rows and leave those found in right
         left_ixs = Vector{Int}()
         sizehint!(left_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
         @inbounds for l_ix in 1:nrow(joiner.dfl_on)
             if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
                 push!(left_ixs, l_ix)
@@ -382,8 +382,8 @@ function Base.join(df1::AbstractDataFrame,
         # iterate over left rows and leave those not found in right
         leftonly_ixs = Vector{Int}()
         sizehint!(leftonly_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
         @inbounds for l_ix in 1:nrow(joiner.dfl_on)
             if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
                 push!(leftonly_ixs, l_ix)
@@ -395,8 +395,8 @@ function Base.join(df1::AbstractDataFrame,
     end
 
     if indicator !== nothing
-        refs = UInt8.(coalesce.(joined[df1_ind], false) .+
-                      2 .* coalesce.(joined[df2_ind], false))
+        refs = UInt8.(coalesce.(joined[!, df1_ind], false) .+
+                      2 .* coalesce.(joined[!, df2_ind], false))
         pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
         indicatorcol = CategoricalArray{String,1}(refs, pool)
         unique_indicator = indicator
@@ -405,7 +405,7 @@ function Base.join(df1::AbstractDataFrame,
             try_idx += 1
             unique_indicator = Symbol(string(indicator, "_", try_idx))
         end
-        joined[unique_indicator] = indicatorcol
+        joined[!, unique_indicator] = indicatorcol
         select!(joined, Not([df1_ind, df2_ind]))
     end
 

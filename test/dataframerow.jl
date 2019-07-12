@@ -38,8 +38,8 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
     @test_throws BoundsError DataFrameRow(df, 100, :)
     @test_throws BoundsError DataFrameRow(df, 100)
-    @test_throws MethodError DataFrameRow(df, true, 1:2)
-    @test_throws MethodError DataFrameRow(df, true)
+    @test_throws ArgumentError DataFrameRow(df, true, 1:2)
+    @test_throws ArgumentError DataFrameRow(df, true)
     @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
 end
 
@@ -109,10 +109,10 @@ end
                     5 6 7 8])
     r = df[1, r"[1-3]"]
     @test names(r) == [:x1, :x2, :x3]
-    r[:] = 10
+    r[:] .= 10
     @test df == DataFrame([10 10 10 4
                             5  6  7 8])
-    r[r"[2-3]"] = 20
+    r[r"[2-3]"] .= 20
     @test df == DataFrame([10 20 20 4
                             5  6  7 8])
 end
@@ -191,7 +191,7 @@ end
     # getting groups for the rows of the other frames
     @test length(gd[DataFrameRow(df2, 1, :)]) > 0
     @test_throws KeyError gd[DataFrameRow(df2, 2, :)]
-    @test isempty(DataFrames.findrows(gd, df2, (gd.df[1],), (df2[1],), 2))
+    @test isempty(DataFrames.findrows(gd, df2, (gd.df[!, 1],), (df2[!, 1],), 2))
 
     # grouping empty frame
     gd = DataFrames.group_rows(DataFrame(x=Int[]))
@@ -248,8 +248,8 @@ end
     @test size(r, 1) == 4
     @test_throws BoundsError size(r, 2)
     @test keys(r) == (:x8, :x5, :x1, :x3)
-    r[:] = 0.0
-    r[1:2] = 2.0
+    r[:] .= 0.0
+    r[1:2] .= 2.0
     @test values(r) == (2.0, 2.0, 0.0, 0.0)
     @test collect(pairs(r)) == [:x8 => 2.0, :x5 => 2.0, :x1 => 0.0, :x3 => 0.0]
 
@@ -275,13 +275,13 @@ end
     @test Vector(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test Vector{Int}(dfr)::Vector{Int} == [1, 2]
 
-    df = deepcopy(ref_df)[1:3]
+    df = ref_df[:, 1:3]
     @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
     @test copy(DataFrameRow(df, 2, :)) ≅ (a = 2, b = missing, c = "B")
 end
 
 @testset "parent and parentindices" begin
-    df = deepcopy(ref_df)[1:3]
+    df = ref_df[:, 1:3]
 
     @test parent(df[2, :]) === df
     @test parentindices(df[2, []]) == (2, Int[])

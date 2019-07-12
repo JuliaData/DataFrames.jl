@@ -247,7 +247,7 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
                     skipmissing::Bool = false)
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
-        row_group_slots(ntuple(i -> df[i], ncol(df)), Val(hash), groups, skipmissing)
+        row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(hash), groups, skipmissing)
 
     # count elements in each group
     stops = zeros(Int, ngroups)
@@ -334,8 +334,8 @@ function findrows(gd::RowGroupDict,
 end
 
 function Base.getindex(gd::RowGroupDict, dfr::DataFrameRow)
-    g_row = findrow(gd, parent(dfr), ntuple(i -> gd.df[i], ncol(gd.df)),
-                    ntuple(i -> parent(dfr)[i], ncol(parent(dfr))), row(dfr))
+    g_row = findrow(gd, parent(dfr), ntuple(i -> gd.df[!, i], ncol(gd.df)),
+                    ntuple(i -> parent(dfr)[!, i], ncol(parent(dfr))), row(dfr))
     (g_row == 0) && throw(KeyError(dfr))
     gix = gd.groups[g_row]
     return view(gd.rperm, gd.starts[gix]:gd.stops[gix])

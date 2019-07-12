@@ -156,12 +156,12 @@ Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
                                                      Pair{Symbol, AbstractVector}}, j::Int)
     @boundscheck checkbounds(itr, j)
-    @inbounds _names(itr.df)[j] => itr.df[j]
+    @inbounds _names(itr.df)[j] => itr.df[!, j]
 end
 
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector}, j::Int)
     @boundscheck checkbounds(itr, j)
-    @inbounds itr.df[j]
+    @inbounds itr.df[!, j]
 end
 
 """
@@ -199,10 +199,24 @@ julia> mapcols(x -> x.^2, df)
 """
 function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
-    res = DataFrame()
-    for (n, v) in eachcol(df, true)
+    vs = AbstractVector[]
+    seenscalar = false
+    seenvector = false
+    for v in eachcol(df)
         fv = f(v)
-        res[n] = fv === v ? copy(v) : fv
+        if fv isa AbstractVector
+            if seenscalar
+                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
+            end
+            seenvector = true
+            push!(vs, fv)
+        else
+            if seenvector
+                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
+            end
+            seenscalar = true
+            push!(vs, [fv])
+        end
     end
-    res
+    DataFrame(vs, _names(df), copycols = false)
 end
