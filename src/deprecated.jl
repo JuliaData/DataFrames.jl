@@ -1482,7 +1482,7 @@ end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
-                        col_inds::AbstractVector{Bool}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), findall(col_inds)); df)
+                   col_inds::AbstractVector{Bool}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), findall(col_inds)); df)
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), col_inds); df)
 
