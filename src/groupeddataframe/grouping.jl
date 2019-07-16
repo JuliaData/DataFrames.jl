@@ -135,7 +135,7 @@ julia> for g in gd
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
     intcols = convert(Vector{Int}, index(df)[cols])
-    sdf = df[intcols]
+    sdf = df[!, intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)
     GroupedDataFrame(df, intcols, df_groups.groups, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
@@ -239,7 +239,7 @@ appended to the input column name; for other functions, columns are called `x1`,
 and so on.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
-`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
 are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
@@ -376,7 +376,7 @@ and so on. The resulting data frame will be sorted if `sort=true` was passed to 
 is undefined.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
-`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
 are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
@@ -625,7 +625,7 @@ function groupreduce!(res, f, op, condf, adjust,
     @inbounds for i in eachindex(incol, gd.groups)
         gix = gd.groups[i]
         x = incol[i]
-        if condf === nothing || condf(x)
+        if gix > 0 && (condf === nothing || condf(x))
             res[gix] = op(res[gix], f(x, gix))
             adjust !== nothing && (counts[gix] += 1)
         end
@@ -713,17 +713,19 @@ function _combine(f::Union{AbstractVector{<:Pair},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
+
         if agg isa AbstractAggregate && p isa Pair && first(p) isa ColumnIndex
-            incol = gd.parent[first(p)]
+            incol = gd.parent[!, first(p)]
             idx = gd.idx[gd.starts]
             outcol = agg(incol, gd)
             return idx, outcol
         else
             fun = do_f(last(p))
-            if p isa Pair && first(p) isa ColumnIndex
-                incols = gd.parent[first(p)]
+      
+             if p isa Pair && first(p) isa ColumnIndex
+                incols = gd.parent[!, first(p)]
             else
-                df = gd.parent[collect(first(p))]
+                df = gd.parent[!, collect(first(p))]
                 incols = NamedTuple{Tuple(names(df))}(eachcol(df))
             end
             firstres = do_call(fun, gd, incols, 1)
@@ -751,11 +753,11 @@ function _combine(f::Union{AbstractVector{<:Pair},
 end
 
 function _combine(f::Any, gd::GroupedDataFrame)
-    if f isa Pair{<:Union{Symbol,Integer}}
-        incols = gd.parent[first(f)]
+    if f isa Pair{<:ColumnIndex}
+        incols = gd.parent[!, first(f)]
         fun = last(f)
     elseif f isa Pair
-        df = gd.parent[collect(first(f))]
+        df = gd.parent[! , collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(eachcol(df))
         fun = last(f)
     else
@@ -763,7 +765,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         fun = f
     end
     agg = check_aggregate(fun)
-    if agg isa AbstractAggregate && f isa Pair{<:Union{Symbol,Integer}}
+    if agg isa AbstractAggregate && f isa Pair{<:ColumnIndex}
         idx = gd.idx[gd.starts]
         outcols = (agg(incols, gd),)
         # nms is set below
@@ -771,7 +773,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         firstres = do_call(fun, gd, incols, 1)
         idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols)
     end
-    if f isa Pair{<:Union{Symbol,Integer}} &&
+    if f isa Pair{<:ColumnIndex} &&
         (agg isa AbstractAggregate ||
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
@@ -907,7 +909,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
         cn = colnames[j]
         local vals
         try
-            vals = rows[cn]
+            vals = getproperty(rows, cn)
         catch
             throw(ArgumentError("return value must have the same column names " *
                                 "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))
@@ -941,7 +943,7 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
             local newcols
             let i = i, j = j, outcols=outcols, rows=rows # Workaround for julia#15276
                 newcols = ntuple(length(outcols)) do k
-                    S = eltype(rows[k])
+                    S = eltype(rows isa AbstractDataFrame ? rows[!, k] : rows[k])
                     T = eltype(outcols[k])
                     U = promote_type(S, T)
                     if S <: T || U <: T
@@ -1205,7 +1207,7 @@ end
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
+    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent)[gd.cols]))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
     res
@@ -1229,7 +1231,7 @@ _makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
 
 function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
                     headers::AbstractVector{Symbol}, sort::Bool=false)
-    res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    res = DataFrame(AbstractVector[vcat(f(d[!, i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res
 end

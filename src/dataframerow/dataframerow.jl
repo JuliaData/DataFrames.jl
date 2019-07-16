@@ -57,14 +57,24 @@ Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
 
+Base.@propagate_inbounds DataFrameRow(df::DataFrame, row::Bool, cols) =
+    throw(ArgumentError("invalid row index of type Bool"))
+
 Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(sdf, 1), row)
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
     end
-    colindex = SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
+    if index(sdf) isa Index # sdf was created using : as row selector
+        colindex = SubIndex(index(sdf), cols)
+    else
+        colindex = SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
+    end
     @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
+
+Base.@propagate_inbounds DataFrameRow(df::SubDataFrame, row::Bool, cols) =
+    throw(ArgumentError("invalid row index of type Bool"))
 
 Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
     DataFrameRow(df, row, :)
@@ -74,22 +84,27 @@ Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
-                                   colinds::Union{Colon, AbstractVector, Regex}) =
+                                   colinds::Union{Colon, AbstractVector, Regex, Not}) =
     DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::Union{AbstractVector, Regex}) =
+                                       colinds::Union{AbstractVector, Regex, Not}) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex}) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value::Any, idx) =
-    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
+Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
+    col = parentcols(index(r), idx)
+    if !(col isa Int)
+        Base.depwarn("implicit broadcasting in DataFrameRow assignment is deprecated", :setindex!)
+    end
+    setindex!(parent(r), value, row(r), col)
+end
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
@@ -100,7 +115,7 @@ Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
-    haskey(parent(r), key) || return false
+    hasproperty(parent(r), key) || return false
     index(r) isa Index && return true
     # here index(r) is a SubIndex
     pos = index(parent(r))[key]
@@ -116,8 +131,8 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
-    view(parent(r)[parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex}) =
+    view(parent(r)[!, parentcols(index(r), col)], row(r))
+Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
@@ -153,11 +168,12 @@ Base.keys(r::DataFrameRow) = Tuple(_names(r))
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
-Base.get(dfr::DataFrameRow, key::Union{Integer, Symbol}, default) =
+Base.get(dfr::DataFrameRow, key::ColumnIndex, default) =
     haskey(dfr, key) ? dfr[key] : default
-Base.get(f::Base.Callable, dfr::DataFrameRow, key::Union{Integer, Symbol}) =
+Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
     haskey(dfr, key) ? dfr[key] : f()
-Base.broadcastable(::DataFrameRow) = throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
+Base.broadcastable(::DataFrameRow) =
+    throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 """
     copy(dfr::DataFrameRow)
@@ -190,7 +206,7 @@ function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UIn
 end
 
 Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(col -> parent(r)[parentcols(index(r), col)], length(r)), row(r), h)
+    rowhash(ntuple(col -> parent(r)[!, parentcols(index(r), col)], length(r)), row(r), h)
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
@@ -259,11 +275,11 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
         i = 1
         for nm in _names(df)
             try
-                push!(df[i], dfr[nm])
+                push!(df[!, i], dfr[nm])
             catch
                 #clean up partial row
                 for j in 1:(i - 1)
-                    pop!(df[j])
+                    pop!(df[!, j])
                 end
                 msg = "Error adding value to column :$nm."
                 throw(ArgumentError(msg))

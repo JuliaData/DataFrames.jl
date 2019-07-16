@@ -297,7 +297,7 @@ function showrowindices(io::IO,
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
-            if isassigned(df[j], i)
+            if isassigned(df[!, j], i)
                 s = df[i, j]
                 strlen = ourstrwidth(io, s)
                 if ismissing(s)
@@ -446,7 +446,7 @@ function showrows(io::IO,
         end
         print(io, " │ ")
         for j in leftcol:rightcol
-            s = compacttype(eltype(df[j]), maxwidths[j])
+            s = compacttype(eltype(df[!, j]), maxwidths[j])
             printstyled(io, s, color=:light_black)
             padding = maxwidths[j] - ourstrwidth(io, s)
             for itr in 1:padding
@@ -518,8 +518,8 @@ function _show(io::IO,
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        else
-            nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        elseif nrows != 1 
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
     dsize = displaysize(io)
