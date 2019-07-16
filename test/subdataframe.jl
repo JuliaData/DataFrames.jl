@@ -38,42 +38,42 @@ end
     @test view(df, UInt(1):UInt(1), r"") == SubDataFrame(df, 1:1, r"")
     @test view(df, BigInt(1):BigInt(1), r"") == SubDataFrame(df, 1:1, r"")
 
-    @test view(df, 1, :x) == view(df[:x], 1)
+    @test view(df, 1, :x) == view(df[!, :x], 1)
     @test view(df, 1, :x) isa SubArray
     @test size(view(df, 1, :x)) == ()
-    @test view(df, 1:2, :x) == df[:x][1:2]
+    @test view(df, 1:2, :x) == df[!, :x][1:2]
     @test view(df, 1:2, :x) isa SubArray
-    @test view(df, vcat(trues(2), falses(8)), :x) == view(df[:x], vcat(trues(2), falses(8)))
-    @test view(df, [1, 2], :x) == view(df[:x], [1, 2])
-    @test view(df, 1, 1) == view(df[1], 1)
+    @test view(df, vcat(trues(2), falses(8)), :x) == view(df[!, :x], vcat(trues(2), falses(8)))
+    @test view(df, [1, 2], :x) == view(df[!, :x], [1, 2])
+    @test view(df, 1, 1) == view(df[!, 1], 1)
     @test view(df, 1, 1) isa SubArray
     @test size(view(df, 1, 1)) == ()
-    @test view(df, 1:2, 1) == df[1][1:2]
+    @test view(df, 1:2, 1) == df[!, 1][1:2]
     @test view(df, 1:2, 1) isa SubArray
-    @test view(df, vcat(trues(2), falses(8)), 1) == view(df[1], vcat(trues(2), falses(8)))
-    @test view(df, [1, 2], 1) == view(df[1], [1,2])
-    @test view(df, 1:2, 1) == df[1][1:2]
+    @test view(df, vcat(trues(2), falses(8)), 1) == view(df[!, 1], vcat(trues(2), falses(8)))
+    @test view(df, [1, 2], 1) == view(df[!, 1], [1,2])
+    @test view(df, 1:2, 1) == df[!, 1][1:2]
     @test view(df, 1:2, 1) isa SubArray
 
-    @test view(df, 1, [:x, :y]) == DataFrameRow(df[[:x, :y]], 1, :)
+    @test view(df, 1, [:x, :y]) == DataFrameRow(df[:, [:x, :y]], 1, :)
     @test view(df, 1, [:x, :y]) == DataFrameRow(df, 1, [:x, :y])
     @test view(df, 1:2, [:x, :y]) == first(df, 2)
     @test view(df, vcat(trues(2), falses(8)), [:x, :y]) == first(df, 2)
     @test view(df, [1, 2], [:x, :y]) == first(df, 2)
 
-    @test view(df, 1, r"[xy]") == DataFrameRow(df[[:x, :y]], 1, :)
+    @test view(df, 1, r"[xy]") == DataFrameRow(df[:, [:x, :y]], 1, :)
     @test view(df, 1, r"[xy]") == DataFrameRow(df, 1, [:x, :y])
     @test view(df, 1:2, r"[xy]") == first(df, 2)
     @test view(df, vcat(trues(2), falses(8)), r"[xy]") == first(df, 2)
     @test view(df, [1, 2], r"[xy]") == first(df, 2)
 
-    @test view(df, 1, [1, 2]) == DataFrameRow(df[1:2], 1, :)
+    @test view(df, 1, [1, 2]) == DataFrameRow(df[:, 1:2], 1, :)
     @test view(df, 1, [1, 2]) == DataFrameRow(df, 1, 1:2)
     @test view(df, 1:2, [1, 2]) == first(df, 2)
     @test view(df, vcat(trues(2), falses(8)), [1, 2]) == first(df, 2)
     @test view(df, [1, 2], [1, 2]) == first(df, 2)
 
-    @test view(df, 1, trues(2)) == DataFrameRow(df[trues(2)], 1, :)
+    @test view(df, 1, trues(2)) == DataFrameRow(df[:, trues(2)], 1, :)
     @test view(df, 1, trues(2)) == DataFrameRow(df, 1, trues(2))
     @test view(df, 1:2, trues(2)) == first(df, 2)
     @test view(df, vcat(trues(2), falses(8)), trues(2)) == first(df, 2)
@@ -87,23 +87,20 @@ end
     @test view(df, Union{UInt, Missing}[1, 2], :) == first(df, 2)
     @test view(df, Union{BigInt, Missing}[1, 2], :) == first(df, 2)
 
-    @test view(df, :) == df
     @test view(df, :, :) == df
     @test view(df, 1, :) == DataFrameRow(df, 1, :)
     @test view(df, :, 1) == df[:, 1]
     @test view(df, :, 1) isa SubArray
 
-    @test view(df, r"") == df
-    @test view(df, :, r"") == df
     @test view(df, 1, r"") == DataFrameRow(df, 1, :)
     @test view(df, :, 1) == df[:, 1]
     @test view(df, :, 1) isa SubArray
 
-    @test size(view(df, r"a")) == (0, 0)
+    @test size(view(df, :, r"a")) == (0, 0)
     @test size(view(df, 1:2, r"a")) == (0, 0)
     @test size(view(df, 2, r"a")) == (0,)
 
-    @test_throws ArgumentError view(df, [missing, 1])
+    @test_throws ArgumentError view(df, :, [missing, 1])
     @test_throws ArgumentError view(df, [missing, 1], :)
     @test_throws ArgumentError view(df, [missing, 1], r"")
 end
@@ -129,36 +126,36 @@ end
     @test view(df, UInt(1), r"") == DataFrameRow(df, 1, r"")
     @test view(df, BigInt(1), r"") == DataFrameRow(df, 1, r"")
 
-    @test view(df, 1, :x) == view(df[:x], 1)
+    @test view(df, 1, :x) == view(df[!, :x], 1)
     @test view(df, 1, 1) isa SubArray
     @test size(view(df, 1, 1)) == ()
-    @test view(df, 1:2, :x) == view(df[:x], 1:2)
-    @test view(df, vcat(trues(2), falses(8)), :x) == view(df[:x], vcat(trues(2), falses(8)))
-    @test view(df, [1, 2], :x) == view(df[:x], [1, 2])
+    @test view(df, 1:2, :x) == view(df[!, :x], 1:2)
+    @test view(df, vcat(trues(2), falses(8)), :x) == view(df[!, :x], vcat(trues(2), falses(8)))
+    @test view(df, [1, 2], :x) == view(df[!, :x], [1, 2])
 
-    @test view(df, 1, 1) == view(df[1], 1)
+    @test view(df, 1, 1) == view(df[!, 1], 1)
     @test view(df, 1, 1) isa SubArray
     @test size(view(df, 1, 1)) == ()
-    @test view(df, 1:2, 1) == view(df[:x], 1:2)
-    @test view(df, vcat(trues(2), falses(8)), 1) == view(df[:x], vcat(trues(2), falses(8)))
-    @test view(df, [1, 2], 1) == view(df[:x], [1, 2])
+    @test view(df, 1:2, 1) == view(df[!, :x], 1:2)
+    @test view(df, vcat(trues(2), falses(8)), 1) == view(df[!, :x], vcat(trues(2), falses(8)))
+    @test view(df, [1, 2], 1) == view(df[!, :x], [1, 2])
 
-    @test view(df, 1, [:x, :y]) == DataFrameRow(df[[:x,:y]], 1, :)
+    @test view(df, 1, [:x, :y]) == DataFrameRow(df[:, [:x,:y]], 1, :)
     @test view(df, 1, [:x, :y]) == DataFrameRow(df, 1, [:x,:y])
     @test view(df, 1:2, [:x, :y]) == first(df, 2)
 
-    @test view(df, 1, r"[xy]") == DataFrameRow(df[[:x,:y]], 1, :)
+    @test view(df, 1, r"[xy]") == DataFrameRow(df[:, [:x,:y]], 1, :)
     @test view(df, 1, r"[xy]") == DataFrameRow(df, 1, [:x,:y])
     @test view(df, 1:2, r"[xy]") == first(df, 2)
 
     @test view(df, vcat(trues(2), falses(8)), [:x, :y]) == first(df, 2)
     @test view(df, [1, 2], [:x, :y]) == first(df, 2)
-    @test view(df, 1, [1, 2]) == DataFrameRow(df[1:2], 1, :)
+    @test view(df, 1, [1, 2]) == DataFrameRow(df[:, 1:2], 1, :)
     @test view(df, 1, [1, 2]) == DataFrameRow(df, 1, 1:2)
     @test view(df, 1:2, [1, 2]) == first(df, 2)
     @test view(df, vcat(trues(2), falses(8)), [1, 2]) == first(df, 2)
     @test view(df, [1, 2], [1, 2]) == first(df, 2)
-    @test view(df, 1, trues(2)) == DataFrameRow(df[trues(2)], 1, :)
+    @test view(df, 1, trues(2)) == DataFrameRow(df[:, trues(2)], 1, :)
     @test view(df, 1, trues(2)) == DataFrameRow(df, 1, trues(2))
     @test view(df, 1:2, trues(2)) == first(df, 2)
     @test view(df, vcat(trues(2), falses(8)), trues(2)) == first(df, 2)
@@ -171,17 +168,15 @@ end
     @test view(df, Union{UInt, Missing}[1, 2], :) == first(df, 2)
     @test view(df, Union{BigInt, Missing}[1, 2], :) == first(df, 2)
 
-    @test view(df, :) == df
     @test view(df, :, :) == df
     @test view(df, 1, :) == DataFrameRow(df, 1, :)
     @test view(df, :, 1) == df[:, 1]
     @test view(df, :, 1) isa SubArray
 
-    @test view(df, r"") == df
     @test view(df, :, r"") == df
     @test view(df, 1, r"") == DataFrameRow(df, 1, :)
 
-    @test_throws ArgumentError view(df, [missing, 1])
+    @test_throws ArgumentError view(df, :, [missing, 1])
     @test_throws ArgumentError view(df, [missing, 1], :)
     @test_throws ArgumentError view(df, [missing, 1], r"")
     @test_throws ArgumentError view(df, :, true)
@@ -198,14 +193,12 @@ end
     @test df.y == 2:6
     @test_throws ArgumentError df.z
 
-    df.x = 1:5
+    df[:, :x] = 1:5
     @test df.x == 1:5
     @test x == [1; 1:5; 7:10]
-    df.y = 1
+    df[:, :y] .= 1
     @test df.y == [1, 1, 1, 1, 1]
     @test y == [1; 1; 1; 1; 1; 1; 7:10]
-    @test_throws ArgumentError df.z = 1:5
-    @test_throws ArgumentError df.z = 1
 end
 
 @testset "index" begin
@@ -250,8 +243,8 @@ end
     df = DataFrame([11:16 21:26 31:36 41:46])
     sdf = view(df, [3,1,4], [3,3,3])
     @test names(sdf) == fill(:x3, 3)
-    @test sdf[1] == [33, 31, 34]
-    @test sdf[1] === sdf[2] === sdf[3]
+    @test sdf[!, 1] == [33, 31, 34]
+    @test sdf[!, 1] === sdf[!, 2] === sdf[!, 3]
     @test sdf.x3[1] == 33
     sdf.x3[1] = 333
     @test df.x3[3] == 333

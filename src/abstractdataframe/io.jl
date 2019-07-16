@@ -81,8 +81,8 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        else
-            size(df, 1) == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        elseif size(df, 1) != 1 
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
 
@@ -106,7 +106,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "<tr>")
     write(io, "<th></th>")
     for j in 1:mxcol
-        s = html_escape(compacttype(eltype(df[j])))
+        s = html_escape(compacttype(eltype(df[!, j])))
         write(io, "<th>$s</th>")
     end
     write(io, "</tr>")
@@ -128,7 +128,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
             write(io, "<th>$rowid</th>")
         end
         for column_name in cnames
-            if isassigned(df[column_name], row)
+            if isassigned(df[!, column_name], row)
                 cell = sprint(ourshow, df[row, column_name])
             else
                 cell = sprint(ourshow, Base.undef_ref_str)
@@ -167,7 +167,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[1][col]))))
+        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[1][!, col]))))
                              for col in gd.cols]
 
         write(io, "<p><i>First Group ($nrows $rows): ")
@@ -179,7 +179,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[N][col]))))
+        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[N][!, col]))))
                              for col in gd.cols]
 
         write(io, "<p>&vellip;</p>")
@@ -214,8 +214,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        else
-            size(df, 1) == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        elseif size(df, 1) != 1 
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
 
@@ -250,7 +250,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         write(io, @sprintf("%d", rowid === nothing ? row : rowid))
         for col in 1:mxcol
             write(io, " & ")
-            cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
+            cell = isassigned(df[!, col], row) ? df[row,col] : Base.undef_ref_str
             if !ismissing(cell)
                 if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
@@ -291,7 +291,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         rows = nrows > 1 ? "rows" : "row"
 
         identified_groups = [latex_escape(string(parent_names[col], " = ",
-                                                 repr(first(gd[1][col]))))
+                                                 repr(first(gd[1][!, col]))))
                              for col in gd.cols]
 
         write(io, "First Group ($nrows $rows): ")
@@ -304,7 +304,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         rows = nrows > 1 ? "rows" : "row"
 
         identified_groups = [latex_escape(string(parent_names[col], " = ",
-                                                 repr(first(gd[N][col]))))
+                                                 repr(first(gd[N][!, col]))))
                              for col in gd.cols]
 
         write(io, "\n\$\\dots\$\n\n")
@@ -353,7 +353,7 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !ismissing(df[j][i])
+            if !ismissing(df[i, j])
                 if ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], quotestr)

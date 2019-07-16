@@ -75,15 +75,15 @@ const ≅ = isequal
                                                      0.0 1.0;
                                                      0.0 1.0])
     names!(df2, [:x1, :x2])
-    @test df[:x1] == df2[:x1]
-    @test df[:x2] == df2[:x2]
+    @test df[!, :x1] == df2[!, :x1]
+    @test df[!, :x2] == df2[!, :x2]
 
     df2 = DataFrame([0.0 1.0;
                      0.0 1.0;
                      0.0 1.0])
     names!(df2, [:x1, :x2])
-    @test df[:x1] == df2[:x1]
-    @test df[:x2] == df2[:x2]
+    @test df[!, :x1] == df2[!, :x1]
+    @test df[!, :x2] == df2[!, :x2]
 
     @test_throws ArgumentError DataFrame!([0.0 1.0;
                                            0.0 1.0;
@@ -93,8 +93,8 @@ const ≅ = isequal
                      0.0 1.0;
                      0.0 1.0], [:a, :b])
     names!(df2, [:a, :b])
-    @test df[:x1] == df2[:a]
-    @test df[:x2] == df2[:b]
+    @test df[!, :x1] == df2[!, :a]
+    @test df[!, :x2] == df2[!, :b]
 
     @test_throws ArgumentError DataFrame!([0.0 1.0;
                                            0.0 1.0;
@@ -104,7 +104,7 @@ const ≅ = isequal
                           x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
     @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
-                          x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[[:x1, :x2]]
+                          x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[:, [:x1, :x2]]
 
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0:0, :)
     @test_throws ArgumentError SubDataFrame(DataFrame(A=1), 0, :)
@@ -341,10 +341,10 @@ end
     df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
     answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
     @test map(typeof, eachcol(df)) == answer
-    df[:D] = [4, 5, missing]
+    df[!, :D] = [4, 5, missing]
     push!(answer, Vector{Union{Int, Missing}})
     @test map(typeof, eachcol(df)) == answer
-    df[:E] = 'c'
+    df[!, :E] .= 'c'
     push!(answer, Vector{Char})
     @test map(typeof, eachcol(df)) == answer
 end
@@ -363,12 +363,12 @@ end
                    [:A, :B, :C], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
-    @test typeof(df[1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[1])
-    @test all(ismissing, df[2])
-    @test all(ismissing, df[3])
+    @test typeof(df[!, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[!, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[!, 3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[!, 1])
+    @test all(ismissing, df[!, 2])
+    @test all(ismissing, df[!, 3])
 
     df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
     @test size(df) == (2, 2)
@@ -383,9 +383,9 @@ end
                    [:A, :B, :C])
     @test size(df, 1) == 0
     @test size(df, 2) == 3
-    @test typeof(df[1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[3]) == Vector{Union{String, Missing}}
+    @test typeof(df[!, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[!, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[!, 3]) == Vector{Union{String, Missing}}
     @test names(df) == [:A, :B, :C]
 end
 
