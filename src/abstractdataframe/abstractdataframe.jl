@@ -365,20 +365,20 @@ support such objects (and not only vectors), and cannot access missing values.
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-describe(df)
-describe(df, :all)
-describe(df, :min, :max)
-describe(df, :min, :sum => sum)
+describe([io,] df)
+describe([io,] df, :all)
+describe([io,] df, :min, :max)
+describe([io,] df, :min, :sum => sum)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
+DataAPI.describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
     _describe(df, collect(stats))
 
-# TODO: un-comment this method definition after the deprecation period of
-# the `stats` keyword for `describe`.
-# StatsBase.describe(df::AbstractDataFrame) =
-#     _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+DataAPI.describe(io::IO, df::AbstractDataFrame) =
+    _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+
+DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = DataAPI.describe(stdout, df, stats...)
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]

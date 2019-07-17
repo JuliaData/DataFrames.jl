@@ -1,6 +1,6 @@
 module TestUtils
 
-using Test, DataFrames, Statistics, StatsBase, Random
+using Test, DataFrames
 #
 # make_unique(df::AbstractDataFrame, makeunique::Bool)
 #
