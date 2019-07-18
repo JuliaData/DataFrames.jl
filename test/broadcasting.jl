@@ -629,7 +629,7 @@ end
     df[!, :b] .= 1.0
     @test df == DataFrame(a=Int[], b=Float64[])
     @test eltype(df.b) == Float64
-    df[!, :a] = 10.0
+    df[!, :a] .= 10.0
     @test df == DataFrame(a=Int[])
     @test eltype(df.a) == Float64
 end
