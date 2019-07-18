@@ -603,6 +603,7 @@ end
 @testset "empty data frame corner case" begin
     df = DataFrame()
     @test_throws ArgumentError df[!, 1] .= 1
+    @test_throws ArgumentError df[!, 2] .= 1
     @test_throws ArgumentError df[!, :a] .= [1]
     @test_throws ArgumentError df[!, [:a,:b]] .= [1]
     @test df == DataFrame()
@@ -615,11 +616,22 @@ end
     @test_throws DimensionMismatch df .= ones(1,2)
     @test_throws DimensionMismatch df .= ones(1,1,1)
 
-    @test_throws ArgumentError df[!, :a] .= 1
+    @test_throws ArgumentError df[!, :a] .= [1]
     @test_throws ArgumentError df[!, [:a, :b]] .= 1
 
     df = DataFrame(a=[])
-    @test_throws ArgumentError df[!, :b] .= 1
+    @test_throws ArgumentError df[!, :b] .= sin.(1)
+
+    df = DataFrame()
+    df[!, :a] .= 1
+    @test df == DataFrame(a=Int[])
+    @test eltype(df.a) == Int
+    df[!, :b] .= 1.0
+    @test df == DataFrame(a=Int[], b=Float64[])
+    @test eltype(df.b) == Float64
+    df[!, :a] = 10.0
+    @test df == DataFrame(a=Int[])
+    @test eltype(df.a) == Float64
 end
 
 @testset "test categorical values" begin

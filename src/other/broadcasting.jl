@@ -97,8 +97,8 @@ function Base.maybeview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
         throw(ArgumentError("broadcasting with column replacement is currently allowed only for single column index"))
     end
-    if ncol(df) == 0
-        throw(ArgumentError("broadcasting into a data frame with no columns is not allowed"))
+    if !(cols isa Symbol) && cols > ncol(df)
+        throw(ArgumentError("creating new columns using an integer index by broadcasting is disallowed"))
     end
     # in the future we might allow cols to target multiple columns
     # in which case ColReplaceDataFrame(df, index(df)[cols]) will be returned
@@ -109,15 +109,17 @@ Base.maybeview(df::SubDataFrame, ::typeof(!), idxs) =
     throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted)
-    if isempty(lazydf.df)
-        throw(ArgumentError("creating a column via broadcasting is not allowed on empty data frames"))
-    end
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}} &&
        bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         T = typeof(bc.args[1][])
-        col = similar(Vector{T}, nrow(lazydf.df))
-        copyto!(col, bc)
+        nrows = nrow(lazydf.df)
+        col = similar(Vector{T}, nrows)
+        nrows > 0  && copyto!(col, bc)
     else
+        if isempty(lazydf.df)
+            throw(ArgumentError("creating a column via broadcasting is not allowed on empty data frames " *
+                                "unless it is a scalar assignment"))
+        end
         col = Base.Broadcast.materialize(bc)
     end
     lazydf.df[!, lazydf.col] = col
