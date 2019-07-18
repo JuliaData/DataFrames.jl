@@ -183,6 +183,7 @@ unstack(df::AbstractDataFrame; transform::Function=identity)
 If `colkey` contains `missing` values then they will be skipped and a warning will be printed.
 
 If transforming `colkey` using the `transform` function produces duplicates
+in a way such that different `colkey` values map to that same transformed column name
 then an error is thrown.
 
 If combination of `rowkeys` and `colkey` contains duplicate entries then last `value` will
