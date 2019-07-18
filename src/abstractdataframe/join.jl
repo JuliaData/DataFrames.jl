@@ -296,6 +296,8 @@ function Base.join(df1::AbstractDataFrame,
                    kind::Symbol = :inner, makeunique::Bool=false,
                    indicator::Union{Nothing, Symbol} = nothing,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    _check_consistency(df1)
+    _check_consistency(df2)
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
         for i in 1:2

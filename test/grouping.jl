@@ -68,6 +68,16 @@ end
     @test parent(gd) === df
 end
 
+@testset "consistency" begin
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(df.c, 5)
+    @test_throws AssertionError gd = groupby(df, :a)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(DataFrames._columns(df), df[:, :a])
+    @test_throws AssertionError gd = groupby(df, :a)
+end
+
 @testset "accepted columns" begin
     df = DataFrame(A=[1,1,1,2,2,2], B=[1,2,1,2,1,2], C=1:6)
     @test groupby(df, [1,2]) == groupby(df, 1:2) == groupby(df, [:A, :B])

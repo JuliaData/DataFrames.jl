@@ -250,42 +250,43 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
     if !(columns in (:equal, :intersect))
         throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
-    if ncol(df) == 0
+    nrows, ncols = size(df)
+    targetrows = nrows + 1
+    if ncols == 0
         for (n, v) in pairs(dfr)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
 
-    if parent(dfr) === df && index(dfr) isa Index
-        # in this case we are sure that all we do is safe
-        r = row(dfr)
-        for col in _columns(df)
-            # use a barrier function to improve performance
-            pushhelper!(col, r)
-        end
-    else
-        # DataFrameRow can contain duplicate columns and we disallow this
-        # corner case when push!-ing
-        # Only check for equal lengths, as an error will be thrown below if some names don't match
-        if columns === :equal
-            msg = "Number of columns of `row` does not match `DataFrame` column count."
-            size(df, 2) == length(dfr) || throw(ArgumentError(msg))
-        end
-        i = 1
-        for nm in _names(df)
-            try
-                push!(df[!, i], dfr[nm])
-            catch
-                #clean up partial row
-                for j in 1:(i - 1)
-                    pop!(df[!, j])
-                end
-                msg = "Error adding value to column :$nm."
-                throw(ArgumentError(msg))
+    try
+        if parent(dfr) === df && index(dfr) isa Index
+            # in this case we are sure that all we do is safe
+            r = row(dfr)
+            for col in _columns(df)
+                # use a barrier function to improve performance
+                pushhelper!(col, r)
             end
-            i += 1
+        else
+            # DataFrameRow can contain duplicate columns and we disallow this
+            # corner case when push!-ing
+            # Only check for equal lengths, as an error will be thrown below if some names don't match
+            if columns === :equal
+                msg = "Number of columns of `row` does not match `DataFrame` column count."
+                ncols == length(dfr) || throw(ArgumentError(msg))
+            end
+            for (col, nm) in zip(_columns(df), _names(df))
+                push!(col, dfr[nm])
+            end
         end
+        for col in _columns(df)
+            @assert length(col) == targetrows
+        end
+    catch err
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        rethrow(err)
     end
     df
 end

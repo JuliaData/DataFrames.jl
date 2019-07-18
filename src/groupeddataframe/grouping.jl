@@ -134,6 +134,7 @@ julia> for g in gd
 """
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
+    _check_consistency(df)
     intcols = convert(Vector{Int}, index(df)[cols])
     sdf = df[!, intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)

@@ -514,11 +514,12 @@ function _show(io::IO,
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                rowid=nothing)
+    _check_consistency(df)
     nrows = size(df, 1)
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        elseif nrows != 1 
+        elseif nrows != 1
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
