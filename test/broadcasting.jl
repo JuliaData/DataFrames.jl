@@ -630,7 +630,7 @@ end
     @test df == DataFrame(a=Int[], b=Float64[])
     @test eltype(df.b) == Float64
     df[!, :a] .= 10.0
-    @test df == DataFrame(a=Int[])
+    @test df == DataFrame(a=Float64[], b=Float64[])
     @test eltype(df.a) == Float64
 end
 
@@ -1100,7 +1100,7 @@ end
     @test df == refdf
     @test_throws ArgumentError df[!, 10] .= [1,2,3]
     @test df == refdf
-    @test_throws DimensionMismatch df[!, 10] .= [1 2 3]
+    @test_throws ArgumentError df[!, 10] .= [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
