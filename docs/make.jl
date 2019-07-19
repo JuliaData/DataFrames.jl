@@ -14,7 +14,7 @@ makedocs(
     doctest = false,
     clean = false,
     sitename = "DataFrames.jl",
-    format = :html,
+    format = Documenter.HTML(),
     pages = Any[
         "Introduction" => "index.md",
         "User Guide" => Any[
@@ -24,7 +24,7 @@ makedocs(
             "Reshaping" => "man/reshaping_and_pivoting.md",
             "Sorting" => "man/sorting.md",
             "Categorical Data" => "man/categorical.md",
-            "Missing Data" => "man/missing.md", 
+            "Missing Data" => "man/missing.md",
             "Data manipulation frameworks" => "man/querying_frameworks.md"
         ],
         "API" => Any[
@@ -42,7 +42,6 @@ deploydocs(
     # options
     repo = "github.com/JuliaData/DataFrames.jl.git",
     target = "build",
-    julia = "1.0",
     deps = nothing,
     make = nothing,
 )

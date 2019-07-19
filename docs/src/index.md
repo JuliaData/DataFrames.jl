@@ -14,7 +14,7 @@ Please report bugs by
 [opening an issue](https://github.com/JuliaData/DataFrames.jl/issues/new).
 
 You can follow
-the [**source**]() links throughout the documentation to jump right to the
+the **source** links throughout the documentation to jump right to the
 source files on GitHub to make pull requests for improving the documentation and function
 capabilities.
 
