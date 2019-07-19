@@ -186,3 +186,10 @@ Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as
 
 If column indexing using `Symbol` names in `cols` is performed, the order of columns in the operation is specified
 by the order of names.
+
+The `df[!, col] .= v` syntax follows several convinence special rules:
+* if `ncol(df) == 0` then it is allowed to add a column `v` as a freshly allocated column `col`;
+  the length of this column is equal to `length(v)` if `v` is a vector and `1` if it is a scalar or
+  a scalar broadcasting operation;
+* if `ncol(df) > 0` and `nrow(df) == 0` then it is allowed to add a column only if `v` is a scalar;
+  the length of this column is `0` and type the same as `typeof(v)`;

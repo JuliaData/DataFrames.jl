@@ -78,8 +78,43 @@ struct LazyNewColDataFrame{T}
     col::T
 end
 
-# we allow LazyNewColDataFrame only for data frames with at least one column
+# we allow LazyNewColDataFrame also for data frames with no columns
+# in this case we inherit length from the left hand side
+# unless the data frame has no columns;
+# in this case we inherit it from the right hand side
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
+
+function Base.materialize!(dest::LazyNewColDataFrame,
+                           bc::Base.Broadcast.Broadcasted{Style}) where {Style}
+    ibc = Base.Broadcast.instantiate(bc)
+    if length(axes(ibc)) == 1 && length(axes(ibc)[1]) == 0
+        throw(ArgumentError("Cannot broadcast over an empty container"))
+    end
+    if ncol(dest.df) > 0
+        copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted{Style}(bc.f, bc.args, axes(dest))))
+    else
+        if length(axes(ibc)) > 1
+            throw(DimensionMismatch("Cannot broadcast $(length(axes(bc)))-dimensional" *
+                                    "object into a vector"))
+        end
+        copyto!(dest, ibc)
+    end
+end
+
+function Base.materialize!(dest::LazyNewColDataFrame, x)
+    if length(axes(x)) == 1 && length(axes(x)[1]) == 0
+        throw(ArgumentError("Cannot broadcast over an empty container"))
+    end
+    if ncol(dest.df) > 0
+        copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted(identity, (x,), axes(dest))))
+    else
+        if length(axes(x)) > 1
+            throw(DimensionMismatch("Cannot broadcast $(length(axes(x)))-dimensional" *
+                                    "object into a vector"))
+        end
+        copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted(identity, (x,), axes(x))))
+    end
+end
 
 # ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
 # # ColReplaceDataFrame allows for column replacement in broadcasting
@@ -112,15 +147,33 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}} &&
        bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         T = typeof(bc.args[1][])
-        nrows = nrow(lazydf.df)
-        col = similar(Vector{T}, nrows)
-        nrows > 0  && copyto!(col, bc)
-    else
-        if isempty(lazydf.df)
-            throw(ArgumentError("creating a column via broadcasting is not allowed on empty data frames " *
-                                "unless it is a scalar assignment"))
+        if ncol(lazydf.df) > 0
+            nrows = nrow(lazydf.df)
+        else
+            nrows = 1
         end
-        col = Base.Broadcast.materialize(bc)
+        col = similar(Vector{T}, nrows)
+        copyto!(col, bc)
+    else
+        if ncol(lazydf.df) > 0 && isempty(lazydf.df)
+            throw(ArgumentError("creating a column via broadcasting is not allowed on data frames " *
+                                "with zero rows and non-zero columns unless it is a scalar assignment"))
+        end
+        if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
+            bcc = convert(Base.Broadcast.Broadcasted{Base.Broadcast.DefaultArrayStyle{1}}, bc)
+            col_tmp = Base.Broadcast.materialize(bcc)
+        else
+            col_tmp = Base.Broadcast.materialize(bc)
+        end
+        if col_tmp isa AbstractVector
+            col = col_tmp
+        else
+            @assert nrow(lazydf.df) < 2
+            unwrapped = col_tmp[]
+            T = typeof(unwrapped)
+            col = similar(Vector{T}, 1)
+            col[1] = unwrapped
+        end
     end
     lazydf.df[!, lazydf.col] = col
 end

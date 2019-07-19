@@ -598,15 +598,41 @@ end
     @test_throws BoundsError dfr[10] .= ones(3)
     @test_throws ArgumentError dfr[:z] .= ones(3)
     @test df == cdf
+
+    df = DataFrame()
+    df[!, :a] .= sin.(1:3)
+    df[!, :b] .= sin.(1)
+    df[!, :c] .= sin(1) .+ 1
+    @test df == DataFrame(a=sin.(1:3), b=sin.([1,1,1]), c=sin.([1,1,1]).+1)
 end
 
 @testset "empty data frame corner case" begin
     df = DataFrame()
     @test_throws ArgumentError df[!, 1] .= 1
     @test_throws ArgumentError df[!, 2] .= 1
-    @test_throws ArgumentError df[!, :a] .= [1]
-    @test_throws ArgumentError df[!, [:a,:b]] .= [1]
-    @test df == DataFrame()
+    @test_throws ArgumentError df[!, [:a, :b]] .= [1]
+    @test_throws ArgumentError df[!, [:a, :b]] .= 1
+    @test_throws DimensionMismatch df[!, :a] .= [1 2]
+
+    for rhs in [1, [1], [1, 2], "abc", ["abc"], ["abc", "def"]]
+        df = DataFrame()
+        df[!, :a] .= rhs
+        @test df == DataFrame(a = rhs)
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs)
+        @test df == DataFrame(a = length.(rhs))
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs) .+ 1
+        @test df == DataFrame(a = length.(rhs) .+ 1)
+
+        df = DataFrame()
+        @. df[!, :a] = length(rhs) + 1
+        @test df == DataFrame(a = length.(rhs) .+ 1)
+    end
+
+    df = DataFrame()
     df .= 1
     @test df == DataFrame()
     df .= [1]
@@ -616,22 +642,27 @@ end
     @test_throws DimensionMismatch df .= ones(1,2)
     @test_throws DimensionMismatch df .= ones(1,1,1)
 
-    @test_throws ArgumentError df[!, :a] .= [1]
-    @test_throws ArgumentError df[!, [:a, :b]] .= 1
-
     df = DataFrame(a=[])
     @test_throws ArgumentError df[!, :b] .= sin.(1)
+    @test_throws ArgumentError df[!, :b] .= [1]
+    df[!, :b] .= 1
+    @test names(df) == [:a, :b]
+    @test eltype(df.b) == Int
+
+    c = categorical(["a", "b", "c"])
+    df = DataFrame()
+    df[!, :a] .= c
+    @test df.a == c
+    @test df.a !== c
+    @test df.a isa CategoricalVector
+    df[!, :b] .= c[1]
+    @test df.b == [c[1], c[1], c[1]]
+    @test df.b isa CategoricalVector
 
     df = DataFrame()
-    df[!, :a] .= 1
-    @test df == DataFrame(a=Int[])
-    @test eltype(df.a) == Int
-    df[!, :b] .= 1.0
-    @test df == DataFrame(a=Int[], b=Float64[])
-    @test eltype(df.b) == Float64
-    df[!, :a] .= 10.0
-    @test df == DataFrame(a=Float64[], b=Float64[])
-    @test eltype(df.a) == Float64
+    df[!, :a] .= c[1]
+    @test df.a == c[1:1]
+    @test df.a isa CategoricalVector
 end
 
 @testset "test categorical values" begin
