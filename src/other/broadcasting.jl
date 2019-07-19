@@ -165,7 +165,7 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
         else
             col_tmp = Base.Broadcast.materialize(bc)
         end
-        if col_tmp isa AbstractVector
+        if col_tmp isa AbstractArray && ndims(col_tmp) == 1
             col = col_tmp
         else
             @assert nrow(lazydf.df) < 2
