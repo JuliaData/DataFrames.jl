@@ -84,7 +84,7 @@ end
 # in this case we inherit it from the right hand side
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
-function Base.materialize!(dest::LazyNewColDataFrame,
+function Base.Broadcast.materialize!(dest::LazyNewColDataFrame,
                            bc::Base.Broadcast.Broadcasted{Style}) where {Style}
     ibc = Base.Broadcast.instantiate(bc)
     if length(axes(ibc)) == 1 && length(axes(ibc)[1]) == 0
@@ -101,7 +101,7 @@ function Base.materialize!(dest::LazyNewColDataFrame,
     end
 end
 
-function Base.materialize!(dest::LazyNewColDataFrame, x)
+function Base.Broadcast.materialize!(dest::LazyNewColDataFrame, x)
     if length(axes(x)) == 1 && length(axes(x)[1]) == 0
         throw(ArgumentError("Cannot broadcast over an empty container"))
     end
