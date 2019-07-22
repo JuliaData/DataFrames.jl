@@ -287,11 +287,13 @@ ncol(df::DataFrame) = length(index(df))
 function _check_consistency(df::DataFrame)
     cols, idx = _columns(df), index(df)
     ncols = length(cols)
-    @assert length(idx.names) == length(idx.lookup) == ncols "Index and columns of a data frame do not match"
+    @assert length(idx.names) == length(idx.lookup) == ncols
     ncols == 0 && return nothing
     nrows = length(cols[1])
     for i in 2:length(cols)
-        @assert length(cols[i]) == nrows "Length of column $i does not match length of column 1"
+        @assert length(cols[i]) == nrows "Length of column $(names(df)[i]) ($(length(df[!, i])))" *
+                                         " does not match length of column 1 ($(length(df[!, 1]))). " *
+                                         "It is likely caused by unintended resizing of the column."
     end
     nothing
 end
@@ -1116,11 +1118,15 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     _names(df1) == _names(df2) || error("Column names do not match")
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
+    current_col = 0
     try
         for j in 1:ncols
+            current_col += 1
             append!(df1[!, j], df2[!, j])
         end
+        current_col = 0
         for col in _columns(df1)
+            current_col += 1
             @assert length(col) == targetrows
         end
     catch err
@@ -1128,6 +1134,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
         for col in _columns(df1)
             resize!(col, nrows)
         end
+        @error "Error adding value to column $(names(df)[current_col])."
         rethrow(err)
     end
     return df1
@@ -1142,7 +1149,6 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
         throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
     nrows, ncols = size(df)
-    targetrows = nrows + 1
     if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
@@ -1156,17 +1162,22 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
                       "of elements as is the number of columns in `df`." *
                       "Use `columns=:intersect` to disable this check.", :push!)
     end
+    current_col = 0
     try
         for (col, nm) in zip(_columns(df), _names(df))
+            current_col += 1
             push!(col, row[nm])
         end
+        current_col = 0
         for col in _columns(df)
-            @assert length(col) == targetrows
+            current_col += 1
+            @assert length(col) == nrows + 1
         end
     catch err
         for col in _columns(df)
             resize!(col, nrows)
         end
+        @error "Error adding value to column $(names(df)[current_col])."
         rethrow(err)
     end
     df
@@ -1260,23 +1271,27 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 """
 function Base.push!(df::DataFrame, row::Any)
     nrows, ncols = size(df)
-    targetrows = nrows + 1
     if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
     end
+    current_col = 0
     try
         for (col, t) in zip(_columns(df), row)
+            current_col += 1
             push!(col, t)
         end
+        current_col = 0
         for col in _columns(df)
-            @assert length(col) == targetrows
+            current_col += 1
+            @assert length(col) == nrows + 1
         end
     catch err
         #clean up partial row
         for col in _columns(df)
             resize!(col, nrows)
         end
+        @error "Error adding value to column $(names(df)[current_col])."
         rethrow(err)
     end
     df
