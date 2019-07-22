@@ -11,7 +11,7 @@ const ≅ = isequal
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
     @test size(df7) == (4, 2)
-    @test df7[:x] ≅ [1, 2, missing, 4]
+    @test df7[!, :x] ≅ [1, 2, missing, 4]
 
     #test_group("description functions")
     @test size(df6, 1) == 4
@@ -24,8 +24,8 @@ const ≅ = isequal
     @test df6[2, 3] == "two"
     @test ismissing(df6[3, 3])
     @test df6[2, :C] == "two"
-    @test df6[:B] ≅ [1, 2, missing, 4]
-    @test size(df6[[2,3]], 2) == 2
+    @test df6[!, :B] ≅ [1, 2, missing, 4]
+    @test size(df6[:, [2,3]], 2) == 2
     @test size(df6[2,:], 1) == ncol(df6) # this is a DataFrameRow
     @test size(df6[2:2,:], 1) == 1
     @test size(df6[[1, 3], [1, 3]]) == (2, 2)
@@ -34,11 +34,11 @@ const ≅ = isequal
     # lots more to do
 
     #test_group("assign")
-    df6[3] = ["un", "deux", "trois", "quatre"]
+    df6[!, 3] = ["un", "deux", "trois", "quatre"]
     @test df6[1, 3] == "un"
-    df6[:B] = [4, 3, 2, 1]
+    df6[!, :B] = [4, 3, 2, 1]
     @test df6[1,2] == 4
-    df6[:D] = [true, false, true, false]
+    df6[!, :D] = [true, false, true, false]
     @test df6[1,4]
     select!(df6, Not(:D))
     @test names(df6) == [:A, :B, :C]
@@ -93,20 +93,20 @@ const ≅ = isequal
     for x in g1
         res += sum(x[:, :d1])
     end
-    @test res == sum(df7[:d1])
+    @test res == sum(df7[!, :d1])
 
     @test aggregate(DataFrame(a=1), identity) == DataFrame(a_identity=1)
 
-    df8 = aggregate(df7[[1, 3]], sum)
-    @test df8[1, :d1_sum] == sum(df7[:d1])
+    df8 = aggregate(df7[:, [1, 3]], sum)
+    @test df8[1, :d1_sum] == sum(df7[!, :d1])
 
     df8 = aggregate(df7, :d2, [sum, length], sort=true)
     @test df8[1:2, :d2] == ["A", "B"]
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
-    @test sum(df8[:d1_length]) == N
-    @test all(df8[:d1_length] .> 0)
-    @test df8[:d1_length] == [sum(isequal.(d2, "A")), sum(isequal.(d2, "B")), sum(ismissing.(d2))]
+    @test sum(df8[!, :d1_length]) == N
+    @test all(df8[!, :d1_length] .> 0)
+    @test df8[!, :d1_length] == [sum(isequal.(d2, "A")), sum(isequal.(d2, "B")), sum(ismissing.(d2))]
     df8′ = aggregate(df7, 2, [sum, length], sort=true)
     @test df8 ≅ df8′
     adf = aggregate(groupby(df7, :d2, sort=true), [sum, length])
@@ -233,19 +233,19 @@ end
     d1s3 = stack(d1)
     d1m = melt(d1, [:c, :d, :e])
     @test d1m == melt(d1, r"[cde]")
-    @test d1s[1:12, :c] == d1[:c]
-    @test d1s[13:24, :c] == d1[:c]
+    @test d1s[1:12, :c] == d1[!, :c]
+    @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
     @test names(d1s) == [:variable, :value, :c, :d, :e]
     @test d1s == d1m
-    d1m = melt(d1[[1,3,4]], :a)
+    d1m = melt(d1[:, [1,3,4]], :a)
     @test names(d1m) == [:variable, :value, :a]
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
-    d1m_named = melt(d1[[1,3,4]], :a, variable_name=:letter, value_name=:someval)
+    d1m_named = melt(d1[:, [1,3,4]], :a, variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :a]
 
     # test empty measures or ids
@@ -271,40 +271,40 @@ end
     # Tests of RepeatedVector and StackedVector indexing
     d1s = stackdf(d1, [:a, :b])
     @test d1s == stackdf(d1, r"[ab]")
-    @test d1s[1] isa DataFrames.RepeatedVector
-    @test ndims(d1s[1]) == 1
-    @test ndims(typeof(d1s[1])) == 1
-    @test d1s[2] isa DataFrames.StackedVector
-    @test ndims(d1s[2]) == 1
-    @test ndims(typeof(d1s[2])) == 1
-    @test d1s[1][[1,24]] == [:a, :b]
-    @test d1s[2][[1,24]] == [1, 4]
-    @test_throws ArgumentError d1s[1][true]
-    @test_throws ArgumentError d1s[2][true]
-    @test_throws ArgumentError d1s[1][1.0]
-    @test_throws ArgumentError d1s[2][1.0]
+    @test d1s[!, 1] isa DataFrames.RepeatedVector
+    @test ndims(d1s[!, 1]) == 1
+    @test ndims(typeof(d1s[!, 1])) == 1
+    @test d1s[!, 2] isa DataFrames.StackedVector
+    @test ndims(d1s[!, 2]) == 1
+    @test ndims(typeof(d1s[!, 2])) == 1
+    @test d1s[!, 1][[1,24]] == [:a, :b]
+    @test d1s[!, 2][[1,24]] == [1, 4]
+    @test_throws ArgumentError d1s[!, 1][true]
+    @test_throws ArgumentError d1s[!, 2][true]
+    @test_throws ArgumentError d1s[!, 1][1.0]
+    @test_throws ArgumentError d1s[!, 2][1.0]
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
-    @test d1s[1][trues(24)] == d1s[1]
-    @test d1s[2][trues(24)] == d1s[2]
-    @test d1s[1][:] == d1s[1]
-    @test d1s[2][:] == d1s[2]
-    @test d1s[1][1:24] == d1s[1]
-    @test d1s[2][1:24] == d1s[2]
-    @test [d1s[1][1:12]; d1s[1][13:24]] == d1s[1]
-    @test [d1s[2][1:12]; d1s[2][13:24]] == d1s[2]
+    @test d1s[!, 1][trues(24)] == d1s[!, 1]
+    @test d1s[!, 2][trues(24)] == d1s[!, 2]
+    @test d1s[!, 1][:] == d1s[!, 1]
+    @test d1s[!, 2][:] == d1s[!, 2]
+    @test d1s[!, 1][1:24] == d1s[!, 1]
+    @test d1s[!, 2][1:24] == d1s[!, 2]
+    @test [d1s[!, 1][1:12]; d1s[!, 1][13:24]] == d1s[!, 1]
+    @test [d1s[!, 2][1:12]; d1s[!, 2][13:24]] == d1s[!, 2]
 
     d1s2 = stackdf(d1, [:c, :d])
     @test d1s2 == stackdf(d1, r"[cd]")
     d1s3 = stackdf(d1)
     d1m = meltdf(d1, [:c, :d, :e])
     @test d1m == meltdf(d1, r"[cde]")
-    @test d1s[1:12, :c] == d1[:c]
-    @test d1s[13:24, :c] == d1[:c]
+    @test d1s[1:12, :c] == d1[!, :c]
+    @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
     @test names(d1s) == [:variable, :value, :c, :d, :e]
     @test d1s == d1m
-    d1m = meltdf(d1[[1,3,4]], :a)
+    d1m = meltdf(d1[:, [1,3,4]], :a)
     @test names(d1m) == [:variable, :value, :a]
 
     d1s_named = stackdf(d1, [:a, :b], variable_name=:letter, value_name=:someval)
@@ -314,20 +314,20 @@ end
     @test d1m_named == meltdf(d1, r"[cde]", variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
-    d1s[:id] = Union{Int, Missing}[1:12; 1:12]
-    d1s2[:id] =  Union{Int, Missing}[1:12; 1:12]
+    d1s[!, :id] = Union{Int, Missing}[1:12; 1:12]
+    d1s2[!, :id] =  Union{Int, Missing}[1:12; 1:12]
     d1us = unstack(d1s, :id, :variable, :value)
     d1us2 = unstack(d1s2, :id, :variable, :value)
     d1us3 = unstack(d1s2, :variable, :value)
-    @test d1us[:a] == d1[:a]
-    @test d1us2[:d] == d1[:d]
-    @test d1us2[3] == d1[:d]
-    @test d1us3[:d] == d1[:d]
+    @test d1us[!, :a] == d1[!, :a]
+    @test d1us2[!, :d] == d1[!, :d]
+    @test d1us2[!, 3] == d1[!, :d]
+    @test d1us3[!, :d] == d1[!, :d]
     @test d1us3 == unstack(d1s2)
 
     # test unstack with exactly one key column that is not passed
     df1 = melt(DataFrame(rand(10,10)))
-    df1[:id] = 1:100
+    df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
@@ -346,16 +346,16 @@ end
                     v2 = Vector{Union{Float64, Missing}}(randn(5)))
 
     m1 = join(df1, df2, on = :a, kind=:inner)
-    @test m1[:a] == df1[:a][df1[:a] .<= 5] # preserves df1 order
+    @test m1[!, :a] == df1[!, :a][df1[!, :a] .<= 5] # preserves df1 order
     m2 = join(df1, df2, on = :a, kind = :outer)
-    @test m2[:a] == df1[:a] # preserves df1 order
-    @test m2[:b] == df1[:b] # preserves df1 order
-    @test m2[indexin(df1[:a], m2[:a]), :b] == df1[:b]
-    @test m2[indexin(df2[:a], m2[:a]), :b2] == df2[:b2]
-    @test m2[indexin(df1[:a], m2[:a]), :v1] == df1[:v1]
-    @test m2[indexin(df2[:a], m2[:a]), :v2] == df2[:v2]
-    @test all(ismissing, m2[map(x -> !in(x, df2[:a]), m2[:a]), :b2])
-    @test all(ismissing, m2[map(x -> !in(x, df2[:a]), m2[:a]), :v2])
+    @test m2[!, :a] == df1[!, :a] # preserves df1 order
+    @test m2[!, :b] == df1[!, :b] # preserves df1 order
+    @test m2[indexin(df1[!, :a], m2[!, :a]), :b] == df1[!, :b]
+    @test m2[indexin(df2[!, :a], m2[!, :a]), :b2] == df2[!, :b2]
+    @test m2[indexin(df1[!, :a], m2[!, :a]), :v1] == df1[!, :v1]
+    @test m2[indexin(df2[!, :a], m2[!, :a]), :v2] == df2[!, :v2]
+    @test all(ismissing, m2[map(x -> !in(x, df2[!, :a]), m2[!, :a]), :b2])
+    @test all(ismissing, m2[map(x -> !in(x, df2[!, :a]), m2[!, :a]), :v2])
 
     df1 = DataFrame(a = Union{Int, Missing}[1, 2, 3],
                     b = Union{String, Missing}["America", "Europe", "Africa"])
@@ -363,33 +363,33 @@ end
                     c = Union{String, Missing}["New World", "Old World", "New World"])
 
     m1 = join(df1, df2, on = :a, kind = :inner)
-    @test m1[:a] == [1, 2]
+    @test m1[!, :a] == [1, 2]
 
     m2 = join(df1, df2, on = :a, kind = :left)
-    @test m2[:a] == [1, 2, 3]
+    @test m2[!, :a] == [1, 2, 3]
 
     m3 = join(df1, df2, on = :a, kind = :right)
-    @test m3[:a] == [1, 2, 4]
+    @test m3[!, :a] == [1, 2, 4]
 
     m4 = join(df1, df2, on = :a, kind = :outer)
-    @test m4[:a] == [1, 2, 3, 4]
+    @test m4[!, :a] == [1, 2, 3, 4]
 
     # test with missings (issue #185)
     df1 = DataFrame()
-    df1[:A] = ["a", "b", "a", missing]
-    df1[:B] = Union{Int, Missing}[1, 2, 1, 3]
+    df1[!, :A] = ["a", "b", "a", missing]
+    df1[!, :B] = Union{Int, Missing}[1, 2, 1, 3]
 
     df2 = DataFrame()
-    df2[:A] = ["a", missing, "c"]
-    df2[:C] = Union{Int, Missing}[1, 2, 4]
+    df2[!, :A] = ["a", missing, "c"]
+    df2[!, :C] = Union{Int, Missing}[1, 2, 4]
 
     m1 = join(df1, df2, on = :A)
     @test size(m1) == (3,3)
-    @test m1[:A] ≅ ["a","a", missing]
+    @test m1[!, :A] ≅ ["a","a", missing]
 
     m2 = join(df1, df2, on = :A, kind = :outer)
     @test size(m2) == (5,3)
-    @test m2[:A] ≅ ["a", "b", "a", missing, "c"]
+    @test m2[!, :A] ≅ ["a", "b", "a", missing, "c"]
 end
 
 Random.seed!(1)
@@ -407,16 +407,16 @@ df2 = DataFrame(
 df2[1,:a] = missing
 
 m1 = join(df1, df2, on = [:a,:b])
-@test m1[:a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
+@test m1[!, :a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
 m2 = join(df1, df2, on = [:a,:b], kind = :outer)
 @test ismissing(m2[10,:v2])
-@test m2[:a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
+@test m2[!, :a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
 
 Random.seed!(1)
 function spltdf(d)
-    d[:x1] = map(x -> x[1], d[:a])
-    d[:x2] = map(x -> x[2], d[:a])
-    d[:x3] = map(x -> x[3], d[:a])
+    d[!, :x1] = map(x -> x[1], d[!, :a])
+    d[!, :x2] = map(x -> x[2], d[!, :a])
+    d[!, :x3] = map(x -> x[3], d[!, :a])
     d
 end
 df1 = DataFrame(
@@ -432,7 +432,7 @@ df2 = spltdf(df2)
 
 m1 = join(df1, df2, on = :a, makeunique=true)
 m2 = join(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
-@test sort(m1[:a]) == sort(m2[:a])
+@test sort(m1[!, :a]) == sort(m2[!, :a])
 
 # test nonunique() with extra argument
 df1 = DataFrame(a = Union{String, Missing}["a", "b", "a", "b", "a", "b"],

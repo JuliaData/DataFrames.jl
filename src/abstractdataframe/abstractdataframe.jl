@@ -228,8 +228,7 @@ Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 Base.ndims(::AbstractDataFrame) = 2
 Base.ndims(::Type{<:AbstractDataFrame}) = 2
 
-Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = getindex(df, col_ind)
-Base.setproperty!(df::AbstractDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
+Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = df[!, col_ind]
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
 
@@ -240,7 +239,7 @@ Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
 ##############################################################################
 
 """
-    similar(df::DataFrame[, rows::Integer])
+    similar(df::AbstractDataFrame, rows::Integer=nrow(df))
 
 Create a new `DataFrame` with the same column names and column element types
 as `df`. An optional second argument can be provided to request a number of rows
@@ -263,9 +262,9 @@ function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = df1[idx] == df2[idx]
+        coleq = df1[!, idx] == df2[!, idx]
         # coleq could be missing
-        !isequal(coleq, false) || return false
+        isequal(coleq, false) && return false
         eq &= coleq
     end
     return eq
@@ -275,7 +274,7 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(df1[idx], df2[idx]) || return false
+        isequal(df1[!, idx], df2[!, idx]) || return false
     end
     return true
 end
@@ -366,20 +365,20 @@ support such objects (and not only vectors), and cannot access missing values.
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-describe(df)
-describe(df, :all)
-describe(df, :min, :max)
-describe(df, :min, :sum => sum)
+describe([io,] df)
+describe([io,] df, :all)
+describe([io,] df, :min, :max)
+describe([io,] df, :min, :sum => sum)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
+DataAPI.describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
     _describe(df, collect(stats))
 
-# TODO: un-comment this method definition after the deprecation period of
-# the `stats` keyword for `describe`.
-# StatsBase.describe(df::AbstractDataFrame) =
-#     _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+DataAPI.describe(io::IO, df::AbstractDataFrame) =
+    _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+
+DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = DataAPI.describe(stdout, df, stats...)
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
@@ -405,12 +404,13 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
     if !allunique(ordered_names)
         duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
-        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(join(duplicate_names, ", "))"))
+        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: " *
+                            ":$(join(duplicate_names, ", "))"))
     end
 
     # Put the summary stats into the return data frame
     data = DataFrame()
-    data[:variable] = names(df)
+    data.variable = names(df)
 
     # An array of Dicts for summary statistics
     column_stats_dicts = map(eachcol(df)) do col
@@ -441,7 +441,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     for stat in ordered_names
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
-        data[stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
+        data[!, stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
     end
 
     return data
@@ -476,7 +476,6 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
             d[:std] = try std(col, mean = m) catch end
         end
     end
-
 
     if :nunique in stats
         if eltype(col) <: Real
@@ -581,19 +580,19 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
     end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
-        _nonmissing!(res, df[i])
+        _nonmissing!(res, df[!, i])
     end
     res
 end
 
 function completecases(df::AbstractDataFrame, col::ColumnIndex)
     res = trues(size(df, 1))
-    _nonmissing!(res, df[col])
+    _nonmissing!(res, df[!, col])
     res
 end
 
 completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
-    completecases(select(df, cols, copycols=false))
+    completecases(df[!, cols])
 
 """
     dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
@@ -816,7 +815,8 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
         catch err
             if err isa MethodError && err.f == convert &&
                !(T >: Missing) && any(ismissing, col)
-                error("cannot convert a DataFrame containing missing values to Matrix{$T} (found for column $name)")
+                throw(ArgumentError("cannot convert a DataFrame containing missing values to Matrix{$T} " *
+                                    "(found for column $name)"))
             else
                 rethrow(err)
             end
@@ -862,7 +862,7 @@ function nonunique(df::AbstractDataFrame)
     if ncol(df) == 0
         throw(ArgumentError("finding duplicate rows in data frame with no columns is not allowed"))
     end
-    gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
+    gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
     res = fill(true, nrow(df))
@@ -924,7 +924,7 @@ unique!(df)  # modifies df
 
 function without(df::AbstractDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
-    view(df, newcols)
+    view(df, :, newcols)
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
 without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
@@ -1142,7 +1142,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
             if hasproperty(df, name)
-                return df[name]
+                return df[!, name]
             else
                 Iterators.repeated(missing, nrow(df))
             end
@@ -1241,7 +1241,7 @@ function Base.hash(df::AbstractDataFrame, h::UInt)
     h += hashdf_seed
     h += hash(size(df))
     for i in 1:size(df, 2)
-        h = hash(df[i], h)
+        h = hash(df[!, i], h)
     end
     return h
 end

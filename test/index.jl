@@ -168,10 +168,10 @@ si7 = SubIndex(i, Not(1:2))
 @testset "selector mutation" begin
     df = DataFrame(a=1:5, b=11:15, c=21:25)
     selector1 = [3,2]
-    dfv1 = view(df, selector1)
+    dfv1 = view(df, :, selector1)
     dfr1 = view(df, 2, selector1)
     selector2 = [1]
-    dfv2 = view(dfv1, selector2)
+    dfv2 = view(dfv1, :, selector2)
     dfr2 = view(dfr1, selector2)
     @test names(dfv1) == [:c, :b]
     @test names(dfv2) == [:c]
@@ -183,7 +183,7 @@ si7 = SubIndex(i, Not(1:2))
     @test names(dfr1) == [:a, :b]
     @test names(dfr2) == [:c]
     selector3 = [:c, :b]
-    dfv3 = view(df, selector3)
+    dfv3 = view(df, :, selector3)
     dfr3 = view(df, 2, selector3)
     @test names(dfv3) == [:c, :b]
     @test names(dfr3) == [:c, :b]

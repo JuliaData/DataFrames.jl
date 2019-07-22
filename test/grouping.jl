@@ -93,23 +93,23 @@ end
     for cols in ([:a, :b], [:b, :a], [:a, :c], [:c, :a],
                  [1, 2], [2, 1], [1, 3], [3, 1],
                  [true, true, false, false], [true, false, true, false])
-        colssym = names(df[cols])
-        hcatdf = hcat(df[cols], df, makeunique=true)
+        colssym = names(df[:, cols])
+        hcatdf = hcat(df[:, cols], df, makeunique=true)
         nms = names(hcatdf)
-        res = unique(df[cols])
-        res.xmax = [maximum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])
-                    for (a, b) in zip(res[colssym[1]], res[colssym[2]])]
-        res2 = unique(df[cols])[repeat(1:4, inner=2), :]
+        res = unique(df[:, cols])
+        res.xmax = [maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
+                    for (a, b) in zip(res[!, colssym[1]], res[!, colssym[2]])]
+        res2 = unique(df[:, cols])[repeat(1:4, inner=2), :]
         res2.x1 = collect(Iterators.flatten(
-            [[maximum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x]),
-              minimum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])]
-             for (a, b) in zip(res[colssym[1]], res[colssym[2]])]))
-        res3 = unique(df[cols])
-        res3.x1 = [maximum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])
-                   for (a, b) in zip(res[colssym[1]], res[colssym[2]])]
-        res3.x2 = [minimum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])
-                   for (a, b) in zip(res[colssym[1]], res[colssym[2]])]
-        res4 = df[cols]
+            [[maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x]),
+              minimum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])]
+             for (a, b) in zip(res[!, colssym[1]], res[!, colssym[2]])]))
+        res3 = unique(df[:, cols])
+        res3.x1 = [maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
+                   for (a, b) in zip(res[!, colssym[1]], res[!, colssym[2]])]
+        res3.x2 = [minimum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
+                   for (a, b) in zip(res[!, colssym[1]], res[!, colssym[2]])]
+        res4 = df[:, cols]
         res4.x2 = df.x.^2
         shcatdf = sort(hcatdf, colssym)
         sres = sort(res, colssym)
@@ -152,7 +152,7 @@ end
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         df_ref = DataFrame(gd)
-        @test sort(hcat(df_ref[cols], df_ref, makeunique=true), colssym) == shcatdf
+        @test sort(hcat(df_ref[:, cols], df_ref, makeunique=true), colssym) == shcatdf
         @test df_ref.x == df_comb.x
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
@@ -167,12 +167,12 @@ end
         gd = groupby_checked(df, cols, sort=true)
         @test names(parent(gd))[gd.cols] == colssym
         for i in 1:length(gd)
-            @test all(gd[i][colssym[1]] .== sres[i, colssym[1]])
-            @test all(gd[i][colssym[2]] .== sres[i, colssym[2]])
+            @test all(gd[i][!, colssym[1]] .== sres[i, colssym[1]])
+            @test all(gd[i][!, colssym[2]] .== sres[i, colssym[2]])
         end
         @test combine(identity, gd) == shcatdf
         df_ref = DataFrame(gd)
-        @test hcat(df_ref[cols], df_ref, makeunique=true) == shcatdf
+        @test hcat(df_ref[:, cols], df_ref, makeunique=true) == shcatdf
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
         @test rename(combine(f3, gd), :x1 => :xmax) == sres
@@ -185,14 +185,14 @@ end
         # map() without and with groups sorting
         for sort in (false, true)
             gd = groupby_checked(df, cols, sort=sort)
-            v = map(d -> d[[:x]], gd)
+            v = map(d -> d[:, [:x]], gd)
             @test length(gd) == length(v)
             nms = [colssym; :x]
-            @test v[1] == gd[1][nms]
-            @test v[1] == gd[1][nms] &&
-                v[2] == gd[2][nms] &&
-                v[3] == gd[3][nms] &&
-                v[4] == gd[4][nms]
+            @test v[1] == gd[1][:, nms]
+            @test v[1] == gd[1][:, nms] &&
+                v[2] == gd[2][:, nms] &&
+                v[3] == gd[3][:, nms] &&
+                v[4] == gd[4][:, nms]
             @test names(parent(v))[v.cols] == colssym
             v = map(f1, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
@@ -236,7 +236,7 @@ end
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
     @test size(df2) == (0, 1)
-    @test sum(df2[:x]) == 0
+    @test sum(df2.x) == 0
 
     # Check that reordering levels does not confuse groupby
     for df in (DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B", "B", "A"]),
@@ -309,7 +309,7 @@ end
     res = combine(d -> (x=d[1, :Key2],), groupby_checked(df, :Key1))
     @test typeof(res.x) == typeof(df.Key2)
     # ...and when returning an array
-    res = combine(d -> DataFrame(x=d[:Key1]), groupby_checked(df, :Key1))
+    res = combine(d -> DataFrame(x=d.Key1), groupby_checked(df, :Key1))
     @test typeof(res.x) == typeof(df.Key1)
 
     # Check that CategoricalArray and String give a String...
@@ -770,12 +770,12 @@ Base.isless(::TestType, ::Int) = true
 Base.isless(::Int, ::TestType) = false
 Base.isless(::TestType, ::TestType) = false
 
-@testset "combine with aggregation functions" begin
+@testset "combine with aggregation functions" for skip in (false, true), sort in (false, true)
     Random.seed!(1)
-    df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
+    df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
-        gd = groupby_checked(df, :a)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
 
         res = combine(gd, y = :x1 => f)
         expected = combine(gd, y = :x1 => x -> f(x))
@@ -785,7 +785,7 @@ Base.isless(::TestType, ::TestType) = false
         for T in (Union{Missing, Int}, Union{Int, Int8},
                   Union{Missing, Int, Int8})
             df.x3 = Vector{T}(df.x1)
-            gd = groupby_checked(df, :a)
+            gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
             res = combine(gd, y = :x3 => f)
             expected = combine(gd, y = :x3 => x -> f(x))
             @test res ≅ expected
@@ -796,7 +796,7 @@ Base.isless(::TestType, ::TestType) = false
 
         df.x3 = allowmissing(df.x1)
         df.x3[1] = missing
-        gd = groupby_checked(df, :a)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -808,7 +808,7 @@ Base.isless(::TestType, ::TestType) = false
     end
     # Test complex numbers
     for f in (sum, prod, mean, var, std, first, last, length)
-        gd = groupby_checked(df, :a)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
 
         res = combine(gd, y = :x2 => f)
         expected = combine(gd, y = :x2 => x -> f(x))
@@ -821,7 +821,7 @@ Base.isless(::TestType, ::TestType) = false
                    (Union{Missing, Int}, false), (Union{Missing, Int}, true))
         df.x3 = CategoricalVector{T}(df.x1)
         m && (df.x3[1] = missing)
-        gd = groupby_checked(df, :a)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -831,23 +831,21 @@ Base.isless(::TestType, ::TestType) = false
 
         res = combine(gd, y = :x3 => f∘skipmissing)
         expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
-        @test res == expected
+        @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
         if m
-            gd[1].x3 = missing
+            gd[1][:, :x3] .= missing
             @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
         end
     end
-    @test combine(gd, y = :x1 => maximum, z = :x2 => sum) ==
+    @test combine(gd, y = :x1 => maximum, z = :x2 => sum) ≅
         combine(gd, y = :x1 => x -> maximum(x), z = :x2 => x -> sum(x))
     # Test floating point corner cases
     df = DataFrame(a = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6],
                    x1 = [0.0, 1.0, 2.0, NaN, NaN, NaN, Inf, Inf, Inf, 1.0, NaN, 0.0, -0.0])
 
-    for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length),
-        sort in (false, true),
-        skip in (false, true)
-        gd = groupby_checked(df, :a, sort=sort, skipmissing=skip)
+    for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
 
         res = combine(gd, y = :x1 => f)
         expected = combine(gd, y = :x1 => x -> f(x))
@@ -858,7 +856,7 @@ Base.isless(::TestType, ::TestType) = false
 
         df.x3 = allowmissing(df.x1)
         df.x3[1] = missing
-        gd = groupby_checked(df, :a, sort=sort, skipmissing=skip)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -876,7 +874,7 @@ Base.isless(::TestType, ::TestType) = false
 
     # Test maximum when no promotion rule exists
     df = DataFrame(x = [1, 1, 2, 2], y = [1, TestType(), TestType(), TestType()])
-    gd = groupby_checked(df, :x)
+    gd = groupby_checked(df, :x, skipmissing=skip, sort=sort)
     for f in (maximum, minimum)
         res = combine(gd, z = :y => maximum)
         @test res.z isa Vector{Any}
