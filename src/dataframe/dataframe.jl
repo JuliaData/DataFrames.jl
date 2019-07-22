@@ -1515,56 +1515,73 @@ end
 ##
 ##############################################################################
 
-
-function expanddf(df::AbstractDataFrame, indexcols::Array{Symbol,1})
-    colnames = names(df)
-    # Check to make sure the symbols in indexcols are in the df
-    for i in indexcols
-        if i ∉ colnames
-            throw(ArgumentError(":$i is not in dataframe"))
-        end
+function _expandhelper(col, vect, stride, offset)
+    assembledcol = []
+    for i in offset:stride:length(vect)
+        #push!(col, vect[i])
+        push!(assembledcol, vect[i])
     end
-    dummydf = similar(df[indexcols],0)
+    return assembledcol
+end
+
+function expand(df::AbstractDataFrame, indexcols)
+    # Check to make sure the symbols in indexcols are in the df
+    allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
+    colind = index(df)[indexcols]
+
+    #dummydf = similar(select(df, indexcols, copycols=false),0)
+    dummydf = DataFrame()
 
     # Create a dictionary of symbol=>vector of unique values
-    uniqueVals = Dict{Symbol, Array{Any,1}}()
-    for col in indexcols
-        uniqueVals[col] = unique(df[col])
+    uniqueVals = []
+    for col in colind
+        # levels drops missing, handle the case where missing values are present
+        if sum(ismissing.(df[col])) != 0
+            tempcol = vcat(levels(df[col]), missing)
+        else
+            tempcol = levels(df[col])
+        end
+        push!(uniqueVals, tempcol)
     end
 
     # Get a long vector of every possible combination
     collected = collect(flatten(product(values(uniqueVals)...)))
     dfsize = div(length(collected),length(indexcols))
 
-    # Re-format to dataframe
-    for i in 1:length(indexcols):length(collected)
-        push!(dummydf, collected[i:(i+length(indexcols)-1)])
+    for i in 1:length(indexcols)
+        #_expandhelper(dummydf, collected, length(indexcols), i)
+        hcat(dummydf,_expandhelper(dummydf[:, i], collected, length(indexcols), i))
     end
 
     return dummydf
 end
 
-function completedf(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missing::Any)
-    colnames = names(df)
+function complete(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missing::Any, replaceallmissing=false)
     # Check to make sure the symbols in indexcols are in the df
-    for i in indexcols
-        if i ∉ colnames
-            throw(ArgumentError(":$i is not in dataframe"))
-        end
-    end
+    allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
+    colind = index(df)[indexcols]
 
     # Expand the input df and left join
-    expanded = expanddf(df, indexcols)
-    expanded = join(expanded, df; on = indexcols, kind = :left)
+    expanded = expand(df, indexcols)
+    expanded = join(expanded, df; on = indexcols, kind = :left, indicator = :source)
 
     # Replace missing values with the fill
     if !ismissing(fill)
-        for i in names(expanded)
-            if i ∉ indexcols
-                expanded[i] = coalesce.(expanded[i],fill)
+        for n in names(expanded)
+            if (n ∉ indexcols) && (n != :source)
+                if replaceallmissing == true
+                    expanded[n] = coalesce.(expanded[n],fill)
+                else
+                    #expanded[n] .= ifelse.(expanded.source .== "left_only", fill, expanded[n])
+                    let col = expanded[n]
+                        for (i,v) in enumerate(expanded.source)
+                            v == "left_only" && (col[i] = fill)
+                        end
+                    end
+                end
             end
         end
     end
-
+    select!(expanded, Not(:source))
     return expanded
 end
