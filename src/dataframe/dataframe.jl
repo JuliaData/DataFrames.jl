@@ -1325,23 +1325,20 @@ end
 ##############################################################################
 
 function _expandhelper(col, vect, stride, offset)
-    assembledcol = []
     for i in offset:stride:length(vect)
-        #push!(col, vect[i])
-        push!(assembledcol, vect[i])
+        push!(col, vect[i])
     end
-    return assembledcol
 end
 
 function expand(df::AbstractDataFrame, indexcols)
     # Check to make sure the symbols in indexcols are in the df
     allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
+    sum(DataFrames.nonunique(df[:,indexcols]))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
     colind = index(df)[indexcols]
 
-    #dummydf = similar(select(df, indexcols, copycols=false),0)
-    dummydf = DataFrame()
+    dummydf = similar(select(df, indexcols, copycols=false),0)
 
-    # Create a dictionary of symbol=>vector of unique values
+    # Create a vect of vectors of unique values in each column
     uniqueVals = []
     for col in colind
         # levels drops missing, handle the case where missing values are present
@@ -1358,8 +1355,7 @@ function expand(df::AbstractDataFrame, indexcols)
     dfsize = div(length(collected),length(indexcols))
 
     for i in 1:length(indexcols)
-        #_expandhelper(dummydf, collected, length(indexcols), i)
-        hcat(dummydf,_expandhelper(dummydf[:, i], collected, length(indexcols), i))
+        _expandhelper(dummydf[!,i], collected, length(indexcols), i)
     end
 
     return dummydf
@@ -1368,6 +1364,7 @@ end
 function complete(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missing::Any, replaceallmissing=false)
     # Check to make sure the symbols in indexcols are in the df
     allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
+    sum(DataFrames.nonunique(df[:,indexcols]))>0 && throw(ArgumentError("duplicate rows in input"))
     colind = index(df)[indexcols]
 
     # Expand the input df and left join
