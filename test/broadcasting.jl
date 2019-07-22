@@ -737,9 +737,11 @@ end
 
 @testset "scalar on assignment side" begin
     df = DataFrame(rand(2, 3))
-    df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
+    df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
-    df[1, 2] .-= df[1, 2]
+    @test_throws MethodError df[1, 2] .-= df[1, 2]
+    df[1:1, 2] .-= df[1, 2]
     @test df[1, 2] == 0
 end
 
@@ -983,26 +985,20 @@ end
 @testset "additional checks of post-! broadcasting rules" begin
     df = copy(refdf)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, 1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= 1
     @test_throws MethodError df[1, 1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, 1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, :x1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= 1
     @test_throws MethodError df[1, :x1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
 
     df = copy(refdf)
@@ -1153,26 +1149,20 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, 1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= 1
     @test_throws MethodError df[1, 1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, 1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, :x1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= 1
     @test_throws MethodError df[1, :x1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
@@ -1318,6 +1308,20 @@ end
     @test a == [2, 3, 4]
     @test df.a == [3, 4, 5]
     @test df.a !== a
+end
+
+@testset "add new correct rules for df[row, col] .= v broadcasting" begin
+    df = DataFrame(a=1)
+    @test_throws MethodError df[1,1] .= 10
+    @test_throws MethodError df[1,:a] .= 10
+    @test_throws MethodError df[CartesianIndex(1,1)] .= 10
+    df = DataFrame(a=[[1,2,3]])
+    df[1,1] .= 10
+    @test df == DataFrame(a=[[10,10,10]])
+    df[1,:a] .= 100
+    @test df == DataFrame(a=[[100,100,100]])
+    df[CartesianIndex(1,1)] .= 1000
+    @test df == DataFrame(a=[[1000,1000,1000]])
 end
 
 end # module

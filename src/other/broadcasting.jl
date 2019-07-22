@@ -97,7 +97,11 @@ function Base.Broadcast.materialize!(dest::LazyNewColDataFrame,
             throw(DimensionMismatch("Cannot broadcast $(length(axes(bc)))-dimensional" *
                                     "object into a vector"))
         end
-        copyto!(dest, ibc)
+        if length(axes(ibc)) == 1
+            copyto!(dest, ibc)
+        else
+            copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted{Style}(bc.f, bc.args, (Base.OneTo(1),))))
+        end
     end
 end
 
@@ -112,7 +116,11 @@ function Base.Broadcast.materialize!(dest::LazyNewColDataFrame, x)
             throw(DimensionMismatch("Cannot broadcast $(length(axes(x)))-dimensional" *
                                     "object into a vector"))
         end
-        copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted(identity, (x,), axes(x))))
+        if length(axes(x)) == 1
+            copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted(identity, (x,), axes(x))))
+        else
+            copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted(identity, (x,), (Base.OneTo(1),))))
+        end
     end
 end
 
@@ -125,7 +133,8 @@ end
 
 # Base.axes(x::ColReplaceDataFrame) = axes(x.df)
 
-Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = view(df, idx[1], idx[2])
+Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
+Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
 Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
 function Base.maybeview(df::DataFrame, ::typeof(!), cols)
@@ -160,19 +169,17 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
                                 "with zero rows and non-zero columns unless it is a scalar assignment"))
         end
         if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
-            bcc = convert(Base.Broadcast.Broadcasted{Base.Broadcast.DefaultArrayStyle{1}}, bc)
-            col_tmp = Base.Broadcast.materialize(bcc)
+            bcf = Base.Broadcast.flatten(bc)
+            v = bcf.f(getindex.(bcf.args)...)
+            if ncol(lazydf.df) > 0
+                nrows = nrow(lazydf.df)
+            else
+                nrows = 1
+            end
+            col = similar(Vector{typeof(v)}, nrows)
+            fill!(col, v)
         else
-            col_tmp = Base.Broadcast.materialize(bc)
-        end
-        if col_tmp isa AbstractArray && ndims(col_tmp) == 1
-            col = col_tmp
-        else
-            @assert nrow(lazydf.df) < 2
-            unwrapped = col_tmp[]
-            T = typeof(unwrapped)
-            col = similar(Vector{T}, 1)
-            col[1] = unwrapped
+            col = Base.Broadcast.materialize(bc)
         end
     end
     lazydf.df[!, lazydf.col] = col
