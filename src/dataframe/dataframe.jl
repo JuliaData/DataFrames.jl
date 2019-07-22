@@ -1331,7 +1331,7 @@ function _expandhelper(col, vect, stride, offset)
 end
 
 function expand(df::AbstractDataFrame, indexcols)
-    # Check to make sure the symbols in indexcols are in the df
+    # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
     allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
     sum(DataFrames.nonunique(df[:,indexcols]))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
     colind = index(df)[indexcols]
@@ -1362,7 +1362,7 @@ function expand(df::AbstractDataFrame, indexcols)
 end
 
 function complete(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missing::Any, replaceallmissing=false)
-    # Check to make sure the symbols in indexcols are in the df
+    # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
     allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
     sum(DataFrames.nonunique(df[:,indexcols]))>0 && throw(ArgumentError("duplicate rows in input"))
     colind = index(df)[indexcols]
