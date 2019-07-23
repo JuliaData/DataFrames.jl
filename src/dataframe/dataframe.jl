@@ -1353,7 +1353,7 @@ function expand(df::AbstractDataFrame, indexcols)
     end
 
     # Get a long vector of every possible combination
-    collected = collect(flatten(product(values(uniqueVals)...)))
+    collected = collect(Iterators.flatten(Iterators.product(uniqueVals...)))
     dfsize = div(length(collected),length(indexcols))
 
     for i in 1:length(indexcols)
