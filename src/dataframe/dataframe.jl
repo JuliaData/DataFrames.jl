@@ -1336,7 +1336,7 @@ function expand(df::AbstractDataFrame, indexcols)
     length(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
     colind = index(df)[indexcols]
 
-    dummydf = similar(select(df, indexcols, copycols=false),0)
+    dummydf = similar(select(df, colind, copycols=false), 0)
 
     # Create a vect of vectors of unique values in each column
     uniqueVals = []
