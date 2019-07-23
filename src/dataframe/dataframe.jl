@@ -1332,7 +1332,9 @@ end
 
 function expand(df::AbstractDataFrame, indexcols)
     # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
-    allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
+    if !(indexcols isa Symbol || allunique(indexcols))
+        throw(ArgumentError("Elements of $indexcols must be unique"))
+    end
     length(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
     colind = index(df)[indexcols]
 
