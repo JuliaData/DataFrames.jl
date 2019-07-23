@@ -1357,7 +1357,7 @@ function expand(df::AbstractDataFrame, indexcols)
     dfsize = div(length(collected),length(indexcols))
 
     for i in 1:length(indexcols)
-        _expandhelper(dummydf[!,i], collected, length(indexcols), i)
+        _expandhelper(dummydf[!, i], collected, length(indexcols), i)
     end
 
     return dummydf
