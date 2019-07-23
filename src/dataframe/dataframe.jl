@@ -1378,7 +1378,7 @@ function complete(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missin
         for n in names(expanded)
             if (n ∉ indexcols) && (n != :source)
                 if replaceallmissing == true
-                    expanded[n] = coalesce.(expanded[n],fill)
+                    expanded[!, n] = coalesce.(expanded[!, n], fill)
                 else
                     #expanded[n] .= ifelse.(expanded.source .== "left_only", fill, expanded[n])
                     let col = expanded[n]
