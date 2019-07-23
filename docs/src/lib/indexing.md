@@ -175,7 +175,7 @@ Additional rules:
 * in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes we broadcast `v` into the contents of `df[row, col]` (this is consistent with Base behavior);
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added;
+* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * `df[!, cols] = v` syntax is currently disallowed, but is planned to be supported in the future;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
@@ -187,10 +187,3 @@ Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as
 
 If column indexing using `Symbol` names in `cols` is performed, the order of columns in the operation is specified
 by the order of names.
-
-The `df[!, col] .= v` syntax follows several convinence special rules:
-* if `ncol(df) == 0` then it is allowed to add a column `v` as a freshly allocated column `col`;
-  the length of this column is equal to `length(v)` if `v` is a vector and `1` if it is a scalar or
-  a scalar broadcasting operation;
-* if `ncol(df) > 0` and `nrow(df) == 0` then it is allowed to add a column only if `v` is a scalar;
-  the length of this column is `0` and type the same as `typeof(v)`;

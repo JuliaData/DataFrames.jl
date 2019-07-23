@@ -600,10 +600,10 @@ end
     @test df == cdf
 
     df = DataFrame()
-    df[!, :a] .= sin.(1:3)
+    @test_throws DimensionMismatch df[!, :a] .= sin.(1:3)
     df[!, :b] .= sin.(1)
     df[!, :c] .= sin(1) .+ 1
-    @test df == DataFrame(a=sin.(1:3), b=sin.([1,1,1]), c=sin.([1,1,1]).+1)
+    @test df == DataFrame(b=Float64[], c=Float64[])
 end
 
 @testset "empty data frame corner case" begin
@@ -613,23 +613,49 @@ end
     @test_throws ArgumentError df[!, [:a, :b]] .= [1]
     @test_throws ArgumentError df[!, [:a, :b]] .= 1
     @test_throws DimensionMismatch df[!, :a] .= [1 2]
+    @test_throws DimensionMismatch df[!, :a] .= [1, 2]
+    @test_throws DimensionMismatch df[!, :a] .= sin.(1) .+ [1, 2]
 
-    for rhs in [1, [1], [1, 2], "abc", ["abc"], ["abc", "def"]]
+    for rhs in [1, [1], Int[], "abc", ["abc"]]
         df = DataFrame()
         df[!, :a] .= rhs
-        @test df == DataFrame(a = rhs)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
 
         df = DataFrame()
         df[!, :a] .= length.(rhs)
-        @test df == DataFrame(a = length.(rhs))
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
         df[!, :a] .= length.(rhs) .+ 1
-        @test df == DataFrame(a = length.(rhs) .+ 1)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
         @. df[!, :a] = length(rhs) + 1
-        @test df == DataFrame(a = length.(rhs) .+ 1)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= rhs
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= length.(rhs)
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= length.(rhs) .+ 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        @. df[!, :a] = length(rhs) + 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
     end
 
     df = DataFrame()
@@ -643,26 +669,21 @@ end
     @test_throws DimensionMismatch df .= ones(1,1,1)
 
     df = DataFrame(a=[])
-    @test_throws ArgumentError df[!, :b] .= sin.(1)
-    @test_throws ArgumentError df[!, :b] .= [1]
-    df[!, :b] .= 1
-    @test names(df) == [:a, :b]
+    df[!, :b] .= sin.(1)
+    @test eltype(df.b) == Float64
+    df[!, :b] .= [1]
     @test eltype(df.b) == Int
+    df[!, :b] .= 'a'
+    @test eltype(df.b) == Char
+    @test names(df) == [:a, :b]
 
     c = categorical(["a", "b", "c"])
     df = DataFrame()
-    df[!, :a] .= c
-    @test df.a == c
-    @test df.a !== c
-    @test df.a isa CategoricalVector
-    df[!, :b] .= c[1]
-    @test df.b == [c[1], c[1], c[1]]
-    @test df.b isa CategoricalVector
+    @test_throws DimensionMismatch df[!, :a] .= c
 
-    df = DataFrame()
-    df[!, :a] .= c[1]
-    @test df.a == c[1:1]
-    @test df.a isa CategoricalVector
+    df[!, :b] .= c[1]
+    @test nrow(df) == 0
+    @test df.b isa CategoricalVector
 end
 
 @testset "test categorical values" begin
