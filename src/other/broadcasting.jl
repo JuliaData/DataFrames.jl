@@ -78,8 +78,6 @@ struct LazyNewColDataFrame{T}
     col::T
 end
 
-# we allow LazyNewColDataFrame also for data frames
-# that are empty, ie. `nrow(df) == 0`; in this case we create a 0 length column
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
 # ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
