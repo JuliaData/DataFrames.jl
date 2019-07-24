@@ -172,7 +172,7 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
     `DataFrameRow` is considered to be column-oriented.
 
 Additional rules:
-* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes we broadcast `v` into the contents of `df[row, col]` (this is consistent with Base behavior);
+* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;

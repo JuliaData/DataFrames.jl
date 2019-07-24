@@ -683,7 +683,7 @@ end
 
     df[!, :b] .= c[1]
     @test nrow(df) == 0
-    @test df.b isa CategoricalVector
+    @test df.b isa CategoricalVector{String}
 end
 
 @testset "test categorical values" begin
