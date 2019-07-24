@@ -1335,9 +1335,8 @@ function expand(df::AbstractDataFrame, indexcols)
     if !(indexcols isa Symbol || allunique(indexcols))
         throw(ArgumentError("Elements of $indexcols must be unique"))
     end
-    length(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
+    sum(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
     colind = index(df)[indexcols]
-
     dummydf = similar(select(df, colind, copycols=false), 0)
 
     # Create a vect of vectors of unique values in each column
@@ -1354,7 +1353,6 @@ function expand(df::AbstractDataFrame, indexcols)
 
     # Get a long vector of every possible combination
     collected = collect(Iterators.flatten(Iterators.product(uniqueVals...)))
-    dfsize = div(length(collected),length(indexcols))
 
     for i in 1:length(indexcols)
         _expandhelper(dummydf[!, i], collected, length(indexcols), i)
@@ -1363,10 +1361,17 @@ function expand(df::AbstractDataFrame, indexcols)
     return dummydf
 end
 
-function complete(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missing::Any, replaceallmissing=false)
+function _completehelper(expandeddf, colname, fill)
+    col = expandeddf[!, colname]
+    for (i,v) in enumerate(expandeddf[!,names(expandeddf)[end]])
+        v == "left_only" && (col[i] = fill)
+    end
+end
+
+function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing=false::Bool)
     # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
     allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
-    sum(DataFrames.nonunique(df[:,indexcols]))>0 && throw(ArgumentError("duplicate rows in input"))
+    sum(nonunique(df, indexcols))>0 && throw(ArgumentError("duplicate rows in input"))
     colind = index(df)[indexcols]
 
     # Expand the input df and left join
@@ -1376,20 +1381,15 @@ function complete(df::AbstractDataFrame, indexcols::Array{Symbol,1}; fill=missin
     # Replace missing values with the fill
     if !ismissing(fill)
         for n in names(expanded)
-            if (n ∉ indexcols) && (n != :source)
+            if (n ∉ indexcols) && (n != names(expanded)[end])
                 if replaceallmissing
                     expanded[!, n] = coalesce.(expanded[!, n], fill)
                 else
-                    #expanded[n] .= ifelse.(expanded.source .== "left_only", fill, expanded[n])
-                    let col = expanded[n]
-                        for (i,v) in enumerate(expanded.source)
-                            v == "left_only" && (col[i] = fill)
-                        end
-                    end
+                    _completehelper(expanded, n, fill)
                 end
             end
         end
     end
-    select!(expanded, Not(:source))
+    select!(expanded, Not(names(expanded)[end]))
     return expanded
 end
