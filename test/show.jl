@@ -366,4 +366,14 @@ end
     @test sprint(show, df[1, 2:1]) == "DataFrameRow"
 end
 
+@testset "consistency" begin
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(df.c, 5)
+    @test_throws AssertionError sprint(show, df)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(DataFrames._columns(df), df[:, :a])
+    @test_throws AssertionError sprint(show, df)
+end
+
 end # module

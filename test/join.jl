@@ -673,4 +673,21 @@ end
                                      validate=(false, true))
 end
 
+@testset "consistency" begin
+    # Join on symbols or vectors of symbols
+    cname = copy(name)
+    cjob = copy(job)
+    push!(cname[!, 1], cname[1, 1])
+    @test_throws AssertionError join(cname, cjob, on = :ID)
+
+    cname = copy(name)
+    cjob = copy(job)
+    push!(cjob[!, 1], cjob[1, 1])
+    @test_throws AssertionError join(cname, cjob, on = :ID)
+
+    cname = copy(name)
+    push!(DataFrames._columns(cname), cname[:, 1])
+    @test_throws AssertionError join(cname, cjob, on = :ID)
+end
+
 end # module

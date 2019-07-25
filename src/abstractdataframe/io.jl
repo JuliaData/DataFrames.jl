@@ -78,10 +78,11 @@ end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
+    _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        elseif size(df, 1) != 1 
+        elseif size(df, 1) != 1
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
@@ -211,10 +212,11 @@ function latex_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
+    _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        elseif size(df, 1) != 1 
+        elseif size(df, 1) != 1
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
@@ -335,6 +337,7 @@ function printtable(io::IO,
                     separator::Char = ',',
                     quotemark::Char = '"',
                     missingstring::AbstractString = "missing")
+    _check_consistency(df)
     n, p = size(df)
     etypes = eltypes(df)
     if header

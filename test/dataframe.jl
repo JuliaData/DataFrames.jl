@@ -156,7 +156,7 @@ end
     @test df == dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, (33.33,"pear"))
+    @test_throws InexactError push!(dfb, (33.33,"pear"))
     @test dfc == dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
@@ -164,11 +164,11 @@ end
     @test dfc == dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, ("coconut",22))
+    @test_throws MethodError push!(dfb, ("coconut",22))
     @test dfc == dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, (11,22))
+    @test_throws MethodError push!(dfb, (11,22))
     @test dfc == dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
@@ -190,7 +190,7 @@ end
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, (second=3, first=3))
+    @test_throws MethodError push!(dfb, (second=3, first=3))
     @test df0 == dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
@@ -199,22 +199,22 @@ end
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, Dict(:first=>true, :second=>false))
+    @test_throws MethodError push!(dfb, Dict(:first=>true, :second=>false))
     @test df0 == dfb
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
+    @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
     @test df0 == dfb
 
     df0=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
     dfb=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
-    @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>1))
+    @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
     @test df0 == dfb
 
     df0=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
     dfb=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
-    @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>1))
+    @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
     @test df0 == dfb
 
     df = DataFrame(x=1)
@@ -226,12 +226,43 @@ end
     @test df[!, :x] == [1, 3, 5] && df[!, :y] == [2, 4, 6]
 
     df = DataFrame(x=1, y=2)
-    @test_throws ArgumentError push!(df, Dict(:x=>1, "y"=>2))
+    @test_throws KeyError push!(df, Dict(:x=>1, "y"=>2))
     @test df == DataFrame(x=1, y=2)
 
     df = DataFrame()
     @test push!(df, (a=1, b=true)) === df
     @test df == DataFrame(a=1, b=true)
+
+    df = DataFrame()
+    df.a = [1,2,3]
+    df.b = df.a
+    dfc = copy(df)
+    @test_throws AssertionError push!(df, [1,2])
+    @test df == dfc
+    @test_throws AssertionError push!(df, (a=1,b=2))
+    @test df == dfc
+    @test_throws AssertionError push!(df, Dict(:a=>1, :b=>2))
+    @test df == dfc
+    @test_throws AssertionError push!(df, df[1, :])
+    @test df == dfc
+    @test_throws AssertionError push!(df, dfc[1, :])
+    @test df == dfc
+
+    df = DataFrame()
+    df.a = [1,2,3,4]
+    df.b = df.a
+    df.c = [1,2,3,4]
+    dfc = copy(df)
+    @test_throws AssertionError push!(df, [1,2,3])
+    @test df == dfc
+    @test_throws AssertionError push!(df, (a=1,b=2,c=3))
+    @test df == dfc
+    @test_throws AssertionError push!(df, Dict(:a=>1, :b=>2, :c=>3))
+    @test df == dfc
+    @test_throws AssertionError push!(df, df[1, :])
+    @test df == dfc
+    @test_throws AssertionError push!(df, dfc[1, :])
+    @test df == dfc
 end
 
 @testset "select! Not" begin
@@ -976,6 +1007,24 @@ end
     df4 = append!(df3, DataFrame())
     @test df4 === df3
     @test df4 == df
+
+    df = DataFrame()
+    df.a = [1,2,3]
+    df.b = df.a
+    dfc = copy(df)
+    @test_throws AssertionError append!(df, dfc)
+    @test df == dfc
+
+    df = DataFrame()
+    df.a = [1,2,3,4]
+    df.b = df.a
+    df.c = [1,2,3,4]
+    dfc = copy(df)
+    @test_throws AssertionError append!(df, dfc)
+    @test df == dfc
+
+    names!(df, [:a, :b, :z])
+    @test_throws ErrorException append!(df, dfc)
 end
 
 @testset "test categorical!" begin

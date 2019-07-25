@@ -280,6 +280,29 @@ ncol(df::DataFrame) = length(index(df))
 
 ##############################################################################
 ##
+## DataFrame consistency check
+##
+##############################################################################
+
+function _check_consistency(df::DataFrame)
+    cols, idx = _columns(df), index(df)
+    ncols = length(cols)
+    @assert length(idx.names) == length(idx.lookup) == ncols
+    ncols == 0 && return nothing
+    nrows = length(cols[1])
+    for i in 2:length(cols)
+        @assert length(cols[i]) == nrows "Data frame is corrupt: length of column :$(names(df)[i]) ($(length(df[!, i])))" *
+                                         " does not match length of column 1 ($(length(df[!, 1]))). " *
+                                         "The column vector has likely been resized unintentionally " *
+                                         "(either directly or because it is shared with another data frame)."
+    end
+    nothing
+end
+
+_check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
+
+##############################################################################
+##
 ## getindex() definitions
 ##
 ##############################################################################
@@ -1053,8 +1076,7 @@ in `df2` contains `missing` values but the corresponding column in `df1` does no
 accept them.
 
 Please note that `append!` must not be used on a `DataFrame` that contains columns
-that are aliases (equal when compared with `===`) as it will silently produce
-a wrong result in such a situation.
+that are aliases (equal when compared with `===`).
 
 !!! note
     Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
@@ -1096,15 +1118,24 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
 
     _names(df1) == _names(df2) || error("Column names do not match")
     nrows, ncols = size(df1)
+    targetrows = nrows + nrow(df2)
+    current_col = 0
     try
         for j in 1:ncols
+            current_col += 1
             append!(df1[!, j], df2[!, j])
+        end
+        current_col = 0
+        for col in _columns(df1)
+            current_col += 1
+            @assert length(col) == targetrows
         end
     catch err
         # Undo changes in case of error
-        for j in 1:ncols
-            resize!(df1[!, j], nrows)
+        for col in _columns(df1)
+            resize!(col, nrows)
         end
+        @error "Error adding value to column $(names(df)[current_col])."
         rethrow(err)
     end
     return df1
@@ -1118,32 +1149,37 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
     if !(columns in (:equal, :intersect))
         throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
-    if ncol(df) == 0 && row isa NamedTuple
+    nrows, ncols = size(df)
+    if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
-    i = 1
     # Only check for equal lengths, as an error will be thrown below if some names don't match
-    if columns === :equal && length(row) != size(df, 2)
+    if columns === :equal && length(row) != ncols
         # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
                       "of elements as is the number of columns in `df`." *
                       "Use `columns=:intersect` to disable this check.", :push!)
     end
-    for nm in _names(df)
-        try
-            push!(df[!, i], row[nm])
-        catch
-            #clean up partial row
-            for j in 1:(i - 1)
-                pop!(df[!, j])
-            end
-            msg = "Error adding value to column :$nm."
-            throw(ArgumentError(msg))
+    current_col = 0
+    try
+        for (col, nm) in zip(_columns(df), _names(df))
+            current_col += 1
+            push!(col, row[nm])
         end
-        i += 1
+        current_col = 0
+        for col in _columns(df)
+            current_col += 1
+            @assert length(col) == nrows + 1
+        end
+    catch err
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        @error "Error adding value to column :$(names(df)[current_col])."
+        rethrow(err)
     end
     df
 end
@@ -1174,8 +1210,7 @@ As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFr
 columns are created for all values in `row`, using their names and order.
 
 Please note that `push!` must not be used on a `DataFrame` that contains columns
-that are aliases (equal when compared with `===`) as it will silently produce
-a wrong result in such a situation.
+that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
@@ -1236,23 +1271,29 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 ```
 """
 function Base.push!(df::DataFrame, row::Any)
-    if length(row) != size(df, 2)
+    nrows, ncols = size(df)
+    if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
     end
-    i = 1
-    for t in row
-        try
-            push!(_columns(df)[i], t)
-        catch
-            #clean up partial row
-            for j in 1:(i - 1)
-                pop!(_columns(df)[j])
-            end
-            msg = "Error adding $(repr(t)) to column :$(_names(df)[i]). Possible type mis-match."
-            throw(ArgumentError(msg))
+    current_col = 0
+    try
+        for (col, t) in zip(_columns(df), row)
+            current_col += 1
+            push!(col, t)
         end
-        i += 1
+        current_col = 0
+        for col in _columns(df)
+            current_col += 1
+            @assert length(col) == nrows + 1
+        end
+    catch err
+        #clean up partial row
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        @error "Error adding value to column :$(names(df)[current_col])."
+        rethrow(err)
     end
     df
 end

@@ -145,4 +145,20 @@ end
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 end
 
+@testset "consistency" begin
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(df.c, 5)
+    @test_throws AssertionError sprint(show, "text/html", df)
+    @test_throws AssertionError sprint(show, "text/latex", df)
+    @test_throws AssertionError sprint(show, "text/csv", df)
+    @test_throws AssertionError sprint(show, "text/tab-separated-values", df)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(DataFrames._columns(df), df[:, :a])
+    @test_throws AssertionError sprint(show, "text/html", df)
+    @test_throws AssertionError sprint(show, "text/latex", df)
+    @test_throws AssertionError sprint(show, "text/csv", df)
+    @test_throws AssertionError sprint(show, "text/tab-separated-values", df)
+end
+
 end # module
