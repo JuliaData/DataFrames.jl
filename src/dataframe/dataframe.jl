@@ -291,9 +291,10 @@ function _check_consistency(df::DataFrame)
     ncols == 0 && return nothing
     nrows = length(cols[1])
     for i in 2:length(cols)
-        @assert length(cols[i]) == nrows "Length of column $(names(df)[i]) ($(length(df[!, i])))" *
+        @assert length(cols[i]) == nrows "Data frame is corrupt: length of column :$(names(df)[i]) ($(length(df[!, i])))" *
                                          " does not match length of column 1 ($(length(df[!, 1]))). " *
-                                         "It is likely caused by unintended resizing of the column."
+                                         "The column vector has likely been resized unintentionally " *
+                                         "(either directly or because it is shared with another data frame)."
     end
     nothing
 end
@@ -1177,7 +1178,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
         for col in _columns(df)
             resize!(col, nrows)
         end
-        @error "Error adding value to column $(names(df)[current_col])."
+        @error "Error adding value to column :$(names(df)[current_col])."
         rethrow(err)
     end
     df
@@ -1291,7 +1292,7 @@ function Base.push!(df::DataFrame, row::Any)
         for col in _columns(df)
             resize!(col, nrows)
         end
-        @error "Error adding value to column $(names(df)[current_col])."
+        @error "Error adding value to column :$(names(df)[current_col])."
         rethrow(err)
     end
     df
