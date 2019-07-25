@@ -598,14 +598,67 @@ end
     @test_throws BoundsError dfr[10] .= ones(3)
     @test_throws ArgumentError dfr[:z] .= ones(3)
     @test df == cdf
+
+    df = DataFrame()
+    @test_throws DimensionMismatch df[!, :a] .= sin.(1:3)
+    df[!, :b] .= sin.(1)
+    df[!, :c] .= sin(1) .+ 1
+    @test df == DataFrame(b=Float64[], c=Float64[])
 end
 
 @testset "empty data frame corner case" begin
     df = DataFrame()
     @test_throws ArgumentError df[!, 1] .= 1
-    @test_throws ArgumentError df[!, :a] .= [1]
-    @test_throws ArgumentError df[!, [:a,:b]] .= [1]
-    @test df == DataFrame()
+    @test_throws ArgumentError df[!, 2] .= 1
+    @test_throws ArgumentError df[!, [:a, :b]] .= [1]
+    @test_throws ArgumentError df[!, [:a, :b]] .= 1
+    @test_throws DimensionMismatch df[!, :a] .= [1 2]
+    @test_throws DimensionMismatch df[!, :a] .= [1, 2]
+    @test_throws DimensionMismatch df[!, :a] .= sin.(1) .+ [1, 2]
+
+    for rhs in [1, [1], Int[], "abc", ["abc"]]
+        df = DataFrame()
+        df[!, :a] .= rhs
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs) .+ 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @. df[!, :a] = length(rhs) + 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= rhs
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= length.(rhs)
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= length.(rhs) .+ 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        @. df[!, :a] = length(rhs) + 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+    end
+
+    df = DataFrame()
     df .= 1
     @test df == DataFrame()
     df .= [1]
@@ -615,11 +668,22 @@ end
     @test_throws DimensionMismatch df .= ones(1,2)
     @test_throws DimensionMismatch df .= ones(1,1,1)
 
-    @test_throws ArgumentError df[!, :a] .= 1
-    @test_throws ArgumentError df[!, [:a, :b]] .= 1
-
     df = DataFrame(a=[])
-    @test_throws ArgumentError df[!, :b] .= 1
+    df[!, :b] .= sin.(1)
+    @test eltype(df.b) == Float64
+    df[!, :b] .= [1]
+    @test eltype(df.b) == Int
+    df[!, :b] .= 'a'
+    @test eltype(df.b) == Char
+    @test names(df) == [:a, :b]
+
+    c = categorical(["a", "b", "c"])
+    df = DataFrame()
+    @test_throws DimensionMismatch df[!, :a] .= c
+
+    df[!, :b] .= c[1]
+    @test nrow(df) == 0
+    @test df.b isa CategoricalVector{String}
 end
 
 @testset "test categorical values" begin
@@ -694,9 +758,11 @@ end
 
 @testset "scalar on assignment side" begin
     df = DataFrame(rand(2, 3))
-    df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
+    df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
-    df[1, 2] .-= df[1, 2]
+    @test_throws MethodError df[1, 2] .-= df[1, 2]
+    df[1:1, 2] .-= df[1, 2]
     @test df[1, 2] == 0
 end
 
@@ -940,26 +1006,20 @@ end
 @testset "additional checks of post-! broadcasting rules" begin
     df = copy(refdf)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, 1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= 1
     @test_throws MethodError df[1, 1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, 1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, :x1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= 1
     @test_throws MethodError df[1, :x1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
 
     df = copy(refdf)
@@ -1088,7 +1148,7 @@ end
     @test df == refdf
     @test_throws ArgumentError df[!, 10] .= [1,2,3]
     @test df == refdf
-    @test_throws DimensionMismatch df[!, 10] .= [1 2 3]
+    @test_throws ArgumentError df[!, 10] .= [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
@@ -1110,26 +1170,20 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, 1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= 1
     @test_throws MethodError df[1, 1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, 1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, :x1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= 1
     @test_throws MethodError df[1, :x1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
@@ -1275,6 +1329,20 @@ end
     @test a == [2, 3, 4]
     @test df.a == [3, 4, 5]
     @test df.a !== a
+end
+
+@testset "add new correct rules for df[row, col] .= v broadcasting" begin
+    df = DataFrame(a=1)
+    @test_throws MethodError df[1,1] .= 10
+    @test_throws MethodError df[1,:a] .= 10
+    @test_throws MethodError df[CartesianIndex(1,1)] .= 10
+    df = DataFrame(a=[[1,2,3]])
+    df[1,1] .= 10
+    @test df == DataFrame(a=[[10,10,10]])
+    df[1,:a] .= 100
+    @test df == DataFrame(a=[[100,100,100]])
+    df[CartesianIndex(1,1)] .= 1000
+    @test df == DataFrame(a=[[1000,1000,1000]])
 end
 
 end # module

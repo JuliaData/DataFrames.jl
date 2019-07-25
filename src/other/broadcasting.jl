@@ -78,7 +78,6 @@ struct LazyNewColDataFrame{T}
     col::T
 end
 
-# we allow LazyNewColDataFrame only for data frames with at least one column
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
 # ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
@@ -90,15 +89,16 @@ Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
 # Base.axes(x::ColReplaceDataFrame) = axes(x.df)
 
-Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = view(df, idx[1], idx[2])
+Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
+Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
 Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
 function Base.maybeview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
         throw(ArgumentError("broadcasting with column replacement is currently allowed only for single column index"))
     end
-    if ncol(df) == 0
-        throw(ArgumentError("broadcasting into a data frame with no columns is not allowed"))
+    if !(cols isa Symbol) && cols > ncol(df)
+        throw(ArgumentError("creating new columns using an integer index by broadcasting is disallowed"))
     end
     # in the future we might allow cols to target multiple columns
     # in which case ColReplaceDataFrame(df, index(df)[cols]) will be returned
@@ -108,14 +108,11 @@ end
 Base.maybeview(df::SubDataFrame, ::typeof(!), idxs) =
     throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
-function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted)
-    if isempty(lazydf.df)
-        throw(ArgumentError("creating a column via broadcasting is not allowed on empty data frames"))
-    end
-    if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}} &&
-       bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
-        T = typeof(bc.args[1][])
-        col = similar(Vector{T}, nrow(lazydf.df))
+function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
+    if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
+        bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())
+        v = Base.Broadcast.materialize(bc_tmp)
+        col = similar(Vector{typeof(v)}, nrow(lazydf.df))
         copyto!(col, bc)
     else
         col = Base.Broadcast.materialize(bc)

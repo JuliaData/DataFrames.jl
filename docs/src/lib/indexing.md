@@ -129,6 +129,7 @@ In particular a description explicitly mentions if the assignment is *in-place*.
                       (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
+                      this is allowed if `ncol(df) == 0 || length(v) == nrow(df)`;
 * `df[!, cols] = v` -> is currently disallowed, but is planned to be supported in the future;
 
 Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
@@ -172,9 +173,10 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
     `DataFrameRow` is considered to be column-oriented.
 
 Additional rules:
-* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` and `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
+* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
+* in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added;
+* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * `df[!, cols] = v` syntax is currently disallowed, but is planned to be supported in the future;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
