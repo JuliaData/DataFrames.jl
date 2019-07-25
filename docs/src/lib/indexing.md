@@ -129,7 +129,7 @@ In particular a description explicitly mentions if the assignment is *in-place*.
                       (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
-                      this operation is allowed if the following condition is met `ncol(df) == 0 || length(v) == nrow(df)`;
+                      this is allowed if `ncol(df) == 0 || length(v) == nrow(df)`;
 * `df[!, cols] = v` -> is currently disallowed, but is planned to be supported in the future;
 
 Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
