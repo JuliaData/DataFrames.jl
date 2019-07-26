@@ -1351,9 +1351,6 @@ import Base: delete!, insert!, merge!
 @deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcols!(df, col_ind, name => item; makeunique=makeunique)
 @deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[!, col] = df2[!, col], names(df2)); df1)
 
-import Base: setindex!
-@deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) select!(df, Not(col_ind))
-
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
 @deprecate map(f::Union{Function,Type}, dfc::DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)
@@ -1406,6 +1403,7 @@ import Base: view
 @deprecate view(adf::AbstractDataFrame, colinds) view(adf, :, colinds)
 
 import Base: setindex!
+@deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) select!(df, Not(col_ind))
 @deprecate setindex!(sdf::SubDataFrame, val::Any, colinds::Any) (sdf[:, colinds] = val; sdf)
 @deprecate setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex) (df[!, col_ind] = v; df)
 
@@ -1472,10 +1470,6 @@ end
 # df[SingleRowIndex, MultiColumnIndex] = Single Item
 @deprecate setindex!(df::DataFrame, v::Any, row_ind::Integer,
                      col_inds::AbstractVector{<:ColumnIndex}) (df[row_ind, col_inds] .= Ref(v); df)
-
-# df[:, SingleColumnIndex] = AbstractVector
-@deprecate setindex!(df::DataFrame, v::AbstractVector, ::Colon,
-                     col_ind::ColumnIndex) (df[!, col_ind] = v; df)
 
 # df[MultiRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
@@ -1584,7 +1578,7 @@ import Base: setproperty!
 @deprecate setproperty!(df::DataFrame, col_ind::Symbol, v) (df[!, col_ind] .= v)
 @deprecate setproperty!(df::SubDataFrame, col_ind::Symbol, v) (df[:, col_ind] .= v)
 
-# There methods duplicate functionality but are needed to resolve method call ambiuguities
+##### BEGIN: There methods duplicate functionality but are needed to resolve method call ambiuguities
 
 function Base.setindex!(df::DataFrame,
                         new_df::AbstractDataFrame,
@@ -1672,4 +1666,4 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
-####### END: duplicate methods
+##### END: duplicate methods

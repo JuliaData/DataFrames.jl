@@ -498,10 +498,29 @@ function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::Column
     return df
 end
 
+# df[SingleRowIndex, MultiColumnIndex] = value
+# the method for value of type DataFrameRow, AbstractDict and NamedTuple
+# is defined in dataframerow.jl
+
+function Base.setindex!(df::DataFrame,
+                        v,
+                        row_ind::Integer,
+                        col_inds::Union{AbstractVector, Regex, Not, Colon})
+    idxs = index(df)[col_inds]
+    if length(v) != length(idxs)
+        throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
+                                " value contains $(length(v)) elements")
+    end
+    for (i, x) in enumerate(v)
+        df[row_ind, i] = x
+    end
+    return df
+end
+
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
+                        row_inds::Union{AbstractVector, Not, Colon},
                         col_ind::ColumnIndex)
     x = df[!, col_ind]
     try
@@ -517,8 +536,8 @@ end
 # df[MultiRowIndex, MultiColumnIndex] = AbstractDataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::AbstractDataFrame,
-                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
-                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
+                        row_inds::Union{AbstractVector, Not, Colon},
+                        col_inds::Union{AbstractVector, Regex, Not, Colon})
     idxs = index(df)[col_inds]
     if view(_names(df), idxs) != _names(new_df)
         Base.depwarn("in the future column names in source and target will have to match", :setindex!)
@@ -532,8 +551,8 @@ end
 # df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
 function Base.setindex!(df::DataFrame,
                         mx::AbstractMatrix,
-                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
-                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
+                        row_inds::Union{AbstractVector, Not, Colon},
+                        col_inds::Union{AbstractVector, Regex, Not, Colon})
     idxs = index(df)[col_inds]
     if size(mx, 2) != length(idxs)
         throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *

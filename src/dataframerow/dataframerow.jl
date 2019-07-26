@@ -98,6 +98,25 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVect
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
+function Base.setindex!(df::DataFrame,
+                        v::Union{DataFrameRow, NamedTuple, AbstractDict},
+                        row_ind::Integer,
+                        col_inds::Union{AbstractVector, Regex, Not, Colon})
+    idxs = index(df)[col_inds]
+    if length(v) != length(idxs)
+        throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
+                                " value contains $(length(v)) elements")
+    end
+
+    if !(v isa AbstractDict || all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v))))
+        throw(ArgumentError("Selected column names do not match the names in assigned value"))
+    end
+    for (col, val) in pairs(v)
+        df[row_ind, col] = val
+    end
+    return df
+end
+
 Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
     col = parentcols(index(r), idx)
     if !(col isa Int)

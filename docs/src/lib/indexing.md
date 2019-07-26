@@ -109,14 +109,11 @@ then view points to selected columns by their number at the moment of creation o
 
 ## `setindex!`
 
-The following list specifies the **target** behavior of `setindex!` operations depending on argument types.
-
-In the current release of DataFrames.jl we are in the transition period when an old, undocumented, behavior
-of `setindex!` is still supported, but throws deprecation warnings.
-
-The behavior described below will be fully implemented in the next major release of DataFrames.jl.
+The following list specifies the behavior of `setindex!` operations depending on argument types.
 
 In particular a description explicitly mentions if the assignment is *in-place*.
+
+Note that `setindex!` operations are not atomic.
 
 `setindex!` on `DataFrame`:
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -150,7 +147,9 @@ Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowe
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
                     equivalent to `dfr.col = v` if `col` is a valid identifier;
 * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
-                     `v` can be an `AbstractVector` or `v` can be a `NamedTuple` or `DataFrameRow` when column names must match;
+                     `v` can be an iterable in which case it must have a number of elements equal to `length(dfr)`,
+                     or `v` can be a `NamedTuple`, `AbstractDict` or `DataFrameRow` when column names must match
+                     (in the case of `NamedTuple` and `DataFrameRow` also the order of column names must match);
 
 ## Broadcasting
 
@@ -161,6 +160,8 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
   An exception is when an `AbstractDataFrame` is used only as a source of broadcast assignment into an object
   of dimensionality higher than two.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
+
+Note that broadcasting assignment operations are not atomic.
 
 Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
 
@@ -177,7 +178,7 @@ Additional rules:
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
-* `df[!, cols] = v` syntax is currently disallowed, but is planned to be supported in the future;
+* `df[!, cols] .= v` syntax is currently disallowed, but is planned to be supported in the future;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
