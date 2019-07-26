@@ -435,6 +435,10 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
             d[:last] = isempty(col) ? nothing : last(col)
         end
 
+        if :eltype in predefined_funs
+            d[:eltype] = eltype(col)
+        end
+
         return d
     end
 
@@ -483,10 +487,6 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
         else
             d[:nunique] = try length(unique(col)) catch end
         end
-    end
-
-    if :eltype in stats
-        d[:eltype] = eltype(col)
     end
 
     return d
