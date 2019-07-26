@@ -36,8 +36,8 @@ const ≅ = isequal
                    Value = Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
     levels!(df[!, 1], ["XXX", "Bob", "Batman"])
     levels!(df[!, 2], ["YYY", "Color", "Mass"])
-    df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
+    df2 = unstack(df, :Fish, :Key, :Value, renamecol=x->string("_", uppercase(x), "_"))
+    df3 = unstack(df, :Key, :Value, renamecol=x->string("_", uppercase(x), "_"))
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
                     _COLOR_ = Union{String, Missing}["Red", "Grey"],
                     _MASS_ = Union{String, Missing}["12 g", "18 g"])
@@ -72,8 +72,8 @@ const ≅ = isequal
     df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
                    Key = ["Mass", "Color", "Mass", "Color"],
                    Value = ["12 g", "Red", "18 g", "Grey"])
-    df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
+    df2 = unstack(df, :Fish, :Key, :Value, renamecol=x->string("_", uppercase(x), "_"))
+    df3 = unstack(df, :Key, :Value, renamecol=x->string("_", uppercase(x), "_"))
     df4 = DataFrame(Fish = ["Batman", "Bob"],
                     _COLOR_ = ["Grey", "Red"],
                     _MASS_ = ["18 g", "12 g"])
@@ -86,7 +86,7 @@ const ≅ = isequal
     @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
     @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))),
                                   :id, :variable, :value)
-    @test_throws TypeError unstack(df, :Key, :Value, renamecols=Symbol)
+    @test_throws TypeError unstack(df, :Key, :Value, renamecol=Symbol)
 
     # test missing value in grouping variable
     mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
@@ -107,13 +107,13 @@ const ≅ = isequal
     wide3 = unstack(long, [:id, :a], :variable, :value)
     @test wide3 == wide[:, [1, 2, 4, 5]]
     wide3 = unstack(long, [:id, :a], :variable, :value,
-                    renamecols=x->string("_", uppercase(string(x)), "_"))
+                    renamecol=x->string("_", uppercase(string(x)), "_"))
     @test wide3 == w2
 
     wide3 = unstack(long, r"^[ia]", :variable, :value)
     @test wide3 == wide[:, [1, 2, 4, 5]]
     wide3 = unstack(long, r"^[ia]", :variable, :value,
-                    renamecols=x->string("_", uppercase(string(x)), "_"))
+                    renamecol=x->string("_", uppercase(string(x)), "_"))
     @test wide3 == w2
 end
 
@@ -334,12 +334,12 @@ end
     wide3 = unstack(long, :id, :variable, :value)
     @test wide3 == w1[!, Not(2)]
     @test_throws ArgumentError unstack(long, [:id, :a], :variable, :value,
-                                       renamecols=uppercase)
+                                       renamecol=uppercase)
     wide3 = unstack(long, [:id, :a], :variable, :value,
-                    renamecols=x->string("_", x, "_"))
+                    renamecol=x->string("_", x, "_"))
     @test wide3 == w2
     wide3 = unstack(long, :id, :variable, :value,
-                    renamecols=x->string("_", x, "_"))
+                    renamecol=x->string("_", x, "_"))
     @test wide3 == w2[!, Not(2)]
 end
 
