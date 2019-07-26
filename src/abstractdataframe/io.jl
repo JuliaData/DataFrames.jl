@@ -156,6 +156,17 @@ function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bo
     _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
 end
 
+function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::Bool=true)
+    write(io, "<p>DataFrameRows</p>")
+    _show(io, mime, parent(dfrs), summary=summary, rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns{T,V};
+                   summary::Bool=true) where {T,V}
+    write(io, "<p>DataFrameColumns (with names = $(V <: Pair))</p>")
+    _show(io, mime, parent(dfcs), summary=summary, rowid=r)
+end
+
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
@@ -280,6 +291,14 @@ function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
     _show(io, mime, view(parent(dfr), [r], c), rowid=r)
 end
 
+function Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows)
+    _show(io, mime, parent(dfrs), rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns)
+    _show(io, mime, parent(dfcs), rowid=r)
+end
+
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
@@ -387,6 +406,16 @@ function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrame
     show(io, mime, view(parent(dfr), [r], c))
 end
 
+function Base.show(io::IO, mime::MIME"text/csv",
+                   dfrs::Union{DataFrameRows, DataFrameColumns})
+    show(io, mime, parent(dfrs))
+end
+
+function Base.show(io::IO, mime::MIME"text/tab-separated-values",
+                   dfrs::Union{DataFrameRows, DataFrameColumns})
+    show(io, mime, parent(dfrs))
+end
+
 function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
     isfirst = true
     for sdf in gd
@@ -402,4 +431,3 @@ function Base.show(io::IO, mime::MIME"text/tab-separated-values", gd::GroupedDat
         isfirst && (isfirst = false)
     end
 end
-
