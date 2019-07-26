@@ -220,3 +220,35 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     end
     DataFrame(vs, _names(df), copycols = false)
 end
+
+function Base.show(io::IO, dfr::DataFrameRows;
+                   allcols::Bool = !get(io, :limit, false),
+                   splitcols = get(io, :limit, false),
+                   rowlabel::Symbol = :Row)
+    r, c = parentindices(dfr)
+    print(io, "DataFrameRows")
+    _show(io, view(parent(dfr), [r], c), allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=false, rowid=r)
+end
+
+Base.show(dfr::DataFrameRows;
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
+          rowlabel::Symbol = :Row) =
+    show(stdout, dfr, allcols=allcols, splitcols=splitcols, rowlabel=rowlabel)
+
+function Base.show(io::IO, dfr::DataFrameColumns{T,V};
+                   allcols::Bool = !get(io, :limit, false),
+                   splitcols = get(io, :limit, false),
+                   rowlabel::Symbol = :Row) where {T, V}
+    r, c = parentindices(dfr)
+    print(io, "DataFrameColumns (with names = $(V <: Pair))")
+    _show(io, view(parent(dfr), [r], c), allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=false, rowid=r)
+end
+
+Base.show(dfr::DataFrameColumns;
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
+          rowlabel::Symbol = :Row) =
+    show(stdout, dfr, allcols=allcols, splitcols=splitcols, rowlabel=rowlabel)
