@@ -876,8 +876,8 @@ end
                                 nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                 first = [1, 1, "a", "a", Date(2000), 1],
                                 last = [4, missing, "d", missing, Date(2004), 2],
-                                eltype = [Int, Int, String, String, Date,
-                                          eltype(df[!, :catarray])])
+                                eltype = [Int, Union{Missing, Int}, String,
+                                          Union{Missing, String}, Date, CategoricalValue{Int, UInt32}])
 
     default_fields = [:mean, :min, :median, :max, :nunique, :nmissing, :eltype]
 
