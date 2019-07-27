@@ -152,19 +152,23 @@ end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
     r, c = parentindices(dfr)
-    write(io, "<p>DataFrameRow</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+    summary && write(io, "<p>DataFrameRow ($(length(dfr)) columns)</p>")
+    _show(io, mime, view(parent(dfr), [r], c), summary=false, rowid=r)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::Bool=true)
-    write(io, "<p>DataFrameRows</p>")
-    _show(io, mime, parent(dfrs), summary=summary, rowid=r)
+    df = parent(dfrs)
+    summary && write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameRows</p>")
+    _show(io, mime, df, summary=false)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns{T,V};
                    summary::Bool=true) where {T,V}
-    write(io, "<p>DataFrameColumns (with names = $(V <: Pair))</p>")
-    _show(io, mime, parent(dfcs), summary=summary, rowid=r)
+    df = parent(dfcs)
+    if summary
+        write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameColumns (with names = $(V <: Pair))</p>")
+    end
+    _show(io, mime, df, summary=false)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
@@ -292,11 +296,11 @@ function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows)
-    _show(io, mime, parent(dfrs), rowid=r)
+    _show(io, mime, parent(dfrs))
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns)
-    _show(io, mime, parent(dfcs), rowid=r)
+    _show(io, mime, parent(dfcs))
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)

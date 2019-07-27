@@ -221,34 +221,65 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     DataFrame(vs, _names(df), copycols = false)
 end
 
-function Base.show(io::IO, dfr::DataFrameRows;
+Base.parent(dfrs::DataFrameRows) = dfrs.df
+Base.parent(dfcs::DataFrameColumns) = dfcs.df
+
+function Base.show(io::IO, dfrs::DataFrameRows;
+                   allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
                    splitcols = get(io, :limit, false),
-                   rowlabel::Symbol = :Row)
-    r, c = parentindices(dfr)
-    print(io, "DataFrameRows")
-    _show(io, view(parent(dfr), [r], c), allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false, rowid=r)
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true)
+    df = parent(dfrs)
+    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameRows")
+    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=false)
 end
 
-Base.show(dfr::DataFrameRows;
+Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(io, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
+
+Base.show(dfrs::DataFrameRows;
+          allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           splitcols = get(stdout, :limit, true),
-          rowlabel::Symbol = :Row) =
-    show(stdout, dfr, allcols=allcols, splitcols=splitcols, rowlabel=rowlabel)
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(stdout, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
 
-function Base.show(io::IO, dfr::DataFrameColumns{T,V};
+function Base.show(io::IO, dfcs::DataFrameColumns{T,V};
+                   allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
                    splitcols = get(io, :limit, false),
-                   rowlabel::Symbol = :Row) where {T, V}
-    r, c = parentindices(dfr)
-    print(io, "DataFrameColumns (with names = $(V <: Pair))")
-    _show(io, view(parent(dfr), [r], c), allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false, rowid=r)
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true) where {T, V}
+    df = parent(dfcs)
+    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns (with names = $(V <: Pair))")
+    _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=false)
 end
 
-Base.show(dfr::DataFrameColumns;
+Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns{T,V};
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) where {T, V} =
+    show(io, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
+
+Base.show(dfcs::DataFrameColumns;
+          allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           splitcols = get(stdout, :limit, true),
-          rowlabel::Symbol = :Row) =
-    show(stdout, dfr, allcols=allcols, splitcols=splitcols, rowlabel=rowlabel)
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(stdout, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
