@@ -25,6 +25,8 @@ using LaTeXStrings
         \\end{tabular}
         """
     @test repr(MIME("text/latex"), df) == str
+    @test repr(MIME("text/latex"), eachcol(df)) == str
+    @test repr(MIME("text/latex"), eachrow(df)) == str
 end
 
 @testset "Huge LaTeX export" begin
@@ -45,31 +47,94 @@ end
     show(io, "text/html", df)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                "</th><th>Fish</th><th>Mass</th></tr>" *
-                "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
-                "<p>2 rows × 2 columns</p>" *
-                "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
-                "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<p>2 rows × 2 columns</p>" *
+                 "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
 
     df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                "</th><th>Fish</th><th>Mass</th></tr>" *
-                "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
-                "<p>2 rows × 2 columns</p>" *
-                "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<p>2 rows × 2 columns</p>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, "text/html", eachrow(df))
+    str = String(take!(io))
+    @test str == "<p>2×2 DataFrameRows</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, "text/html", eachcol(df))
+    str = String(take!(io))
+    @test str == "<p>2×2 DataFrameColumns (with names = false)</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, "text/html", eachcol(df, true))
+    str = String(take!(io))
+    @test str == "<p>2×2 DataFrameColumns (with names = true)</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, "text/html", df[1, :])
+    str = String(take!(io))
+    @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
+                 "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th></th>" *
+                 "<th>String</th><th>Float64⍰</th></tr></thead><tbody><tr><th>1</th>" *
+                 "<td>#undef</td><td>1.5</td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df, summary=false)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                "</th><th>Fish</th><th>Mass</th></tr>" *
-                "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
-                "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME"text/html"(), eachrow(df), summary=false)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME"text/html"(), eachcol(df), summary=false)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME"text/html"(), df[1, :], summary=false)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
+                 "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64⍰</th></tr></thead>" *
+                 "<tbody><tr><th>1</th><td>#undef</td><td>1.5</td></tr></tbody></table>"
 end
 
 # test limit attribute of IOContext is used
@@ -139,8 +204,8 @@ end
     @test sprint(show, "text/csv", df[1, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", df[1, 2:1]) == ""
     @test sprint(show, "text/html", df[1, 2:1]) ==
-          "<p>DataFrameRow</p><table class=\"data-frame\"><thead><tr><th></th></tr>" *
-          "<tr><th></th></tr></thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+          "<p>DataFrameRow (0 columns)</p><table class=\"data-frame\">" *
+          "<thead><tr><th></th></tr><tr><th></th></tr></thead><tbody></tbody></table>"
     @test sprint(show, "text/latex", df[1, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 end

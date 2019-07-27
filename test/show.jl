@@ -359,6 +359,32 @@ end
         │ 1   │ 3.141592653589793 │"""
 end
 
+@testset "Test using :compact parameter of IOContext" begin
+    df = DataFrame(x = [float(pi)])
+    @test sprint(show, eachrow(df)) == """
+        1×1 DataFrameRows
+        │ Row │ x       │
+        │     │ Float64 │
+        ├─────┼─────────┤
+        │ 1   │ 3.14159 │"""
+
+    df = DataFrame(x = [float(pi)])
+    @test sprint(show, eachcol(df)) == """
+        1×1 DataFrameColumns (with names = false)
+        │ Row │ x       │
+        │     │ Float64 │
+        ├─────┼─────────┤
+        │ 1   │ 3.14159 │"""
+
+    df = DataFrame(x = [float(pi)])
+    @test sprint(show, eachcol(df, true)) == """
+        1×1 DataFrameColumns (with names = true)
+        │ Row │ x       │
+        │     │ Float64 │
+        ├─────┼─────────┤
+        │ 1   │ 3.14159 │"""
+end
+
 @testset "Test empty data frame and DataFrameRow" begin
     df = DataFrame(x = [float(pi)])
     @test sprint(show, df[:, 2:1]) == "0×0 DataFrame\n"
