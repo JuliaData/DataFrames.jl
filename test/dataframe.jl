@@ -1067,7 +1067,9 @@ end
                    CategoricalArrays.CategoricalString{UInt32}]))
     @test all(map(<:, eltypes(categorical!(deepcopy(df), :)),
                   [CategoricalArrays.CategoricalString{UInt32},
-                   Char, Bool, Int,
+                   CategoricalArrays.CategoricalValue{Char,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
     @test all(map(<:, eltypes(categorical!(deepcopy(df), compress=true)),
                   [CategoricalArrays.CategoricalString{UInt8},
