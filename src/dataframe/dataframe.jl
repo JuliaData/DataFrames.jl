@@ -1135,7 +1135,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
         for col in _columns(df1)
             resize!(col, nrows)
         end
-        @error "Error adding value to column $(names(df)[current_col])."
+        @error "Error adding value to column $(names(df1)[current_col])."
         rethrow(err)
     end
     return df1
