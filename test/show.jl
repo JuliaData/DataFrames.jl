@@ -359,7 +359,7 @@ end
         │ 1   │ 3.141592653589793 │"""
 end
 
-@testset "Test using :compact parameter of IOContext" begin
+@testset "Test of DataFrameRows and DataFrameColumns" begin
     df = DataFrame(x = [float(pi)])
     @test sprint(show, eachrow(df)) == """
         1×1 DataFrameRows
