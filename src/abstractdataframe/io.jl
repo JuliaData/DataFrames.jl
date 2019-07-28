@@ -295,13 +295,8 @@ function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
     _show(io, mime, view(parent(dfr), [r], c), rowid=r)
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows)
-    _show(io, mime, parent(dfrs))
-end
-
-function Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns)
-    _show(io, mime, parent(dfcs))
-end
+Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows) = _show(io, mime, parent(dfrs))
+Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns) = _show(io, mime, parent(dfcs))
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
@@ -346,13 +341,8 @@ end
 #
 ##############################################################################
 
-function escapedprint(io::IO, x::Any, escapes::AbstractString)
-    ourshow(io, x)
-end
-
-function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-    escape_string(io, x, escapes)
-end
+escapedprint(io::IO, x::Any, escapes::AbstractString) = ourshow(io, x)
+escapedprint(io::IO, x::AbstractString, escapes::AbstractString) = escape_string(io, x, escapes)
 
 function printtable(io::IO,
                     df::AbstractDataFrame;
@@ -410,15 +400,12 @@ function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrame
     show(io, mime, view(parent(dfr), [r], c))
 end
 
-function Base.show(io::IO, mime::MIME"text/csv",
-                   dfrs::Union{DataFrameRows, DataFrameColumns})
-    show(io, mime, parent(dfrs))
-end
-
-function Base.show(io::IO, mime::MIME"text/tab-separated-values",
-                   dfrs::Union{DataFrameRows, DataFrameColumns})
-    show(io, mime, parent(dfrs))
-end
+Base.show(io::IO, mime::MIME"text/csv",
+          dfs::Union{DataFrameRows, DataFrameColumns}) =
+    show(io, mime, parent(dfs))
+Base.show(io::IO, mime::MIME"text/tab-separated-values",
+          dfs::Union{DataFrameRows, DataFrameColumns}) =
+    show(io, mime, parent(dfs))
 
 function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
     isfirst = true
