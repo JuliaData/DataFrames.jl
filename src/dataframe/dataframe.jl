@@ -1346,7 +1346,7 @@ function expand(df::AbstractDataFrame, indexcols)
         if any(ismissing, df[!, col])
             tempcol = vcat(levels(df[!, col]), missing)
         else
-            tempcol = levels(df[col])
+            tempcol = levels(df[!, col])
         end
         push!(uniqueVals, tempcol)
     end
