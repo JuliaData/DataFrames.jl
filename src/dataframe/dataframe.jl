@@ -1330,15 +1330,15 @@ function _expandhelper(col, iterprod, idx)
     end
 end
 
-function expand(df::AbstractDataFrame, indexcols; duplicateerror=true::Bool)
+function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
     # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
     if !(indexcols isa Symbol || allunique(indexcols))
         throw(ArgumentError("Elements of $indexcols must be unique"))
     end
-    if duplicateerror == true
-        sum(nonunique(df, indexcols))>0 && throw(ArgumentError("duplicate rows in input"))
+    if error == true
+        row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && throw(ArgumentError("duplicate rows in input"))
     else
-        sum(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
+        row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && @warn "duplicate rows in input; expand will only return unique combinations"
     end
 
     colind = index(df)[indexcols]
