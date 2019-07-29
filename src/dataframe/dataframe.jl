@@ -1385,7 +1385,7 @@ function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmiss
                 if replaceallmissing
                     expanded[!, n] = coalesce.(expanded[!, n], fill)
                 else
-                    _completehelper(expanded, n, fill)
+                    expanded[!, i] .= ifelse.(expanded[!, end] .== "left_only", Ref(fill), expanded[!, i])
                 end
             end
         end
