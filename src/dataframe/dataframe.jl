@@ -1324,18 +1324,23 @@ end
 ##
 ##############################################################################
 
-function _expandhelper(col, vect, stride, offset)
-    for i in offset:stride:length(vect)
-        push!(col, vect[i])
+function _expandhelper(col, iterprod, idx)
+    for v in iterprod
+        push!(col, v[idx])
     end
 end
 
-function expand(df::AbstractDataFrame, indexcols)
+function expand(df::AbstractDataFrame, indexcols; duplicateerror=true::Bool)
     # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
     if !(indexcols isa Symbol || allunique(indexcols))
         throw(ArgumentError("Elements of $indexcols must be unique"))
     end
-    sum(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
+    if duplicateerror == true
+        sum(nonunique(df, indexcols))>0 && throw(ArgumentError("duplicate rows in input"))
+    else
+        sum(nonunique(df, indexcols))>0 && @warn "duplicate rows in input; expand will only return unique combinations"
+    end
+
     colind = index(df)[indexcols]
     dummydf = similar(select(df, colind, copycols=false), 0)
 
@@ -1352,44 +1357,33 @@ function expand(df::AbstractDataFrame, indexcols)
     end
 
     # Get a long vector of every possible combination
-    collected = collect(Iterators.flatten(Iterators.product(uniqueVals...)))
+    p = Iterators.product(uniqueVals...)
 
     for i in 1:length(indexcols)
-        _expandhelper(dummydf[!, i], collected, length(indexcols), i)
+        _expandhelper(dummydf[!, i], p, i)
     end
 
     return dummydf
 end
 
-function _completehelper(expandeddf, colname, fill)
-    col = expandeddf[!, colname]
-    for (i,v) in enumerate(expandeddf[!,names(expandeddf)[end]])
-        v == "left_only" && (col[i] = fill)
-    end
-end
-
 function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing=false::Bool)
-    # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
-    allunique(indexcols) || throw(ArgumentError("Elements of $indexcols must be unique"))
-    sum(nonunique(df, indexcols))>0 && throw(ArgumentError("duplicate rows in input"))
     colind = index(df)[indexcols]
 
     # Expand the input df and left join
     expanded = expand(df, indexcols)
-    expanded = join(expanded, df; on = indexcols, kind = :left, indicator = :source)
+    joined = join(expanded, df; on = indexcols, kind = :left, indicator = :source)
 
     # Replace missing values with the fill
     if !ismissing(fill)
-        for n in names(expanded)
-            if (n ∉ indexcols) && (n != names(expanded)[end])
-                if replaceallmissing
-                    expanded[!, n] = coalesce.(expanded[!, n], fill)
-                else
-                    expanded[!, i] .= ifelse.(expanded[!, end] .== "left_only", Ref(fill), expanded[!, i])
-                end
+        for n in ncol(expanded)+1:ncol(joined)-1
+            if replaceallmissing
+                joined[!, n] = coalesce.(joined[!, n], Ref(fill))
+            else
+                joined[!, n] .= ifelse.(joined[!, end] .== "left_only", Ref(fill), joined[!, n])
             end
         end
     end
-    select!(expanded, 1:ncol(expanded)-1)
-    return expanded
+
+    select!(joined, 1:ncol(joined)-1)
+    return joined
 end
