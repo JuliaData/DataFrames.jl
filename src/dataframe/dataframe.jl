@@ -1390,6 +1390,6 @@ function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmiss
             end
         end
     end
-    select!(expanded, Not(names(expanded)[end]))
+    select!(expanded, 1:ncol(expanded)-1)
     return expanded
 end
