@@ -1344,7 +1344,7 @@ function expand(df::AbstractDataFrame, indexcols)
     for col in colind
         # levels drops missing, handle the case where missing values are present
         if any(ismissing, df[!, col])
-            tempcol = vcat(levels(df[col]), missing)
+            tempcol = vcat(levels(df[!, col]), missing)
         else
             tempcol = levels(df[col])
         end
