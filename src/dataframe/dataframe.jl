@@ -1366,7 +1366,7 @@ function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
     return dummydf
 end
 
-function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing=false::Bool)
+function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing::Bool=false)
     colind = index(df)[indexcols]
 
     # Expand the input df and left join
