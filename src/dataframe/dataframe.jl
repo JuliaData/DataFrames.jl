@@ -1354,7 +1354,7 @@ function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
     # Get a long vector of every possible combination
     p = Iterators.product(uniqueVals...)
 
-    for i in 1:length(indexcols)
+    for i in axes(colind, 1)
         _expandhelper(dummydf[!, i], p, i)
     end
 
@@ -1365,8 +1365,8 @@ function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmiss
     colind = index(df)[indexcols]
 
     # Expand the input df and left join
-    expanded = expand(df, indexcols)
-    joined = join(expanded, df; on = indexcols, kind = :left, indicator = :source)
+    expanded = expand(df, colind)
+    joined = join(expanded, df; on = _names(df)[colind], kind = :left, indicator = :source)
 
     # Replace missing values with the fill
     if !ismissing(fill)
