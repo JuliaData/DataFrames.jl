@@ -1330,9 +1330,10 @@ function _expandhelper(col, iterprod, idx)
     end
 end
 
-function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
+function expand(df::AbstractDataFrame, indexcols; error::Bool=true)
     colind = index(df)[indexcols]
     dummydf = similar(select(df, colind, copycols=false), 0)
+
     if error == true
         row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && throw(ArgumentError("duplicate rows in input"))
     else
@@ -1361,7 +1362,7 @@ function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
     return dummydf
 end
 
-function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing=false::Bool)
+function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing::Bool=false)
     colind = index(df)[indexcols]
 
     # Expand the input df and left join
