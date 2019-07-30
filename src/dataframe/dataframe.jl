@@ -1359,7 +1359,7 @@ function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
     # Get a long vector of every possible combination
     p = Iterators.product(uniqueVals...)
 
-    for i in 1:length(indexcols)
+    for i in axes(colind, 1)
         _expandhelper(dummydf[!, i], p, i)
     end
 
