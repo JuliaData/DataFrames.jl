@@ -1371,7 +1371,7 @@ function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmiss
 
     # Expand the input df and left join
     expanded = expand(df, colind)
-    joined = join(expanded, df; on = indexcols, kind = :left, indicator = :source)
+    joined = join(expanded, df; on = _names(df)[colind], kind = :left, indicator = :source)
 
     # Replace missing values with the fill
     if !ismissing(fill)
