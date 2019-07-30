@@ -1331,18 +1331,13 @@ function _expandhelper(col, iterprod, idx)
 end
 
 function expand(df::AbstractDataFrame, indexcols; error=true::Bool)
-    # Check to make sure the symbols in indexcols are in the df, and check for duplicate rows in the input df
-    if !(indexcols isa Symbol || allunique(indexcols))
-        throw(ArgumentError("Elements of $indexcols must be unique"))
-    end
+    colind = index(df)[indexcols]
+    dummydf = similar(select(df, colind, copycols=false), 0)
     if error == true
         row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && throw(ArgumentError("duplicate rows in input"))
     else
         row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && @warn "duplicate rows in input; expand will only return unique combinations"
     end
-
-    colind = index(df)[indexcols]
-    dummydf = similar(select(df, colind, copycols=false), 0)
 
     # Create a vect of vectors of unique values in each column
     uniqueVals = []
