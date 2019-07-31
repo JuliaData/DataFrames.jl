@@ -1288,7 +1288,7 @@ julia> ncol(df)
     disallowmissing(df::AbstractDataFrame,
         cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
 
-Create a new `DataFrame` in which columns `cols` of data frame `df` are converted
+Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
@@ -1333,7 +1333,7 @@ end
     allowmissing(df::AbstractDataFrame,
         cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
 
-Create a new `DataFrame` in which columns `cols` of data frame `df` are converted
+Return a copy of data frame `df` with columns `cols` converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
@@ -1379,7 +1379,7 @@ end
                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
                 compress::Bool=false)
 
-Create a new `DataFrame` and change columns selected by `cols` from `df`
+Return a copy of data frame `df` with columns `cols` converted
 to `CategoricalVector`.
 If no columns are indicated then all columns whose element type
 is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
