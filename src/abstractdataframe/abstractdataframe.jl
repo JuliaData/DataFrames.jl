@@ -1380,9 +1380,8 @@ end
                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
                 compress::Bool=false)
 
-Return a copy of data frame `df` with columns `cols` converted
-to `CategoricalVector`.
-If a function is called without passing `cols` argument then all columns whose element type
+Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+If the function is called without passing the `cols` argument, all columns whose element type
 is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
