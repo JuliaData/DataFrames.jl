@@ -1286,7 +1286,7 @@ julia> ncol(df)
 
 """
     disallowmissing(df::AbstractDataFrame,
-        cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
 
 Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
@@ -1314,7 +1314,7 @@ julia> disallowmissing(df)
 ```
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
-                         cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
@@ -1331,7 +1331,7 @@ end
 
 """
     allowmissing(df::AbstractDataFrame,
-        cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
 
 Return a copy of data frame `df` with columns `cols` converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
@@ -1359,7 +1359,7 @@ julia> allowmissing(df)
 ```
 """
 function Missings.allowmissing(df::AbstractDataFrame,
-                         cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
@@ -1375,13 +1375,14 @@ function Missings.allowmissing(df::AbstractDataFrame,
 end
 
 """
+    categorical(df::AbstractDataFrame; compress::Bool=false)
     categorical(df::AbstractDataFrame,
-                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
+                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
                 compress::Bool=false)
 
 Return a copy of data frame `df` with columns `cols` converted
 to `CategoricalVector`.
-If no columns are indicated then all columns whose element type
+If a function is called without passing `cols` argument then all columns whose element type
 is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
@@ -1419,8 +1420,8 @@ julia> categorical(df, :)
 
 """
 function CategoricalArrays.categorical(df::AbstractDataFrame,
-                         cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
-                         compress::Bool=false)
+                                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
+                                       compress::Bool=false)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
