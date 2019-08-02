@@ -1067,7 +1067,9 @@ end
                    CategoricalArrays.CategoricalString{UInt32}]))
     @test all(map(<:, eltypes(categorical!(deepcopy(df), :)),
                   [CategoricalArrays.CategoricalString{UInt32},
-                   Char, Bool, Int,
+                   CategoricalArrays.CategoricalValue{Char,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
     @test all(map(<:, eltypes(categorical!(deepcopy(df), compress=true)),
                   [CategoricalArrays.CategoricalString{UInt8},
@@ -1101,6 +1103,12 @@ end
     df = DataFrame([["a", missing]])
     categorical!(df)
     @test df.x1 isa CategoricalVector{Union{Missing, String}}
+
+    df = DataFrame(x1=[1, 2])
+    categorical!(df)
+    @test df.x1 isa Vector{Int}
+    categorical!(df, :)
+    @test df.x1 isa CategoricalVector{Int}
 end
 
 @testset "unstack promotion to support missing values" begin
@@ -1330,6 +1338,184 @@ end
     @test eltype(df.b) == Int
     @test eltype(df.c) == Int
     @test eltype(df.d) == Union{Int, Missing}
+end
+
+@testset "test disallowmissing" begin
+    df = DataFrame(x=Union{Int,Missing}[1,2,3],
+                   y=Union{Int,Missing}[1,2,3],
+                   z=[1,2,3])
+    for x in [df, view(df, :, :)]
+        y = disallowmissing(x)
+        @test y isa DataFrame
+        @test x == y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test eltypes(y) == [Int, Int, Int]
+
+        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Int, Int, Int]
+        end
+
+        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Int, Union{Missing, Int}, Int]
+        end
+
+        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Union{Int, Missing}, Int]
+        end
+
+        for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Union{Int, Missing}, Int]
+        end
+    end
+
+    @test_throws MethodError disallowmissing(DataFrame(x=[missing]))
+    @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
+end
+
+@testset "test allowmissing" begin
+    df = DataFrame(x=Union{Int,Missing}[1,2,3],
+                   y=[1,2,3],
+                   z=[1,2,3])
+    for x in [df, view(df, :, :)]
+        y = allowmissing(x)
+        @test y isa DataFrame
+        @test x == y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test eltypes(y) == fill(Union{Missing, Int}, 3)
+
+        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == fill(Union{Missing, Int}, 3)
+        end
+
+        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Missing, Int}, Int, Int]
+        end
+
+        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Int, Union{Missing, Int}]
+        end
+
+        for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Int, Int]
+        end
+    end
+end
+
+@testset "test categorical" begin
+    df = DataFrame(x=["a", "b", "c"],
+                   y=["a", "b", missing],
+                   z=[1,2,3])
+    for x in [df, view(df, :, :)]
+        y = categorical(x)
+        @test y isa DataFrame
+        @test x ≅ y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test y.x isa CategoricalVector{String}
+        @test y.y isa CategoricalVector{Union{Missing, String}}
+        @test y.z isa Vector{Int}
+
+        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa CategoricalVector{String}
+            @test y.y isa CategoricalVector{Union{Missing, String}}
+            @test y.z isa CategoricalVector{Int}
+        end
+
+        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa CategoricalVector{String}
+            @test y.y isa Vector{Union{Missing, String}}
+            @test y.z isa Vector{Int}
+        end
+
+        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa Vector{String}
+            @test y.y isa Vector{Union{Missing, String}}
+            @test y.z isa CategoricalVector{Int}
+        end
+
+        for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa Vector{String}
+            @test y.y isa Vector{Union{Missing, String}}
+            @test y.z isa Vector{Int}
+        end
+    end
 end
 
 @testset "similar" begin

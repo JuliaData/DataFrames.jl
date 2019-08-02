@@ -1047,10 +1047,10 @@ function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
     df
 end
 
-categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
+categorical!(df::DataFrame, cnames::Union{Regex, Not, Colon}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
+function categorical!(df::DataFrame; compress::Bool=false)
     for i in 1:size(df, 2)
         if eltype(df[!, i]) <: Union{AbstractString, Missing}
             df[!, i] = categorical(df[!, i], compress)

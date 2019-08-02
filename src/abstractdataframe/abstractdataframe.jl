@@ -31,6 +31,9 @@ The following are normally implemented for AbstractDataFrames:
 * [`dropmissing!`](@ref) : remove rows with missing values in-place
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
+* [`disallowmissing`](@ref) : drop support for missing values in columns
+* [`allowmissing`](@ref) : add support for missing values in columns
+* [`categorical`](@ref) : change column types to categorical
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
 * `filter!` : remove rows in-place
@@ -1280,3 +1283,168 @@ julia> ncol(df)
 
 """
 (nrow, ncol)
+
+"""
+    disallowmissing(df::AbstractDataFrame,
+                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+
+Return a copy of data frame `df` with columns `cols` converted
+from element type `Union{T, Missing}` to `T` to drop support for missing values.
+
+If `cols` is omitted all columns in the data frame are converted.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(a=Union{Int,Missing}[1,2])
+2×1 DataFrame
+│ Row │ a      │
+│     │ Int64⍰ │
+├─────┼────────┤
+│ 1   │ 1      │
+│ 2   │ 2      │
+
+julia> disallowmissing(df)
+2×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+```
+"""
+function Missings.disallowmissing(df::AbstractDataFrame,
+                                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+    idxcols = Set(index(df)[cols])
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if i in idxcols
+            y = disallowmissing(x)
+            push!(newcols, y === x ? copy(y) : y)
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
+
+"""
+    allowmissing(df::AbstractDataFrame,
+                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+
+Return a copy of data frame `df` with columns `cols` converted
+to element type `Union{T, Missing}` from `T` to allow support for missing values.
+
+If `cols` is omitted all columns in the data frame are converted.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(a=[1,2])
+2×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+
+julia> allowmissing(df)
+2×1 DataFrame
+│ Row │ a      │
+│     │ Int64⍰ │
+├─────┼────────┤
+│ 1   │ 1      │
+│ 2   │ 2      │
+```
+"""
+function Missings.allowmissing(df::AbstractDataFrame,
+                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+    idxcols = Set(index(df)[cols])
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if i in idxcols
+            y = allowmissing(x)
+            push!(newcols, y === x ? copy(y) : y)
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
+
+"""
+    categorical(df::AbstractDataFrame; compress::Bool=false)
+    categorical(df::AbstractDataFrame,
+                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
+                compress::Bool=false)
+
+Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+If the function is called without passing the `cols` argument, all columns whose element type
+is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
+
+If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
+will be compressed.
+
+All created `CategoricalVector`s are unordered.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(a=[1,2], b=["a","b"])
+2×2 DataFrame
+│ Row │ a     │ b      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ a      │
+│ 2   │ 2     │ b      │
+
+julia> categorical(df)
+2×2 DataFrame
+│ Row │ a     │ b            │
+│     │ Int64 │ Categorical… │
+├─────┼───────┼──────────────┤
+│ 1   │ 1     │ a            │
+│ 2   │ 2     │ b            │
+
+julia> categorical(df, :)
+2×2 DataFrame
+│ Row │ a            │ b            │
+│     │ Categorical… │ Categorical… │
+├─────┼──────────────┼──────────────┤
+│ 1   │ 1            │ a            │
+│ 2   │ 2            │ b            │
+```
+
+"""
+function CategoricalArrays.categorical(df::AbstractDataFrame,
+                                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
+                                       compress::Bool=false)
+    idxcols = Set(index(df)[cols])
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if i in idxcols
+            # categorical always copies
+            push!(newcols, categorical(x, compress))
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
+
+function CategoricalArrays.categorical(df::AbstractDataFrame; compress::Bool=false)
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if eltype(x) <: Union{AbstractString, Missing}
+            # categorical always copies
+            push!(newcols, categorical(x, compress))
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
