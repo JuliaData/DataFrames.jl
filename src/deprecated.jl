@@ -1416,11 +1416,13 @@ function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
                      "Use an explicit broadcast with `df[:, col_ind] .= v`", :setindex!)
         df[:, col_ind] .= v
     else
-        Base.depwarn("Implicit broadcasting to a new column in DataFrame assignment is deprecated." *
-                     "Use an explicit broadcast with `df[!, col_ind] .= v`", :setindex!)
         if ncol(df) == 0
+            Base.depwarn("Implicit broadcasting to a new column in DataFrame assignment is deprecated." *
+                         "Use `df[!, col_ind] = [v]` when `df` has zero columns", :setindex!)
             df[!, col_ind] = [v]
         else
+            Base.depwarn("Implicit broadcasting to a new column in DataFrame assignment is deprecated." *
+                         "Use `df[!, col_ind] .= v`  when `df` has some columns", :setindex!)
             df[!, col_ind] .= v
         end
     end
