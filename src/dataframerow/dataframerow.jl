@@ -104,7 +104,7 @@ function Base.setindex!(df::DataFrame,
                         col_inds::Union{AbstractVector, Regex, Not, Colon})
     idxs = index(df)[col_inds]
     if length(v) != length(idxs)
-        throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
+        throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
                                 " value contains $(length(v)) elements")
     end
 
