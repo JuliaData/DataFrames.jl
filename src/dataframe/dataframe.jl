@@ -1116,7 +1116,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     end
     ncol(df2) == 0 && return df1
 
-    _names(df1) == _names(df2) || error("Column names do not match")
+    _names(df1) == _names(df2) || throw(ArgumentError("Column names do not match"))
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
     current_col = 0
