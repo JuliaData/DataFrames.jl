@@ -151,12 +151,14 @@ Unstacks a DataFrame; convert from a long to wide format
 
 ```julia
 unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
-        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol})
+        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
+        renamecols::Function=identity)
 unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Integer, Symbol}},
-        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol})
+        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
+        renamecols::Function=identity)
 unstack(df::AbstractDataFrame, colkey::Union{Integer, Symbol},
-        value::Union{Integer, Symbol})
-unstack(df::AbstractDataFrame)
+        value::Union{Integer, Symbol}; renamecols::Function=identity)
+unstack(df::AbstractDataFrame; renamecols::Function=identity)
 ```
 
 ### Arguments
@@ -170,6 +172,10 @@ unstack(df::AbstractDataFrame)
   defaults to `:variable`
 
 * `value` : the value column, defaults to `:value`
+
+* `renamecols` : a function called on each unique value in `colkey` which must
+                 return the name of the column to be created (typically as a string
+                 or a `Symbol`). Duplicate names are not allowed.
 
 ### Result
 
@@ -194,20 +200,22 @@ wide0 = unstack(long)
 wide1 = unstack(long, :variable, :value)
 wide2 = unstack(long, :id, :variable, :value)
 wide3 = unstack(long, [:id, :a], :variable, :value)
+wide4 = unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
 ```
 Note that there are some differences between the widened results above.
 """
-function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
+function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int;
+                 renamecols::Function=identity)
     refkeycol = categorical(df[!, rowkey])
     droplevels!(refkeycol)
     keycol = categorical(df[!, colkey])
     droplevels!(keycol)
     valuecol = df[!, value]
-    _unstack(df, rowkey, colkey, value, keycol, valuecol, refkeycol)
+    _unstack(df, rowkey, colkey, value, keycol, valuecol, refkeycol, renamecols)
 end
 
-function _unstack(df::AbstractDataFrame, rowkey::Int,
-                  colkey::Int, value::Int, keycol, valuecol, refkeycol)
+function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int,
+                  keycol, valuecol, refkeycol, renamecols::Function)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
@@ -253,42 +261,49 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     col = similar(df[!, rowkey], length(levs) + hadmissing)
     copyto!(col, levs)
     hadmissing && (col[end] = missing)
-    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)), copycols=false)
+    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(levels(keycol))), copycols=false)
     insertcols!(df2, 1, _names(df)[rowkey] => col)
 end
 
-unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::Int, value::Int) =
-    unstack(df, index(df)[rowkey], colkey, value)
+unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::Int, value::Int;
+        renamecols::Function=identity) =
+    unstack(df, index(df)[rowkey], colkey, value, renamecols=renamecols)
 
 # Version of unstack with just the colkey and value columns provided
-unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex) =
-    unstack(df, index(df)[colkey], index(df)[value])
+unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
+        renamecols::Function=identity) =
+    unstack(df, index(df)[colkey], index(df)[value], renamecols=renamecols)
 
 # group on anything not a key or value
-unstack(df::AbstractDataFrame, colkey::Int, value::Int) =
-    unstack(df, setdiff(_names(df), _names(df)[[colkey, value]]), colkey, value)
+unstack(df::AbstractDataFrame, colkey::Int, value::Int; renamecols::Function=identity) =
+    unstack(df, setdiff(_names(df), _names(df)[[colkey, value]]), colkey, value,
+            renamecols=renamecols)
 
-unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex, value::ColumnIndex) =
-    unstack(df, rowkeys, index(df)[colkey], index(df)[value])
+unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex, value::ColumnIndex;
+        renamecols::Function=identity) =
+    unstack(df, rowkeys, index(df)[colkey], index(df)[value], renamecols=renamecols)
 
-unstack(df::AbstractDataFrame, rowkeys, colkey::Int, value::Int) =
-    unstack(df, names(df)[index(df)[rowkeys]], colkey, value)
+unstack(df::AbstractDataFrame, rowkeys, colkey::Int, value::Int;
+        renamecols::Function=identity) =
+    unstack(df, names(df)[index(df)[rowkeys]], colkey, value, renamecols=renamecols)
 
-unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Integer}, colkey::Int, value::Int) =
-    unstack(df, names(df)[rowkeys], colkey, value)
+unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Integer}, colkey::Int,
+        value::Int; renamecols::Function=identity) =
+    unstack(df, names(df)[rowkeys], colkey, value, renamecols=renamecols)
 
-function unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol}, colkey::Int, value::Int)
+function unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol}, colkey::Int,
+                 value::Int; renamecols::Function=identity)
     length(rowkeys) == 0 && throw(ArgumentError("No key column found"))
-    length(rowkeys) == 1 && return unstack(df, rowkeys[1], colkey, value)
+    length(rowkeys) == 1 && return unstack(df, rowkeys[1], colkey, value, renamecols=renamecols)
     g = groupby(df, rowkeys, sort=true)
     keycol = categorical(df[!, colkey])
     droplevels!(keycol)
     valuecol = df[!, value]
-    _unstack(df, rowkeys, colkey, value, keycol, valuecol, g)
+    _unstack(df, rowkeys, colkey, value, keycol, valuecol, g, renamecols)
 end
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
-                  colkey::Int, value::Int, keycol, valuecol, g)
+                  colkey::Int, value::Int, keycol, valuecol, g, renamecols)
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)
@@ -321,11 +336,12 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         unstacked_val[j][i] = valuecol[k]
         mask_filled[i, j] = true
     end
-    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)), copycols=false)
+    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(levels(keycol))), copycols=false)
     hcat(df1, df2, copycols=false)
 end
 
-unstack(df::AbstractDataFrame) = unstack(df, :variable, :value)
+unstack(df::AbstractDataFrame; renamecols::Function=identity) =
+    unstack(df, :variable, :value, renamecols=renamecols)
 
 ##############################################################################
 ##
