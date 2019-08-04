@@ -113,7 +113,8 @@ The following list specifies the behavior of `setindex!` operations depending on
 
 In particular a description explicitly mentions if the assignment is *in-place*.
 
-Note that `setindex!` operations are not atomic.
+Note that if `setindex!` operation throws an error the target data frame may be partially changed
+so it is unsafe to use it afterwards.
 
 `setindex!` on `DataFrame`:
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -147,9 +148,9 @@ Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowe
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
                     equivalent to `dfr.col = v` if `col` is a valid identifier;
 * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
-                     `v` can be an iterable in which case it must have a number of elements equal to `length(dfr)`,
-                     or `v` can be a `NamedTuple`, `AbstractDict` or `DataFrameRow` when column names must match
-                     (in the case of `NamedTuple` and `DataFrameRow` also the order of column names must match);
+                     `v` can be: 1) an iterable in which case it must have a number of elements equal to `length(dfr)`,
+                     2) an `AbstractDict`, when column names must match,
+                     3) a `NamedTuple` or `DataFrameRow` when column names and order must match;
 
 ## Broadcasting
 
@@ -161,7 +162,9 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
   of dimensionality higher than two.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 
-Note that broadcasting assignment operations are not atomic.
+Note that if broadcasting assignment operation throws an error the target data frame may be partially changed
+so it is unsafe to use it afterwards.
+
 
 Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
 
