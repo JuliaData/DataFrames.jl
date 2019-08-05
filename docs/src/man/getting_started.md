@@ -58,7 +58,7 @@ julia> df.A
 julia> df.A === df[!, :A]
 true
 
-julia> df.A === df[!,, 1]
+julia> df.A === df[!, 1]
 true
 
 julia> firstcolumn = :A
