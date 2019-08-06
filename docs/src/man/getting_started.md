@@ -45,7 +45,7 @@ julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-Columns can be accessed via `df.col` or `df[:col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position.
+Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position.
 
 ```jldoctest dataframe
 julia> df.A
@@ -55,16 +55,16 @@ julia> df.A
  3
  4
 
-julia> df.A === df[:A]
+julia> df.A === df[!, :A]
 true
 
-julia> df.A === df[1]
+julia> df.A === df[!, 1]
 true
 
 julia> firstcolumn = :A
 :A
 
-julia> df[firstcolumn] === df.A
+julia> df[!, firstcolumn] === df.A
 true
 ```
 
@@ -328,10 +328,10 @@ julia> df[[3, 1], [:C]]
 │ 2   │ 1     │
 ```
 
-Do note that `df[[:A]]` and `df[:, [:A]]` return a `DataFrame` object, while `df[:A]` and `df[:, :A]` return a vector:
+Do note that `df[!, [:A]]` and `df[:, [:A]]` return a `DataFrame` object, while `df[!, :A]` and `df[:, :A]` return a vector:
 
 ```jldoctest dataframe
-julia> df[[:A]]
+julia> df[!, [:A]]
 500×1 DataFrame
 │ Row │ A     │
 │     │ Int64 │
@@ -347,10 +347,10 @@ julia> df[[:A]]
 │ 499 │ 997   │
 │ 500 │ 999   │
 
-julia> df[[:A]] == df[:, [:A]]
+julia> df[!, [:A]] == df[:, [:A]]
 true
 
-julia> df[:A]
+julia> df[!, :A]
 500-element Array{Int64,1}:
    1
    3
@@ -365,7 +365,7 @@ julia> df[:A]
  997
  999
 
-julia> df[:A] == df[:, :A]
+julia> df[!, :A] == df[:, :A]
 true
 ```
 
@@ -380,7 +380,7 @@ julia> df = DataFrame(x1=1, x2=2, y=3)
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia> df[r"x"]
+julia> df[!, r"x"]
 1×2 DataFrame
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
@@ -562,7 +562,7 @@ or when a `DataFrame` created with `copycols=false` (or with the `DataFrame!` fu
 are in use.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
-using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,
+using the syntaxes `df.col`, `df[!, :col]`, via the [`eachcol`](@ref) function,
 by accessing a `parent` of a `view` of a column of a `DataFrame`,
 or simply by storing the reference to the column vector before the `DataFrame`
 was created with `copycols=false` (or with the `DataFrame!` function).

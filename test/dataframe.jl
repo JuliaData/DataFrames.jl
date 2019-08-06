@@ -941,7 +941,7 @@ end
     @test df == dfc
 
     names!(df, [:a, :b, :z])
-    @test_throws ErrorException append!(df, dfc)
+    @test_throws ArgumentError append!(df, dfc)
 end
 
 @testset "test categorical!" begin
