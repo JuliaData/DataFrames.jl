@@ -84,17 +84,17 @@ Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
-                                   colinds::Union{Colon, AbstractVector, Regex, Not}) =
+                                   colinds::Union{Colon, AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::Union{AbstractVector, Regex, Not}) =
+                                       colinds::Union{AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not}) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
@@ -132,7 +132,7 @@ Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not}) =
+Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
