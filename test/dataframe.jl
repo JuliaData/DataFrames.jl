@@ -1617,4 +1617,124 @@ end
     @test df.a === df.b
 end
 
+@testset "And and Between tests" begin
+    # we check dispatch here only
+    df = DataFrame(a=1, b=2, c=3)
+    completecases(df, All())
+    completecases(df, Between(1, 2))
+    dropmissing(df, All())
+    dropmissing(df, Between(1, 2))
+    dropmissing!(df, All())
+    dropmissing!(df, Between(1, 2))
+    disallowmissing(df, All())
+    disallowmissing(df, Between(1, 2))
+    allowmissing(df, All())
+    allowmissing(df, Between(1, 2))
+    categorical(df, All())
+    categorical(df, Between(1, 2))
+
+    df[1, All()]
+    df[1, Between(1,2)]
+    df[1:1, All()]
+    df[1:1, Between(1,2)]
+    df[Not(1), All()]
+    df[Not(1), Between(1,2)]
+    df[:, All()]
+    df[:, Between(1,2)]
+    df[!, All()]
+    df[!, Between(1,2)]
+
+    @view df[1, All()]
+    @view df[1, Between(1,2)]
+    @view df[1:1, All()]
+    @view df[1:1, Between(1,2)]
+    @view df[Not(1), All()]
+    @view df[Not(1), Between(1,2)]
+    @view df[:, All()]
+    @view df[:, Between(1,2)]
+    @view df[!, All()]
+    @view df[!, Between(1,2)]
+
+    df[1, All()] = (a=1, b=2, c=3)
+    df[1, Between(1,2)] = (a=1, b=2)
+    df[1:1, All()] = df
+    df[1:1, Between(1,2)] = df[!, 1:2]
+    df[:, All()] = df
+    df[:, Between(1,2)] = df[!, 1:2]
+    df[!, All()] = df
+    df[!, Between(1,2)] = df[!, 1:2]
+    df[1:1, All()] = Matrix(df)
+    df[1:1, Between(1,2)] = Matrix(df[!, 1:2])
+    df[:, All()] = Matrix(df)
+    df[:, Between(1,2)] = Matrix(df[!, 1:2])
+    df[!, All()] = Matrix(df)
+    df[!, Between(1,2)] = Matrix(df[!, 1:2])
+
+    df2 = vcat(df, df)
+    df2[Not(1), All()] = df
+    df2[Not(1), Between(1,2)] = df
+    df2[Not(1), All()] = Matrix(df)
+    df2[Not(1), Between(1,2)] = Matrix(df)
+
+    allowmissing!(df2, All())
+    allowmissing!(df2, Between(1,2))
+    disallowmissing!(df2, All())
+    disallowmissing!(df2, Between(1,2))
+    categorical!(df2, All())
+    categorical!(df2, Between(1,2))
+
+    dfr = df[1, :]
+    dfr[All()]
+    dfr[Between(1,2)]
+    dfr[All()] = (a=1, b=2, c=3)
+    dfr[Between(1,2)] = (a=1, b=2)
+    @view dfr[All()]
+    @view dfr[Between(1,2)]
+
+    dfv = view(df, :, :)
+
+    dfv[1, All()]
+    dfv[1, Between(1,2)]
+    dfv[1:1, All()]
+    dfv[1:1, Between(1,2)]
+    dfv[Not(1), All()]
+    dfv[Not(1), Between(1,2)]
+    dfv[:, All()]
+    dfv[:, Between(1,2)]
+    dfv[!, All()]
+    dfv[!, Between(1,2)]
+
+    @view dfv[1, All()]
+    @view dfv[1, Between(1,2)]
+    @view dfv[1:1, All()]
+    @view dfv[1:1, Between(1,2)]
+    @view dfv[Not(1), All()]
+    @view dfv[Not(1), Between(1,2)]
+    @view dfv[:, All()]
+    @view dfv[:, Between(1,2)]
+    @view dfv[!, All()]
+    @view dfv[!, Between(1,2)]
+
+    dfv[1, All()] = (a=1, b=2, c=3)
+    dfv[1, Between(1,2)] = (a=1, b=2)
+    dfv[1:1, All()] = df
+    dfv[1:1, Between(1,2)] = df[!, 1:2]
+    dfv[:, All()] = df
+    dfv[:, Between(1,2)] = df[!, 1:2]
+    dfv[!, All()] = df
+    dfv[!, Between(1,2)] = df[!, 1:2]
+    dfv[1:1, All()] = Matrix(df)
+    dfv[1:1, Between(1,2)] = Matrix(df[!, 1:2])
+    dfv[:, All()] = Matrix(df)
+    dfv[:, Between(1,2)] = Matrix(df[!, 1:2])
+    dfv[!, All()] = Matrix(df)
+    dfv[!, Between(1,2)] = Matrix(df[!, 1:2])
+
+    df2 = view(vcat(df, df), :, :)
+    df2v[Not(1), All()] = df
+    df2v[Not(1), Between(1,2)] = df
+    df2v[Not(1), All()] = Matrix(df)
+    df2v[Not(1), Between(1,2)] = Matrix(df)
+end
+
 end # module
