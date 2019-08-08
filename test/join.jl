@@ -389,92 +389,50 @@ end
 @testset "join on columns with different left/right names" begin
     global left = DataFrame(id = 1:7, sid = string.(1:7))
     global right = DataFrame(ID = 3:10, SID = string.(3:10))
-    @test join(left, right, on = (:id, :ID), kind=:inner) ==
-        DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
     @test join(left, right, on = :id => :ID, kind=:inner) ==
-        DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
-    @test join(left, right, on = [(:id, :ID)], kind=:inner) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
     @test join(left, right, on = [:id => :ID], kind=:inner) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:inner) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:inner) ==
         DataFrame(id = 3:7, sid = string.(3:7))
 
-    @test join(left, right, on = (:id, :ID), kind=:left) ≅
-        DataFrame(id = 1:7, sid = string.(1:7),
-                  SID = [missing, missing, string.(3:7)...])
     @test join(left, right, on = :id => :ID, kind=:left) ≅
-        DataFrame(id = 1:7, sid = string.(1:7),
-                  SID = [missing, missing, string.(3:7)...])
-    @test join(left, right, on = [(:id, :ID)], kind=:left) ≅
         DataFrame(id = 1:7, sid = string.(1:7),
                   SID = [missing, missing, string.(3:7)...])
     @test join(left, right, on = [:id => :ID], kind=:left) ≅
         DataFrame(id = 1:7, sid = string.(1:7),
                   SID = [missing, missing, string.(3:7)...])
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:left) ==
-        DataFrame(id = 1:7, sid = string.(1:7))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:left) ==
         DataFrame(id = 1:7, sid = string.(1:7))
 
-    @test join(left, right, on = (:id, :ID), kind=:right) ≅
-        DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
-                 SID = string.(3:10))
     @test join(left, right, on = :id => :ID, kind=:right) ≅
-        DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
-                 SID = string.(3:10))
-    @test join(left, right, on = [(:id, :ID)], kind=:right) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
                  SID = string.(3:10))
     @test join(left, right, on = [:id => :ID], kind=:right) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
                  SID = string.(3:10))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:right) ≅
-        DataFrame(id = 3:10, sid = string.(3:10))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:right) ≅
         DataFrame(id = 3:10, sid = string.(3:10))
 
-    @test join(left, right, on = (:id, :ID), kind=:outer) ≅
-        DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
-                  SID = [missing, missing, string.(3:10)...])
     @test join(left, right, on = :id => :ID, kind=:outer) ≅
-        DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
-                  SID = [missing, missing, string.(3:10)...])
-    @test join(left, right, on = [(:id, :ID)], kind=:outer) ≅
         DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
                   SID = [missing, missing, string.(3:10)...])
     @test join(left, right, on = [:id => :ID], kind=:outer) ≅
         DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
                   SID = [missing, missing, string.(3:10)...])
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:outer) ≅
-        DataFrame(id = 1:10, sid = string.(1:10))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:outer) ≅
         DataFrame(id = 1:10, sid = string.(1:10))
 
-    @test join(left, right, on = (:id, :ID), kind=:semi) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = :id => :ID, kind=:semi) ==
         DataFrame(id = 3:7, sid = string.(3:7))
-    @test join(left, right, on = [(:id, :ID)], kind=:semi) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = [:id => :ID], kind=:semi) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:semi) ==
         DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:semi) ==
         DataFrame(id = 3:7, sid = string.(3:7))
 
-    @test join(left, right, on = (:id, :ID), kind=:anti) ==
-        DataFrame(id = 1:2, sid = string.(1:2))
     @test join(left, right, on = :id => :ID, kind=:anti) ==
         DataFrame(id = 1:2, sid = string.(1:2))
-    @test join(left, right, on = [(:id, :ID)], kind=:anti) ==
-        DataFrame(id = 1:2, sid = string.(1:2))
     @test join(left, right, on = [:id => :ID], kind=:anti) ==
-        DataFrame(id = 1:2, sid = string.(1:2))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:anti) ==
         DataFrame(id = 1:2, sid = string.(1:2))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:anti) ==
         DataFrame(id = 1:2, sid = string.(1:2))
