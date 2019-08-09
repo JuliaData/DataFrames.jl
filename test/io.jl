@@ -77,7 +77,7 @@ end
     io = IOBuffer()
     show(io, "text/html", eachcol(df))
     str = String(take!(io))
-    @test str == "<p>2×2 DataFrameColumns (with names = false)</p>" *
+    @test str == "<p>2×2 DataFrameColumns (with names=false)</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
@@ -87,7 +87,7 @@ end
     io = IOBuffer()
     show(io, "text/html", eachcol(df, true))
     str = String(take!(io))
-    @test str == "<p>2×2 DataFrameColumns (with names = true)</p>" *
+    @test str == "<p>2×2 DataFrameColumns (with names=true)</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
