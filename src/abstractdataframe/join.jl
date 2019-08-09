@@ -298,8 +298,8 @@ function Base.join(df1::AbstractDataFrame,
     _check_consistency(df1)
     _check_consistency(df2)
     if on isa NTuple{2,Symbol} || on isa AbstractVector{NTuple{2,Symbol}}
-        Base.depwarn("Using a `Tuple{Symbol, Symbol} or a vector of such tuples " *
-                     "as a value of `on` keyword argument is deprecated.", :join)
+        Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector of such tuples " *
+                     "as a value of `on` keyword argument is deprecated: use pairs instead.", :join)
     end
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
