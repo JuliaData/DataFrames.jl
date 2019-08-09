@@ -1286,7 +1286,7 @@ julia> ncol(df)
 
 """
     disallowmissing(df::AbstractDataFrame,
-                    cols::Union{ColumnIndex, AbstractVector, Regex, Between, All, Not, Colon}=:)
+                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
 
 Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
@@ -1359,7 +1359,7 @@ julia> allowmissing(df)
 ```
 """
 function Missings.allowmissing(df::AbstractDataFrame,
-                               cols::Union{ColumnIndex, AbstractVector, Regex, Between, All, Not, Colon}=:)
+                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
