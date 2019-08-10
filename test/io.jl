@@ -27,6 +27,9 @@ using LaTeXStrings
     @test repr(MIME("text/latex"), df) == str
     @test repr(MIME("text/latex"), eachcol(df)) == str
     @test repr(MIME("text/latex"), eachrow(df)) == str
+
+    @test_throws ArgumentError DataFrames._show(stdout, MIME("text/laxex"),
+                                                DataFrame(ones(2,2)), rowid=10)
 end
 
 @testset "Huge LaTeX export" begin
@@ -135,6 +138,9 @@ end
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
                  "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64⍰</th></tr></thead>" *
                  "<tbody><tr><th>1</th><td>#undef</td><td>1.5</td></tr></tbody></table>"
+
+    @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
+                                                DataFrame(ones(2,2)), rowid=10)
 end
 
 # test limit attribute of IOContext is used
@@ -170,16 +176,19 @@ end
 
 @testset "csv/tsv output" begin
     df = DataFrame(a = [1,2], b = [1.0, 2.0])
-    @test sprint(show, "text/csv", df) == """
-    "a","b"
-    1,1.0
-    2,2.0
-    """
-    @test sprint(show, "text/tab-separated-values", df) == """
-    "a"\t"b"
-    1\t1.0
-    2\t2.0
-    """
+
+    for x in [df, eachcol(df), eachrow(df)]
+        @test sprint(show, "text/csv", x) == """
+        "a","b"
+        1,1.0
+        2,2.0
+        """
+        @test sprint(show, "text/tab-separated-values", x) == """
+        "a"\t"b"
+        1\t1.0
+        2\t2.0
+        """
+    end
 end
 
 @testset "empty data frame and DataFrameRow" begin
