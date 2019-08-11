@@ -972,11 +972,13 @@ disallowmissing!(df::DataFrame, cols::Colon=:) =
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Union{Regex, Not};
                  compress::Bool=false)
-    categorical!(df::DataFrame; compress::Bool=false)
+    categorical!(df::DataFrame; type::Type=Union{AbstractString, Missing},
+                 compress::Bool=false)
 
 Change columns selected by `cname` or `cnames` in data frame `df`
 to `CategoricalVector`. If no columns are indicated then all columns whose element type
-is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
+is a subtype of `type` keyword argument (by default `Union{AbstractString, Missing}`)
+will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
 will be compressed.
@@ -1050,9 +1052,11 @@ end
 categorical!(df::DataFrame, cnames::Union{Regex, Not, Colon}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame; compress::Bool=false)
+function categorical!(df::DataFrame;
+                      type::Type=Union{AbstractString, Missing},
+                      compress::Bool=false)
     for i in 1:size(df, 2)
-        if eltype(df[!, i]) <: Union{AbstractString, Missing}
+        if eltype(df[!, i]) <: type
             df[!, i] = categorical(df[!, i], compress)
         end
     end
