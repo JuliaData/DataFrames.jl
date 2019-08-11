@@ -376,7 +376,7 @@ end
         │ 1   │ 3.14159 │"""
 
     @test sprint(show, eachcol(df)) == """
-        1×1 DataFrameColumns (with names = false)
+        1×1 DataFrameColumns (with names=false)
         │ Row │ x       │
         │     │ Float64 │
         ├─────┼─────────┤
@@ -390,7 +390,7 @@ end
         │ 1   │ 3.14159 │"""
 
     @test sprint(show, eachcol(df, true)) == """
-        1×1 DataFrameColumns (with names = true)
+        1×1 DataFrameColumns (with names=true)
         │ Row │ x       │
         │     │ Float64 │
         ├─────┼─────────┤
