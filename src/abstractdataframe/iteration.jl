@@ -261,7 +261,7 @@ function Base.show(io::IO, dfcs::DataFrameColumns{T,V};
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) where {T, V}
     df = parent(dfcs)
-    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns (with names = $(V <: Pair))")
+    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns (with names=$(V <: Pair))")
     _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=false)
 end
