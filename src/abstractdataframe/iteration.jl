@@ -4,8 +4,6 @@
 ##
 ##############################################################################
 
-# TODO: Reconsider/redesign eachrow -- ~100% overhead
-
 # Iteration by rows
 """
     DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
