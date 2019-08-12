@@ -28,7 +28,7 @@ using LaTeXStrings
     @test repr(MIME("text/latex"), eachcol(df)) == str
     @test repr(MIME("text/latex"), eachrow(df)) == str
 
-    @test_throws ArgumentError DataFrames._show(stdout, MIME("text/laxex"),
+    @test_throws ArgumentError DataFrames._show(stdout, MIME("text/latex"),
                                                 DataFrame(ones(2,2)), rowid=10)
 end
 
