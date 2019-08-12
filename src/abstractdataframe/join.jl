@@ -227,9 +227,8 @@ Join two `DataFrame` objects
 
 * `on` : A column, or vector of columns to join df1 and df2 on. If the column(s)
     that df1 and df2 will be joined on have different names, then the columns
-    should be `(left, right)` tuples or `left => right` pairs, or a vector of
-    such tuples or pairs. `on` is a required argument for all joins except for
-    `kind = :cross`
+    should be `left => right` pairs, or a vector of such pairs.
+    `on` is a required argument for all joins except for `kind = :cross`
 
 * `kind` : the type of join, options include:
 
@@ -285,8 +284,8 @@ join(name, job, on = :ID, kind = :anti)
 join(name, job, kind = :cross)
 
 job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
-join(name, job2, on = (:ID, :identifier))
 join(name, job2, on = :ID => :identifier)
+join(name, job2, on = [:ID => :identifier])
 ```
 
 """
@@ -298,6 +297,10 @@ function Base.join(df1::AbstractDataFrame,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
     _check_consistency(df1)
     _check_consistency(df2)
+    if on isa NTuple{2,Symbol} || on isa AbstractVector{NTuple{2,Symbol}}
+        Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector of such tuples " *
+                     "as a value of `on` keyword argument is deprecated: use pairs instead.", :join)
+    end
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
         for i in 1:2
