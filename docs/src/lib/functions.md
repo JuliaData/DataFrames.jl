@@ -17,6 +17,8 @@ combine
 groupby
 groupindices
 groupvars
+keys
+get
 join
 map
 melt

@@ -1256,4 +1256,32 @@ end
         "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
 end
 
+@testset "GroupedDataFrame dictionary interface" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    @test keys(gd) ≅ [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
+
+    @test collect(pairs(gd)) ≅ map(Pair, keys(gd), gd)
+
+    for (i, key) in enumerate(keys(gd))
+        # Named tuple from keys(gd)
+        @test gd[key] ≅ gd[i]
+        # Plain tuple
+        @test gd[Tuple(key)] ≅ gd[i]
+    end
+
+    @test get(gd, (a=:A, b=:X), nothing) ≅ gd[1]
+    @test get(gd, (a=:A, b=:Z), nothing) == nothing
+
+    @test_throws KeyError gd[(a=:A, b=:Z)]
+    @test_throws KeyError gd[(a=:A, b="Z")]
+    @test_throws KeyError gd[(a=:A,)]
+    @test_throws KeyError gd[(a=:A, b=:X, c=1)]
+    @test_throws KeyError gd[(:A, :Z)]
+    @test_throws KeyError gd[(:A,)]
+    @test_throws KeyError gd[(:A, :X, 1)]
+    @test_throws KeyError gd[(b=:X, a=:D)]
+end
+
 end # module
