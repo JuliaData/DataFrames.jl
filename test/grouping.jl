@@ -1208,6 +1208,26 @@ end
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+
+    df2 = DataFrame(A = vcat(df.A, df.A), B = repeat([:X, :Y], inner=6), C = 1:12)
+
+    gd = groupby_checked(df2, [:A, :B])
+    @inferred groupindices(gd)
+    @test groupindices(gd) == [1, 2, 3, 2, 3, 1, 4, 5, 6, 5, 6, 4]
+    @test groupvars(gd) == [:A, :B]
+    gd2 = gd[[3,2,5]]
+    @inferred groupindices(gd2)
+    @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing, missing, 3, missing, 3, missing, missing]
+    @test groupvars(gd2) == [:A, :B]
+
+    gd = groupby_checked(df2, [:A, :B], skipmissing=true)
+    @inferred groupindices(gd)
+    @test groupindices(gd) ≅ [missing, 1, 2, 1, 2, missing, missing, 3, 4, 3, 4, missing]
+    @test groupvars(gd) == [:A, :B]
+    gd2 = gd[[4,2,1]]
+    @inferred groupindices(gd2)
+    @test groupindices(gd2) ≅ [missing, 3, 2, 3, 2, missing, missing, missing, 1, missing, 1, missing]
+    @test groupvars(gd2) == [:A, :B]
 end
 
 @testset "by skipmissing and sort" begin
