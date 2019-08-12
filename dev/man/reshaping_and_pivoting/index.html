@@ -124,7 +124,7 @@ julia&gt; last(d, 6)
 │ 3   │ PetalWidth │ 1.9      │ virginica     │
 │ 4   │ PetalWidth │ 2.0      │ virginica     │
 │ 5   │ PetalWidth │ 2.3      │ virginica     │
-│ 6   │ PetalWidth │ 1.8      │ virginica     │</code></pre><p><code>unstack</code> converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:</p><pre><code class="language-julia-repl">julia&gt; iris[:id] = 1:size(iris, 1)
+│ 6   │ PetalWidth │ 1.8      │ virginica     │</code></pre><p><code>unstack</code> converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:</p><pre><code class="language-julia-repl">julia&gt; iris.id = 1:size(iris, 1)
 1:150
 
 julia&gt; longdf = melt(iris, [:Species, :id]);
@@ -239,7 +239,7 @@ julia&gt; last(d, 6)
 │ 3   │ PetalWidth │ 1.9      │ virginica     │ 147   │
 │ 4   │ PetalWidth │ 2.0      │ virginica     │ 148   │
 │ 5   │ PetalWidth │ 2.3      │ virginica     │ 149   │
-│ 6   │ PetalWidth │ 1.8      │ virginica     │ 150   │</code></pre><p>This saves memory. To create the view, several AbstractVectors are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code>   This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code>   This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code>   This repeats the original columns N times where N is the number of columns stacked.</p><p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; d = melt(iris, :Species);
+│ 6   │ PetalWidth │ 1.8      │ virginica     │ 150   │</code></pre><p>This saves memory. To create the view, several AbstractVectors are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code> This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code> This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code> This repeats the original columns N times where N is the number of columns stacked.</p><p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; d = melt(iris, :Species);
 
 julia&gt; first(d, 6)
 6×3 DataFrame
@@ -253,7 +253,7 @@ julia&gt; first(d, 6)
 │ 5   │ SepalLength │ 5.0      │ setosa        │
 │ 6   │ SepalLength │ 5.4      │ setosa        │
 
-julia&gt; x = by(d, [:variable, :Species], df -&gt; DataFrame(vsum = mean(df[:value])));
+julia&gt; x = by(d, [:variable, :Species], df -&gt; DataFrame(vsum = mean(df.value)));
 
 julia&gt; first(x, 6)
 

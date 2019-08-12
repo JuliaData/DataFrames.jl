@@ -11,23 +11,23 @@ julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quo
 │ 2   │ 2     │ F      │
 │ 3   │ 3     │ F      │
 │ 4   │ 4     │ M      │
-</code></pre><p>Columns can be accessed via <code>df.col</code> or <code>df[:col]</code>. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (<code>:col</code> or <code>Symbol(&quot;col&quot;)</code>) rather than strings (<code>&quot;col&quot;</code>). Columns can also be accessed using an integer index specifying their position.</p><pre><code class="language-julia-repl">julia&gt; df.A
+</code></pre><p>Columns can be directly (i.e. without copying) accessed via <code>df.col</code> or <code>df[!, :col]</code>. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (<code>:col</code> or <code>Symbol(&quot;col&quot;)</code>) rather than strings (<code>&quot;col&quot;</code>). Columns can also be accessed using an integer index specifying their position.</p><pre><code class="language-julia-repl">julia&gt; df.A
 4-element Array{Int64,1}:
  1
  2
  3
  4
 
-julia&gt; df.A === df[:A]
+julia&gt; df.A === df[!, :A]
 true
 
-julia&gt; df.A === df[1]
+julia&gt; df.A === df[!, 1]
 true
 
 julia&gt; firstcolumn = :A
 :A
 
-julia&gt; df[firstcolumn] === df.A
+julia&gt; df[!, firstcolumn] === df.A
 true</code></pre><p>Column names can be obtained using the <code>names</code> function:</p><pre><code class="language-julia-repl">julia&gt; names(df)
 2-element Array{Symbol,1}:
  :A
@@ -192,7 +192,7 @@ julia&gt; df[[3, 1], [:C]]
 │     │ Int64 │
 ├─────┼───────┤
 │ 1   │ 3     │
-│ 2   │ 1     │</code></pre><p>Do note that <code>df[[:A]]</code> and <code>df[:, [:A]]</code> return a <code>DataFrame</code> object, while <code>df[:A]</code> and <code>df[:, :A]</code> return a vector:</p><pre><code class="language-julia-repl">julia&gt; df[[:A]]
+│ 2   │ 1     │</code></pre><p>Do note that <code>df[!, [:A]]</code> and <code>df[:, [:A]]</code> return a <code>DataFrame</code> object, while <code>df[!, :A]</code> and <code>df[:, :A]</code> return a vector:</p><pre><code class="language-julia-repl">julia&gt; df[!, [:A]]
 500×1 DataFrame
 │ Row │ A     │
 │     │ Int64 │
@@ -208,10 +208,10 @@ julia&gt; df[[3, 1], [:C]]
 │ 499 │ 997   │
 │ 500 │ 999   │
 
-julia&gt; df[[:A]] == df[:, [:A]]
+julia&gt; df[!, [:A]] == df[:, [:A]]
 true
 
-julia&gt; df[:A]
+julia&gt; df[!, :A]
 500-element Array{Int64,1}:
    1
    3
@@ -226,7 +226,7 @@ julia&gt; df[:A]
  997
  999
 
-julia&gt; df[:A] == df[:, :A]
+julia&gt; df[!, :A] == df[:, :A]
 true</code></pre><p>In the first cases, <code>[:A]</code> is a vector, indicating that the resulting object should be a <code>DataFrame</code>, since a vector can contain one or more column names. On the other hand, <code>:A</code> is a single symbol, indicating that a single column vector should be extracted.</p><p>It is also possible to use a regular expression as a selector of columns matching it:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=1, x2=2, y=3)
 1×3 DataFrame
 │ Row │ x1    │ x2    │ y     │
@@ -234,7 +234,7 @@ true</code></pre><p>In the first cases, <code>[:A]</code> is a vector, indicatin
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia&gt; df[r&quot;x&quot;]
+julia&gt; df[!, r&quot;x&quot;]
 1×2 DataFrame
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
@@ -358,7 +358,7 @@ julia&gt; x
 3-element Array{Int64,1}:
  100
    2
-   3</code></pre><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function) are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code> <code>df</code> using the syntaxes <code>df.col</code>, <code>df[:col]</code>, via the <a href="../../lib/functions/#DataFrames.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function).</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+   3</code></pre><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function) are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code> <code>df</code> using the syntaxes <code>df.col</code>, <code>df[!, :col]</code>, via the <a href="../../lib/functions/#DataFrames.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function).</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
 
 julia&gt; df = DataFrame(x=x)
 3×1 DataFrame
