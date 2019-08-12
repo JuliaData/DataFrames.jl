@@ -1304,4 +1304,22 @@ end
     @test_throws KeyError gd[(b=:X, a=:D)]
 end
 
+@testset "Parent DataFrame names changed" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    @test names(gd) == names(df)
+    @test groupvars(gd) == [:a, :b]
+    @test keys(gd) ≅ [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
+    @test gd[(a=:A, b=:X)] ≅ gd[1]
+
+    names!(df, [:d, :e, :f])
+
+    @test names(gd) == names(df)
+    @test groupvars(gd) == [:d, :e]
+    @test keys(gd) ≅ [(d=:A, e=:X), (d=:B, e=:X), (d=missing, e=:X), (d=:A, e=:Y), (d=:B, e=:Y), (d=missing, e=:Y)]
+    @test_throws KeyError gd[(a=:A, b=:X)]
+    @test gd[(d=:A, e=:X)] ≅ gd[1]
+end
+
 end # module
