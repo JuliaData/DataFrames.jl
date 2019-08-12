@@ -17,15 +17,18 @@ using Base.Sort, Base.Order, Base.Iterators
 ##
 ##############################################################################
 
-import DataAPI.describe
+import DataAPI.All,
+       DataAPI.Between,
+       DataAPI.describe
 
 export AbstractDataFrame,
+       All,
+       Between,
        DataFrame,
        DataFrame!,
        DataFrameRow,
        GroupedDataFrame,
        SubDataFrame,
-
        allowmissing!,
        aggregate,
        by,

@@ -34,6 +34,7 @@ test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Random", "Test
 julia = "1"
 CategoricalArrays = ">= 0.5.4"
 Compat = "2.0.0"
+DataAPI = "1.0.1"
 InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = ">= 0.2.3"

@@ -525,7 +525,7 @@ end
 
 """
     completecases(df::AbstractDataFrame, cols::Colon=:)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not})
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -594,12 +594,12 @@ function completecases(df::AbstractDataFrame, col::ColumnIndex)
     res
 end
 
-completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All}) =
     completecases(df[!, cols])
 
 """
     dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
                 disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol};
                 disallowmissing::Bool=true)
@@ -664,7 +664,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
+                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -673,7 +673,7 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
                  disallowmissing::Bool=true)
     dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol};
                  disallowmissing::Bool=true)
@@ -736,7 +736,7 @@ julia> dropmissing!(df3, [:x, :y])
 
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
+                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -1286,7 +1286,7 @@ julia> ncol(df)
 
 """
     disallowmissing(df::AbstractDataFrame,
-                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
 
 Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
@@ -1314,7 +1314,7 @@ julia> disallowmissing(df)
 ```
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
-                                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
@@ -1331,7 +1331,7 @@ end
 
 """
     allowmissing(df::AbstractDataFrame,
-                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
 
 Return a copy of data frame `df` with columns `cols` converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
@@ -1359,7 +1359,7 @@ julia> allowmissing(df)
 ```
 """
 function Missings.allowmissing(df::AbstractDataFrame,
-                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:)
+                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
@@ -1377,7 +1377,7 @@ end
 """
     categorical(df::AbstractDataFrame; compress::Bool=false)
     categorical(df::AbstractDataFrame,
-                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
+                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
                 compress::Bool=false)
 
 Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
@@ -1419,7 +1419,7 @@ julia> categorical(df, :)
 
 """
 function CategoricalArrays.categorical(df::AbstractDataFrame,
-                                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon};
+                                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
                                        compress::Bool=false)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]

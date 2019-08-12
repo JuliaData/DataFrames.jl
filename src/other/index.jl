@@ -174,9 +174,14 @@ end
     idx
 end
 
-@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = getindex(x, collect(Int, idx))
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) =
+    getindex(x, collect(Int, idx))
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
-@inline Base.getindex(x::AbstractIndex, notidx::Not) = setdiff(1:length(x), getindex(x, notidx.skip))
+@inline Base.getindex(x::AbstractIndex, notidx::Not) =
+    setdiff(1:length(x), getindex(x, notidx.skip))
+@inline Base.getindex(x::AbstractIndex, idx::Between) = x[idx.first]:x[idx.last]
+@inline Base.getindex(x::AbstractIndex, idx::All) =
+    isempty(idx.cols) ? (1:length(x)) : union(getindex.(Ref(x), idx.cols)...)
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)

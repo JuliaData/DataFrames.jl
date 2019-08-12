@@ -24,6 +24,7 @@ The rules for a valid type of index into a column are the following:
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
     * a regular expression, which gets expanded to a vector of matching column names;
     * a `Not` expression (see [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl));
+    * an `All` or `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
     * a colon literal `:`.
 
 The rules for a valid type of index into a row are the following:
