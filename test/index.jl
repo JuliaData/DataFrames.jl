@@ -307,4 +307,64 @@ end
     @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"")))) == 1:2
 end
 
+@testset "Between indexing" begin
+    df = DataFrame(a=1, b=2, c=3)
+    @test select(df, Between(1,2)) == df[:, 1:2]
+    @test select(df, Between(1,:b)) == df[:, 1:2]
+    @test select(df, Between(:a,2)) == df[:, 1:2]
+    @test select(df, Between(:a,:b)) == df[:, 1:2]
+    @test select(df, Between(2,1)) == df[:, 2:1]
+    @test select(df, Between(:b,1)) == df[:, 2:1]
+    @test select(df, Between(2,:a)) == df[:, 2:1]
+    @test select(df, Between(:b,:a)) == df[:, 2:1]
+
+    @test df[:, Between(1,2)] == df[:, 1:2]
+    @test df[:, Between(1,:b)] == df[:, 1:2]
+    @test df[:, Between(:a,2)] == df[:, 1:2]
+    @test df[:, Between(:a,:b)] == df[:, 1:2]
+    @test df[:, Between(2,1)] == df[:, 2:1]
+    @test df[:, Between(:b,1)] == df[:, 2:1]
+    @test df[:, Between(2,:a)] == df[:, 2:1]
+    @test df[:, Between(:b,:a)] == df[:, 2:1]
+
+    @test_throws BoundsError df[:, Between(:b,0)]
+    @test_throws BoundsError df[:, Between(0,:b)]
+    @test_throws ArgumentError df[:, Between(:b,:z)]
+    @test_throws ArgumentError df[:, Between(:z,:b)]
+end
+
+@testset "All indexing" begin
+    df = DataFrame(a=1, b=2, c=3)
+    @test select(df, All()) == df[:, :]
+    @test df[:, All()] == df[:, :]
+
+    @test select(df, All(1,2)) == df[:, 1:2]
+    @test select(df, All(1,:b)) == df[:, 1:2]
+    @test select(df, All(:a,2)) == df[:, 1:2]
+    @test select(df, All(:a,:b)) == df[:, 1:2]
+    @test select(df, All(2,1)) == df[:, [2,1]]
+    @test select(df, All(:b,1)) == df[:, [2,1]]
+    @test select(df, All(2,:a)) == df[:, [2,1]]
+    @test select(df, All(:b,:a)) == df[:, [2,1]]
+
+    @test df[:, All(1,2)] == df[:, 1:2]
+    @test df[:, All(1,:b)] == df[:, 1:2]
+    @test df[:, All(:a,2)] == df[:, 1:2]
+    @test df[:, All(:a,:b)] == df[:, 1:2]
+    @test df[:, All(2,1)] == df[:, [2,1]]
+    @test df[:, All(:b,1)] == df[:, [2,1]]
+    @test df[:, All(2,:a)] == df[:, [2,1]]
+    @test df[:, All(:b,:a)] == df[:, [2,1]]
+
+    @test df[:, All(1,1,2)] == df[:, 1:2]
+    @test df[:, All(:a,1,:b)] == df[:, 1:2]
+    @test df[:, All(:a,2,:b)] == df[:, 1:2]
+    @test df[:, All(:a,:b,2)] == df[:, 1:2]
+    @test df[:, All(2,1,:a)] == df[:, [2,1]]
+
+    df = DataFrame(a1=1, a2=2, b1=3, b2=4)
+    @test df[:, All(r"a", Not(r"1"))] == df[:, [1,2,4]]
+    @test df[:, All(Not(r"1"), r"a")] == df[:, [2,4,1]]
+end
+
 end # module

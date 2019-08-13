@@ -15,6 +15,9 @@ struct GroupedDataFrame{T<:AbstractDataFrame}
     ends::Vector{Int}    # ends of groups
 end
 
+Base.broadcastable(::GroupedDataFrame) =
+    throw(ArgumentError("broadcasting over `GroupedDataFrame`s is reserved"))
+
 """
     parent(gd::GroupedDataFrame)
 

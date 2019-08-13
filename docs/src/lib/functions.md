@@ -29,13 +29,16 @@ meltdf
 ## Basics
 
 ```@docs
+allowmissing
 allowmissing!
+categorical
 categorical!
 completecases
 copy
 DataFrame!
 deleterows!
 describe
+disallowmissing
 disallowmissing!
 dropmissing
 dropmissing!

@@ -156,7 +156,7 @@ julia> last(d, 6)
 `unstack` converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:
 
 ```jldoctest reshape
-julia> iris[:id] = 1:size(iris, 1)
+julia> iris.id = 1:size(iris, 1)
 1:150
 
 julia> longdf = melt(iris, [:Species, :id]);
@@ -293,13 +293,13 @@ julia> last(d, 6)
 
 This saves memory. To create the view, several AbstractVectors are defined:
 
-`:variable` column -- `EachRepeatedVector`  
+`:variable` column -- `EachRepeatedVector`
 This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.
 
-`:value` column -- `StackedVector`  
+`:value` column -- `StackedVector`
 This is provides a view of the original columns stacked together.
 
-Id columns -- `RepeatedVector`  
+Id columns -- `RepeatedVector`
 This repeats the original columns N times where N is the number of columns stacked.
 
 None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:
@@ -319,7 +319,7 @@ julia> first(d, 6)
 │ 5   │ SepalLength │ 5.0      │ setosa        │
 │ 6   │ SepalLength │ 5.4      │ setosa        │
 
-julia> x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df[:value])));
+julia> x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df.value)));
 
 julia> first(x, 6)
 

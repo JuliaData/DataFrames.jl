@@ -370,7 +370,7 @@ end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
-                               col_inds::Union{AbstractVector, Regex, Not}) where T
+                               col_inds::Union{AbstractVector, Regex, Not, Between, All}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -394,15 +394,15 @@ end
 end
 
 @inline Base.getindex(df::DataFrame, row_inds::Not,
-                      col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+                      col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     df[axes(df, 1)[row_inds], col_inds]
 
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     select(df, col_inds, copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     select(df, col_inds, copycols=false)
 
 ##############################################################################
@@ -537,7 +537,7 @@ end
 function Base.setindex!(df::DataFrame,
                         new_df::AbstractDataFrame,
                         row_inds::Union{AbstractVector, Not, Colon},
-                        col_inds::Union{AbstractVector, Regex, Not, Colon})
+                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
     idxs = index(df)[col_inds]
     if view(_names(df), idxs) != _names(new_df)
         Base.depwarn("in the future column names in source and target will have to match", :setindex!)
@@ -552,7 +552,7 @@ end
 function Base.setindex!(df::DataFrame,
                         mx::AbstractMatrix,
                         row_inds::Union{AbstractVector, Not, Colon},
-                        col_inds::Union{AbstractVector, Regex, Not, Colon})
+                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
     idxs = index(df)[col_inds]
     if size(mx, 2) != length(idxs)
         throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
@@ -905,7 +905,7 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 """
     allowmissing!(df::DataFrame, cols::Colon=:)
     allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
-    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
+    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
 
 Convert columns `cols` of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
@@ -934,7 +934,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-allowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+allowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}) =
     allowmissing!(df, index(df)[cols])
 
 allowmissing!(df::DataFrame, cols::Colon=:) =
@@ -943,7 +943,7 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
 """
     disallowmissing!(df::DataFrame, cols::Colon=:)
     disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
-    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
+    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
 
 Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
@@ -972,7 +972,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+disallowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}) =
     disallowmissing!(df, index(df)[cols])
 
 disallowmissing!(df::DataFrame, cols::Colon=:) =
@@ -989,7 +989,7 @@ disallowmissing!(df::DataFrame, cols::Colon=:) =
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
                  compress::Bool=false)
-    categorical!(df::DataFrame, cnames::Union{Regex, Not};
+    categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All};
                  compress::Bool=false)
     categorical!(df::DataFrame; compress::Bool=false)
 
@@ -1066,10 +1066,10 @@ function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
     df
 end
 
-categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
+categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All, Colon}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
+function categorical!(df::DataFrame; compress::Bool=false)
     for i in 1:size(df, 2)
         if eltype(df[!, i]) <: Union{AbstractString, Missing}
             df[!, i] = categorical(df[!, i], compress)
@@ -1135,7 +1135,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     end
     ncol(df2) == 0 && return df1
 
-    _names(df1) == _names(df2) || error("Column names do not match")
+    _names(df1) == _names(df2) || throw(ArgumentError("Column names do not match"))
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
     current_col = 0
@@ -1154,7 +1154,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
         for col in _columns(df1)
             resize!(col, nrows)
         end
-        @error "Error adding value to column $(names(df)[current_col])."
+        @error "Error adding value to column $(names(df1)[current_col])."
         rethrow(err)
     end
     return df1

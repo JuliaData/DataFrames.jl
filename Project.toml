@@ -1,6 +1,6 @@
 name = "DataFrames"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "0.19.1"
+version = "0.19.2"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
@@ -34,6 +34,7 @@ test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Random", "Test
 julia = "1"
 CategoricalArrays = ">= 0.5.4"
 Compat = "2.0.0"
+DataAPI = "1.0.1"
 InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = ">= 0.2.3"

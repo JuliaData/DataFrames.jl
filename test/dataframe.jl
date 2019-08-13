@@ -876,8 +876,8 @@ end
                                 nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                 first = [1, 1, "a", "a", Date(2000), 1],
                                 last = [4, missing, "d", missing, Date(2004), 2],
-                                eltype = [Int, Int, String, String, Date,
-                                          eltype(df[!, :catarray])])
+                                eltype = [Int, Union{Missing, Int}, String,
+                                          Union{Missing, String}, Date, CategoricalValue{Int, UInt32}])
 
     default_fields = [:mean, :min, :median, :max, :nunique, :nmissing, :eltype]
 
@@ -903,91 +903,6 @@ end
     @test_throws ArgumentError describe(df, :mean, :all)
 end
 
-@testset "the output of unstack" begin
-    df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
-                   Key = CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),
-                   Value = Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
-    # Check that reordering levels does not confuse unstack
-    levels!(df[!, 1], ["XXX", "Bob", "Batman"])
-    levels!(df[!, 2], ["YYY", "Color", "Mass"])
-    #Unstack specifying a row column
-    df2 = unstack(df, :Fish, :Key, :Value)
-    @test levels(df[!, 1]) == ["XXX", "Bob", "Batman"] # make sure we did not mess df[!, 1] levels
-    @test levels(df[!, 2]) == ["YYY", "Color", "Mass"] # make sure we did not mess df[!, 2] levels
-    #Unstack without specifying a row column
-    df3 = unstack(df, :Key, :Value)
-    #The expected output, XXX level should be dropped as it has no rows with this key
-    df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    Color = Union{String, Missing}["Red", "Grey"],
-                    Mass = Union{String, Missing}["12 g", "18 g"])
-    @test df2 ≅ df4
-    @test typeof(df2[!, :Fish]) <: CategoricalVector{Union{String, Missing}}
-    # first column stays as CategoricalArray in df3
-    @test df3 == df4
-    #Make sure unstack works with missing values at the start of the value column
-    df[1,:Value] = missing
-    df2 = unstack(df, :Fish, :Key, :Value)
-    #This changes the expected result
-    df4[1,:Mass] = missing
-    @test df2 ≅ df4
-
-    #The same as above but without CategoricalArray
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
-                   Key = ["Mass", "Color", "Mass", "Color"],
-                   Value = ["12 g", "Red", "18 g", "Grey"])
-    #Unstack specifying a row column
-    df2 = unstack(df, :Fish, :Key, :Value)
-    #Unstack without specifying a row column
-    df3 = unstack(df, :Key, :Value)
-    #The expected output, XXX level should be dropped as it has no rows with this key
-    df4 = DataFrame(Fish = ["Batman", "Bob"],
-                    Color = ["Grey", "Red"],
-                    Mass = ["18 g", "12 g"])
-    @test df2 ≅ df4
-    @test typeof(df2[!, :Fish]) <: Vector{String}
-    # first column stays as CategoricalArray in df3
-    @test df3 == df4
-    #Make sure unstack works with missing values at the start of the value column
-    allowmissing!(df, :Value)
-    df[1,:Value] = missing
-    df2 = unstack(df, :Fish, :Key, :Value)
-    #This changes the expected result
-    allowmissing!(df4, :Mass)
-    df4[2,:Mass] = missing
-    @test df2 ≅ df4
-
-    # test empty set of grouping variables
-    @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
-    @test_throws ArgumentError unstack(df, r"xxxxx", :Key, :Value)
-    @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
-    @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))),
-                                  :id, :variable, :value)
-
-    # test missing value in grouping variable
-    mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
-    @test unstack(melt(mdf, :id), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(melt(mdf, :id), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
-    @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
-
-    # test more than one grouping column
-    wide = DataFrame(id = 1:12,
-                     a  = repeat([1:3;], inner = [4]),
-                     b  = repeat([1:4;], inner = [3]),
-                     c  = randn(12),
-                     d  = randn(12))
-
-    long = stack(wide)
-    wide3 = unstack(long, [:id, :a], :variable, :value)
-    @test wide3 == wide[:, [1, 2, 4, 5]]
-
-    wide3 = unstack(long, r"^[ia]", :variable, :value)
-    @test wide3 == wide[:, [1, 2, 4, 5]]
-
-    df = DataFrame(A = 1:10, B = 'A':'J')
-    @test !(df[:,:] === df)
-end
-
 @testset "append!" begin
     df = DataFrame(A = 1:2, B = 1:2)
     df2 = DataFrame(A = 1:4, B = 1:4)
@@ -995,6 +910,8 @@ end
     @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
     @test df == df2
     @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    @test df == df2
+    @test_throws ArgumentError append!(df, DataFrame(A = 1:4, C = 1:4))
     @test df == df2
 
     dfx = DataFrame()
@@ -1024,7 +941,7 @@ end
     @test df == dfc
 
     names!(df, [:a, :b, :z])
-    @test_throws ErrorException append!(df, dfc)
+    @test_throws ArgumentError append!(df, dfc)
 end
 
 @testset "test categorical!" begin
@@ -1067,7 +984,9 @@ end
                    CategoricalArrays.CategoricalString{UInt32}]))
     @test all(map(<:, eltypes(categorical!(deepcopy(df), :)),
                   [CategoricalArrays.CategoricalString{UInt32},
-                   Char, Bool, Int,
+                   CategoricalArrays.CategoricalValue{Char,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
     @test all(map(<:, eltypes(categorical!(deepcopy(df), compress=true)),
                   [CategoricalArrays.CategoricalString{UInt8},
@@ -1101,85 +1020,12 @@ end
     df = DataFrame([["a", missing]])
     categorical!(df)
     @test df.x1 isa CategoricalVector{Union{Missing, String}}
-end
 
-@testset "unstack promotion to support missing values" begin
-    df = DataFrame([repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],
-                   [:id, :variable, :value])
-    udf = unstack(df, :variable, :value)
-    @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
-    @test udf == DataFrame([Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
-                            Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
-                            Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
-    @test isa(udf[!, 1], Vector{Int})
-    @test all(isa.(eachcol(udf)[2:end], Vector{Union{Int, Missing}}))
-    df = DataFrame([categorical(repeat(1:2, inner=4)),
-                       categorical(repeat('a':'d', outer=2)), categorical(1:8)],
-                   [:id, :variable, :value])
-    udf = unstack(df, :variable, :value)
-    @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
-    @test udf == DataFrame([Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
-                            Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
-                            Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
-    @test isa(udf[!, 1], CategoricalVector{Int})
-    @test all(isa.(eachcol(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
-end
-
-@testset "duplicate entries in unstack warnings" begin
-    df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
-                   id2=Union{Int, Missing}[1, 2, 1, 2],
-                   variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-    @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
-    @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
-    a = unstack(df, :id, :variable, :value)
-    @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
-    b = unstack(df, :variable, :value)
-    @test b ≅ DataFrame(id = [1, 2], id2 = [1, 2], a = [5, missing], b = [missing, 6])
-
-    df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
-    @test_nowarn unstack(df, :id, :variable, :value)
-    @test_nowarn unstack(df, :variable, :value)
-    a = unstack(df, :id, :variable, :value)
-    b = unstack(df, :variable, :value)
-    @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
-
-    df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
-    @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
-    @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :id, :variable, :value)
-end
-
-@testset "missing values in colkey" begin
-    df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
-                   variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
-                   value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, :variable, :value)
-    udf = unstack(df, :variable, :value)
-    @test names(udf) == [:id, :a, :b, :missing]
-    @test udf[!, :missing] ≅ [missing, 9.0, missing]
-    df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
-                   id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
-                   variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
-                   value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
-    udf = unstack(df, 3, 4)
-    @test names(udf) == [:id, :id2, :a, :b, :missing]
-    @test udf[!, :missing] ≅ [missing, 9.0, missing]
-end
-
-@testset "stack-unstack correctness" begin
-    x = DataFrame(rand(100, 50))
-    x[!, :id] = [1:99; missing]
-    x[!, :id2] = string.("a", x[!, :id])
-    x[!, :s] = [i % 2 == 0 ? randstring() : missing for i in 1:100]
-    allowmissing!(x, :x1)
-    x[1, :x1] = missing
-    y = melt(x, [:id, :id2])
-    @test y ≅ melt(x, r"id")
-    @test y ≅ melt(x, Not(Not(r"id")))
-    z = unstack(y, :id, :variable, :value)
-    @test all(isequal(z[!, n], x[!, n]) for n in names(z))
-    z = unstack(y, :variable, :value)
-    @test all(isequal(z[!, n], x[!, n]) for n in names(x))
+    df = DataFrame(x1=[1, 2])
+    categorical!(df)
+    @test df.x1 isa Vector{Int}
+    categorical!(df, :)
+    @test df.x1 isa CategoricalVector{Int}
 end
 
 @testset "rename" begin
@@ -1330,6 +1176,184 @@ end
     @test eltype(df.b) == Int
     @test eltype(df.c) == Int
     @test eltype(df.d) == Union{Int, Missing}
+end
+
+@testset "test disallowmissing" begin
+    df = DataFrame(x=Union{Int,Missing}[1,2,3],
+                   y=Union{Int,Missing}[1,2,3],
+                   z=[1,2,3])
+    for x in [df, view(df, :, :)]
+        y = disallowmissing(x)
+        @test y isa DataFrame
+        @test x == y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test eltypes(y) == [Int, Int, Int]
+
+        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Int, Int, Int]
+        end
+
+        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Int, Union{Missing, Int}, Int]
+        end
+
+        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Union{Int, Missing}, Int]
+        end
+
+        for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
+            y = disallowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Union{Int, Missing}, Int]
+        end
+    end
+
+    @test_throws MethodError disallowmissing(DataFrame(x=[missing]))
+    @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
+end
+
+@testset "test allowmissing" begin
+    df = DataFrame(x=Union{Int,Missing}[1,2,3],
+                   y=[1,2,3],
+                   z=[1,2,3])
+    for x in [df, view(df, :, :)]
+        y = allowmissing(x)
+        @test y isa DataFrame
+        @test x == y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test eltypes(y) == fill(Union{Missing, Int}, 3)
+
+        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == fill(Union{Missing, Int}, 3)
+        end
+
+        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Missing, Int}, Int, Int]
+        end
+
+        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Int, Union{Missing, Int}]
+        end
+
+        for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
+            y = allowmissing(x, colsel)
+            @test y isa DataFrame
+            @test x == y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test eltypes(y) == [Union{Int, Missing}, Int, Int]
+        end
+    end
+end
+
+@testset "test categorical" begin
+    df = DataFrame(x=["a", "b", "c"],
+                   y=["a", "b", missing],
+                   z=[1,2,3])
+    for x in [df, view(df, :, :)]
+        y = categorical(x)
+        @test y isa DataFrame
+        @test x ≅ y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test y.x isa CategoricalVector{String}
+        @test y.y isa CategoricalVector{Union{Missing, String}}
+        @test y.z isa Vector{Int}
+
+        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa CategoricalVector{String}
+            @test y.y isa CategoricalVector{Union{Missing, String}}
+            @test y.z isa CategoricalVector{Int}
+        end
+
+        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa CategoricalVector{String}
+            @test y.y isa Vector{Union{Missing, String}}
+            @test y.z isa Vector{Int}
+        end
+
+        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa Vector{String}
+            @test y.y isa Vector{Union{Missing, String}}
+            @test y.z isa CategoricalVector{Int}
+        end
+
+        for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
+            y = categorical(x, colsel)
+            @test y isa DataFrame
+            @test x ≅ y
+            @test x.x !== y.x
+            @test x.y !== y.y
+            @test x.z !== y.z
+            @test y.x isa Vector{String}
+            @test y.y isa Vector{Union{Missing, String}}
+            @test y.z isa Vector{Int}
+        end
+    end
 end
 
 @testset "similar" begin
@@ -1591,6 +1615,123 @@ end
     @test df.a !== df.b
     df = DataFrame(a=v, b=v, copycols=false)
     @test df.a === df.b
+end
+
+@testset "And and Between tests" begin
+    # we check dispatch here only
+    df = DataFrame(a=1, b=2, c=3)
+    completecases(df, All())
+    completecases(df, Between(1, 2))
+    dropmissing(df, All())
+    dropmissing(df, Between(1, 2))
+    dropmissing!(df, All())
+    dropmissing!(df, Between(1, 2))
+    disallowmissing(df, All())
+    disallowmissing(df, Between(1, 2))
+    allowmissing(df, All())
+    allowmissing(df, Between(1, 2))
+    categorical(df, All())
+    categorical(df, Between(1, 2))
+
+    df[1, All()]
+    df[1, Between(1,2)]
+    df[1:1, All()]
+    df[1:1, Between(1,2)]
+    df[Not(1), All()]
+    df[Not(1), Between(1,2)]
+    df[:, All()]
+    df[:, Between(1,2)]
+    df[!, All()]
+    df[!, Between(1,2)]
+
+    @view df[1, All()]
+    @view df[1, Between(1,2)]
+    @view df[1:1, All()]
+    @view df[1:1, Between(1,2)]
+    @view df[Not(1), All()]
+    @view df[Not(1), Between(1,2)]
+    @view df[:, All()]
+    @view df[:, Between(1,2)]
+    @view df[!, All()]
+    @view df[!, Between(1,2)]
+
+# TODO: enable after setindex! rules update
+#    df[1, All()] = (a=1, b=2, c=3)
+#    df[1, Between(1,2)] = (a=1, b=2)
+    df[1:1, All()] = df
+    df[1:1, Between(1,2)] = df[!, 1:2]
+# TODO: enable after setindex! rules update
+#    df[:, All()] = df
+#    df[:, Between(1,2)] = df[!, 1:2]
+    df[1:1, All()] = Matrix(df)
+    df[1:1, Between(1,2)] = Matrix(df[!, 1:2])
+# TODO: enable after setindex! rules update
+#    df[:, All()] = Matrix(df)
+#    df[:, Between(1,2)] = Matrix(df[!, 1:2])
+
+    df2 = vcat(df, df)
+    df2[Not(1), All()] = df
+    df2[Not(1), Between(1,2)] = df[!, 1:2]
+    df2[Not(1), All()] = Matrix(df)
+    df2[Not(1), Between(1,2)] = Matrix(df[!,1:2])
+
+    allowmissing!(df2, All())
+    allowmissing!(df2, Between(1,2))
+    disallowmissing!(df2, All())
+    disallowmissing!(df2, Between(1,2))
+    categorical!(df2, All())
+    categorical!(df2, Between(1,2))
+
+    dfr = df[1, :]
+    dfr[All()]
+    dfr[Between(1,2)]
+# TODO: enable after setindex! rules update
+#    dfr[All()] = (a=1, b=2, c=3)
+#    dfr[Between(1,2)] = (a=1, b=2)
+    @view dfr[All()]
+    @view dfr[Between(1,2)]
+
+    dfv = view(df, :, :)
+
+    dfv[1, All()]
+    dfv[1, Between(1,2)]
+    dfv[1:1, All()]
+    dfv[1:1, Between(1,2)]
+    dfv[Not(1), All()]
+    dfv[Not(1), Between(1,2)]
+    dfv[:, All()]
+    dfv[:, Between(1,2)]
+    dfv[!, All()]
+    dfv[!, Between(1,2)]
+
+    @view dfv[1, All()]
+    @view dfv[1, Between(1,2)]
+    @view dfv[1:1, All()]
+    @view dfv[1:1, Between(1,2)]
+    @view dfv[Not(1), All()]
+    @view dfv[Not(1), Between(1,2)]
+    @view dfv[:, All()]
+    @view dfv[:, Between(1,2)]
+    @view dfv[!, All()]
+    @view dfv[!, Between(1,2)]
+
+# TODO: enable after setindex! rules update
+#    dfv[1, All()] = (a=1, b=2, c=3)
+#    dfv[1, Between(1,2)] = (a=1, b=2)
+    dfv[1:1, All()] = df
+    dfv[1:1, Between(1,2)] = df[!, 1:2]
+    dfv[:, All()] = df
+    dfv[:, Between(1,2)] = df[!, 1:2]
+    dfv[1:1, All()] = Matrix(df)
+    dfv[1:1, Between(1,2)] = Matrix(df[!, 1:2])
+    dfv[:, All()] = Matrix(df)
+    dfv[:, Between(1,2)] = Matrix(df[!, 1:2])
+
+    df2v = view(vcat(df, df), :, :)
+    df2v[Not(1), All()] = df
+    df2v[Not(1), Between(1,2)] = df[!, 1:2]
+    df2v[Not(1), All()] = Matrix(df)
+    df2v[Not(1), Between(1,2)] = Matrix(df[!, 1:2])
 end
 
 end # module
