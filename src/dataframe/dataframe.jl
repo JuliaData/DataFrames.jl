@@ -509,7 +509,7 @@ function Base.setindex!(df::DataFrame,
     idxs = index(df)[col_inds]
     if length(v) != length(idxs)
         throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
-                                " value contains $(length(v)) elements")
+                                " value contains $(length(v)) elements"))
     end
     for (i, x) in enumerate(v)
         df[row_ind, i] = x
