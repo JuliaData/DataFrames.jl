@@ -237,7 +237,7 @@ function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
 
     bcf′ = Base.Broadcast.preprocess(crdf, bcf)
     for (i, col) in enumerate(crdf.cols)
-        crdf.df[!, col] = [bcf'[CartesianIndex(j, i)] for j in axes(crdf, 1)]
+        crdf.df[!, col] = [bcf′[CartesianIndex(j, i)] for j in axes(crdf.df, 1)]
     end
     crdf.df
 end

@@ -1152,8 +1152,10 @@ end
     @test df == refdf
 
     df = copy(refdf)
-    @test_throws ArgumentError df[!, 1:2] .= 'a'
-    @test df == refdf
+    df[!, 1:2] .= 'a'
+    @test Matrix(df) == ['a'  'a'  7.5  10.5  13.5
+                         'a'  'a'  8.5  11.5  14.5
+                         'a'  'a'  9.5  12.5  15.5]
 
     df = copy(refdf)
     v1 = df[!, 1]
