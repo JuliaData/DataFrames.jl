@@ -505,7 +505,7 @@ end
 function Base.setindex!(df::DataFrame,
                         v,
                         row_ind::Integer,
-                        col_inds::Union{AbstractVector, Regex, Not, Colon})
+                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
     idxs = index(df)[col_inds]
     if length(v) != length(idxs)
         throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
@@ -548,6 +548,21 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
+function Base.setindex!(df::DataFrame,
+                        new_df::AbstractDataFrame,
+                        row_inds::typeof(!),
+                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
+    idxs = index(df)[col_inds]
+    if view(_names(df), idxs) != _names(new_df)
+        throw(ArgumentError("Column names in source and target data frames do not match"))
+    end
+    for (j, col) in enumerate(idxs)
+        # make sure we make a copy on assignment
+        df[!, col] = new_df[:, j]
+    end
+    return df
+end
+
 # df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
 function Base.setindex!(df::DataFrame,
                         mx::AbstractMatrix,
@@ -560,6 +575,21 @@ function Base.setindex!(df::DataFrame,
     end
     for (j, col) in enumerate(idxs)
         df[row_inds, col] = view(mx, :, j)
+    end
+    return df
+end
+
+function Base.setindex!(df::DataFrame,
+                        mx::AbstractMatrix,
+                        row_inds::typeof(!),
+                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
+    idxs = index(df)[col_inds]
+    if size(mx, 2) != length(idxs)
+        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
+                                " matrix ($(size(mx, 2))) do not match"))
+    end
+    for (j, col) in enumerate(idxs)
+        df[!, col] = mx[:, j]
     end
     return df
 end

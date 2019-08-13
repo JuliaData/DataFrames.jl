@@ -129,7 +129,9 @@ so it is unsafe to use it afterwards.
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
                       this is allowed if `ncol(df) == 0 || length(v) == nrow(df)`;
-* `df[!, cols] = v` -> is currently disallowed, but is planned to be supported in the future;
+* `df[!, cols] = v` -> replaces existing columns `cols` in data frame `df` with copying;
+                       `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
+                       (in this case column names must match);
 
 Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
 In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
@@ -182,7 +184,7 @@ Additional rules:
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
-* the `df[!, cols] .= v` syntax is currently disallowed, but is planned to be supported in the future;
+* the `df[!, cols] .= v` replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;

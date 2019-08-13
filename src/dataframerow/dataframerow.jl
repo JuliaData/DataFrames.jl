@@ -101,7 +101,7 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 function Base.setindex!(df::DataFrame,
                         v::Union{DataFrameRow, NamedTuple, AbstractDict},
                         row_ind::Integer,
-                        col_inds::Union{AbstractVector, Regex, Not, Colon})
+                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
     idxs = index(df)[col_inds]
     if length(v) != length(idxs)
         throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
