@@ -17,8 +17,7 @@ notifications:
   email: false
 
 after_success:
-  - julia -e 'import DataFrams; cd(dirname(pathof(DataFrames)));
-              using Pkg; Pkg.add("Coverage"); using Coverage;
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage;
               Coveralls.submit(Coveralls.process_folder())'
 
 jobs:
