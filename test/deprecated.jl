@@ -1,9 +1,11 @@
 module TestDeprecated
 
-using Test, DataFrames, Random
+using Test, DataFrames, Random, Logging
 import DataFrames: identifier
 
 const ≅ = isequal
+
+old_logger = global_logger(NullLogger())
 
 # old sort(df; cols=...) syntax
 df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
@@ -482,5 +484,7 @@ end
         @test df[1, :B] === 0.0
     end
 end
+
+global_logger(old_logger)
 
 end # module
