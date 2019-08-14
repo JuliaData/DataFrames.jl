@@ -18,7 +18,7 @@ notifications:
 
 after_success:
   - julia -e 'import DataFrams; cd(dirname(pathof(DataFrames)));
-              Pkg.add("Coverage"); using Coverage;
+              using Pkg; Pkg.add("Coverage"); using Coverage;
               Coveralls.submit(Coveralls.process_folder())'
 
 jobs:
