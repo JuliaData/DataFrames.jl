@@ -1347,4 +1347,69 @@ end
     @test df == DataFrame(a=[[1000,1000,1000]])
 end
 
+@testset "broadcasting into df[!, cols]" begin
+    for selector in [1:2, Between(:x1, :x2), Not(r"xx"), [:x1, :x2]]
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= "a"
+        @test df == DataFrame(fill("a", 3, 2))
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= Ref((a=1,b=2))
+        @test df == DataFrame(fill((a=1,b=2), 3, 2))
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a" "b"]
+        @test df == DataFrame(["a" "b"
+                               "a" "b"
+                               "a" "b"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a", "b", "c"]
+        @test df == DataFrame(["a" "a"
+                               "b" "b"
+                               "c" "c"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= categorical(["a"])
+        @test df == DataFrame(["a" "a"
+                               "a" "a"
+                               "a" "a"])
+        @test df.x1 isa CategoricalVector
+        @test df.x2 isa CategoricalVector
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= DataFrame(["a" "b"])
+        @test df == DataFrame(["a" "b"
+                               "a" "b"
+                               "a" "b"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= DataFrame(["a" "d"
+                                      "b" "e"
+                                      "c" "f"])
+        @test df == DataFrame(["a" "d"
+                               "b" "e"
+                               "c" "f"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a" "d"
+                            "b" "e"
+                            "c" "f"]
+        @test df == DataFrame(["a" "d"
+                               "b" "e"
+                               "c" "f"])
+        @test df.x1 !== df.x2
+    end
+
+    df = DataFrame(x1=1:3, x2=4:6)
+    @test_throws ArgumentError df[!, [:x1, :x3]] .= "a"
+end
+
 end # module
