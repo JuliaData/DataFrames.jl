@@ -1717,19 +1717,16 @@ end
     @view df[!, All()]
     @view df[!, Between(1,2)]
 
-# TODO: enable after setindex! rules update
-#    df[1, All()] = (a=1, b=2, c=3)
-#    df[1, Between(1,2)] = (a=1, b=2)
+    df[1, All()] = (a=1, b=2, c=3)
+    df[1, Between(1,2)] = (a=1, b=2)
     df[1:1, All()] = df
     df[1:1, Between(1,2)] = df[!, 1:2]
-# TODO: enable after setindex! rules update
-#    df[:, All()] = df
-#    df[:, Between(1,2)] = df[!, 1:2]
+    df[:, All()] = df
+    df[:, Between(1,2)] = df[!, 1:2]
     df[1:1, All()] = Matrix(df)
     df[1:1, Between(1,2)] = Matrix(df[!, 1:2])
-# TODO: enable after setindex! rules update
-#    df[:, All()] = Matrix(df)
-#    df[:, Between(1,2)] = Matrix(df[!, 1:2])
+    df[:, All()] = Matrix(df)
+    df[:, Between(1,2)] = Matrix(df[!, 1:2])
 
     df2 = vcat(df, df)
     df2[Not(1), All()] = df
@@ -1747,9 +1744,8 @@ end
     dfr = df[1, :]
     dfr[All()]
     dfr[Between(1,2)]
-# TODO: enable after setindex! rules update
-#    dfr[All()] = (a=1, b=2, c=3)
-#    dfr[Between(1,2)] = (a=1, b=2)
+    dfr[All()] = (a=1, b=2, c=3)
+    dfr[Between(1,2)] = (a=1, b=2)
     @view dfr[All()]
     @view dfr[Between(1,2)]
 

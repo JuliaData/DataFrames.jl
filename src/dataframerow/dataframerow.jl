@@ -128,13 +128,8 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     end
 end
 
-Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
-    col = parentcols(index(r), idx)
-    if !(col isa Int)
-        Base.depwarn("implicit broadcasting in DataFrameRow assignment is deprecated", :setindex!)
-    end
-    setindex!(parent(r), value, row(r), col)
-end
+Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
+    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 

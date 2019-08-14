@@ -827,18 +827,67 @@ end
     # `df[row, cols] = v` -> set row `row` of columns `cols` in-place;
     # the same as `dfr = df[row, cols]; dfr[:] = v`
 
-    # TODO: add these tests after deprecation period
-    # here is the example current behavior (that we have to keep) that disallows any tests:
-    #
-    # julia> df = DataFrame(a=[[1,2]],b=[[1,2]]);
-    # julia> dfr = df[1, :];
-    # julia> dfr[:] = [10, 11];
-    # julia> df
-    # 1×2 DataFrame
-    # │ Row │ a        │ b        │
-    # │     │ Array…   │ Array…   │
-    # ├─────┼──────────┼──────────┤
-    # │ 1   │ [10, 11] │ [10, 11] │
+    df = DataFrame(a=[[1,2]],b=[[1,2]])
+    dfr = df[1, :];
+    @test_throws MethodError dfr[:] = [10, 11]
+    @test df == DataFrame(a=[[1,2]],b=[[1,2]])
+    @test_throws MethodError df[1, :] = [10, 11]
+    @test df == DataFrame(a=[[1,2]],b=[[1,2]])
+
+    df = DataFrame(a=1,b=2)
+    df[1, :] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+
+    df = DataFrame(a=1,b=2)
+    df[1, :] = (10, 11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = (10, 11)
+    @test df == DataFrame(a=10,b=11)
+
+    @test_throws DimensionMismatch df[1, :] = [1, 2, 3]
+    @test_throws DimensionMismatch dfr[:] = [1, 2, 3]
+
+    df = DataFrame(a=1,b=2)
+    df[1, :] = Dict(:a=>10, :b=>11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    @test_throws ArgumentError df[1, :] = Dict(:a=>10, :c=>11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    @test_throws DimensionMismatch df[1, :] = Dict(:a=>10, :b=>11, :c=>12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    df[1, :] = (a=10, b=11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    @test_throws ArgumentError df[1, :] = (a=10, c=11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    @test_throws ArgumentError df[1, :] = (b=10, a=11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    @test_throws DimensionMismatch df[1, :] = (a=10, b=11, c=12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    df[1, :] = DataFrame(a=10, b=11)[1, :]
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    @test_throws ArgumentError df[1, :] = DataFrame(a=10, c=11)[1, :]
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    @test_throws ArgumentError df[1, :] = DataFrame(b=10, a=11)[1, :]
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    @test_throws DimensionMismatch df[1, :] = DataFrame(a=10, b=11, c=12)[1, :]
+    @test df == DataFrame(a=1,b=2)
 
     # `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`
 
@@ -950,7 +999,67 @@ end
 
     # `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
 
-    # TODO: add these tests after deprecation period. Same issues as with DataFrame case
+    df = view(DataFrame(a=[[1,2]],b=[[1,2]]), :, :)
+    dfr = df[1, :];
+    @test_throws MethodError dfr[:] = [10, 11]
+    @test df == DataFrame(a=[[1,2]],b=[[1,2]])
+    @test_throws MethodError df[1, :] = [10, 11]
+    @test df == DataFrame(a=[[1,2]],b=[[1,2]])
+
+    df = view(DataFrame(a=1,b=2), :, :)
+    df[1, :] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+    df = view(DataFrame(a=1,b=2), :, :)
+    dfr = df[1, :]
+    dfr[:] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+
+    df = view(DataFrame(a=1,b=2), :, :)
+    df[1, :] = (10, 11)
+    @test df == DataFrame(a=10,b=11)
+    df = view(DataFrame(a=1,b=2), :, :)
+    dfr = df[1, :]
+    dfr[:] = (10, 11)
+    @test df == DataFrame(a=10,b=11)
+
+    @test_throws DimensionMismatch df[1, :] = [1, 2, 3]
+    @test_throws DimensionMismatch dfr[:] = [1, 2, 3]
+
+    df = view(DataFrame(a=1,b=2), :, :)
+    df[1, :] = Dict(:a=>10, :b=>11)
+    @test df == DataFrame(a=10,b=11)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws ArgumentError df[1, :] = Dict(:a=>10, :c=>11)
+    @test df == DataFrame(a=1,b=2)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws DimensionMismatch df[1, :] = Dict(:a=>10, :b=>11, :c=>12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = view(DataFrame(a=1,b=2), :, :)
+    df[1, :] = (a=10, b=11)
+    @test df == DataFrame(a=10,b=11)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws ArgumentError df[1, :] = (a=10, c=11)
+    @test df == DataFrame(a=1,b=2)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws ArgumentError df[1, :] = (b=10, a=11)
+    @test df == DataFrame(a=1,b=2)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws DimensionMismatch df[1, :] = (a=10, b=11, c=12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = view(DataFrame(a=1,b=2), :, :)
+    df[1, :] = DataFrame(a=10, b=11)[1, :]
+    @test df == DataFrame(a=10,b=11)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws ArgumentError df[1, :] = DataFrame(a=10, c=11)[1, :]
+    @test df == DataFrame(a=1,b=2)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws ArgumentError df[1, :] = DataFrame(b=10, a=11)[1, :]
+    @test df == DataFrame(a=1,b=2)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws DimensionMismatch df[1, :] = DataFrame(a=10, b=11, c=12)[1, :]
+    @test df == DataFrame(a=1,b=2)
 
     # `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
 
@@ -1056,7 +1165,99 @@ end
     #                    `v` can be an `AbstractVector` or `v` can be a `NamedTuple` or `DataFrameRow`
     #                    when column names must match;
 
-    # TODO: add these tests after deprecation period. Same issues as with DataFrame case
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = Dict(:a=>10, :b=>11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[:] = Dict(:a=>10, :c=>11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = Dict(:a=>10, :b=>11, :c=>12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = (a=10, b=11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[:] = (a=10, c=11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[:] = (b=10, a=11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = (a=10, b=11, c=12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = DataFrame(a=10, b=11)[1, :]
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[:] = DataFrame(a=10, c=11)[1, :]
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[:] = DataFrame(b=10, a=11)[1, :]
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = DataFrame(a=10, b=11, c=12)[1, :]
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = Dict(:a=>10, :b=>11)
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[Not(3)] = Dict(:a=>10, :c=>11)
+    @test df == DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = Dict(:a=>10, :b=>11, :c=>12)
+    @test df == DataFrame(a=1,b=2, c=3)
+
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = (a=10, b=11)
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[Not(3)] = (a=10, c=11)
+    @test df == DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[Not(3)] = (b=10, a=11)
+    @test df == DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = (a=10, b=11, c=12)
+    @test df == DataFrame(a=1,b=2, c=3)
+
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = DataFrame(a=10, b=11)[1, :]
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[Not(3)] = DataFrame(a=10, c=11)[1, :]
+    @test df == DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws ArgumentError dfr[Not(3)] = DataFrame(b=10, a=11)[1, :]
+    @test df == DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1,b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = DataFrame(a=10, b=11, c=12)[1, :]
+    @test df == DataFrame(a=1,b=2, c=3)
 end
 
 @testset "setindex! with ! or : and multiple cols" begin
