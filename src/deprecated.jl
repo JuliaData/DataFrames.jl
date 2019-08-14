@@ -1466,20 +1466,10 @@ end
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
                      col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), col_inds); df)
 
-# df[SingleRowIndex, MultiColumnIndex] = Single Item
-@deprecate setindex!(df::DataFrame, v::Any, row_ind::Integer,
-                     col_inds::AbstractVector{<:ColumnIndex}) (df[row_ind, col_inds] .= Ref(v); df)
-
 # df[MultiRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_ind::ColumnIndex)
-    setindex!(df, v, findall(row_inds), col_ind)
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Integer},
+                        row_inds::AbstractVector,
                         col_ind::ColumnIndex)
     insert_multiple_entries!(df, v, row_inds, col_ind)
     Base.depwarn("implicit broadcasting in setindex! is deprecated; " *
@@ -1490,27 +1480,10 @@ end
 # df[MultiRowIndex, MultiColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Integer},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Integer},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
+                        row_inds::AbstractVector,
+                        col_inds::AbstractVector)
+    col_inds_norm = index(df)[col_inds]
+    for col_ind in col_inds_norm
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
     Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
@@ -1521,27 +1494,10 @@ end
 # df[MultiRowIndex, MultiColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, findall(row_inds), findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, findall(row_inds), col_inds)
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Integer},
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_inds::AbstractVector{<:Integer},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
+                        row_inds::AbstractVector,
+                        col_inds::AbstractVector)
+    col_inds_norm = index(df)[col_inds]
+    for col_ind in col_inds_norm
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
     Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
@@ -1576,93 +1532,3 @@ end
 import Base: setproperty!
 @deprecate setproperty!(df::DataFrame, col_ind::Symbol, v) (df[!, col_ind] .= v)
 @deprecate setproperty!(df::SubDataFrame, col_ind::Symbol, v) (df[:, col_ind] .= v)
-
-##### BEGIN: There methods duplicate functionality but are needed to resolve method call ambiuguities
-
-function Base.setindex!(df::DataFrame,
-                        new_df::AbstractDataFrame,
-                        row_inds::AbstractVector{<:Integer},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    idxs = index(df)[col_inds]
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = new_df[!, j]
-    end
-    if names(df)[idxs] != names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        new_df::AbstractDataFrame,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    idxs = index(df)[col_inds]
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = new_df[!, j]
-    end
-    if names(df)[idxs] != names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        mx::AbstractMatrix,
-                        row_inds::AbstractVector{<:Integer},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    idxs = index(df)[col_inds]
-    if size(mx, 2) != length(idxs)
-        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and a" *
-                                " matrix ($(size(mx, 2))) do not match"))
-    end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = view(mx, :, j)
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        mx::AbstractMatrix,
-                        row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{<:ColumnIndex})
-    idxs = index(df)[col_inds]
-    if size(mx, 2) != length(idxs)
-        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and a" *
-                                " matrix ($(size(mx, 2))) do not match"))
-    end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = view(mx, :, j)
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{<:Integer},
-                        col_ind::ColumnIndex)
-    if length(v) == length(df[row_inds, col_ind])
-        x = df[!, col_ind]
-        x[row_inds] = v
-    else
-        insert_multiple_entries!(df, v, row_inds, col_ind)
-        Base.depwarn("implicit vector broadcasting in setindex! is deprecated", :setindex!)
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::AbstractVector{Bool},
-                        col_ind::ColumnIndex)
-    if length(v) == length(df[row_inds, col_ind])
-        x = df[!, col_ind]
-        x[row_inds] = v
-    else
-        insert_multiple_entries!(df, v, row_inds, col_ind)
-        Base.depwarn("implicit vector broadcasting in setindex! is deprecated", :setindex!)
-    end
-    return df
-end
-
-##### END: duplicate methods
