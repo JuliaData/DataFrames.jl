@@ -1024,6 +1024,20 @@ end
 
     @test_throws DimensionMismatch df[1, :] = [1, 2, 3]
     @test_throws DimensionMismatch dfr[:] = [1, 2, 3]
+    @test_throws DimensionMismatch df[1, 1:2] = 3
+    @test_throws DimensionMismatch dfr[:] = 3
+
+    # numbers are iterable
+    dfr[1:1] = 100
+    @test df == DataFrame(a=100, b=11)
+    df[1, 1:1] = 1000
+    @test df == DataFrame(a=1000, b=11)
+
+    # so are strings
+    dfr[1:1] = "d"
+    @test df == DataFrame(a=100, b=11)
+    df[1, 1:1] = "e"
+    @test df == DataFrame(a=101, b=11)
 
     df = view(DataFrame(a=1,b=2), :, :)
     df[1, :] = Dict(:a=>10, :b=>11)

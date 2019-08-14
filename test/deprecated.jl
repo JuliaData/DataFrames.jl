@@ -371,7 +371,6 @@ end
         df[[true,false,false,true], 2:3] = df[1:2,1:2]
 
         # scalar broadcasting assignment of subtables
-        df[1, 1:2] = 3
         df[1:2, 1:2] = 3
         df[[true,false,false,true], 2:3] = 3
 
