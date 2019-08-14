@@ -1,6 +1,6 @@
 module TestReshape
 
-using Test, DataFrames, Random
+using Test, DataFrames, Random, Logging
 const ≅ = isequal
 
 @testset "the output of unstack" begin
@@ -145,9 +145,10 @@ end
                    variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
     @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
     @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
-    a = unstack(df, :id, :variable, :value)
+    a, b = with_logger(NullLogger()) do
+        unstack(df, :id, :variable, :value), unstack(df, :variable, :value)
+    end
     @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
-    b = unstack(df, :variable, :value)
     @test b ≅ DataFrame(id = [1, 2], id2 = [1, 2], a = [5, missing], b = [missing, 6])
 
     df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
@@ -167,7 +168,9 @@ end
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
     @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, :variable, :value)
-    udf = unstack(df, :variable, :value)
+    udf = with_logger(NullLogger()) do
+        unstack(df, :variable, :value)
+    end
     @test names(udf) == [:id, :a, :b, :missing]
     @test udf[!, :missing] ≅ [missing, 9.0, missing]
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
@@ -175,7 +178,9 @@ end
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
     @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
-    udf = unstack(df, 3, 4)
+    udf = with_logger(NullLogger()) do
+        unstack(df, 3, 4)
+    end
     @test names(udf) == [:id, :id2, :a, :b, :missing]
     @test udf[!, :missing] ≅ [missing, 9.0, missing]
 end
