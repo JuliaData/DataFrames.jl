@@ -1584,11 +1584,11 @@ function Base.setindex!(df::DataFrame,
                         row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{<:ColumnIndex})
     idxs = index(df)[col_inds]
-    if names(df)[idxs] != names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
-    end
     for (j, col) in enumerate(idxs)
         df[row_inds, col] = new_df[!, j]
+    end
+    if names(df)[idxs] != names(new_df)
+        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
     end
     return df
 end
@@ -1598,11 +1598,11 @@ function Base.setindex!(df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
     idxs = index(df)[col_inds]
-    if names(df)[idxs] != names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
-    end
     for (j, col) in enumerate(idxs)
         df[row_inds, col] = new_df[!, j]
+    end
+    if names(df)[idxs] != names(new_df)
+        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
     end
     return df
 end
@@ -1661,50 +1661,6 @@ function Base.setindex!(df::DataFrame,
     else
         insert_multiple_entries!(df, v, row_inds, col_ind)
         Base.depwarn("implicit vector broadcasting in setindex! is deprecated", :setindex!)
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        v,
-                        row_ind::Integer,
-                        col_inds::Colon)
-    idxs = index(df)[col_inds]
-    if length(v) != length(idxs)
-        throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
-                                " value contains $(length(v)) elements"))
-    end
-    for (i, x) in enumerate(v)
-        df[row_ind, i] = x
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        new_df::AbstractDataFrame,
-                        row_inds::Union{AbstractVector, Not, Colon},
-                        col_inds::Colon)
-    idxs = index(df)[col_inds]
-    if view(_names(df), idxs) != _names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
-    end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = new_df[!, j]
-    end
-    return df
-end
-
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::Colon,
-                        col_ind::ColumnIndex)
-    x = df[!, col_ind]
-    try
-        x[row_inds] = v
-    catch
-        insert_multiple_entries!(df, v, 1:nrow(df), col_ind)
-        Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
-                     "write `df[row_inds, col_ind] .= v` instead", :setindex!)
     end
     return df
 end

@@ -1059,6 +1059,42 @@ end
     # TODO: add these tests after deprecation period. Same issues as with DataFrame case
 end
 
+@testset "setindex! with ! or : and multiple cols" begin
+    df = DataFrame(fill("x", 3, 4))
+    df[!, :] = DataFrame(reshape(1:12, 3, :))
+    @test df == DataFrame(reshape(1:12, 3, :))
+    @test_throws ArgumentError df[!, :] = DataFrame(fill(1, 3, 4))[:, [3,2,1]]
+    @test_throws ArgumentError df[!, :] = DataFrame(fill(1, 3, 4))[1:2, :]
+
+    df = DataFrame(fill("x", 3, 4))
+    df[!, Not(4)] = DataFrame(reshape(1:12, 3, :))[:, 1:3]
+    @test df[:, 1:3] == DataFrame(reshape(1:12, 3, :))[:, 1:3]
+
+    df = DataFrame(fill("x", 3, 4))
+    df[!, :] = reshape(1:12, 3, :)
+    @test df == DataFrame(reshape(1:12, 3, :))
+
+    df = DataFrame(fill("x", 3, 4))
+    df[!, Not(4)] = reshape(1:12, 3, :)[:, 1:3]
+    @test df[:, 1:3] == DataFrame(reshape(1:12, 3, :))[:, 1:3]
+
+    dfv = view(df, :, :)
+    @test_throws ArgumentError dfv[!, :] = DataFrame(reshape(1:12, 3, :))
+    @test_throws ArgumentError dfv[!, :] = reshape(1:12, 3, :)
+
+    for rows in [:, 1:3], cols in [:, r"", Not(r"xx"), 1:4]
+        df = DataFrame(ones(3,4))
+        df[rows, cols] = DataFrame(reshape(1:12, 3, :))
+        @test df == DataFrame(reshape(1:12, 3, :))
+    end
+
+    for rows in [:, 1:3], cols in [:, r"", Not(r"xx"), 1:4]
+        df = DataFrame(ones(3,4))
+        df[rows, cols] = reshape(1:12, 3, :)
+        @test df == DataFrame(reshape(1:12, 3, :))
+    end
+end
+
 @testset "old setindex! tests adjusted to new rules" begin
     df = DataFrame(reshape(1:12, 4, :))
 

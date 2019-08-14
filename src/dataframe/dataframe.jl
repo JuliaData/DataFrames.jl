@@ -502,96 +502,110 @@ end
 # the method for value of type DataFrameRow, AbstractDict and NamedTuple
 # is defined in dataframerow.jl
 
-function Base.setindex!(df::DataFrame,
-                        v,
-                        row_ind::Integer,
-                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
-    idxs = index(df)[col_inds]
-    if length(v) != length(idxs)
-        throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
-                                " value contains $(length(v)) elements"))
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v,
+                                  row_ind::Integer,
+                                  col_inds::$(T))
+        idxs = index(df)[col_inds]
+        if length(v) != length(idxs)
+            throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
+                                    " value contains $(length(v)) elements"))
+        end
+        for (i, x) in enumerate(v)
+            df[row_ind, i] = x
+        end
+        return df
     end
-    for (i, x) in enumerate(v)
-        df[row_ind, i] = x
-    end
-    return df
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::Union{AbstractVector, Not, Colon},
-                        col_ind::ColumnIndex)
-    x = df[!, col_ind]
-    try
-        x[row_inds] = v
-    catch
-        insert_multiple_entries!(df, v, row_inds, col_ind)
-        Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
-                     "write `df[row_inds, col_ind] .= v` instead", :setindex!)
+for T in (:AbstractVector, :Not, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::AbstractVector,
+                                  row_inds::$(T),
+                                  col_ind::ColumnIndex)
+        x = df[!, col_ind]
+        try
+            x[row_inds] = v
+        catch
+            insert_multiple_entries!(df, v, axes(df, 1)[row_inds], col_ind)
+            Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
+                         "write `df[row_inds, col_ind] .= v` instead", :setindex!)
+        end
+        return df
     end
-    return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractDataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::AbstractDataFrame,
-                        row_inds::Union{AbstractVector, Not, Colon},
-                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
-    idxs = index(df)[col_inds]
-    if view(_names(df), idxs) != _names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
+for T1 in (:AbstractVector, :Not, :Colon),
+    T2 in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  new_df::AbstractDataFrame,
+                                  row_inds::$(T1),
+                                  col_inds::$(T2))
+        idxs = index(df)[col_inds]
+        for (j, col) in enumerate(idxs)
+            df[row_inds, col] = new_df[!, j]
+        end
+        if view(_names(df), idxs) != _names(new_df)
+            Base.depwarn("in the future column names in source and target will have to match", :setindex!)
+        end
+        return df
     end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = new_df[!, j]
-    end
-    return df
 end
 
-function Base.setindex!(df::DataFrame,
-                        new_df::AbstractDataFrame,
-                        row_inds::typeof(!),
-                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
-    idxs = index(df)[col_inds]
-    if view(_names(df), idxs) != _names(new_df)
-        throw(ArgumentError("Column names in source and target data frames do not match"))
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  new_df::AbstractDataFrame,
+                                  row_inds::typeof(!),
+                                  col_inds::$(T))
+        idxs = index(df)[col_inds]
+        if view(_names(df), idxs) != _names(new_df)
+            throw(ArgumentError("Column names in source and target data frames do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            # make sure we make a copy on assignment
+            df[!, col] = new_df[:, j]
+        end
+        return df
     end
-    for (j, col) in enumerate(idxs)
-        # make sure we make a copy on assignment
-        df[!, col] = new_df[:, j]
-    end
-    return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
-function Base.setindex!(df::DataFrame,
-                        mx::AbstractMatrix,
-                        row_inds::Union{AbstractVector, Not, Colon},
-                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
-    idxs = index(df)[col_inds]
-    if size(mx, 2) != length(idxs)
-        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
-                                " matrix ($(size(mx, 2))) do not match"))
+for T1 in (:AbstractVector, :Not, :Colon),
+    T2 in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  mx::AbstractMatrix,
+                                  row_inds::$(T1),
+                                  col_inds::$(T2))
+        idxs = index(df)[col_inds]
+        if size(mx, 2) != length(idxs)
+            throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
+                                    " matrix ($(size(mx, 2))) do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            df[row_inds, col] = view(mx, :, j)
+        end
+        return df
     end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = view(mx, :, j)
-    end
-    return df
 end
 
-function Base.setindex!(df::DataFrame,
-                        mx::AbstractMatrix,
-                        row_inds::typeof(!),
-                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
-    idxs = index(df)[col_inds]
-    if size(mx, 2) != length(idxs)
-        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
-                                " matrix ($(size(mx, 2))) do not match"))
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  mx::AbstractMatrix,
+                                  row_inds::typeof(!),
+                                  col_inds::$(T))
+        idxs = index(df)[col_inds]
+        if size(mx, 2) != length(idxs)
+            throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
+                                    " matrix ($(size(mx, 2))) do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            df[!, col] = mx[:, j]
+        end
+        return df
     end
-    for (j, col) in enumerate(idxs)
-        df[!, col] = mx[:, j]
-    end
-    return df
 end
 
 ##############################################################################

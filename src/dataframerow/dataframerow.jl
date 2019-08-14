@@ -98,32 +98,34 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVect
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-function Base.setindex!(df::DataFrame,
-                        v::Union{DataFrameRow, NamedTuple, AbstractDict},
-                        row_ind::Integer,
-                        col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon})
-    idxs = index(df)[col_inds]
-    if length(v) != length(idxs)
-        throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
-                                " value contains $(length(v)) elements"))
-    end
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::Union{DataFrameRow, NamedTuple, AbstractDict},
+                                  row_ind::Integer,
+                                  col_inds::$(T))
+        idxs = index(df)[col_inds]
+        if length(v) != length(idxs)
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
+                                    " value contains $(length(v)) elements"))
+        end
 
-    if !(v isa AbstractDict || all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v))))
-        mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
-        throw(ArgumentError("Selected column names do not match the names in assigned value in" *
-                            " positions $(join(mismatched, ", ", " and "))"))
-    end
-    if v isa AbstractDict
-        for n in view(_names(df), idxs)
-            if !haskey(v, n)
-                throw(ArgumentError("Column $n not found in source dictionary"))
+        if !(v isa AbstractDict || all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v))))
+            mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
+            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
+                                " positions $(join(mismatched, ", ", " and "))"))
+        end
+        if v isa AbstractDict
+            for n in view(_names(df), idxs)
+                if !haskey(v, n)
+                    throw(ArgumentError("Column $n not found in source dictionary"))
+                end
             end
         end
+        for (col, val) in pairs(v)
+            df[row_ind, col] = val
+        end
+        return df
     end
-    for (col, val) in pairs(v)
-        df[row_ind, col] = val
-    end
-    return df
 end
 
 Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
