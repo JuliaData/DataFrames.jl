@@ -526,9 +526,9 @@ function Base.setindex!(df::DataFrame,
     try
         x[row_inds] = v
     catch
+        insert_multiple_entries!(df, v, row_inds, col_ind)
         Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
                      "write `df[row_inds, col_ind] .= v` instead", :setindex!)
-        insert_multiple_entries!(df, v, row_inds, col_ind)
     end
     return df
 end

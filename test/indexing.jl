@@ -1059,4 +1059,32 @@ end
     # TODO: add these tests after deprecation period. Same issues as with DataFrame case
 end
 
+@testset "old setindex! tests adjusted to new rules" begin
+    df = DataFrame(reshape(1:12, 4, :))
+
+    @test_throws MethodError df[1, :] = df[1:1, :]
+
+    df[1:2, :] = df[3:4, :]
+    @test df == DataFrame([3  7  11
+                           4  8  12
+                           3  7  11
+                           4  8  12])
+
+    df[[true,false,true,false], :] = df[[2,4], :]
+    @test df == DataFrame([4  8  12
+                           4  8  12
+                           4  8  12
+                           4  8  12])
+
+    @test_throws DimensionMismatch df[1, :] = 1
+
+    df[:, 2] = ones(4)
+    @test df == DataFrame([4  1  12
+                           4  1  12
+                           4  1  12
+                           4  1  12])
+
+    @test_throws InexactError df[:, 2] = fill(1.5, 4)
+end
+
 end # module

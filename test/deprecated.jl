@@ -349,25 +349,15 @@ end
     end
 
     @testset "old setindex! tests" begin
-        missing_df = DataFrame()
-        df = DataFrame(Matrix{Int}(undef, 4, 3))
-
-        # Assignment of rows
-        df[1, :] = df[1:1, :]
-        df[1:2, :] = df[1:2, :]
-        df[[true,false,false,true], :] = df[2:3, :]
+        df = DataFrame(reshape(1:12, 4, :))
 
         # Scalar broadcasting assignment of rows
-        df[1, :] = 1
         df[1:2, :] = 1
         df[[true,false,false,true], :] = 3
 
         # Vector broadcasting assignment of rows
         df[1:2, :] = [2,3]
         df[[true,false,false,true], :] = [2,3]
-
-        # Assignment of columns
-        df[:, 2] = ones(4)
 
         # Broadcasting assignment of columns
         df[:, 1] = 1
