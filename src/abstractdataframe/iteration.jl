@@ -82,6 +82,10 @@ Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
     DataFrameRow(parent(itr.df), itr.index, rows(itr.df)[i])
 
+Base.getproperty(df::DataFrameRows, col_ind::Symbol) = getproperty(itr.df, col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(df::DataFrameRows, private::Bool=false) = names(itr.df)
+
 # Iteration by columns
 """
     DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
@@ -161,6 +165,10 @@ end
     @boundscheck checkbounds(itr, j)
     @inbounds itr.df[!, j]
 end
+
+Base.getproperty(df::DataFrameColumns, col_ind::Symbol) = getproperty(itr.df, col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(df::DataFrameColumns, private::Bool=false) = names(itr.df)
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
