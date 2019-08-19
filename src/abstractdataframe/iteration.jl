@@ -82,9 +82,9 @@ Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
     DataFrameRow(parent(parent(itr)), getfield(itr, :index), rows(parent(itr))[i])
 
-Base.getproperty(df::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(df::DataFrameRows, private::Bool=false) = names(parent(itr))
+Base.propertynames(itr::DataFrameRows, private::Bool=false) = names(parent(itr))
 
 # Iteration by columns
 """
@@ -166,9 +166,9 @@ end
     @inbounds parent(itr)[!, j]
 end
 
-Base.getproperty(df::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(df::DataFrameColumns, private::Bool=false) = names(parent(itr))
+Base.propertynames(itr::DataFrameColumns, private::Bool=false) = names(parent(itr))
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
