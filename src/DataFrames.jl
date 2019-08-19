@@ -20,7 +20,8 @@ using Tables, TableTraits, IteratorInterfaceExtensions
 
 import DataAPI.All,
        DataAPI.Between,
-       DataAPI.describe
+       DataAPI.describe,
+       Tables.columnindex
 
 export AbstractDataFrame,
        All,
@@ -35,7 +36,7 @@ export AbstractDataFrame,
        aggregate,
        by,
        categorical!,
-       Tables.columnindex,
+       columnindex,
        combine,
        completecases,
        deleterows!,
