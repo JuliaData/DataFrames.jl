@@ -75,16 +75,16 @@ x  3
 eachrow(df::AbstractDataFrame) = DataFrameRows(df, index(df))
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
-Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
+Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
-    DataFrameRow(itr.df, itr.index, i)
+    DataFrameRow(parent(itr), getfield(itr, :index), i)
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
-    DataFrameRow(parent(itr.df), itr.index, rows(itr.df)[i])
+    DataFrameRow(parent(parent(itr)), getfield(itr, :index), rows(parent(itr))[i])
 
-Base.getproperty(df::DataFrameRows, col_ind::Symbol) = getproperty(itr.df, col_ind)
+Base.getproperty(df::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(df::DataFrameRows, private::Bool=false) = names(itr.df)
+Base.propertynames(df::DataFrameRows, private::Bool=false) = names(parent(itr))
 
 # Iteration by columns
 """
@@ -152,23 +152,23 @@ julia> collect(eachcol(df, true))
     end
 end
 
-Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
+Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
                                                      Pair{Symbol, AbstractVector}}, j::Int)
     @boundscheck checkbounds(itr, j)
-    @inbounds _names(itr.df)[j] => itr.df[!, j]
+    @inbounds _names(parent(itr))[j] => parent(itr)[!, j]
 end
 
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector}, j::Int)
     @boundscheck checkbounds(itr, j)
-    @inbounds itr.df[!, j]
+    @inbounds parent(itr)[!, j]
 end
 
-Base.getproperty(df::DataFrameColumns, col_ind::Symbol) = getproperty(itr.df, col_ind)
+Base.getproperty(df::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(df::DataFrameColumns, private::Bool=false) = names(itr.df)
+Base.propertynames(df::DataFrameColumns, private::Bool=false) = names(parent(itr))
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
@@ -227,8 +227,8 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     DataFrame(vs, _names(df), copycols = false)
 end
 
-Base.parent(dfrs::DataFrameRows) = dfrs.df
-Base.parent(dfcs::DataFrameColumns) = dfcs.df
+Base.parent(dfrs::DataFrameRows) = getfield(dfrs, :df)
+Base.parent(dfcs::DataFrameColumns) = getfield(dfcs, :df)
 
 function Base.show(io::IO, dfrs::DataFrameRows;
                    allrows::Bool = !get(io, :limit, false),
