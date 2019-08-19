@@ -48,7 +48,7 @@ In broadcasting `AbstractDataFrame` behavior is similar to a `Matrix`.
 
 A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`,
 broadcasting and broadcasting assignment for data frames is given in
-https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/.
+the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/) of the manual.
 
 """
 abstract type AbstractDataFrame end
