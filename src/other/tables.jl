@@ -1,5 +1,3 @@
-using Tables, TableTraits, IteratorInterfaceExtensions
-
 Tables.istable(::Type{<:AbstractDataFrame}) = true
 Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
 Tables.columns(df::AbstractDataFrame) = df

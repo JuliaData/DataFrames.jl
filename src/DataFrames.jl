@@ -10,6 +10,7 @@ using Statistics, Printf, REPL
 using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, DataAPI
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
+using Tables, TableTraits, IteratorInterfaceExtensions
 
 ##############################################################################
 ##
@@ -29,10 +30,12 @@ export AbstractDataFrame,
        DataFrameRow,
        GroupedDataFrame,
        SubDataFrame,
+       Tables,
        allowmissing!,
        aggregate,
        by,
        categorical!,
+       Tables.columnindex,
        combine,
        completecases,
        deleterows!,
