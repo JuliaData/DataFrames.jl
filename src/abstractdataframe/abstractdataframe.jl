@@ -38,33 +38,18 @@ The following are normally implemented for AbstractDataFrames:
 * `filter` : remove rows
 * `filter!` : remove rows in-place
 
-**Indexing**
+**Indexing and broadcasting**
 
-Table columns are accessed (`getindex`) by a single index that can be
-a symbol identifier, an integer, or a vector of each. If a single
-column is selected, just the column object is returned. If multiple
-columns are selected, some AbstractDataFrame is returned.
+`AbstractDataFrame` can be indexed by passing two indices specifying
+row and column selectors. The allowed indices are a superset of indices
+that can be used for standard arrays. You can also access a single column
+of an `AbstractDataFrame` using `getproperty` and `setproperty!` functions.
+In broadcasting `AbstractDataFrame` behavior is similar to a `Matrix`.
 
-```julia
-d[:colA]
-d[3]
-d[[:colA, :colB]]
-d[[1:3; 5]]
-```
+A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`,
+broadcasting and broadcasting assignment for data frames is given in
+the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/) of the manual.
 
-Rows and columns can be indexed like a `Matrix` with the added feature
-of indexing columns by name.
-
-```julia
-d[1:3, :colA]
-d[3,3]
-d[3,:]
-d[3,[:colA, :colB]]
-d[:, [:colA, :colB]]
-d[[1:3; 5], :]
-```
-
-`setindex` works similarly.
 """
 abstract type AbstractDataFrame end
 
