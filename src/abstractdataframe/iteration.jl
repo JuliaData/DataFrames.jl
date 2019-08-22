@@ -6,16 +6,15 @@
 
 # Iteration by rows
 """
-    DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
+    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
     df::D
-    index::S
 end
 
 Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
@@ -72,15 +71,20 @@ y  13
 x  3
 ```
 """
-eachrow(df::AbstractDataFrame) = DataFrameRows(df, index(df))
+eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
-Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
-    DataFrameRow(parent(itr), getfield(itr, :index), i)
-Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
-    DataFrameRow(parent(parent(itr)), getfield(itr, :index), rows(parent(itr))[i])
+function Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int)
+    df = parent(itr)
+    DataFrameRow(df, index(df), i)
+end
+
+function Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
+    sdf = parent(itr)
+    DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
+end
 
 Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
