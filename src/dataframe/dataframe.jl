@@ -966,13 +966,13 @@ disallowmissing!(df::DataFrame, cols::Colon=:) =
 ##############################################################################
 
 """
+    categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
+                 compress::Bool=false)
     categorical!(df::DataFrame, cname::Union{Integer, Symbol};
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Union{Regex, Not};
-                 compress::Bool=false)
-    categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
                  compress::Bool=false)
 
 Change columns selected by `cname` or `cnames` in data frame `df`
