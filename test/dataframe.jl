@@ -1017,7 +1017,7 @@ end
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
 
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), type=Integer)),
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), Integer)),
                   [String, Char,
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
@@ -1312,7 +1312,7 @@ end
         @test y.y isa CategoricalVector{Union{Missing, String}}
         @test y.z isa Vector{Int}
 
-        y = categorical(x, type=Int)
+        y = categorical(x, Int)
         @test y isa DataFrame
         @test x ≅ y
         @test x.x !== y.x
