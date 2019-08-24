@@ -1017,6 +1017,12 @@ end
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
 
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), Integer)),
+                  [String, Char,
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
+                   String]))
+
     df = DataFrame([["a", missing]])
     categorical!(df)
     @test df.x1 isa CategoricalVector{Union{Missing, String}}
@@ -1305,6 +1311,16 @@ end
         @test y.x isa CategoricalVector{String}
         @test y.y isa CategoricalVector{Union{Missing, String}}
         @test y.z isa Vector{Int}
+
+        y = categorical(x, Int)
+        @test y isa DataFrame
+        @test x ≅ y
+        @test x.x !== y.x
+        @test x.y !== y.y
+        @test x.z !== y.z
+        @test y.x isa Vector{String}
+        @test y.y isa Vector{Union{Missing, String}}
+        @test y.z isa CategoricalVector{Int}
 
         for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
             y = categorical(x, colsel)

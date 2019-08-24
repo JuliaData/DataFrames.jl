@@ -1360,14 +1360,16 @@ function Missings.allowmissing(df::AbstractDataFrame,
 end
 
 """
-    categorical(df::AbstractDataFrame; compress::Bool=false)
+    categorical(df::AbstractDataFrame, cols::Type=Union{AbstractString, Missing};
+                compress::Bool=false)
     categorical(df::AbstractDataFrame,
                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
                 compress::Bool=false)
 
 Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
-If the function is called without passing the `cols` argument, all columns whose element type
-is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
+If `categorical` is called with the `cols` argument being a `Type`, then
+all columns whose element type is a subtype of this type
+(by default `Union{AbstractString, Missing}`) will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
 will be compressed.
@@ -1420,11 +1422,13 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
     DataFrame(newcols, _names(df), copycols=false)
 end
 
-function CategoricalArrays.categorical(df::AbstractDataFrame; compress::Bool=false)
+function CategoricalArrays.categorical(df::AbstractDataFrame,
+                                       cols::Type=Union{AbstractString, Missing};
+                                       compress::Bool=false)
     newcols = AbstractVector[]
     for i in axes(df, 2)
         x = df[!, i]
-        if eltype(x) <: Union{AbstractString, Missing}
+        if eltype(x) <: cols
             # categorical always copies
             push!(newcols, categorical(x, compress))
         else
