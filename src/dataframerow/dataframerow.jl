@@ -109,18 +109,18 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
                                     " value contains $(length(v)) elements"))
         end
 
-        if !(v isa AbstractDict || all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v))))
-            mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
-            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
-                                " positions $(join(mismatched, ", ", " and "))"))
-        end
         if v isa AbstractDict
             for n in view(_names(df), idxs)
                 if !haskey(v, n)
                     throw(ArgumentError("Column :$n not found in source dictionary"))
                 end
             end
+        elseif !all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v)))
+            mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
+            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
+                                " positions $(join(mismatched, ", ", " and "))"))
         end
+
         for (col, val) in pairs(v)
             df[row_ind, col] = val
         end

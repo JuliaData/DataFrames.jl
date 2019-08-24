@@ -1310,7 +1310,7 @@ end
     end
 end
 
-@testset "old setindex! tests adjusted to new rules" begin
+@testset "additional setindex! tests" begin
     df = DataFrame(reshape(1:12, 4, :))
 
     @test_throws MethodError df[1, :] = df[1:1, :]

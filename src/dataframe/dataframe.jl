@@ -523,7 +523,7 @@ end
 for T in (:AbstractVector, :Not, :Colon)
     @eval function Base.setindex!(df::DataFrame,
                                   v::AbstractVector,
-                                  row_inds::$(T),
+                                  row_inds::$T,
                                   col_ind::ColumnIndex)
         x = df[!, col_ind]
         try
@@ -542,8 +542,8 @@ for T1 in (:AbstractVector, :Not, :Colon),
     T2 in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     @eval function Base.setindex!(df::DataFrame,
                                   new_df::AbstractDataFrame,
-                                  row_inds::$(T1),
-                                  col_inds::$(T2))
+                                  row_inds::$T1,
+                                  col_inds::$T2)
         idxs = index(df)[col_inds]
         for (j, col) in enumerate(idxs)
             df[row_inds, col] = new_df[!, j]
@@ -559,7 +559,7 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     @eval function Base.setindex!(df::DataFrame,
                                   new_df::AbstractDataFrame,
                                   row_inds::typeof(!),
-                                  col_inds::$(T))
+                                  col_inds::$T)
         idxs = index(df)[col_inds]
         if view(_names(df), idxs) != _names(new_df)
             throw(ArgumentError("Column names in source and target data frames do not match"))
@@ -573,36 +573,19 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
-for T1 in (:AbstractVector, :Not, :Colon),
+for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
     T2 in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     @eval function Base.setindex!(df::DataFrame,
                                   mx::AbstractMatrix,
-                                  row_inds::$(T1),
-                                  col_inds::$(T2))
+                                  row_inds::$T1,
+                                  col_inds::$T2)
         idxs = index(df)[col_inds]
         if size(mx, 2) != length(idxs)
             throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
                                     " matrix ($(size(mx, 2))) do not match"))
         end
         for (j, col) in enumerate(idxs)
-            df[row_inds, col] = view(mx, :, j)
-        end
-        return df
-    end
-end
-
-for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
-    @eval function Base.setindex!(df::DataFrame,
-                                  mx::AbstractMatrix,
-                                  row_inds::typeof(!),
-                                  col_inds::$(T))
-        idxs = index(df)[col_inds]
-        if size(mx, 2) != length(idxs)
-            throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
-                                    " matrix ($(size(mx, 2))) do not match"))
-        end
-        for (j, col) in enumerate(idxs)
-            df[!, col] = mx[:, j]
+            df[row_inds, col] = row_inds isa typeof(!) ? mx[:, j] : view(mx, :, j)
         end
         return df
     end

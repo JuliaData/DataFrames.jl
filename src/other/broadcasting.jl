@@ -27,7 +27,7 @@ function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
             newres = similar(Vector{promote_type(S, T)}, length(res))
             copyto!(newres, 1, res, 1, i-1)
             newres[i] = val
-            return copyto_widen!(newres, bc, i + 1, 2)
+            return copyto_widen!(newres, bc, i + 1, col)
         end
     end
     return res
@@ -50,9 +50,14 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
     if length(colnames) != 1
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
-        msg = join(wrongnames, ", ", " and ")
-        throw(ArgumentError("Column names in broadcasted data frames must match. " *
-                            "Non matching column names are $msg"))
+        if isempty(wrongnames)
+            throw(ArgumentError("Column names in broadcasted data frames " *
+                                "must have the same order"))
+        else
+            msg = join(wrongnames, ", ", " and ")
+            throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                                "Non matching column names are $msg"))
+        end
     end
     nrows = length(axes(bcf)[1])
     df = DataFrame()
@@ -200,10 +205,16 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && _names(df) != colnames[1])
+        push!(colnames, _names(df))
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
-        msg = join(wrongnames, ", ", " and ")
-        throw(ArgumentError("Column names in broadcasted data frames must match. " *
-                            "Non matching column names are $msg"))
+        if isempty(wrongnames)
+            throw(ArgumentError("Column names in broadcasted data frames " *
+                                "must have the same order"))
+        else
+            msg = join(wrongnames, ", ", " and ")
+            throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                                "Non matching column names are $msg"))
+        end
     end
 
     bcf′ = Base.Broadcast.preprocess(df, bcf)
@@ -229,15 +240,38 @@ function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && view(_names(crdf.df), crdf.cols) != colnames[1])
+        push!(colnames, view(_names(crdf.df), crdf.cols))
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
-        msg = join(wrongnames, ", ", " and ")
-        throw(ArgumentError("Column names in broadcasted data frames must match. " *
-                            "Non matching column names are $msg"))
+        if isempty(wrongnames)
+            throw(ArgumentError("Column names in broadcasted data frames " *
+                                "must have the same order"))
+        else
+            msg = join(wrongnames, ", ", " and ")
+            throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                                "Non matching column names are $msg"))
+        end
     end
 
     bcf′ = Base.Broadcast.preprocess(crdf, bcf)
+    nrows = length(axes(bcf′)[1])
     for (i, col) in enumerate(crdf.cols)
-        crdf.df[!, col] = [bcf′[CartesianIndex(j, i)] for j in axes(crdf.df, 1)]
+        bcf′_col = getcolbc(bcf′, i)
+        if bcf′_col isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
+            bc_tmp = Base.Broadcast.Broadcasted{T}(bcf′_col.f, bcf′_col.args, ())
+            v = Base.Broadcast.materialize(bc_tmp)
+            col = similar(Vector{typeof(v)}, nrow(crdf.df))
+            copyto!(col, bc)
+        else
+            if nrows == 0
+                col = Any[]
+            else
+                v1 = bcf′_col[CartesianIndex(1, i)]
+                startcol = similar(Vector{typeof(v1)}, nrows)
+                startcol[1] = v1
+                col = copyto_widen!(startcol, bcf′_col, 2, i)
+            end
+        end
+        crdf.df[!, col] = col
     end
     crdf.df
 end
