@@ -13,7 +13,7 @@ with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame,S} <: AbstractVector{DataFrameRow{D,S}}
     df::D
 end
 
@@ -71,7 +71,7 @@ y  13
 x  3
 ```
 """
-eachrow(df::AbstractDataFrame) = DataFrameRows(df)
+eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df)
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
