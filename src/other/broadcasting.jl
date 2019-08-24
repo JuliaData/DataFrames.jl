@@ -257,24 +257,24 @@ function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
 
     bcf′ = Base.Broadcast.preprocess(crdf, bcf)
     nrows = length(axes(bcf′)[1])
-    for (i, col) in enumerate(crdf.cols)
+    for (i, col_idx) in enumerate(crdf.cols)
         bcf′_col = getcolbc(bcf′, i)
         if bcf′_col isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
             bc_tmp = create_bc_tmp(bcf′_col)
             v = Base.Broadcast.materialize(bc_tmp)
-            col = similar(Vector{typeof(v)}, nrow(crdf.df))
-            copyto!(col, bc)
+            newcol = similar(Vector{typeof(v)}, nrow(crdf.df))
+            copyto!(newcol, bc)
         else
             if nrows == 0
-                col = Any[]
+                newcol = Any[]
             else
                 v1 = bcf′_col[CartesianIndex(1, i)]
                 startcol = similar(Vector{typeof(v1)}, nrows)
                 startcol[1] = v1
-                col = copyto_widen!(startcol, bcf′_col, 2, i)
+                newcol = copyto_widen!(startcol, bcf′_col, 2, i)
             end
         end
-        crdf.df[!, col] = col
+        crdf.df[!, col_idx] = newcol
     end
     crdf.df
 end
