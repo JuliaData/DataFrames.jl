@@ -236,6 +236,9 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     end
 end
 
+create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) =
+    Base.Broadcast.Broadcasted{T}(bcf′_col.f, bcf′_col.args, ())
+
 function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
@@ -257,7 +260,7 @@ function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     for (i, col) in enumerate(crdf.cols)
         bcf′_col = getcolbc(bcf′, i)
         if bcf′_col isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
-            bc_tmp = Base.Broadcast.Broadcasted{T}(bcf′_col.f, bcf′_col.args, ())
+            bc_tmp = create_bc_tmp(bcf′_col)
             v = Base.Broadcast.materialize(bc_tmp)
             col = similar(Vector{typeof(v)}, nrow(crdf.df))
             copyto!(col, bc)
