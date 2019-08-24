@@ -115,7 +115,7 @@ The following list specifies the behavior of `setindex!` operations depending on
 In particular a description explicitly mentions if the assignment is *in-place*.
 
 Note that if a `setindex!` operation throws an error the target data frame may be partially changed
-so it is unsafe to use it afterwards.
+so it is unsafe to use it afterwards (the column length correctness will be preserved).
 
 `setindex!` on `DataFrame`:
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -166,7 +166,7 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
 
 Note that if broadcasting assignment operation throws an error the target data frame may be partially changed
-so it is unsafe to use it afterwards.
+so it is unsafe to use it afterwards (the column length correctness will be preserved).
 
 
 Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
