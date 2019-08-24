@@ -236,7 +236,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     end
 end
 
-create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) =
+create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) where {T} =
     Base.Broadcast.Broadcasted{T}(bcf′_col.f, bcf′_col.args, ())
 
 function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
