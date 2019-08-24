@@ -506,11 +506,11 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     @eval function Base.setindex!(df::DataFrame,
                                   v,
                                   row_ind::Integer,
-                                  col_inds::$(T))
+                                  col_inds::$T)
         idxs = index(df)[col_inds]
         if length(v) != length(idxs)
-            throw(DimensionMismatch("$(length(idxs)) columns were selected and the assigned" *
-                                    " value contains $(length(v)) elements"))
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
+                                    " collection contains $(length(v)) elements"))
         end
         for (i, x) in enumerate(v)
             df[row_ind, i] = x

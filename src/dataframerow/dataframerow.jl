@@ -117,7 +117,7 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
         if v isa AbstractDict
             for n in view(_names(df), idxs)
                 if !haskey(v, n)
-                    throw(ArgumentError("Column $n not found in source dictionary"))
+                    throw(ArgumentError("Column :$n not found in source dictionary"))
                 end
             end
         end

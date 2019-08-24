@@ -114,7 +114,7 @@ The following list specifies the behavior of `setindex!` operations depending on
 
 In particular a description explicitly mentions if the assignment is *in-place*.
 
-Note that if `setindex!` operation throws an error the target data frame may be partially changed
+Note that if a `setindex!` operation throws an error the target data frame may be partially changed
 so it is unsafe to use it afterwards.
 
 `setindex!` on `DataFrame`:
@@ -131,7 +131,7 @@ so it is unsafe to use it afterwards.
                       this is allowed if `ncol(df) == 0 || length(v) == nrow(df)`;
 * `df[!, cols] = v` -> replaces existing columns `cols` in data frame `df` with copying;
                        `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
-                       (in this case column names must match);
+                       (in the latter case column names must match);
 
 Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
 In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
@@ -151,9 +151,9 @@ Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowe
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
                     equivalent to `dfr.col = v` if `col` is a valid identifier;
 * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
-                     `v` can be: 1) an iterable in which case it must have a number of elements equal to `length(dfr)`,
-                     2) an `AbstractDict`, when column names must match,
-                     3) a `NamedTuple` or `DataFrameRow` when column names and order must match;
+                     `v` can be: 1) an iterable, in which case it must have a number of elements equal to `length(dfr)`,
+                     2) an `AbstractDict`, in which case column names must match,
+                     3) a `NamedTuple` or `DataFrameRow`, in which case column names and order must match;
 
 ## Broadcasting
 
@@ -184,7 +184,7 @@ Additional rules:
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
-* the `df[!, cols] .= v` replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
+* the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;

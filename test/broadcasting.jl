@@ -1356,7 +1356,7 @@ end
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= Ref((a=1,b=2))
-        @test df == DataFrame(fill((a=1,b=2), 3, 2))
+        @test df == DataFrame(fill((a=1, b=2), 3, 2))
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)

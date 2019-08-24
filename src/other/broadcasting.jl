@@ -227,7 +227,7 @@ end
 
 function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+    colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && view(_names(crdf.df), crdf.cols) != colnames[1])
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         msg = join(wrongnames, ", ", " and ")
