@@ -76,12 +76,12 @@ eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
-function Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int)
+Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows, i::Int)
     df = parent(itr)
     DataFrameRow(df, index(df), i)
 end
 
-function Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
+Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
     sdf = parent(itr)
     DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
 end
