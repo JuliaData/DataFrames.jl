@@ -1348,7 +1348,7 @@ end
 end
 
 @testset "broadcasting into df[!, cols]" begin
-    for selector in [1:2, Between(:x1, :x2), Not(r"xx"), [:x1, :x2]]
+    for selector in [1:2, Between(:x1, :x2), Not(r"x3"), [:x1, :x2]]
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= "a"
         @test df == DataFrame(fill("a", 3, 2))
