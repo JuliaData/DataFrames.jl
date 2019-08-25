@@ -1434,7 +1434,8 @@ function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVect
     setindex!(df, new_df, findall(col_inds))
 end
 @deprecate setindex!(df::DataFrame, new_df::DataFrame,
-                     col_inds::AbstractVector{<:ColumnIndex}) foreach(((j, colind),) -> (df[!, colind] = new_df[!, j]), enumerate(col_inds))
+                     col_inds::AbstractVector{<:ColumnIndex}) foreach(((j, colind),) -> (df[!, colind] = new_df[!, j]),
+                                                                      enumerate(col_inds))
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
 @deprecate setindex!(df::DataFrame, v::AbstractVector,
@@ -1467,9 +1468,11 @@ end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
-                     col_inds::AbstractVector{Bool}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), findall(col_inds)); df)
+                     col_inds::AbstractVector{Bool}) (foreach(((i, c),) -> (df[row_ind, c] = new_df[1, i]),
+                                                              enumerate(findall(col_inds))); df)
 @deprecate setindex!(df::DataFrame, new_df::DataFrame, row_ind::Integer,
-                     col_inds::AbstractVector{<:ColumnIndex}) (foreach(c -> (df[row_ind, c] = new_df[1, c]), col_inds); df)
+                     col_inds::AbstractVector{<:ColumnIndex}) (foreach(((i, c),) -> (df[row_ind, c] = new_df[1, i]),
+                                                                       enumerate(col_inds)); df)
 
 # df[SingleRowIndex, MultiColumnIndex] = Single Item
 @deprecate setindex!(df::DataFrame, v::Any, row_ind::Integer,

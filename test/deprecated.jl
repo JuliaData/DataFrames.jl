@@ -386,6 +386,15 @@ end
         # vector broadcasting assignment of subtables
         df[1:2, 1:2] = [3,2]
         df[[true,false,false,true], 2:3] = [2,3]
+
+        # test of 1-row DataFrame assignment
+        df = DataFrame([1 2 3])
+        df[1, 2:3] = DataFrame([11 12])
+        @test df == DataFrame([1 11 12])
+
+        df = DataFrame([1 2 3])
+        df[1, [false, true, true]] = DataFrame([11 12])
+        @test df == DataFrame([1 11 12])
     end
 
     @testset "old test/dataframes.jl tests" begin
