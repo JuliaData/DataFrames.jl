@@ -61,10 +61,10 @@ and combines the result into a data frame).
 
 See the following for additional split-apply-combine operations:
 
-* `by` : split-apply-combine using functions
-* `aggregate` : split-apply-combine; applies functions in the form of a cross product
-* `map` : apply a function to each group of a `GroupedDataFrame` (without combining)
-* `combine` : combine a `GroupedDataFrame`, optionally applying a function to each group
+* [`by`](@ref) : split-apply-combine using functions
+* [`aggregate`](@ref) : split-apply-combine; applies functions in the form of a cross product
+* [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
+* [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
 
 ### Examples
 
