@@ -115,4 +115,17 @@ end
     @test copy(erd[1]) == (y1 = 51, y2 = 21, y3 = 31) # the removed columns are reflected
 end
 
+@testset "getproperty and propertynames" begin
+    df_base = DataFrame([11:16 21:26 31:36 41:46])
+    for df in (df_base, view(df_base, 1:3, 1:3))
+        for x in (eachcol(df), eachcol(df, true), eachrow(df))
+            @test propertynames(x) == propertynames(df)
+            for n in names(df)
+                @test getproperty(x, n) === getproperty(df, n)
+            end
+            @test_throws ArgumentError x.a
+        end
+    end
+end
+
 end # module
