@@ -44,7 +44,7 @@ function ordering(col_ord::UserColOrdering, lt::Function, by::Function, rev::Boo
 end
 
 ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
-             Order.ord(lt,by,rev,order)
+    Order.ord(lt,by,rev,order)
 
 # DFPerm: defines a permutation on a particular DataFrame, using
 #         a single ordering (O<:Ordering) or a list of column orderings
@@ -55,29 +55,31 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-struct DFPerm{O<:Union{Ordering, AbstractVector}, DF<:AbstractDataFrame} <: Ordering
+struct DFPerm{O<:Union{Ordering, AbstractVector}, T<:Tuple} <: Ordering
     ord::O
-    df::DF
+    cols::T
 end
 
-function DFPerm(ords::AbstractVector{O}, df::DF) where {O<:Ordering, DF<:AbstractDataFrame}
-    if length(ords) != ncol(df)
-        error("DFPerm: number of column orderings does not equal the number of DataFrame columns")
+function DFPerm(ords::AbstractVector{O}, cols::T) where {O<:Ordering, T<:Tuple}
+    if length(ords) != length(cols)
+        error("DFPerm: number of column orderings does not equal the number of columns")
     end
-    DFPerm{typeof(ords), DF}(ords, df)
+    DFPerm{typeof(ords), T}(ords, cols)
 end
 
-DFPerm(o::O, df::DF) where {O<:Ordering, DF<:AbstractDataFrame} = DFPerm{O,DF}(o,df)
+DFPerm(o::Union{Ordering, AbstractVector}, df::AbstractDataFrame) =
+    DFPerm(o, ntuple(i -> df[!, i], ncol(df)))
 
 # get ordering function for the i-th column used for ordering
 col_ordering(o::DFPerm{O}, i::Int) where {O<:Ordering} = o.ord
 col_ordering(o::DFPerm{V}, i::Int) where {V<:AbstractVector} = o.ord[i]
 
 function Sort.lt(o::DFPerm, a, b)
-    @inbounds for i in 1:ncol(o.df)
+    @inbounds for i in 1:length(o.cols)
         ord = col_ordering(o, i)
-        va = o.df[a, i]
-        vb = o.df[b, i]
+        col = o.cols[i]
+        va = col[a]
+        vb = col[b]
         lt(ord, va, vb) && return true
         lt(ord, vb, va) && return false
     end
