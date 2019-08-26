@@ -427,7 +427,7 @@ end
     @test_throws ArgumentError reduce(vcat, (df1, df2, df2), cols=[:C, :C])
 end
 
-@testset "vcat errors" begin
+@testset "vcat thrown exceptions" begin
     df1 = DataFrame(A = 1:3, B = 1:3)
     df2 = DataFrame(A = 1:3)
     # right missing 1 column

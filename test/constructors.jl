@@ -322,7 +322,7 @@ end
     @test DataFrame(a = 1, b = 1:5) == DataFrame(a = fill(1, 5), b = collect(1:5))
 end
 
-@testset "constructor errors" begin
+@testset "constructor thrown exceptions" begin
     @test_throws DimensionMismatch DataFrame(a=1, b=[])
     @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]))
     @test_throws DimensionMismatch DataFrame(A = rand(2,2))
