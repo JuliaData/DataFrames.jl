@@ -278,7 +278,7 @@ end
 
 Get the first row of `df` as a `DataFrameRow`.
 """
-Base.first(df::AbstractDataFrame) = df[1, :]
+Base.first(df::AbstractDataFrame) = df[6, :]
 
 """
     first(df::AbstractDataFrame, n::Integer)
