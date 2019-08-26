@@ -29,7 +29,10 @@ end
 _levels!(x::CategoricalArray, levels::AbstractVector) = levels!(x, levels)
 
 function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
-    gd = groupby(df, keys, args...; kwargs...)
+    ogd = groupby(df, keys, args...; kwargs...)
+
+    gd = deepcopy(ogd)
+    gd.idx === nothing && DataFrames.compute_indices!(gd)
 
     # checking that groups field is consistent with other fields
     # (since == and isequal do not use it)
@@ -70,7 +73,7 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
         @test allunique(eachrow(gd.parent[gd.idx[gd.starts], gd.cols]))
     end
 
-    gd
+    ogd # Return original object so that tests cover case when not calling compute_indices!
 end
 
 @testset "parent" begin
@@ -247,9 +250,9 @@ end
         groupby_checked(df2b, [:v1, :v2, :v3])
 
     # grouping empty table
-    @test groupby_checked(DataFrame(A=Int[]), :A).starts == Int[]
+    @test length(groupby_checked(DataFrame(A=Int[]), :A)) == 0
     # grouping single row
-    @test groupby_checked(DataFrame(A=Int[1]), :A).starts == Int[1]
+    @test length(groupby_checked(DataFrame(A=Int[1]), :A)) == 1
 
     # issue #960
     x = CategoricalArray(collect(1:20))

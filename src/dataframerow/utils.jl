@@ -236,30 +236,20 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
     return ngroups, UInt[], Int[], sorted
 end
 
-# Builds RowGroupDict for a given DataFrame.
-# Partly uses the code of Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
-# - hash: whether row hashes should be computed (if false, the rhashes and gslots fields
-#   hold empty vectors)
-# - sort: whether groups should be sorted
-# - skipmissing: whether rows with missing values should be skipped
-#   rather than put into a separate group
-function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false,
-                    skipmissing::Bool = false)
-    groups = Vector{Int}(undef, nrow(df))
-    ngroups, rhashes, gslots, sorted =
-        row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(hash), groups, skipmissing)
 
+# Partly uses the code of Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
+function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
     # count elements in each group
-    stops = zeros(Int, ngroups)
+    stops = zeros(Int, ngroups+1)
     @inbounds for g_ix in groups
-        stops[g_ix] += 1
+        stops[g_ix+1] += 1
     end
 
     # group start positions in a sorted table
-    starts = Vector{Int}(undef, ngroups)
-    if !isempty(starts)
+    starts = Vector{Int}(undef, ngroups+1)
+    if length(starts) > 1
         starts[1] = 1
-        @inbounds for i in 1:(ngroups-1)
+        @inbounds for i in 1:ngroups
             starts[i+1] = starts[i] + stops[i]
         end
     end
@@ -268,31 +258,24 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
     rperm = Vector{Int}(undef, length(groups))
     copyto!(stops, starts)
     @inbounds for (i, gix) in enumerate(groups)
-        rperm[stops[gix]] = i
-        stops[gix] += 1
+        rperm[stops[gix+1]] = i
+        stops[gix+1] += 1
     end
     stops .-= 1
 
-    # drop group 1 which contains rows with missings in grouping columns
-    if skipmissing
-        popfirst!(starts)
-        popfirst!(stops)
-        groups .-= 1
-        ngroups -= 1
-    end
+    # drop group 1 which contains rows with missings in grouping columns (if any)
+    popfirst!(starts)
+    popfirst!(stops)
 
-    # sort groups if row_group_slots hasn't already done that
-    if sort && !sorted
-        group_perm = sortperm(view(df, rperm[starts], :))
-        group_invperm = invperm(group_perm)
-        permute!(starts, group_perm)
-        Base.permute!!(stops, group_perm)
-        for i in eachindex(groups)
-            gix = groups[i]
-            groups[i] = gix == 0 ? 0 : group_invperm[gix]
-        end
-    end
+    return rperm, starts, stops
+end
 
+# Build RowGroupDict for a given DataFrame
+function group_rows(df::AbstractDataFrame)
+    groups = Vector{Int}(undef, nrow(df))
+    ngroups, rhashes, gslots, sorted =
+        row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), groups, false)
+    rperm, starts, stops = compute_indices(groups, ngroups)
     return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
 end
 
