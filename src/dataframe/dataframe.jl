@@ -585,7 +585,7 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
                                     " matrix ($(size(mx, 2))) do not match"))
         end
         for (j, col) in enumerate(idxs)
-            df[row_inds, col] = row_inds isa typeof(!) ? mx[:, j] : view(mx, :, j)
+            df[row_inds, col] = (row_inds === !) ? mx[:, j] : view(mx, :, j)
         end
         return df
     end

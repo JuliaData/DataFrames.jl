@@ -106,7 +106,7 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
         idxs = index(df)[col_inds]
         if length(v) != length(idxs)
             throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
-                                    " value contains $(length(v)) elements"))
+                                    " collection contains $(length(v)) elements"))
         end
 
         if v isa AbstractDict
