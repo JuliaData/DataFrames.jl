@@ -173,4 +173,33 @@ end
     @test_throws ErrorException columnindex(df, "x1")
 end
 
+@testset "eachrow and eachcol integration" begin
+     df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+
+     df2 = DataFrame(eachrow(df))
+     @test df == df2
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame!(eachrow(df))
+     @test df == df2
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame(eachcol(df, true))
+     @test df == df2
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame!(eachcol(df, true))
+     @test df == df2
+     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame(eachcol(df))
+     @test names(df2) == [:x1, :x2, :x3, :x4]
+     @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame(eachcol(df))
+     @test names(df2) == [:x1, :x2, :x3, :x4]
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+end
+
 end # module

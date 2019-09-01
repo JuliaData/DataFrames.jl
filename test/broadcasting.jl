@@ -53,7 +53,7 @@ end
     @test (df1 ./ df2) == DataFrame(ones(size(refdf)))
 end
 
-@testset "broadcasting of AbstractDataFrame objects errors" begin
+@testset "broadcasting of AbstractDataFrame objects thrown exceptions" begin
     df = copy(refdf)
     dfv = view(df, :, 2:ncol(df))
 

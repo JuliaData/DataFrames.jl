@@ -192,7 +192,7 @@ si7 = SubIndex(i, Not(1:2))
     @test names(dfr3) == [:c, :b]
 end
 
-@testset "fuzzy matching and ArgumentError" begin
+@testset "fuzzy matching" begin
     i = Index()
     push!(i, :x1)
     push!(i, :x12)
