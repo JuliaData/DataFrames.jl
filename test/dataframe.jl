@@ -1,6 +1,6 @@
 module TestDataFrame
 
-using Dates, DataFrames, Statistics, Random, Test
+using Dates, DataFrames, Statistics, Random, Test, Logging
 using DataFrames: _columns
 const ≅ = isequal
 const ≇ = !isequal
@@ -18,8 +18,8 @@ const ≇ = !isequal
 end
 
 @testset "copying" begin
-    df = DataFrame(a = Union{Int, Missing}[2, 3],
-                b = Union{DataFrame, Missing}[DataFrame(c = 1), DataFrame(d = 2)])
+    df = DataFrame(a=Union{Int, Missing}[2, 3],
+                   b=Union{DataFrame, Missing}[DataFrame(c = 1), DataFrame(d = 2)])
     dfc = copy(df)
     dfdc = deepcopy(df)
 
@@ -38,12 +38,12 @@ end
 end
 
 @testset "similar / missings" begin
-    df = DataFrame(a = Union{Int, Missing}[1],
-                b = Union{String, Missing}["b"],
-                c = CategoricalArray{Union{Float64, Missing}}([3.3]))
-    missingdf = DataFrame(a = missings(Int, 2),
-                        b = missings(String, 2),
-                        c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
+    df = DataFrame(a=Union{Int, Missing}[1],
+                   b=Union{String, Missing}["b"],
+                   c=CategoricalArray{Union{Float64, Missing}}([3.3]))
+    missingdf = DataFrame(a=missings(Int, 2),
+                          b=missings(String, 2),
+                          c=CategoricalArray{Union{Float64, Missing}}(undef, 2))
     # https://github.com/JuliaData/Missings.jl/issues/66
     # @test missingdf ≅ similar(df, 2)
     @test typeof.(eachcol(similar(df, 2))) == typeof.(eachcol(missingdf))
@@ -144,78 +144,105 @@ end
 end
 
 @testset "push!(df, row)" begin
-    df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    dfc= DataFrame( first=[1,2], second=["apple","orange"] )
+    df = DataFrame(first=[1,2,3], second=["apple","orange","pear"])
+
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfc = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, Any[3,"pear"])
     @test df == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, (3,"pear"))
     @test df == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws InexactError push!(dfb, (33.33,"pear"))
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    with_logger(sl) do
+        @test_throws InexactError push!(dfb, (33.33,"pear"))
+    end
     @test dfc == dfb
+    @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     @test_throws ArgumentError push!(dfb, (1,"2",3))
     @test dfc == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws MethodError push!(dfb, ("coconut",22))
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, ("coconut",22))
+    end
     @test dfc == dfb
+    @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws MethodError push!(dfb, (11,22))
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, (11,22))
+    end
     @test dfc == dfb
+    @test occursin("Error adding value to column :second", String(take!(buf)))
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, Dict(:first=>3, :second=>"pear"))
     @test df == dfb
 
-    df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    df = DataFrame(first=[1,2,3], second=["apple","orange","banana"])
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, Dict(:first=>3, :second=>"banana"))
     @test df == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, (first=3, second="banana"))
     @test df == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, (second="banana", first=3))
     @test df == dfb
 
-    df0= DataFrame( first=[1,2], second=["apple","orange"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws MethodError push!(dfb, (second=3, first=3))
+    df0 = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, (second=3, first=3))
+    end
     @test df0 == dfb
+    @test occursin("Error adding value to column :second", String(take!(buf)))
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
     push!(dfb, (second="banana", first=3))
     @test df == dfb
 
-    df0= DataFrame( first=[1,2], second=["apple","orange"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws MethodError push!(dfb, Dict(:first=>true, :second=>false))
+    df0 = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, Dict(:first=>true, :second=>false))
+    end
     @test df0 == dfb
+    @test occursin("Error adding value to column :second", String(take!(buf)))
 
-    df0= DataFrame( first=[1,2], second=["apple","orange"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
+    df0 = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
+    end
     @test df0 == dfb
+    @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    df0=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
-    dfb=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
-    @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
+    df0 = DataFrame(first=[1,2,3], second=["apple","orange","pear"])
+    dfb = DataFrame(first=[1,2,3], second=["apple","orange","pear"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
+    end
     @test df0 == dfb
+    @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    df0=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
-    dfb=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
-    @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
+    df0 = DataFrame(first=["1","2","3"], second=["apple","orange","pear"])
+    dfb = DataFrame(first=["1","2","3"], second=["apple","orange","pear"])
+    with_logger(sl) do
+        @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
+    end
     @test df0 == dfb
+    @test occursin("Error adding value to column :second", String(take!(buf)))
 
     df = DataFrame(x=1)
     push!(df, Dict(:x=>2), Dict(:x=>3))
@@ -226,8 +253,11 @@ end
     @test df[!, :x] == [1, 3, 5] && df[!, :y] == [2, 4, 6]
 
     df = DataFrame(x=1, y=2)
-    @test_throws KeyError push!(df, Dict(:x=>1, "y"=>2))
+    with_logger(sl) do
+        @test_throws KeyError push!(df, Dict(:x=>1, "y"=>2))
+    end
     @test df == DataFrame(x=1, y=2)
+    @test occursin("Error adding value to column :y", String(take!(buf)))
 
     df = DataFrame()
     @test push!(df, (a=1, b=true)) === df
@@ -237,12 +267,21 @@ end
     df.a = [1,2,3]
     df.b = df.a
     dfc = copy(df)
-    @test_throws AssertionError push!(df, [1,2])
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, [1,2])
+    end
     @test df == dfc
-    @test_throws AssertionError push!(df, (a=1,b=2))
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, (a=1,b=2))
+    end
     @test df == dfc
-    @test_throws AssertionError push!(df, Dict(:a=>1, :b=>2))
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, Dict(:a=>1, :b=>2))
+    end
     @test df == dfc
+    @test occursin("Error adding value to column :a", String(take!(buf)))
     @test_throws AssertionError push!(df, df[1, :])
     @test df == dfc
     @test_throws AssertionError push!(df, dfc[1, :])
@@ -253,12 +292,21 @@ end
     df.b = df.a
     df.c = [1,2,3,4]
     dfc = copy(df)
-    @test_throws AssertionError push!(df, [1,2,3])
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, [1,2,3])
+    end
     @test df == dfc
-    @test_throws AssertionError push!(df, (a=1,b=2,c=3))
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, (a=1,b=2,c=3))
+    end
     @test df == dfc
-    @test_throws AssertionError push!(df, Dict(:a=>1, :b=>2, :c=>3))
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, Dict(:a=>1, :b=>2, :c=>3))
+    end
     @test df == dfc
+    @test occursin("Error adding value to column :a", String(take!(buf)))
     @test_throws AssertionError push!(df, df[1, :])
     @test df == dfc
     @test_throws AssertionError push!(df, dfc[1, :])
@@ -904,13 +952,21 @@ end
 end
 
 @testset "append!" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
     df = DataFrame(A = 1:2, B = 1:2)
     df2 = DataFrame(A = 1:4, B = 1:4)
     @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
-    @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+    with_logger(sl) do
+        @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+    end
     @test df == df2
-    @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    @test occursin("Error adding value to column B", String(take!(buf)))
+    with_logger(sl) do
+        @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    end
     @test df == df2
+    @test occursin("Error adding value to column B", String(take!(buf)))
     @test_throws ArgumentError append!(df, DataFrame(A = 1:4, C = 1:4))
     @test df == df2
 
@@ -929,16 +985,22 @@ end
     df.a = [1,2,3]
     df.b = df.a
     dfc = copy(df)
-    @test_throws AssertionError append!(df, dfc)
+    with_logger(sl) do
+        @test_throws AssertionError append!(df, dfc)
+    end
     @test df == dfc
+    @test occursin("Error adding value to column a", String(take!(buf)))
 
     df = DataFrame()
     df.a = [1,2,3,4]
     df.b = df.a
     df.c = [1,2,3,4]
     dfc = copy(df)
-    @test_throws AssertionError append!(df, dfc)
+    with_logger(sl) do
+        @test_throws AssertionError append!(df, dfc)
+    end
     @test df == dfc
+    @test occursin("Error adding value to column a", String(take!(buf)))
 
     names!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
@@ -1671,19 +1733,16 @@ end
     @view df[!, All()]
     @view df[!, Between(1,2)]
 
-# TODO: enable after setindex! rules update
-#    df[1, All()] = (a=1, b=2, c=3)
-#    df[1, Between(1,2)] = (a=1, b=2)
+    df[1, All()] = (a=1, b=2, c=3)
+    df[1, Between(1,2)] = (a=1, b=2)
     df[1:1, All()] = df
     df[1:1, Between(1,2)] = df[!, 1:2]
-# TODO: enable after setindex! rules update
-#    df[:, All()] = df
-#    df[:, Between(1,2)] = df[!, 1:2]
+    df[:, All()] = df
+    df[:, Between(1,2)] = df[!, 1:2]
     df[1:1, All()] = Matrix(df)
     df[1:1, Between(1,2)] = Matrix(df[!, 1:2])
-# TODO: enable after setindex! rules update
-#    df[:, All()] = Matrix(df)
-#    df[:, Between(1,2)] = Matrix(df[!, 1:2])
+    df[:, All()] = Matrix(df)
+    df[:, Between(1,2)] = Matrix(df[!, 1:2])
 
     df2 = vcat(df, df)
     df2[Not(1), All()] = df
@@ -1701,9 +1760,8 @@ end
     dfr = df[1, :]
     dfr[All()]
     dfr[Between(1,2)]
-# TODO: enable after setindex! rules update
-#    dfr[All()] = (a=1, b=2, c=3)
-#    dfr[Between(1,2)] = (a=1, b=2)
+    dfr[All()] = (a=1, b=2, c=3)
+    dfr[Between(1,2)] = (a=1, b=2)
     @view dfr[All()]
     @view dfr[Between(1,2)]
 

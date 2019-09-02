@@ -1152,8 +1152,10 @@ end
     @test df == refdf
 
     df = copy(refdf)
-    @test_throws ArgumentError df[!, 1:2] .= 'a'
-    @test df == refdf
+    df[!, 1:2] .= 'a'
+    @test Matrix(df) == ['a'  'a'  7.5  10.5  13.5
+                         'a'  'a'  8.5  11.5  14.5
+                         'a'  'a'  9.5  12.5  15.5]
 
     df = copy(refdf)
     v1 = df[!, 1]
@@ -1343,6 +1345,138 @@ end
     @test df == DataFrame(a=[[100,100,100]])
     df[CartesianIndex(1,1)] .= 1000
     @test df == DataFrame(a=[[1000,1000,1000]])
+end
+
+@testset "broadcasting into df[!, cols]" begin
+    for selector in [1:2, Between(:x1, :x2), Not(r"x3"), [:x1, :x2]]
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= "a"
+        @test df == DataFrame(fill("a", 3, 2))
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= Ref((a=1,b=2))
+        @test df == DataFrame(fill((a=1, b=2), 3, 2))
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a" "b"]
+        @test df == DataFrame(["a" "b"
+                               "a" "b"
+                               "a" "b"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a", "b", "c"]
+        @test df == DataFrame(["a" "a"
+                               "b" "b"
+                               "c" "c"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= categorical(["a"])
+        @test df == DataFrame(["a" "a"
+                               "a" "a"
+                               "a" "a"])
+        @test df.x1 isa CategoricalVector
+        @test df.x2 isa CategoricalVector
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= DataFrame(["a" "b"])
+        @test df == DataFrame(["a" "b"
+                               "a" "b"
+                               "a" "b"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= DataFrame(["a" "d"
+                                      "b" "e"
+                                      "c" "f"])
+        @test df == DataFrame(["a" "d"
+                               "b" "e"
+                               "c" "f"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a" "d"
+                            "b" "e"
+                            "c" "f"]
+        @test df == DataFrame(["a" "d"
+                               "b" "e"
+                               "c" "f"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= "a"
+        @test df == DataFrame(["a" "a" 1
+                               "a" "a" 1
+                               "a" "a" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= Ref((a=1,b=2))
+        @test df[:, 1:2] == DataFrame(fill((a=1, b=2), 3, 2))
+        @test df[:, 3] == [1, 1, 1]
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= ["a" "b"]
+        @test df == DataFrame(["a" "b" 1
+                               "a" "b" 1
+                               "a" "b" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= ["a", "b", "c"]
+        @test df == DataFrame(["a" "a" 1
+                               "b" "b" 1
+                               "c" "c" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= categorical(["a"])
+        @test df == DataFrame(["a" "a" 1
+                               "a" "a" 1
+                               "a" "a" 1])
+        @test df.x1 isa CategoricalVector
+        @test df.x2 isa CategoricalVector
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= DataFrame(["a" "b"])
+        @test df == DataFrame(["a" "b" 1
+                               "a" "b" 1
+                               "a" "b" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= DataFrame(["a" "d"
+                                      "b" "e"
+                                      "c" "f"])
+        @test df == DataFrame(["a" "d" 1
+                               "b" "e" 1
+                               "c" "f" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= ["a" "d"
+                            "b" "e"
+                            "c" "f"]
+        @test df == DataFrame(["a" "d" 1
+                               "b" "e" 1
+                               "c" "f" 1])
+        @test df.x1 !== df.x2
+    end
+
+    df = DataFrame(x1=1:3, x2=4:6)
+    @test_throws ArgumentError df[!, [:x1, :x3]] .= "a"
+end
+
+@testset "broadcasting over heterogenous columns" begin
+    df = DataFrame(x = [1, 1.0, big(1), "1"])
+    f_identity(x) = x
+    @test df == f_identity.(df)
 end
 
 end # module

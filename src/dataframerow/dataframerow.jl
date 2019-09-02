@@ -98,13 +98,38 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVect
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
-    col = parentcols(index(r), idx)
-    if !(col isa Int)
-        Base.depwarn("implicit broadcasting in DataFrameRow assignment is deprecated", :setindex!)
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::Union{DataFrameRow, NamedTuple, AbstractDict},
+                                  row_ind::Integer,
+                                  col_inds::$(T))
+        idxs = index(df)[col_inds]
+        if length(v) != length(idxs)
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
+                                    " collection contains $(length(v)) elements"))
+        end
+
+        if v isa AbstractDict
+            for n in view(_names(df), idxs)
+                if !haskey(v, n)
+                    throw(ArgumentError("Column :$n not found in source dictionary"))
+                end
+            end
+        elseif !all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v)))
+            mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
+            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
+                                " positions $(join(mismatched, ", ", " and "))"))
+        end
+
+        for (col, val) in pairs(v)
+            df[row_ind, col] = val
+        end
+        return df
     end
-    setindex!(parent(r), value, row(r), col)
 end
+
+Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
+    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 

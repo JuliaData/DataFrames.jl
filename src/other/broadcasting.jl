@@ -27,7 +27,7 @@ function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
             newres = similar(Vector{promote_type(S, T)}, length(res))
             copyto!(newres, 1, res, 1, i-1)
             newres[i] = val
-            return copyto_widen!(newres, bc, i + 1, 2)
+            return copyto_widen!(newres, bc, i + 1, col)
         end
     end
     return res
@@ -47,12 +47,17 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         throw(DimensionMismatch("cannot broadcast a data frame into $ndim dimensions"))
     end
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique([_names(df) for df in bcf.args if df isa AbstractDataFrame])
+    colnames = unique!([_names(df) for df in bcf.args if df isa AbstractDataFrame])
     if length(colnames) != 1
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
-        msg = join(wrongnames, ", ", " and ")
-        throw(ArgumentError("Column names in broadcasted data frames must match. " *
-                            "Non matching column names are $msg"))
+        if isempty(wrongnames)
+            throw(ArgumentError("Column names in broadcasted data frames " *
+                                "must have the same order"))
+        else
+            msg = join(wrongnames, ", ", " and ")
+            throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                                "Non matching column names are $msg"))
+        end
     end
     nrows = length(axes(bcf)[1])
     df = DataFrame()
@@ -80,14 +85,12 @@ end
 
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
-# ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
-# # ColReplaceDataFrame allows for column replacement in broadcasting
-# struct ColReplaceDataFrame
-#     df::DataFrame
-#     cols::Vector{Int}
-# end
+struct ColReplaceDataFrame
+    df::DataFrame
+    cols::Vector{Int}
+end
 
-# Base.axes(x::ColReplaceDataFrame) = axes(x.df)
+Base.axes(x::ColReplaceDataFrame) = (axes(x.df, 1), Base.OneTo(length(x.cols)))
 
 Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
 Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
@@ -95,13 +98,11 @@ Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
 function Base.maybeview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
-        throw(ArgumentError("broadcasting with column replacement is currently allowed only for single column index"))
+        return ColReplaceDataFrame(df, index(df)[cols])
     end
     if !(cols isa Symbol) && cols > ncol(df)
         throw(ArgumentError("creating new columns using an integer index by broadcasting is disallowed"))
     end
-    # in the future we might allow cols to target multiple columns
-    # in which case ColReplaceDataFrame(df, index(df)[cols]) will be returned
     LazyNewColDataFrame(df, cols)
 end
 
@@ -202,12 +203,18 @@ end
 
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+    colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && _names(df) != colnames[1])
+        push!(colnames, _names(df))
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
-        msg = join(wrongnames, ", ", " and ")
-        throw(ArgumentError("Column names in broadcasted data frames must match. " *
-                            "Non matching column names are $msg"))
+        if isempty(wrongnames)
+            throw(ArgumentError("Column names in broadcasted data frames " *
+                                "must have the same order"))
+        else
+            msg = join(wrongnames, ", ", " and ")
+            throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                                "Non matching column names are $msg"))
+        end
     end
 
     bcf′ = Base.Broadcast.preprocess(df, bcf)
@@ -229,28 +236,48 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Ba
     end
 end
 
-# copyto! for ColReplaceDataFrame is reserved for future extensions if we decide to allow df[!, cols] .= v
-# function Base.copyto!(df::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
-#     bcf = Base.Broadcast.flatten(bc)
-#     colnames = unique([_names(x) for x in bcf.args if x isa AbstractDataFrame])
-#     if length(colnames) > 1 || (length(colnames) == 1 && view(_names(df.df), df.cols) != colnames[1])
-#         wrongnames = setdiff(union(colnames...), intersect(colnames...))
-#         msg = join(wrongnames, ", ", " and ")
-#         throw(ArgumentError("Column names in broadcasted data frames must match. " *
-#                             "Non matching column names are $msg"))
-#     end
+create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) where {T} =
+    Base.Broadcast.Broadcasted{T}(bcf′_col.f, bcf′_col.args, ())
 
-#     nrows = length(axes(bcf)[1])
-#     for (i, colidx) in enumerate(df.cols)
-#         bcf′ = getcolbc(bcf, i)
-#         v1 = bcf′[CartesianIndex(1, i)]
-#         startcol = similar(Vector{typeof(v1)}, nrows)
-#         startcol[1] = v1
-#         col = copyto_widen!(startcol, bcf′, 2, i)
-#         df.df[!, colidx] = col
-#     end
-#     df.df
-# end
+function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
+    bcf = Base.Broadcast.flatten(bc)
+    colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+    if length(colnames) > 1 || (length(colnames) == 1 && view(_names(crdf.df), crdf.cols) != colnames[1])
+        push!(colnames, view(_names(crdf.df), crdf.cols))
+        wrongnames = setdiff(union(colnames...), intersect(colnames...))
+        if isempty(wrongnames)
+            throw(ArgumentError("Column names in broadcasted data frames " *
+                                "must have the same order"))
+        else
+            msg = join(wrongnames, ", ", " and ")
+            throw(ArgumentError("Column names in broadcasted data frames must match. " *
+                                "Non matching column names are $msg"))
+        end
+    end
+
+    bcf′ = Base.Broadcast.preprocess(crdf, bcf)
+    nrows = length(axes(bcf′)[1])
+    for (i, col_idx) in enumerate(crdf.cols)
+        bcf′_col = getcolbc(bcf′, i)
+        if bcf′_col isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
+            bc_tmp = create_bc_tmp(bcf′_col)
+            v = Base.Broadcast.materialize(bc_tmp)
+            newcol = similar(Vector{typeof(v)}, nrow(crdf.df))
+            copyto!(newcol, bc)
+        else
+            if nrows == 0
+                newcol = Any[]
+            else
+                v1 = bcf′_col[CartesianIndex(1, i)]
+                startcol = similar(Vector{typeof(v1)}, nrows)
+                startcol[1] = v1
+                newcol = copyto_widen!(startcol, bcf′_col, 2, i)
+            end
+        end
+        crdf.df[!, col_idx] = newcol
+    end
+    crdf.df
+end
 
 Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
     Base.Broadcast.broadcast_unalias(parent(dest), src)

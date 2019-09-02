@@ -24,11 +24,12 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DataValues = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Random", "Test"]
+test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Logging", "Random", "Test"]
 
 [compat]
 julia = "1"
