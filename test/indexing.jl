@@ -1380,6 +1380,7 @@ end
 end
 
 @testset "additional setindex! tests" begin
+    df = DataFrame(reshape(1:12, 4, :))
     df[1:2, :] = df[3:4, :]
     @test df == DataFrame([3  7  11
                            4  8  12
