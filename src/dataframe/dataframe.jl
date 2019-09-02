@@ -1166,7 +1166,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
     if columns === :equal && length(row) != ncols
         # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
-                      " of elements as is the number of columns in `df`." *
+                      " of elements as is the number of columns in `df`. " *
                       "Use `columns=:intersect` to disable this check.", :push!)
     end
     current_col = 0
