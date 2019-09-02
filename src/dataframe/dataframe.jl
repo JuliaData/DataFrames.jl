@@ -1191,7 +1191,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
 end
 
 """
-    push!(df::DataFrame, row)
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray, Base.Generator})
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
           columns::Symbol=:intersect)
 
@@ -1201,8 +1201,9 @@ Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
 If `row` is neither a `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
-it is assumed to be an iterable and columns are matched by order of appearance.
-In this case `row` must contain the same number of elements as the number of columns in `df`.
+it must be a `Tuple`, an `AbstractArray`, or a `Base.Generator`
+and columns are matched by order of appearance. In this case `row` must contain
+the same number of elements as the number of columns in `df`.
 
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names (order is ignored).
@@ -1277,6 +1278,10 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 ```
 """
 function Base.push!(df::DataFrame, row::Any)
+    if ! row isa Union{Tuple, AbstractArray, Base.Generator}
+        Base.depwarn("In the future push! will not allow passing collections of type" *
+                     "$(typeof(row)) to be pushed into a DataFrame", :push!)
+    end
     nrows, ncols = size(df)
     if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
