@@ -151,7 +151,9 @@ Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowe
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
                     equivalent to `dfr.col = v` if `col` is a valid identifier;
 * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
-                     `v` can be: 1) an iterable, in which case it must have a number of elements equal to `length(dfr)`,
+                     `v` can be:
+                     1) a `Tuple`, an `AbstractArray` or a `Base.Generator`,
+                        in which cases it must have a number of elements equal to `length(dfr)`,
                      2) an `AbstractDict`, in which case column names must match,
                      3) a `NamedTuple` or `DataFrameRow`, in which case column names and order must match;
 

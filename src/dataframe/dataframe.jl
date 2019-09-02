@@ -504,7 +504,7 @@ end
 
 for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     @eval function Base.setindex!(df::DataFrame,
-                                  v,
+                                  v::Union{Tuple, AbstractArray, Base.Generator},
                                   row_ind::Integer,
                                   col_inds::$T)
         idxs = index(df)[col_inds]

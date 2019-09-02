@@ -1175,9 +1175,48 @@ end
         @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
     end
 
-    # `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
-    #                    `v` can be an `AbstractVector` or `v` can be a `NamedTuple` or `DataFrameRow`
-    #                    when column names must match;
+    # * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
+    #                      `v` can be:
+    #                      1) a `Tuple`, an `AbstractArray` or a `Base.Generator`,
+    #                         in which cases it must have a number of elements equal to `length(dfr)`,
+    #                      2) an `AbstractDict`, in which case column names must match,
+    #                      3) a `NamedTuple` or `DataFrameRow`, in which case column names and order must match;
+
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = (10, 11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = (10, 11, 12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = [10, 11, 12]
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = [10  11]
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = [10 11 12]
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    dfr[:] = (i for i in 10:11, _ in 1:1, _ in 1:1)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[:] = (i for i in 10:12, _ in 1:1, _ in 1:1)
+    @test df == DataFrame(a=1,b=2)
 
     df = DataFrame(a=1,b=2)
     dfr = df[1, :]
@@ -1226,52 +1265,90 @@ end
     @test_throws DimensionMismatch dfr[:] = DataFrame(a=10, b=11, c=12)[1, :]
     @test df == DataFrame(a=1,b=2)
 
-    df = DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = (10, 11)
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = (10, 11, 12)
+    @test df == DataFrame(a=1, b=2, c=3)
+
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = [10, 11]
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = [10, 11, 12]
+    @test df == DataFrame(a=1, b=2, c=3)
+
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = [10 11]
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = [10 11 12]
+    @test df == DataFrame(a=1, b=2, c=3)
+
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    dfr[Not(3)] = (i for i in 11:12, _ in 1:1, _ in 1:1)
+    @test df == DataFrame(a=10,b=11, c=3)
+    df = DataFrame(a=1, b=2, c=3)
+    dfr = df[1, :]
+    @test_throws DimensionMismatch dfr[Not(3)] = (i for i in 11:13, _ in 1:1, _ in 1:1)
+    @test df == DataFrame(a=1, b=2, c=3)
+
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     dfr[Not(3)] = Dict(:a=>10, :b=>11)
     @test df == DataFrame(a=10,b=11, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws ArgumentError dfr[Not(3)] = Dict(:a=>10, :c=>11)
-    @test df == DataFrame(a=1,b=2, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws DimensionMismatch dfr[Not(3)] = Dict(:a=>10, :b=>11, :c=>12)
-    @test df == DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
 
-    df = DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     dfr[Not(3)] = (a=10, b=11)
     @test df == DataFrame(a=10,b=11, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws ArgumentError dfr[Not(3)] = (a=10, c=11)
-    @test df == DataFrame(a=1,b=2, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws ArgumentError dfr[Not(3)] = (b=10, a=11)
-    @test df == DataFrame(a=1,b=2, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws DimensionMismatch dfr[Not(3)] = (a=10, b=11, c=12)
-    @test df == DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
 
-    df = DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     dfr[Not(3)] = DataFrame(a=10, b=11)[1, :]
     @test df == DataFrame(a=10,b=11, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws ArgumentError dfr[Not(3)] = DataFrame(a=10, c=11)[1, :]
-    @test df == DataFrame(a=1,b=2, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws ArgumentError dfr[Not(3)] = DataFrame(b=10, a=11)[1, :]
-    @test df == DataFrame(a=1,b=2, c=3)
-    df = DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
     @test_throws DimensionMismatch dfr[Not(3)] = DataFrame(a=10, b=11, c=12)[1, :]
-    @test df == DataFrame(a=1,b=2, c=3)
+    @test df == DataFrame(a=1, b=2, c=3)
+
+    @test_throws MethodError dfr[:] = "ab"
 end
 
 @testset "setindex! with ! or : and multiple cols" begin
