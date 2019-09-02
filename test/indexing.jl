@@ -1286,7 +1286,7 @@ end
 
     df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
-    dfr[Not(3)] = (i for i in 11:12, _ in 1:1, _ in 1:1)
+    dfr[Not(3)] = (i for i in 10:11, _ in 1:1, _ in 1:1)
     @test df == DataFrame(a=10,b=11, c=3)
     df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
