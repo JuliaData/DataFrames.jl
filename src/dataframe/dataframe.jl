@@ -1278,7 +1278,7 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 ```
 """
 function Base.push!(df::DataFrame, row::Any)
-    if ! row isa Union{Tuple, AbstractArray, Base.Generator}
+    if !(row isa Union{Tuple, AbstractArray, Base.Generator})
         Base.depwarn("In the future push! will not allow passing collections of type" *
                      "$(typeof(row)) to be pushed into a DataFrame", :push!)
     end
