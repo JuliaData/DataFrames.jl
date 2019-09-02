@@ -1393,7 +1393,7 @@ end
                            4  8  12
                            4  8  12])
 
-    @test_throws DimensionMismatch df[1, :] = 1
+    @test_throws MethodError df[1, :] = 1
 
     df[:, 2] = ones(4)
     @test df == DataFrame([4  1  12
