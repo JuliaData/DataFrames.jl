@@ -352,6 +352,9 @@ end
 
     @testset "old setindex! tests" begin
         df = DataFrame(reshape(1:12, 4, :))
+        df[1, :] = df[1:1, :]
+
+        df = DataFrame(reshape(1:12, 4, :))
 
         # Scalar broadcasting assignment of rows
         df[1:2, :] = 1
