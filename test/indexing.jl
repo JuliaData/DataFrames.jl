@@ -1024,8 +1024,8 @@ end
 
     @test_throws DimensionMismatch df[1, :] = [1, 2, 3]
     @test_throws DimensionMismatch dfr[:] = [1, 2, 3]
-    @test_throws DimensionMismatch df[1, 1:2] = 3
-    @test_throws DimensionMismatch dfr[:] = 3
+    @test_throws MethodError df[1, 1:2] = 3
+    @test_throws MethodError dfr[:] = 3
 
     # numbers are iterable
     dfr[1:1] = 100
