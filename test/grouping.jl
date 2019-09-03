@@ -893,17 +893,23 @@ Base.isless(::TestType, ::TestType) = false
     end
 end
 
-@testset "combine with columns named like grouping keys" begin
+@testset "combine and map with columns named like grouping keys" begin
     df = DataFrame(x=["a", "a", "b", missing], y=1:4)
     gd = groupby(df, :x)
     @test combine(identity, gd) ≅ df
     @test combine(d -> d[:, [2, 1]], gd) ≅ df
     @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test map(identity, gd) ≅ gd
+    @test map(d -> d[:, [2, 1]], gd) ≅ gd
+    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
 
     gd = groupby(df, :x, skipmissing=true)
     @test combine(identity, gd) == df[1:3, :]
     @test combine(d -> d[:, [2, 1]], gd) == df[1:3, :]
     @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test map(identity, gd) == gd
+    @test map(d -> d[:, [2, 1]], gd) == gd
+    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
 end
 
 @testset "iteration protocol" begin
