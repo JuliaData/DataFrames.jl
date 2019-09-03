@@ -20,7 +20,6 @@ The following are normally implemented for AbstractDataFrames:
 * `names` : columns names
 * [`names!`](@ref) : set columns names
 * [`rename!`](@ref) : rename columns names based on keyword arguments
-* [`eltypes`](@ref) : `eltype` of each column
 * `length` : number of columns
 * `size` : (nrows, ncols)
 * [`first`](@ref) : first `n` rows
@@ -170,31 +169,6 @@ rename!(df, Dict(:i =>: A, :x => :X))
 
 """
 (rename!, rename)
-
-"""
-Return element types of columns
-
-```julia
-eltypes(df::AbstractDataFrame)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::Vector{Type}` : the element type of each column
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-eltypes(df)
-```
-
-"""
-eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -790,7 +764,7 @@ Base.filter!(f, df::AbstractDataFrame) =
     deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
-    T = reduce(promote_type, eltypes(df))
+    T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
     convert(Matrix{T}, df)
 end
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T

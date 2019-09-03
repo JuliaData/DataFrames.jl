@@ -114,7 +114,7 @@ end
     @test df ≅ (x->x).(df)
     df3 = coalesce.(df, nothing)
     @test df2 == df3
-    @test eltypes(df2) == eltypes(df3)
+    @test eltype.(eachcol(df2)) == eltype.(eachcol(df3))
     for i in axes(df, 2)
         @test typeof(df2[!, i]) == typeof(df3[!, i])
     end
@@ -127,9 +127,9 @@ end
     @test identity.(df5) == df5
     @test (x->x).(df5) == df5
     @test df5 .+ 1 == DataFrame(Matrix(df5) .+ 1, names(df5))
-    @test eltypes(identity.(df5)) == [Int, BigFloat]
-    @test eltypes((x->x).(df5)) == [Int, BigFloat]
-    @test eltypes(df5 .+ 1) == [Int, BigFloat]
+    @test eltype.(eachcol(identity.(df5))) == [Int, BigFloat]
+    @test eltype.(eachcol((x->x).(df5))) == [Int, BigFloat]
+    @test eltype.(eachcol(df5 .+ 1)) == [Int, BigFloat]
 end
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
@@ -753,7 +753,7 @@ end
     @test_throws InexactError convert.(Int, df)
     df2 = convert.(Int, floor.(df))
     @test df2 == DataFrame(zeros(Int, 2, 3))
-    @test eltypes(df2) == [Int, Int, Int]
+    @test eltype.(eachcol(df2)) == [Int, Int, Int]
 end
 
 @testset "scalar on assignment side" begin

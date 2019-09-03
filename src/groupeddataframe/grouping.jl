@@ -754,13 +754,13 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                              incols::Union{Nothing, AbstractVector, NamedTuple})
     if first isa AbstractDataFrame
         n = 0
-        eltys = eltypes(first)
+        eltys = eltype.(eachcol(first))
     elseif first isa NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}
         n = 0
         eltys = map(eltype, first)
     elseif first isa DataFrameRow
         n = length(gd)
-        eltys = eltypes(parent(first))
+        eltys = eltype.(eachcol(parent(first)))
     else # NamedTuple giving a single row
         n = length(gd)
         eltys = map(typeof, first)
