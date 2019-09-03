@@ -435,7 +435,16 @@ of `combine(map(f, groupby(df, cols)))`.
 function combine(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
-        return hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
+        keys = _names(gd.parent)[gd.cols]
+        for key in keys
+            if hasproperty(valscat, key) &&
+               !isequal(valscat[!, key], view(gd.parent[!, key], idx))
+               throw(ArgumentError("column :$key in returned data frame " *
+                                   "is not equal to grouping key :$key"))
+            end
+        end
+        return hcat!(gd.parent[idx, gd.cols],
+                     without(valscat, intersect(keys, _names(valscat))))
     else
         return gd.parent[1:0, gd.cols]
     end
