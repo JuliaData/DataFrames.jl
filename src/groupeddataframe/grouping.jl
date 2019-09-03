@@ -212,8 +212,10 @@ If the first argument is a vector, tuple or named tuple of such pairs, each pair
 handled as described above. If a named tuple, field names are used to name
 each generated column.
 
-If the first argument is a callable, it is passed a `SubDataFrame` view for each group,
+If the first argument is a callable `f`, it is passed a [`SubDataFrame`](@ref) view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
+If the returned data frame contains columns with the same names as the grouping columns,
+they are required to be equal.
 Note that this second form is much slower than the first one due to type instability.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
@@ -297,7 +299,16 @@ See [`by`](@ref) for more examples.
 function Base.map(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
-        parent = hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
+        keys = _names(gd.parent)[gd.cols]
+        for key in keys
+            if hasproperty(valscat, key) &&
+               !isequal(valscat[!, key], view(gd.parent[!, key], idx))
+               throw(ArgumentError("column :$key in returned data frame " *
+                                   "is not equal to grouping key :$key"))
+            end
+        end
+        parent = hcat!(gd.parent[idx, gd.cols],
+                       without(valscat, intersect(keys, _names(valscat))))
         if length(idx) == 0
             return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
                                     Int[], Int[], Int[])
@@ -343,6 +354,8 @@ views into these columns.
 
 If the last argument is a callable `f`, it is passed a [`SubDataFrame`](@ref) view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
+If the returned data frame contains columns with the same names as the grouping columns,
+they are required to be equal.
 Note that this second form is much slower than the first one due to type instability.
 A method is defined with `f` as the first argument, so do-block
 notation can be used.
@@ -435,7 +448,16 @@ of `combine(map(f, groupby(df, cols)))`.
 function combine(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
-        return hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
+        keys = _names(gd.parent)[gd.cols]
+        for key in keys
+            if hasproperty(valscat, key) &&
+               !isequal(valscat[!, key], view(gd.parent[!, key], idx))
+               throw(ArgumentError("column :$key in returned data frame " *
+                                   "is not equal to grouping key :$key"))
+            end
+        end
+        return hcat!(gd.parent[idx, gd.cols],
+                     without(valscat, intersect(keys, _names(valscat))))
     else
         return gd.parent[1:0, gd.cols]
     end
@@ -948,6 +970,8 @@ views into these columns.
 
 If the last argument is a callable `f`, it is passed a [`SubDataFrame`](@ref) view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
+If the returned data frame contains columns with the same names as the grouping columns,
+they are required to be equal.
 Note that this second form is much slower than the first one due to type instability.
 A method is defined with `f` as the first argument, so do-block
 notation can be used.
