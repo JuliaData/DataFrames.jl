@@ -136,7 +136,7 @@ julia> for g in gd
 
 """
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
-                 sort::Bool = false, skipmissing::Bool = false)
+                 sort::Bool=false, skipmissing::Bool=false)
     _check_consistency(df)
     intcols = convert(Vector{Int}, index(df)[cols])
     sdf = df[!, intcols]
@@ -1064,16 +1064,21 @@ julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
 ```
 
 """
-by(d::AbstractDataFrame, cols::Any, f::Any; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
-    by(d, cols, f, sort = sort)
-by(d::AbstractDataFrame, cols::Any, f::Pair; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(d::AbstractDataFrame, cols::Any, f::Pair...; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
-    combine(values(f), groupby(d, cols, sort = sort))
+by(d::AbstractDataFrame, cols::Any, f::Any;
+   sort::Bool=false, skipmissing::Bool=false) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(f::Any, d::AbstractDataFrame, cols::Any;
+   sort::Bool=false, skipmissing::Bool=false) =
+    by(d, cols, f, sort=sor, skipmissing=skipmissingt)
+by(d::AbstractDataFrame, cols::Any, f::Pair;
+   sort::Bool=false, skipmissing::Bool=false) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(d::AbstractDataFrame, cols::Any, f::Pair...;
+   sort::Bool=false, skipmissing::Bool=false) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(d::AbstractDataFrame, cols::Any;
+   sort::Bool=false, skipmissing::Bool=false, f...) =
+    combine(values(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
 
 #
 # Aggregate convenience functions

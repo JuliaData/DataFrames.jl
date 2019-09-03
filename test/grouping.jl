@@ -1173,4 +1173,11 @@ end
     @test groupvars(gd2) == [:A]
 end
 
+@testset "by skipmissing and sort" begin
+    df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
+    for dosort in (false, true), doskipmissing in (false, true)
+        @test by(df, :x1, :b=>sum) ≅ combine(groupby(df, :x1), :b=>sum)
+    end
+end
+
 end # module
