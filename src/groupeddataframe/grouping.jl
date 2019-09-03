@@ -1069,7 +1069,7 @@ by(d::AbstractDataFrame, cols::Any, f::Any;
     combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
 by(f::Any, d::AbstractDataFrame, cols::Any;
    sort::Bool=false, skipmissing::Bool=false) =
-    by(d, cols, f, sort=sor, skipmissing=skipmissingt)
+    by(d, cols, f, sort=sort, skipmissing=skipmissingt)
 by(d::AbstractDataFrame, cols::Any, f::Pair;
    sort::Bool=false, skipmissing::Bool=false) =
     combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
