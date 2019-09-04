@@ -104,8 +104,8 @@ end
     for cols in ([:a, :b], [:b, :a], [:a, :c], [:c, :a],
                  [1, 2], [2, 1], [1, 3], [3, 1],
                  [true, true, false, false], [true, false, true, false])
-        colssym = names(df[:, cols])
-        hcatdf = hcat(df[:, cols], df, makeunique=true)
+        colssym = names(df[!, cols])
+        hcatdf = hcat(df[!, cols], df[!, Not(cols)])
         nms = names(hcatdf)
         res = unique(df[:, cols])
         res.xmax = [maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
@@ -163,7 +163,7 @@ end
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         df_ref = DataFrame(gd)
-        @test sort(hcat(df_ref[:, cols], df_ref, makeunique=true), colssym) == shcatdf
+        @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
@@ -183,7 +183,7 @@ end
         end
         @test combine(identity, gd) == shcatdf
         df_ref = DataFrame(gd)
-        @test hcat(df_ref[:, cols], df_ref, makeunique=true) == shcatdf
+        @test hcat(df_ref[!, cols], df_ref[!, Not(cols)]) == shcatdf
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
         @test rename(combine(f3, gd), :x1 => :xmax) == sres
@@ -342,7 +342,7 @@ end
 
     # Test function returning DataFrameRow
     res = by(d -> DataFrameRow(d, 1, :), df, :x)
-    @test res == DataFrame(x=df.x, x_1=df.x, y=df.y)
+    @test res == DataFrame(x=df.x, y=df.y)
 
     # Test function returning Tuple
     res = by(d -> (sum(d.y),), df, :x)
@@ -891,6 +891,25 @@ Base.isless(::TestType, ::TestType) = false
         @test res.z isa Vector{Any}
         @test res.z == by(df, :x, z = :y => x -> maximum(x)).z
     end
+end
+
+@testset "combine and map with columns named like grouping keys" begin
+    df = DataFrame(x=["a", "a", "b", missing], y=1:4)
+    gd = groupby(df, :x)
+    @test combine(identity, gd) ≅ df
+    @test combine(d -> d[:, [2, 1]], gd) ≅ df
+    @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test map(identity, gd) ≅ gd
+    @test map(d -> d[:, [2, 1]], gd) ≅ gd
+    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+
+    gd = groupby(df, :x, skipmissing=true)
+    @test combine(identity, gd) == df[1:3, :]
+    @test combine(d -> d[:, [2, 1]], gd) == df[1:3, :]
+    @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test map(identity, gd) == gd
+    @test map(d -> d[:, [2, 1]], gd) == gd
+    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
 end
 
 @testset "iteration protocol" begin
