@@ -1176,8 +1176,8 @@ end
 @testset "by skipmissing and sort" begin
     df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
     for dosort in (false, true), doskipmissing in (false, true)
-        @test by(df, :x1, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
-            combine(groupby(df, :x1, sort=dosort, skipmissing=doskipmissing), :b=>sum)
+        @test by(df, :a, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
+            combine(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
     end
 end
 
