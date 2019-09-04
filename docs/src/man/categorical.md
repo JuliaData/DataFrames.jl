@@ -160,11 +160,6 @@ julia> df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
 │ 5   │ D      │ Y      │
 │ 6   │ A      │ Y      │
 
-julia> eltypes(df)
-2-element Array{DataType,1}:
- String
- String
-
 julia> categorical!(df, :A) # change the column `:A` to be categorical
 6×2 DataFrame
 │ Row │ A            │ B      │
@@ -176,11 +171,6 @@ julia> categorical!(df, :A) # change the column `:A` to be categorical
 │ 4   │ D            │ Y      │
 │ 5   │ D            │ Y      │
 │ 6   │ A            │ Y      │
-
-julia> eltypes(df)
-2-element Array{DataType,1}:
- CategoricalString{UInt32}
- String
 ```
 
 If columns are not specified, all columns with an `AbstractString` element type
@@ -199,7 +189,7 @@ julia> categorical!(df, compress=true)
 │ 5   │ D            │ Y            │
 │ 6   │ A            │ Y            │
 
-julia> eltypes(df)
+julia> eltype.(eachcol(df))
 2-element Array{DataType,1}:
  CategoricalString{UInt8}
  CategoricalString{UInt8}
