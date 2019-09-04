@@ -33,7 +33,7 @@ Base.parent(gd::GroupedDataFrame) = getfield(gd, :parent)
 A view of an `AbstractDataFrame` split into row groups
 
 ```julia
-groupby(d::AbstractDataFrame, cols; sort = false, skipmissing = false)
+groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 ```
 
 ### Arguments
@@ -135,7 +135,7 @@ julia> for g in gd
 
 """
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
-                 sort::Bool = false, skipmissing::Bool = false)
+                 sort::Bool=false, skipmissing::Bool=false)
     _check_consistency(df)
     intcols = convert(Vector{Int}, index(df)[cols])
     sdf = df[!, intcols]
@@ -949,10 +949,14 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-    by(df::AbstractDataFrame, keys, cols => f...; sort::Bool = false)
-    by(df::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
-    by(df::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, df::AbstractDataFrame, keys; sort::Bool = false)
+    by(df::AbstractDataFrame, keys, cols=>f...;
+       sort::Bool=false, skipmissing::Bool=false)
+    by(df::AbstractDataFrame, keys; (colname = cols => f)...,
+       sort::Bool=false, skipmissing::Bool=false)
+    by(df::AbstractDataFrame, keys, f;
+       sort::Bool=false, skipmissing::Bool=false)
+    by(f, df::AbstractDataFrame, keys;
+       sort::Bool=false, skipmissing::Bool=false)
 
 Split-apply-combine in one step: apply `f` to each grouping in `df`
 based on grouping columns `keys`, and return a `DataFrame`.
@@ -1001,6 +1005,8 @@ operating on a single column and returning a single value or vector, the functio
 appended to the input colummn name; for other functions, columns are called `x1`, `x2`
 and so on. The resulting data frame will be sorted on `keys` if `sort=true`.
 Otherwise, ordering of rows is undefined.
+If `skipmissing=true` then the resulting data frame will not contain groups
+with `missing` values in one of the `keys` columns.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
 `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
@@ -1087,16 +1093,21 @@ julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
 ```
 
 """
-by(d::AbstractDataFrame, cols::Any, f::Any; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
-    by(d, cols, f, sort = sort)
-by(d::AbstractDataFrame, cols::Any, f::Pair; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(d::AbstractDataFrame, cols::Any, f::Pair...; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
-    combine(values(f), groupby(d, cols, sort = sort))
+by(d::AbstractDataFrame, cols::Any, f::Any;
+   sort::Bool=false, skipmissing::Bool=false) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(f::Any, d::AbstractDataFrame, cols::Any;
+   sort::Bool=false, skipmissing::Bool=false) =
+    by(d, cols, f, sort=sort, skipmissing=skipmissing)
+by(d::AbstractDataFrame, cols::Any, f::Pair;
+   sort::Bool=false, skipmissing::Bool=false) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(d::AbstractDataFrame, cols::Any, f::Pair...;
+   sort::Bool=false, skipmissing::Bool=false) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(d::AbstractDataFrame, cols::Any;
+   sort::Bool=false, skipmissing::Bool=false, f...) =
+    combine(values(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
 
 #
 # Aggregate convenience functions
