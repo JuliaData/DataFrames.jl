@@ -34,12 +34,11 @@ A view of an `AbstractDataFrame` split into row groups
 
 ```julia
 groupby(d::AbstractDataFrame, cols; sort = false, skipmissing = false)
-groupby(cols; sort = false, skipmissing = false)
 ```
 
 ### Arguments
 
-* `df` : an `AbstractDataFrame` to split (optional, see [Returns](#returns))
+* `df` : an `AbstractDataFrame` to split
 * `cols` : data table columns to group by
 * `sort` : whether to sort rows according to the values of the grouping columns `cols`
 * `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
