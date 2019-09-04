@@ -982,7 +982,7 @@ operating on a single column and returning a single value or vector, the functio
 appended to the input colummn name; for other functions, columns are called `x1`, `x2`
 and so on. The resulting data frame will be sorted on `keys` if `sort=true`.
 Otherwise, ordering of rows is undefined.
-Additionally if `skipmissing=true` then the resulting data frame will not contain groups
+If `skipmissing=true` then the resulting data frame will not contain groups
 with `missing` values in one of the `keys` columns.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
