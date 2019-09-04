@@ -570,7 +570,7 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
     @eval begin
         function groupreduce_init(::typeof($op), condf, incol::AbstractVector{T}, gd) where T
             # !ismissing check is purely an optimization to avoid a copy later
-            outcol = similar(incol, condf === !ismissing ? Missings.T(T) : T, length(gd))
+            outcol = similar(incol, condf === !ismissing ? nonmissingtype(T) : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
             if incol isa CategoricalVector
                 U = Union{CategoricalArrays.leveltype(outcol),
@@ -579,7 +579,7 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             end
             # It is safe to use a non-missing init value
             # since missing will poison the result if present
-            S = Missings.T(T)
+            S = nonmissingtype(T)
             if isconcretetype(S) && hasmethod($initf, Tuple{S})
                 fill!(outcol, $initf(S))
             elseif condf !== nothing

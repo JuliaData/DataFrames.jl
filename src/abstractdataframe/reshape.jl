@@ -108,8 +108,7 @@ function stack(df::AbstractDataFrame, measure_vars, id_vars;
 end
 # no vars specified, by default select only numeric columns
 numeric_vars(df::AbstractDataFrame) =
-    [T <: AbstractFloat || (T >: Missing && Missings.T(T) <: AbstractFloat)
-     for T in eltypes(df)]
+    [nonmissingtype(T) <: AbstractFloat for T in eltypes(df)]
 
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                variable_name::Symbol=:variable, value_name::Symbol=:value)
