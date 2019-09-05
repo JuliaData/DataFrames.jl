@@ -5,7 +5,8 @@ Sorting is a fundamental component of data analysis. Basic sorting is trivial: j
 ```jldoctest sort
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv"));
+julia> iris = CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv")) |>
+              DataFrame;
 
 julia> first(iris, 4)
 4×5 DataFrame
