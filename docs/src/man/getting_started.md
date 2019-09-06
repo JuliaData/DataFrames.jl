@@ -612,7 +612,7 @@ using CSV
 
 A dataset can now be read from a CSV file at path `input` using
 ```julia
-CSV.read(input)
+DataFrame(CSV.File(input))
 ```
 
 A `DataFrame` can be written to a CSV file at path `output` using
@@ -621,4 +621,4 @@ df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)
 ```
 
-The behavior of CSV functions can be adapted via keyword arguments. For more information, see `?CSV.read` and `?CSV.write`, or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
+The behavior of CSV functions can be adapted via keyword arguments. For more information, see `?CSV.File`, `?CSV.read` and `?CSV.write`, or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).

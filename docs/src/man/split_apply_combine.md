@@ -27,7 +27,7 @@ We show several examples of the `by` function applied to the `iris` dataset belo
 ```jldoctest sac
 julia> using DataFrames, CSV, Statistics
 
-julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv"));
+julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv")));
 
 julia> first(iris, 6)
 6×5 DataFrame
