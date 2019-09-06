@@ -36,7 +36,7 @@ function compacttype(T::Type, maxwidth::Int=8)
     sT = string(T)
     length(sT) ≤ maxwidth && return sT
     if T >: Missing
-        T = Missings.T(T)
+        T = nonmissingtype(T)
         sT = string(T)
         suffix = "⍰"
         # handle the case when after removing Missing union type name is short
