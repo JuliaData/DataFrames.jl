@@ -5,6 +5,7 @@ using Test, DataFrames
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
 @test size(eachrow(df)) == (size(df, 1),)
+@test IndexStyle(eachrow(df)) == IndexLinear()
 @test sprint(summary, eachrow(df)) == "2-element DataFrameRows"
 @test Base.IndexStyle(eachrow(df)) == IndexLinear()
 @test eachrow(df)[1] == DataFrameRow(df, 1, :)
@@ -18,9 +19,12 @@ for row in eachrow(df)
 end
 
 @test size(eachcol(df)) == (size(df, 2),)
+@test IndexStyle(eachcol(df)) == IndexLinear()
 @test Base.IndexStyle(eachcol(df)) == IndexLinear()
 @test size(eachcol(df, true)) == (size(df, 2),)
+@test IndexStyle(eachcol(df, true)) == IndexLinear()
 @test size(eachcol(df, false)) == (size(df, 2),)
+@test IndexStyle(eachcol(df, false)) == IndexLinear()
 @test length(eachcol(df)) == size(df, 2)
 @test length(eachcol(df, true)) == size(df, 2)
 @test length(eachcol(df, false)) == size(df, 2)
@@ -51,7 +55,7 @@ end
 @test mapcols(minimum, df) == DataFrame(A = [1], B = [2])
 @test map(minimum, eachcol(df, false)) == [1, 2]
 @test map(minimum, eachcol(df)) == [1, 2]
-@test eltypes(mapcols(Vector{Float64}, df)) == [Float64, Float64]
+@test eltype.(eachcol(mapcols(Vector{Float64}, df))) == [Float64, Float64]
 @test eltype(map(Vector{Float64}, eachcol(df, false))) == Vector{Float64}
 @test eltype(map(Vector{Float64}, eachcol(df))) == Vector{Float64}
 
@@ -109,6 +113,19 @@ end
     @test length(erd[1]) == 5 # the added column is reflected
     select!(df, Not([4,5]))
     @test copy(erd[1]) == (y1 = 51, y2 = 21, y3 = 31) # the removed columns are reflected
+end
+
+@testset "getproperty and propertynames" begin
+    df_base = DataFrame([11:16 21:26 31:36 41:46])
+    for df in (df_base, view(df_base, 1:3, 1:3))
+        for x in (eachcol(df), eachcol(df, true), eachrow(df))
+            @test propertynames(x) == propertynames(df)
+            for n in names(df)
+                @test getproperty(x, n) === getproperty(df, n)
+            end
+            @test_throws ArgumentError x.a
+        end
+    end
 end
 
 end # module

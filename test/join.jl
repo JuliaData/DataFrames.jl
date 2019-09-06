@@ -389,92 +389,50 @@ end
 @testset "join on columns with different left/right names" begin
     global left = DataFrame(id = 1:7, sid = string.(1:7))
     global right = DataFrame(ID = 3:10, SID = string.(3:10))
-    @test join(left, right, on = (:id, :ID), kind=:inner) ==
-        DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
     @test join(left, right, on = :id => :ID, kind=:inner) ==
-        DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
-    @test join(left, right, on = [(:id, :ID)], kind=:inner) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
     @test join(left, right, on = [:id => :ID], kind=:inner) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:inner) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:inner) ==
         DataFrame(id = 3:7, sid = string.(3:7))
 
-    @test join(left, right, on = (:id, :ID), kind=:left) ≅
-        DataFrame(id = 1:7, sid = string.(1:7),
-                  SID = [missing, missing, string.(3:7)...])
     @test join(left, right, on = :id => :ID, kind=:left) ≅
-        DataFrame(id = 1:7, sid = string.(1:7),
-                  SID = [missing, missing, string.(3:7)...])
-    @test join(left, right, on = [(:id, :ID)], kind=:left) ≅
         DataFrame(id = 1:7, sid = string.(1:7),
                   SID = [missing, missing, string.(3:7)...])
     @test join(left, right, on = [:id => :ID], kind=:left) ≅
         DataFrame(id = 1:7, sid = string.(1:7),
                   SID = [missing, missing, string.(3:7)...])
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:left) ==
-        DataFrame(id = 1:7, sid = string.(1:7))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:left) ==
         DataFrame(id = 1:7, sid = string.(1:7))
 
-    @test join(left, right, on = (:id, :ID), kind=:right) ≅
-        DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
-                 SID = string.(3:10))
     @test join(left, right, on = :id => :ID, kind=:right) ≅
-        DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
-                 SID = string.(3:10))
-    @test join(left, right, on = [(:id, :ID)], kind=:right) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
                  SID = string.(3:10))
     @test join(left, right, on = [:id => :ID], kind=:right) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
                  SID = string.(3:10))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:right) ≅
-        DataFrame(id = 3:10, sid = string.(3:10))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:right) ≅
         DataFrame(id = 3:10, sid = string.(3:10))
 
-    @test join(left, right, on = (:id, :ID), kind=:outer) ≅
-        DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
-                  SID = [missing, missing, string.(3:10)...])
     @test join(left, right, on = :id => :ID, kind=:outer) ≅
-        DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
-                  SID = [missing, missing, string.(3:10)...])
-    @test join(left, right, on = [(:id, :ID)], kind=:outer) ≅
         DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
                   SID = [missing, missing, string.(3:10)...])
     @test join(left, right, on = [:id => :ID], kind=:outer) ≅
         DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
                   SID = [missing, missing, string.(3:10)...])
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:outer) ≅
-        DataFrame(id = 1:10, sid = string.(1:10))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:outer) ≅
         DataFrame(id = 1:10, sid = string.(1:10))
 
-    @test join(left, right, on = (:id, :ID), kind=:semi) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = :id => :ID, kind=:semi) ==
         DataFrame(id = 3:7, sid = string.(3:7))
-    @test join(left, right, on = [(:id, :ID)], kind=:semi) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = [:id => :ID], kind=:semi) ==
-        DataFrame(id = 3:7, sid = string.(3:7))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:semi) ==
         DataFrame(id = 3:7, sid = string.(3:7))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:semi) ==
         DataFrame(id = 3:7, sid = string.(3:7))
 
-    @test join(left, right, on = (:id, :ID), kind=:anti) ==
-        DataFrame(id = 1:2, sid = string.(1:2))
     @test join(left, right, on = :id => :ID, kind=:anti) ==
         DataFrame(id = 1:2, sid = string.(1:2))
-    @test join(left, right, on = [(:id, :ID)], kind=:anti) ==
-        DataFrame(id = 1:2, sid = string.(1:2))
     @test join(left, right, on = [:id => :ID], kind=:anti) ==
-        DataFrame(id = 1:2, sid = string.(1:2))
-    @test join(left, right, on = [(:id, :ID), (:sid, :SID)], kind=:anti) ==
         DataFrame(id = 1:2, sid = string.(1:2))
     @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:anti) ==
         DataFrame(id = 1:2, sid = string.(1:2))
@@ -486,33 +444,33 @@ end
 
     # join by :a and :b (Any is the on-column)
     @test join(l, r, on=[:a, :b], kind=:inner) ≅ DataFrame(a=Any[3:7;], b=3:7)
-    @test eltypes(join(l, r, on=[:a, :b], kind=:inner)) == [Any, Int]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:inner))) == [Any, Int]
 
     @test join(l, r, on=[:a, :b], kind=:left) ≅ DataFrame(a=Any[1:7;], b=1:7)
-    @test eltypes(join(l, r, on=[:a, :b], kind=:left)) == [Any, Int]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:left))) == [Any, Int]
 
     @test join(l, r, on=[:a, :b], kind=:right) ≅ DataFrame(a=Any[3:10;], b=3:10)
-    @test eltypes(join(l, r, on=[:a, :b], kind=:right)) == [Any, Int]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:right))) == [Any, Int]
 
     @test join(l, r, on=[:a, :b], kind=:outer) ≅ DataFrame(a=Any[1:10;], b=1:10)
-    @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Any, Int]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:outer))) == [Any, Int]
 
     # join by :b (Any is not on-column)
     @test join(l, r, on=:b, kind=:inner, makeunique=true) ≅
         DataFrame(a=Any[3:7;], b=3:7, a_1=Any[3:7;])
-    @test eltypes(join(l, r, on=:b, kind=:inner, makeunique=true)) == [Any, Int, Any]
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:inner, makeunique=true))) == [Any, Int, Any]
 
     @test join(l, r, on=:b, kind=:left, makeunique=true) ≅
         DataFrame(a=Any[1:7;], b=1:7, a_1=[fill(missing, 2); 3:7;])
-    @test eltypes(join(l, r, on=:b, kind=:left, makeunique=true)) == [Any, Int, Any]
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:left, makeunique=true))) == [Any, Int, Any]
 
     @test join(l, r, on=:b, kind=:right, makeunique=true) ≅
         DataFrame(a=[3:7; fill(missing, 3)], b=3:10, a_1=Any[3:10;])
-    @test eltypes(join(l, r, on=:b, kind=:right, makeunique=true)) == [Any, Int, Any]
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:right, makeunique=true))) == [Any, Int, Any]
 
     @test join(l, r, on=:b, kind=:outer, makeunique=true) ≅
         DataFrame(a=[1:7; fill(missing, 3)], b=1:10, a_1=[fill(missing, 2); 3:10;])
-    @test eltypes(join(l, r, on=:b, kind=:outer, makeunique=true)) == [Any, Int, Any]
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:outer, makeunique=true))) == [Any, Int, Any]
 end
 
 @testset "joins with categorical columns and no matching rows" begin
@@ -525,60 +483,60 @@ end
 
     # joins by a and b
     @test join(l, r, on=[:a, :b], kind=:inner) ≅ DataFrame(a=Int[], b=similar(l.a, 0))
-    @test eltypes(join(l, r, on=[:a, :b], kind=:inner)) == [Int, CS]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:inner))) == [Int, CS]
 
     @test join(l, r, on=[:a, :b], kind=:left) ≅ DataFrame(a=l.a, b=l.b)
-    @test eltypes(join(l, r, on=[:a, :b], kind=:left)) == [Int, CS]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:left))) == [Int, CS]
 
     @test join(l, r, on=[:a, :b], kind=:right) ≅ DataFrame(a=r.a, b=r.b)
-    @test eltypes(join(l, r, on=[:a, :b], kind=:right)) == [Int, CS]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:right))) == [Int, CS]
 
     @test join(l, r, on=[:a, :b], kind=:outer) ≅
         DataFrame(a=vcat(l.a, r.a), b=vcat(l.b, r.b))
-    @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Int, CS]
+    @test eltype.(eachcol(join(l, r, on=[:a, :b], kind=:outer))) == [Int, CS]
 
     # joins by a
     @test join(l, r, on=:a, kind=:inner, makeunique=true) ≅
         DataFrame(a=Int[], b=similar(l.b, 0), b_1=similar(r.b, 0))
-    @test eltypes(join(l, r, on=:a, kind=:inner, makeunique=true)) == [Int, CS, CS]
+    @test eltype.(eachcol(join(l, r, on=:a, kind=:inner, makeunique=true))) == [Int, CS, CS]
 
     @test join(l, r, on=:a, kind=:left, makeunique=true) ≅
         DataFrame(a=l.a, b=l.b, b_1=similar_missing(r.b, nl))
-    @test eltypes(join(l, r, on=:a, kind=:left, makeunique=true)) ==
+    @test eltype.(eachcol(join(l, r, on=:a, kind=:left, makeunique=true))) ==
         [Int, CS, Union{CS, Missing}]
 
     @test join(l, r, on=:a, kind=:right, makeunique=true) ≅
         DataFrame(a=r.a, b=similar_missing(l.b, nr), b_1=r.b)
-    @test eltypes(join(l, r, on=:a, kind=:right, makeunique=true)) ==
+    @test eltype.(eachcol(join(l, r, on=:a, kind=:right, makeunique=true))) ==
         [Int, Union{CS, Missing}, CS]
 
     @test join(l, r, on=:a, kind=:outer, makeunique=true) ≅
         DataFrame(a=vcat(l.a, r.a),
                   b=vcat(l.b, fill(missing, nr)),
                   b_1=vcat(fill(missing, nl), r.b))
-    @test eltypes(join(l, r, on=:a, kind=:outer, makeunique=true)) ==
+    @test eltype.(eachcol(join(l, r, on=:a, kind=:outer, makeunique=true))) ==
         [Int, Union{CS, Missing}, Union{CS, Missing}]
 
     # joins by b
     @test join(l, r, on=:b, kind=:inner, makeunique=true) ≅
         DataFrame(a=Int[], b=similar(l.b, 0), a_1=similar(r.b, 0))
-    @test eltypes(join(l, r, on=:b, kind=:inner, makeunique=true)) == [Int, CS, Int]
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:inner, makeunique=true))) == [Int, CS, Int]
 
     @test join(l, r, on=:b, kind=:left, makeunique=true) ≅
         DataFrame(a=l.a, b=l.b, a_1=fill(missing, nl))
-    @test eltypes(join(l, r, on=:b, kind=:left, makeunique=true)) ==
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:left, makeunique=true))) ==
         [Int, CS, Union{Int, Missing}]
 
     @test join(l, r, on=:b, kind=:right, makeunique=true) ≅
         DataFrame(a=fill(missing, nr), b=r.b, a_1=r.a)
-    @test eltypes(join(l, r, on=:b, kind=:right, makeunique=true)) ==
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:right, makeunique=true))) ==
         [Union{Int, Missing}, CS, Int]
 
     @test join(l, r, on=:b, kind=:outer, makeunique=true) ≅
         DataFrame(a=vcat(l.a, fill(missing, nr)),
                   b=vcat(l.b, r.b),
                   a_1=vcat(fill(missing, nl), r.a))
-    @test eltypes(join(l, r, on=:b, kind=:outer, makeunique=true)) ==
+    @test eltype.(eachcol(join(l, r, on=:b, kind=:outer, makeunique=true))) ==
         [Union{Int, Missing}, CS, Union{Int, Missing}]
 end
 
@@ -671,6 +629,23 @@ end
                 validate=(true, false)) ≅ outer_multi
      @test_throws ArgumentError join(name_multi, job_multi, on=[:ID1, :ID2], kind=:outer,
                                      validate=(false, true))
+end
+
+@testset "consistency" begin
+    # Join on symbols or vectors of symbols
+    cname = copy(name)
+    cjob = copy(job)
+    push!(cname[!, 1], cname[1, 1])
+    @test_throws AssertionError join(cname, cjob, on = :ID)
+
+    cname = copy(name)
+    cjob = copy(job)
+    push!(cjob[!, 1], cjob[1, 1])
+    @test_throws AssertionError join(cname, cjob, on = :ID)
+
+    cname = copy(name)
+    push!(DataFrames._columns(cname), cname[:, 1])
+    @test_throws AssertionError join(cname, cjob, on = :ID)
 end
 
 end # module

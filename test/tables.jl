@@ -1,6 +1,6 @@
 module TestTables
 
-using Test, Tables, DataFrames, CategoricalArrays
+using Test, Tables, DataFrames
 
 struct NamedTupleIterator{T <: NamedTuple}
     elements::Vector{T}
@@ -163,6 +163,43 @@ end
     @test df.b == [2, 4]
     @test_throws ArgumentError DataFrame!(v)
     @test_throws ArgumentError DataFrame(v, copycols=false)
+end
+
+@testset "columnindex" begin
+    df = DataFrame(rand(3,4))
+    @test columnindex.(Ref(df), names(df)) == 1:4
+    @test columnindex(df, :a) == 0
+    @test_throws ErrorException columnindex(df, 1)
+    @test_throws ErrorException columnindex(df, "x1")
+end
+
+@testset "eachrow and eachcol integration" begin
+     df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+
+     df2 = DataFrame(eachrow(df))
+     @test df == df2
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame!(eachrow(df))
+     @test df == df2
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame(eachcol(df, true))
+     @test df == df2
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame!(eachcol(df, true))
+     @test df == df2
+     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame(eachcol(df))
+     @test names(df2) == [:x1, :x2, :x3, :x4]
+     @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     df2 = DataFrame(eachcol(df))
+     @test names(df2) == [:x1, :x2, :x3, :x4]
+     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 end
 
 end # module

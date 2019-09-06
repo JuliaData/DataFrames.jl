@@ -20,7 +20,6 @@ The following are normally implemented for AbstractDataFrames:
 * `names` : columns names
 * [`names!`](@ref) : set columns names
 * [`rename!`](@ref) : rename columns names based on keyword arguments
-* [`eltypes`](@ref) : `eltype` of each column
 * `length` : number of columns
 * `size` : (nrows, ncols)
 * [`first`](@ref) : first `n` rows
@@ -31,37 +30,25 @@ The following are normally implemented for AbstractDataFrames:
 * [`dropmissing!`](@ref) : remove rows with missing values in-place
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
+* [`disallowmissing`](@ref) : drop support for missing values in columns
+* [`allowmissing`](@ref) : add support for missing values in columns
+* [`categorical`](@ref) : change column types to categorical
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
 * `filter!` : remove rows in-place
 
-**Indexing**
+**Indexing and broadcasting**
 
-Table columns are accessed (`getindex`) by a single index that can be
-a symbol identifier, an integer, or a vector of each. If a single
-column is selected, just the column object is returned. If multiple
-columns are selected, some AbstractDataFrame is returned.
+`AbstractDataFrame` can be indexed by passing two indices specifying
+row and column selectors. The allowed indices are a superset of indices
+that can be used for standard arrays. You can also access a single column
+of an `AbstractDataFrame` using `getproperty` and `setproperty!` functions.
+In broadcasting `AbstractDataFrame` behavior is similar to a `Matrix`.
 
-```julia
-d[:colA]
-d[3]
-d[[:colA, :colB]]
-d[[1:3; 5]]
-```
+A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`,
+broadcasting and broadcasting assignment for data frames is given in
+the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/) of the manual.
 
-Rows and columns can be indexed like a `Matrix` with the added feature
-of indexing columns by name.
-
-```julia
-d[1:3, :colA]
-d[3,3]
-d[3,:]
-d[3,[:colA, :colB]]
-d[:, [:colA, :colB]]
-d[[1:3; 5], :]
-```
-
-`setindex` works similarly.
 """
 abstract type AbstractDataFrame end
 
@@ -182,31 +169,6 @@ rename!(df, Dict(:i =>: A, :x => :X))
 
 """
 (rename!, rename)
-
-"""
-Return element types of columns
-
-```julia
-eltypes(df::AbstractDataFrame)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::Vector{Type}` : the element type of each column
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-eltypes(df)
-```
-
-"""
-eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -435,6 +397,10 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
             d[:last] = isempty(col) ? nothing : last(col)
         end
 
+        if :eltype in predefined_funs
+            d[:eltype] = eltype(col)
+        end
+
         return d
     end
 
@@ -485,10 +451,6 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
         end
     end
 
-    if :eltype in stats
-        d[:eltype] = eltype(col)
-    end
-
     return d
 end
 
@@ -522,7 +484,7 @@ end
 
 """
     completecases(df::AbstractDataFrame, cols::Colon=:)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not})
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -591,12 +553,12 @@ function completecases(df::AbstractDataFrame, col::ColumnIndex)
     res
 end
 
-completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not}) =
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All}) =
     completecases(df[!, cols])
 
 """
     dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
                 disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol};
                 disallowmissing::Bool=true)
@@ -661,7 +623,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
+                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -670,7 +632,7 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not};
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
                  disallowmissing::Bool=true)
     dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol};
                  disallowmissing::Bool=true)
@@ -733,7 +695,7 @@ julia> dropmissing!(df3, [:x, :y])
 
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Colon}=:;
+                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -802,7 +764,7 @@ Base.filter!(f, df::AbstractDataFrame) =
     deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
-    T = reduce(promote_type, eltypes(df))
+    T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
     convert(Matrix{T}, df)
 end
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
@@ -1280,3 +1242,172 @@ julia> ncol(df)
 
 """
 (nrow, ncol)
+
+"""
+    disallowmissing(df::AbstractDataFrame,
+                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+
+Return a copy of data frame `df` with columns `cols` converted
+from element type `Union{T, Missing}` to `T` to drop support for missing values.
+
+If `cols` is omitted all columns in the data frame are converted.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(a=Union{Int,Missing}[1,2])
+2×1 DataFrame
+│ Row │ a      │
+│     │ Int64⍰ │
+├─────┼────────┤
+│ 1   │ 1      │
+│ 2   │ 2      │
+
+julia> disallowmissing(df)
+2×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+```
+"""
+function Missings.disallowmissing(df::AbstractDataFrame,
+                                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+    idxcols = Set(index(df)[cols])
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if i in idxcols
+            y = disallowmissing(x)
+            push!(newcols, y === x ? copy(y) : y)
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
+
+"""
+    allowmissing(df::AbstractDataFrame,
+                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+
+Return a copy of data frame `df` with columns `cols` converted
+to element type `Union{T, Missing}` from `T` to allow support for missing values.
+
+If `cols` is omitted all columns in the data frame are converted.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(a=[1,2])
+2×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+
+julia> allowmissing(df)
+2×1 DataFrame
+│ Row │ a      │
+│     │ Int64⍰ │
+├─────┼────────┤
+│ 1   │ 1      │
+│ 2   │ 2      │
+```
+"""
+function Missings.allowmissing(df::AbstractDataFrame,
+                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+    idxcols = Set(index(df)[cols])
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if i in idxcols
+            y = allowmissing(x)
+            push!(newcols, y === x ? copy(y) : y)
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
+
+"""
+    categorical(df::AbstractDataFrame, cols::Type=Union{AbstractString, Missing};
+                compress::Bool=false)
+    categorical(df::AbstractDataFrame,
+                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
+                compress::Bool=false)
+
+Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+If `categorical` is called with the `cols` argument being a `Type`, then
+all columns whose element type is a subtype of this type
+(by default `Union{AbstractString, Missing}`) will be converted to categorical.
+
+If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
+will be compressed.
+
+All created `CategoricalVector`s are unordered.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(a=[1,2], b=["a","b"])
+2×2 DataFrame
+│ Row │ a     │ b      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ a      │
+│ 2   │ 2     │ b      │
+
+julia> categorical(df)
+2×2 DataFrame
+│ Row │ a     │ b            │
+│     │ Int64 │ Categorical… │
+├─────┼───────┼──────────────┤
+│ 1   │ 1     │ a            │
+│ 2   │ 2     │ b            │
+
+julia> categorical(df, :)
+2×2 DataFrame
+│ Row │ a            │ b            │
+│     │ Categorical… │ Categorical… │
+├─────┼──────────────┼──────────────┤
+│ 1   │ 1            │ a            │
+│ 2   │ 2            │ b            │
+```
+
+"""
+function CategoricalArrays.categorical(df::AbstractDataFrame,
+                                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
+                                       compress::Bool=false)
+    idxcols = Set(index(df)[cols])
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if i in idxcols
+            # categorical always copies
+            push!(newcols, categorical(x, compress))
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end
+
+function CategoricalArrays.categorical(df::AbstractDataFrame,
+                                       cols::Type=Union{AbstractString, Missing};
+                                       compress::Bool=false)
+    newcols = AbstractVector[]
+    for i in axes(df, 2)
+        x = df[!, i]
+        if eltype(x) <: cols
+            # categorical always copies
+            push!(newcols, categorical(x, compress))
+        else
+            push!(newcols, copy(x))
+        end
+    end
+    DataFrame(newcols, _names(df), copycols=false)
+end

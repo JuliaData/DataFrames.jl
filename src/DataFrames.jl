@@ -10,6 +10,7 @@ using Statistics, Printf, REPL
 using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, DataAPI
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
+using Tables, TableTraits, IteratorInterfaceExtensions
 
 ##############################################################################
 ##
@@ -17,19 +18,24 @@ using Base.Sort, Base.Order, Base.Iterators
 ##
 ##############################################################################
 
-import DataAPI.describe
+import DataAPI.All,
+       DataAPI.Between,
+       DataAPI.describe,
+       Tables.columnindex
 
 export AbstractDataFrame,
+       All,
+       Between,
        DataFrame,
        DataFrame!,
        DataFrameRow,
        GroupedDataFrame,
        SubDataFrame,
-
        allowmissing!,
        aggregate,
        by,
        categorical!,
+       columnindex,
        combine,
        completecases,
        deleterows!,
@@ -37,7 +43,6 @@ export AbstractDataFrame,
        disallowmissing!,
        dropmissing,
        dropmissing!,
-       eltypes,
        groupby,
        groupindices,
        groupvars,

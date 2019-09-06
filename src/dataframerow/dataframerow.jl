@@ -84,27 +84,52 @@ Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
-                                   colinds::Union{Colon, AbstractVector, Regex, Not}) =
+                                   colinds::Union{Colon, AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::Union{AbstractVector, Regex, Not}) =
+                                       colinds::Union{AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not}) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-Base.@propagate_inbounds function Base.setindex!(r::DataFrameRow, value::Any, idx)
-    col = parentcols(index(r), idx)
-    if !(col isa Int)
-        Base.depwarn("implicit broadcasting in DataFrameRow assignment is deprecated", :setindex!)
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::Union{DataFrameRow, NamedTuple, AbstractDict},
+                                  row_ind::Integer,
+                                  col_inds::$(T))
+        idxs = index(df)[col_inds]
+        if length(v) != length(idxs)
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
+                                    " collection contains $(length(v)) elements"))
+        end
+
+        if v isa AbstractDict
+            for n in view(_names(df), idxs)
+                if !haskey(v, n)
+                    throw(ArgumentError("Column :$n not found in source dictionary"))
+                end
+            end
+        elseif !all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v)))
+            mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
+            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
+                                " positions $(join(mismatched, ", ", " and "))"))
+        end
+
+        for (col, val) in pairs(v)
+            df[row_ind, col] = val
+        end
+        return df
     end
-    setindex!(parent(r), value, row(r), col)
 end
+
+Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
+    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
@@ -132,7 +157,7 @@ Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not}) =
+Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
@@ -156,7 +181,7 @@ end
 Base.IteratorEltype(::Type{<:DataFrameRow}) = Base.EltypeUnknown()
 
 function Base.convert(::Type{Vector}, dfr::DataFrameRow)
-    T = reduce(promote_type, eltypes(parent(dfr)))
+    T = reduce(promote_type, (eltype(v) for v in eachcol(parent(dfr))))
     convert(Vector{T}, dfr)
 end
 Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
@@ -250,42 +275,43 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
     if !(columns in (:equal, :intersect))
         throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
-    if ncol(df) == 0
+    nrows, ncols = size(df)
+    targetrows = nrows + 1
+    if ncols == 0
         for (n, v) in pairs(dfr)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
 
-    if parent(dfr) === df && index(dfr) isa Index
-        # in this case we are sure that all we do is safe
-        r = row(dfr)
-        for col in _columns(df)
-            # use a barrier function to improve performance
-            pushhelper!(col, r)
-        end
-    else
-        # DataFrameRow can contain duplicate columns and we disallow this
-        # corner case when push!-ing
-        # Only check for equal lengths, as an error will be thrown below if some names don't match
-        if columns === :equal
-            msg = "Number of columns of `row` does not match `DataFrame` column count."
-            size(df, 2) == length(dfr) || throw(ArgumentError(msg))
-        end
-        i = 1
-        for nm in _names(df)
-            try
-                push!(df[!, i], dfr[nm])
-            catch
-                #clean up partial row
-                for j in 1:(i - 1)
-                    pop!(df[!, j])
-                end
-                msg = "Error adding value to column :$nm."
-                throw(ArgumentError(msg))
+    try
+        if parent(dfr) === df && index(dfr) isa Index
+            # in this case we are sure that all we do is safe
+            r = row(dfr)
+            for col in _columns(df)
+                # use a barrier function to improve performance
+                pushhelper!(col, r)
             end
-            i += 1
+        else
+            # DataFrameRow can contain duplicate columns and we disallow this
+            # corner case when push!-ing
+            # Only check for equal lengths, as an error will be thrown below if some names don't match
+            if columns === :equal
+                msg = "Number of columns of `row` does not match `DataFrame` column count."
+                ncols == length(dfr) || throw(ArgumentError(msg))
+            end
+            for (col, nm) in zip(_columns(df), _names(df))
+                push!(col, dfr[nm])
+            end
         end
+        for col in _columns(df)
+            @assert length(col) == targetrows
+        end
+    catch err
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        rethrow(err)
     end
     df
 end

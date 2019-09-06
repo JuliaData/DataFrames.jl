@@ -280,6 +280,29 @@ ncol(df::DataFrame) = length(index(df))
 
 ##############################################################################
 ##
+## DataFrame consistency check
+##
+##############################################################################
+
+function _check_consistency(df::DataFrame)
+    cols, idx = _columns(df), index(df)
+    ncols = length(cols)
+    @assert length(idx.names) == length(idx.lookup) == ncols
+    ncols == 0 && return nothing
+    nrows = length(cols[1])
+    for i in 2:length(cols)
+        @assert length(cols[i]) == nrows "Data frame is corrupt: length of column :$(names(df)[i]) ($(length(df[!, i])))" *
+                                         " does not match length of column 1 ($(length(df[!, 1]))). " *
+                                         "The column vector has likely been resized unintentionally " *
+                                         "(either directly or because it is shared with another data frame)."
+    end
+    nothing
+end
+
+_check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
+
+##############################################################################
+##
 ## getindex() definitions
 ##
 ##############################################################################
@@ -347,7 +370,7 @@ end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
-                               col_inds::Union{AbstractVector, Regex, Not}) where T
+                               col_inds::Union{AbstractVector, Regex, Not, Between, All}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -371,15 +394,15 @@ end
 end
 
 @inline Base.getindex(df::DataFrame, row_inds::Not,
-                      col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+                      col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     df[axes(df, 1)[row_inds], col_inds]
 
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     select(df, col_inds, copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Colon}) =
+Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     select(df, col_inds, copycols=false)
 
 ##############################################################################
@@ -475,51 +498,97 @@ function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::Column
     return df
 end
 
-# df[MultiRowIndex, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame,
-                        v::AbstractVector,
-                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
-                        col_ind::ColumnIndex)
-    x = df[!, col_ind]
-    try
-        x[row_inds] = v
-    catch
-        Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
-                     "write `df[row_inds, col_ind] .= v` instead", :setindex!)
-        insert_multiple_entries!(df, v, row_inds, col_ind)
+# df[SingleRowIndex, MultiColumnIndex] = value
+# the method for value of type DataFrameRow, AbstractDict and NamedTuple
+# is defined in dataframerow.jl
+
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::Union{Tuple, AbstractArray, Base.Generator},
+                                  row_ind::Integer,
+                                  col_inds::$T)
+        idxs = index(df)[col_inds]
+        if length(v) != length(idxs)
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
+                                    " collection contains $(length(v)) elements"))
+        end
+        for (i, x) in enumerate(v)
+            df[row_ind, i] = x
+        end
+        return df
     end
-    return df
+end
+
+# df[MultiRowIndex, SingleColumnIndex] = AbstractVector
+for T in (:AbstractVector, :Not, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::AbstractVector,
+                                  row_inds::$T,
+                                  col_ind::ColumnIndex)
+        x = df[!, col_ind]
+        try
+            x[row_inds] = v
+        catch
+            insert_multiple_entries!(df, v, axes(df, 1)[row_inds], col_ind)
+            Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
+                         "write `df[row_inds, col_ind] .= v` instead", :setindex!)
+        end
+        return df
+    end
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractDataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::AbstractDataFrame,
-                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
-                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
-    idxs = index(df)[col_inds]
-    if view(_names(df), idxs) != _names(new_df)
-        Base.depwarn("in the future column names in source and target will have to match", :setindex!)
+for T1 in (:AbstractVector, :Not, :Colon),
+    T2 in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  new_df::AbstractDataFrame,
+                                  row_inds::$T1,
+                                  col_inds::$T2)
+        idxs = index(df)[col_inds]
+        for (j, col) in enumerate(idxs)
+            df[row_inds, col] = new_df[!, j]
+        end
+        if view(_names(df), idxs) != _names(new_df)
+            Base.depwarn("in the future column names in source and target will have to match", :setindex!)
+        end
+        return df
     end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = new_df[!, j]
+end
+
+for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  new_df::AbstractDataFrame,
+                                  row_inds::typeof(!),
+                                  col_inds::$T)
+        idxs = index(df)[col_inds]
+        if view(_names(df), idxs) != _names(new_df)
+            throw(ArgumentError("Column names in source and target data frames do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            # make sure we make a copy on assignment
+            df[!, col] = new_df[:, j]
+        end
+        return df
     end
-    return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractMatrix
-function Base.setindex!(df::DataFrame,
-                        mx::AbstractMatrix,
-                        row_inds::Union{AbstractVector, Not}, # add Colon after deprecation
-                        col_inds::Union{AbstractVector, Regex, Not}) # add Colon after deprecation
-    idxs = index(df)[col_inds]
-    if size(mx, 2) != length(idxs)
-        throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
-                                " matrix ($(size(mx, 2))) do not match"))
+for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
+    T2 in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+    @eval function Base.setindex!(df::DataFrame,
+                                  mx::AbstractMatrix,
+                                  row_inds::$T1,
+                                  col_inds::$T2)
+        idxs = index(df)[col_inds]
+        if size(mx, 2) != length(idxs)
+            throw(DimensionMismatch("number of selected columns ($(length(idxs))) and number of columns in" *
+                                    " matrix ($(size(mx, 2))) do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            df[row_inds, col] = (row_inds === !) ? mx[:, j] : view(mx, :, j)
+        end
+        return df
     end
-    for (j, col) in enumerate(idxs)
-        df[row_inds, col] = view(mx, :, j)
-    end
-    return df
 end
 
 ##############################################################################
@@ -863,7 +932,7 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 """
     allowmissing!(df::DataFrame, cols::Colon=:)
     allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
-    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
+    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
 
 Convert columns `cols` of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
@@ -892,7 +961,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-allowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+allowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}) =
     allowmissing!(df, index(df)[cols])
 
 allowmissing!(df::DataFrame, cols::Colon=:) =
@@ -901,7 +970,7 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
 """
     disallowmissing!(df::DataFrame, cols::Colon=:)
     disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
-    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not})
+    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
 
 Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
@@ -930,7 +999,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-disallowmissing!(df::DataFrame, cols::Union{Regex, Not}) =
+disallowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}) =
     disallowmissing!(df, index(df)[cols])
 
 disallowmissing!(df::DataFrame, cols::Colon=:) =
@@ -943,17 +1012,21 @@ disallowmissing!(df::DataFrame, cols::Colon=:) =
 ##############################################################################
 
 """
+    categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
+                 compress::Bool=false)
     categorical!(df::DataFrame, cname::Union{Integer, Symbol};
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
                  compress::Bool=false)
-    categorical!(df::DataFrame, cnames::Union{Regex, Not};
+    categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All};
                  compress::Bool=false)
-    categorical!(df::DataFrame; compress::Bool=false)
 
 Change columns selected by `cname` or `cnames` in data frame `df`
-to `CategoricalVector`. If no columns are indicated then all columns whose element type
-is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
+to `CategoricalVector`.
+
+If `categorical!` is called with the `cols` argument being a `Type`, then
+all columns whose element type is a subtype of this type
+(by default `Union{AbstractString, Missing}`) will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
 will be compressed.
@@ -979,7 +1052,7 @@ julia> categorical!(df)
 │ 1   │ a            │ 1     │ p            │
 │ 2   │ b            │ 2     │ q            │
 
-julia> eltypes(df)
+julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:
  CategoricalString{UInt32}
  Int64
@@ -1001,7 +1074,7 @@ julia> categorical!(df, :Y, compress=true)
 │ 1   │ a      │ 1            │ p      │
 │ 2   │ b      │ 2            │ q      │
 
-julia> eltypes(df)
+julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:
  String
  CategoricalValue{Int64,UInt8}
@@ -1024,12 +1097,14 @@ function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
     df
 end
 
-categorical!(df::DataFrame, cnames::Union{Regex, Not}; compress::Bool=false) =
+categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All, Colon}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame, cnames::Colon=:; compress::Bool=false)
+function categorical!(df::DataFrame,
+                      cols::Type=Union{AbstractString, Missing};
+                      compress::Bool=false)
     for i in 1:size(df, 2)
-        if eltype(df[!, i]) <: Union{AbstractString, Missing}
+        if eltype(df[!, i]) <: cols
             df[!, i] = categorical(df[!, i], compress)
         end
     end
@@ -1053,8 +1128,7 @@ in `df2` contains `missing` values but the corresponding column in `df1` does no
 accept them.
 
 Please note that `append!` must not be used on a `DataFrame` that contains columns
-that are aliases (equal when compared with `===`) as it will silently produce
-a wrong result in such a situation.
+that are aliases (equal when compared with `===`).
 
 !!! note
     Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
@@ -1094,17 +1168,26 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     end
     ncol(df2) == 0 && return df1
 
-    _names(df1) == _names(df2) || error("Column names do not match")
+    _names(df1) == _names(df2) || throw(ArgumentError("Column names do not match"))
     nrows, ncols = size(df1)
+    targetrows = nrows + nrow(df2)
+    current_col = 0
     try
         for j in 1:ncols
+            current_col += 1
             append!(df1[!, j], df2[!, j])
+        end
+        current_col = 0
+        for col in _columns(df1)
+            current_col += 1
+            @assert length(col) == targetrows
         end
     catch err
         # Undo changes in case of error
-        for j in 1:ncols
-            resize!(df1[!, j], nrows)
+        for col in _columns(df1)
+            resize!(col, nrows)
         end
+        @error "Error adding value to column $(names(df1)[current_col])."
         rethrow(err)
     end
     return df1
@@ -1118,32 +1201,37 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
     if !(columns in (:equal, :intersect))
         throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
-    if ncol(df) == 0 && row isa NamedTuple
+    nrows, ncols = size(df)
+    if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
-    i = 1
     # Only check for equal lengths, as an error will be thrown below if some names don't match
-    if columns === :equal && length(row) != size(df, 2)
+    if columns === :equal && length(row) != ncols
         # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
                       "of elements as is the number of columns in `df`." *
                       "Use `columns=:intersect` to disable this check.", :push!)
     end
-    for nm in _names(df)
-        try
-            push!(df[!, i], row[nm])
-        catch
-            #clean up partial row
-            for j in 1:(i - 1)
-                pop!(df[!, j])
-            end
-            msg = "Error adding value to column :$nm."
-            throw(ArgumentError(msg))
+    current_col = 0
+    try
+        for (col, nm) in zip(_columns(df), _names(df))
+            current_col += 1
+            push!(col, row[nm])
         end
-        i += 1
+        current_col = 0
+        for col in _columns(df)
+            current_col += 1
+            @assert length(col) == nrows + 1
+        end
+    catch err
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        @error "Error adding value to column :$(names(df)[current_col])."
+        rethrow(err)
     end
     df
 end
@@ -1174,8 +1262,7 @@ As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFr
 columns are created for all values in `row`, using their names and order.
 
 Please note that `push!` must not be used on a `DataFrame` that contains columns
-that are aliases (equal when compared with `===`) as it will silently produce
-a wrong result in such a situation.
+that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
@@ -1236,23 +1323,29 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 ```
 """
 function Base.push!(df::DataFrame, row::Any)
-    if length(row) != size(df, 2)
+    nrows, ncols = size(df)
+    if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
     end
-    i = 1
-    for t in row
-        try
-            push!(_columns(df)[i], t)
-        catch
-            #clean up partial row
-            for j in 1:(i - 1)
-                pop!(_columns(df)[j])
-            end
-            msg = "Error adding $(repr(t)) to column :$(_names(df)[i]). Possible type mis-match."
-            throw(ArgumentError(msg))
+    current_col = 0
+    try
+        for (col, t) in zip(_columns(df), row)
+            current_col += 1
+            push!(col, t)
         end
-        i += 1
+        current_col = 0
+        for col in _columns(df)
+            current_col += 1
+            @assert length(col) == nrows + 1
+        end
+    catch err
+        #clean up partial row
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        @error "Error adding value to column :$(names(df)[current_col])."
+        rethrow(err)
     end
     df
 end

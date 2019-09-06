@@ -1,9 +1,11 @@
 module TestDeprecated
 
-using Test, DataFrames, Random
+using Test, DataFrames, Random, Logging
 import DataFrames: identifier
 
 const ≅ = isequal
+
+old_logger = global_logger(NullLogger())
 
 # old sort(df; cols=...) syntax
 df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
@@ -116,7 +118,7 @@ end
 
 df = DataFrame(Union{Int, Missing}, 2, 2)
 @test size(df) == (2, 2)
-@test eltypes(df) == [Union{Int, Missing}, Union{Int, Missing}]
+@test eltype.(eachcol(df)) == [Union{Int, Missing}, Union{Int, Missing}]
 
 @test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
 
@@ -349,25 +351,18 @@ end
     end
 
     @testset "old setindex! tests" begin
-        missing_df = DataFrame()
-        df = DataFrame(Matrix{Int}(undef, 4, 3))
-
-        # Assignment of rows
+        df = DataFrame(reshape(1:12, 4, :))
         df[1, :] = df[1:1, :]
-        df[1:2, :] = df[1:2, :]
-        df[[true,false,false,true], :] = df[2:3, :]
+
+        df = DataFrame(reshape(1:12, 4, :))
 
         # Scalar broadcasting assignment of rows
-        df[1, :] = 1
         df[1:2, :] = 1
         df[[true,false,false,true], :] = 3
 
         # Vector broadcasting assignment of rows
         df[1:2, :] = [2,3]
         df[[true,false,false,true], :] = [2,3]
-
-        # Assignment of columns
-        df[:, 2] = ones(4)
 
         # Broadcasting assignment of columns
         df[:, 1] = 1
@@ -379,13 +374,21 @@ end
         df[[true,false,false,true], 2:3] = df[1:2,1:2]
 
         # scalar broadcasting assignment of subtables
-        df[1, 1:2] = 3
         df[1:2, 1:2] = 3
         df[[true,false,false,true], 2:3] = 3
 
         # vector broadcasting assignment of subtables
         df[1:2, 1:2] = [3,2]
         df[[true,false,false,true], 2:3] = [2,3]
+
+        # test of 1-row DataFrame assignment
+        df = DataFrame([1 2 3])
+        df[1, 2:3] = DataFrame([11 12])
+        @test df == DataFrame([1 11 12])
+
+        df = DataFrame([1 2 3])
+        df[1, [false, true, true]] = DataFrame([11 12])
+        @test df == DataFrame([1 11 12])
     end
 
     @testset "old test/dataframes.jl tests" begin
@@ -492,5 +495,11 @@ end
         @test df[1, :B] === 0.0
     end
 end
+
+@testset "eltypes" begin
+    @test eltypes(DataFrame(x=[1], y=["a"])) == [Int, String]
+end
+
+global_logger(old_logger)
 
 end # module

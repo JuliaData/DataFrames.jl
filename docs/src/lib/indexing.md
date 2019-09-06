@@ -24,6 +24,7 @@ The rules for a valid type of index into a column are the following:
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
     * a regular expression, which gets expanded to a vector of matching column names;
     * a `Not` expression (see [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl));
+    * an `All` or `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
     * a colon literal `:`.
 
 The rules for a valid type of index into a row are the following:
@@ -109,14 +110,12 @@ then view points to selected columns by their number at the moment of creation o
 
 ## `setindex!`
 
-The following list specifies the **target** behavior of `setindex!` operations depending on argument types.
-
-In the current release of DataFrames.jl we are in the transition period when an old, undocumented, behavior
-of `setindex!` is still supported, but throws deprecation warnings.
-
-The behavior described below will be fully implemented in the next major release of DataFrames.jl.
+The following list specifies the behavior of `setindex!` operations depending on argument types.
 
 In particular a description explicitly mentions if the assignment is *in-place*.
+
+Note that if a `setindex!` operation throws an error the target data frame may be partially changed
+so it is unsafe to use it afterwards (the column length correctness will be preserved).
 
 `setindex!` on `DataFrame`:
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -129,7 +128,10 @@ In particular a description explicitly mentions if the assignment is *in-place*.
                       (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
                       also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
-* `df[!, cols] = v` -> is currently disallowed, but is planned to be supported in the future;
+                      this is allowed if `ncol(df) == 0 || length(v) == nrow(df)`;
+* `df[!, cols] = v` -> replaces existing columns `cols` in data frame `df` with copying;
+                       `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
+                       (in the latter case column names must match);
 
 Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
 In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
@@ -149,7 +151,11 @@ Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowe
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
                     equivalent to `dfr.col = v` if `col` is a valid identifier;
 * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
-                     `v` can be an `AbstractVector` or `v` can be a `NamedTuple` or `DataFrameRow` when column names must match;
+                     `v` can be:
+                     1) a `Tuple`, an `AbstractArray` or a `Base.Generator`,
+                        in which cases it must have a number of elements equal to `length(dfr)`,
+                     2) an `AbstractDict`, in which case column names must match,
+                     3) a `NamedTuple` or `DataFrameRow`, in which case column names and order must match;
 
 ## Broadcasting
 
@@ -160,6 +166,10 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
   An exception is when an `AbstractDataFrame` is used only as a source of broadcast assignment into an object
   of dimensionality higher than two.
 * If multiple `AbstractDataFrame` objects take part in broadcasting then they have to have identical column names.
+
+Note that if broadcasting assignment operation throws an error the target data frame may be partially changed
+so it is unsafe to use it afterwards (the column length correctness will be preserved).
+
 
 Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
 
@@ -172,10 +182,11 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
     `DataFrameRow` is considered to be column-oriented.
 
 Additional rules:
-* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` and `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
+* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
+* in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added;
-* `df[!, cols] = v` syntax is currently disallowed, but is planned to be supported in the future;
+* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
+* the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;

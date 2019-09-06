@@ -78,10 +78,11 @@ end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
+    _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        elseif size(df, 1) != 1 
+        elseif size(df, 1) != 1
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
@@ -151,8 +152,23 @@ end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
     r, c = parentindices(dfr)
-    write(io, "<p>DataFrameRow</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+    summary && write(io, "<p>DataFrameRow ($(length(dfr)) columns)</p>")
+    _show(io, mime, view(parent(dfr), [r], c), summary=false, rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::Bool=true)
+    df = parent(dfrs)
+    summary && write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameRows</p>")
+    _show(io, mime, df, summary=false)
+end
+
+function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns{T,V};
+                   summary::Bool=true) where {T,V}
+    df = parent(dfcs)
+    if summary
+        write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameColumns (with names=$(V <: Pair))</p>")
+    end
+    _show(io, mime, df, summary=false)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
@@ -211,10 +227,11 @@ function latex_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
+    _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
-        elseif size(df, 1) != 1 
+        elseif size(df, 1) != 1
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
         end
     end
@@ -240,7 +257,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\\\\\n")
     write(io, "\t\\hline\n")
     write(io, "\t& ")
-    header = join(map(c -> latex_escape(string(compacttype(c))), eltypes(df)[1:mxcol]), " & ")
+    header = join(map(c -> latex_escape(string(compacttype(c))), eltype.(eachcol(df)[1:mxcol])), " & ")
     write(io, header)
     mxcol < size(df, 2) && write(io, " & ")
     write(io, "\\\\\n")
@@ -277,6 +294,9 @@ function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
     r, c = parentindices(dfr)
     _show(io, mime, view(parent(dfr), [r], c), rowid=r)
 end
+
+Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows) = _show(io, mime, parent(dfrs))
+Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns) = _show(io, mime, parent(dfcs))
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
@@ -321,13 +341,8 @@ end
 #
 ##############################################################################
 
-function escapedprint(io::IO, x::Any, escapes::AbstractString)
-    ourshow(io, x)
-end
-
-function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-    escape_string(io, x, escapes)
-end
+escapedprint(io::IO, x::Any, escapes::AbstractString) = ourshow(io, x)
+escapedprint(io::IO, x::AbstractString, escapes::AbstractString) = escape_string(io, x, escapes)
 
 function printtable(io::IO,
                     df::AbstractDataFrame;
@@ -335,8 +350,9 @@ function printtable(io::IO,
                     separator::Char = ',',
                     quotemark::Char = '"',
                     missingstring::AbstractString = "missing")
+    _check_consistency(df)
     n, p = size(df)
-    etypes = eltypes(df)
+    etypes = eltype.(eachcol(df))
     if header
         cnames = _names(df)
         for j in 1:p
@@ -384,6 +400,13 @@ function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrame
     show(io, mime, view(parent(dfr), [r], c))
 end
 
+Base.show(io::IO, mime::MIME"text/csv",
+          dfs::Union{DataFrameRows, DataFrameColumns}) =
+    show(io, mime, parent(dfs))
+Base.show(io::IO, mime::MIME"text/tab-separated-values",
+          dfs::Union{DataFrameRows, DataFrameColumns}) =
+    show(io, mime, parent(dfs))
+
 function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
     isfirst = true
     for sdf in gd
@@ -399,4 +422,3 @@ function Base.show(io::IO, mime::MIME"text/tab-separated-values", gd::GroupedDat
         isfirst && (isfirst = false)
     end
 end
-

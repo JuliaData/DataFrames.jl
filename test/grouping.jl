@@ -66,6 +66,17 @@ end
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
     gd = groupby(df, :a)
     @test parent(gd) === df
+    @test_throws ArgumentError identity.(gd)
+end
+
+@testset "consistency" begin
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(df.c, 5)
+    @test_throws AssertionError gd = groupby(df, :a)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    push!(DataFrames._columns(df), df[:, :a])
+    @test_throws AssertionError gd = groupby(df, :a)
 end
 
 @testset "accepted columns" begin
@@ -93,8 +104,8 @@ end
     for cols in ([:a, :b], [:b, :a], [:a, :c], [:c, :a],
                  [1, 2], [2, 1], [1, 3], [3, 1],
                  [true, true, false, false], [true, false, true, false])
-        colssym = names(df[:, cols])
-        hcatdf = hcat(df[:, cols], df, makeunique=true)
+        colssym = names(df[!, cols])
+        hcatdf = hcat(df[!, cols], df[!, Not(cols)])
         nms = names(hcatdf)
         res = unique(df[:, cols])
         res.xmax = [maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
@@ -152,7 +163,7 @@ end
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         df_ref = DataFrame(gd)
-        @test sort(hcat(df_ref[:, cols], df_ref, makeunique=true), colssym) == shcatdf
+        @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
@@ -172,7 +183,7 @@ end
         end
         @test combine(identity, gd) == shcatdf
         df_ref = DataFrame(gd)
-        @test hcat(df_ref[:, cols], df_ref, makeunique=true) == shcatdf
+        @test hcat(df_ref[!, cols], df_ref[!, Not(cols)]) == shcatdf
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
         @test rename(combine(f3, gd), :x1 => :xmax) == sres
@@ -331,7 +342,7 @@ end
 
     # Test function returning DataFrameRow
     res = by(d -> DataFrameRow(d, 1, :), df, :x)
-    @test res == DataFrame(x=df.x, x_1=df.x, y=df.y)
+    @test res == DataFrame(x=df.x, y=df.y)
 
     # Test function returning Tuple
     res = by(d -> (sum(d.y),), df, :x)
@@ -432,7 +443,7 @@ end
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
     @test parent(gd2) == DataFrame(A=[])
-    @test eltypes(parent(gd2)) == [Int]
+    @test eltype.(eachcol(parent(gd2))) == [Int]
 
     gd2 = map(d -> DataFrame(X=Int[]), gd)
     @test length(gd2) == 0
@@ -442,7 +453,7 @@ end
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
     @test parent(gd2) == DataFrame(A=[], X=[])
-    @test eltypes(parent(gd2)) == [Int, Int]
+    @test eltype.(eachcol(parent(gd2))) == [Int, Int]
 end
 
 @testset "grouping with missings" begin
@@ -882,6 +893,25 @@ Base.isless(::TestType, ::TestType) = false
     end
 end
 
+@testset "combine and map with columns named like grouping keys" begin
+    df = DataFrame(x=["a", "a", "b", missing], y=1:4)
+    gd = groupby(df, :x)
+    @test combine(identity, gd) ≅ df
+    @test combine(d -> d[:, [2, 1]], gd) ≅ df
+    @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test map(identity, gd) ≅ gd
+    @test map(d -> d[:, [2, 1]], gd) ≅ gd
+    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+
+    gd = groupby(df, :x, skipmissing=true)
+    @test combine(identity, gd) == df[1:3, :]
+    @test combine(d -> d[:, [2, 1]], gd) == df[1:3, :]
+    @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test map(identity, gd) == gd
+    @test map(d -> d[:, [2, 1]], gd) == gd
+    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+end
+
 @testset "iteration protocol" begin
     gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
     for v in gd
@@ -1113,7 +1143,7 @@ end
     for df in [dfx, view(dfx, :, :)]
         gd = groupby_checked(df, :A)
         @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
-        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+        @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 
         gd2 = gd[[3,2]]
         @test DataFrame(gd2) == df[[3,5,2,4], :]
@@ -1121,7 +1151,7 @@ end
         gd = groupby_checked(df, :A, skipmissing=true)
         @test sort(DataFrame(gd), :B) ==
               sort(dropmissing(df, disallowmissing=false), :B)
-        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+        @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 
         gd2 = gd[[2,1]]
         @test DataFrame(gd2) == df[[3,5,2,4], :]
@@ -1133,12 +1163,12 @@ end
     df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
     gd = groupby_checked(df, :a)
     @test size(DataFrame(gd)) == size(df)
-    @test eltypes(DataFrame(gd)) == [Int, Any, Union{Missing, String}]
+    @test eltype.(eachcol(DataFrame(gd))) == [Int, Any, Union{Missing, String}]
 
     dfv = view(dfx, 1:0, :)
     gd = groupby_checked(dfv, :A)
     @test size(DataFrame(gd)) == size(dfv)
-    @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+    @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 end
 
 @testset "groupindices and groupvars" begin
@@ -1160,6 +1190,14 @@ end
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+end
+
+@testset "by skipmissing and sort" begin
+    df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
+    for dosort in (false, true), doskipmissing in (false, true)
+        @test by(df, :a, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
+            combine(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
+    end
 end
 
 end # module

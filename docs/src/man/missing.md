@@ -126,13 +126,13 @@ true
 
 ```
 
-The function `Missings.T` returns the element-type `T` in `Union{T, Missing}`.
+The function `nonmissingtype` returns the element-type `T` in `Union{T, Missing}`.
 
 ```jldoctest missings
 julia> eltype(x)
 Union{Int64, Missing}
 
-julia> Missings.T(eltype(x))
+julia> nonmissingtype(eltype(x))
 Int64
 
 ```

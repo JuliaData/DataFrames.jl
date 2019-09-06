@@ -29,19 +29,21 @@ meltdf
 ## Basics
 
 ```@docs
+allowmissing
 allowmissing!
+categorical
 categorical!
 completecases
 copy
 DataFrame!
 deleterows!
 describe
+disallowmissing
 disallowmissing!
 dropmissing
 dropmissing!
 eachrow
 eachcol
-eltypes
 filter
 filter!
 hcat

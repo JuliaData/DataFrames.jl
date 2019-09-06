@@ -4,20 +4,17 @@
 ##
 ##############################################################################
 
-# TODO: Reconsider/redesign eachrow -- ~100% overhead
-
 # Iteration by rows
 """
-    DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
+    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame,S} <: AbstractVector{DataFrameRow{D,S}}
     df::D
-    index::S
 end
 
 Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
@@ -74,15 +71,24 @@ y  13
 x  3
 ```
 """
-eachrow(df::AbstractDataFrame) = DataFrameRows(df, index(df))
+eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df)
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
-Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
+Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
-Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
-    DataFrameRow(itr.df, itr.index, i)
-Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
-    DataFrameRow(parent(itr.df), itr.index, rows(itr.df)[i])
+Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows, i::Int)
+    df = parent(itr)
+    DataFrameRow(df, index(df), i)
+end
+
+Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
+    sdf = parent(itr)
+    DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
+end
+
+Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(itr::DataFrameRows, private::Bool=false) = names(parent(itr))
 
 # Iteration by columns
 """
@@ -150,19 +156,23 @@ julia> collect(eachcol(df, true))
     end
 end
 
-Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
+Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
                                                      Pair{Symbol, AbstractVector}}, j::Int)
     @boundscheck checkbounds(itr, j)
-    @inbounds _names(itr.df)[j] => itr.df[!, j]
+    @inbounds _names(parent(itr))[j] => parent(itr)[!, j]
 end
 
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector}, j::Int)
     @boundscheck checkbounds(itr, j)
-    @inbounds itr.df[!, j]
+    @inbounds parent(itr)[!, j]
 end
+
+Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(itr::DataFrameColumns, private::Bool=false) = names(parent(itr))
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
@@ -220,3 +230,66 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     end
     DataFrame(vs, _names(df), copycols = false)
 end
+
+Base.parent(dfrs::DataFrameRows) = getfield(dfrs, :df)
+Base.parent(dfcs::DataFrameColumns) = getfield(dfcs, :df)
+
+function Base.show(io::IO, dfrs::DataFrameRows;
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   splitcols = get(io, :limit, false),
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true)
+    df = parent(dfrs)
+    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameRows")
+    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=false)
+end
+
+Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(io, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
+
+Base.show(dfrs::DataFrameRows;
+          allrows::Bool = !get(stdout, :limit, true),
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(stdout, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
+
+function Base.show(io::IO, dfcs::DataFrameColumns{T,V};
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   splitcols = get(io, :limit, false),
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true) where {T, V}
+    df = parent(dfcs)
+    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns (with names=$(V <: Pair))")
+    _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=false)
+end
+
+Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns{T,V};
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) where {T, V} =
+    show(io, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
+
+Base.show(dfcs::DataFrameColumns;
+          allrows::Bool = !get(stdout, :limit, true),
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(stdout, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)

@@ -53,7 +53,7 @@ end
     @test (df1 ./ df2) == DataFrame(ones(size(refdf)))
 end
 
-@testset "broadcasting of AbstractDataFrame objects errors" begin
+@testset "broadcasting of AbstractDataFrame objects thrown exceptions" begin
     df = copy(refdf)
     dfv = view(df, :, 2:ncol(df))
 
@@ -114,7 +114,7 @@ end
     @test df ≅ (x->x).(df)
     df3 = coalesce.(df, nothing)
     @test df2 == df3
-    @test eltypes(df2) == eltypes(df3)
+    @test eltype.(eachcol(df2)) == eltype.(eachcol(df3))
     for i in axes(df, 2)
         @test typeof(df2[!, i]) == typeof(df3[!, i])
     end
@@ -127,9 +127,9 @@ end
     @test identity.(df5) == df5
     @test (x->x).(df5) == df5
     @test df5 .+ 1 == DataFrame(Matrix(df5) .+ 1, names(df5))
-    @test eltypes(identity.(df5)) == [Int, BigFloat]
-    @test eltypes((x->x).(df5)) == [Int, BigFloat]
-    @test eltypes(df5 .+ 1) == [Int, BigFloat]
+    @test eltype.(eachcol(identity.(df5))) == [Int, BigFloat]
+    @test eltype.(eachcol((x->x).(df5))) == [Int, BigFloat]
+    @test eltype.(eachcol(df5 .+ 1)) == [Int, BigFloat]
 end
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
@@ -598,14 +598,67 @@ end
     @test_throws BoundsError dfr[10] .= ones(3)
     @test_throws ArgumentError dfr[:z] .= ones(3)
     @test df == cdf
+
+    df = DataFrame()
+    @test_throws DimensionMismatch df[!, :a] .= sin.(1:3)
+    df[!, :b] .= sin.(1)
+    df[!, :c] .= sin(1) .+ 1
+    @test df == DataFrame(b=Float64[], c=Float64[])
 end
 
 @testset "empty data frame corner case" begin
     df = DataFrame()
     @test_throws ArgumentError df[!, 1] .= 1
-    @test_throws ArgumentError df[!, :a] .= [1]
-    @test_throws ArgumentError df[!, [:a,:b]] .= [1]
-    @test df == DataFrame()
+    @test_throws ArgumentError df[!, 2] .= 1
+    @test_throws ArgumentError df[!, [:a, :b]] .= [1]
+    @test_throws ArgumentError df[!, [:a, :b]] .= 1
+    @test_throws DimensionMismatch df[!, :a] .= [1 2]
+    @test_throws DimensionMismatch df[!, :a] .= [1, 2]
+    @test_throws DimensionMismatch df[!, :a] .= sin.(1) .+ [1, 2]
+
+    for rhs in [1, [1], Int[], "abc", ["abc"]]
+        df = DataFrame()
+        df[!, :a] .= rhs
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs) .+ 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @. df[!, :a] = length(rhs) + 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= rhs
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= length.(rhs)
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, :a] .= length.(rhs) .+ 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        @. df[!, :a] = length(rhs) + 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+    end
+
+    df = DataFrame()
     df .= 1
     @test df == DataFrame()
     df .= [1]
@@ -615,11 +668,22 @@ end
     @test_throws DimensionMismatch df .= ones(1,2)
     @test_throws DimensionMismatch df .= ones(1,1,1)
 
-    @test_throws ArgumentError df[!, :a] .= 1
-    @test_throws ArgumentError df[!, [:a, :b]] .= 1
-
     df = DataFrame(a=[])
-    @test_throws ArgumentError df[!, :b] .= 1
+    df[!, :b] .= sin.(1)
+    @test eltype(df.b) == Float64
+    df[!, :b] .= [1]
+    @test eltype(df.b) == Int
+    df[!, :b] .= 'a'
+    @test eltype(df.b) == Char
+    @test names(df) == [:a, :b]
+
+    c = categorical(["a", "b", "c"])
+    df = DataFrame()
+    @test_throws DimensionMismatch df[!, :a] .= c
+
+    df[!, :b] .= c[1]
+    @test nrow(df) == 0
+    @test df.b isa CategoricalVector{String}
 end
 
 @testset "test categorical values" begin
@@ -689,14 +753,16 @@ end
     @test_throws InexactError convert.(Int, df)
     df2 = convert.(Int, floor.(df))
     @test df2 == DataFrame(zeros(Int, 2, 3))
-    @test eltypes(df2) == [Int, Int, Int]
+    @test eltype.(eachcol(df2)) == [Int, Int, Int]
 end
 
 @testset "scalar on assignment side" begin
     df = DataFrame(rand(2, 3))
-    df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
+    df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
-    df[1, 2] .-= df[1, 2]
+    @test_throws MethodError df[1, 2] .-= df[1, 2]
+    df[1:1, 2] .-= df[1, 2]
     @test df[1, 2] == 0
 end
 
@@ -940,26 +1006,20 @@ end
 @testset "additional checks of post-! broadcasting rules" begin
     df = copy(refdf)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, 1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= 1
     @test_throws MethodError df[1, 1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, 1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df[1, :x1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= 1
     @test_throws MethodError df[1, :x1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
 
     df = copy(refdf)
@@ -1088,12 +1148,14 @@ end
     @test df == refdf
     @test_throws ArgumentError df[!, 10] .= [1,2,3]
     @test df == refdf
-    @test_throws DimensionMismatch df[!, 10] .= [1 2 3]
+    @test_throws ArgumentError df[!, 10] .= [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
-    @test_throws ArgumentError df[!, 1:2] .= 'a'
-    @test df == refdf
+    df[!, 1:2] .= 'a'
+    @test Matrix(df) == ['a'  'a'  7.5  10.5  13.5
+                         'a'  'a'  8.5  11.5  14.5
+                         'a'  'a'  9.5  12.5  15.5]
 
     df = copy(refdf)
     v1 = df[!, 1]
@@ -1110,26 +1172,20 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[CartesianIndex(1, 1)] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, 1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, 1] .= 1
     @test_throws MethodError df[1, 1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, 1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df[1, :x1] .= VERSION >= v"1.1.0" ? 'd' : Ref('d')
-    @test v1 == [100.0, 2.5, 3.5]
+    @test_throws MethodError df[1, :x1] .= 1
     @test_throws MethodError df[1, :x1] .= "d"
-    @test v1 == [100.0, 2.5, 3.5]
     @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
@@ -1275,6 +1331,152 @@ end
     @test a == [2, 3, 4]
     @test df.a == [3, 4, 5]
     @test df.a !== a
+end
+
+@testset "add new correct rules for df[row, col] .= v broadcasting" begin
+    df = DataFrame(a=1)
+    @test_throws MethodError df[1,1] .= 10
+    @test_throws MethodError df[1,:a] .= 10
+    @test_throws MethodError df[CartesianIndex(1,1)] .= 10
+    df = DataFrame(a=[[1,2,3]])
+    df[1,1] .= 10
+    @test df == DataFrame(a=[[10,10,10]])
+    df[1,:a] .= 100
+    @test df == DataFrame(a=[[100,100,100]])
+    df[CartesianIndex(1,1)] .= 1000
+    @test df == DataFrame(a=[[1000,1000,1000]])
+end
+
+@testset "broadcasting into df[!, cols]" begin
+    for selector in [1:2, Between(:x1, :x2), Not(r"x3"), [:x1, :x2]]
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= "a"
+        @test df == DataFrame(fill("a", 3, 2))
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= Ref((a=1,b=2))
+        @test df == DataFrame(fill((a=1, b=2), 3, 2))
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a" "b"]
+        @test df == DataFrame(["a" "b"
+                               "a" "b"
+                               "a" "b"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a", "b", "c"]
+        @test df == DataFrame(["a" "a"
+                               "b" "b"
+                               "c" "c"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= categorical(["a"])
+        @test df == DataFrame(["a" "a"
+                               "a" "a"
+                               "a" "a"])
+        @test df.x1 isa CategoricalVector
+        @test df.x2 isa CategoricalVector
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= DataFrame(["a" "b"])
+        @test df == DataFrame(["a" "b"
+                               "a" "b"
+                               "a" "b"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= DataFrame(["a" "d"
+                                      "b" "e"
+                                      "c" "f"])
+        @test df == DataFrame(["a" "d"
+                               "b" "e"
+                               "c" "f"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6)
+        df[!, selector] .= ["a" "d"
+                            "b" "e"
+                            "c" "f"]
+        @test df == DataFrame(["a" "d"
+                               "b" "e"
+                               "c" "f"])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= "a"
+        @test df == DataFrame(["a" "a" 1
+                               "a" "a" 1
+                               "a" "a" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= Ref((a=1,b=2))
+        @test df[:, 1:2] == DataFrame(fill((a=1, b=2), 3, 2))
+        @test df[:, 3] == [1, 1, 1]
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= ["a" "b"]
+        @test df == DataFrame(["a" "b" 1
+                               "a" "b" 1
+                               "a" "b" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= ["a", "b", "c"]
+        @test df == DataFrame(["a" "a" 1
+                               "b" "b" 1
+                               "c" "c" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= categorical(["a"])
+        @test df == DataFrame(["a" "a" 1
+                               "a" "a" 1
+                               "a" "a" 1])
+        @test df.x1 isa CategoricalVector
+        @test df.x2 isa CategoricalVector
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= DataFrame(["a" "b"])
+        @test df == DataFrame(["a" "b" 1
+                               "a" "b" 1
+                               "a" "b" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= DataFrame(["a" "d"
+                                      "b" "e"
+                                      "c" "f"])
+        @test df == DataFrame(["a" "d" 1
+                               "b" "e" 1
+                               "c" "f" 1])
+        @test df.x1 !== df.x2
+
+        df = DataFrame(x1=1:3, x2=4:6, x3=1)
+        df[!, selector] .= ["a" "d"
+                            "b" "e"
+                            "c" "f"]
+        @test df == DataFrame(["a" "d" 1
+                               "b" "e" 1
+                               "c" "f" 1])
+        @test df.x1 !== df.x2
+    end
+
+    df = DataFrame(x1=1:3, x2=4:6)
+    @test_throws ArgumentError df[!, [:x1, :x3]] .= "a"
+end
+
+@testset "broadcasting over heterogenous columns" begin
+    df = DataFrame(x = [1, 1.0, big(1), "1"])
+    f_identity(x) = x
+    @test df == f_identity.(df)
 end
 
 end # module
