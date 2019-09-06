@@ -68,10 +68,10 @@ julia&gt; collect(Missings.replace(x, 1))
 
 julia&gt; collect(Missings.replace(x, 1)) == coalesce.(x, 1)
 true
-</code></pre><p>The function <code>Missings.T</code> returns the element-type <code>T</code> in <code>Union{T, Missing}</code>.</p><pre><code class="language-julia-repl">julia&gt; eltype(x)
+</code></pre><p>The function <code>nonmissingtype</code> returns the element-type <code>T</code> in <code>Union{T, Missing}</code>.</p><pre><code class="language-julia-repl">julia&gt; eltype(x)
 Union{Int64, Missing}
 
-julia&gt; Missings.T(eltype(x))
+julia&gt; nonmissingtype(eltype(x))
 Int64
 </code></pre><p>The <code>missings</code> function constructs <code>Vector</code>s and <code>Array</code>s supporting missing values, using the optional first argument to specify the element-type.</p><pre><code class="language-julia-repl">julia&gt; missings(1)
 1-element Array{Missing,1}:
