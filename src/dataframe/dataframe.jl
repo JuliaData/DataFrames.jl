@@ -1330,20 +1330,23 @@ function _expandhelper(col, iterprod, idx)
     end
 end
 
-function expand(df::AbstractDataFrame, indexcols; error::Bool=true)
+function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bool=false, fill=missing, replaceallmissing::Bool=false)
     colind = index(df)[indexcols]
     dummydf = similar(select(df, colind, copycols=false), 0)
 
-    if error == true
-        row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && throw(ArgumentError("duplicate rows in input"))
-    else
-        row_group_slots(ntuple(i -> df[!, i], ncol(df)))[1]!=nrow(df) && @warn "duplicate rows in input; expand will only return unique combinations"
+    if row_group_slots(ntuple(i -> df[!,colind][!, i], ncol(df[!,colind])), Val(false))[1] != nrow(df[!,colind])
+        if error == true
+            throw(ArgumentError("duplicate rows in input"))
+        else
+            @warn "duplicate rows in input; expand will only return unique combinations"
+        end
     end
 
     # Create a vect of vectors of unique values in each column
     uniqueVals = []
     for col in colind
         # levels drops missing, handle the case where missing values are present
+        # All levels are retained, missing is added only if present. See discussion here: https://github.com/JuliaData/DataFrames.jl/pull/1864#discussion_r313067309
         if any(ismissing, df[!, col])
             tempcol = vcat(levels(df[!, col]), missing)
         else
@@ -1358,28 +1361,23 @@ function expand(df::AbstractDataFrame, indexcols; error::Bool=true)
     for i in axes(colind, 1)
         _expandhelper(dummydf[!, i], p, i)
     end
+    if complete == false
+        return dummydf
+    else
+        joined = join(dummydf, df; on = _names(df)[colind], kind = :left, indicator = :source)
 
-    return dummydf
-end
-
-function complete(df::AbstractDataFrame, indexcols; fill=missing, replaceallmissing::Bool=false)
-    colind = index(df)[indexcols]
-
-    # Expand the input df and left join
-    expanded = expand(df, colind)
-    joined = join(expanded, df; on = _names(df)[colind], kind = :left, indicator = :source)
-
-    # Replace missing values with the fill
-    if !ismissing(fill)
-        for n in ncol(expanded)+1:ncol(joined)-1
-            if replaceallmissing
-                joined[!, n] = coalesce.(joined[!, n], Ref(fill))
-            else
-                joined[!, n] .= ifelse.(joined[!, end] .== "left_only", Ref(fill), joined[!, n])
+        # Replace missing values with the fill
+        if !ismissing(fill)
+            for n in ncol(dummydf)+1:ncol(joined)-1
+                if replaceallmissing
+                    joined[!, n] = coalesce.(joined[!, n], Ref(fill))
+                else
+                    joined[!, n] .= ifelse.(joined[!, end] .== "left_only", Ref(fill), joined[!, n])
+                end
             end
         end
-    end
 
-    select!(joined, 1:ncol(joined)-1)
-    return joined
+        select!(joined, 1:ncol(joined)-1)
+        return joined
+    end
 end
