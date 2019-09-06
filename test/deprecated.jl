@@ -118,7 +118,7 @@ end
 
 df = DataFrame(Union{Int, Missing}, 2, 2)
 @test size(df) == (2, 2)
-@test eltypes(df) == [Union{Int, Missing}, Union{Int, Missing}]
+@test eltype.(eachcol(df)) == [Union{Int, Missing}, Union{Int, Missing}]
 
 @test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
 
@@ -494,6 +494,10 @@ end
         df[1, :A] = 1.0
         @test df[1, :B] === 0.0
     end
+end
+
+@testset "eltypes" begin
+    @test eltypes(DataFrame(x=[1], y=["a"])) == [Int, String]
 end
 
 global_logger(old_logger)

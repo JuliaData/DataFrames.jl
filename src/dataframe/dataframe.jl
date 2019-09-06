@@ -1052,7 +1052,7 @@ julia> categorical!(df)
 │ 1   │ a            │ 1     │ p            │
 │ 2   │ b            │ 2     │ q            │
 
-julia> eltypes(df)
+julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:
  CategoricalString{UInt32}
  Int64
@@ -1074,7 +1074,7 @@ julia> categorical!(df, :Y, compress=true)
 │ 1   │ a      │ 1            │ p      │
 │ 2   │ b      │ 2            │ q      │
 
-julia> eltypes(df)
+julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:
  String
  CategoricalValue{Int64,UInt8}

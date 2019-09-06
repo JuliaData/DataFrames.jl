@@ -4,7 +4,7 @@ Tables.columns(df::AbstractDataFrame) = df
 Tables.rowaccess(::Type{<:AbstractDataFrame}) = true
 Tables.rows(df::AbstractDataFrame) = Tables.rows(columntable(df))
 
-Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltypes(df))
+Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x

@@ -443,7 +443,7 @@ end
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
     @test parent(gd2) == DataFrame(A=[])
-    @test eltypes(parent(gd2)) == [Int]
+    @test eltype.(eachcol(parent(gd2))) == [Int]
 
     gd2 = map(d -> DataFrame(X=Int[]), gd)
     @test length(gd2) == 0
@@ -453,7 +453,7 @@ end
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
     @test parent(gd2) == DataFrame(A=[], X=[])
-    @test eltypes(parent(gd2)) == [Int, Int]
+    @test eltype.(eachcol(parent(gd2))) == [Int, Int]
 end
 
 @testset "grouping with missings" begin
@@ -1143,7 +1143,7 @@ end
     for df in [dfx, view(dfx, :, :)]
         gd = groupby_checked(df, :A)
         @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
-        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+        @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 
         gd2 = gd[[3,2]]
         @test DataFrame(gd2) == df[[3,5,2,4], :]
@@ -1151,7 +1151,7 @@ end
         gd = groupby_checked(df, :A, skipmissing=true)
         @test sort(DataFrame(gd), :B) ==
               sort(dropmissing(df, disallowmissing=false), :B)
-        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+        @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 
         gd2 = gd[[2,1]]
         @test DataFrame(gd2) == df[[3,5,2,4], :]
@@ -1163,12 +1163,12 @@ end
     df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
     gd = groupby_checked(df, :a)
     @test size(DataFrame(gd)) == size(df)
-    @test eltypes(DataFrame(gd)) == [Int, Any, Union{Missing, String}]
+    @test eltype.(eachcol(DataFrame(gd))) == [Int, Any, Union{Missing, String}]
 
     dfv = view(dfx, 1:0, :)
     gd = groupby_checked(dfv, :A)
     @test size(DataFrame(gd)) == size(dfv)
-    @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+    @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 end
 
 @testset "groupindices and groupvars" begin
@@ -1190,6 +1190,14 @@ end
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+end
+
+@testset "by skipmissing and sort" begin
+    df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
+    for dosort in (false, true), doskipmissing in (false, true)
+        @test by(df, :a, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
+            combine(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
+    end
 end
 
 end # module

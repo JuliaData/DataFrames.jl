@@ -1040,46 +1040,46 @@ end
 
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
-    @test all(map(<:, eltypes(categorical!(deepcopy(df))),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df)))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    Char, Bool, Int,
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), :)),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), :))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), compress=true)),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), compress=true))),
                   [CategoricalArrays.CategoricalString{UInt8},
                    Char, Bool, Int,
                    CategoricalArrays.CategoricalString{UInt8}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), names(df))),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), names(df)))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), names(df), compress=true)),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), names(df), compress=true))),
                   [CategoricalArrays.CategoricalString{UInt8},
                    CategoricalArrays.CategoricalValue{Char,UInt8},
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), Not(1:0))),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Not(1:0)))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), Not(1:0), compress=true)),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Not(1:0), compress=true))),
                   [CategoricalArrays.CategoricalString{UInt8},
                    CategoricalArrays.CategoricalValue{Char,UInt8},
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
 
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), Integer)),
+    @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Integer))),
                   [String, Char,
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
@@ -1217,15 +1217,15 @@ end
                     CategoricalArray(string.('a':'j'))])
     @test allowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
-    @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
-    @test eltypes(df)[2] <: Union{CategoricalString, Missing}
+    @test eltype(df[!, 1]) <: Union{CategoricalValue{Int}, Missing}
+    @test eltype(df[!, 2]) <: Union{CategoricalString, Missing}
     df[1,2] = missing
     @test_throws MissingException disallowmissing!(df)
     df[1,2] = "a"
     @test disallowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
-    @test eltypes(df)[1] <: CategoricalValue{Int}
-    @test eltypes(df)[2] <: CategoricalString
+    @test eltype(df[!, 1]) <: CategoricalValue{Int}
+    @test eltype(df[!, 2]) <: CategoricalString
 
     df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
     @test allowmissing!(df, [:b, :c]) === df
@@ -1257,7 +1257,7 @@ end
         @test x.x !== y.x
         @test x.y !== y.y
         @test x.z !== y.z
-        @test eltypes(y) == [Int, Int, Int]
+        @test eltype.(eachcol(y)) == [Int, Int, Int]
 
         for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
             y = disallowmissing(x, colsel)
@@ -1266,7 +1266,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Int, Int, Int]
+            @test eltype.(eachcol(y)) == [Int, Int, Int]
         end
 
         for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
@@ -1276,7 +1276,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Int, Union{Missing, Int}, Int]
+            @test eltype.(eachcol(y)) == [Int, Union{Missing, Int}, Int]
         end
 
         for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
@@ -1286,7 +1286,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Union{Int, Missing}, Union{Int, Missing}, Int]
+            @test eltype.(eachcol(y)) == [Union{Int, Missing}, Union{Int, Missing}, Int]
         end
 
         for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
@@ -1296,7 +1296,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Union{Int, Missing}, Union{Int, Missing}, Int]
+            @test eltype.(eachcol(y)) == [Union{Int, Missing}, Union{Int, Missing}, Int]
         end
     end
 
@@ -1315,7 +1315,7 @@ end
         @test x.x !== y.x
         @test x.y !== y.y
         @test x.z !== y.z
-        @test eltypes(y) == fill(Union{Missing, Int}, 3)
+        @test eltype.(eachcol(y)) == fill(Union{Missing, Int}, 3)
 
         for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
             y = allowmissing(x, colsel)
@@ -1324,7 +1324,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == fill(Union{Missing, Int}, 3)
+            @test eltype.(eachcol(y)) == fill(Union{Missing, Int}, 3)
         end
 
         for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
@@ -1334,7 +1334,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Union{Missing, Int}, Int, Int]
+            @test eltype.(eachcol(y)) == [Union{Missing, Int}, Int, Int]
         end
 
         for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
@@ -1344,7 +1344,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Union{Int, Missing}, Int, Union{Missing, Int}]
+            @test eltype.(eachcol(y)) == [Union{Int, Missing}, Int, Union{Missing, Int}]
         end
 
         for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
@@ -1354,7 +1354,7 @@ end
             @test x.x !== y.x
             @test x.y !== y.y
             @test x.z !== y.z
-            @test eltypes(y) == [Union{Int, Missing}, Int, Int]
+            @test eltype.(eachcol(y)) == [Union{Int, Missing}, Int, Int]
         end
     end
 end
@@ -1439,15 +1439,15 @@ end
                    b = CategoricalArray(["foo"]),
                    c = [0.0],
                    d = CategoricalArray([0.0]))
-    @test eltypes(similar(df)) == eltypes(df)
+    @test eltype.(eachcol(similar(df))) == eltype.(eachcol(df))
     @test size(similar(df)) == size(df)
 
     rows = size(df, 1) + 5
     @test size(similar(df, rows)) == (rows, size(df, 2))
-    @test eltypes(similar(df, rows)) == eltypes(df)
+    @test eltype.(eachcol(similar(df, rows))) == eltype.(eachcol(df))
 
     @test size(similar(df, 0)) == (0, size(df, 2))
-    @test eltypes(similar(df, 0)) == eltypes(df)
+    @test eltype.(eachcol(similar(df, 0))) == eltype.(eachcol(df))
 
     e = @test_throws ArgumentError similar(df, -1)
     @test e.value.msg == "the number of rows must be non-negative"

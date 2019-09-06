@@ -1535,3 +1535,5 @@ end
 import Base: setproperty!
 @deprecate setproperty!(df::DataFrame, col_ind::Symbol, v) (df[!, col_ind] .= v)
 @deprecate setproperty!(df::SubDataFrame, col_ind::Symbol, v) (df[:, col_ind] .= v)
+
+@deprecate eltypes(df::AbstractDataFrame) eltype.(eachcol(df))

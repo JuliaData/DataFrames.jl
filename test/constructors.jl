@@ -218,7 +218,7 @@ end
     df = DataFrame(Dict(:A => 1:3, :B => 4:6))
     @inferred DataFrame(Dict(:A => 1:3, :B => 4:6))
     @test df == DataFrame(A = 1:3, B = 4:6)
-    @test eltypes(df) == [Int, Int]
+    @test eltype.(eachcol(df)) == [Int, Int]
 
     a=[1,2,3]
     df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3))
@@ -372,12 +372,12 @@ end
 
     df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
+    @test eltype.(eachcol(df)) == [Union{Int, Missing}, Union{Float64, Missing}]
 
     @test_throws ArgumentError DataFrame!([Union{Int, Missing}, Union{Float64, Missing}],
                                           [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
+    @test eltype.(eachcol(df)) == [Union{Int, Missing}, Union{Float64, Missing}]
 
     df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
                    [:A, :B, :C])
