@@ -257,7 +257,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\\\\\n")
     write(io, "\t\\hline\n")
     write(io, "\t& ")
-    header = join(map(c -> latex_escape(string(compacttype(c))), eltypes(df)[1:mxcol]), " & ")
+    header = join(map(c -> latex_escape(string(compacttype(c))), eltype.(eachcol(df)[1:mxcol])), " & ")
     write(io, header)
     mxcol < size(df, 2) && write(io, " & ")
     write(io, "\\\\\n")
@@ -352,7 +352,7 @@ function printtable(io::IO,
                     missingstring::AbstractString = "missing")
     _check_consistency(df)
     n, p = size(df)
-    etypes = eltypes(df)
+    etypes = eltype.(eachcol(df))
     if header
         cnames = _names(df)
         for j in 1:p
