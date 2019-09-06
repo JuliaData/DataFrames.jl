@@ -267,7 +267,7 @@ end
     df = DataFrame(a=1, b=2)
     push!(df, [1 2])
     @test df == DataFrame(a=[1, 1], b=[2, 2])
-    push!(df, (i for i in 1:2))
+    push!(df, (1, 2))
     @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
 
     @test_logs (:warn, r"In the future push! will not allow passing collections of type") push!(df, "ab")

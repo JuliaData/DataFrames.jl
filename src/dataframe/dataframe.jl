@@ -1191,7 +1191,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
 end
 
 """
-    push!(df::DataFrame, row::Union{Tuple, AbstractArray, Base.Generator})
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray})
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
           columns::Symbol=:intersect)
 
@@ -1201,7 +1201,7 @@ Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
 If `row` is neither a `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
-it must be a `Tuple`, an `AbstractArray`, or a `Base.Generator`
+it must be a `Tuple` or an `AbstractArray`
 and columns are matched by order of appearance. In this case `row` must contain
 the same number of elements as the number of columns in `df`.
 
@@ -1278,7 +1278,7 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 ```
 """
 function Base.push!(df::DataFrame, row::Any)
-    if !(row isa Union{Tuple, AbstractArray, Base.Generator})
+    if !(row isa Union{Tuple, AbstractArray})
         Base.depwarn("In the future push! will not allow passing collections of type" *
                      " $(typeof(row)) to be pushed into a DataFrame", :push!)
     end
