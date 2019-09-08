@@ -441,7 +441,7 @@ function insert_single_column!(df::DataFrame,
         else
             if ncol(df) + 1 == Int(col_ind)
                 Base.depwarn("In the future setindex! will disallow adding columns" *
-                             "to a DataFrame using integer index. " *
+                             " to a DataFrame using integer index. " *
                              "Use a Symbol to specify a column name instead.", :setindex!)
                 push!(index(df), nextcolname(df))
                 push!(_columns(df), dv)
@@ -1214,7 +1214,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
     if columns === :equal && length(row) != ncols
         # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
-                      "of elements as is the number of columns in `df`." *
+                      " of elements as is the number of columns in `df`. " *
                       "Use `columns=:intersect` to disable this check.", :push!)
     end
     current_col = 0
@@ -1239,7 +1239,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
 end
 
 """
-    push!(df::DataFrame, row)
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray})
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
           columns::Symbol=:intersect)
 
@@ -1249,8 +1249,9 @@ Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
 If `row` is neither a `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
-it is assumed to be an iterable and columns are matched by order of appearance.
-In this case `row` must contain the same number of elements as the number of columns in `df`.
+it must be a `Tuple` or an `AbstractArray`
+and columns are matched by order of appearance. In this case `row` must contain
+the same number of elements as the number of columns in `df`.
 
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names (order is ignored).
@@ -1325,6 +1326,10 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 ```
 """
 function Base.push!(df::DataFrame, row::Any)
+    if !(row isa Union{Tuple, AbstractArray})
+        Base.depwarn("In the future push! will not allow passing collections of type" *
+                     " $(typeof(row)) to be pushed into a DataFrame", :push!)
+    end
     nrows, ncols = size(df)
     if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."

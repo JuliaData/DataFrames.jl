@@ -311,6 +311,14 @@ end
     @test df == dfc
     @test_throws AssertionError push!(df, dfc[1, :])
     @test df == dfc
+
+    df = DataFrame(a=1, b=2)
+    push!(df, [1 2])
+    @test df == DataFrame(a=[1, 1], b=[2, 2])
+    push!(df, (1, 2))
+    @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
+
+    @test_logs (:warn, r"In the future push! will not allow passing collections of type") push!(df, "ab")
 end
 
 @testset "select! Not" begin
