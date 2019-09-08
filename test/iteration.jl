@@ -88,7 +88,7 @@ s2[2, :B] = "M"
     @test_throws ArgumentError mapcols(x -> x[1] == 1 ? 0 : [0], df_mapcols)
     @test_throws ArgumentError mapcols(x -> x[1] == 1 ? x : 0, df_mapcols)
     @test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
-    df_mapcols2 = DataFrame(x -> x, df_mapcols)
+    df_mapcols2 = mapcols(x -> x, df_mapcols)
     @test df_mapcols2 == df_mapcols
     @test df_mapcols2.a !== df_mapcols.a
     @test df_mapcols2.b !== df_mapcols.b
