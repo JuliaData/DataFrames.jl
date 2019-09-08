@@ -5,7 +5,7 @@ Reshape data from wide to long format using the `stack` function:
 ```jldoctest reshape
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv"));
+julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv")));
 
 julia> first(iris, 6)
 6×5 DataFrame
@@ -305,6 +305,8 @@ This repeats the original columns N times where N is the number of columns stack
 None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:
 
 ```jldoctest reshape
+julia> using Statistics
+
 julia> d = melt(iris, :Species);
 
 julia> first(d, 6)
