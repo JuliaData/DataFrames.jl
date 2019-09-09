@@ -1169,7 +1169,7 @@ end
 
     # * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
     #                      `v` can be:
-    #                      1) a `Tuple` an `AbstractArray`
+    #                      1) a `Tuple` or an `AbstractArray`
     #                         in which cases it must have a number of elements equal to `length(dfr)`,
     #                      2) an `AbstractDict`, in which case column names must match,
     #                      3) a `NamedTuple` or `DataFrameRow`, in which case column names and order must match;
