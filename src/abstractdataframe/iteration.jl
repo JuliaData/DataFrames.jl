@@ -219,7 +219,7 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
             end
             seenvector = true
-            push!(vs, fv)
+            push!(vs, fv === v ? copy(fv) : fv)
         else
             if seenvector
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
@@ -228,7 +228,7 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
             push!(vs, [fv])
         end
     end
-    DataFrame(vs, _names(df), copycols = false)
+    DataFrame(vs, _names(df), copycols=false)
 end
 
 Base.parent(dfrs::DataFrameRows) = getfield(dfrs, :df)

@@ -59,13 +59,6 @@ end
 @test eltype(map(Vector{Float64}, eachcol(df, false))) == Vector{Float64}
 @test eltype(map(Vector{Float64}, eachcol(df))) == Vector{Float64}
 
-# test mapcols corner cases
-df_mapcols = DataFrame(a=1:10, b=11:20)
-@test mapcols(sum, df_mapcols) == DataFrame(a=55, b=155)
-@test_throws ArgumentError mapcols(x -> x[1] == 1 ? 0 : [0], df_mapcols) == DataFrame(a=0, b=0)
-@test_throws ArgumentError mapcols(x -> x[1] == 1 ? x : 0, df_mapcols) == DataFrame(a=1:10, b=0)
-@test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
-
 row = DataFrameRow(df, 1, :)
 
 row[:A] = 100
@@ -87,6 +80,19 @@ s2[2, :B] = "M"
 @test view(s2, 1:1:2, :) == view(df, [1,3], :)
 
 @test_throws MethodError for x in df; end
+
+@testset "mapcols" begin
+    df_mapcols = DataFrame(a=1:10, b=11:20)
+    @test mapcols(sum, df_mapcols) == DataFrame(a=55, b=155)
+    @test mapcols(x -> 1, df_mapcols) == DataFrame(a=1, b=1)
+    @test_throws ArgumentError mapcols(x -> x[1] == 1 ? 0 : [0], df_mapcols)
+    @test_throws ArgumentError mapcols(x -> x[1] == 1 ? x : 0, df_mapcols)
+    @test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
+    df_mapcols2 = mapcols(x -> x, df_mapcols)
+    @test df_mapcols2 == df_mapcols
+    @test df_mapcols2.a !== df_mapcols.a
+    @test df_mapcols2.b !== df_mapcols.b
+end
 
 @testset "SubDataFrame" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
