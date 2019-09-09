@@ -1169,7 +1169,7 @@ end
 
     # * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
     #                      `v` can be:
-    #                      1) a `Tuple`, an `AbstractArray` or a `Base.Generator`,
+    #                      1) a `Tuple` or an `AbstractArray`
     #                         in which cases it must have a number of elements equal to `length(dfr)`,
     #                      2) an `AbstractDict`, in which case column names must match,
     #                      3) a `NamedTuple` or `DataFrameRow`, in which case column names and order must match;
@@ -1203,12 +1203,7 @@ end
 
     df = DataFrame(a=1,b=2)
     dfr = df[1, :]
-    dfr[:] = (i for i in 10:11, _ in 1:1, _ in 1:1)
-    @test df == DataFrame(a=10,b=11)
-    df = DataFrame(a=1,b=2)
-    dfr = df[1, :]
-    @test_throws DimensionMismatch dfr[:] = (i for i in 10:12, _ in 1:1, _ in 1:1)
-    @test df == DataFrame(a=1,b=2)
+    @test_throws MethodError dfr[:] = (i for i in 10:11, _ in 1:1, _ in 1:1)
 
     df = DataFrame(a=1,b=2)
     dfr = df[1, :]
@@ -1286,12 +1281,7 @@ end
 
     df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]
-    dfr[Not(3)] = (i for i in 10:11, _ in 1:1, _ in 1:1)
-    @test df == DataFrame(a=10,b=11, c=3)
-    df = DataFrame(a=1, b=2, c=3)
-    dfr = df[1, :]
-    @test_throws DimensionMismatch dfr[Not(3)] = (i for i in 11:13, _ in 1:1, _ in 1:1)
-    @test df == DataFrame(a=1, b=2, c=3)
+    @test_throws MethodError dfr[Not(3)] = (i for i in 10:11, _ in 1:1, _ in 1:1)
 
     df = DataFrame(a=1, b=2, c=3)
     dfr = df[1, :]

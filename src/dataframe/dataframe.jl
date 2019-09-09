@@ -504,7 +504,7 @@ end
 
 for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
     @eval function Base.setindex!(df::DataFrame,
-                                  v::Union{Tuple, AbstractArray, Base.Generator},
+                                  v::Union{Tuple, AbstractArray},
                                   row_ind::Integer,
                                   col_inds::$T)
         idxs = index(df)[col_inds]
@@ -663,7 +663,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
     name, item = name_col
     if !(0 < col_ind <= ncol(df) + 1)
         throw(BoundsError("attempt to insert a column to a data frame with $(ncol(df)) columns at index $col_ind"))
-    end  
+    end
     if !(size(df, 1) == length(item) || size(df, 2) == 0)
         throw(DimensionMismatch("length of new column ($(length(item))) must match the number of rows in data frame ($(nrow(df)))"))
     end
