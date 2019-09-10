@@ -1418,7 +1418,7 @@ end
 ##############################################################################
 
 function _expandhelper(col, iterprod, idx)
-    for v in iterprod
+    @inbounds for v in iterprod
         push!(col, v[idx])
     end
 end
