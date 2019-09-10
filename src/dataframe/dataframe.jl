@@ -1439,7 +1439,7 @@ function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bo
     uniqueVals = []
     for col in colind
         # levels drops missing, handle the case where missing values are present
-        # All levels are retained, missing is added only if present. See discussion here: https://github.com/JuliaData/DataFrames.jl/pull/1864#discussion_r313067309
+        # All levels are retained, missing is added only if present
         if any(ismissing, df[!, col])
             tempcol = vcat(levels(df[!, col]), missing)
         else
