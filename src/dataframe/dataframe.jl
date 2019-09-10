@@ -1457,7 +1457,7 @@ function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bo
     if complete == false
         return dummydf
     else
-        joined = join(dummydf, df; on = _names(df)[colind], kind = :left, indicator = :source)
+        joined = join(dummydf, df; on=_names(df)[colind], kind=:left, indicator=:source)
 
         # Replace missing values with the fill
         if !ismissing(fill)
