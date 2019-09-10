@@ -1427,7 +1427,7 @@ function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bo
     colind = index(df)[indexcols]
     dummydf = similar(select(df, colind, copycols=false), 0)
 
-    if row_group_slots(ntuple(i -> df[!,colind][!, i], ncol(df[!,colind])), Val(false))[1] != nrow(df[!,colind])
+    if row_group_slots(ntuple(i -> df[!, colind][!, i], ncol(df[!, colind])), Val(false))[1] != nrow(df[!, colind])
         if error == true
             throw(ArgumentError("duplicate rows in input"))
         else
