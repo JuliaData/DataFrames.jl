@@ -1336,7 +1336,7 @@ end
     @test_throws MethodError disallowmissing(DataFrame(x=[missing]))
     @test disallowmissing(DataFrame(x=[missing]), skip=true) == DataFrame(x=[missing])
     @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
-    @test disallowmissing(DataFrame(x=[1, missing], skip=true)) == DataFrame(x=[1, missing])
+    @test disallowmissing(DataFrame(x=[1, missing]), skip=true) == DataFrame(x=[1, missing])
 
     df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
     df2 = disallowmissing(df, skip=true)
