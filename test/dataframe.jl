@@ -1584,7 +1584,7 @@ end
 end
 
 @testset "permutecols!" begin
-    a, b, c = 1:5, 2:6, 3:7
+    a, b, c, d = 1:5, 2:6, 3:7, 4:8
     original = DataFrame(a=a, b=b, c=c)
 
     df = deepcopy(original)
@@ -1634,15 +1634,155 @@ end
     permutecols!(df, [3, 2, 1]) === df
     @test df == expected
 
+    df = deepcopy(original)
+    @test permutecols!(df, [:a, :b]) == DataFrame(a=a, b=b, c=c)
+    df = deepcopy(original)
+    @test permutecols!(df, [1, 2]) == DataFrame(a=a, b=b, c=c)
+
+    df = deepcopy(original)
+    @test permutecols!(df, [:b, :a]) == DataFrame(b=b, a=a, c=c)
+    df = deepcopy(original)
+    @test permutecols!(df, [2, 1]) == DataFrame(b=b, a=a, c=c)
+
+    df = deepcopy(original)
+    @test permutecols!(df, []) == original
+    df = deepcopy(original)
+    @test permutecols!(df, Symbol[]) == original
+
+    df = deepcopy(original)
+    @test permutecols!(df, [2]) == original
+    df = deepcopy(original)
+    @test permutecols!(df, [:b]) == original
+
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols!(df, [4, 3, 1]) == DataFrame(d=d, b=b, c=c, a=a)
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols!(df, [:d, :c, :a]) == DataFrame(d=d, b=b, c=c, a=a)
+
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols!(df, [4, 1]) == DataFrame(d=d, b=b, c=c, a=a)
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols!(df, [:d, :a]) == DataFrame(d=d, b=b, c=c, a=a)
+
     # Invalid
     df = DataFrame(a=a, b=b, c=c)
-    @test_throws ArgumentError permutecols!(df, [:a, :b])
     @test_throws ArgumentError permutecols!(df, 1:4)
     @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :d])
-    @test_throws ArgumentError permutecols!(df, [1, 3])
-    @test_throws ArgumentError permutecols!(df, [:a, :c])
     @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
     @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
+    @test_throws ArgumentError permutecols!(df, [1, 1])
+    @test_throws ArgumentError permutecols!(df, [:a, :a])
+    @test_throws ArgumentError permutecols!(df, [4])
+    @test_throws ArgumentError permutecols!(df, [:d])
+    @test_throws ArgumentError permutecols!(df, [0])
+    @test_throws ArgumentError permutecols!(df, [1, 4])
+end
+
+@testset "permutecols" begin
+    a, b, c, d = 1:5, 2:6, 3:7, 4:8
+    original = DataFrame(a=a, b=b, c=c)
+
+    df = deepcopy(original)
+    expected = deepcopy(original)
+    @test permutecols(df, [:a, :b, :c]) == expected
+    @test df == original
+    @test permutecols(df, 1:3) == expected
+    @test df == original
+
+    df = deepcopy(original)
+    expected = DataFrame(b=b, c=c, a=a)
+    permutecols(df, [:b, :c, :a]) == expected
+    @test df == original
+    df = deepcopy(original)
+    permutecols(df, [2, 3, 1]) == expected
+    @test df == original
+
+    df = deepcopy(original)
+    expected = DataFrame(c=c, a=a, b=b)
+    permutecols(df, [:c, :a, :b]) == expected
+    @test df == original
+    df = deepcopy(original)
+    permutecols(df, [3, 1, 2]) == expected
+    @test df == original
+
+    df = deepcopy(original)
+    expected = DataFrame(a=a, c=c, b=b)
+    permutecols(df, [:a, :c, :b]) == expected
+    @test df == original
+    df = deepcopy(original)
+    permutecols(df, [1, 3, 2]) == expected
+    @test df == original
+
+    df = deepcopy(original)
+    expected = DataFrame(b=b, a=a, c=c)
+    permutecols(df, [:b, :a, :c]) == expected
+    @test df == original
+    df = deepcopy(original)
+    permutecols(df, [2, 1, 3]) == expected
+    @test df == original
+
+    df = deepcopy(original)
+    expected = DataFrame(c=c, b=b, a=a)
+    permutecols(df, [:c, :b, :a]) == expected
+    @test df == original
+    df = deepcopy(original)
+    permutecols(df, [3, 2, 1]) == expected
+    @test df == original
+
+    df = deepcopy(original)
+    @test permutecols(df, [:a, :b]) == DataFrame(a=a, b=b, c=c)
+    @test df == original
+    df = deepcopy(original)
+    @test permutecols(df, [1, 2]) == DataFrame(a=a, b=b, c=c)
+    @test df == original
+
+    df = deepcopy(original)
+    @test permutecols(df, [:b, :a]) == DataFrame(b=b, a=a, c=c)
+    @test df == original
+    df = deepcopy(original)
+    @test permutecols(df, [2, 1]) == DataFrame(b=b, a=a, c=c)
+    @test df == original
+
+    df = deepcopy(original)
+    @test permutecols(df, []) == original
+    @test df == original
+    df = deepcopy(original)
+    @test permutecols(df, Symbol[]) == original
+    @test df == original
+
+    df = deepcopy(original)
+    @test permutecols(df, [2]) == original
+    @test df == original
+    df = deepcopy(original)
+    @test permutecols(df, [:b]) == original
+    @test df == original
+
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols(df, [4, 3, 1]) == DataFrame(d=d, b=b, c=c, a=a)
+    @test df == DataFrame(a=a, b=b, c=c, d=d)
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols(df, [:d, :c, :a]) == DataFrame(d=d, b=b, c=c, a=a)
+    @test df == DataFrame(a=a, b=b, c=c, d=d)
+
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols(df, [4, 1]) == DataFrame(d=d, b=b, c=c, a=a)
+    @test df == DataFrame(a=a, b=b, c=c, d=d)
+    df = DataFrame(a=a, b=b, c=c, d=d)
+    @test permutecols(df, [:d, :a]) == DataFrame(d=d, b=b, c=c, a=a)
+    @test df == DataFrame(a=a, b=b, c=c, d=d)
+
+    # Invalid
+    df = DataFrame(a=a, b=b, c=c)
+    @test_throws ArgumentError permutecols(df, 1:4)
+    @test_throws ArgumentError permutecols(df, [:a, :b, :c, :d])
+    @test_throws ArgumentError permutecols(df, [1, 2, 3, 1])
+    @test_throws ArgumentError permutecols(df, [:a, :b, :c, :a])
+    @test_throws ArgumentError permutecols(df, [1, 1])
+    @test_throws ArgumentError permutecols(df, [:a, :a])
+    @test_throws ArgumentError permutecols(df, [4])
+    @test_throws ArgumentError permutecols(df, [:d])
+    @test_throws ArgumentError permutecols(df, [0])
+    @test_throws ArgumentError permutecols(df, [1, 4])
 end
 
 @testset "getproperty, setproperty! and propertynames" begin

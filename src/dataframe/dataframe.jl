@@ -1361,8 +1361,10 @@ end
     permutecols!(df::DataFrame, p::AbstractVector)
 
 Permute the columns of `df` in-place, according to permutation `p`. Elements of `p` may be
-either column indices (`Int`) or names (`Symbol`), but cannot be a combination of both. All
-columns must be listed.
+either column indices (`Int`) or names (`Symbol`), but cannot be a combination of both.
+Any subset of columns may be listed, but it may not contain duplicates.
+If the subset does not contain all columns, then the permutation is performed
+within the subset passed.
 
 ### Examples
 
@@ -1378,9 +1380,7 @@ julia> df = DataFrame(a=1:5, b=2:6, c=3:7)
 │ 4   │ 4     │ 5     │ 6     │
 │ 5   │ 5     │ 6     │ 7     │
 
-julia> permutecols!(df, [2, 1, 3]);
-
-julia> df
+julia> permutecols!(df, [2, 1, 3])
 5×3 DataFrame
 │ Row │ b     │ a     │ c     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -1391,9 +1391,7 @@ julia> df
 │ 4   │ 5     │ 4     │ 6     │
 │ 5   │ 6     │ 5     │ 7     │
 
-julia> permutecols!(df, [:c, :a, :b]);
-
-julia> df
+julia> permutecols!(df, [:c, :a, :b])
 5×3 DataFrame
 │ Row │ c     │ a     │ b     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -1403,17 +1401,108 @@ julia> df
 │ 3   │ 5     │ 3     │ 4     │
 │ 4   │ 6     │ 4     │ 5     │
 │ 5   │ 7     │ 5     │ 6     │
+
+julia> permutecols!(df, [:b, :a])
+5×3 DataFrame
+│ Row │ c     │ b     │ a     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 1     │
+│ 2   │ 4     │ 3     │ 2     │
+│ 3   │ 5     │ 4     │ 3     │
+│ 4   │ 6     │ 5     │ 4     │
+│ 5   │ 7     │ 6     │ 5     │
 ```
 """
 function permutecols!(df::DataFrame, p::AbstractVector)
-    if !(length(p) == size(df, 2) && isperm(p))
+    if length(p) == 0
+        return df
+    elseif length(p) == 1
+        if 1 <= p[1] <= ncol(df)
+            return df
+        else
+            pext = [0]
+        end
+    elseif length(p) == ncol(df)
+        pext = p
+    elseif length(p) > ncol(df)
+        pext = [0]
+    else
+        pext = [i for i in axes(df, 2)]
+        pus = sort!(unique(p))
+        if length(pus) != length(p) || pus[end] > ncol(df)
+            pext = [0]
+        else
+            for (pos, loc) in zip(pus, p)
+                pext[pos] = loc
+            end
+        end
+    end
+    if !isperm(pext)
         throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
     end
-    permute!(_columns(df), p)
-    @inbounds permute!(index(df), p)
+    permute!(_columns(df), pext)
+    @inbounds permute!(index(df), pext)
     df
 end
 
-function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
-    permutecols!(df, index(df)[p])
-end
+permutecols!(df::DataFrame, p::AbstractVector{Symbol}) = permutecols!(df, index(df)[p])
+
+"""
+    permutecols(df::DataFrame, p::AbstractVector)
+
+Permute the columns of `df` and return a new `DataFrame`, according to permutation `p`.
+Elements of `p` may be either column indices (`Int`) or names (`Symbol`), but cannot
+be a combination of both. Any subset of columns may be listed, but it may not contain
+duplicates. If the subset does not contain all columns, then the permutation is performed
+within the subset passed.
+
+### Examples
+
+```julia
+julia> df = DataFrame(a=1:5, b=2:6, c=3:7)
+5×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+│ 2   │ 2     │ 3     │ 4     │
+│ 3   │ 3     │ 4     │ 5     │
+│ 4   │ 4     │ 5     │ 6     │
+│ 5   │ 5     │ 6     │ 7     │
+
+julia> permutecols(df, [2, 1, 3])
+5×3 DataFrame
+│ Row │ b     │ a     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 3     │
+│ 2   │ 3     │ 2     │ 4     │
+│ 3   │ 4     │ 3     │ 5     │
+│ 4   │ 5     │ 4     │ 6     │
+│ 5   │ 6     │ 5     │ 7     │
+
+julia> permutecols(df, [:c, :a, :b])
+5×3 DataFrame
+│ Row │ c     │ a     │ b     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 1     │ 2     │
+│ 2   │ 4     │ 2     │ 3     │
+│ 3   │ 5     │ 3     │ 4     │
+│ 4   │ 6     │ 4     │ 5     │
+│ 5   │ 7     │ 5     │ 6     │
+
+julia> permutecols(df, [:b, :a])
+5×3 DataFrame
+│ Row │ b     │ a     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 3     │
+│ 2   │ 3     │ 2     │ 4     │
+│ 3   │ 4     │ 3     │ 5     │
+│ 4   │ 5     │ 4     │ 6     │
+│ 5   │ 6     │ 5     │ 7     │
+```
+"""
+permutecols(df::DataFrame, p::AbstractVector) = permutecols!(copy(df), p)
