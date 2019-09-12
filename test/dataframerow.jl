@@ -456,4 +456,10 @@ end
         """
 end
 
+@testset "check Vector type" begin
+    df = DataFrame(a=1, b=1.0, c=1)
+    dfr = df[1, [1, 3]]
+    @test eltype(Vector(dfr)) == Int
+end
+
 end # module

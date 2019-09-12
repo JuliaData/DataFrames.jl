@@ -181,7 +181,8 @@ end
 Base.IteratorEltype(::Type{<:DataFrameRow}) = Base.EltypeUnknown()
 
 function Base.convert(::Type{Vector}, dfr::DataFrameRow)
-    T = reduce(promote_type, (eltype(v) for v in eachcol(parent(dfr))))
+    df = parent(dfr)
+    T = reduce(promote_type, (eltype(df[!, i]) for i in parentcols(index(dfr))))
     convert(Vector{T}, dfr)
 end
 Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
