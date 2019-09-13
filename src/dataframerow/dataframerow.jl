@@ -273,8 +273,8 @@ end
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
 function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
-    if !(columns in (:equal, :intersect))
-        throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
+    if !(columns in (:equal, :intersect, :identical))
+        throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1
@@ -300,6 +300,14 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
             if columns === :equal
                 msg = "Number of columns of `row` does not match `DataFrame` column count."
                 ncols == length(dfr) || throw(ArgumentError(msg))
+                if _names(df) != _names(dfr)
+                    Base.depwarn("columns=:equal is deprecated; in the future :identical " *
+                                 "will be the default", :push!)
+                end
+            end
+            if columns === :identical
+                msg = "Names and order of columns in `row` and `df` do not match."
+                _names(df) == _names(dfr) || throw(ArgumentError(msg))
             end
             for (col, nm) in zip(_columns(df), _names(df))
                 push!(col, dfr[nm])

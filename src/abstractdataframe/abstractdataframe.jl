@@ -956,7 +956,9 @@ Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:equal` (the default): require all data frames to have the same column names.
+* `:identical`: require all data frames to have the same column names and in the same order.
+* `:equal` (currently the default, but in the future `:identical` will be the default):
+  require all data frames to have the same column names.
   If they appear in different orders, the order of the first provided data frame is used.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
@@ -965,9 +967,9 @@ The `cols` keyword argument determines the columns of the returned data frame:
 * A vector of `Symbol`s: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-The order of columns is determined by the order they appear in the included
-data frames, searching through the header of the first data frame, then the
-second, etc.
+Unless `cols==:identical` the order of columns is determined by the order they appear
+in the included data frames, searching through the header of the first data frame, then
+the second, etc.
 
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
@@ -1057,7 +1059,6 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     if cols === :equal
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
-
         if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> !issetequal(u, header), uniqueheaders)
@@ -1070,11 +1071,20 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
         throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-
+        if length(header) > 1
+            Base.depwarn("cols=:equal is deprecated; in the future :identical " *
+                         "will be the default", :vcat)
+        end
     elseif cols === :intersect
         header = intersectunique
     elseif cols === :union
         header = unionunique
+    elseif cols === :identical
+        header = uniqueheaders[1]
+        if length(header) > 1
+            throw(ArgumentError("All passed data frames must have exactly the " *
+                                "same column names and in the same order."))
+        end
     else
         header = cols
     end

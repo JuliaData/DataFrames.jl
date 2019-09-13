@@ -1225,7 +1225,7 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:equal)
     if !(columns in (:equal, :intersect))
-        throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
+        throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
     if ncols == 0 && row isa NamedTuple
@@ -1234,12 +1234,23 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
         end
         return df
     end
-    # Only check for equal lengths, as an error will be thrown below if some names don't match
-    if columns === :equal && length(row) != ncols
+    if columns !== :intersect
+        # Only check for equal lengths if :equal is selected, as an error will be thrown below if some names don't match
+        if length(row) != ncols
         # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
                       " of elements as is the number of columns in `df`. " *
                       "Use `columns=:intersect` to disable this check.", :push!)
+        if row isa NamedTuple
+            matching = all(x -> x[1]==x[2], zip(propertynames(row), _names(df)))
+            if columns == :equal
+            else
+                if !matching
+                    throw(ArgumentError("All passed data frames must have exactly the " *
+                                        "same column names and in the same order."))
+                end
+            end
+        end
     end
     current_col = 0
     try
@@ -1280,10 +1291,12 @@ the same number of elements as the number of columns in `df`.
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names (order is ignored).
 `row` may contain more columns than `df` if `columns=:intersect`
-(this is currently the default, but will change in the future), but all column names
-that are present in `df` must be present in `row`.
-Otherwise if `columns=:equal` then `row` must contain exactly the same columns as `df`
-(but possibly in a different order).
+(this is currently the default, but will change to `:identical` in the future),
+but all column names that are present in `df` must be present in `row`.
+If `columns=:equal` then `row` must contain exactly the same columns as `df`
+(but possibly in a different order). Finally if `columns=:identical` then `row`
+must contain the same columns in the same order (this option is the same as
+`:equal` if `row` is an `AbstractDict`).
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
