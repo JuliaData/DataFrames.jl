@@ -1244,6 +1244,10 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
         if row isa NamedTuple
             matching = all(x -> x[1]==x[2], zip(propertynames(row), _names(df)))
             if columns == :equal
+                if !matching
+                    Base.depwarn("columns=:equal is deprecated; in the future :identical " *
+                                 "will be the default", :push!)
+                end
             else
                 if !matching
                     throw(ArgumentError("All passed data frames must have exactly the " *
