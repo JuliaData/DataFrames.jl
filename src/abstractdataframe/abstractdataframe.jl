@@ -1253,7 +1253,7 @@ from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
 
-If `skip=true` then columns containing `missing` as value will be skipped in the conversion.
+If `skip=true` then columns containing a `missing` value will be skipped instead of throwing an error.
 
 **Examples**
 
@@ -1282,6 +1282,7 @@ julia> df = DataFrame(a=[1,missing])
 ├─────┼─────────┼────────┤
 │ 1   │ 1       │ 1      │
 │ 2   │ missing │ 2      │
+
 julia> disallowmissing(df, skip=true)
 2×2 DataFrame
 │ Row │ a       │ b     │
