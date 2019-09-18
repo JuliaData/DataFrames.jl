@@ -1299,7 +1299,7 @@ function Missings.disallowmissing(df::AbstractDataFrame,
     for i in axes(df, 2)
         x = df[!, i]
         if i in idxcols
-            if error && Missing <: eltype(x) && any(ismissing, x)
+            if !error && Missing <: eltype(x) && any(ismissing, x)
                 y = x
             else
                 y = disallowmissing(x)

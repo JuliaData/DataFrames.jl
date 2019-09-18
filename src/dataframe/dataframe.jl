@@ -986,7 +986,7 @@ function disallowmissing! end
 
 function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
     x = df[!, col]
-    if !(error && Missing <: eltype(x) && any(ismissing, x))
+    if !(!error && Missing <: eltype(x) && any(ismissing, x))
         df[!, col] = disallowmissing(x)
     end
     df
