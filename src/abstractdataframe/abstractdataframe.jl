@@ -1293,7 +1293,7 @@ julia> disallowmissing(df, error=false)
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
                                   cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
-                                  error::Bool=tru)
+                                  error::Bool=true)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
