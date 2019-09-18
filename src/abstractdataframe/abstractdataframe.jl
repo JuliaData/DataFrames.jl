@@ -1246,14 +1246,15 @@ julia> ncol(df)
 """
     disallowmissing(df::AbstractDataFrame,
                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
-                    skip::Bool=false)
+                    error::Bool=true)
 
 Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
 
-If `skip=true` then columns containing `missing` as value will be skipped in the conversion.
+If `error=false` then columns containing `missing` as value will be skipped in the conversion,
+otherwise an error is thrown if such columns exist.
 
 **Examples**
 
@@ -1282,7 +1283,7 @@ julia> df = DataFrame(a=[1,missing])
 ├─────┼─────────┼────────┤
 │ 1   │ 1       │ 1      │
 │ 2   │ missing │ 2      │
-julia> disallowmissing(df, skip=true)
+julia> disallowmissing(df, error=false)
 2×2 DataFrame
 │ Row │ a       │ b     │
 │     │ Int64⍰  │ Int64 │
@@ -1292,13 +1293,13 @@ julia> disallowmissing(df, skip=true)
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
                                   cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
-                                  skip::Bool=false)
+                                  error::Bool=tru)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
         x = df[!, i]
         if i in idxcols
-            if skip && Missing <: eltype(x) && any(ismissing, x)
+            if error && Missing <: eltype(x) && any(ismissing, x)
                 y = x
             else
                 y = disallowmissing(x)
