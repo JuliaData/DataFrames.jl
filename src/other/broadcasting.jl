@@ -84,6 +84,7 @@ struct LazyNewColDataFrame{T}
 end
 
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
+Base.broadcastable(df::LazyNewColDataFrame) = df.df[!, df.col]
 
 struct ColReplaceDataFrame
     df::DataFrame
