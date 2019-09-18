@@ -1253,7 +1253,7 @@ from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
 
-
+If `error=false` then columns containing a `missing` value will be skipped instead of throwing an error.
 
 **Examples**
 
