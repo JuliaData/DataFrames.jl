@@ -980,8 +980,7 @@ Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` 
 
 If `cols` is omitted all columns in the data frame are converted.
 
-If `error=false` then columns containing `missing` as value will be skipped in the conversion,
-otherwise an error is thrown if such columns exist.
+If `error=false` then columns containing a `missing` value will be skipped instead of throwing an error.
 """
 function disallowmissing! end
 
