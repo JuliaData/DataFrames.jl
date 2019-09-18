@@ -1283,6 +1283,7 @@ julia> df = DataFrame(a=[1,missing])
 │ 1   │ 1       │ 1      │
 │ 2   │ missing │ 2      │
 
+julia> disallowmissing(df, error=false)
 2×2 DataFrame
 │ Row │ a       │ b     │
 │     │ Int64⍰  │ Int64 │
