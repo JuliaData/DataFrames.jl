@@ -1162,6 +1162,9 @@ end
     @test !isa(df[!, 2], Vector{Union{Int, Missing}})
     df[1,1] = missing
     @test_throws MethodError disallowmissing!(df, 1)
+    tmpcol = df[!, 1]
+    disallowmissing!(df, 1, error=false)
+    @test df[!, 1] === tmpcol
     df[1,1] = 1
     @test disallowmissing!(df, 1) === df
     @test isa(df[!, 1], Vector{Int})
@@ -1173,53 +1176,58 @@ end
     @test !isa(df[!, 2], Vector{Union{Int, Missing}})
     df[1,1] = missing
     @test_throws MethodError disallowmissing!(df, Not(Not(1)))
+    tmpcol = df[!, 1]
+    disallowmissing!(df, Not(Not(1)), error=false)
+    @test df[!, 1] === tmpcol
     df[1,1] = 1
     @test disallowmissing!(df, Not(Not(1))) === df
     @test isa(df[!, 1], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test allowmissing!(df, [1,2]) === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test disallowmissing!(df, [1,2]) === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+    for em in [true, false]
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test allowmissing!(df, [1,2]) === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test disallowmissing!(df, [1,2], error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test allowmissing!(df, Not(Not([1,2]))) === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test disallowmissing!(df, Not(Not([1,2]))) === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test allowmissing!(df, Not(Not([1,2]))) === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test disallowmissing!(df, Not(Not([1,2])), error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test_throws BoundsError allowmissing!(df, [true])
-    @test allowmissing!(df, [true, true]) === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test_throws BoundsError disallowmissing!(df, [true])
-    @test disallowmissing!(df, [true,true]) === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test_throws BoundsError allowmissing!(df, [true])
+        @test allowmissing!(df, [true, true]) === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test_throws BoundsError disallowmissing!(df, [true], error=em)
+        @test disallowmissing!(df, [true,true], error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test allowmissing!(df) === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test disallowmissing!(df) === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test allowmissing!(df) === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test disallowmissing!(df, error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test allowmissing!(df, :) === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test disallowmissing!(df, :) === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test allowmissing!(df, :) === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test disallowmissing!(df, :, error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test allowmissing!(df, r"") === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test disallowmissing!(df, r"") === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test allowmissing!(df, r"") === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test disallowmissing!(df, r"", error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
-    @test allowmissing!(df, Not(1:0)) === df
-    @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-    @test disallowmissing!(df, Not(1:0)) === df
-    @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+        df = DataFrame([collect(1:10), collect(1:10)])
+        @test allowmissing!(df, Not(1:0)) === df
+        @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
+        @test disallowmissing!(df, Not(1:0), error=em) === df
+        @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
+    end
 
     df = DataFrame([CategoricalArray(1:10),
                     CategoricalArray(string.('a':'j'))])
@@ -1229,37 +1237,54 @@ end
     @test eltype(df[!, 2]) <: Union{CategoricalString, Missing}
     df[1,2] = missing
     @test_throws MissingException disallowmissing!(df)
+    tmpcol =df[!, 2]
+    disallowmissing!(df, error=false)
+    @test df[!, 2] === tmpcol
     df[1,2] = "a"
     @test disallowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: CategoricalValue{Int}
     @test eltype(df[!, 2]) <: CategoricalString
 
-    df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
-    @test allowmissing!(df, [:b, :c]) === df
-    @test eltype(df.b) == Union{Int, Missing}
-    @test eltype(df.c) == Union{Int, Missing}
-    @test eltype(df.d) == Int
-    @test disallowmissing!(df, :c) === df
-    @test eltype(df.b) == Union{Int, Missing}
-    @test eltype(df.c) == Int
-    @test eltype(df.d) == Int
-    @test allowmissing!(df, [false, false, true]) === df
-    @test eltype(df.b) == Union{Int, Missing}
-    @test eltype(df.c) == Int
-    @test eltype(df.d) == Union{Int, Missing}
-    @test disallowmissing!(df, [true, false, false]) === df
-    @test eltype(df.b) == Int
-    @test eltype(df.c) == Int
-    @test eltype(df.d) == Union{Int, Missing}
+    for em in [true, false]
+        df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+        @test allowmissing!(df, [:b, :c]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Union{Int, Missing}
+        @test eltype(df.d) == Int
+        @test disallowmissing!(df, :c, error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
+        @test allowmissing!(df, [false, false, true]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Union{Int, Missing}
+        @test disallowmissing!(df, [true, false, false], error=em) === df
+        @test eltype(df.b) == Int
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Union{Int, Missing}
+    end
+
+    df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
+    disallowmissing!(df, error=false)
+    @test eltype(df.x) == Int
+    @test eltype(df.y) == Int
+    @test eltype(df.z) == Missing
+
+    df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
+    disallowmissing!(df, 2:3, error=false)
+    @test eltype(df.x) == Int
+    @test eltype(df.y) == Int
+    @test eltype(df.z) == Missing
 end
 
 @testset "test disallowmissing" begin
     df = DataFrame(x=Union{Int,Missing}[1,2,3],
                    y=Union{Int,Missing}[1,2,3],
                    z=[1,2,3])
-    for x in [df, view(df, :, :)]
-        y = disallowmissing(x)
+    for x in [df, view(df, :, :)], em in [true, false]
+        y = disallowmissing(x, error=em)
         @test y isa DataFrame
         @test x == y
         @test x.x !== y.x
@@ -1268,7 +1293,7 @@ end
         @test eltype.(eachcol(y)) == [Int, Int, Int]
 
         for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
-            y = disallowmissing(x, colsel)
+            y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
             @test x.x !== y.x
@@ -1278,7 +1303,7 @@ end
         end
 
         for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
-            y = disallowmissing(x, colsel)
+            y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
             @test x.x !== y.x
@@ -1288,7 +1313,7 @@ end
         end
 
         for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
-            y = disallowmissing(x, colsel)
+            y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
             @test x.x !== y.x
@@ -1298,7 +1323,7 @@ end
         end
 
         for colsel in [Int[], Symbol[], [false, false, false], r"a", Not(:)]
-            y = disallowmissing(x, colsel)
+            y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
             @test x.x !== y.x
@@ -1309,7 +1334,20 @@ end
     end
 
     @test_throws MethodError disallowmissing(DataFrame(x=[missing]))
+    @test disallowmissing(DataFrame(x=[missing]), error=false) ≅ DataFrame(x=[missing])
     @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
+    @test disallowmissing(DataFrame(x=[1, missing]), error=false) ≅ DataFrame(x=[1, missing])
+
+    df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
+    df2 = disallowmissing(df, error=false)
+    @test eltype(df2.x) == Int
+    @test eltype(df2.y) == Int
+    @test eltype(df2.z) == Missing
+
+    df2 = disallowmissing(df, 2:3, error=false)
+    @test eltype(df2.x) == Int
+    @test eltype(df2.y) == Int
+    @test eltype(df2.z) == Missing
 end
 
 @testset "test allowmissing" begin

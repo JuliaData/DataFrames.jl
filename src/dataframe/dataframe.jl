@@ -970,42 +970,49 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
     allowmissing!(df, axes(df, 2))
 
 """
-    disallowmissing!(df::DataFrame, cols::Colon=:)
-    disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
-    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
+    disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true)
+    disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol}; error::Bool=true)
+    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
+                     error::Bool=true)
 
 Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
+
+If `error=false` then columns containing a `missing` value will be skipped instead of throwing an error.
 """
 function disallowmissing! end
 
-function disallowmissing!(df::DataFrame, col::ColumnIndex)
-    df[!, col] = disallowmissing(df[!, col])
-    df
-end
-
-function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
-    for col in cols
-        disallowmissing!(df, col)
+function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
+    x = df[!, col]
+    if !(!error && Missing <: eltype(x) && any(ismissing, x))
+        df[!, col] = disallowmissing(x)
     end
     df
 end
 
-function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
+function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
+                          error::Bool=true)
+    for col in cols
+        disallowmissing!(df, col, error=error)
+    end
+    df
+end
+
+function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool}; error::Bool=true)
     length(cols) == size(df, 2) || throw(BoundsError(df, cols))
     for (col, cond) in enumerate(cols)
-        cond && disallowmissing!(df, col)
+        cond && disallowmissing!(df, col, error=error)
     end
     df
 end
 
-disallowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}) =
-    disallowmissing!(df, index(df)[cols])
+disallowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}; error::Bool=true) =
+    disallowmissing!(df, index(df)[cols], error=error)
 
-disallowmissing!(df::DataFrame, cols::Colon=:) =
-    disallowmissing!(df, axes(df, 2))
+disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
+    disallowmissing!(df, axes(df, 2), error=error)
 
 ##############################################################################
 ##
