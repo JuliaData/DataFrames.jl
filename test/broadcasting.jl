@@ -1479,4 +1479,15 @@ end
     @test df == f_identity.(df)
 end
 
+@testset "@views on df[!, col]" begin
+    df = DataFrame(ones(3, 4))
+    @views df[!, 1] .+= 1
+    @test df[!, 1] == [2.0, 2.0, 2.0]
+    @views df[:, 2] .= df[!, 4] .+ df[!, 3]
+    @test df[!, 2] == [2.0, 2.0, 2.0]
+
+    # make sure we do not mess with maybeview
+    @test @views typeof(df[!, 1:2]) <: SubDataFrame
+end
+
 end # module
