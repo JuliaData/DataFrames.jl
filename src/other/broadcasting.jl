@@ -84,7 +84,6 @@ struct LazyNewColDataFrame{T}
 end
 
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
-Base.broadcastable(df::LazyNewColDataFrame) = df.df[!, df.col]
 
 struct ColReplaceDataFrame
     df::DataFrame
@@ -97,7 +96,7 @@ Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
 Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
 Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
-function Base.maybeview(df::DataFrame, ::typeof(!), cols)
+function Base.dotview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
         return ColReplaceDataFrame(df, index(df)[cols])
     end
@@ -107,7 +106,7 @@ function Base.maybeview(df::DataFrame, ::typeof(!), cols)
     LazyNewColDataFrame(df, cols)
 end
 
-Base.maybeview(df::SubDataFrame, ::typeof(!), idxs) =
+Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =
     throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
