@@ -1532,8 +1532,8 @@ function Base.setindex!(df::DataFrame, v, ::Colon, col_inds)
     df
 end
 
-function Base.maybeview(df::AbstractDataFrame, col::ColumnIndex)
-    Base.depwarn("in broadcasted assignment use `df[:, col]` instead of `df[col]`", :maybeview)
+function Base.dotview(df::AbstractDataFrame, col::ColumnIndex)
+    Base.depwarn("in broadcasted assignment use `df[:, col]` instead of `df[col]`", :dotview)
     @view df[:, col]
 end
 
