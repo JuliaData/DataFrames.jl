@@ -1487,7 +1487,7 @@ end
     @test df[!, 2] == [2.0, 2.0, 2.0]
 
     # make sure we do not mess with maybeview
-    @test typeof(df[!, 1:2]) <: SubDataFrame
+    @test @views typeof(df[!, 1:2]) <: SubDataFrame
 end
 
 end # module
