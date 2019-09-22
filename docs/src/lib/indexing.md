@@ -122,6 +122,8 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
 * `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
 * `df[row, cols] = v` -> set row `row` of columns `cols` in-place; the same as `dfr = df[row, cols]; dfr[:] = v`;
 * `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
+                         if `rows` is `:` and `col` is a `Symbol` that is not present in `df` then a new column
+                         in `df` is created and holds a `copy` of `v`; equivalent to `df.col = copy(v)` if `col` is a valid identifier;
 * `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                       (in this case column names must match);
 * `df[!, col] = v` -> replaces `col` with `v` without copying
@@ -185,7 +187,11 @@ Additional rules:
 * in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector; if `col` is `Symbol` and it is missing from `df` then a new column is added; the length of the column is always the value of `nrow(df)` before the assignment takes place;
+  if `rows` is `:` and `col` is `Symbol` and it is missing from `df` then a new column is allocated and added;
+  the length of the column is always the value of `nrow(df)` before the assignment takes place;
+* in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector;
+  if `col` is `Symbol` and it is missing from `df` then a new column is allocated added;
+  the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;

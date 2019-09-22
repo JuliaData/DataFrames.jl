@@ -96,6 +96,14 @@ Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
 Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
 Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
+function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
+    haskey(index(df), cols) && return view(df, :, cols)
+    if !(cols isa Symbol)
+        throw(ArgumentError("creating new columns using an integer index by broadcasting is disallowed"))
+    end
+    LazyNewColDataFrame(df, cols)
+end
+
 function Base.dotview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
         return ColReplaceDataFrame(df, index(df)[cols])
