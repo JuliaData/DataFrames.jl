@@ -135,9 +135,9 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                        `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                        (in the latter case column names must match);
 
-Note that only `df[!, col] = v` and `df.col = v` can be used to add a new column to a `DataFrame`.
-In particular as `df[:, col] = v` is an in-place operation it does not add a column `v` to a `DataFrame` if `col` is missing
-(an error is thrown if such operation is attempted).
+Note that `df[!, col] = v`, `df.col = v` and `df[:, col] = v` can be used to add a new column to a `DataFrame`.
+The difference is that `df[:, col] = v` copies `v` before adding it to `df` and `df[!, col] = v` and `df.col = v`
+add `v` without copying it.
 
 `setindex!` on `SubDataFrame`:
 * `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
