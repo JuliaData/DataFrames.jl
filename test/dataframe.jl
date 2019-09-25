@@ -1675,11 +1675,11 @@ end
     df = DataFrame(a=a, b=b, c=c)
     @test_throws ArgumentError select!(df, 1:4)
     @test_throws ArgumentError select!(df, [:a, :b, :c, :d])
-    @test_throws ArgumentError select!(df, [:a, :c])
     @test_throws ArgumentError select!(df, [1, 2, 3, 1])
     @test_throws ArgumentError select!(df, [:a, :b, :c, :a])
 
     # but this works
+    @test select!(copy(df), [:a, :c]) == df[:, [:a, :c]]
     @test select!(copy(df), [:a, :b]) == df[:, [:a, :b]]
     @test select!(copy(df), [1, 3]) == df[:, [1, 3]]
 end
