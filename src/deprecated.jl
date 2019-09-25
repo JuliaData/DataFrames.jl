@@ -1542,3 +1542,5 @@ import Base: setproperty!
 @deprecate setproperty!(df::SubDataFrame, col_ind::Symbol, v) (df[:, col_ind] .= v)
 
 @deprecate eltypes(df::AbstractDataFrame) eltype.(eachcol(df))
+
+@deprecate permutecols!(df::DataFrame, p::AbstractVector) select!(df, p)

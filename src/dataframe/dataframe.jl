@@ -818,7 +818,10 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
         splice!(_columns(df), i)
         delete!(index(df), i)
     end
-    permutecols!(df, targetnames)
+    p = index(df)[targetnames]
+    permute!(index(df), p)
+    permute!(_columns(df), p)
+    df
 end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])

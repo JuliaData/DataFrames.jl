@@ -62,7 +62,6 @@ show
 sort
 sort!
 unique!
-permutecols!
 vcat
 append!
 push!
