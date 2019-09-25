@@ -1673,11 +1673,11 @@ end
     @test df == expected
 
     df = DataFrame(a=a, b=b, c=c)
-    @test_throws ArgumentError permutecols!(df, 1:4)
-    @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :d])
-    @test_throws ArgumentError permutecols!(df, [:a, :c])
-    @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
-    @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
+    @test_throws ArgumentError select!(df, 1:4)
+    @test_throws ArgumentError select!(df, [:a, :b, :c, :d])
+    @test_throws ArgumentError select!(df, [:a, :c])
+    @test_throws ArgumentError select!(df, [1, 2, 3, 1])
+    @test_throws ArgumentError select!(df, [:a, :b, :c, :a])
 
     # but this works
     @test select!(copy(df), [:a, :b]) == df[:, [:a, :b]]
