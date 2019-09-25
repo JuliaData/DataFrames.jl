@@ -180,3 +180,5 @@ select(dfv::SubDataFrame, inds; copycols::Bool=true) =
     copycols ? dfv[:, inds] : view(dfv, :, inds)
 select(dfv::SubDataFrame, inds::ColumnIndex; copycols::Bool=true) =
     select(dfv, [inds], copycols=copycols)
+select(dfv::SubDataFrame, ind, inds...; copycols::Bool=true) =
+    select(dfv, All(ind, inds...), copycols=copycols)

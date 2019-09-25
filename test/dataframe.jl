@@ -1854,4 +1854,23 @@ end
     df2v[Not(1), Between(1,2)] = Matrix(df[!, 1:2])
 end
 
+@testset "select and select! with multiple columns passed" begin
+    df = DataFrame(rand(10, 4))
+    @test select(df, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
+
+    dfv = view(df, :, :)
+    @test select(dfv, :x2, :x4, All()) == select(dfv, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x4, Between(:x2, :x4), All()) == select(dfv, :x4, :x2, :x3, :x1)
+
+    dfc = copy(df)
+    @test select!(dfc, :x2, :x4, All()) == dfc
+    @test dfc == select(df, :x2, :x4, :x1, :x3)
+    dfc = copy(df)
+    @test select!(dfc, :x4, Between(:x2, :x4), All()) == dfc
+    @test dfc == select(df, :x4, :x2, :x3, :x1)
+
+    @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
+end
+
 end # module

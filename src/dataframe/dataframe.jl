@@ -823,6 +823,7 @@ end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])
 select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
+select!(df::DataFrame, c, cs...) = select!(df, All(c, cs...))
 
 """
     select(df::AbstractDataFrame, inds, copycols::Bool=true)
@@ -872,6 +873,8 @@ select(df::DataFrame, c::Int; copycols::Bool=true) =
     select(df, [c], copycols=copycols)
 select(df::DataFrame, c::Any; copycols::Bool=true) =
     select(df, index(df)[c], copycols=copycols)
+select(df::DataFrame, c, cs...; copycols::Bool=true) =
+    select(df, All(c, cs...), copycols=copycols)
 
 ##############################################################################
 ##
