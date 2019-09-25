@@ -231,7 +231,8 @@ Join two or more `DataFrame` objects
     that df1 and df2 will be joined on have different names, then the columns
     should be `left => right` pairs, or a vector of such pairs.
     `on` is a required argument for all joins except for `kind = :cross`.
-    If more than two data frames are joined then only a vector of column names is allowed.
+    If more than two data frames are joined then only a column name
+    or a vector of column names are allowed.
 
 * `kind` : the type of join, options include:
 
