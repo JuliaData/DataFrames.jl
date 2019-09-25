@@ -655,7 +655,7 @@ end
     @test join(df1, df2, df3, on=:id) == DataFrame(id=1, x=1, y=1, z=1)
     @test join(df1, df2, df3, on=:id, kind=:outer) ≅ DataFrame(id=[1,2,3,4],
                                                                x=[1,2,3,missing],
-                                                               y=[1,2,missing,4]
+                                                               y=[1,2,missing,4],
                                                                z=[1,missing,3,4])
     @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:left)
     @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:right)
