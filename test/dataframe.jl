@@ -1983,7 +1983,16 @@ end
         push!(df, v, cols=:identical)
         @test df == DataFrame(a=[1,10], b=[2,20], c=[3,30])
     end
-    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30), (a=10, c=20, b=30),
+
+    df = DataFrame(a=1, b=2, c=3)
+    v = Dict(:a=>10, :b=>20, :d=>30)
+
+    # avoid printing of error to the console during test
+    old_logger = global_logger(NullLogger())
+    @test_throws KeyError push!(df, v, cols=:identical)
+    global_logger(old_logger)
+
+    for v in ((a=10, b=20, d=30), (a=10, c=20, b=30),
               DataFrame(a=10, c=20, b=30)[1, :], Dict(:a=>10, :b=>20, :c=>30, :d=>0),
               (a=10, b=20, c=30, d=0), DataFrame(a=10, b=20, c=30, d=0)[1, :])
         df = DataFrame(a=1, b=2, c=3)

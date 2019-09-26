@@ -1081,7 +1081,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         header = unionunique
     elseif cols === :identical
         header = uniqueheaders[1]
-        if length(header) > 1
+        if length(uniqueheaders) > 1
             throw(ArgumentError("All passed data frames must have exactly the " *
                                 "same column names and in the same order."))
         end
