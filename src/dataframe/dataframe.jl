@@ -1235,6 +1235,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
+    targetrows = nrows + 1
     if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
@@ -1280,7 +1281,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         current_col = 0
         for col in _columns(df)
             current_col += 1
-            @assert length(col) == nrows + 1
+            @assert length(col) == targetrows
         end
     catch err
         for col in _columns(df)
@@ -1387,6 +1388,7 @@ function Base.push!(df::DataFrame, row::Any)
                      " $(typeof(row)) to be pushed into a DataFrame", :push!)
     end
     nrows, ncols = size(df)
+    targetrows = nrows + 1
     if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
@@ -1400,7 +1402,7 @@ function Base.push!(df::DataFrame, row::Any)
         current_col = 0
         for col in _columns(df)
             current_col += 1
-            @assert length(col) == nrows + 1
+            @assert length(col) == targetrows
         end
     catch err
         #clean up partial row

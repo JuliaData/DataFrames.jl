@@ -309,7 +309,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
                 msg = "Number of columns of `row` does not match `DataFrame` column count."
                 ncols == length(dfr) || throw(ArgumentError(msg))
                 if _names(df) != _names(dfr)
-                    Base.depwarn("columns=:equal is deprecated; in the future :identical " *
+                    Base.depwarn("columns=:equal as a default is deprecated; in the future :identical " *
                                  "will be the default", :push!)
                 end
             end

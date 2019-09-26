@@ -1976,4 +1976,28 @@ end
     @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
 end
 
+@testset "vcat and push! with :identical" begin
+    for v in (Dict(:a=>10, :b=>20, :c=>30), (a=10, b=20, c=30),
+              DataFrame(a=10, b=20, c=30)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        push!(df, v, cols=:identical)
+        @test df == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    end
+    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30), (a=10, c=20, b=30),
+              DataFrame(a=10, c=20, b=30)[1, :], Dict(:a=>10, :b=>20, :c=>30, :d=>0),
+              (a=10, b=20, c=30, d=0), DataFrame(a=10, b=20, c=30, d=0)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        @test_throws ArgumentError push!(df, v, cols=:identical)
+    end
+
+    @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
+               cols=:identical) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
+                                    cols=:identical)
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, d=30),
+                                    cols=:identical)
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30, d=0),
+                                    cols=:identical)
+end
+
 end # module
