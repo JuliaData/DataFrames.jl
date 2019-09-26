@@ -1223,8 +1223,15 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:equal)
-    if !(columns in (:equal, :intersect))
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:equal,
+                    columns::Union{Nothing,Symbol}=nothing)
+    if isnothing(columns)
+        columns = cols
+    else
+        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. " *
+                     "In the future `cols` will have value `:identical` as a default.", :push!)
+    end
+    if !(columns in (:identical, :equal, :intersect))
         throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
@@ -1234,25 +1241,33 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
         end
         return df
     end
-    if columns !== :intersect
-        # Only check for equal lengths if :equal is selected, as an error will be thrown below if some names don't match
+    if columns === :equal
+        # Only check for equal lengths if :equal is selected,
+        # as an error will be thrown below if some names don't match
         if length(row) != ncols
-        # TODO: add tests for this case after the deprecation period
-        Base.depwarn("In the future push! will require that `row` has the same number" *
-                      " of elements as is the number of columns in `df`. " *
-                      "Use `columns=:intersect` to disable this check.", :push!)
+            # TODO: add tests for this case after the deprecation period
+            Base.depwarn("In the future push! will require that `row` has the same number" *
+                          " of elements as is the number of columns in `df`. " *
+                          "Use `columns=:intersect` to disable this check.", :push!)
+        end
         if row isa NamedTuple
             matching = all(x -> x[1]==x[2], zip(propertynames(row), _names(df)))
-            if columns == :equal
-                if !matching
-                    Base.depwarn("columns=:equal is deprecated; in the future :identical " *
-                                 "will be the default", :push!)
-                end
-            else
-                if !matching
-                    throw(ArgumentError("All passed data frames must have exactly the " *
-                                        "same column names and in the same order."))
-                end
+            if !matching
+                Base.depwarn("columns=:equal as default is deprecated; in the future :identical " *
+                             "will be the default", :push!)
+            end
+        end
+    end
+    if columns === :identical
+        if length(row) != ncols
+            throw(ArgumentError("A pushed object must have the same number of elements" *
+                                " as a target data frame."))
+        end
+        if row isa NamedTuple
+            if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
+                throw(ArgumentError("A pushed `NamedTuple` must have exactly the " *
+                                    "same column names and in the same order " *
+                                    "as a target data frame."))
             end
         end
     end
@@ -1280,7 +1295,7 @@ end
 """
     push!(df::DataFrame, row::Union{Tuple, AbstractArray})
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-          columns::Symbol=:intersect)
+          cols::Symbol=:equal)
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
@@ -1294,11 +1309,11 @@ the same number of elements as the number of columns in `df`.
 
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names (order is ignored).
-`row` may contain more columns than `df` if `columns=:intersect`
+`row` may contain more columns than `df` if `cols=:intersect`
 (this is currently the default, but will change to `:identical` in the future),
 but all column names that are present in `df` must be present in `row`.
-If `columns=:equal` then `row` must contain exactly the same columns as `df`
-(but possibly in a different order). Finally if `columns=:identical` then `row`
+If `cols=:equal` then `row` must contain exactly the same columns as `df`
+(but possibly in a different order). Finally if `cols=:identical` then `row`
 must contain the same columns in the same order (this option is the same as
 `:equal` if `row` is an `AbstractDict`).
 
@@ -1340,7 +1355,7 @@ julia> push!(df, df[1, :])
 │ 4   │ 1     │ 0     │
 │ 5   │ 1     │ 1     │
 
-julia> push!(df, (C="something", A=true, B=false), columns=:intersect)
+julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
 4×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │

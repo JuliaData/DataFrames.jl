@@ -272,7 +272,15 @@ end
 
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
-function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
+function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
+                    columns::Union{Nothing,Symbol}=nothing)
+    if isnothing(columns)
+        columns = cols
+    else
+        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. " *
+                     "In the future `cols` will have value `:identical` as a default.", :push!)
+    end
+
     if !(columns in (:equal, :intersect, :identical))
         throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
