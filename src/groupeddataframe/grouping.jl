@@ -1235,6 +1235,14 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
 end
 
 """
+    groupvars(gd::GroupedDataFrame)
+
+Return a vector of column names in `parent(gd)` used for grouping.
+"""
+groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
+
+
+"""
     groupindices(gd::GroupedDataFrame)
 
 Return a vector of group indices for each row of `parent(gd)`.
@@ -1245,9 +1253,27 @@ passed when creating `gd`, or if `gd` is a subset from a larger [`GroupedDataFra
 """
 groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
-"""
-    groupvars(gd::GroupedDataFrame)
 
-Return a vector of column names in `parent(gd)` used for grouping.
 """
-groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
+    groupindices(cols...)
+
+Return a vector of group indices. Each group index corresponds to a distinct combination of values for cols. Returns missing for groups in which one of the values in cols is missing.
+### Arguments
+* `cols...` : `AbstractVector`s to group by
+"""
+function groupindices(cols...)
+    if !isa(cols, Tuple{Vararg{AbstractVector}})
+        throw(ArgumentError("Arguments of groupindices should be AbstractVectors"))
+    end
+    if isempty(cols)
+        throw(ArgumentError("groupindices was called without argument")) 
+    end
+    n = length(first(cols))
+    if any(length(col) != n for col in cols)
+        throw(DimensionMismatch("Arguments of groupindices should have the same length"))
+    end
+    groups = Vector{Int}(undef, n)
+    row_group_slots(cols, Val(false), groups, true)
+    groups .-= 1
+    replace(groups, 0 => missing)
+end

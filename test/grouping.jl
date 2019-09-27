@@ -1190,6 +1190,17 @@ end
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+
+    A = [missing, :A, :B, :A, :B, missing]
+    @inferred groupindices(A)
+    @test groupindices(A) ≅ [missing, 1, 2, 1, 2, missing]
+    @test_throws DimensionMismatch groupindices([1, 2], [1, 3, 4])
+    @test_throws ArgumentError groupindices([1, 2], 1)
+    @test_throws ArgumentError groupindices()
+
+    B = [1, 1, 1, 1, 1, 1]
+    @inferred groupindices(A, B)
+    @test groupindices(A, B) ≅ [missing, 1, 2, 1, 2, missing]
 end
 
 @testset "by skipmissing and sort" begin
