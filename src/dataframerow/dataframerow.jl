@@ -282,7 +282,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
     end
 
     if !(columns in (:equal, :intersect, :identical))
-        throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
+        throw(ArgumentError("`cols` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1

@@ -1232,7 +1232,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
                      "In the future `cols` will have value `:identical` as a default.", :push!)
     end
     if !(columns in (:identical, :equal, :intersect))
-        throw(ArgumentError("`columns` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
+        throw(ArgumentError("`cols` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1

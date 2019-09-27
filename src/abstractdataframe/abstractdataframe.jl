@@ -1071,7 +1071,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
         throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-        if length(header) > 1
+        if length(uniqueheaders) > 1
             Base.depwarn("cols=:equal is deprecated; in the future :identical " *
                          "will be the default", :vcat)
         end
