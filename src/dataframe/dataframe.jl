@@ -766,12 +766,12 @@ function deleterows!(df::DataFrame, inds::AbstractVector{Bool})
 end
 
 """
-    select!(df::DataFrame, inds)
+    select!(df::DataFrame, inds...)
 
 Mutate `df` in place to retain only columns specified by `inds...` and return it.
 
 Arguments passed as `inds...` can be any index that is allowed for column indexing
-provided that the columns requested in eachof them are unique and present in `df`.
+provided that the columns requested in each of them are unique and present in `df`.
 
 If more than one argument is passed then they are joined as `All(inds...)`.
 Note that `All` selects the union of columns passed to it, so columns selected
