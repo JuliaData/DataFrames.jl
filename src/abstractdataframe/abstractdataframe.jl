@@ -940,7 +940,7 @@ julia> df3 = hcat(df1, df2, makeunique=true)
 │ 3   │ 3     │ 3     │ 6     │ 6     │
 
 julia> df3.A === df1.A
-true
+false
 
 julia> df3 = hcat(df1, df2, makeunique=true, copycols=false);
 
