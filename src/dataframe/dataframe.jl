@@ -766,12 +766,18 @@ function deleterows!(df::DataFrame, inds::AbstractVector{Bool})
 end
 
 """
-    select!(df::DataFrame, inds)
+    select!(df::DataFrame, inds...)
 
-Mutate `df` in place to retain only columns specified by `inds` and return it.
+Mutate `df` in place to retain only columns specified by `inds...` and return it.
 
-Argument `inds` can be any index that is allowed for column indexing of
-a `DataFrame` provided that the columns requested to be removed are unique.
+Arguments passed as `inds...` can be any index that is allowed for column indexing
+provided that the columns requested in each of them are unique and present in `df`.
+
+If more than one argument is passed then they are joined as `All(inds...)`.
+Note that `All` selects the union of columns passed to it, so columns selected
+in different `inds...` do not have to be unique. For example a call
+`select!(df, :col, All())` is valid and moves column `:col` in the
+data frame to be the first, provided it is present in `df`.
 
 ### Examples
 
@@ -818,19 +824,31 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
         splice!(_columns(df), i)
         delete!(index(df), i)
     end
-    permutecols!(df, targetnames)
+    p = index(df)[targetnames]
+    permute!(index(df), p)
+    permute!(_columns(df), p)
+    df
 end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])
 select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
+select!(df::DataFrame, c, cs...) = select!(df, All(c, cs...))
 
 """
-    select(df::AbstractDataFrame, inds, copycols::Bool=true)
+    select(df::AbstractDataFrame, inds...; copycols::Bool=true)
 
 Create a new data frame that contains columns from `df`
 specified by `inds` and return it.
 
-Argument `inds` can be any index that is allowed for column indexing.
+Arguments passed as `inds...` can be any index that is allowed for column indexing
+provided that the columns requested in each of them are unique and present in `df`.
+
+If more than one argument is passed then they are joined as `All(inds...)`.
+Note that `All` selects the union of columns passed to it, so columns selected
+in different `inds...` do not have to be unique. For example a call
+`select(df, :col, All())` is valid and creates a new data frame with column `:col`
+moved to be the first, provided it is present in `df`.
+
 
 If `df` is a `DataFrame` return a new `DataFrame` that contains columns from `df`
 specified by `inds`.
@@ -872,6 +890,8 @@ select(df::DataFrame, c::Int; copycols::Bool=true) =
     select(df, [c], copycols=copycols)
 select(df::DataFrame, c::Any; copycols::Bool=true) =
     select(df, index(df)[c], copycols=copycols)
+select(df::DataFrame, c, cs...; copycols::Bool=true) =
+    select(df, All(c, cs...), copycols=copycols)
 
 ##############################################################################
 ##

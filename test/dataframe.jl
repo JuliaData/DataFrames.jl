@@ -1621,66 +1621,67 @@ end
     @test df[1, :B] === 0
 end
 
-@testset "permutecols!" begin
+@testset "select! on all columns" begin
     a, b, c = 1:5, 2:6, 3:7
     original = DataFrame(a=a, b=b, c=c)
 
     df = deepcopy(original)
     expected = deepcopy(original)
-    @test permutecols!(df, [:a, :b, :c]) === df
+    @test select!(df, [:a, :b, :c]) === df
     @test df == expected
-    @test permutecols!(df, 1:3) === df
+    @test select!(df, 1:3) === df
     @test df == expected
 
     df = deepcopy(original)
     expected = DataFrame(b=b, c=c, a=a)
-    permutecols!(df, [:b, :c, :a]) === df
+    select!(df, [:b, :c, :a]) === df
     @test df == expected
     df = deepcopy(original)
-    permutecols!(df, [2, 3, 1]) === df
+    select!(df, [2, 3, 1]) === df
     @test df == expected
 
     df = deepcopy(original)
     expected = DataFrame(c=c, a=a, b=b)
-    permutecols!(df, [:c, :a, :b]) === df
+    select!(df, [:c, :a, :b]) === df
     @test df == expected
     df = deepcopy(original)
-    permutecols!(df, [3, 1, 2]) === df
+    select!(df, [3, 1, 2]) === df
     @test df == expected
 
     df = deepcopy(original)
     expected = DataFrame(a=a, c=c, b=b)
-    permutecols!(df, [:a, :c, :b]) === df
+    select!(df, [:a, :c, :b]) === df
     @test df == expected
     df = deepcopy(original)
-    permutecols!(df, [1, 3, 2]) === df
+    select!(df, [1, 3, 2]) === df
     @test df == expected
 
     df = deepcopy(original)
     expected = DataFrame(b=b, a=a, c=c)
-    permutecols!(df, [:b, :a, :c]) === df
+    select!(df, [:b, :a, :c]) === df
     @test df == expected
     df = deepcopy(original)
-    permutecols!(df, [2, 1, 3]) === df
+    select!(df, [2, 1, 3]) === df
     @test df == expected
 
     df = deepcopy(original)
     expected = DataFrame(c=c, b=b, a=a)
-    permutecols!(df, [:c, :b, :a]) === df
+    select!(df, [:c, :b, :a]) === df
     @test df == expected
     df = deepcopy(original)
-    permutecols!(df, [3, 2, 1]) === df
+    select!(df, [3, 2, 1]) === df
     @test df == expected
 
-    # Invalid
     df = DataFrame(a=a, b=b, c=c)
-    @test_throws ArgumentError permutecols!(df, [:a, :b])
-    @test_throws ArgumentError permutecols!(df, 1:4)
-    @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :d])
-    @test_throws ArgumentError permutecols!(df, [1, 3])
-    @test_throws ArgumentError permutecols!(df, [:a, :c])
-    @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
-    @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
+    @test_throws ArgumentError select!(df, 1:4)
+    @test_throws ArgumentError select!(df, [:a, :b, :c, :d])
+    @test_throws ArgumentError select!(df, [1, 2, 3, 1])
+    @test_throws ArgumentError select!(df, [:a, :b, :c, :a])
+
+    # but this works
+    @test select!(copy(df), [:a, :c]) == df[:, [:a, :c]]
+    @test select!(copy(df), [:a, :b]) == df[:, [:a, :b]]
+    @test select!(copy(df), [1, 3]) == df[:, [1, 3]]
 end
 
 @testset "getproperty, setproperty! and propertynames" begin
@@ -1852,6 +1853,25 @@ end
     df2v[Not(1), Between(1,2)] = df[!, 1:2]
     df2v[Not(1), All()] = Matrix(df)
     df2v[Not(1), Between(1,2)] = Matrix(df[!, 1:2])
+end
+
+@testset "select and select! with multiple columns passed" begin
+    df = DataFrame(rand(10, 4))
+    @test select(df, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
+
+    dfv = view(df, :, :)
+    @test select(dfv, :x2, :x4, All()) == select(dfv, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x4, Between(:x2, :x4), All()) == select(dfv, :x4, :x2, :x3, :x1)
+
+    dfc = copy(df)
+    @test select!(dfc, :x2, :x4, All()) == dfc
+    @test dfc == select(df, :x2, :x4, :x1, :x3)
+    dfc = copy(df)
+    @test select!(dfc, :x4, Between(:x2, :x4), All()) == dfc
+    @test dfc == select(df, :x4, :x2, :x3, :x1)
+
+    @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
 end
 
 end # module

@@ -62,8 +62,7 @@ export AbstractDataFrame,
        stack,
        stackdf,
        unique!,
-       unstack,
-       permutecols!
+       unstack
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow
