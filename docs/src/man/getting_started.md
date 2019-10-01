@@ -371,23 +371,6 @@ true
 
 In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
 
-It is also possible to use a regular expression as a selector of columns matching it:
-```jldoctest dataframe
-julia> df = DataFrame(x1=1, x2=2, y=3)
-1×3 DataFrame
-│ Row │ x1    │ x2    │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
-
-julia> df[!, r"x"]
-1×2 DataFrame
-│ Row │ x1    │ x2    │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │
-```
-
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
@@ -423,6 +406,49 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
 │ 98  │ 795   │ 8     │ 398   │
 │ 99  │ 797   │ 8     │ 399   │
 ```
+
+It is also possible to use a regular expression as a selector of columns matching it:
+```jldoctest dataframe
+julia> df = DataFrame(x1=1, x2=2, y=3)
+1×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> df[!, r"x"]
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+```
+
+Finally, you can use `Not` and `All` selectors in more complex cases. The following examples move all columns containing `"x"` respectively to the front and to the end of a data frame:
+```
+julia> df = DataFrame(r="r", x1="x1", x2="x2", y="y")
+1×4 DataFrame
+│ Row │ r      │ x1     │ x2     │ y      │
+│     │ String │ String │ String │ String │
+├─────┼────────┼────────┼────────┼────────┤
+│ 1   │ r      │ x1     │ x2     │ y      │
+
+julia> df[:, All(r"x", :)]
+1×4 DataFrame
+│ Row │ x1     │ x2     │ r      │ y      │
+│     │ String │ String │ String │ String │
+├─────┼────────┼────────┼────────┼────────┤
+│ 1   │ x1     │ x2     │ r      │ y      │
+
+julia> df[:, All(Not(r"x"), :)]
+1×4 DataFrame
+│ Row │ r      │ y      │ x1     │ x2     │
+│     │ String │ String │ String │ String │
+├─────┼────────┼────────┼────────┼────────┤
+│ 1   │ r      │ y      │ x1     │ x2     │
+```
+
+You can also use [`select`](@ref) and [`select!`](@ref) functions to perform column selection in a data frame.
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
