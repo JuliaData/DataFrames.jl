@@ -388,6 +388,17 @@ julia> df[!, r"x"]
 │ 1   │ 1     │ 2     │
 ```
 
+In addition, [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) can be used to select all columns excluding a specified subset:
+
+```jldoctest dataframe
+julia> df[!, Not(:x1)]
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+```
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
@@ -422,6 +433,18 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
 │ 97  │ 793   │ 8     │ 397   │
 │ 98  │ 795   │ 8     │ 398   │
 │ 99  │ 797   │ 8     │ 399   │
+```
+Where a specific subset of values needs to be matched, the `in()` function can be applied:
+
+```jldoctest dataframe
+julia> df[in([1, 5, 601]).(df.A), :]
+3×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 5     │ 1     │ 3     │
+│ 3   │ 601   │ 7     │ 301   │
 ```
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
