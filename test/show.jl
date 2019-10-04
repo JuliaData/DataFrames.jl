@@ -52,7 +52,7 @@ end
 
 @testset "displaysize test" begin
     Random.seed!(1)
-    df_big = DataFrame(rand(Int64, 10000000:20000000, 25,5))
+    df_big = DataFrame(rand(Int64(10000000):Int64(20000000), 25,5))
 
     io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big)
