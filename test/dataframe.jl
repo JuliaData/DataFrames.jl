@@ -617,6 +617,36 @@ end
     @test d.b === df.b
 end
 
+@testset "select! rename" begin
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+    dfa = df.a
+    dfb = df.b
+    dfc = df.c
+    dfd = df.d
+    dfe = df.e
+
+    d = copy(df, copycols=false)
+    select!(d, [:a=>:b])
+    @test names(d) == [:b]
+    @test d.b === dfa
+
+    d = copy(df, copycols=false)
+    select!(d, [:b=>:a, :a=>:b, :e])
+    @test names(d) == [:a, :b, :e]
+    @test d.b === dfa
+    @test d.a === dfb
+    @test d.e === dfe
+
+    d = copy(df, copycols=false)
+    select!(d, [:a=>:aa, :b=>:bb, :c=>:cc, :d=>:dd, :e=>:ee])
+    @test names(d) == [:aa, :bb, :cc, :dd, :ee]
+    @test d.aa === dfa
+    @test d.bb === dfb
+    @test d.cc === dfc
+    @test d.dd === dfd
+    @test d.ee === dfe
+end
+
 @testset "select" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
     @test_throws BoundsError select(df, 0)
@@ -817,6 +847,36 @@ end
     @test d isa SubDataFrame
     @test names(d) == [:b]
     @test d.b === df.b
+end
+
+@testset "select rename" begin
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+
+    d = select(df, [:a=>:b])
+    @test names(d) == [:b]
+    @test d.b !== df.a
+    @test d.b == df.a
+
+    d = select(df, [:b=>:a, :a=>:b, :e])
+    @test names(d) == [:a, :b, :e]
+    @test d.b !== df.a
+    @test d.a !== df.b
+    @test d.e !== df.e
+    @test d.b == df.a
+    @test d.a == df.b
+    @test d.e == df.e
+
+    d = select(df, [:e, :b=>:a, :c], copycols=false)
+    @test names(d) == [:e, :a, :c]
+    @test d.e === df.e
+    @test d.a === df.b
+    @test d.c === df.c
+
+    d = select(df, [:e=>:a, :b, :a=>:c], copycols=false)
+    @test names(d) == [:a, :b, :c]
+    @test d.a === df.e
+    @test d.b === df.b
+    @test d.c === df.a
 end
 
 @testset "deleterows!" begin
@@ -1552,6 +1612,17 @@ end
     @test df[:, :][!, :x] !== x
     @test df[:, [:y,:x]][!, :x] == x
     @test df[:, [:y,:x]][!, :x] !== x
+end
+
+@testset "test getindex with rename" begin
+    x = [1,3]
+    y = [2,4]
+    df = DataFrame(x=x, y=y, copycols=false)
+    @test df[!, [:x=>:t]].t === x
+    @test df[:, [:x=>:t]].t == x
+    @test df[:, [:x=>:t]].t !== x
+    @test df[1:1, [:x=>:t]].t == x[1:1]
+    @test df[Not(2), [:x=>:t]].t == x[Not(2)]
 end
 
 @testset "test corner case of getindex" begin

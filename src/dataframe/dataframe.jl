@@ -370,7 +370,7 @@ end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
-                               col_inds::Union{AbstractVector, Regex, Not, Between, All}) where T
+                               col_inds::Union{Regex, Not, Between, All}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))
@@ -380,6 +380,28 @@ end
     selected_rows = T === Bool ? findall(row_inds) : row_inds
     new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
+end
+
+
+# df[MultiRowIndex, MultiColumnIndex] => DataFrame
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
+                               col_inds::AbstractVector) where T
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_inds"))
+    end
+    if any(i->i isa Pair{Symbol, Symbol}, col_inds)
+        cc = [i isa Symbol ? i : i[1] for i in col_inds]
+        rr = filter(i -> i isa Pair{Symbol, Symbol}, col_inds)
+    else
+        cc = col_inds
+        rr = Pair{Symbol, Symbol}[]
+    end
+    selected_columns = index(df)[cc]
+    # Computing integer indices once for all columns is faster
+    selected_rows = T === Bool ? findall(row_inds) : row_inds
+    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
+    return rename!(DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false), rr...)
 end
 
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
@@ -831,6 +853,16 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
 end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])
+
+function select!(df::DataFrame, c::AbstractVector{T}) where T
+    if any(i->i isa Pair{Symbol, Symbol}, c)
+        cc = [i isa Symbol ? i : i[1] for i in c]
+        rr = filter(i -> i isa Pair{Symbol, Symbol}, c)
+        return rename!(select!(df, index(df)[cc]), rr...)
+    end
+    return select!(df, index(df)[c])
+end
+
 select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 select!(df::DataFrame, c, cs...) = select!(df, All(c, cs...))
 
@@ -859,6 +891,9 @@ If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
 If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
 and a `DataFrame` with freshly allocated columns otherwise.
 
+If `df` is a `DataFrame`, then select! support partially rename (`SubDataFrame`
+does not support rename yet).
+
 ### Examples
 
 ```jldoctest
@@ -879,6 +914,15 @@ julia> select(d, :b)
 │ 1   │ 4     │
 │ 2   │ 5     │
 │ 3   │ 6     │
+
+julia> select(d, [:b=>:x])
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 4     │
+│ 2   │ 5     │
+│ 3   │ 6     │
 ```
 
 """
@@ -888,8 +932,21 @@ select(df::DataFrame, inds::AbstractVector{Int}; copycols::Bool=true) =
 
 select(df::DataFrame, c::Int; copycols::Bool=true) =
     select(df, [c], copycols=copycols)
+select(df::DataFrame, c::AbstractVector{T}; copycols::Bool=true) where T<:Union{Symbol,Integer} =
+    select(df, index(df)[c], copycols=copycols)
+
+function select(df::DataFrame, c::AbstractVector{T}; copycols::Bool=true) where T
+    if any(i->i isa Pair{Symbol, Symbol}, c)
+        cc = [i isa Symbol ? i : i[1] for i in c]
+        rr = filter(i -> i isa Pair{Symbol, Symbol}, c)
+        return rename!(select(df, index(df)[cc], copycols=copycols), rr...)
+    end
+    return select(df, index(df)[c], copycols=copycols)
+end
+
 select(df::DataFrame, c::Any; copycols::Bool=true) =
     select(df, index(df)[c], copycols=copycols)
+
 select(df::DataFrame, c, cs...; copycols::Bool=true) =
     select(df, All(c, cs...), copycols=copycols)
 
