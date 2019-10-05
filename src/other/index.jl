@@ -47,7 +47,7 @@ end
 
 function rename!(x::Index, nms)
     xbackup = copy(x)
-    processedfrom = Set(Symbol[])
+    processedfrom = Set{Symbol}()
     processedto = Set(Symbol[])
     toholder = Dict{Symbol,Int}()
     for (from, to) in nms
