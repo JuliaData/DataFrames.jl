@@ -33,7 +33,7 @@ test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Logging", "Ran
 
 [compat]
 julia = "1"
-CategoricalArrays = ">= 0.5.4"
+CategoricalArrays = ">= 0.7.0"
 Compat = "2.0.0"
 DataAPI = "1.0.1"
 InvertedIndices = "1"
