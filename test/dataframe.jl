@@ -1127,6 +1127,33 @@ end
     @test names(df) == [:A_4, :B_4]
     @test rename!(x->Symbol(lowercase(string(x))), df) === df
     @test names(df) == [:a_4, :b_4]
+
+    df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
+    @test rename!(df, :A => :B, :B => :A) === df
+    @test names(df) == [:B, :A, :C]
+    @test rename!(df, :A => :B, :B => :A, :C => :D) === df
+    @test names(df) == [:A, :B, :D]
+    @test rename!(df, :A => :B, :B => :C, :D => :A) === df
+    @test names(df) == [:B, :C, :A]
+    @test rename!(df, :A => :C, :B => :A, :C => :B) === df
+    @test names(df) == [:A, :B, :C]
+    @test rename!(df, :A => :A, :B => :B, :C => :C) === df
+    @test names(df) == [:A, :B, :C]
+
+    @test_throws ArgumentError rename!(df, :X => :Y)
+    @test names(df) == [:A, :B, :C]
+    @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
+    @test names(df) == [:A, :B, :C]
+    @test_throws ArgumentError rename!(df, :A => :B)
+    @test names(df) == [:A, :B, :C]
+    @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
+    @test names(df) == [:A, :B, :C]
+    @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
+    @test names(df) == [:A, :B, :C]
+    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
+    @test names(df) == [:A, :B, :C]
+    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
+    @test names(df) == [:A, :B, :C]
 end
 
 @testset "size" begin
