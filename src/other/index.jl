@@ -52,12 +52,12 @@ function rename!(x::Index, nms)
     toholder = Dict{Symbol,Int}()
     for (from, to) in nms
         if from ∈ processedfrom
-            copy!(x.lookup, xbackup.lookup)
+            merge!(empty!(x.lookup), xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming $from multiple times."))
         end
         if to ∈ processedto
-            copy!(x.lookup, xbackup.lookup)
+            merge!(empty!(x.lookup), xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming to $to multiple times."))
         end
@@ -65,7 +65,7 @@ function rename!(x::Index, nms)
         push!(processedto, to)
         from == to && continue # No change, nothing to do
         if !haskey(xbackup, from)
-            copy!(x.lookup, xbackup.lookup)
+            merge!(empty!(x.lookup), xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming $from to $to, when $from does not exist in the Index."))
         end
@@ -77,7 +77,7 @@ function rename!(x::Index, nms)
         x.names[col] = to
     end
     if !isempty(toholder)
-        copy!(x.lookup, xbackup.lookup)
+        merge!(empty!(x.lookup), xbackup.lookup)
         x.names .= xbackup.names
         throw(ArgumentError("Tried renaming to $(first(keys(toholder))), when it already exists in the Index."))
     end
