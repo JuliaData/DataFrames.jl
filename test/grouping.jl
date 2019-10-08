@@ -1200,4 +1200,25 @@ end
     end
 end
 
+@testset "non standard cols arguments" begin
+    df = DataFrame(x1=[1,2,2], x2=[1,1,2], y=[1,2,3])
+    gdf = groupby(df, r"x")
+    @test groupvars(gdf) == [:x1, :x2]
+    @test groupindices(gdf) == [1,2,3]
+
+    gdf = groupby(df, Not(r"x"))
+    @test groupvars(gdf) == [:y]
+    @test groupindices(gdf) == [1,2,3]
+
+    gdf = groupby(df, [])
+    @test groupvars(gdf) == Symbol[]
+    @test groupindices(gdf) == [1,1,1]
+
+    gdf = groupby(df, r"z")
+    @test groupvars(gdf) == Symbol[]
+    @test groupindices(gdf) == [1,1,1]
+
+    @test by(df, [], a=:x1=>sum, b=:x2=>length) == DataFrame(a=5, b=3)
+end
+
 end # module
