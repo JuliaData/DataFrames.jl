@@ -608,6 +608,13 @@ end
     end
 end
 
+@testset "grouping with hash collisions" begin
+    # Hash collisions are almost certain on 32-bit
+    df = DataFrame(A=1:2_000_000)
+    gd = groupby_checked(df, :A)
+    @test DataFrame(df) == df
+end
+
 @testset "by, combine and map with pair interface" begin
     vexp = x -> exp.(x)
     Random.seed!(1)
