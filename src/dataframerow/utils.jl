@@ -131,8 +131,8 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                 elseif rhashes[i] == rhashes[g_row] # occupied slot, check if miss or hit
                     if isequal_row(cols, i, g_row) # hit
                         gix = groups !== nothing ? groups[g_row] : 0
+                        break
                     end
-                    break
                 end
                 slotix = slotix & szm1 + 1 # check the next slot
                 probe += 1
