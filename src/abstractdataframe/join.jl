@@ -258,7 +258,7 @@ Join two or more `DataFrame` objects
    column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
-   This argument is supported when joining exactly two data frames.
+   This argument is only supported when joining exactly two data frames.
 
 * `validate` : whether to check that columns passed as the `on` argument
    define unique keys in each input data frame (according to [`isequal`](@ref)).
@@ -272,9 +272,9 @@ and `:right`), all columns of the returned data table will support missing value
 When merging `on` categorical columns that differ in the ordering of their levels, the
 ordering of the left `DataFrame` takes precedence over the ordering of the right `DataFrame`.
 
-If there are more than two data frames passed to `join` the joining is performed
+If more than two data frames are passed, the join is performed
 recursively with left associativity.
-Also in this case `indicator` keyword argument is not supported.
+In this case the `indicator` keyword argument is not supported.
 
 ### Result
 
@@ -432,8 +432,8 @@ function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame,
                    on::Union{Symbol, AbstractVector{Symbol}} = Symbol[],
                    kind::Symbol = :inner, makeunique::Bool=false,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
-    if !(kind in [:inner, :outer, :cross])
-        throw(ArgumentError("Only inner, outer, and cross join is supported when " *
+    if !(kind in (:inner, :outer, :cross))
+        throw(ArgumentError("Only inner, outer, and cross joins are supported when " *
                             "joining more than two data frames"))
     end
     join(join(df1, df2, on=on, kind=kind, makeunique=makeunique, validate=validate),
