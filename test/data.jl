@@ -272,101 +272,92 @@ end
     @test m2[!, :A] ≅ ["a", "b", "a", missing, "c"]
 end
 
-Random.seed!(1)
-df1 = DataFrame(
-    a = rand(Union{Symbol, Missing}[:x,:y], 10),
-    b = rand(Union{Symbol, Missing}[:A,:B], 10),
-    v1 = Vector{Union{Float64, Missing}}(randn(10))
-)
+@testset "join tests" begin
+    Random.seed!(1)
+    df1 = DataFrame(a = rand(Union{Symbol, Missing}[:x,:y], 10),
+                    b = rand(Union{Symbol, Missing}[:A,:B], 10),
+                    v1 = Vector{Union{Float64, Missing}}(randn(10)))
 
-df2 = DataFrame(
-    a = Union{Symbol, Missing}[:x,:y][[1,2,1,1,2]],
-    b = Union{Symbol, Missing}[:A,:B,:C][[1,1,1,2,3]],
-    v2 = Vector{Union{Float64, Missing}}(randn(5))
-)
-df2[1,:a] = missing
+    df2 = DataFrame(a = Union{Symbol, Missing}[:x,:y][[1,2,1,1,2]],
+                    b = Union{Symbol, Missing}[:A,:B,:C][[1,1,1,2,3]],
+                    v2 = Vector{Union{Float64, Missing}}(randn(5)))
+    df2[1,:a] = missing
 
-m1 = join(df1, df2, on = [:a,:b])
-@test m1[!, :a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
-m2 = join(df1, df2, on = [:a,:b], kind = :outer)
-@test ismissing(m2[10,:v2])
-@test m2[!, :a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
+    m1 = join(df1, df2, on = [:a,:b])
+    @test m1[!, :a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
+    m2 = join(df1, df2, on = [:a,:b], kind = :outer)
+    @test ismissing(m2[10,:v2])
+    @test m2[!, :a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
 
-Random.seed!(1)
-function spltdf(d)
-    d[!, :x1] = map(x -> x[1], d[!, :a])
-    d[!, :x2] = map(x -> x[2], d[!, :a])
-    d[!, :x3] = map(x -> x[3], d[!, :a])
-    d
+    Random.seed!(1)
+    function spltdf(d)
+        d[!, :x1] = map(x -> x[1], d[!, :a])
+        d[!, :x2] = map(x -> x[2], d[!, :a])
+        d[!, :x3] = map(x -> x[3], d[!, :a])
+        d
+    end
+    df1 = DataFrame(a = ["abc", "abx", "axz", "def", "dfr"], v1 = randn(5))
+    df2 = DataFrame(a = ["def", "abc","abx", "axz", "xyz"], v2 = randn(5))
+    spltdf(df1)
+    spltdf(df2)
+
+    m1 = join(df1, df2, on = :a, makeunique=true)
+    m2 = join(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
+    @test m1[!, :a] == m2[!, :a]
 end
-df1 = DataFrame(
-    a = ["abc", "abx", "axz", "def", "dfr"],
-    v1 = randn(5)
-)
-df1 = spltdf(df1)
-df2 = DataFrame(
-    a = ["def", "abc","abx", "axz", "xyz"],
-    v2 = randn(5)
-)
-df2 = spltdf(df2)
 
-m1 = join(df1, df2, on = :a, makeunique=true)
-m2 = join(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
-@test sort(m1[!, :a]) == sort(m2[!, :a])
-
-# test nonunique() with extra argument
-df1 = DataFrame(a = Union{String, Missing}["a", "b", "a", "b", "a", "b"],
-                b = Vector{Union{Int, Missing}}(1:6),
-                c = Union{Int, Missing}[1:3;1:3])
-df = vcat(df1, df1)
-@test findall(nonunique(df)) == collect(7:12)
-@test findall(nonunique(df, :)) == collect(7:12)
-@test findall(nonunique(df, Colon())) == collect(7:12)
-@test findall(nonunique(df, :a)) == collect(3:12)
-@test findall(nonunique(df, [:a, :c])) == collect(7:12)
-@test findall(nonunique(df, r"[ac]")) == collect(7:12)
-@test findall(nonunique(df, Not(2))) == collect(7:12)
-@test findall(nonunique(df, Not([2]))) == collect(7:12)
-@test findall(nonunique(df, Not(:b))) == collect(7:12)
-@test findall(nonunique(df, Not([:b]))) == collect(7:12)
-@test findall(nonunique(df, Not([false, true, false]))) == collect(7:12)
-@test findall(nonunique(df, [1, 3])) == collect(7:12)
-@test findall(nonunique(df, 1)) == collect(3:12)
-
-# Test unique() with extra argument
-@test unique(df) == df1
-@test unique(df, :) == df1
-@test unique(df, Colon()) == df1
-@test unique(df, 2:3) == df1
-@test unique(df, 3) == df1[1:3,:]
-@test unique(df, [1, 3]) == df1
-@test unique(df, [:a, :c]) == df1
-@test unique(df, r"[ac]") == df1
-@test unique(df, Not(2)) == df1
-@test unique(df, Not([2])) == df1
-@test unique(df, Not(:b)) == df1
-@test unique(df, Not([:b])) == df1
-@test unique(df, Not([false, true, false])) == df1
-@test unique(df, :a) == df1[1:2,:]
-@test_throws ArgumentError unique(DataFrame())
-@test_throws ArgumentError nonunique(DataFrame())
-
-#test unique!() with extra argument
-unique!(df, [1, 3])
-@test df == df1
-
-for cols in (r"[ac]", Not(:b), Not(2), Not([:b]), Not([2]), Not([false, true, false]))
+@testset "nonunique, nonunique, unique! with extra argument" begin
+    df1 = DataFrame(a = Union{String, Missing}["a", "b", "a", "b", "a", "b"],
+                    b = Vector{Union{Int, Missing}}(1:6),
+                    c = Union{Int, Missing}[1:3;1:3])
     df = vcat(df1, df1)
-    unique!(df, cols)
+    @test findall(nonunique(df)) == collect(7:12)
+    @test findall(nonunique(df, :)) == collect(7:12)
+    @test findall(nonunique(df, Colon())) == collect(7:12)
+    @test findall(nonunique(df, :a)) == collect(3:12)
+    @test findall(nonunique(df, [:a, :c])) == collect(7:12)
+    @test findall(nonunique(df, r"[ac]")) == collect(7:12)
+    @test findall(nonunique(df, Not(2))) == collect(7:12)
+    @test findall(nonunique(df, Not([2]))) == collect(7:12)
+    @test findall(nonunique(df, Not(:b))) == collect(7:12)
+    @test findall(nonunique(df, Not([:b]))) == collect(7:12)
+    @test findall(nonunique(df, Not([false, true, false]))) == collect(7:12)
+    @test findall(nonunique(df, [1, 3])) == collect(7:12)
+    @test findall(nonunique(df, 1)) == collect(3:12)
+
+    @test unique(df) == df1
+    @test unique(df, :) == df1
+    @test unique(df, Colon()) == df1
+    @test unique(df, 2:3) == df1
+    @test unique(df, 3) == df1[1:3,:]
+    @test unique(df, [1, 3]) == df1
+    @test unique(df, [:a, :c]) == df1
+    @test unique(df, r"[ac]") == df1
+    @test unique(df, Not(2)) == df1
+    @test unique(df, Not([2])) == df1
+    @test unique(df, Not(:b)) == df1
+    @test unique(df, Not([:b])) == df1
+    @test unique(df, Not([false, true, false])) == df1
+    @test unique(df, :a) == df1[1:2,:]
+    @test_throws ArgumentError unique(DataFrame())
+    @test_throws ArgumentError nonunique(DataFrame())
+
+    unique!(df, [1, 3])
     @test df == df1
+    for cols in (r"[ac]", Not(:b), Not(2), Not([:b]), Not([2]), Not([false, true, false]))
+        df = vcat(df1, df1)
+        unique!(df, cols)
+        @test df == df1
+    end
 end
 
-#test filter() and filter!()
-df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-@test filter(r -> r[:x] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-@test filter!(r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
-df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
-@test_throws TypeError filter(r -> r[:x] > 1, df)
-@test_throws TypeError filter!(r -> r[:x] > 1, df)
+@testset "filter() and filter!()" begin
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter(r -> r[:x] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!(r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
+    @test_throws TypeError filter(r -> r[:x] > 1, df)
+    @test_throws TypeError filter!(r -> r[:x] > 1, df)
+end
 
 end # module
