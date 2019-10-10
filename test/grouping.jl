@@ -1210,7 +1210,7 @@ end
     @test groupvars(gdf) == [:y]
     @test groupindices(gdf) == [1,2,3]
 
-    gdf = groupby(df, [])
+    gdf = groupby_checked(df, [])
     @test groupvars(gdf) == []
     @test groupindices(gdf) == [1,1,1]
 
@@ -1220,14 +1220,14 @@ end
 
     @test by(df, [], a=:x1=>sum, b=:x2=>length) == DataFrame(a=5, b=3)
 
-    gdf = groupby(df, [])
+    gdf = groupby_checked(df, [])
     @test gdf[1] == df
     @test_throws BoundsError gdf[2]
     @test gdf[:] == gdf
     @test gdf[1:1] == gdf
 
-    @test map(nrow, gdf) == groupby(DataFrame(x1=4), [])
-    @test map(:x3 => identity, gdf) == groupby(DataFrame(x3_identity=[1,2,3]), [])
+    @test map(nrow, gdf) == groupby_checked(DataFrame(x1=4), [])
+    @test map(:x3 => identity, gdf) == groupby_checked(DataFrame(x3_identity=[1,2,3]), [])
     @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
     @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
