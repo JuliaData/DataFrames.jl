@@ -1227,7 +1227,7 @@ end
     @test gdf[1:1] == gdf
 
     @test map(nrow, gdf) == groupby_checked(DataFrame(x1=4), [])
-    @test map(:x3 => identity, gdf) == groupby_checked(DataFrame(x3_identity=[1,2,3]), [])
+    @test map(:x2 => identity, gdf) == groupby_checked(DataFrame(x2_identity=[1,2,3]), [])
     @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
     @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
