@@ -1219,6 +1219,28 @@ end
     @test groupindices(gdf) == [1,1,1]
 
     @test by(df, [], a=:x1=>sum, b=:x2=>length) == DataFrame(a=5, b=3)
+
+    gdf = groupby(df, [])
+    @test gdf[1] == df
+    @test_throws BoundsError gdf[2]
+    @test gdf[:] == gdf
+    @test gdf[1:1] == gdf
+
+    @test map(nrow, gdf) == groupby(DataFrame(x1=4), [])
+    @test map(:x3 => identity, gdf) == groupby(DataFrame(x3_identity=[1,2,3]), [])
+    @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
+    @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
+    @test DataFrame(gdf) == df
+
+    @test sprint(show, df) == """
+    GroupedDataFrame with 1 group based on key:
+    First Group (3 rows):
+    │ Row │ x1    │ x2    │ y     │
+    │     │ Int64 │ Int64 │ Int64 │
+    ├─────┼───────┼───────┼───────┤
+    │ 1   │ 1     │ 1     │ 1     │
+    │ 2   │ 2     │ 1     │ 2     │
+    │ 3   │ 2     │ 2     │ 3     │"""
 end
 
 end # module
