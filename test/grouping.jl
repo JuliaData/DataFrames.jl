@@ -51,12 +51,23 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
 
         # correct start-end relations
         for i in eachindex(se)
+            firstkeys = gd.parent[gd.idx[se[i][1]], gd.cols]
+            # all grouping keys must be equal within a group
+            @assert all(j -> gd.parent[gd.idx[j], gd.cols] ≅ firstkeys, se[i][1]:se[i][2])
             @assert se[i][1] <= se[i][2]
             if i > 1
                 # the blocks returned by groupby must be continuous
                 @assert se[i-1][2] + 1 == se[i][1]
             end
         end
+
+        # all grouping keys must be equal within a group
+        for (s, e) in zip(gd.starts, gd.ends)
+            firstkeys = gd.parent[gd.idx[s], gd.cols]
+            @assert all(j -> gd.parent[gd.idx[j], gd.cols] ≅ firstkeys, s:e)
+        end
+        # all groups have different grouping keys
+        @test allunique(eachrow(gd.parent[gd.idx[gd.starts], gd.cols]))
     end
 
     gd
@@ -606,6 +617,13 @@ end
                 groupby_checked(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
         end
     end
+end
+
+@testset "grouping with hash collisions" begin
+    # Hash collisions are almost certain on 32-bit
+    df = DataFrame(A=1:2_000_000)
+    gd = groupby_checked(df, :A)
+    @test DataFrame(df) == df
 end
 
 @testset "by, combine and map with pair interface" begin
