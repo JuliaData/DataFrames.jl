@@ -2,12 +2,17 @@ language: julia
 
 julia:
   - 1.0
-  - 1.1
+  - 1.2
   - nightly
 
 os:
   - linux
   - osx
+  - windows
+
+arch:
+  - x64
+  - x86
 
 matrix:
  allow_failures:
