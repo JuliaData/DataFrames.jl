@@ -15,8 +15,11 @@ arch:
   - x86
 
 matrix:
- allow_failures:
- - julia: nightly
+  exclude:
+    - os: osx
+      arch: x86
+  allow_failures:
+    - julia: nightly
 
 notifications:
   email: false
