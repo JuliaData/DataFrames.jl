@@ -1201,7 +1201,7 @@ end
 end
 
 @testset "non standard cols arguments" begin
-    df = DataFrame(x1=[1,2,2], x2=[1,1,2], y=[1,2,3])
+    df = DataFrame(x1=Int64[1,2,2], x2=Int64[1,1,2], y=Int64[1,2,3])
     gdf = groupby_checked(df, r"x")
     @test groupvars(gdf) == [:x1, :x2]
     @test groupindices(gdf) == [1,2,3]
