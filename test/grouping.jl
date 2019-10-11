@@ -1234,7 +1234,7 @@ end
 
     @test sprint(show, groupby(df, [])) == """
     GroupedDataFrame with 1 group based on key:
-    First Group (3 rows):
+    Group 1 (3 rows):
     │ Row │ x1    │ x2    │ y     │
     │     │ Int64 │ Int64 │ Int64 │
     ├─────┼───────┼───────┼───────┤
