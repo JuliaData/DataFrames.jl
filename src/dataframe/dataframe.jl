@@ -818,15 +818,16 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
     if !allunique(inds)
         throw(ArgumentError("indices must not contain duplicates"))
     end
-
     targetnames = _names(df)[inds]
-    for i in setdiff(ncol(df):-1:1, inds)
-        splice!(_columns(df), i)
-        delete!(index(df), i)
+    targetcolumns = _columns(df)[inds]
+    empty!(_columns(df))
+    append!(_columns(df), targetcolumns)
+    x = index(df)
+    empty!(x)
+    append!(_names(x), targetnames)
+    for (i, n) in enumerate(x.names)
+        x.lookup[n] = i
     end
-    p = index(df)[targetnames]
-    permute!(index(df), p)
-    permute!(_columns(df), p)
     df
 end
 
