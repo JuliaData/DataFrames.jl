@@ -1173,20 +1173,21 @@ end
     @test rename!(df, :A => :A, :B => :B, :C => :C) === df
     @test names(df) == [:A, :B, :C]
 
+    cdf = copy(df)
     @test_throws ArgumentError rename!(df, :X => :Y)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
-    @test names(df) == [:A, :B, :C]
+    @test df == cdf
 end
 
 @testset "size" begin
