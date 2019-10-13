@@ -1,9 +1,42 @@
 module TestDataFrame
 
 using Dates, DataFrames, Statistics, Random, Test, Logging
-using DataFrames: _columns
+using DataFrames: _columns, index
 const ≅ = isequal
 const ≇ = !isequal
+
+# randomized test from https://github.com/JuliaData/DataFrames.jl/pull/1974
+@testset "randomized tests for rename!" begin
+    n = Symbol.('a':'z')
+    Random.seed!(1234)
+    for k in 1:20
+        sn = shuffle(n)
+        df = DataFrame(zeros(1,26), n)
+        p = Dict(Pair.(n, sn))
+        cyclelength = Int[]
+        for x in n
+            i = 0
+            y = x
+            while true
+                y = p[y]
+                i += 1
+                x == y && break
+            end
+            push!(cyclelength, i)
+        end
+        i = lcm(cyclelength)
+        while true
+            rename!(df, p)
+            @test sort(names(df)) == n
+            @test sort(collect(keys(index(df).lookup))) == n
+            @test sort(collect(values(index(df).lookup))) == 1:26
+            @test all(index(df).lookup[x] == i for (i,x) in enumerate(names(df)))
+            i -= 1
+            names(df) == n && break
+        end
+        @test i == 0
+    end
+end
 
 @testset "equality" begin
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
