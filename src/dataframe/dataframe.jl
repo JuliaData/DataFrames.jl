@@ -818,15 +818,11 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
     if !allunique(inds)
         throw(ArgumentError("indices must not contain duplicates"))
     end
-    targetnames = _names(df)[inds]
-    targetcolumns = _columns(df)[inds]
-    empty!(_columns(df))
-    append!(_columns(df), targetcolumns)
-    x = index(df)
-    empty!(x)
-    append!(_names(x), targetnames)
-    for (i, n) in enumerate(x.names)
-        x.lookup[n] = i
+    copy!(_names(df), _names(df)[inds])
+    copy!(_columns(df), _columns(df)[inds])
+    empty!(index(df).lookup)
+    for (i, n) in enumerate(_names(df))
+        index(df).lookup[n] = i
     end
     df
 end
