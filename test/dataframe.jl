@@ -1182,6 +1182,8 @@ end
     @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
     @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
+    @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
     @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)

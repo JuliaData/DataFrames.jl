@@ -21,7 +21,8 @@ using Tables, TableTraits, IteratorInterfaceExtensions
 import DataAPI.All,
        DataAPI.Between,
        DataAPI.describe,
-       Tables.columnindex
+       Tables.columnindex,
+       Future.copy!
 
 export AbstractDataFrame,
        All,

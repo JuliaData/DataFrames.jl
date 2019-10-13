@@ -52,13 +52,12 @@ function rename!(x::Index, nms)
     toholder = Dict{Symbol,Int}()
     for (from, to) in nms
         if from ∈ processedfrom
-            # The merge! ∘ empty! can be replaced with copy! in Julia 1.1
-            merge!(empty!(x.lookup), xbackup.lookup)
+            copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming $from multiple times."))
         end
         if to ∈ processedto
-            merge!(empty!(x.lookup), xbackup.lookup)
+            copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming to $to multiple times."))
         end
@@ -66,7 +65,7 @@ function rename!(x::Index, nms)
         push!(processedto, to)
         from == to && continue # No change, nothing to do
         if !haskey(xbackup, from)
-            merge!(empty!(x.lookup), xbackup.lookup)
+            copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming $from to $to, when $from does not exist in the Index."))
         end
@@ -78,7 +77,7 @@ function rename!(x::Index, nms)
         x.names[col] = to
     end
     if !isempty(toholder)
-        merge!(empty!(x.lookup), xbackup.lookup)
+        copy!(x.lookup, xbackup.lookup)
         x.names .= xbackup.names
         throw(ArgumentError("Tried renaming to $(first(keys(toholder))), when it already exists in the Index."))
     end
