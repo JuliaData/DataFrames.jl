@@ -52,6 +52,7 @@ function rename!(x::Index, nms)
     toholder = Dict{Symbol,Int}()
     for (from, to) in nms
         if from ∈ processedfrom
+            # The merge! ∘ empty! can be replaced with copy! in Julia 1.1
             merge!(empty!(x.lookup), xbackup.lookup)
             x.names .= xbackup.names
             throw(ArgumentError("Tried renaming $from multiple times."))
