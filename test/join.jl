@@ -648,4 +648,28 @@ end
     @test_throws AssertionError join(cname, cjob, on = :ID)
 end
 
+@testset "multi data frame join" begin
+    df1 = DataFrame(id=[1,2,3], x=[1,2,3])
+    df2 = DataFrame(id=[1,2,4], y=[1,2,4])
+    df3 = DataFrame(id=[1,3,4], z=[1,3,4])
+    @test join(df1, df2, df3, on=:id) == DataFrame(id=1, x=1, y=1, z=1)
+    @test join(df1, df2, df3, on=:id, kind=:outer) ≅ DataFrame(id=[1,2,3,4],
+                                                               x=[1,2,3,missing],
+                                                               y=[1,2,missing,4],
+                                                               z=[1,missing,3,4])
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:left)
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:right)
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:semi)
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:anti)
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:xxx)
+
+    dfc = join(df1, df2, df3, kind=:cross, makeunique=true)
+    @test dfc.x == dfc.id == repeat(1:3, inner=9)
+    @test dfc.y == dfc.id_1 == repeat([1,2,4], inner=3, outer=3)
+    @test dfc.z == dfc.id_2 == repeat([1,3,4], outer=9)
+
+    df3[1,1] = 4
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, validate=(true,true))
+end
+
 end # module
