@@ -150,21 +150,21 @@ rename(f::Function, df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated result
 
-New names are processed sequentially. A new name must not already exist in the `DataFrame`
-at the moment an attempt to rename a column is performed.
+Each name is changed at most once. Permutation of names is allowed.
 
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 rename(df, :i => :A, :x => :X)
+rename(df, :x => :y, :y => :x)
 rename(df, [:i => :A, :x => :X])
 rename(df, Dict(:i => :A, :x => :X))
 rename(x -> Symbol(uppercase(string(x))), df)
 rename(df) do x
     Symbol(uppercase(string(x)))
 end
-rename!(df, Dict(:i =>: A, :x => :X))
+rename!(df, Dict(:i => :A, :x => :X))
 ```
 
 """

@@ -46,13 +46,40 @@ function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
 end
 
 function rename!(x::Index, nms)
+    xbackup = copy(x)
+    processedfrom = Set{Symbol}()
+    processedto = Set{Symbol}()
+    toholder = Dict{Symbol,Int}()
     for (from, to) in nms
-        from == to && continue # No change, nothing to do
-        if haskey(x, to)
-            error("Tried renaming $from to $to, when $to already exists in the Index.")
+        if from ∈ processedfrom
+            copy!(x.lookup, xbackup.lookup)
+            x.names .= xbackup.names
+            throw(ArgumentError("Tried renaming $from multiple times."))
         end
-        x.lookup[to] = col = pop!(x.lookup, from)
+        if to ∈ processedto
+            copy!(x.lookup, xbackup.lookup)
+            x.names .= xbackup.names
+            throw(ArgumentError("Tried renaming to $to multiple times."))
+        end
+        push!(processedfrom, from)
+        push!(processedto, to)
+        from == to && continue # No change, nothing to do
+        if !haskey(xbackup, from)
+            copy!(x.lookup, xbackup.lookup)
+            x.names .= xbackup.names
+            throw(ArgumentError("Tried renaming $from to $to, when $from does not exist in the Index."))
+        end
+        if haskey(x, to)
+            toholder[to] = x.lookup[to]
+        end
+        col = haskey(toholder, from) ? pop!(toholder, from) : pop!(x.lookup, from)
+        x.lookup[to] = col
         x.names[col] = to
+    end
+    if !isempty(toholder)
+        copy!(x.lookup, xbackup.lookup)
+        x.names .= xbackup.names
+        throw(ArgumentError("Tried renaming to $(first(keys(toholder))), when it already exists in the Index."))
     end
     return x
 end

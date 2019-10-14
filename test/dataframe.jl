@@ -1,9 +1,42 @@
 module TestDataFrame
 
 using Dates, DataFrames, Statistics, Random, Test, Logging
-using DataFrames: _columns
+using DataFrames: _columns, index
 const ≅ = isequal
 const ≇ = !isequal
+
+# randomized test from https://github.com/JuliaData/DataFrames.jl/pull/1974
+@testset "randomized tests for rename!" begin
+    n = Symbol.('a':'z')
+    Random.seed!(1234)
+    for k in 1:20
+        sn = shuffle(n)
+        df = DataFrame(zeros(1,26), n)
+        p = Dict(Pair.(n, sn))
+        cyclelength = Int[]
+        for x in n
+            i = 0
+            y = x
+            while true
+                y = p[y]
+                i += 1
+                x == y && break
+            end
+            push!(cyclelength, i)
+        end
+        i = lcm(cyclelength)
+        while true
+            rename!(df, p)
+            @test sort(names(df)) == n
+            @test sort(collect(keys(index(df).lookup))) == n
+            @test sort(collect(values(index(df).lookup))) == 1:26
+            @test all(index(df).lookup[x] == i for (i,x) in enumerate(names(df)))
+            i -= 1
+            names(df) == n && break
+        end
+        @test i == 0
+    end
+end
 
 @testset "equality" begin
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
@@ -1127,6 +1160,36 @@ end
     @test names(df) == [:A_4, :B_4]
     @test rename!(x->Symbol(lowercase(string(x))), df) === df
     @test names(df) == [:a_4, :b_4]
+
+    df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
+    @test rename!(df, :A => :B, :B => :A) === df
+    @test names(df) == [:B, :A, :C]
+    @test rename!(df, :A => :B, :B => :A, :C => :D) === df
+    @test names(df) == [:A, :B, :D]
+    @test rename!(df, :A => :B, :B => :C, :D => :A) === df
+    @test names(df) == [:B, :C, :A]
+    @test rename!(df, :A => :C, :B => :A, :C => :B) === df
+    @test names(df) == [:A, :B, :C]
+    @test rename!(df, :A => :A, :B => :B, :C => :C) === df
+    @test names(df) == [:A, :B, :C]
+
+    cdf = copy(df)
+    @test_throws ArgumentError rename!(df, :X => :Y)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :B)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
+    @test df == cdf
 end
 
 @testset "size" begin
