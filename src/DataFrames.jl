@@ -74,10 +74,6 @@ if VERSION < v"1.2"
     export hasproperty
 end
 
-if VERSION < v"1.1"
-    import Future.copy!
-end
-
 ##############################################################################
 ##
 ## Load files
