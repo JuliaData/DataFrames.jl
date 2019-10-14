@@ -38,6 +38,36 @@ const ≇ = !isequal
     end
 end
 
+@testset "additional rename! tests" begin
+    Random.seed!(123)
+    for i in 1:1000
+        oldnames = Symbol.(rand('a':'z', 8))
+        while !allunique(oldnames)
+            oldnames .= Symbol.(rand('a':'z', 8))
+        end
+        newnames = [Symbol.(rand('a':'z', 4)); oldnames[5:end]]
+        df = DataFrame([[] for i in 1:8], oldnames)
+        if allunique(newnames)
+            @test names(rename(df, Pair.(oldnames[1:4], newnames[1:4])...)) == newnames
+            @test names(df) == oldnames
+            rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
+            @test names(df) == newnames
+        else
+            @test_throws ArgumentError rename(df, Pair.(oldnames[1:4], newnames[1:4])...)
+            @test names(df) == oldnames
+            @test_throws ArgumentError rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
+            @test names(df) == oldnames
+        end
+
+        newnames = [oldnames[1:2]; reverse(oldnames[3:6]); oldnames[7:end]]
+        df = DataFrame([[] for i in 1:8], oldnames)
+        @test names(rename(df, Pair.(oldnames[3:6], newnames[3:6])...)) == newnames
+        @test names(df) == oldnames
+        rename!(df, Pair.(oldnames[3:6], newnames[3:6])...)
+        @test names(df) == newnames
+    end
+end
+
 @testset "equality" begin
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
     @test DataFrame(a=[1, 2], b=[4, 5]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
@@ -58,7 +88,12 @@ end
 
     df[1, :a] = 4
     df[1, :b][!, :e] .= 5
-    names!(df, [:f, :g])
+
+    @test names(rename(df, [:f, :g])) == [:f, :g]
+    @test names(rename(df, [:f, :f], makeunique=true)) == [:f, :f_1]
+    @test names(df) == [:a, :b]
+
+    rename!(df, [:f, :g])
 
     @test names(dfc) == [:a, :b]
     @test names(dfdc) == [:a, :b]
@@ -1043,7 +1078,7 @@ end
     @test df == dfc
     @test occursin("Error adding value to column a", String(take!(buf)))
 
-    names!(df, [:a, :b, :z])
+    rename!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
 end
 

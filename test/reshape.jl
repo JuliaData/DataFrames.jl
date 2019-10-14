@@ -102,7 +102,7 @@ const ≅ = isequal
                      c  = randn(12),
                      d  = randn(12))
     w2 = wide[:, [1, 2, 4, 5]]
-    names!(w2, [:id, :a, :_C_, :_D_])
+    rename!(w2, [:id, :a, :_C_, :_D_])
     long = stack(wide)
     wide3 = unstack(long, [:id, :a], :variable, :value)
     @test wide3 == wide[:, [1, 2, 4, 5]]
@@ -329,9 +329,9 @@ end
                      c  = randn(12),
                      d  = randn(12))
     w1 = wide[:, [1, 2, 4, 5]]
-    names!(w1, [:id, :a, :D, :d])
+    rename!(w1, [:id, :a, :D, :d])
     w2 = wide[:, [1, 2, 4, 5]]
-    names!(w2, [:id, :a, :_D_, :_d_])
+    rename!(w2, [:id, :a, :_D_, :_d_])
     long = stack(wide)
     long.variable = replace.(string.(long.variable), Ref("c" => "D"))
     wide3 = unstack(long, [:id, :a], :variable, :value)

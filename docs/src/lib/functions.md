@@ -49,7 +49,6 @@ filter!
 hcat
 insertcols!
 mapcols
-names!
 nonunique
 nrow
 ncol

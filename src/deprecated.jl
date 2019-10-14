@@ -1544,3 +1544,5 @@ import Base: setproperty!
 @deprecate eltypes(df::AbstractDataFrame) eltype.(eachcol(df))
 
 @deprecate permutecols!(df::DataFrame, p::AbstractVector) select!(df, p)
+@deprecate names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false) rename!(x, nms, makeunique=makeunique)
+@deprecate names!(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false) rename!(df, vals, makeunique=makeunique)
