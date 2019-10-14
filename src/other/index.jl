@@ -63,19 +63,6 @@ rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
 rename(x::Index, args...) = rename!(copy(x), args...)
 rename(f::Function, x::Index) = rename!(f, copy(x))
 
-@inline function Base.permute!(x::Index, p::AbstractVector)
-    @boundscheck if !(length(p) == length(x) && isperm(p))
-        throw(ArgumentError("$p is not a valid column permutation for this Index"))
-    end
-    oldnames = copy(_names(x))
-    for (i, j) in enumerate(p)
-        n = oldnames[j]
-        x.names[i] = n
-        x.lookup[n] = i
-    end
-    x
-end
-
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
 Base.haskey(x::Index, key::Bool) =
