@@ -97,12 +97,12 @@ rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 Rename columns
 
 ```julia
-rename!(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false)
+rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
 rename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
 rename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
 rename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
 rename!(f::Function, df::AbstractDataFrame)
-rename(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false)
+rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
 rename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
 rename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
 rename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
