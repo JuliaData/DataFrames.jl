@@ -38,6 +38,10 @@ const ≇ = !isequal
     end
 end
 
+# additional randomized tests of renaming only part of the columns
+# they cover both cases leading to duplicate names and not leading to them
+# but possibly allowing for cyclical renaming and non-cyclical renaming that
+# would lead to duplicates if we did the renaming sequentially as before
 @testset "additional rename! tests" begin
     Random.seed!(123)
     for i in 1:1000
