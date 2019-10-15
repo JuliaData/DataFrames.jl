@@ -426,26 +426,26 @@ julia> df[!, r"x"]
 
 Finally, you can use `Not` and `All` selectors in more complex cases. The following examples move all columns containing `"x"` respectively to the front and to the end of a data frame:
 ```
-julia> df = DataFrame(r="r", x1="x1", x2="x2", y="y")
+julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
-│ Row │ r      │ x1     │ x2     │ y      │
-│     │ String │ String │ String │ String │
-├─────┼────────┼────────┼────────┼────────┤
-│ 1   │ r      │ x1     │ x2     │ y      │
+│ Row │ r     │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │ 4     │
 
 julia> df[:, All(r"x", :)]
 1×4 DataFrame
-│ Row │ x1     │ x2     │ r      │ y      │
-│     │ String │ String │ String │ String │
-├─────┼────────┼────────┼────────┼────────┤
-│ 1   │ x1     │ x2     │ r      │ y      │
+│ Row │ x1    │ x2    │ r     │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 3     │ 1     │ 4     │
 
 julia> df[:, All(Not(r"x"), :)]
 1×4 DataFrame
-│ Row │ r      │ y      │ x1     │ x2     │
-│     │ String │ String │ String │ String │
-├─────┼────────┼────────┼────────┼────────┤
-│ 1   │ r      │ y      │ x1     │ x2     │
+│ Row │ r     │ y     │ x1    │ x2    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 2     │ 3     │
 ```
 
 You can also use [`select`](@ref) and [`select!`](@ref) functions to perform column selection in a data frame.
