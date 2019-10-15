@@ -74,7 +74,7 @@ _names(df::AbstractDataFrame) = _names(index(df))
 
 Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
 
-function rename!(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false)
+function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
     rename!(index(df), vals, makeunique=makeunique)
     return df
 end
@@ -88,7 +88,7 @@ function rename!(f::Function, df::AbstractDataFrame)
     return df
 end
 
-rename(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false) =
+rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false) =
     rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
