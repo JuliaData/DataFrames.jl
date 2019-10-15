@@ -116,7 +116,7 @@ rename(f::Function, df::AbstractDataFrame)
   the original names to new names
 * `f` : a function which for each column takes the old name (a Symbol)
   and returns the new name (a Symbol)
-* `vals` : column names, normally a Vector{Symbol} the same length as
+* `vals` : new column names as a vector of `Symbol`s of the same length as
   the number of columns in `df`
 * `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
