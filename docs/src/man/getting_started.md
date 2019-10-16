@@ -437,7 +437,7 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
 Where a specific subset of values needs to be matched, the `in()` function can be applied:
 
 ```jldoctest dataframe
-julia> df[in([1, 5, 601]).(df.A), :]
+julia> df[in.(df.A, Ref([1, 5, 601])), :]
 3×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -446,6 +446,8 @@ julia> df[in([1, 5, 601]).(df.A), :]
 │ 2   │ 5     │ 1     │ 3     │
 │ 3   │ 601   │ 7     │ 301   │
 ```
+
+Equivalently, the `in` function can be used as a [`Fix2`](https://docs.julialang.org/en/v1/base/base/#Base.isequal) function object - the above call would then be written as `df[in([1, 5, 601]).(df.A), :]`.
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
