@@ -388,7 +388,7 @@ julia> df[!, r"x"]
 │ 1   │ 1     │ 2     │
 ```
 
-In addition, [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) can be used to select all columns excluding a specified subset:
+A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
 julia> df[!, Not(:x1)]
