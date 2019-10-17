@@ -399,6 +399,32 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
+Finally, you can use `Not` and `All` selectors in more complex cases. The following examples move all columns containing `"x"` respectively to the front and to the end of a data frame:
+```
+julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
+1×4 DataFrame
+│ Row │ r     │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │ 4     │
+
+julia> df[:, All(r"x", :)]
+1×4 DataFrame
+│ Row │ x1    │ x2    │ r     │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 3     │ 1     │ 4     │
+
+julia> df[:, All(Not(r"x"), :)]
+1×4 DataFrame
+│ Row │ r     │ y     │ x1    │ x2    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 2     │ 3     │
+```
+
+You can also use [`select`](@ref) and [`select!`](@ref) functions to perform column selection in a data frame.
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
@@ -448,49 +474,6 @@ julia> df[in.(df.A, Ref([1, 5, 601])), :]
 ```
 
 Equivalently, the `in` function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
-
-It is also possible to use a regular expression as a selector of columns matching it:
-```jldoctest dataframe
-julia> df = DataFrame(x1=1, x2=2, y=3)
-1×3 DataFrame
-│ Row │ x1    │ x2    │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
-
-julia> df[!, r"x"]
-1×2 DataFrame
-│ Row │ x1    │ x2    │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │
-```
-
-Finally, you can use `Not` and `All` selectors in more complex cases. The following examples move all columns containing `"x"` respectively to the front and to the end of a data frame:
-```
-julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
-1×4 DataFrame
-│ Row │ r     │ x1    │ x2    │ y     │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │ 4     │
-
-julia> df[:, All(r"x", :)]
-1×4 DataFrame
-│ Row │ x1    │ x2    │ r     │ y     │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 3     │ 1     │ 4     │
-
-julia> df[:, All(Not(r"x"), :)]
-1×4 DataFrame
-│ Row │ r     │ y     │ x1    │ x2    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 2     │ 3     │
-```
-
-You can also use [`select`](@ref) and [`select!`](@ref) functions to perform column selection in a data frame.
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
