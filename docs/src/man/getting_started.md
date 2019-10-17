@@ -447,7 +447,7 @@ julia> df[in.(df.A, Ref([1, 5, 601])), :]
 │ 3   │ 601   │ 7     │ 301   │
 ```
 
-Equivalently, the `in` function can be used as a [`Fix2`](https://github.com/JuliaLang/julia/blob/v1.0/base/operators.jl#L964) function object - the above call would then be written as `df[in([1, 5, 601]).(df.A), :]`.
+Equivalently, the `in` function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
