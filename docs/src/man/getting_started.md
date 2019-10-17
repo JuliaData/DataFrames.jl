@@ -399,7 +399,8 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
-Finally, you can use `Not` and `All` selectors in more complex cases. The following examples move all columns containing `"x"` respectively to the front and to the end of a data frame:
+Finally, you can use `Not` and `All` selectors in more complex column selection scenarios.
+The following examples move all columns whose names match `r"x"` regular expression respectively to the front and to the end of a data frame:
 ```
 julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
