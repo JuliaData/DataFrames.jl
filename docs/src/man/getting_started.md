@@ -388,6 +388,17 @@ julia> df[!, r"x"]
 │ 1   │ 1     │ 2     │
 ```
 
+A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be used to select all columns excluding a specific subset:
+
+```jldoctest dataframe
+julia> df[!, Not(:x1)]
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+```
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
@@ -423,6 +434,20 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
 │ 98  │ 795   │ 8     │ 398   │
 │ 99  │ 797   │ 8     │ 399   │
 ```
+Where a specific subset of values needs to be matched, the `in()` function can be applied:
+
+```jldoctest dataframe
+julia> df[in.(df.A, Ref([1, 5, 601])), :]
+3×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 5     │ 1     │ 3     │
+│ 3   │ 601   │ 7     │ 301   │
+```
+
+Equivalently, the `in` function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
