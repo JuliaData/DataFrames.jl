@@ -111,7 +111,7 @@ end
     sdf = view(df, [3,1,4], [3,1,4])
     erd = eachrow(df)
     erv = eachrow(sdf)
-    names!(df, Symbol.(string.("y", 1:4)))
+    rename!(df, Symbol.(string.("y", 1:4)))
     df[!, 1] = 51:56
     @test df[1, :] == erd[1]
     @test copy(erv[1]) == (y3=33, y1=53, y4=43)

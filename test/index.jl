@@ -72,9 +72,14 @@ end
 @test i[Not(1:0)] == 1:length(i)
 
 @test names(i) == [:A,:B]
-@test names!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
-@test_throws ArgumentError names!(i, [:a,:a])
-@test names!(i, [:a,:b]) == Index([:a,:b])
+@test rename(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
+@test names(i) == [:A,:B]
+@test rename!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
+@test_throws ArgumentError rename(i, [:a,:a])
+@test_throws ArgumentError rename!(i, [:a,:a])
+@test rename(i, [:a,:b]) == Index([:a,:b])
+@test names(i) == [:a,:a_1]
+@test rename!(i, [:a,:b]) == Index([:a,:b])
 @test rename(i, Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
 @test rename(i, :a => :A) == Index([:A,:b])
 @test rename(i, :a => :a) == Index([:a,:b])
@@ -89,8 +94,8 @@ push!(i, :C)
 
 i = Index([:A, :B, :C, :D, :E])
 i2 = copy(i)
-names!(i2, reverse(names(i2)))
-names!(i2, reverse(names(i2)))
+rename!(i2, reverse(names(i2)))
+rename!(i2, reverse(names(i2)))
 @test names(i2) == names(i)
 for name in names(i)
   i2[name] # Issue #715

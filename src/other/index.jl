@@ -24,7 +24,7 @@ Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it i
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
 
-function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
+function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     if !makeunique
         if length(unique(nms)) != length(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
@@ -46,13 +46,40 @@ function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
 end
 
 function rename!(x::Index, nms)
+    xbackup = copy(x)
+    processedfrom = Set{Symbol}()
+    processedto = Set{Symbol}()
+    toholder = Dict{Symbol,Int}()
     for (from, to) in nms
-        from == to && continue # No change, nothing to do
-        if haskey(x, to)
-            error("Tried renaming $from to $to, when $to already exists in the Index.")
+        if from ∈ processedfrom
+            copy!(x.lookup, xbackup.lookup)
+            x.names .= xbackup.names
+            throw(ArgumentError("Tried renaming $from multiple times."))
         end
-        x.lookup[to] = col = pop!(x.lookup, from)
+        if to ∈ processedto
+            copy!(x.lookup, xbackup.lookup)
+            x.names .= xbackup.names
+            throw(ArgumentError("Tried renaming to $to multiple times."))
+        end
+        push!(processedfrom, from)
+        push!(processedto, to)
+        from == to && continue # No change, nothing to do
+        if !haskey(xbackup, from)
+            copy!(x.lookup, xbackup.lookup)
+            x.names .= xbackup.names
+            throw(ArgumentError("Tried renaming $from to $to, when $from does not exist in the Index."))
+        end
+        if haskey(x, to)
+            toholder[to] = x.lookup[to]
+        end
+        col = haskey(toholder, from) ? pop!(toholder, from) : pop!(x.lookup, from)
+        x.lookup[to] = col
         x.names[col] = to
+    end
+    if !isempty(toholder)
+        copy!(x.lookup, xbackup.lookup)
+        x.names .= xbackup.names
+        throw(ArgumentError("Tried renaming to $(first(keys(toholder))), when it already exists in the Index."))
     end
     return x
 end
@@ -60,21 +87,10 @@ end
 rename!(x::Index, nms::Pair{Symbol,Symbol}...) = rename!(x::Index, collect(nms))
 rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
 
+rename(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
+    rename!(copy(x), nms, makeunique=makeunique)
 rename(x::Index, args...) = rename!(copy(x), args...)
 rename(f::Function, x::Index) = rename!(f, copy(x))
-
-@inline function Base.permute!(x::Index, p::AbstractVector)
-    @boundscheck if !(length(p) == length(x) && isperm(p))
-        throw(ArgumentError("$p is not a valid column permutation for this Index"))
-    end
-    oldnames = copy(_names(x))
-    for (i, j) in enumerate(p)
-        n = oldnames[j]
-        x.names[i] = n
-        x.lookup[n] = i
-    end
-    x
-end
 
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)

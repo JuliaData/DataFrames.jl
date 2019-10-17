@@ -1,9 +1,76 @@
 module TestDataFrame
 
 using Dates, DataFrames, Statistics, Random, Test, Logging
-using DataFrames: _columns
+using DataFrames: _columns, index
 const ≅ = isequal
 const ≇ = !isequal
+
+# randomized test from https://github.com/JuliaData/DataFrames.jl/pull/1974
+@testset "randomized tests for rename!" begin
+    n = Symbol.('a':'z')
+    Random.seed!(1234)
+    for k in 1:20
+        sn = shuffle(n)
+        df = DataFrame(zeros(1,26), n)
+        p = Dict(Pair.(n, sn))
+        cyclelength = Int[]
+        for x in n
+            i = 0
+            y = x
+            while true
+                y = p[y]
+                i += 1
+                x == y && break
+            end
+            push!(cyclelength, i)
+        end
+        i = lcm(cyclelength)
+        while true
+            rename!(df, p)
+            @test sort(names(df)) == n
+            @test sort(collect(keys(index(df).lookup))) == n
+            @test sort(collect(values(index(df).lookup))) == 1:26
+            @test all(index(df).lookup[x] == i for (i,x) in enumerate(names(df)))
+            i -= 1
+            names(df) == n && break
+        end
+        @test i == 0
+    end
+end
+
+# additional randomized tests of renaming only part of the columns
+# they cover both cases leading to duplicate names and not leading to them
+# but possibly allowing for cyclical renaming and non-cyclical renaming that
+# would lead to duplicates if we did the renaming sequentially as before
+@testset "additional rename! tests" begin
+    Random.seed!(123)
+    for i in 1:1000
+        oldnames = Symbol.(rand('a':'z', 8))
+        while !allunique(oldnames)
+            oldnames .= Symbol.(rand('a':'z', 8))
+        end
+        newnames = [Symbol.(rand('a':'z', 4)); oldnames[5:end]]
+        df = DataFrame([[] for i in 1:8], oldnames)
+        if allunique(newnames)
+            @test names(rename(df, Pair.(oldnames[1:4], newnames[1:4])...)) == newnames
+            @test names(df) == oldnames
+            rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
+            @test names(df) == newnames
+        else
+            @test_throws ArgumentError rename(df, Pair.(oldnames[1:4], newnames[1:4])...)
+            @test names(df) == oldnames
+            @test_throws ArgumentError rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
+            @test names(df) == oldnames
+        end
+
+        newnames = [oldnames[1:2]; reverse(oldnames[3:6]); oldnames[7:end]]
+        df = DataFrame([[] for i in 1:8], oldnames)
+        @test names(rename(df, Pair.(oldnames[3:6], newnames[3:6])...)) == newnames
+        @test names(df) == oldnames
+        rename!(df, Pair.(oldnames[3:6], newnames[3:6])...)
+        @test names(df) == newnames
+    end
+end
 
 @testset "equality" begin
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
@@ -25,7 +92,12 @@ end
 
     df[1, :a] = 4
     df[1, :b][!, :e] .= 5
-    names!(df, [:f, :g])
+
+    @test names(rename(df, [:f, :g])) == [:f, :g]
+    @test names(rename(df, [:f, :f], makeunique=true)) == [:f, :f_1]
+    @test names(df) == [:a, :b]
+
+    rename!(df, [:f, :g])
 
     @test names(dfc) == [:a, :b]
     @test names(dfdc) == [:a, :b]
@@ -1010,7 +1082,7 @@ end
     @test df == dfc
     @test occursin("Error adding value to column a", String(take!(buf)))
 
-    names!(df, [:a, :b, :z])
+    rename!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
 end
 
@@ -1127,6 +1199,36 @@ end
     @test names(df) == [:A_4, :B_4]
     @test rename!(x->Symbol(lowercase(string(x))), df) === df
     @test names(df) == [:a_4, :b_4]
+
+    df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
+    @test rename!(df, :A => :B, :B => :A) === df
+    @test names(df) == [:B, :A, :C]
+    @test rename!(df, :A => :B, :B => :A, :C => :D) === df
+    @test names(df) == [:A, :B, :D]
+    @test rename!(df, :A => :B, :B => :C, :D => :A) === df
+    @test names(df) == [:B, :C, :A]
+    @test rename!(df, :A => :C, :B => :A, :C => :B) === df
+    @test names(df) == [:A, :B, :C]
+    @test rename!(df, :A => :A, :B => :B, :C => :C) === df
+    @test names(df) == [:A, :B, :C]
+
+    cdf = copy(df)
+    @test_throws ArgumentError rename!(df, :X => :Y)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :B)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
+    @test df == cdf
+    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
+    @test df == cdf
 end
 
 @testset "size" begin
