@@ -54,7 +54,7 @@ for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
 
 `cols` can be any valid data frame indexing expression.
-In particular if it is an empty vector then a single group `GroupedDataFrame`
+In particular if it is an empty vector then a single-group `GroupedDataFrame`
 is created.
 
 A `GroupedDataFrame` also supports

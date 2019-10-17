@@ -1232,7 +1232,7 @@ end
     @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
 
-    @test sprint(show, groupby(df, [])) == "GroupedDataFrame with 1 group based on key: \n" *
+    @test sprint(show, groupby_checked(df, [])) == "GroupedDataFrame with 1 group based on key: \n" *
         "Group 1 (3 rows): \n│ Row │ x1    │ x2    │ y     │\n│     │ Int64 │ Int64 │ Int64 │\n" *
         "├─────┼───────┼───────┼───────┤\n│ 1   │ 1     │ 1     │ 1     │\n" *
         "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
