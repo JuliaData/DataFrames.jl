@@ -24,7 +24,7 @@ Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it i
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
 
-function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
+function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     if !makeunique
         if length(unique(nms)) != length(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
@@ -87,6 +87,8 @@ end
 rename!(x::Index, nms::Pair{Symbol,Symbol}...) = rename!(x::Index, collect(nms))
 rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
 
+rename(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
+    rename!(copy(x), nms, makeunique=makeunique)
 rename(x::Index, args...) = rename!(copy(x), args...)
 rename(f::Function, x::Index) = rename!(f, copy(x))
 

@@ -68,7 +68,7 @@ end
     @test_throws DimensionMismatch dfv .+ rand(2,2)
 
     df2 = copy(df)
-    names!(df2, [:x1, :x2, :x3, :x4, :y])
+    rename!(df2, [:x1, :x2, :x3, :x4, :y])
     @test_throws ArgumentError df .+ df2
     @test_throws ArgumentError df .+ 1 .+ df2
 end
