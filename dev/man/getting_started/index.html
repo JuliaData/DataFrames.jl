@@ -239,7 +239,12 @@ julia&gt; df[!, r&quot;x&quot;]
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │</code></pre><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df[df.A .&gt; 500, :]
+│ 1   │ 1     │ 2     │</code></pre><p>A <code>Not</code> selector (from the <a href="https://github.com/mbauman/InvertedIndices.jl">InvertedIndices</a> package) can be used to select all columns excluding a specific subset:</p><pre><code class="language-julia-repl">julia&gt; df[!, Not(:x1)]
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │</code></pre><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df[df.A .&gt; 500, :]
 250×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -269,7 +274,14 @@ julia&gt; df[(df.A .&gt; 500) .&amp; (300 .&lt; df.C .&lt; 400), :]
 │ 96  │ 791   │ 8     │ 396   │
 │ 97  │ 793   │ 8     │ 397   │
 │ 98  │ 795   │ 8     │ 398   │
-│ 99  │ 797   │ 8     │ 399   │</code></pre><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks-1">Data manipulation frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+│ 99  │ 797   │ 8     │ 399   │</code></pre><p>Where a specific subset of values needs to be matched, the <code>in()</code> function can be applied:</p><pre><code class="language-julia-repl">julia&gt; df[in.(df.A, Ref([1, 5, 601])), :]
+3×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 5     │ 1     │ 3     │
+│ 3   │ 601   │ 7     │ 301   │</code></pre><p>Equivalently, the <code>in</code> function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of <code>in</code>): <code>df[in([1, 5, 601]).(df.A), :]</code>.</p><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks-1">Data manipulation frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
 
 julia&gt; describe(df)
 2×8 DataFrame
