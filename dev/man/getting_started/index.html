@@ -244,7 +244,26 @@ julia&gt; df[!, r&quot;x&quot;]
 │ Row │ x2    │ y     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 2     │ 3     │</code></pre><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df[df.A .&gt; 500, :]
+│ 1   │ 2     │ 3     │</code></pre><p>Finally, you can use <code>Not</code> and <code>All</code> selectors in more complex column selection scenarios. The following examples move all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="language-none">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
+1×4 DataFrame
+│ Row │ r     │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │ 4     │
+
+julia&gt; df[:, All(r&quot;x&quot;, :)]
+1×4 DataFrame
+│ Row │ x1    │ x2    │ r     │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 3     │ 1     │ 4     │
+
+julia&gt; df[:, All(Not(r&quot;x&quot;), :)]
+1×4 DataFrame
+│ Row │ r     │ y     │ x1    │ x2    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 2     │ 3     │</code></pre><p>You can also use the <a href="../../lib/functions/#DataFrames.select"><code>select</code></a> and <a href="../../lib/functions/#DataFrames.select!"><code>select!</code></a> functions to select columns in a data frame.</p><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df[df.A .&gt; 500, :]
 250×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
