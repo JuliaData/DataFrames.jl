@@ -424,7 +424,7 @@ julia> df[:, All(Not(r"x"), :)]
 │ 1   │ 1     │ 4     │ 2     │ 3     │
 ```
 
-You can also use [`select`](@ref) and [`select!`](@ref) functions to perform column selection in a data frame.
+You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
 
 The indexing syntax can also be used to select rows based on conditions on variables:
 
