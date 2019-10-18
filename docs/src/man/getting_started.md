@@ -399,6 +399,33 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
+Finally, you can use `Not` and `All` selectors in more complex column selection scenarios.
+The following examples move all columns whose names match `r"x"` regular expression respectively to the front and to the end of a data frame:
+```
+julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
+1×4 DataFrame
+│ Row │ r     │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │ 4     │
+
+julia> df[:, All(r"x", :)]
+1×4 DataFrame
+│ Row │ x1    │ x2    │ r     │ y     │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 3     │ 1     │ 4     │
+
+julia> df[:, All(Not(r"x"), :)]
+1×4 DataFrame
+│ Row │ r     │ y     │ x1    │ x2    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 2     │ 3     │
+```
+
+You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
