@@ -207,6 +207,16 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
+Base.length(df::AbstractDataFrame) = size(df, 1)
+
+Base.iterate(df::AbstractDataFrame, i::Int64=1) = let next=i+1
+    if i <= length(df)
+        (df[i, :], next)
+    else
+        nothing
+    end
+end
+
 Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
@@ -788,7 +798,7 @@ julia> df
 """
 Base.filter!(f, df::AbstractDataFrame) =
     deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
-
+ 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, eltypes(df))
     convert(Matrix{T}, df)
