@@ -39,7 +39,7 @@ groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 ### Arguments
 
 * `df` : an `AbstractDataFrame` to split
-* `cols` : data table columns to group by
+* `cols` : data frame columns to group by
 * `sort` : whether to sort rows according to the values of the grouping columns `cols`
 * `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
@@ -52,6 +52,10 @@ A `GroupedDataFrame` : a grouped view into `df`
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
+
+`cols` can be any valid data frame indexing expression.
+In particular if it is an empty vector then a single-group `GroupedDataFrame`
+is created.
 
 A `GroupedDataFrame` also supports
 indexing by groups, `map` (which applies a function to each group)
@@ -134,18 +138,20 @@ julia> for g in gd
 ```
 
 """
-function groupby(df::AbstractDataFrame, cols::AbstractVector;
+function groupby(df::AbstractDataFrame, cols;
                  sort::Bool=false, skipmissing::Bool=false)
     _check_consistency(df)
-    intcols = convert(Vector{Int}, index(df)[cols])
+    idxcols = index(df)[cols]
+    intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
+    if isempty(intcols)
+        return GroupedDataFrame(df, intcols, ones(Int, nrow(df)),
+                                collect(axes(df, 1)), [1], [nrow(df)])
+    end
     sdf = df[!, intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)
     GroupedDataFrame(df, intcols, df_groups.groups, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end
-groupby(d::AbstractDataFrame, cols;
-        sort::Bool = false, skipmissing::Bool = false) =
-    groupby(d, [cols], sort = sort, skipmissing = skipmissing)
 
 function Base.iterate(gd::GroupedDataFrame, i=1)
     if i > length(gd.starts)
@@ -1119,8 +1125,9 @@ Split-apply-combine that applies a set of functions over columns of an
 `AbstractDataFrame` or [`GroupedDataFrame`](@ref)
 
 ```julia
-aggregate(df::AbstractDataFrame, cols, fs)
-aggregate(gd::GroupedDataFrame, fs)
+aggregate(df::AbstractDataFrame, fs)
+aggregate(df::AbstractDataFrame, cols, fs; sort=false, skipmissing=false)
+aggregate(gd::GroupedDataFrame, fs; sort=false)
 ```
 
 ### Arguments
@@ -1130,6 +1137,8 @@ aggregate(gd::GroupedDataFrame, fs)
 * `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
 * `fs` : a function or vector of functions to be applied to vectors
   within groups; expects each argument to be a column vector
+* `sort` : whether to sort rows according to the values of the grouping columns
+* `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
 Each `fs` should return a value or vector. All returns must be the
 same length.
@@ -1195,11 +1204,9 @@ function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
 end
 
 # Groups DataFrame by cols before applying aggregate
-function aggregate(d::AbstractDataFrame,
-                   cols::Union{S, AbstractVector{S}},
-                   fs::Any;
-                   sort::Bool=false) where {S<:ColumnIndex}
-    aggregate(groupby(d, cols, sort=sort), fs)
+function aggregate(d::AbstractDataFrame, cols, fs::Any;
+                   sort::Bool=false, skipmissing::Bool=false)
+    aggregate(groupby(d, cols, sort=sort, skipmissing=skipmissing), fs)
 end
 
 function funname(f)

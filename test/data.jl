@@ -118,6 +118,12 @@ const ≅ = isequal
     adf′ = aggregate(groupby(df7, 2), [sum, length], sort=true)
     @test adf ≅ adf′
 
+    df = DataFrame(a = [3, missing, 1], b = [100, 200, 300])
+    for dosort in (true, false), doskipmissing in (true, false)
+        @test aggregate(df, :a, sum, sort=dosort, skipmissing=doskipmissing) ≅
+              aggregate(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), sum)
+    end
+
     # Check column names
     anonf = x -> sum(x)
     adf = aggregate(df7, :d2, [mean, anonf])

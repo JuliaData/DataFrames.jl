@@ -1218,4 +1218,42 @@ end
     end
 end
 
+@testset "non standard cols arguments" begin
+    df = DataFrame(x1=Int64[1,2,2], x2=Int64[1,1,2], y=Int64[1,2,3])
+    gdf = groupby_checked(df, r"x")
+    @test groupvars(gdf) == [:x1, :x2]
+    @test groupindices(gdf) == [1,2,3]
+
+    gdf = groupby_checked(df, Not(r"x"))
+    @test groupvars(gdf) == [:y]
+    @test groupindices(gdf) == [1,2,3]
+
+    gdf = groupby_checked(df, [])
+    @test groupvars(gdf) == []
+    @test groupindices(gdf) == [1,1,1]
+
+    gdf = groupby_checked(df, r"z")
+    @test groupvars(gdf) == []
+    @test groupindices(gdf) == [1,1,1]
+
+    @test by(df, [], a=:x1=>sum, b=:x2=>length) == DataFrame(a=5, b=3)
+
+    gdf = groupby_checked(df, [])
+    @test gdf[1] == df
+    @test_throws BoundsError gdf[2]
+    @test gdf[:] == gdf
+    @test gdf[1:1] == gdf
+
+    @test map(nrow, gdf) == groupby_checked(DataFrame(x1=3), [])
+    @test map(:x2 => identity, gdf) == groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
+    @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
+    @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
+    @test DataFrame(gdf) == df
+
+    @test sprint(show, groupby_checked(df, [])) == "GroupedDataFrame with 1 group based on key: \n" *
+        "Group 1 (3 rows): \n│ Row │ x1    │ x2    │ y     │\n│     │ Int64 │ Int64 │ Int64 │\n" *
+        "├─────┼───────┼───────┼───────┤\n│ 1   │ 1     │ 1     │ 1     │\n" *
+        "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
+end
+
 end # module
