@@ -1231,7 +1231,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. " *
                      "In the future `cols` will have value `:identical` as a default.", :push!)
     end
-    if !(columns in (:identical, :equal, :intersect))
+    if !(columns in (:identical, :equal, :intersect, :subset, :union))
         throw(ArgumentError("`cols` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
@@ -1272,11 +1272,36 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             end
         end
     end
+    if columns === :union
+        for k in keys(row)
+            if !hasproperty(df, k)
+                df[!, k] = Vector{Union{Missing, typeof(row[k])}}(missing, nrow(df))
+            end
+        end
+    end
     current_col = 0
     try
         for (col, nm) in zip(_columns(df), _names(df))
             current_col += 1
-            push!(col, row[nm])
+            if columns === :union
+                val = get(row, nm, missing)
+                if val isa eltype(col)
+                    push!(col, val)
+                else
+                    newcol = similar(Vector{promote_type(typeof(val), eltype(col))},
+                                     length(col) + 1)
+                    copyto!(newcol, 1, col, 1, length(col))
+                    newcol[end] = val
+                    _columns(df)[current_col] = newcol
+                end
+            else
+                if columns === :subset
+                    val = get(row, nm, missing)
+                else
+                    val = row[nm]
+                end
+                push!(col, val)
+            end
         end
         current_col = 0
         for col in _columns(df)
@@ -1309,14 +1334,19 @@ and columns are matched by order of appearance. In this case `row` must contain
 the same number of elements as the number of columns in `df`.
 
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
-values in `row` are matched to columns in `df` based on names (order is ignored).
-`row` may contain more columns than `df` if `cols=:intersect`
-(this is currently the default, but will change to `:identical` in the future),
-but all column names that are present in `df` must be present in `row`.
-If `cols=:equal` then `row` must contain exactly the same columns as `df`
-(but possibly in a different order). Finally if `cols=:identical` then `row`
-must contain the same columns in the same order (this option is the same as
-`:equal` if `row` is an `AbstractDict`).
+values in `row` are matched to columns in `df` based on names. The exact behavior
+depends on `cols` argument value in the following way:
+* If `cols=:equal` (this is currently the default, but will change to `:identical` in the future)
+  then `row` must contain exactly the same columns as `df` (but possibly in a different order).
+* If `cols=:identical` then `row` must contain the same columns in the same order
+  (this option is the same as `:equal` if `row` is an `AbstractDict`).
+* If `cols=:intersect` then `row` may contain more columns than `df`,
+  but all column names that are present in `df` must be present in `row`.
+* If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
+  is missing in `row` then a `missing` value is pushed to `df`.
+* Finally, if `cols=:union` then `push!` behaves like for `:subset` with two additional changes:
+  a) if `row` contains columns that are not present in `df` then they are added to `df`
+  at the end and filled with `missing` for all rows existing in `df` prior to calling `push!.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.

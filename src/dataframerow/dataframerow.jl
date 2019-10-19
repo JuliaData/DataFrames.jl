@@ -281,7 +281,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
                      "In the future `cols` will have value `:identical` as a default.", :push!)
     end
 
-    if !(columns in (:equal, :intersect, :identical))
+    if !(columns in (:equal, :intersect, :identical, :subset, :union))
         throw(ArgumentError("`cols` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
     end
     nrows, ncols = size(df)
@@ -293,6 +293,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
         return df
     end
 
+    current_col = 0
     try
         if parent(dfr) === df && index(dfr) isa Index
             # in this case we are sure that all we do is safe
@@ -306,7 +307,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
             # corner case when push!-ing
             # Only check for equal lengths, as an error will be thrown below if some names don't match
             if columns === :equal
-                msg = "Number of columns of `row` does not match `DataFrame` column count."
+                msg = "Number of columns of `dfr` does not match `DataFrame` column count."
                 ncols == length(dfr) || throw(ArgumentError(msg))
                 if _names(df) != _names(dfr)
                     Base.depwarn("columns=:equal as a default is deprecated; in the future :identical " *
@@ -317,8 +318,34 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
                 msg = "Names and order of columns in `row` and `df` do not match."
                 _names(df) == _names(dfr) || throw(ArgumentError(msg))
             end
+            if columns === :union
+                for k in keys(dfr)
+                    if !hasproperty(df, k)
+                        df[!, k] = Vector{Union{Missing, typeof(dfr[k])}}(missing, nrow(df))
+                    end
+                end
+            end
             for (col, nm) in zip(_columns(df), _names(df))
-                push!(col, dfr[nm])
+                current_col += 1
+                if columns === :union
+                    val = get(dfr, nm, missing)
+                    if val isa eltype(col)
+                        push!(col, val)
+                    else
+                        newcol = similar(Vector{promote_type(typeof(val), eltype(col))},
+                                         length(col) + 1)
+                        copyto!(newcol, 1, col, 1, length(col))
+                        newcol[end] = val
+                        _columns(df)[current_col] = newcol
+                    end
+                else
+                    if columns === :subset
+                        val = get(dfr, nm, missing)
+                    else
+                        val = dfr[nm]
+                    end
+                    push!(col, val)
+                end
             end
         end
         for col in _columns(df)
@@ -327,6 +354,9 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
     catch err
         for col in _columns(df)
             resize!(col, nrows)
+        end
+        if current_col > 0
+            @error "Error adding value to column :$(names(df)[current_col])."
         end
         rethrow(err)
     end

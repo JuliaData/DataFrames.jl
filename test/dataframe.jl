@@ -2009,4 +2009,56 @@ end
                                     cols=:identical)
 end
 
+@testset "push! with :subset" begin
+    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30),
+              DataFrame(a=10, b=20, d=30)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        old_logger = global_logger(NullLogger())
+        @test_throws MethodError push!(df, v, cols=:subset)
+        global_logger(old_logger)
+        @test df == DataFrame(a=1, b=2, c=3)
+    end
+    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30),
+              DataFrame(a=10, b=20, d=30)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        allowmissing!(df, :c)
+        push!(df, v, cols=:subset)
+        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
+        old_logger = global_logger(NullLogger())
+        @test_throws MethodError push!(df, Dict(), cols=:subset)
+        global_logger(old_logger)
+        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
+        allowmissing!(df, [:a, :b])
+        push!(df, Dict(), cols=:subset)
+        @test df ≅ DataFrame(a=[1,10, missing], b=[2,20, missing], c=[3,missing, missing])
+    end
+end
+
+@testset "push! with :union" begin
+    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30),
+              DataFrame(a=10, b=20, d=30)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        push!(df, v, cols=:union)
+        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing], d=[missing, 30])
+        for v2 in (Dict(:e=>-1), (e=-1,),
+              DataFrame(e=-1)[1, :])
+            dfc = copy(df)
+            push!(df, v2, cols=:union)
+            @test df ≅ DataFrame(a=[1,10,missing], b=[2,20,missing], c=[3,missing,missing],
+                                 d=[missing, 30,missing], e=[missing,missing,-1])
+            df = dfc
+        end
+        push!(df, (e=-1,), cols=:union)
+        for v3 in (Dict(), NamedTuple(),
+              DataFrame(e=-1)[1, 1:0])
+            dfc = copy(df)
+            push!(df, v3, cols=:union)
+            @test df ≅ DataFrame(a=[1,10,missing,missing], b=[2,20,missing,missing],
+                                 c=[3,missing,missing,missing],
+                                 d=[missing, 30,missing,missing], e=[missing,missing,-1,missing])
+            df = dfc
+        end
+    end
+end
+
 end # module
