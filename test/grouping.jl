@@ -1230,6 +1230,38 @@ end
     @test groupvars(gd2) == [:A, :B]
 end
 
+@testset "groupvalues" begin
+    df = DataFrame(A=repeat([missing, :A, :B, :A, :B, missing], outer=2),
+                   B=repeat([:X, :Y], inner=6),
+                   C=1:12)
+
+    cols = [:A, :B]
+    gd = groupby_checked(df, cols)
+
+    expected =
+        [(A=missing, B=:X), (A=:A, B=:X), (A=:B, B=:X), (A=missing, B=:Y), (A=:A, B=:Y), (A=:B, B=:Y)]
+
+    # All groups
+    @test collect(groupvalues(gd)) ≅ expected
+    @test collect(groupvalues(NamedTuple, gd)) ≅ expected
+    @test collect(groupvalues(Tuple, gd)) ≅ map(values, expected)
+
+    # Single group
+    for (i, ex) in enumerate(expected)
+        @test groupvalues(gd, i) ≅ ex
+        @test groupvalues(NamedTuple, gd, i) ≅ ex
+        @test groupvalues(Tuple, gd, i) ≅ values(ex)
+
+        # Single group, column
+        for (j, col) in enumerate(cols)
+            @test groupvalues(gd, i, j) ≅ ex[j]
+            @test groupvalues(gd, i, col) ≅ ex[j]
+        end
+    end
+
+    @test_throws ArgumentError groupvalues(gd, 1, :foo)
+end
+
 @testset "by skipmissing and sort" begin
     df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
     for dosort in (false, true), doskipmissing in (false, true)
@@ -1312,12 +1344,16 @@ end
     @test groupvars(gd) == [:a, :b]
     @test keys(gd) ≅ [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
     @test gd[(a=:A, b=:X)] ≅ gd[1]
+    @test groupvalues(gd, 1) == (a=:A, b=:X)
+    @test groupvalues(gd, 1, :a) == :A
 
     names!(df, [:d, :e, :f])
 
     @test names(gd) == names(df)
     @test groupvars(gd) == [:d, :e]
     @test keys(gd) ≅ [(d=:A, e=:X), (d=:B, e=:X), (d=missing, e=:X), (d=:A, e=:Y), (d=:B, e=:Y), (d=missing, e=:Y)]
+    @test groupvalues(gd, 1) == (d=:A, e=:X)
+    @test groupvalues(gd, 1, :d) == :A
     @test_throws KeyError gd[(a=:A, b=:X)]
     @test gd[(d=:A, e=:X)] ≅ gd[1]
 end

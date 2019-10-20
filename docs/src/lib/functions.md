@@ -16,6 +16,7 @@ by
 combine
 groupby
 groupindices
+groupvalues
 groupvars
 keys
 get
