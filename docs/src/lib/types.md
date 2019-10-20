@@ -114,6 +114,7 @@ AbstractDataFrame
 DataFrame
 DataFrameRow
 GroupedDataFrame
+GroupKey
 SubDataFrame
 DataFrameRows
 DataFrameColumns

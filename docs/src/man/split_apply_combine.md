@@ -139,7 +139,7 @@ julia> for subdf in groupby(iris, :Species)
 50
 ```
 
-To also get the values of the grouping columns (as a `NamedTuple`) along with each group, use the
+To also get the values of the grouping columns along with each group, use the
 `pairs` function:
 
 ```jldoctest sac
@@ -150,3 +150,6 @@ Number of data points for setosa: 50
 Number of data points for versicolor: 50
 Number of data points for verginica: 50
 ```
+
+The variable `key` in the previous example is an instance [`GroupKey`](@ref),
+which can be used in a similar fashion to a `NamedTuple`.

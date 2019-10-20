@@ -204,8 +204,11 @@ by the order of names.
 [`GroupedDataFrame`](@ref) implements the `AbstractDict` interface and so supports additional methods for indexing:
 
 * `gd[i::Integer]` -> Get the `i`th group
-* `gd[key::NamedTuple]` -> Get the group corresponding to the dictionary key `key` (see [`keys(::GroupedDataFrame)`](@ref)).
-  The fields of the `NamedTuple` must match the grouping columns columns passed to [`groupby`](@ref)
-  (including order).
+* `gd[key::GroupKey]` -> Get the group corresponding to the [`GroupKey`](@ref)
+  `key` (see [`keys(::GroupedDataFrame)`](@ref)). This should be nearly as fast
+  as integer indexing.
+* `gd[key::NamedTuple]` -> Get the group corresponding to the given values of the
+  grouping columns. The fields of the `NamedTuple` must match the grouping columns
+  columns passed to [`groupby`](@ref) (including order).
 * `gd[key::Tuple]` -> Same as previous, but omitting the names on `key`.
-* `get(gd, key, default)` -> Get group by key, returning `default` if it does not exist.
+* `get(gd, key, default)` -> Get group by `key`, returning `default` if it does not exist.

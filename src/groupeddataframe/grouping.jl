@@ -61,10 +61,13 @@ See the following for additional split-apply-combine operations:
 * [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
 * [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
 
-`GroupedDataFrame` also supports the dictionary interface, where its keys are
-`NamedTuple`s containing the values of the grouping columns. You may also index
-using a `Tuple`, in which case the values should be in the same order as the `cols`
-argument.
+`GroupedDataFrame` also supports the dictionary interface. The keys
+are the `GroupKey` objects returned by [`Base.keys(::GroupedDataFrame)`](@ref),
+which can also be used to get the values of the grouping columns for each group.
+`Tuples` and `NamedTuple`s containing the values of the grouping columns are
+also accepted as indices, but this will be slower than using the equivalent
+`GroupKey`. Note that in this case the values should be in the same order as
+the `cols` argument.
 
 # Examples
 ```julia
@@ -292,54 +295,175 @@ _grouptypes(gd::GroupedDataFrame) = Tuple(eltype(gd.parent[!, c]) for c in gd.co
 
 
 """
+    GroupKey{T<:GroupedDataFrame}
+
+Key for one of the groups of a [`GroupedDataFrame`](@ref). Contains the values
+of the corresponding grouping columns and behaves similarly to a `NamedTuple`,
+but using it to index its `GroupedDataFrame` is much more effecient than using the
+equivalent `Tuple` or `NamedTuple`.
+
+Instances of this type are returned by `keys(::GroupedDataFrame)` and are not
+meant to be constructed directly.
+
+See [`keys(::GroupedDataFrame)`](@ref) for more information.
+"""
+struct GroupKey{T<:GroupedDataFrame}
+    parent::T
+    idx::Int
+end
+
+function Base.show(io::IO, k::GroupKey)
+    print(io, "GroupKey: ")
+    show(io, NamedTuple(k))
+end
+
+Base.parent(key::GroupKey) = getfield(key, :parent)
+Base.length(key::GroupKey) = length(parent(key).cols)
+Base.keys(key::GroupKey) = Tuple(groupvars(parent(key)))
+Base.names(key::GroupKey) = groupvars(parent(key))
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
+Base.values(key::GroupKey) = groupvalues(Tuple, parent(key), getfield(key, :idx))
+
+Base.iterate(key::GroupKey, i::Integer=1) = i <= length(key) ? (key[i], i + 1) : nothing
+
+Base.getindex(key::GroupKey, i::Integer) = groupvalues(parent(key), getfield(key, :idx), i)
+
+function Base.getindex(key::GroupKey, n::Symbol)
+    try
+        return groupvalues(parent(key), getfield(key, :idx), n)
+    catch e
+        throw(KeyError(n))
+    end
+end
+
+function Base.getproperty(key::GroupKey, p::Symbol)
+    try
+        return key[p]
+    catch e
+        throw(ArgumentError("$(typeof(key)) has no property $p"))
+    end
+end
+
+Base.NamedTuple(key::GroupKey) = groupvalues(NamedTuple, parent(key), getfield(key, :idx))
+Base.Tuple(key::GroupKey) = values(key)
+
+
+"""
+    GroupKeys{T<:GroupedDataFrame} <: AbstractVector{GroupKey{T}}
+
+An abstract vector containing all [`GroupKey`](@ref) objects for a given
+[`GroupedDataFrame`](@ref).
+
+See [`keys(::GroupedDataFrame)`](@ref) for more information.
+"""
+struct GroupKeys{T<:GroupedDataFrame} <: AbstractVector{GroupKey{T}}
+    parent::T
+end
+
+Base.parent(gk::GroupKeys) = gk.parent
+
+Base.size(gk::GroupKeys) = (length(parent(gk)),)
+Base.IndexStyle(::Type{GroupKeys}) = IndexLinear()
+@Base.propagate_inbounds function Base.getindex(gk::GroupKeys, i::Integer)
+    @boundscheck checkbounds(gk, i)
+    return GroupKey(parent(gk), i)
+end
+
+
+"""
     keys(gd::GroupedDataFrame)
 
-Get the values of the grouping columns for each group. These can be used to get
-the groups using the dictionary interface (by passing the key to `getindex`
-or `get`). See [`get(gd::GroupedDataFrame, key, default)`](@ref).
+Get the set of keys for each group of the `GroupedDataFrame` `gd` as a
+[`GroupKeys`](@ref) object. Each key is a [`GroupKey`](@ref), which behaves like
+a `NamedTuple` holding the values of the grouping columns for a given group.
+Unlike the equivalent `Tuple` and `NamedTuple`, these keys can be used to index
+into `gd` efficiently. The ordering of the keys is identical to the ordering of
+the groups of `gd` under iteration and integer indexing.
 
-### Returns
+# Examples
 
-A vector of `NamedTuple`s with names corresponding to the grouping columns.
+```jldoctest groupkeys
+julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
+                      b = repeat([2, 1], outer=[6]),
+                      c = 1:12);
 
-### Examples
-
-```jldoctest
-julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[2]),
-                      b = repeat([2, 1], outer=[3]),
-                      c = 1:6);
-
-julia> gd = groupby(df, :a)
-GroupedDataFrame with 3 groups based on key: a
-First Group (2 rows): a = :foo
+julia> gd = groupby(df, [:a, :b])
+GroupedDataFrame with 6 groups based on keys: a, b
+First Group (2 rows): a = :foo, b = 2
 │ Row │ a      │ b     │ c     │
 │     │ Symbol │ Int64 │ Int64 │
 ├─────┼────────┼───────┼───────┤
 │ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 1     │ 4     │
+│ 2   │ foo    │ 2     │ 7     │
 ⋮
-Last Group (2 rows): a = :baz
+Last Group (2 rows): a = :baz, b = 1
 │ Row │ a      │ b     │ c     │
 │     │ Symbol │ Int64 │ Int64 │
 ├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 2     │ 3     │
-│ 2   │ baz    │ 1     │ 6     │
+│ 1   │ baz    │ 1     │ 6     │
+│ 2   │ baz    │ 1     │ 12    │
 
 julia> keys(gd)
-3-element Array{NamedTuple{(:a,),Tuple{Symbol}},1}:
- (a = :foo,)
- (a = :bar,)
- (a = :baz,)
+6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (a = :foo, b = 2)
+ GroupKey: (a = :bar, b = 1)
+ GroupKey: (a = :baz, b = 2)
+ GroupKey: (a = :foo, b = 1)
+ GroupKey: (a = :bar, b = 2)
+ GroupKey: (a = :baz, b = 1)
+```
+
+`GroupKey` objects behave similarly to `NamedTuple`s:
+
+```jldoctest groupkeys
+julia> k = keys(gd)[1]
+GroupKey: (a = :foo, b = 2)
+
+julia> keys(k)
+(:a, :b)
+
+julia> values(k)
+(:foo, 2)
+
+julia> NamedTuple(k)
+(a = :foo, b = 2)
+
+julia> k.a
+:foo
+
+julia> k[:a]
+:foo
+
+julia> k[1]
+:foo
+```
+
+Keys can be used as indices to retrieve the corresponding group from their
+`GroupedDataFrame`:
+
+```jldoctest groupkeys
+julia> gd[k]
+2×3 SubDataFrame
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ foo    │ 2     │ 1     │
+│ 2   │ foo    │ 2     │ 7     │
+
+julia> isequal(gd[keys(gd)[1]], gd[1])
+true
 ```
 """
-function Base.keys(gd::GroupedDataFrame)
-    colnames = Tuple(_names(gd)[gd.cols])
-    coltypes = [eltype(gd.parent[!, c]) for c in gd.cols]
-    T = NamedTuple{colnames, Tuple{coltypes...}}
-    return map(T, _groupvalues(gd))
+Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
+
+# Index with GroupKey
+function Base.getindex(gd::GroupedDataFrame, key::GroupKey)
+    gd === parent(key) && return gd[getfield(key, :idx)]
+    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
 end
 
-# Get group by values of grouped column (plain Tuple)
+# Index with tuple
 function Base.getindex(gd::GroupedDataFrame, key::Tuple)
     for (i, v) in enumerate(groupvalues(Tuple, gd))
         isequal(v, key) && return gd[i]
@@ -347,7 +471,7 @@ function Base.getindex(gd::GroupedDataFrame, key::Tuple)
     throw(KeyError(key))
 end
 
-# Get group by values of grouped column (named Tuple)
+# Index with named tuple
 function Base.getindex(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
         throw(KeyError(key))
@@ -360,8 +484,8 @@ end
 
 Get a group based on the values of the grouping columns.
 
-`key` may be one of the `NamedTuple`s returned by
-[`keys(gd::GroupedDataFrame)`](@ref) or the equivalent plain `Tuple`.
+`key` may be a `NamedTuple` or `Tuple` of grouping column values, or one of the
+[`GroupKey`](@ref)s returned by [`keys(gd::GroupedDataFrame)`](@ref).
 
 ### Examples
 
