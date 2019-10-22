@@ -704,9 +704,19 @@ function do_f(f, x...)
     end
 end
 
-function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
-                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+# Avoid recompilation of larger function for each set of names
+function _combine(@nospecialize(f::NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}),
                   gd::GroupedDataFrame)
+    idx, valscat = _combine(collect(f), gd)
+    rename!(valscat, collect(Symbol, propertynames(f)))
+    idx, valscat
+end
+
+# Avoid recompilation of larger function for each length
+_combine(@nospecialize(f::Tuple{Vararg{Pair}}), gd::GroupedDataFrame) =
+    _combine(collect(f), gd)
+
+function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
@@ -733,15 +743,11 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     if !all(x -> length(x) == length(outcols[1]), outcols)
         throw(ArgumentError("all functions must return values of the same length"))
     end
-    if f isa NamedTuple
-        nams = collect(Symbol, propertynames(f))
-    else
-        nams = [f[i] isa Pair{<:ColumnIndex} ?
-                    Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
-                           '_', funname(last(f[i]))) :
-                    Symbol('x', i)
-                for i in 1:length(f)]
-    end
+    nams = [f[i] isa Pair{<:ColumnIndex} ?
+                Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
+                       '_', funname(last(f[i]))) :
+                Symbol('x', i)
+            for i in 1:length(f)]
     valscat = DataFrame(collect(AbstractVector, outcols), nams, makeunique=true)
     return idx, valscat
 end
