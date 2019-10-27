@@ -6,6 +6,8 @@ This resource aims to teach you everything you need
 to know to get up and running with tabular data manipulation using the DataFrames.jl package
 and the Julia language.
 
+This documentation is always updated. There is available also a [DataFrames Tutorial in NoteBooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/). That tutorial is not guarantee that be completely updated, but it is a good complementary resource to learn about DataFrames usage. 
+
 If there is something you expect DataFrames to be capable of, but
 cannot figure out how to do, please reach out with questions in Domains/Data on
 [Discourse](https://discourse.julialang.org/new-topic?title=[DataFrames%20Question]:%20&body=%23%20Question:%0A%0A%23%20Dataset%20(if%20applicable):%0A%0A%23%20Minimal%20Working%20Example%20(if%20applicable):%0A&category=Domains/Data&tags=question).
