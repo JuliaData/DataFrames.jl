@@ -821,6 +821,7 @@ function select!(df::DataFrame, inds::AbstractVector{Int})
     copy!(_columns(df), _columns(df)[inds])
     x = index(df)
     copy!(_names(x), _names(df)[inds])
+    empty!(x.lookup)
     for (i, n) in enumerate(x.names)
         x.lookup[n] = i
     end
