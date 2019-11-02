@@ -406,6 +406,7 @@ end
     @test names(d) == [:b, :d]
     select!(d, Not(:b))
     @test d == DataFrame(d=4)
+    DataFrames._check_consistency(d)
 
     d = copy(df)
     select!(d, Not(r"[aec]"))
