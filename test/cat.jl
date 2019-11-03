@@ -263,13 +263,13 @@ end
 
     df1 = DataFrame(A=Int[], B=Float64[])
     df2 = DataFrame(B=1.0, A=1)
-    @test vcat(df2, df1, df2, df1) == vcat(df2, df2)
+    @test vcat(df2, df1, df2, df1, cols=:equal) == vcat(df2, df2)
 
     df = DataFrame(A=1:5, B=11:15, C=21:25)
-    @test vcat(view(df, 1:2, :), view(df, 3:5, [3,2,1])) == df
-    @test vcat(view(df, 1:2, [1,2,3,1,2,3]), view(df, 3:5, [3,2,1,1,2,3])) == df
+    @test vcat(view(df, 1:2, :), view(df, 3:5, [3,2,1]), cols=:equal) == df
+    @test vcat(view(df, 1:2, [1,2,3,1,2,3]), view(df, 3:5, [3,2,1,1,2,3]), cols=:equal) == df
     @test all(==(df[1, :]), eachrow(vcat(view(df, [1,1,1], [1,2,3,1,2,3]),
-                                         view(df, [1,1,1], [3,2,1,1,2,3]))))
+                                         view(df, [1,1,1], [3,2,1,1,2,3]), cols=:equal)))
 end
 
 @testset "vcat copy" begin
@@ -326,25 +326,21 @@ end
 @testset "vcat out of order" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
     df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
-    @test vcat(df1, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18],
-                                      B = [4, 5, 6, 8, 10, 12],
-                                      C = [7, 8, 9, 2, 4, 6])
-    # test with cols keyword argument
-    @test vcat(df1, df2, cols = :equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
-                                                     B = [4, 5, 6, 8, 10, 12],
-                                                     C = [7, 8, 9, 2, 4, 6])
-    @test vcat(df1, df1, df2) == DataFrame(A = [1, 2, 3, 1, 2, 3, 14, 16, 18],
-                                           B = [4, 5, 6, 4, 5, 6, 8, 10, 12],
-                                           C = [7, 8, 9, 7, 8, 9, 2, 4, 6])
-    @test vcat(df1, df2, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18, 14, 16, 18],
-                                           B = [4, 5, 6, 8, 10, 12, 8, 10, 12],
-                                           C = [7, 8, 9, 2, 4, 6, 2, 4, 6])
-    @test vcat(df2, df1, df2) == DataFrame(C = [2, 4, 6, 7, 8, 9, 2, 4, 6],
-                                           B = [8, 10, 12, 4, 5, 6, 8, 10, 12],
-                                           A = [14, 16, 18, 1, 2, 3, 14, 16, 18])
-    @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
+    @test vcat(df1, df2, cols=:equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
+                                                   B = [4, 5, 6, 8, 10, 12],
+                                                   C = [7, 8, 9, 2, 4, 6])
+    @test vcat(df1, df1, df2, cols=:equal) == DataFrame(A = [1, 2, 3, 1, 2, 3, 14, 16, 18],
+                                                        B = [4, 5, 6, 4, 5, 6, 8, 10, 12],
+                                                        C = [7, 8, 9, 7, 8, 9, 2, 4, 6])
+    @test vcat(df1, df2, df2, cols=:equal) == DataFrame(A = [1, 2, 3, 14, 16, 18, 14, 16, 18],
+                                                        B = [4, 5, 6, 8, 10, 12, 8, 10, 12],
+                                                        C = [7, 8, 9, 2, 4, 6, 2, 4, 6])
+    @test vcat(df2, df1, df2, cols=:equal) == DataFrame(C = [2, 4, 6, 7, 8, 9, 2, 4, 6],
+                                                        B = [8, 10, 12, 4, 5, 6, 8, 10, 12],
+                                                        A = [14, 16, 18, 1, 2, 3, 14, 16, 18])
+    @test size(vcat(df1, df1, df1, df2, df2, df2, cols=:equal)) == (18, 3)
     df3 = df1[:, [1, 3, 2]]
-    res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
+    res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3, cols=:equal)
     @test res == reduce(vcat, [df1, df1, df1, df2, df2, df2, df3, df3, df3, df3])
     @test res == reduce(vcat, (df1, df1, df1, df2, df2, df2, df3, df3, df3, df3))
     @test size(res) == (30, 3)
@@ -360,6 +356,7 @@ end
     df1 = DataFrame(A = 1, B = 2)
     df2 = DataFrame(B = 12, A = 11)
     df3 = DataFrame(A = [1, 11], B = [2, 12])
+    # this test should be rewritten after deprecation
     @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
     @test df3 == reduce(vcat, (df1, df2))
 end

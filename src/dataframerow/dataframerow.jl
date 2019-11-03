@@ -313,7 +313,6 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:equal,
                     Base.depwarn("cols=:equal as a default is deprecated; in the future :identical " *
                                  "will be the default", :push!)
                 end
-            end
             elseif cols === :identical
                 msg = "Names and order of columns in `row` and `df` do not match."
                 _names(df) == _names(dfr) || throw(ArgumentError(msg))

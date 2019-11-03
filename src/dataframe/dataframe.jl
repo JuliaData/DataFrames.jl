@@ -1258,7 +1258,6 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
                              "will be the default", :push!)
             end
         end
-    end
     elseif cols === :identical
         if length(row) != ncols
             throw(ArgumentError("Pushed object must have the same number of elements" *

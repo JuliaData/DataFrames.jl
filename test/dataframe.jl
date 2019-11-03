@@ -269,7 +269,7 @@ end
     @test df == dfb
 
     dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    push!(dfb, (second="banana", first=3))
+    @test_logs (:warn, r"cols=:equal as default is deprecated") push!(dfb, (second="banana", first=3))
     @test df == dfb
 
     df0 = DataFrame(first=[1,2], second=["apple","orange"])
@@ -281,7 +281,7 @@ end
     @test occursin("Error adding value to column :second", String(take!(buf)))
 
     dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    push!(dfb, (second="banana", first=3))
+    @test_logs (:warn, r"cols=:equal as default is deprecated") push!(dfb, (second="banana", first=3))
     @test df == dfb
 
     df0 = DataFrame(first=[1,2], second=["apple","orange"])
@@ -356,7 +356,9 @@ end
     @test occursin("Error adding value to column :a", String(take!(buf)))
     @test_throws AssertionError push!(df, df[1, :])
     @test df == dfc
-    @test_throws AssertionError push!(df, dfc[1, :])
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, dfc[1, :])
+    end
     @test df == dfc
 
     df = DataFrame()
@@ -381,7 +383,9 @@ end
     @test occursin("Error adding value to column :a", String(take!(buf)))
     @test_throws AssertionError push!(df, df[1, :])
     @test df == dfc
-    @test_throws AssertionError push!(df, dfc[1, :])
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, dfc[1, :])
+    end
     @test df == dfc
 
     df = DataFrame(a=1, b=2)
@@ -390,7 +394,7 @@ end
     push!(df, (1, 2))
     @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
 
-    @test_logs (:warn, r"In the future push! will not allow passing collections of type") push!(df, "ab")
+    @test_logs (:warn, r"In the future `push!` will not allow passing collections of type") push!(df, "ab")
 end
 
 @testset "select! Not" begin
