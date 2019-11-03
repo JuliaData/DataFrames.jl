@@ -967,9 +967,8 @@ The `cols` keyword argument determines the columns of the returned data frame:
 * A vector of `Symbol`s: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-Unless `cols==:identical` the order of columns is determined by the order they appear
-in the included data frames, searching through the header of the first data frame, then
-the second, etc.
+The order of columns is determined by the order they appear in the included data frames,
+searching through the header of the first data frame, then the second, etc.
 
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
@@ -1069,7 +1068,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                 args = join(matching, ", ", " and ")
                 return "column(s) $cols are missing from argument(s) $args"
             end
-        throw(ArgumentError(join(estrings, ", ", ", and ")))
+            throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
         if length(uniqueheaders) > 1
             Base.depwarn("cols=:equal is deprecated; in the future :identical " *

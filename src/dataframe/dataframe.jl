@@ -1225,14 +1225,14 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:equal,
                     columns::Union{Nothing,Symbol}=nothing)
-    if isnothing(columns)
-        columns = cols
-    else
+    if !isnothing(columns)
+        cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. " *
                      "In the future `cols` will have value `:identical` as a default.", :push!)
     end
-    if !(columns in (:identical, :equal, :intersect, :subset, :union))
-        throw(ArgumentError("`cols` keyword argument must be `:identical`, `:equal`, or `:intersect`"))
+    possible_cols = (:identical, :equal, :intersect, :subset)
+    if !(cols in possible_cols)
+        throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1
@@ -1242,40 +1242,33 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         end
         return df
     end
-    if columns === :equal
+    if cols === :equal
         # Only check for equal lengths if :equal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
             # TODO: add tests for this case after the deprecation period
-            Base.depwarn("In the future push! will require that `row` has the same number" *
-                          " of elements as is the number of columns in `df`. " *
-                          "Use `columns=:intersect` to disable this check.", :push!)
+            Base.depwarn("In the future `push!` with `cols == :equal` will require that " *
+                         "`row` has the same number of elements as is the " *
+                         "number of columns in `df`.", :push!)
         end
         if row isa NamedTuple
             matching = all(x -> x[1]==x[2], zip(propertynames(row), _names(df)))
             if !matching
-                Base.depwarn("columns=:equal as default is deprecated; in the future :identical " *
+                Base.depwarn("cols=:equal as default is deprecated; in the future :identical " *
                              "will be the default", :push!)
             end
         end
     end
-    if columns === :identical
+    elseif cols === :identical
         if length(row) != ncols
-            throw(ArgumentError("A pushed object must have the same number of elements" *
-                                " as a target data frame."))
+            throw(ArgumentError("Pushed object must have the same number of elements" *
+                                " as target data frame."))
         end
         if row isa NamedTuple
             if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("A pushed `NamedTuple` must have exactly the " *
+                throw(ArgumentError("Pushed `NamedTuple` must have exactly the " *
                                     "same column names and in the same order " *
-                                    "as a target data frame."))
-            end
-        end
-    end
-    if columns === :union
-        for k in keys(row)
-            if !hasproperty(df, k)
-                df[!, k] = Vector{Union{Missing, typeof(row[k])}}(missing, nrow(df))
+                                    "as target data frame when `cols == :identical`."))
             end
         end
     end
@@ -1283,25 +1276,12 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     try
         for (col, nm) in zip(_columns(df), _names(df))
             current_col += 1
-            if columns === :union
+            if cols === :subset
                 val = get(row, nm, missing)
-                if val isa eltype(col)
-                    push!(col, val)
-                else
-                    newcol = similar(Vector{promote_type(typeof(val), eltype(col))},
-                                     length(col) + 1)
-                    copyto!(newcol, 1, col, 1, length(col))
-                    newcol[end] = val
-                    _columns(df)[current_col] = newcol
-                end
             else
-                if columns === :subset
-                    val = get(row, nm, missing)
-                else
-                    val = row[nm]
-                end
-                push!(col, val)
+                val = row[nm]
             end
+            push!(col, val)
         end
         current_col = 0
         for col in _columns(df)
@@ -1335,18 +1315,16 @@ the same number of elements as the number of columns in `df`.
 
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names. The exact behavior
-depends on `cols` argument value in the following way:
+depends on the `cols` argument value in the following way:
 * If `cols=:equal` (this is currently the default, but will change to `:identical` in the future)
   then `row` must contain exactly the same columns as `df` (but possibly in a different order).
 * If `cols=:identical` then `row` must contain the same columns in the same order
   (this option is the same as `:equal` if `row` is an `AbstractDict`).
 * If `cols=:intersect` then `row` may contain more columns than `df`,
-  but all column names that are present in `df` must be present in `row`.
+  but all column names that are present in `df` must be present in `row` and only they
+  are used to populate a new row in `df`.
 * If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
   is missing in `row` then a `missing` value is pushed to `df`.
-* Finally, if `cols=:union` then `push!` behaves like for `:subset` with two additional changes:
-  a) if `row` contains columns that are not present in `df` then they are added to `df`
-  at the end and filled with `missing` for all rows existing in `df` prior to calling `push!.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
@@ -1414,8 +1392,10 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 """
 function Base.push!(df::DataFrame, row::Any)
     if !(row isa Union{Tuple, AbstractArray})
-        Base.depwarn("In the future push! will not allow passing collections of type" *
-                     " $(typeof(row)) to be pushed into a DataFrame", :push!)
+        Base.depwarn("In the future `push!` will not allow passing collections of type" *
+                     " $(typeof(row)) to be pushed into a DataFrame. " *
+                     "Only `Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` and " *
+                     "`NamedTuple` will be allowed.", :push!)
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1
