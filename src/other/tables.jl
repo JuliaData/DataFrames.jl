@@ -32,7 +32,13 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
     return fromcolumns(Tables.columns(x), copycols=copycols)
 end
 
-Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
+function Base.append!(df::DataFrame, x)
+    if Tables.columnaccess(x)
+        return append!(df, DataFrame(x, copycols=false))
+    else
+        return foldl(push!, Tables.rows(x); init=df)
+    end
+end
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 function DataFrame(x::Vector{<:NamedTuple}; copycols::Bool=true)
