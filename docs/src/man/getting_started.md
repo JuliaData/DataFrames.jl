@@ -45,7 +45,9 @@ julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position.
+Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position. 
+
+`Notice that, changing the elements of the array returned by `df[!, :col]` will affect the original `df`, while `df[:, :col]` returns a copy of the array, and changing it doesn't change `df` values.
 
 ```jldoctest dataframe
 julia> df.A
