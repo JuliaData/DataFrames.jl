@@ -3,8 +3,10 @@
 Welcome to the DataFrames documentation!
 
 This resource aims to teach you everything you need
-to know to get up and running with tabular data manipulation using the DataFrames.jl package
-and the Julia language.
+to know to get up and running with tabular data manipulation using the DataFrames.jl package.
+For more illustrations of its usage in conjunction with other packages, the
+[DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
+is a good complementary resource.
 
 If there is something you expect DataFrames to be capable of, but
 cannot figure out how to do, please reach out with questions in Domains/Data on
