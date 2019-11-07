@@ -45,8 +45,9 @@ DataFrame(::GroupedDataFrame)
 * `table` : any type that implements the
   [Tables.jl](https://github.com/JuliaData/Tables.jl) interface; in particular
   a tuple or vector of `Pair{Symbol, <:AbstractVector}}` objects is a table.
-* `copycols` : whether vectors passed as columns should be copied; note that
-  `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
+* `copycols` : whether vectors passed as columns should be copied; if set
+  to `false` then the constructor will still copy the passed columns
+  if it is not possible to construct a `DataFrame` without materializing new columns.
 
 All columns in `columns` should have the same length.
 
