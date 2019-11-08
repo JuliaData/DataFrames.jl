@@ -672,4 +672,17 @@ end
     @test_throws ArgumentError join(df1, df2, df3, on=:id, validate=(true,true))
 end
 
+@testset "flexible on in join" begin
+    df1 = DataFrame(id=[1,2,3], id2=[11,12,13], x=[1,2,3])
+    df2 = DataFrame(id=[1,2,4], ID2=[11,12,14], y=[1,2,4])
+    @test join(df1, df2, on=[:id, :id2=>:ID2]) == DataFrame(id=[1,2], id2=[11, 12],
+                                                            x=[1,2], y=[1,2])
+    @test join(df1, df2, on=[:id2=>:ID2, :id]) == DataFrame(id=[1,2], id2=[11, 12],
+                                                            x=[1,2], y=[1,2])
+    @test join(df1, df2, on=[:id=>:id, :id2=>:ID2]) == DataFrame(id=[1,2], id2=[11, 12],
+                                                                 x=[1,2], y=[1,2])
+    @test join(df1, df2, on=[:id2=>:ID2, :id=>:id]) == DataFrame(id=[1,2], id2=[11, 12],
+                                                                 x=[1,2], y=[1,2])
+end
+
 end # module

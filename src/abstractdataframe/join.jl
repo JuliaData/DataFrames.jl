@@ -18,15 +18,27 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
     right_on::Vector{Symbol}
 
     function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2,
-                                       on::Union{<:OnType, AbstractVector{<:OnType}}) where {DF1, DF2}
+                                       on::Union{<:OnType, AbstractVector}) where {DF1, DF2}
+        on_cols = isa(on, AbstractVector) ? on : [on]
+        left_on = Symbol[]
+        right_on = Symbol[]
+        for v in on
+            if v isa Symbol
+                push!(left_on, v)
+                push!(right_on, v)
+            elseif v isa Pair{Symbol,Symbol} || v isa NTuple{2,Symbol}
+                push!(left_on, first(v))
+                push!(left_on, last(v))
+                if v isa NTuple{2,Symbol}
+                    Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector containing such tuples " *
+                                 "as a value of `on` keyword argument is deprecated: use " *
+                                 "`Pair{Symbol,Symbol}` instead.", :join)
 
-        on_cols = isa(on, Vector) ? on : [on]
-        if eltype(on_cols) == Symbol
-            left_on = on_cols
-            right_on = on_cols
-        else
-            left_on = [first(x) for x in on_cols]
-            right_on = [last(x) for x in on_cols]
+                end
+            else
+                throw(ArgumentError("All elements of `on` argument to `join` must be " *
+                                    "Symbol or Pair{Symbol,Symbol}."))
+            end
         end
         new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
     end
@@ -301,16 +313,13 @@ join(name, job2, on = [:ID => :identifier])
 
 """
 function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
-                   on::Union{<:OnType, AbstractVector{<:OnType}} = Symbol[],
+                   on::Union{<:OnType, AbstractVector = Symbol[],
                    kind::Symbol = :inner, makeunique::Bool=false,
                    indicator::Union{Nothing, Symbol} = nothing,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
     _check_consistency(df1)
     _check_consistency(df2)
-    if on isa NTuple{2,Symbol} || on isa AbstractVector{NTuple{2,Symbol}}
-        Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector of such tuples " *
-                     "as a value of `on` keyword argument is deprecated: use pairs instead.", :join)
-    end
+
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
         for i in 1:2
@@ -329,9 +338,9 @@ function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if kind == :cross
-        (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
+        (on == []) || throw(ArgumentError("Cross joins don't use argument 'on'."))
         return crossjoin(df1, df2, makeunique=makeunique)
-    elseif on == Symbol[]
+    elseif on == []
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
