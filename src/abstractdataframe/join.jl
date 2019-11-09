@@ -22,7 +22,7 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
-        for v in on
+        for v in on_cols
             if v isa Symbol
                 push!(left_on, v)
                 push!(right_on, v)
