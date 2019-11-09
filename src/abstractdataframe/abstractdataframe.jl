@@ -950,15 +950,14 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
           makeunique=makeunique, copycols=copycols)
 
 """
-    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
+    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
 
 Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:identical`: require all data frames to have the same column names and in the same order.
-* `:equal` (currently the default, but in the future `:identical` will be the default):
-  require all data frames to have the same column names.
+* `:equal`: require all data frames to have the same column names and in the same order.
+* `:setequal`: require all data frames to have the same column names.
   If they appear in different orders, the order of the first provided data frame is used.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
@@ -1034,16 +1033,16 @@ julia> vcat(d4, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+          cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
 Base.reduce(::typeof(vcat),
             dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
-            cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+            cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
     _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
-               cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
+               cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
 
     isempty(dfs) && return DataFrame()
     # Array of all headers
@@ -1055,7 +1054,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
 
-    if cols === :equal
+    if cols === :setequal || cols === :equal
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
         if !isempty(coldiff)
@@ -1070,20 +1069,15 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
             throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-        if length(uniqueheaders) > 1
-            Base.depwarn("cols=:equal is deprecated; in the future :identical " *
-                         "will be the default", :vcat)
+        if cols === :equal && length(uniqueheaders) > 1
+            Base.depwarn("In the future if `cols` has value `:equal`" *
+                         "then all data frames will have to have the same " *
+                         " column names and in the same order.", :vcat)
         end
     elseif cols === :intersect
         header = intersectunique
     elseif cols === :union
         header = unionunique
-    elseif cols === :identical
-        header = uniqueheaders[1]
-        if length(uniqueheaders) > 1
-            throw(ArgumentError("All passed data frames must have exactly the " *
-                                "same column names and in the same order."))
-        end
     else
         header = cols
     end

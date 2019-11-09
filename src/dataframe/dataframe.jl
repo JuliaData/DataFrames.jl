@@ -1138,11 +1138,14 @@ function categorical!(df::DataFrame,
 end
 
 """
-    append!(df1::DataFrame, df2::AbstractDataFrame)
+    append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:setequal)
 
 Add the rows of `df2` to the end of `df1`.
 
-Column names must be equal (including order), with the following exceptions:
+Column names must be equal, including order, if `cols` argument is `:equal`.
+If `cols` is `:setequal` (the default) column names might have different order
+and `append!` is performed by matching column names.
+The above rule has the following exceptions:
 * If `df1` has no columns then copies of
   columns from `df2` are added to it.
 * If `df2` has no columns then calling `append!` leaves `df1` unchanged.
@@ -1185,7 +1188,11 @@ julia> df1
 │ 6   │ 6     │ 6     │
 ```
 """
-function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
+function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:setequal)
+    if !(cols in (:equal, :setequal))
+        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :equal")
+    end
+
     if ncol(df1) == 0
         for (n, v) in eachcol(df2, true)
             df1[!, n] = copy(v) # make sure df1 does not reuse df2
@@ -1194,14 +1201,20 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     end
     ncol(df2) == 0 && return df1
 
-    _names(df1) == _names(df2) || throw(ArgumentError("Column names do not match"))
+    if cols == :equal && _names(df1) != _names(df2)
+        throw(ArgumentError("Column names do not match"))
+    end
+    if cols == :setequal && Set(_names(df1)) != Set(_names(df2))
+        throw(ArgumentError("Column names sets do not match"))
+    end
+
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
     current_col = 0
     try
-        for j in 1:ncols
+        for (j, n) in enumerate(_names(df1))
             current_col += 1
-            append!(df1[!, j], df2[!, j])
+            append!(df1[!, j], df2[!, n])
         end
         current_col = 0
         for col in _columns(df1)
@@ -1223,14 +1236,13 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:equal,
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:setequal,
                     columns::Union{Nothing,Symbol}=nothing)
     if !isnothing(columns)
         cols = columns
-        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. " *
-                     "In the future `cols` will have value `:identical` as a default.", :push!)
+        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
     end
-    possible_cols = (:identical, :equal, :intersect, :subset)
+    possible_cols = (:equal, :setequal, :intersect, :subset)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
@@ -1242,32 +1254,21 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         end
         return df
     end
-    if cols === :equal
-        # Only check for equal lengths if :equal is selected,
+    if cols === :setequal || cols == :equal
+        # Only check for equal lengths if :setequal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
             # TODO: add tests for this case after the deprecation period
-            Base.depwarn("In the future `push!` with `cols == :equal` will require that " *
+            Base.depwarn("In the future `push!` with `cols` equal to `:setequal or " *
+                         "`:equal` will require that " *
                          "`row` has the same number of elements as is the " *
                          "number of columns in `df`.", :push!)
         end
         if row isa NamedTuple
             matching = all(x -> x[1]==x[2], zip(propertynames(row), _names(df)))
-            if !matching
-                Base.depwarn("cols=:equal as default is deprecated; in the future :identical " *
-                             "will be the default", :push!)
-            end
-        end
-    elseif cols === :identical
-        if length(row) != ncols
-            throw(ArgumentError("Pushed object must have the same number of elements" *
-                                " as target data frame."))
-        end
-        if row isa NamedTuple
-            if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("Pushed `NamedTuple` must have exactly the " *
-                                    "same column names and in the same order " *
-                                    "as target data frame when `cols == :identical`."))
+            if cols === :equal && !matching
+                Base.depwarn("In the future if `cols` is equal to `:equal`" *
+                             "pushed row will have to contain the same columns in the same order as `df`", :push!)
             end
         end
     end
@@ -1315,10 +1316,10 @@ the same number of elements as the number of columns in `df`.
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names. The exact behavior
 depends on the `cols` argument value in the following way:
-* If `cols=:equal` (this is currently the default, but will change to `:identical` in the future)
+* If `cols=:setequal` (this is the default)
   then `row` must contain exactly the same columns as `df` (but possibly in a different order).
-* If `cols=:identical` then `row` must contain the same columns in the same order
-  (this option is the same as `:equal` if `row` is an `AbstractDict`).
+* If `cols=:equal` then `row` must contain the same columns in the same order
+  (this option is the same as `:setequal` if `row` is an `AbstractDict`).
 * If `cols=:intersect` then `row` may contain more columns than `df`,
   but all column names that are present in `df` must be present in `row` and only they
   are used to populate a new row in `df`.
