@@ -44,7 +44,7 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
     end
 end
 
-DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{<:OnType, AbstractVector{<:OnType}}) where
+DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{<:OnType, AbstractVector) where
     {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
     DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
 
