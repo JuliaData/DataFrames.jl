@@ -313,7 +313,7 @@ join(name, job2, on = [:ID => :identifier])
 
 """
 function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
-                   on::Union{<:OnType, AbstractVector = Symbol[],
+                   on::Union{<:OnType, AbstractVector} = Symbol[],
                    kind::Symbol = :inner, makeunique::Bool=false,
                    indicator::Union{Nothing, Symbol} = nothing,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
