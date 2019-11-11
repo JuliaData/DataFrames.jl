@@ -371,6 +371,9 @@ true
 
 In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
 
+Note, that similarly to Base Julia you are not allowed to select rows nor columns using `Tuple`s, use `AbstractVector`s instead.
+For instance `df[:, (:x1, :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid and creates a new `DataFrame` with columns `:x1` and `:x2` only.
+
 It is also possible to use a regular expression as a selector of columns matching it:
 ```jldoctest dataframe
 julia> df = DataFrame(x1=1, x2=2, y=3)
@@ -425,6 +428,24 @@ julia> df[:, All(Not(r"x"), :)]
 ```
 
 You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
+For example to drop a column `:x1` from `df` and return a new `DataFrame` you can write:
+```jldoctest dataframe
+julia> select(df, Not(:x1))
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+```
+and to perform this operation in-place use `select!`:
+```jldoctest dataframe
+julia> select!(df, Not(:x1))
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+```
 
 The indexing syntax can also be used to select rows based on conditions on variables:
 
@@ -499,7 +520,27 @@ julia> describe(df)
 
 ```
 
-Of course, one can also compute descrptive statistics directly on individual columns:
+If you are interested in describing only a subset of columns then the easiest way to do it is to
+use `select` function like this:
+```jldoctest dataframe
+julia> describe(select(df, :A, copycols=false))
+1×8 DataFrame
+│ Row │ variable │ mean    │ min   │ median  │ max   │ nunique │ nmissing │ eltype   │
+│     │ Symbol   │ Float64 │ Int64 │ Float64 │ Int64 │ Nothing │ Nothing  │ DataType │
+├─────┼──────────┼─────────┼───────┼─────────┼───────┼─────────┼──────────┼──────────┤
+│ 1   │ A        │ 2.5     │ 1     │ 2.5     │ 4     │         │          │ Int64    │
+```
+Note that we passed `copycols=false` to `select` in order to avoid copying the columns
+in the `DataFrame` passed to `describe`. This was not strictly required and we could omit this,
+but can save memory if `df` were very large. Note that in general using `copycols=false` is unsafe
+as the `DataFrame` returned by `select` shares the columns with `df`. In this case it
+is acceptable, as the reference to the returned `DataFrame` is not kept (it is only passed to `describe`).
+
+As a general note remember that  using `copycols=false` in `select` or in `DataFrame` constructors
+can save memory and speed up operations, but is potentially unsafe. Therefore in both cases
+the default is `copycols=true`.
+
+Of course, one can also compute descriptive statistics directly on individual columns:
 ```jldoctest dataframe
 julia> using Statistics
 
