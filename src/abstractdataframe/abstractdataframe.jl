@@ -956,8 +956,8 @@ Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:equal`: require all data frames to have the same column names and in the same order.
-* `:setequal`: require all data frames to have the same column names.
+* `:orderequal`: require all data frames to have the same column names and in the same order.
+* `:setequal`: require all data frames to have the same sets of column names.
   If they appear in different orders, the order of the first provided data frame is used.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
@@ -1054,9 +1054,21 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
 
-    if cols === :setequal || cols === :equal
+    if cols === :orderequal
+        header = unionunique
+        if length(uniqueheaders) > 1
+            throw(ArgumentError("all data frames to have the same column names " *
+                                "and in the same order"))
+        end
+    elseif cols === :setequal || cols === :equal
+        if cols === :equal
+            Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
+                         "Use `:setequal` instead.", :vcat)
+        end
+
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
+
         if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> !issetequal(u, header), uniqueheaders)
@@ -1069,15 +1081,14 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
             throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-        if cols === :equal && length(uniqueheaders) > 1
-            Base.depwarn("In the future if `cols` has value `:equal`" *
-                         "then all data frames will have to have the same " *
-                         " column names and in the same order.", :vcat)
-        end
     elseif cols === :intersect
         header = intersectunique
     elseif cols === :union
         header = unionunique
+    elseif cols isa Symbol
+        throw(ArgumentError("Invalid `cols` value $cols. " *
+                            "Only `:orderequal`, `:setequal`, `:intersect`, " *
+                            "`:union`, or a vector of column names is allowed."))
     else
         header = cols
     end

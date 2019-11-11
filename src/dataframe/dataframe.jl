@@ -1142,7 +1142,7 @@ end
 
 Add the rows of `df2` to the end of `df1`.
 
-Column names must be equal, including order, if `cols` argument is `:equal`.
+Column names must be equal, including order, if `cols` argument is `:orderequal`.
 If `cols` is `:setequal` (the default) column names might have different order
 and `append!` is performed by matching column names.
 The above rule has the following exceptions:
@@ -1189,8 +1189,8 @@ julia> df1
 ```
 """
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:setequal)
-    if !(cols in (:equal, :setequal))
-        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :equal")
+    if !(cols in (:orderequal, :setequal))
+        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal")
     end
 
     if ncol(df1) == 0
@@ -1201,7 +1201,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
     end
     ncol(df2) == 0 && return df1
 
-    if cols == :equal && _names(df1) != _names(df2)
+    if cols == :orderequal && _names(df1) != _names(df2)
         throw(ArgumentError("Column names do not match"))
     end
     if cols == :setequal && Set(_names(df1)) != Set(_names(df2))
@@ -1242,7 +1242,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
     end
-    possible_cols = (:equal, :setequal, :intersect, :subset)
+    possible_cols = (:orderequal, :setequal, :intersect, :subset)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
@@ -1254,22 +1254,24 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         end
         return df
     end
-    if cols === :setequal || cols == :equal
+    if cols === :orderequal
+        if row isa NamedTuple
+            if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
+                throw(ArgumentError("all data frames to have the same column names " *
+                                    "and in the same order"))
+            end
+        end
+    elseif cols === :setequal || cols === :equal
+        if cols === :equal
+            Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
+                         "Use `:setequal` instead.", :push!)
+        end
         # Only check for equal lengths if :setequal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
-            # TODO: add tests for this case after the deprecation period
             Base.depwarn("In the future `push!` with `cols` equal to `:setequal or " *
-                         "`:equal` will require that " *
                          "`row` has the same number of elements as is the " *
                          "number of columns in `df`.", :push!)
-        end
-        if row isa NamedTuple
-            matching = all(x -> x[1]==x[2], zip(propertynames(row), _names(df)))
-            if cols === :equal && !matching
-                Base.depwarn("In the future if `cols` is equal to `:equal`" *
-                             "pushed row will have to contain the same columns in the same order as `df`", :push!)
-            end
         end
     end
     current_col = 0
@@ -1301,7 +1303,7 @@ end
 """
     push!(df::DataFrame, row::Union{Tuple, AbstractArray})
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-          cols::Symbol=:equal)
+          cols::Symbol=:setequal)
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
@@ -1318,7 +1320,7 @@ values in `row` are matched to columns in `df` based on names. The exact behavio
 depends on the `cols` argument value in the following way:
 * If `cols=:setequal` (this is the default)
   then `row` must contain exactly the same columns as `df` (but possibly in a different order).
-* If `cols=:equal` then `row` must contain the same columns in the same order
+* If `cols=:orderequal` then `row` must contain the same columns in the same order
   (this option is the same as `:setequal` if `row` is an `AbstractDict`).
 * If `cols=:intersect` then `row` may contain more columns than `df`,
   but all column names that are present in `df` must be present in `row` and only they

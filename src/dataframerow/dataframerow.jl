@@ -279,7 +279,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead.", :push!)
     end
 
-    possible_cols = (:equal, :setequal, :intersect, :subset)
+    possible_cols = (:orderequal, :setequal, :intersect, :subset)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
@@ -305,14 +305,20 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             # DataFrameRow can contain duplicate columns and we disallow this
             # corner case when push!-ing
             # Only check for equal lengths, as an error will be thrown below if some names don't match
-            if cols === :setequal || cols === :equal
+            if cols === :orderequal
+                if _names(df)) != _names(dfr)
+                    throw(ArgumentError("all data frames to have the same column names " *
+                                        "and in the same order"))
+                end
+            elseif cols === :setequal || cols === :equal
+                if cols === :equal
+                    Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
+                                 "Use `:setequal` instead.", :push!)
+                end
                 msg = "Number of columns of `dfr` does not match `DataFrame` column count."
                 ncols == length(dfr) || throw(ArgumentError(msg))
-                if cols == :equal && _names(df) != _names(dfr)
-                    Base.depwarn("In the future if `cols` is equal to `:equal`" *
-                                 "pushed row will have to contain the same columns in the same order as `df`", :push!)
-                end
             end
+
             for (col, nm) in zip(_columns(df), _names(df))
                 current_col += 1
                 if cols === :subset
