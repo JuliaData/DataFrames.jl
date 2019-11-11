@@ -26,8 +26,7 @@ Base.summary(io::IO, dfrs::DataFrameRows) = print(io, summary(dfrs))
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
-**Examples**
-
+# Examples
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
@@ -112,8 +111,7 @@ If `names` is equal to `false` (the default) iteration returns column vectors.
 If `names` is equal to `true` pairs consisting of column name and column vector
 are yielded.
 
-**Examples**
-
+# Examples
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
@@ -183,8 +181,7 @@ Return a `DataFrame` where each column of `df` is transformed using function `f`
 Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
 `DataFrame`. If `f` returns its argument then it gets copied before being stored.
 
-**Examples**
-
+# Examples
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame

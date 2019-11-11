@@ -1,65 +1,37 @@
-##############################################################################
-##
-## Reshaping
-##
-## Also, see issue # ??
-##
-##############################################################################
-
-##############################################################################
-##
-## stack()
-## melt()
-##
-##############################################################################
-
 """
-Stacks a DataFrame; convert from a wide to long format
+    stack(df::AbstractDataFrame, [measure_vars], [id_vars];
+          variable_name::Symbol=:variable, value_name::Symbol=:value)
+    melt(df::AbstractDataFrame, [id_vars], [measure_vars];
+         variable_name::Symbol=:variable, value_name::Symbol=:value)
 
+Stack a DataFrame; convert from a wide to long format.
 
-```julia
-stack(df::AbstractDataFrame, [measure_vars], [id_vars];
-      variable_name::Symbol=:variable, value_name::Symbol=:value)
-melt(df::AbstractDataFrame, [id_vars], [measure_vars];
-     variable_name::Symbol=:variable, value_name::Symbol=:value)
-```
+Return the long-format `DataFrame` with column `:value`
+holding the values of the stacked columns (`measure_vars`), with
+column `:variable` a vector of `Symbol`s with the `measure_vars` name,
+and with columns for each of the `id_vars`.
 
-### Arguments
+See also [`stackdf`](@ref)) and [`meltdf`](@ref) for stacking methods that return a
+view into the original data frame. See [`unstack`](@ref) for converting from
+long to wide format.
 
-* `df` : the AbstractDataFrame to be stacked
-
-* `measure_vars` : the columns to be stacked (the measurement
-  variables), a normal column indexing type, like a Symbol,
-  Vector{Symbol}, Int, etc.; for `melt`, defaults to all
+# Arguments
+- `df` : the AbstractDataFrame to be stacked
+- `measure_vars` : the columns to be stacked (the measurement
+  variables), a normal column indexing type, like a `Symbol`,
+  `Vector{Symbol}`, Int, etc.; for `melt`, defaults to all
   variables that are not `id_vars`. If neither `measure_vars`
   or `id_vars` are given, `measure_vars` defaults to all
   floating point columns.
-
-* `id_vars` : the identifier columns that are repeated during
+- `id_vars` : the identifier columns that are repeated during
   stacking, a normal column indexing type; for `stack` defaults to all
   variables that are not `measure_vars`
-
-* `variable_name` : the name of the new stacked column that shall hold the names
+- `variable_name` : the name of the new stacked column that shall hold the names
   of each of `measure_vars`
-
-* `value_name` : the name of the new stacked column containing the values from
+- `value_name` : the name of the new stacked column containing the values from
   each of `measure_vars`
 
-
-### Result
-
-* `::DataFrame` : the long-format DataFrame with column `:value`
-  holding the values of the stacked columns (`measure_vars`), with
-  column `:variable` a Vector of Symbols with the `measure_vars` name,
-  and with columns for each of the `id_vars`.
-
-See also `stackdf` and `meltdf` for stacking methods that return a
-view into the original DataFrame. See `unstack` for converting from
-long to wide format.
-
-
-### Examples
-
+# Examples
 ```julia
 d1 = DataFrame(a = repeat([1:3;], inner = [4]),
                b = repeat([1:4;], inner = [3]),
@@ -72,8 +44,9 @@ d1s2 = stack(d1, [:c, :d], [:a])
 d1m = melt(d1, [:a, :b, :e])
 d1s_name = melt(d1, [:a, :b, :e], variable_name=:somemeasure)
 ```
-
 """
+(stack, melt)
+
 function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
                value_name::Symbol=:value)
@@ -117,10 +90,6 @@ function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
           variable_name=variable_name, value_name=value_name)
 end
 
-"""
-Stacks a DataFrame; convert from a wide to long format; see
-`stack`.
-"""
 function melt(df::AbstractDataFrame, id_vars::ColumnIndex;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     melt(df, [id_vars]; variable_name=variable_name, value_name=value_name)
@@ -146,47 +115,35 @@ melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=
 ##############################################################################
 
 """
-Unstacks a DataFrame; convert from a long to wide format
+    unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
+            colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
+            renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Integer, Symbol}},
+            colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
+            renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, colkey::Union{Integer, Symbol},
+            value::Union{Integer, Symbol}; renamecols::Function=identity)
+    unstack(df::AbstractDataFrame; renamecols::Function=identity)
 
-```julia
-unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
-        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
-        renamecols::Function=identity)
-unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Integer, Symbol}},
-        colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
-        renamecols::Function=identity)
-unstack(df::AbstractDataFrame, colkey::Union{Integer, Symbol},
-        value::Union{Integer, Symbol}; renamecols::Function=identity)
-unstack(df::AbstractDataFrame; renamecols::Function=identity)
-```
-
-### Arguments
-
-* `df` : the AbstractDataFrame to be unstacked
-
-* `rowkeys` : the column(s) with a unique key for each row, if not given,
-  find a key by grouping on anything not a `colkey` or `value`
-
-* `colkey` : the column holding the column names in wide format,
-  defaults to `:variable`
-
-* `value` : the value column, defaults to `:value`
-
-* `renamecols` : a function called on each unique value in `colkey` which must
-                 return the name of the column to be created (typically as a string
-                 or a `Symbol`). Duplicate names are not allowed.
-
-### Result
-
-* `::DataFrame` : the wide-format DataFrame
+Unstack a data frame; convert from a long to wide format. Return the wide-format data frame.
 
 If `colkey` contains `missing` values then they will be skipped and a warning will be printed.
 
 If combination of `rowkeys` and `colkey` contains duplicate entries then last `value` will
 be retained and a warning will be printed.
 
-### Examples
+# Arguments
+- `df` : the AbstractDataFrame to be unstacked
+- `rowkeys` : the column(s) with a unique key for each row, if not given,
+  find a key by grouping on anything not a `colkey` or `value`
+- `colkey` : the column holding the column names in wide format,
+  defaults to `:variable`
+- `value` : the value column, defaults to `:value`
+- `renamecols` : a function called on each unique value in `colkey` which must
+                 return the name of the column to be created (typically as a string
+                 or a `Symbol`). Duplicate names are not allowed.
 
+# Examples
 ```julia
 wide = DataFrame(id = 1:12,
                  a  = repeat([1:3;], inner = [4]),
@@ -359,22 +316,18 @@ another set of AbstractVectors
 
 NOTE: Not exported.
 
-### Constructor
-
+# Constructor
 ```julia
 StackedVector(d::AbstractVector...)
 ```
 
-### Arguments
+# Arguments
+- `d...` : one or more AbstractVectors
 
-* `d...` : one or more AbstractVectors
-
-### Examples
-
+# Examples
 ```julia
 StackedVector(Any[[1,2], [9,10], [11,12]])  # [1,2,9,10,11,12]
 ```
-
 """
 struct StackedVector <: AbstractVector{Any}
     components::Vector{Any}
@@ -412,30 +365,26 @@ repeated elements
 
 NOTE: Not exported.
 
-### Constructor
-
+# Constructor
 ```julia
 RepeatedVector(parent::AbstractVector, inner::Int, outer::Int)
 ```
 
-### Arguments
-
-* `parent` : the AbstractVector that's repeated
-* `inner` : the numer of times each element is repeated
-* `outer` : the numer of times the whole vector is repeated after
+# Arguments
+- `parent` : the AbstractVector that's repeated
+- `inner` : the numer of times each element is repeated
+- `outer` : the numer of times the whole vector is repeated after
   expanded by `inner`
 
 `inner` and `outer` have the same meaning as similarly named arguments
 to `repeat`.
 
-### Examples
-
+# Examples
 ```julia
 RepeatedVector([1,2], 3, 1)   # [1,1,1,2,2,2]
 RepeatedVector([1,2], 1, 3)   # [1,2,1,2,1,2]
 RepeatedVector([1,2], 2, 2)   # [1,2,1,2,1,2,1,2]
 ```
-
 """
 struct RepeatedVector{T} <: AbstractVector{T}
     parent::AbstractVector{T}
@@ -463,52 +412,36 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
     res
 end
 
-##############################################################################
-##
-## stackdf()
-## meltdf()
-## Reshaping using referencing (issue #145), using the above vector types
-##
-##############################################################################
-
 """
-A stacked view of a DataFrame (long format)
+    stackdf(df::AbstractDataFrame, [measure_vars], [id_vars];
+            variable_name::Symbol=:variable, value_name::Symbol=:value)
+    meltdf(df::AbstractDataFrame, [id_vars], [measure_vars];
+           variable_name::Symbol=:variable, value_name::Symbol=:value)
 
-Like `stack` and `melt`, but a view is returned rather than data
+Return a stacked view of a data frame (long format).
+
+Like [`stack`](@ref) and [`melt`](@ref), but a view is returned rather than data
 copies.
 
-```julia
-stackdf(df::AbstractDataFrame, [measure_vars], [id_vars];
-        variable_name::Symbol=:variable, value_name::Symbol=:value)
-meltdf(df::AbstractDataFrame, [id_vars], [measure_vars];
-       variable_name::Symbol=:variable, value_name::Symbol=:value)
-```
+The returned data frame has a column `:value`
+holding the values of the stacked columns (`measure_vars`), with
+column `:variable` a vector of `Symbol`s with the `measure_vars` name,
+and with columns for each of the `id_vars`.
 
-### Arguments
+The result is a view because the columns are special `AbstractVectors`
+that return indexed views into the original data frame.
 
-* `df` : the wide AbstractDataFrame
-
-* `measure_vars` : the columns to be stacked (the measurement
-  variables), a normal column indexing type, like a Symbol,
-  Vector{Symbol}, Int, etc.; for `melt`, defaults to all
+# Arguments
+- `df` : the wide AbstractDataFrame
+- `measure_vars` : the columns to be stacked (the measurement
+  variables), a normal column indexing type, like a `Symbol`,
+  `Vector{Symbol}`, Int, etc.; for `meltdf`, defaults to all
   variables that are not `id_vars`
-
-* `id_vars` : the identifier columns that are repeated during
-  stacking, a normal column indexing type; for `stack` defaults to all
+- `id_vars` : the identifier columns that are repeated during
+  stacking, a normal column indexing type; for `stackdf` defaults to all
   variables that are not `measure_vars`
 
-### Result
-
-* `::DataFrame` : the long-format DataFrame with column `:value`
-  holding the values of the stacked columns (`measure_vars`), with
-  column `:variable` a Vector of Symbols with the `measure_vars` name,
-  and with columns for each of the `id_vars`.
-
-The result is a view because the columns are special AbstractVectors
-that return indexed views into the original DataFrame.
-
-### Examples
-
+# Examples
 ```julia
 d1 = DataFrame(a = repeat([1:3;], inner = [4]),
                b = repeat([1:4;], inner = [3]),
@@ -520,8 +453,9 @@ d1s = stackdf(d1, [:c, :d])
 d1s2 = stackdf(d1, [:c, :d], [:a])
 d1m = meltdf(d1, [:a, :b, :e])
 ```
-
 """
+(stackdf, meltdf)
+
 function stackdf(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                  id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
                  value_name::Symbol=:value)
@@ -561,9 +495,6 @@ function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df);
             variable_name=variable_name, value_name=value_name)
 end
 
-"""
-A stacked view of a DataFrame (long format); see `stackdf`
-"""
 function meltdf(df::AbstractDataFrame, id_vars; variable_name::Symbol=:variable,
                 value_name::Symbol=:value)
     id_inds = index(df)[id_vars]

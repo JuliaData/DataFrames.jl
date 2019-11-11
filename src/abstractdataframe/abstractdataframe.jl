@@ -4,7 +4,7 @@
 An abstract type for which all concrete types expose an interface
 for working with tabular data.
 
-**Common methods**
+# Common methods
 
 An AbstractDataFrame is a two-dimensional table with Symbols for
 column names. An AbstractDataFrame is also similar to an Associative
@@ -36,7 +36,7 @@ The following are normally implemented for AbstractDataFrames:
 * `filter` : remove rows
 * `filter!` : remove rows in-place
 
-**Indexing and broadcasting**
+# Indexing and broadcasting
 
 `AbstractDataFrame` can be indexed by passing two indices specifying
 row and column selectors. The allowed indices are a superset of indices
@@ -94,42 +94,34 @@ rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 
 """
-Rename columns
+    rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
+    rename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
+    rename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
+    rename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
+    rename!(f::Function, df::AbstractDataFrame)
+    rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
+    rename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
+    rename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
+    rename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
+    rename(f::Function, df::AbstractDataFrame)
 
-```julia
-rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
-rename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
-rename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
-rename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
-rename!(f::Function, df::AbstractDataFrame)
-rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
-rename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
-rename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
-rename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
-rename(f::Function, df::AbstractDataFrame)
-```
+Rename columns of `df`;
+`rename!` changes `df` in-place and `rename` returns a new data frame.
+Each name is changed at most once. Permutation of names is allowed.
 
-**Arguments**
-
-* `df` : the AbstractDataFrame
-* `d` : an Associative type or an AbstractArray of pairs that maps
+# Arguments
+- `df` : the AbstractDataFrame
+- `d` : an Associative type or an AbstractArray of pairs that maps
   the original names to new names
-* `f` : a function which for each column takes the old name (a Symbol)
+- `f` : a function which for each column takes the old name (a Symbol)
   and returns the new name (a Symbol)
-* `vals` : new column names as a vector of `Symbol`s of the same length as
+- `vals` : new column names as a vector of `Symbol`s of the same length as
   the number of columns in `df`
-* `makeunique` : if `false` (the default), an error will be raised
+- `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 
-**Result**
-
-* `::AbstractDataFrame` : the updated result
-
-Each name is changed at most once. Permutation of names is allowed.
-
-**Examples**
-
+# Examples
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 rename(df, :i => :A, :x => :X)
@@ -146,7 +138,6 @@ rename!(df, [:a, :b, :c])
 rename!(df, [:a, :b, :a])  # throws ArgumentError
 rename(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 ```
-
 """
 (rename!, rename)
 
@@ -257,32 +248,25 @@ Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), 
 
 
 """
-Report descriptive statistics for a data frame
+    describe(df::AbstractDataFrame)
+    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
 
-```julia
-describe(df::AbstractDataFrame)
-describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
-```
+Report descriptive statistics for a data frame as a new `DataFrame`
+where each row represents a variable and each column a summary statistic.
 
-**Arguments**
-
-* `df` : the `AbstractDataFrame`
-* `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report.
+# Arguments
+- `df` : the `AbstractDataFrame`
+- `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report.
   Arguments can be:
-    *  A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
+    -  A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
       `:nmissing`. The default statistics used
       are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
-    * `:all` as the only `Symbol` argument to return all statistics.
-    * A `name => function` pair where `name` is a `Symbol`. This will create
+    - `:all` as the only `Symbol` argument to return all statistics.
+    - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
 
-**Result**
-
-* A `DataFrame` where each row represents a variable and each column a summary statistic.
-
-**Details**
-
+# Details
 For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
 third quantile, and maximum. If a column does not derive from `Real`, `describe` will
 attempt to calculate all statistics, using `nothing` as a fall-back in the case of an error.
@@ -302,9 +286,7 @@ to each column as the only argument. For columns allowing for missing values,
 the vector is wrapped in a call to [`skipmissing`](@ref): custom functions must therefore
 support such objects (and not only vectors), and cannot access missing values.
 
-
-**Examples**
-
+# Examples
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 describe([io,] df)
@@ -312,7 +294,6 @@ describe([io,] df, :all)
 describe([io,] df, :min, :max)
 describe([io,] df, :min, :sum => sum)
 ```
-
 """
 DataAPI.describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
     _describe(df, collect(stats))
@@ -514,7 +495,6 @@ julia> completecases(df, [:x, :y])
   true
   true
 ```
-
 """
 function completecases(df::AbstractDataFrame, col::Colon=:)
     if ncol(df) == 0
@@ -600,7 +580,6 @@ julia> dropmissing(df, [:x, :y])
 │ 1   │ 4     │ 2     │ d      │
 │ 2   │ 5     │ 1     │ e      │
 ```
-
 """
 function dropmissing(df::AbstractDataFrame,
                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
@@ -672,7 +651,6 @@ julia> dropmissing!(df3, [:x, :y])
 │ 1   │ 4     │ 2     │ d      │
 │ 2   │ 5     │ 1     │ e      │
 ```
-
 """
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
@@ -771,34 +749,27 @@ Base.Matrix(df::AbstractDataFrame) = Base.convert(Matrix, df)
 Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
 
 """
-Indexes of duplicate rows (a row that is a duplicate of a prior row)
+    nonunique(df::AbstractDataFrame)
+    nonunique(df::AbstractDataFrame, cols)
 
-```julia
-nonunique(df::AbstractDataFrame)
-nonunique(df::AbstractDataFrame, cols)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-* `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.) specifying the column(s) to compare
-
-**Result**
-
-* `::Vector{Bool}` : indicates whether the row is a duplicate of some
-  prior row
+Return a `Vector{Bool}` in which `true` entries indicate duplicate rows.
+A row is a duplicate if there exits a prior row with all columns containing
+equal values. The check is performed using `isequal`.
 
 See also [`unique`](@ref) and [`unique!`](@ref).
 
-**Examples**
+# Arguments
+- `df` : the AbstractDataFrame
+- `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.)
+  specifying the column(s) to compare
 
+# Examples
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df = vcat(df, df)
 nonunique(df)
 nonunique(df, 1)
 ```
-
 """
 function nonunique(df::AbstractDataFrame)
     if ncol(df) == 0
@@ -828,31 +799,25 @@ Base.unique(df::AbstractDataFrame, cols) =
     df[(!).(nonunique(df, cols)), :]
 
 """
-Delete duplicate rows
+    unique(df::AbstractDataFrame)
+    unique(df::AbstractDataFrame, cols)
+    unique!(df::AbstractDataFrame)
+    unique!(df::AbstractDataFrame, cols)
 
-```julia
-unique(df::AbstractDataFrame)
-unique(df::AbstractDataFrame, cols)
-unique!(df::AbstractDataFrame)
-unique!(df::AbstractDataFrame, cols)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
-specifying the column(s) to compare.
-
-**Result**
-
-* `::AbstractDataFrame` : the updated version of `df` with unique rows.
+Delete duplicate rows. The result of the operation contains only unique rows of `df`.
 When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
+When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
+
 See also [`nonunique`](@ref).
 
-**Examples**
+# Arguments
+- `df` : the AbstractDataFrame
+- `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
+specifying the column(s) to compare.
 
+# Examples
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df = vcat(df, df)
@@ -860,7 +825,6 @@ unique(df)   # doesn't modify df
 unique(df, 1)
 unique!(df)  # modifies df
 ```
-
 """
 (unique, unique!)
 
@@ -926,7 +890,6 @@ julia> df3 = hcat(df1, df2, makeunique=true, copycols=false);
 
 julia> df3.A === df1.A
 true
-
 ```
 """
 Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
@@ -1200,7 +1163,6 @@ function ncol end
     nrow(df::AbstractDataFrame)
     ncol(df::AbstractDataFrame)
 
-
 Return the number of rows or columns in an `AbstractDataFrame` `df`.
 
 See also [`size`](@ref).
@@ -1381,7 +1343,6 @@ julia> categorical(df, :)
 │ 1   │ 1            │ a            │
 │ 2   │ 2            │ b            │
 ```
-
 """
 function CategoricalArrays.categorical(df::AbstractDataFrame,
                                        cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
