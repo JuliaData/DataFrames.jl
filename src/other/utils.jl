@@ -58,3 +58,40 @@ function gennames(n::Integer)
     return res
 end
 
+"""
+    flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
+
+When column `veccol` of `df` has non-zero length (i.e. a vector), returns a data frame where each element 
+of `veccol` is flattened, row `i` of `df` will be duplicated according to the length of `df[i, veccol]`
+"""
+function Base.Iterators.flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
+    N = nrow(df)
+    lengths = Vector{Int64}(undef, nrow(df))
+
+    for i in 1:N
+        lengths[i] = length(df[i, veccol])
+    end
+
+    new_N = sum(lengths)
+    
+    new_df = similar(df[!, Not(veccol)], new_N)
+
+    function copy_length!(longnew, shortold, lengths)
+        counter = 1
+        @inbounds for i in 1:length(shortold)
+            @inbounds for j in 1:lengths[i]
+                longnew[counter] = shortold[i]
+                counter += 1
+            end
+        end
+    end
+
+    for name in names(new_df)
+        copy_length!(new_df[!, name], df[!, name], lengths)  
+    end
+
+    insertcols!(new_df, columnindex(df, veccol), veccol => reduce(vcat, df[!, veccol]))
+
+    return new_df
+end
+
