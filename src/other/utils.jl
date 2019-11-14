@@ -61,7 +61,7 @@ end
 """
     flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
 
-When column `veccol` of `df` has elements non-zero length, for example a `Vector` 
+When column `veccol` of `df` has iterable elements that define `length`, for example a `Vector` 
 of `Vector`s. Returns a DataFrame where each element of `veccol` is flattened. 
 Elements of row `i` of `df` other than `veccol` will be duplicated according to 
 the length of `df[i, veccol]`
