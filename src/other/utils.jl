@@ -66,7 +66,7 @@ of `Vector`s. Returns a DataFrame where each element of `veccol` is flattened.
 Elements of row `i` of `df` other than `veccol` will be duplicated according to 
 the length of `df[i, veccol]`
 
-**Arguments**
+# Arguments
 
 * `df`: An `AbstractDataFrame`
 * `veccol`: A `Symbol` or `Integer` where `df[:, veccol]` is a column whose 
