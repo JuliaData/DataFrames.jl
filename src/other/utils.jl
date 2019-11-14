@@ -72,7 +72,6 @@ the length of `df[i, veccol]`
 - `veccol`: a `Symbol` or `Integer` where `veccol` is a column of `df` whose 
 elements support iteration.
 """
-
 function flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
     col_to_flatten = df[!, veccol]
     lengths = length.(col_to_flatten)    
