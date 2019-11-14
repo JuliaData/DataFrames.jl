@@ -73,8 +73,9 @@ the length of `df[i, veccol]`
 elements support iteration.
 """
 
-function Base.Iterators.flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
-    lengths = length.(df[!, veccol])    
+function flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
+    col_to_flatten = df[!, veccol]
+    lengths = length.(col_to_flatten)    
     new_df = similar(df[!, Not(veccol)], sum(lengths))
 
     function copy_length!(longnew, shortold, lengths)
@@ -91,7 +92,11 @@ function Base.Iterators.flatten(df::AbstractDataFrame, veccol::Union{Integer, Sy
         copy_length!(new_df[!, name], df[!, name], lengths)  
     end
 
-    insertcols!(new_df, columnindex(df, veccol), veccol => reduce(vcat, df[!, veccol]))
+    flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
+        reduce(vcat, col_to_flatten) :
+        collect(Iterators.flatten(col_to_flatten))
+
+    insertcols!(new_df, columnindex(df, veccol), veccol => flattened_col)
 
     return new_df
 end
