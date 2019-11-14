@@ -69,7 +69,7 @@ the length of `df[i, veccol]`
 # Arguments
 
 - `df`: an `AbstractDataFrame` to flatten
-* `veccol`: A `Symbol` or `Integer` where `df[:, veccol]` is a column whose 
+* `veccol`: a `Symbol` or `Integer` where `veccol` is a column of `df` whose 
 elements support iteration.
 """
 
