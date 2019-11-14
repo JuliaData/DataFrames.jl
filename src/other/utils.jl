@@ -79,7 +79,7 @@ function Base.Iterators.flatten(df::AbstractDataFrame, veccol::Union{Integer, Sy
 
     function copy_length!(longnew, shortold, lengths)
         counter = 1
-        @inbounds @simd for i in 1:length(shortold)
+        @inbounds for i in 1:length(shortold)
             for j in 1:lengths[i]
                 longnew[counter] = shortold[i]
                 counter += 1

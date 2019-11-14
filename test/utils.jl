@@ -29,5 +29,16 @@ end
     @test repeat(df, inner = 2, outer = 3) == ref
     @test repeat(view(df, 1:2, :), inner = 2, outer = 3) == ref
 end
+#
+# flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
+#
+@testset "flatten" begin
+    df = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
+    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
+    @test flatten(df, :b) == ref
+    df = DataFrame(a = [1, 2], b = [[1, 2], ["x", "y"]])
+    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, "x", "y"])
+    @test flatten(df, :b) == ref
+end
 
 end # module
