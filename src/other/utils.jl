@@ -61,25 +61,26 @@ end
 """
     flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
 
-When column `veccol` of `df` has non-zero length (i.e. a vector), returns a data frame where each element 
-of `veccol` is flattened, row `i` of `df` will be duplicated according to the length of `df[i, veccol]`
+When column `veccol` of `df` has elements non-zero length, for example a `Vector` 
+of `Vector`s. Returns a DataFrame where each element of `veccol` is flattened. 
+Elements of row `i` of `df` other than `veccol` will be duplicated according to 
+the length of `df[i, veccol]`
+
+**Arguments**
+
+* `df`: An `AbstractDataFrame`
+* `veccol`: A `Symbol` or `Integer` where `df[:, veccol]` is a column whose 
+elements support iteration.
 """
+
 function Base.Iterators.flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
-    N = nrow(df)
-    lengths = Vector{Int64}(undef, nrow(df))
-
-    for i in 1:N
-        lengths[i] = length(df[i, veccol])
-    end
-
-    new_N = sum(lengths)
-    
-    new_df = similar(df[!, Not(veccol)], new_N)
+    lengths = length.(df[!, veccol])    
+    new_df = similar(df[!, Not(veccol)], sum(lengths))
 
     function copy_length!(longnew, shortold, lengths)
         counter = 1
-        @inbounds for i in 1:length(shortold)
-            @inbounds for j in 1:lengths[i]
+        @inbounds @simd for i in 1:length(shortold)
+            for j in 1:lengths[i]
                 longnew[counter] = shortold[i]
                 counter += 1
             end
@@ -94,4 +95,5 @@ function Base.Iterators.flatten(df::AbstractDataFrame, veccol::Union{Integer, Sy
 
     return new_df
 end
+
 
