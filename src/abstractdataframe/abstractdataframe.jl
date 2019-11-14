@@ -1452,7 +1452,7 @@ the length of `df[i, veccol]`
 """
 function flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
     col_to_flatten = df[!, veccol]
-    lengths = length.(col_to_flatten)    
+    lengths = length.(col_to_flatten)
     new_df = similar(df[!, Not(veccol)], sum(lengths))
 
     function copy_length!(longnew, shortold, lengths)
@@ -1466,7 +1466,7 @@ function flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
     end
 
     for name in names(new_df)
-        copy_length!(new_df[!, name], df[!, name], lengths)  
+        copy_length!(new_df[!, name], df[!, name], lengths)
     end
 
     flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
