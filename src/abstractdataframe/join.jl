@@ -240,7 +240,7 @@ Join two or more `DataFrame` objects
 ### Keyword Arguments
 
 * `on` : A column name to join `df1` and `df2` on. If the columns on which `df1` and `df2`
-  will be joined have different names, then a`left=>right` pair can be passed.
+  will be joined have different names, then a `left=>right` pair can be passed.
   It is also allowed to perform a join on multiple columns, in which case
   a vector of column names or column name pairs can be passed
   (mixing names and pairs is allowed).
