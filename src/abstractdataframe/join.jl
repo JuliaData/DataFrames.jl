@@ -239,9 +239,9 @@ Join two or more `DataFrame` objects
 
 ### Keyword Arguments
 
-* `on` : A column name to join df1 and df2 on. If the columns that df1 and df2
-  will be joined on have different names, then `left=>right` pair can be passed.
-  It is also allowed to perform a join on multiple columns, in this case
+* `on` : A column name to join `df1` and `df2` on. If the columns on which `df1` and `df2`
+  will be joined have different names, then a`left=>right` pair can be passed.
+  It is also allowed to perform a join on multiple columns, in which case
   a vector of column names or column name pairs can be passed
   (mixing names and pairs is allowed).
   If more than two data frames are joined then only a column name
