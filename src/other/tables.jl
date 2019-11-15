@@ -33,7 +33,7 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
 end
 
 Base.append!(df::DataFrame, x, cols::Symbol=:setequal) =
-  append!(df, DataFrame(x, copycols=false), cols=cols)
+    append!(df, DataFrame(x, copycols=false), cols=cols)
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 function DataFrame(x::Vector{<:NamedTuple}; copycols::Bool=true)

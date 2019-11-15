@@ -1238,7 +1238,7 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:setequal,
                     columns::Union{Nothing,Symbol}=nothing)
-    if !isnothing(columns)
+    if columns !== nothing
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
     end
@@ -1257,13 +1257,13 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     if cols === :orderequal
         if row isa NamedTuple
             if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("all data frames to have the same column names " *
+                throw(ArgumentError("when `cols=:orderequal` all data frames to have the same column names " *
                                     "and in the same order"))
             end
         end
     elseif cols === :setequal || cols === :equal
         if cols === :equal
-            Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
+            Base.depwarn("`cols=:equal` is deprecated." *
                          "Use `:setequal` instead.", :push!)
         end
         # Only check for equal lengths if :setequal is selected,

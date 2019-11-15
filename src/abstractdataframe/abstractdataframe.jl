@@ -1057,12 +1057,12 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     if cols === :orderequal
         header = unionunique
         if length(uniqueheaders) > 1
-            throw(ArgumentError("all data frames to have the same column names " *
-                                "and in the same order"))
+            throw(ArgumentError("when `cols=:orderequal` all data frames need to have the same column names " *
+                                "and be in the same order"))
         end
     elseif cols === :setequal || cols === :equal
         if cols === :equal
-            Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
+            Base.depwarn("`cols=:equal` is deprecated." *
                          "Use `:setequal` instead.", :vcat)
         end
 
@@ -1086,7 +1086,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     elseif cols === :union
         header = unionunique
     elseif cols isa Symbol
-        throw(ArgumentError("Invalid `cols` value $cols. " *
+        throw(ArgumentError("Invalid `cols` value :$cols. " *
                             "Only `:orderequal`, `:setequal`, `:intersect`, " *
                             "`:union`, or a vector of column names is allowed."))
     else

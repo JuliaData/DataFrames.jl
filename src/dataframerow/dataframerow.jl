@@ -274,7 +274,7 @@ end
 
 function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                     columns::Union{Nothing,Symbol}=nothing)
-    if !isnothing(columns)
+    if columns !== nothing
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead.", :push!)
     end
@@ -315,7 +315,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                     Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
                                  "Use `:setequal` instead.", :push!)
                 end
-                msg = "Number of columns of `dfr` does not match `DataFrame` column count."
+                msg = "Number of columns of row does not match that of data frame (got $(length(dfr)) and $ncols)."
                 ncols == length(dfr) || throw(ArgumentError(msg))
             end
 
