@@ -1437,23 +1437,59 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
+    flatten(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
-When column `veccol` of `df` has iterable elements that define `length`, for example a `Vector` 
-of `Vector`s. Returns a `DataFrame` where each element of `veccol` is flattened. 
-Elements of row `i` of `df` other than `veccol` will be duplicated according to 
-the length of `df[i, veccol]`.
+When column `cols` of `df` has iterable elements that define `length`, for example a `Vector` 
+of `Vector`s. Returns a `DataFrame` where each element of `cols` is flattened, meaning 
+the column corresponding to `cols` becomes a longer `Vector` where the original entries 
+are concatenated. Elements of row `i` of `df` other than `cols` will be duplicated according to 
+the length of `df[i, cols]`.
 
-# Arguments
+# Examples
 
-- `df`: an `AbstractDataFrame` to flatten
-- `veccol`: a `Symbol` or `Integer` where `veccol` is a column of `df` whose 
-   elements support iteration.
+```
+julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
+2×2 DataFrame
+│ Row │ a     │ b      │
+│     │ Int64 │ Array… │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ [1, 2] │
+│ 2   │ 2     │ [3, 4] │
+
+julia> flatten(df1, :b)
+4×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 1     │ 2     │
+│ 3   │ 2     │ 3     │
+│ 4   │ 2     │ 4     │
+
+julia> df2 = DataFrame(a = [1, 2], b = [("p", "q"), ("r", "s")])
+2×2 DataFrame
+│ Row │ a     │ b          │
+│     │ Int64 │ Tuple…     │
+├─────┼───────┼────────────┤
+│ 1   │ 1     │ ("p", "q") │
+│ 2   │ 2     │ ("r", "s") │
+
+julia> flatten(df2, :b)
+4×2 DataFrame
+│ Row │ a     │ b      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ p      │
+│ 2   │ 1     │ q      │
+│ 3   │ 2     │ r      │
+│ 4   │ 2     │ s      │
+
+```
 """
-function flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
-    col_to_flatten = df[!, veccol]
+function flatten(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+    col_to_flatten = df[!, cols]
     lengths = length.(col_to_flatten)
-    new_df = similar(df[!, Not(veccol)], sum(lengths))
+    new_df = similar(df[!, Not(cols)], sum(lengths))
 
     function copy_length!(longnew, shortold, lengths)
         counter = 1
@@ -1473,7 +1509,7 @@ function flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
         reduce(vcat, col_to_flatten) :
         collect(Iterators.flatten(col_to_flatten))
 
-    insertcols!(new_df, columnindex(df, veccol), veccol => flattened_col)
+    insertcols!(new_df, columnindex(df, cols), cols => flattened_col)
 
     return new_df
 end

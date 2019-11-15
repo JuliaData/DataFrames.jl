@@ -347,5 +347,17 @@ end
                     renamecols=x->string("_", x, "_"))
     @test wide3 == w2[!, Not(2)]
 end
+#
+# flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
+#
+@testset "flatten" begin
+    df_vec = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
+    df_tup = DataFrame(a = [1, 2], b = [(1, 2), (3, 4)])
+    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
+    @test flatten(df_vec, :b) == flatten(df_tup, :b) == ref
+    df = DataFrame(a = [1, 2], b = [[1, 2], ["x", "y"]])
+    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, "x", "y"])
+    @test flatten(df, :b) == ref
+end
 
 end # module
