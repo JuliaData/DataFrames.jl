@@ -956,9 +956,9 @@ Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:orderequal`: require all data frames to have the same column names and in the same order.
-* `:setequal`: require all data frames to have the same sets of column names.
+* `:setequal`: require all data frames to have the same column names disregarding order.
   If they appear in different orders, the order of the first provided data frame is used.
+* `:orderequal`: require all data frames to have the same column names and in the same order.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
 * `:union`: columns present in *at least one* of the provided data frames are kept.

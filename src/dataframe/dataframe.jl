@@ -1142,9 +1142,12 @@ end
 
 Add the rows of `df2` to the end of `df1`.
 
-Column names must be equal, including order, if `cols` argument is `:orderequal`.
-If `cols` is `:setequal` (the default) column names might have different order
+Column names must be equal in both `df1` and `df2`.
+If `cols` is `:setequal` (the default) then column names might have different order
 and `append!` is performed by matching column names.
+If `cols` is `:orderequal` then the order of columns in `df1` and `df2` must be
+the same.
+
 The above rule has the following exceptions:
 * If `df1` has no columns then copies of
   columns from `df2` are added to it.
@@ -1202,10 +1205,28 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
     ncol(df2) == 0 && return df1
 
     if cols == :orderequal && _names(df1) != _names(df2)
-        throw(ArgumentError("Column names do not match"))
+        if ncol(df1) != ncol(df2)
+            throw(ArgumentError("The numer of columns in both data frames does not match " *
+                                "and passed `cols` value is `:orderequal`"))
+        end
+        mismatches = findall(_names(df1) .!= _names(df2))
+        throw(ArgumentError("The names of columns number " * join(mismatches, ", ", " and ") *
+                            " in both passed data frames do not match" *
+                            "and `cols` keyword argument value is `:orderequal`"))
     end
-    if cols == :setequal && Set(_names(df1)) != Set(_names(df2))
-        throw(ArgumentError("Column names sets do not match"))
+    if cols == :setequal
+        ns1 = Set(_names(df1))
+        ns2 = Set(_names(df2))
+        # note here that df2 could be a SubDataFrame that has multiple
+        # occurences of the same column name, so it is possible that ncol(df1) != ncol(df2).
+        # This is not a problem as the columns with the same name contain
+        # the same data in df2 then anyway.
+        if ns1 != ns2
+            wrongnames = symdiff(ns1, ns2)
+            throw(ArgumentError("The following column names :" * join(wrongnames, ", ", :" and :") *
+                                "were found in one of the passed data frames " *
+                                "and `cols` keyword argument value is `:setequal`"))
+        end
     end
 
     nrows, ncols = size(df1)
@@ -1257,7 +1278,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     if cols === :orderequal
         if row isa NamedTuple
             if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("when `cols=:orderequal` all data frames to have the same column names " *
+                throw(ArgumentError("when `cols=:orderequal` all data frames need to have the same column names " *
                                     "and in the same order"))
             end
         end
@@ -1269,8 +1290,8 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         # Only check for equal lengths if :setequal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
-            Base.depwarn("In the future `push!` with `cols` equal to `:setequal or " *
-                         "`row` has the same number of elements as is the " *
+            Base.depwarn("In the future `push!` with `cols` equal to `:setequal`" *
+                         "will require `row` to have the same number of elements as is the " *
                          "number of columns in `df`.", :push!)
         end
     end
