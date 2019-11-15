@@ -358,6 +358,9 @@ end
     df = DataFrame(a = [1, 2], b = [[1, 2], ["x", "y"]])
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, "x", "y"])
     @test flatten(df, :b) == ref
+    df = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
+    ref = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
+    @test flatten(df, :b) == ref
 end
 
 end # module

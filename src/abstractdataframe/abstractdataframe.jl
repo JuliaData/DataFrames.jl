@@ -1491,18 +1491,8 @@ function flatten(df::AbstractDataFrame, cols::Union{Integer, Symbol})
     lengths = length.(col_to_flatten)
     new_df = similar(df[!, Not(cols)], sum(lengths))
 
-    function copy_length!(longnew, shortold, lengths)
-        counter = 1
-        @inbounds for i in 1:length(shortold)
-            for j in 1:lengths[i]
-                longnew[counter] = shortold[i]
-                counter += 1
-            end
-        end
-    end
-
     for name in names(new_df)
-        copy_length!(new_df[!, name], df[!, name], lengths)
+        repeat_lengths!(new_df[!, name], df[!, name], lengths)
     end
 
     flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
@@ -1512,4 +1502,13 @@ function flatten(df::AbstractDataFrame, cols::Union{Integer, Symbol})
     insertcols!(new_df, columnindex(df, cols), cols => flattened_col)
 
     return new_df
+end
+
+function repeat_lengths!(longnew::V, shortold::V, lengths::Vector{Int}) where V <: AbstractVector
+    counter = 1
+    @inbounds for i in 1:length(shortold)
+        l = lengths[i]
+        longnew[counter:counter + l] .= shortold[i]
+        counter += 1
+    end
 end
