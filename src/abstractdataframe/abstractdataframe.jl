@@ -1486,7 +1486,7 @@ julia> flatten(df2, :b)
 
 ```
 """
-function flatten(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+function flatten(df::AbstractDataFrame, cols::ColumnIndex)
     col_to_flatten = df[!, cols]
     lengths = length.(col_to_flatten)
     new_df = similar(df[!, Not(cols)], sum(lengths))
