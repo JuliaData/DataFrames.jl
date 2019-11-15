@@ -1193,7 +1193,7 @@ julia> df1
 """
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:setequal)
     if !(cols in (:orderequal, :setequal))
-        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal")
+        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal"))
     end
 
     if ncol(df1) == 0
