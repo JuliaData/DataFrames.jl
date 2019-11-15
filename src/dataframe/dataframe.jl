@@ -772,8 +772,7 @@ Mutate `df` in place to retain only columns specified by `inds...` and return it
 
 Arguments passed as `inds...` can be any index that is allowed for column indexing
 provided that the columns requested in each of them are unique and present in `df`.
-In particular, you are allowed to use regular expressions,
-`All`, `Between`, and `Not` selectors.
+In particular, regular expressions, `All`, `Between`, and `Not` selectors are supported.
 
 If more than one argument is passed then they are joined as `All(inds...)`.
 Note that `All` selects the union of columns passed to it, so columns selected
@@ -842,8 +841,7 @@ specified by `inds` and return it.
 
 Arguments passed as `inds...` can be any index that is allowed for column indexing
 provided that the columns requested in each of them are unique and present in `df`.
-In particular, you are allowed to use regular expressions,
-`All`, `Between`, and `Not` selectors.
+In particular, regular expressions, `All`, `Between`, and `Not` selectors  are supported.
 
 If more than one argument is passed then they are joined as `All(inds...)`.
 Note that `All` selects the union of columns passed to it, so columns selected
