@@ -1509,6 +1509,6 @@ function repeat_lengths!(longnew::V, shortold::V, lengths::Vector{Int}) where V 
     @inbounds for i in 1:length(shortold)
         l = lengths[i]
         longnew[counter:counter + l] .= shortold[i]
-        counter += 1
+        counter += l
     end
 end
