@@ -479,6 +479,7 @@ Equivalently, the `in` function can be called with a single argument to create a
 #### Column selection using `select` and `select!`
 
 You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
+
 The `select` function creates a new data frame:
 ```jldoctest dataframe
 julia> df = DataFrame(x1=1, x2=2, y=3)
@@ -503,7 +504,46 @@ julia> select(df, r"x") # select columns containing 'x' character
 │ 1   │ 1     │ 2     │
 ```
 
-To perform the operations in-place use `select!`:
+It is important to note that `select` always returns a data frame,
+even if a single column is selected (as opposed to indexing syntax).
+```jldoctest dataframe
+julia> select(df, :x1)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia> df[:, :x1]
+1-element Array{Int64,1}:
+ 1
+```
+
+By default `select` copies columns of a passed source data frame.
+In order to avoid copying set its `copycols` keyword argument to `false`:
+```
+julia> df2 = select(df, :x1)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia> df2.x1 === df.x1
+false
+
+julia> df2 = select(df, :x1, copycols=false)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia> df2.x1 === df.x1
+true
+```
+
+To perform the selection operation in-place use `select!`:
 ```jldoctest dataframe
 julia> select!(df, Not(:x1))
 1×2 DataFrame
