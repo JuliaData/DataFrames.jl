@@ -4,11 +4,12 @@
     melt(df::AbstractDataFrame, [id_vars], [measure_vars];
          variable_name::Symbol=:variable, value_name::Symbol=:value)
 
-Stack a DataFrame; convert from a wide to long format.
+Stack a data frame `df`, i.e. convert it from wide to long format.
 
-Return the long-format `DataFrame` with column `:value`
+Return the long-format `DataFrame` with column `variable_name` (`:value` by default)
 holding the values of the stacked columns (`measure_vars`), with
-column `:variable` a vector of `Symbol`s with the `measure_vars` name,
+column `variable_name` (`:variable` by default) a vector of `Symbol`s holding
+the name of the corresponding `measure_vars` variable,
 and with columns for each of the `id_vars`.
 
 See also [`stackdf`](@ref)) and [`meltdf`](@ref) for stacking methods that return a
@@ -125,7 +126,7 @@ melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=
             value::Union{Integer, Symbol}; renamecols::Function=identity)
     unstack(df::AbstractDataFrame; renamecols::Function=identity)
 
-Unstack a data frame; convert from a long to wide format. Return the wide-format data frame.
+Unstack data frame `df`, i.e. convert it from long to wide format.
 
 If `colkey` contains `missing` values then they will be skipped and a warning will be printed.
 
@@ -423,9 +424,9 @@ Return a stacked view of a data frame (long format).
 Like [`stack`](@ref) and [`melt`](@ref), but a view is returned rather than data
 copies.
 
-The returned data frame has a column `:value`
+Return a `DataFrame` with a column `value_name` (`:value` by default)
 holding the values of the stacked columns (`measure_vars`), with
-column `:variable` a vector of `Symbol`s with the `measure_vars` name,
+column `variable_name` (`:variable` by default) a vector of `Symbol`s with the `measure_vars` name,
 and with columns for each of the `id_vars`.
 
 The result is a view because the columns are special `AbstractVectors`

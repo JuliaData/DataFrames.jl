@@ -32,7 +32,7 @@ Base.parent(gd::GroupedDataFrame) = getfield(gd, :parent)
 """
     groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
-Return a `GroupedDataFrame` view of an `AbstractDataFrame` split into row groups.
+Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split into row groups.
 
 # Arguments
 - `df` : an `AbstractDataFrame` to split

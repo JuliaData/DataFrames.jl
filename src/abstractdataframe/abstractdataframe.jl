@@ -244,7 +244,7 @@ Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), 
     describe(df::AbstractDataFrame)
     describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
 
-Report descriptive statistics for a data frame as a new `DataFrame`
+Return descriptive statistics for a data frame as a new `DataFrame`
 where each row represents a variable and each column a summary statistic.
 
 # Arguments
@@ -746,7 +746,7 @@ Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
     nonunique(df::AbstractDataFrame, cols)
 
 Return a `Vector{Bool}` in which `true` entries indicate duplicate rows.
-A row is a duplicate if there exits a prior row with all columns containing
+A row is a duplicate if there exists a prior row with all columns containing
 equal values. The check is performed using `isequal`.
 
 See also [`unique`](@ref) and [`unique!`](@ref).
@@ -797,7 +797,7 @@ Base.unique(df::AbstractDataFrame, cols) =
     unique!(df::AbstractDataFrame)
     unique!(df::AbstractDataFrame, cols)
 
-Delete duplicate rows. The result of the operation contains only unique rows of `df`.
+Delete duplicate rows of data frame `df`, keeping only the first occurrence of unique rows.
 When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
