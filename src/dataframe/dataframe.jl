@@ -1206,25 +1206,38 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
 
     if cols == :orderequal && _names(df1) != _names(df2)
         if ncol(df1) != ncol(df2)
-            throw(ArgumentError("The number of columns in the two data frames does not match " *
-                                "and passed `cols` value is `:orderequal`"))
+            ns1 = Set(_names(df1))
+            ns2 = Set(_names(df2))
+            wrongnames = symdiff(ns1, ns2)
+            if length(wrongnames) > 0
+                mismatchmsg = " The following column names :" *
+                              join(wrongnames, ", ", :" and :") *
+                              "were found in only one of the passed data frames"
+            else
+                mismatchmsg = ""
+            end
+            throw(ArgumentError("The number of columns in the two data frames does " *
+                                "not match and passed `cols` value is `:orderequal`.") *
+                                mismatchmsg)
         end
         mismatches = findall(_names(df1) .!= _names(df2))
-        throw(ArgumentError("The names of columns number " * join(mismatches, ", ", " and ") *
+        throw(ArgumentError("The names of columns number " *
+                            join(mismatches, ", ", " and ") *
                             " in both passed data frames do not match" *
                             "and `cols` keyword argument value is `:orderequal`"))
     end
     if cols == :setequal
         ns1 = Set(_names(df1))
         ns2 = Set(_names(df2))
-        # note here that df2 could be a SubDataFrame that has multiple
-        # occurrences of the same column name, so it is possible that ncol(df1) != ncol(df2).
+        # note here that df2 could be a SubDataFrame that has multiple occurrences
+        # of the same column name, so it is possible that ncol(df1) != ncol(df2).
         # This is not a problem as the columns with the same name contain
         # the same data in df2 then anyway.
         if ns1 != ns2
             wrongnames = symdiff(ns1, ns2)
-            throw(ArgumentError("The following column names :" * join(wrongnames, ", ", :" and :") *
-                                "were found in one of the passed data frames " *
+            throw(ArgumentError("The following column names :" *
+                                join(wrongnames, ", ", :" and :") *
+                                "were found in only one of the passed data frames " *
                                 "and `cols` keyword argument value is `:setequal`"))
         end
     end
@@ -1278,8 +1291,8 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     if cols === :orderequal
         if row isa NamedTuple
             if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("when `cols=:orderequal` all data frames must have the same column names " *
-                                    "and in the same order"))
+                throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
+                                    "the same column names and in the same order"))
             end
         end
     elseif cols === :setequal || cols === :equal
