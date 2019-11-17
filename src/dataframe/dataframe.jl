@@ -1142,8 +1142,8 @@ end
 
 Add the rows of `df2` to the end of `df1`.
 
-Column names must be equal in both `df1` and `df2`.
-If `cols` is `:setequal` (the default) then column names might have different order
+Column names of  `df1` and `df2` must be equal.
+If `cols` is `:setequal` (the default) then column names may have different orders
 and `append!` is performed by matching column names.
 If `cols` is `:orderequal` then the order of columns in `df1` and `df2` must be
 the same.
@@ -1206,7 +1206,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
 
     if cols == :orderequal && _names(df1) != _names(df2)
         if ncol(df1) != ncol(df2)
-            throw(ArgumentError("The numer of columns in both data frames does not match " *
+            throw(ArgumentError("The number of columns in the two data frames does not match " *
                                 "and passed `cols` value is `:orderequal`"))
         end
         mismatches = findall(_names(df1) .!= _names(df2))
@@ -1218,7 +1218,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
         ns1 = Set(_names(df1))
         ns2 = Set(_names(df2))
         # note here that df2 could be a SubDataFrame that has multiple
-        # occurences of the same column name, so it is possible that ncol(df1) != ncol(df2).
+        # occurrences of the same column name, so it is possible that ncol(df1) != ncol(df2).
         # This is not a problem as the columns with the same name contain
         # the same data in df2 then anyway.
         if ns1 != ns2
@@ -1278,7 +1278,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     if cols === :orderequal
         if row isa NamedTuple
             if any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("when `cols=:orderequal` all data frames need to have the same column names " *
+                throw(ArgumentError("when `cols=:orderequal` all data frames must have the same column names " *
                                     "and in the same order"))
             end
         end
