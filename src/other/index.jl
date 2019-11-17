@@ -45,7 +45,7 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     return x
 end
 
-function rename!(x::Index, nms)
+function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     xbackup = copy(x)
     processedfrom = Set{Symbol}()
     processedto = Set{Symbol}()
@@ -84,13 +84,7 @@ function rename!(x::Index, nms)
     return x
 end
 
-rename!(x::Index, nms::Pair{Symbol,Symbol}...) = rename!(x::Index, collect(nms))
-rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
-
-rename(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
-    rename!(copy(x), nms, makeunique=makeunique)
-rename(x::Index, args...) = rename!(copy(x), args...)
-rename(f::Function, x::Index) = rename!(f, copy(x))
+rename!(f::Function, x::Index) = rename!(x, [(x=>Symbol(f(x))) for x in x.names])
 
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
