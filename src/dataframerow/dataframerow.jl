@@ -306,16 +306,18 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             # corner case when push!-ing
             # Only check for equal lengths, as an error will be thrown below if some names don't match
             if cols === :orderequal
-                if _names(df)) != _names(dfr)
-                    throw(ArgumentError("all data frames to have the same column names " *
-                                        "and in the same order"))
+                if _names(df) != _names(dfr)
+                    msg = "`DataFrameRow` pushed must have the same column " *
+                          "names and in the same order as the target data frame"
+                    throw(ArgumentError(msg))
                 end
             elseif cols === :setequal || cols === :equal
                 if cols === :equal
                     Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
                                  "Use `:setequal` instead.", :push!)
                 end
-                msg = "Number of columns of row does not match that of data frame (got $(length(dfr)) and $ncols)."
+                msg = "Number of columns of `DataFrameRow` does not match that of " *
+                      "target data frame (got $(length(dfr)) and $ncols)."
                 ncols == length(dfr) || throw(ArgumentError(msg))
             end
 
