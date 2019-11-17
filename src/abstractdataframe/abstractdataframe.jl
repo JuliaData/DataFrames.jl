@@ -80,7 +80,7 @@ function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
 end
 
 function rename!(df::AbstractDataFrame,
-                 args::Union{AbstractVector{<:Pair}, AbstractDict{<:Pair}})
+                 args::Union{AbstractVector{<:Pair}, AbstractDict})
     args_vec = Vector{Pair{Symbol, Symbol}}(undef, length(args))
     for (i, (from, to)) in args
         if !(from isa Union{Symbol, AbstractString})
