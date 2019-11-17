@@ -476,7 +476,7 @@ julia> df[in.(df.A, Ref([1, 5, 601])), :]
 
 Equivalently, the `in` function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
-#### Column selection syntax
+#### Column selection using `select` and `select!`
 
 You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
 The `select` function creates a new data frame:
@@ -502,6 +502,7 @@ julia> select(df, r"x") # select columns containing 'x' character
 ├─────┼───────┼───────┤
 │ 1   │ 1     │ 2     │
 ```
+
 To perform the operations in-place use `select!`:
 ```jldoctest dataframe
 julia> select!(df, Not(:x1))
