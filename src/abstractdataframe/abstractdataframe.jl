@@ -53,22 +53,15 @@ abstract type AbstractDataFrame end
 
 ##############################################################################
 ##
-## Interface (not final)
-##
-##############################################################################
-
-# index(df) => AbstractIndex
-# nrow(df) => Int
-# ncol(df) => Int
-# getindex(...)
-# setindex!(...) exclusive of methods that add new columns
-
-##############################################################################
-##
 ## Basic properties of a DataFrame
 ##
 ##############################################################################
 
+"""
+    names(df::AbstractDataFrame)
+
+    Return a `Vector{Symbol}` of names of columns contained in `df`.
+"""
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
