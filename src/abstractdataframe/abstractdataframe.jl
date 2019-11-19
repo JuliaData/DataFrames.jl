@@ -747,7 +747,7 @@ Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
 
 Return a `Vector{Bool}` in which `true` entries indicate duplicate rows.
 A row is a duplicate if there exists a prior row with all columns containing
-equal values. The check is performed using `isequal`.
+equal values (according to `isequal`).
 
 See also [`unique`](@ref) and [`unique!`](@ref).
 
