@@ -1029,6 +1029,9 @@ end
     @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
                                           mean = [NaN, nothing, nothing])
 
+    @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
+    @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
+
     @test_throws ArgumentError describe(df, :mean, :all)
 end
 
