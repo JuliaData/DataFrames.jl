@@ -545,19 +545,14 @@ true
 
 To perform the selection operation in-place use `select!`:
 ```jldoctest dataframe
-julia> select!(df, Not(:x1))
+julia> select!(df, Not(:x1));
+
+julia> df
 1×2 DataFrame
 │ Row │ x2    │ y     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 2     │ 3     │
-
-julia> select!(df, r"x") # only :x2 column is present as :x1 was dropped above
-1×1 DataFrame
-│ Row │ x2    │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 2     │
 ```
 
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
