@@ -259,7 +259,7 @@ where each row represents a variable and each column a summary statistic.
     - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe; all standard column selection methods are allowed
+  to describe; all standard column selection methods are allowed.
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
