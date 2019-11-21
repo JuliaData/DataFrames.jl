@@ -287,7 +287,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         i = rowkey[k]
         if !warned_dup && mask_filled[i, j]
             @warn("Duplicate entries in unstack at row $k for key "*
-                 "$(tuple((df[1,s] for s in rowkeys)...)) and variable $(keycol[k]).")
+                 "$(tuple((df[k,s] for s in rowkeys)...)) and variable $(keycol[k]).")
             warned_dup = true
         end
         unstacked_val[j][i] = valuecol[k]
