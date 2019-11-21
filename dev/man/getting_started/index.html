@@ -161,7 +161,7 @@ julia&gt; last(df, 6)
 │     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
 ├─────┼───────┼──────────┼──────────────┼───────────┤
 │ 1   │ 1     │ 1.0      │ &#39;a&#39;          │ 1//2      │
-│ 2   │ 2     │ missing  │ &#39;b&#39;          │ missing   │</code></pre><p>we can observe that:</p><ul><li>the first column <code>:a</code> can hold elements of type <code>Int64</code>;</li><li>the second column <code>:b</code> can hold <code>Float64</code> or <code>Missing</code>, which is indicated by <code>⍰</code> printed after the name of type;</li><li>the third column <code>:c</code> can hold categorical data; here we notice <code>…</code>, which indicates that the actual name of the type was long and got truncated;</li><li>the type information in fourth column <code>:d</code> presents a situation where the name is both truncated and the type allows <code>Missing</code>.</li></ul><h3><a class="nav-anchor" id="Taking-a-Subset-1" href="#Taking-a-Subset-1">Taking a Subset</a></h3><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
+│ 2   │ 2     │ missing  │ &#39;b&#39;          │ missing   │</code></pre><p>we can observe that:</p><ul><li>the first column <code>:a</code> can hold elements of type <code>Int64</code>;</li><li>the second column <code>:b</code> can hold <code>Float64</code> or <code>Missing</code>, which is indicated by <code>⍰</code> printed after the name of type;</li><li>the third column <code>:c</code> can hold categorical data; here we notice <code>…</code>, which indicates that the actual name of the type was long and got truncated;</li><li>the type information in fourth column <code>:d</code> presents a situation where the name is both truncated and the type allows <code>Missing</code>.</li></ul><h3><a class="nav-anchor" id="Taking-a-Subset-1" href="#Taking-a-Subset-1">Taking a Subset</a></h3><h4><a class="nav-anchor" id="Indexing-syntax-1" href="#Indexing-syntax-1">Indexing syntax</a></h4><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
 3×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -245,7 +245,7 @@ julia&gt; df[!, :A]
  999
 
 julia&gt; df[!, :A] == df[:, :A]
-true</code></pre><p>In the first cases, <code>[:A]</code> is a vector, indicating that the resulting object should be a <code>DataFrame</code>, since a vector can contain one or more column names. On the other hand, <code>:A</code> is a single symbol, indicating that a single column vector should be extracted.</p><p>It is also possible to use a regular expression as a selector of columns matching it:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=1, x2=2, y=3)
+true</code></pre><p>In the first cases, <code>[:A]</code> is a vector, indicating that the resulting object should be a <code>DataFrame</code>, since a vector can contain one or more column names. On the other hand, <code>:A</code> is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. <code>df[:, (:x1, :x2)]</code> is not allowed, but <code>df[:, [:x1, :x2]]</code> is valid.</p><p>It is also possible to use a regular expression as a selector of columns matching it:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=1, x2=2, y=3)
 1×3 DataFrame
 │ Row │ x1    │ x2    │ y     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -281,7 +281,7 @@ julia&gt; df[:, All(Not(r&quot;x&quot;), :)]
 │ Row │ r     │ y     │ x1    │ x2    │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 2     │ 3     │</code></pre><p>You can also use the <a href="../../lib/functions/#DataFrames.select"><code>select</code></a> and <a href="../../lib/functions/#DataFrames.select!"><code>select!</code></a> functions to select columns in a data frame.</p><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df[df.A .&gt; 500, :]
+│ 1   │ 1     │ 4     │ 2     │ 3     │</code></pre><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df[df.A .&gt; 500, :]
 250×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -318,7 +318,60 @@ julia&gt; df[(df.A .&gt; 500) .&amp; (300 .&lt; df.C .&lt; 400), :]
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 1     │ 1     │
 │ 2   │ 5     │ 1     │ 3     │
-│ 3   │ 601   │ 7     │ 301   │</code></pre><p>Equivalently, the <code>in</code> function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of <code>in</code>): <code>df[in([1, 5, 601]).(df.A), :]</code>.</p><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks-1">Data manipulation frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+│ 3   │ 601   │ 7     │ 301   │</code></pre><p>Equivalently, the <code>in</code> function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of <code>in</code>): <code>df[in([1, 5, 601]).(df.A), :]</code>.</p><h4><a class="nav-anchor" id="Column-selection-using-select-and-select!-1" href="#Column-selection-using-select-and-select!-1">Column selection using <code>select</code> and <code>select!</code></a></h4><p>You can also use the <a href="../../lib/functions/#DataFrames.select"><code>select</code></a> and <a href="../../lib/functions/#DataFrames.select!"><code>select!</code></a> functions to select columns in a data frame.</p><p>The <code>select</code> function creates a new data frame:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=1, x2=2, y=3)
+1×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia&gt; select(df, Not(:x1)) # drop column :x1 in a new data frame
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+
+julia&gt; select(df, r&quot;x&quot;) # select columns containing &#39;x&#39; character
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │</code></pre><p>It is important to note that <code>select</code> always returns a data frame, even if a single column is selected (as opposed to indexing syntax).</p><pre><code class="language-julia-repl">julia&gt; select(df, :x1)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia&gt; df[:, :x1]
+1-element Array{Int64,1}:
+ 1</code></pre><p>By default <code>select</code> copies columns of a passed source data frame. In order to avoid copying, pass <code>copycols=false</code>:</p><pre><code class="language-none">julia&gt; df2 = select(df, :x1)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia&gt; df2.x1 === df.x1
+false
+
+julia&gt; df2 = select(df, :x1, copycols=false)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia&gt; df2.x1 === df.x1
+true</code></pre><p>To perform the selection operation in-place use <code>select!</code>:</p><pre><code class="language-julia-repl">julia&gt; select!(df, Not(:x1));
+
+julia&gt; df
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │</code></pre><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks-1">Data manipulation frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
 
 julia&gt; describe(df)
 2×8 DataFrame
@@ -327,7 +380,12 @@ julia&gt; describe(df)
 ├─────┼──────────┼────────┼─────┼────────┼─────┼─────────┼──────────┼──────────┤
 │ 1   │ A        │ 2.5    │ 1   │ 2.5    │ 4   │         │          │ Int64    │
 │ 2   │ B        │        │ F   │        │ M   │ 2       │          │ String   │
-</code></pre><p>Of course, one can also compute descrptive statistics directly on individual columns:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
+</code></pre><p>If you are interested in describing only a subset of columns then the easiest way to do it is to pass a subset of an original data frame to <code>describe</code> like this:</p><pre><code class="language-julia-repl">julia&gt; describe(df[!, [:A]))
+1×8 DataFrame
+│ Row │ variable │ mean    │ min   │ median  │ max   │ nunique │ nmissing │ eltype   │
+│     │ Symbol   │ Float64 │ Int64 │ Float64 │ Int64 │ Nothing │ Nothing  │ DataType │
+├─────┼──────────┼─────────┼───────┼─────────┼───────┼─────────┼──────────┼──────────┤
+│ 1   │ A        │ 2.5     │ 1     │ 2.5     │ 4     │         │          │ Int64    │</code></pre><p>Of course, one can also compute descriptive statistics directly on individual columns:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
 
 julia&gt; mean(df.A)
 2.5</code></pre><h3><a class="nav-anchor" id="Column-Wise-Operations-1" href="#Column-Wise-Operations-1">Column-Wise Operations</a></h3><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>aggregate</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
