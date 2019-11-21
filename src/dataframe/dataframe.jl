@@ -752,6 +752,7 @@ Mutate `df` in place to retain only columns specified by `inds...` and return it
 
 Arguments passed as `inds...` can be any index that is allowed for column indexing
 provided that the columns requested in each of them are unique and present in `df`.
+In particular, regular expressions, `All`, `Between`, and `Not` selectors are supported.
 
 If more than one argument is passed then they are joined as `All(inds...)`.
 Note that `All` selects the union of columns passed to it, so columns selected
@@ -761,7 +762,7 @@ data frame to be the first, provided it is present in `df`.
 
 # Examples
 ```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
+julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -770,7 +771,7 @@ julia> d = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select!(d, 2)
+julia> select!(df, 2)
 3×1 DataFrame
 │ Row │ b     │
 │     │ Int64 │
@@ -819,6 +820,7 @@ specified by `inds` and return it.
 
 Arguments passed as `inds...` can be any index that is allowed for column indexing
 provided that the columns requested in each of them are unique and present in `df`.
+In particular, regular expressions, `All`, `Between`, and `Not` selectors  are supported.
 
 If more than one argument is passed then they are joined as `All(inds...)`.
 Note that `All` selects the union of columns passed to it, so columns selected
@@ -838,7 +840,7 @@ and a `DataFrame` with freshly allocated columns otherwise.
 
 # Examples
 ```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
+julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -847,7 +849,7 @@ julia> d = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select(d, :b)
+julia> select(df, :b)
 3×1 DataFrame
 │ Row │ b     │
 │     │ Int64 │
@@ -855,6 +857,15 @@ julia> select(d, :b)
 │ 1   │ 4     │
 │ 2   │ 5     │
 │ 3   │ 6     │
+
+julia> select(df, Not(:b)) # drop column :b from df
+3×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
 ```
 
 """
