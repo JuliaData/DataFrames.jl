@@ -307,7 +307,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             # Only check for equal lengths, as an error will be thrown below if some names don't match
             if cols === :orderequal
                 if _names(df) != _names(dfr)
-                    msg = "`DataFrameRow` pushed must have the same column " *
+                    msg = "when `cols=equal` pushed row must have the same column " *
                           "names and in the same order as the target data frame"
                     throw(ArgumentError(msg))
                 end
