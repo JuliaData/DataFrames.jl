@@ -298,7 +298,7 @@ end
     @test parentindices(sdf[2, r"a"]) == (3, [1])
     @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
-    @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
+    @test_throws ArgumentError parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
     @test parent(df[2, r""]) === df
     @test parent(df[2, r"a"]) === df
     @test parent(df[2, r"x"]) === df
@@ -318,7 +318,7 @@ end
     @test parentindices(sdf[2, r"a"]) == (3, [1])
     @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
-    @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
+    @test_throws ArgumentError parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
 end
 
 @testset "iteration and collect" begin
