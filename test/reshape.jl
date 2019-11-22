@@ -353,9 +353,12 @@ end
     df_tup = DataFrame(a = [1, 2], b = [(1, 2), (3, 4)])
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
     @test flatten(df_vec, :b) == flatten(df_tup, :b) == ref
-    df = DataFrame(a = [1, 2, 3], b = [[1, 2], ["x", "y"], ["a", "b", "c"]])
-    ref = DataFrame(a = [1, 1, 2, 2, 3, 3, 3], b = [1, 2, "x", "y", "a", "b", "c"])
-    @test flatten(df, :b) == ref
+    df_mixed_types = DataFrame(a = [1, 2], b = [[1, 2], ["x", "y"]])
+    ref_mixed_types = DataFrame(a = [1, 1, 2, 2], b = [1, 2, "x", "y"])
+    @test flatten(df_mixed_types, :b) == ref_mixed_types
+    df_three = DataFrame(a = [1, 2, 3], b = [[1, 2], [10, 20], [100, 200, 300]])
+    ref_three = DataFrame(a = [1, 1, 2, 2, 3, 3, 3], b = [1, 2, 10, 20, 100, 200, 300])
+    @test flatten(df_three, :b) == ref_three
     df = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
     ref = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
     @test flatten(df, :b) == ref
