@@ -1206,9 +1206,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
 
     if cols == :orderequal && _names(df1) != _names(df2)
         if ncol(df1) != ncol(df2)
-            ns1 = Set(_names(df1))
-            ns2 = Set(_names(df2))
-            wrongnames = symdiff(ns1, ns2)
+            wrongnames = symdiff(Set(_names(df1)), Set(_names(df2)))
             if length(wrongnames) > 0
                 mismatchmsg = " Column names :" *
                               join(wrongnames, ", :", " and :") *
