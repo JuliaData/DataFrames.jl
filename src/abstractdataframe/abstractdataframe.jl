@@ -1437,10 +1437,10 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+    flatten(df::AbstractDataFrame, col::Union{Integer, Symbol})
 
 When column `cols` of `df` has iterable elements that define `length`, for example a `Vector` 
-of `Vector`s. Returns a `DataFrame` where each element of `cols` is flattened, meaning 
+of `Vector`s, `flatten` returns a `DataFrame` where each element of `cols` is flattened, meaning 
 the column corresponding to `cols` becomes a longer `Vector` where the original entries 
 are concatenated. Elements of row `i` of `df` other than `cols` will be duplicated according to 
 the length of `df[i, cols]`.
@@ -1486,10 +1486,10 @@ julia> flatten(df2, :b)
 
 ```
 """
-function flatten(df::AbstractDataFrame, cols::ColumnIndex)
-    col_to_flatten = df[!, cols]
+function flatten(df::AbstractDataFrame, col::ColumnIndex)
+    col_to_flatten = df[!, col]
     lengths = length.(col_to_flatten)
-    new_df = similar(df[!, Not(cols)], sum(lengths))
+    new_df = similar(df[!, Not(col)], sum(lengths))
 
     for name in names(new_df)
         repeat_lengths!(new_df[!, name], df[!, name], lengths)
@@ -1499,12 +1499,12 @@ function flatten(df::AbstractDataFrame, cols::ColumnIndex)
         reduce(vcat, col_to_flatten) :
         collect(Iterators.flatten(col_to_flatten))
 
-    insertcols!(new_df, columnindex(df, cols), cols => flattened_col)
+    insertcols!(new_df, columnindex(df, col), col => flattened_col)
 
     return new_df
 end
 
-function repeat_lengths!(longnew::V, shortold::V, lengths::Vector{Int}) where V <: AbstractVector
+function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector, lengths::AbstractVector{Int})
     counter = 1
     @inbounds for i in 1:length(shortold)
         l = lengths[i]
