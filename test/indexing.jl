@@ -1394,4 +1394,16 @@ end
     @test_throws InexactError df[:, 2] = fill(1.5, 4)
 end
 
+@testset "invalid view tests" begin
+    df = DataFrame(ones(2,3))
+    for r in (1, 1:1)
+        @test_throws BoundsError view(df, r, 0:1)
+        @test_throws BoundsError view(df, r, 1:4)
+        @test_throws BoundsError view(df, r, [0,1])
+        @test_throws BoundsError view(df, r, [1,4])
+        @test_throws ArgumentError view(df, r, [1,2,1])
+        @test_throws ArgumentError view(df, r, [:x1,:x2,:x1])
+    end
+end
+
 end # module

@@ -329,7 +329,6 @@ Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     parentcol = ind.parent[idx]
     @boundscheck begin
         remap = ind.remap
-        length(remap) == 0 && lazyremap!(ind)
         remap[parentcol] == 0 && throw(ArgumentError("$idx not found"))
     end
     return parentcol
@@ -345,22 +344,29 @@ Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Not) = parentcols(ind, ind[idx])
 
-Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
+function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
     f = first(cols)
-    @boundscheck if !checkindex(Bool, Base.OneTo(length(parent)), cols)
+    if !checkindex(Bool, Base.OneTo(length(parent)), cols)
         throw(BoundsError("invalid columns $cols selected"))
     end
     remap = (1:l) .- f .+ 1
     SubIndex(parent, cols, remap)
 end
 
-Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
+function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
     ncols = length(parent)
-    @boundscheck if !all(x -> 0 < x ≤ ncols, cols)
-        throw(BoundsError("invalid columns $cols selected"))
+    remap = zeros(Int, ncols)
+    for (i, col) in enumerate(cols)
+        if !(1 <= col <= ncols)
+            throw(BoundsError("column index must be greater than zero " *
+                                "and not larger than number columns in the parent"))
+        end
+        if remap[col] != 0
+            throw(ArgumentError("duplicate selected column detected"))
+        end
+        remap[col] = i
     end
-    remap = Int[]
     SubIndex(parent, cols, remap)
 end
 
@@ -370,21 +376,6 @@ end
 Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
     SubIndex(parent, parent[cols])
 
-# a helper function that lazily creates remap when needed
-function lazyremap!(x::SubIndex)
-    remap = x.remap
-    remap isa AbstractUnitRange{Int} && return remap
-    if length(remap) == 0
-        resize!(remap, length(x.parent))
-        # we set non-existing mappings to 0
-        fill!(remap, 0)
-        for (i, col) in enumerate(x.cols)
-            remap[col] = i
-        end
-    end
-    remap
-end
-
 Base.length(x::SubIndex) = length(x.cols)
 Base.names(x::SubIndex) = copy(_names(x))
 _names(x::SubIndex) = view(_names(x.parent), x.cols)
@@ -393,7 +384,6 @@ function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false
     pos = x.parent[key]
     remap = x.remap
-    length(remap) == 0 && lazyremap!(x)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
@@ -405,7 +395,6 @@ Base.keys(x::SubIndex) = names(x)
 
 function Base.getindex(x::SubIndex, idx::Symbol)
     remap = x.remap
-    length(remap) == 0 && lazyremap!(x)
     remap[x.parent[idx]]
 end
 
