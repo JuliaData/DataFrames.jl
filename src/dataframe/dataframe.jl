@@ -1210,8 +1210,8 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
             ns2 = Set(_names(df2))
             wrongnames = symdiff(ns1, ns2)
             if length(wrongnames) > 0
-                mismatchmsg = " The following column names :" *
-                              join(wrongnames, ", ", :" and :") *
+                mismatchmsg = " Column names :" *
+                              join(wrongnames, ", :", " and :") *
                               "were found in only one of the passed data frames"
             else
                 mismatchmsg = ""
@@ -1221,10 +1221,10 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
                                 mismatchmsg)
         end
         mismatches = findall(_names(df1) .!= _names(df2))
-        throw(ArgumentError("The names of columns number " *
+        throw(ArgumentError("Columns number " *
                             join(mismatches, ", ", " and ") *
-                            " in both passed data frames do not match" *
-                            "and `cols` keyword argument value is `:orderequal`"))
+                            " do not have the same names in both passed data frames" *
+                            "and `cols=:orderequal`"))
     end
     if cols == :setequal
         ns1 = Set(_names(df1))
@@ -1235,10 +1235,10 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
         # the same data in df2 then anyway.
         if ns1 != ns2
             wrongnames = symdiff(ns1, ns2)
-            throw(ArgumentError("The following column names :" *
+            throw(ArgumentError("Column names :" *
                                 join(wrongnames, ", ", :" and :") *
                                 "were found in only one of the passed data frames " *
-                                "and `cols` keyword argument value is `:setequal`"))
+                                "and `cols=:setequal`"))
         end
     end
 

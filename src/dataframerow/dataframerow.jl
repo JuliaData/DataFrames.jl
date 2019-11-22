@@ -313,7 +313,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 end
             elseif cols === :setequal || cols === :equal
                 if cols === :equal
-                    Base.depwarn("`cols` value eqaual to `:equal` is deprecated." *
+                    Base.depwarn("`cols=:equal` is deprecated." *
                                  "Use `:setequal` instead.", :push!)
                 end
                 msg = "Number of columns of `DataFrameRow` does not match that of " *
