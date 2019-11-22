@@ -341,22 +341,8 @@ end
 @testset "duplicate column" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
     sdf = view(df, [3,1,4], [3,1,4])
-    dfr1 = df[2, [2,2,2]]
-    dfr2 = sdf[2, [2,2,2]]
-    @test names(dfr1) == fill(:x2, 3)
-    @test names(dfr2) == fill(:x1, 3)
-    @test values(dfr1) == (22, 22, 22)
-    @test values(dfr2) == (11, 11, 11)
-    @test dfr1.x2 == 22
-    dfr1.x2 = 100
-    @test values(dfr1) == (100, 100, 100)
-    @test df[2, 2] == 100
-    @test_throws ArgumentError dfr1.x1
-    @test dfr2.x1 == 11
-    dfr2.x1 = 200
-    @test values(dfr2) == (200, 200, 200)
-    @test df[1, 1] == 200
-    @test_throws ArgumentError dfr2.x2
+    @test_throws ArgumentError dfr1 = df[2, [2,2,2]]
+    @test_throws ArgumentError dfr2 = sdf[2, [2,2,2]]
 end
 
 @testset "conversion and push!" begin
