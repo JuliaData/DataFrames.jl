@@ -347,9 +347,7 @@ end
                     renamecols=x->string("_", x, "_"))
     @test wide3 == w2[!, Not(2)]
 end
-#
-# flatten(df::AbstractDataFrame, veccol::Union{Integer, Symbol})
-#
+
 @testset "flatten" begin
     df_vec = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
     df_tup = DataFrame(a = [1, 2], b = [(1, 2), (3, 4)])
@@ -361,6 +359,9 @@ end
     df = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
     ref = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
     @test flatten(df, :b) == ref
+    df_miss = DataFrame(a = [1, 2], b = d = [Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
+    ref = DataFrame(a = [1, 1, 2, 2], b = Union{Missing, Int}[1, 2, 3, 4])
+    @test flatten(df_miss, :b) == ref && ref.b isa Vector{Union{Missing, Int}}
 end
 
 end # module

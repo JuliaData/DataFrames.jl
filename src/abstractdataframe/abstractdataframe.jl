@@ -1506,7 +1506,7 @@ end
 
 function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector, lengths::AbstractVector{Int})
     counter = 1
-    @inbounds for i in 1:length(shortold)
+    @inbounds for i in eachindex(shortold)
         l = lengths[i]
         longnew[counter:(counter + l - 1)] .= shortold[i]
         counter += l
