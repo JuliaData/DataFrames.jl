@@ -360,7 +360,7 @@ function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
     for (i, col) in enumerate(cols)
         if !(1 <= col <= ncols)
             throw(BoundsError("column index must be greater than zero " *
-                                "and not larger than number columns in the parent"))
+                              "and not larger than number columns in the parent"))
         end
         if remap[col] != 0
             throw(ArgumentError("duplicate selected column detected"))
