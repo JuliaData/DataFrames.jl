@@ -190,10 +190,12 @@ Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
+# Single integer indexing
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 
-function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray)
+# Array of integers
+function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray{T}) where {T<:Integer}
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
     if !allunique(new_starts)
@@ -210,7 +212,6 @@ end
 
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
     GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts, gd.ends)
-
 
 """
     groupindices(gd::GroupedDataFrame)
