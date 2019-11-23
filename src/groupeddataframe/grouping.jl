@@ -61,13 +61,12 @@ See the following for additional split-apply-combine operations:
 * [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
 * [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
 
-`GroupedDataFrame` also supports the dictionary interface. The keys
-are the `GroupKey` objects returned by [`Base.keys(::GroupedDataFrame)`](@ref),
+`GroupedDataFrame` also supports the dictionary interface. The keys are
+[`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
 which can also be used to get the values of the grouping columns for each group.
-`Tuples` and `NamedTuple`s containing the values of the grouping columns are
-also accepted as indices, but this will be slower than using the equivalent
-`GroupKey`. Note that in this case the values should be in the same order as
-the `cols` argument.
+`Tuples` and `NamedTuple`s containing the values of the grouping columns (in the
+same order as the `cols` argument) are also accepted as indices, but this will
+be slower than using the equivalent `GroupKey`.
 
 # Examples
 ```julia
@@ -108,6 +107,25 @@ julia> last(gd)
 │ 2   │ 4     │ 1     │ 8     │
 
 julia> gd[(a=3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> gd[(3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> k = first(keys(gd))
+GroupKey: (a = 3)
+
+julia> gd[k]
 2×3 SubDataFrame
 │ Row │ a     │ b     │ c     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -230,12 +248,12 @@ grouping columns passed to [`groupby`](@ref)) or the column name itself. The
 optional first argument to the first two forms specifies the return type, which
 may be `NamedTuple` (default) or `Tuple`.
 
-### Returns
+# Returns
 
 Iterator over `Tuple`s/`NamedTuple`s, a single `Tuple`/`NamedTuple`, or a
 grouping column value.
 
-### Examples
+# Examples
 
 ```jldoctest
 julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
@@ -352,7 +370,7 @@ Base.Tuple(key::GroupKey) = values(key)
 """
     GroupKeys{T<:GroupedDataFrame} <: AbstractVector{GroupKey{T}}
 
-An abstract vector containing all [`GroupKey`](@ref) objects for a given
+A vector containing all [`GroupKey`](@ref) objects for a given
 [`GroupedDataFrame`](@ref).
 
 See [`keys(::GroupedDataFrame)`](@ref) for more information.
@@ -451,7 +469,7 @@ julia> gd[k]
 │ 1   │ foo    │ 2     │ 1     │
 │ 2   │ foo    │ 2     │ 7     │
 
-julia> isequal(gd[keys(gd)[1]], gd[1])
+julia> gd[keys(gd)[1]] == gd[1]
 true
 ```
 """
@@ -484,10 +502,10 @@ end
 
 Get a group based on the values of the grouping columns.
 
-`key` may be a `NamedTuple` or `Tuple` of grouping column values, or one of the
-[`GroupKey`](@ref)s returned by [`keys(gd::GroupedDataFrame)`](@ref).
+`key` may be a `NamedTuple` or `Tuple` of grouping column values (in the same
+order as the `cols` argument to `groupby`).
 
-### Examples
+# Examples
 
 ```jldoctest
 julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[2]),

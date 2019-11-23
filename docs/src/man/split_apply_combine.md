@@ -148,8 +148,8 @@ julia> for (key, subdf) in pairs(groupby(iris, :Species))
        end
 Number of data points for setosa: 50
 Number of data points for versicolor: 50
-Number of data points for verginica: 50
+Number of data points for virginica: 50
 ```
 
-The variable `key` in the previous example is an instance [`GroupKey`](@ref),
+The value of `key` in the previous example is a [`DataFrames.GroupKey`](@ref) object,
 which can be used in a similar fashion to a `NamedTuple`.
