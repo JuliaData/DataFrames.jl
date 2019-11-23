@@ -1439,11 +1439,11 @@ end
 """
     flatten(df::AbstractDataFrame, col::Union{Integer, Symbol})
 
-When column `cols` of `df` has iterable elements that define `length`, for example a `Vector` 
-of `Vector`s, `flatten` returns a `DataFrame` where each element of `cols` is flattened, meaning 
-the column corresponding to `cols` becomes a longer `Vector` where the original entries 
-are concatenated. Elements of row `i` of `df` other than `cols` will be duplicated according to 
-the length of `df[i, cols]`.
+When column `col` of data frame `df` has iterable elements that define `length` (for example
+a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning 
+the column corresponding to `col` becomes a longer `Vector` where the original entries 
+are concatenated. Elements of row `i` of `df` other than `col` will be duplicated according to 
+the length of `df[i, col]`.
 
 # Examples
 
