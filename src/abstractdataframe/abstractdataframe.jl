@@ -1491,7 +1491,7 @@ function flatten(df::AbstractDataFrame, col::ColumnIndex)
     lengths = length.(col_to_flatten)
     new_df = similar(df[!, Not(col)], sum(lengths))
 
-    for name in names(new_df)
+    for name in _names(new_df)
         repeat_lengths!(new_df[!, name], df[!, name], lengths)
     end
 
