@@ -372,8 +372,8 @@ end
     ref_vec_vec = DataFrame(a = [1, 1, 2, 2], b = [v1 ; v2])
     @test flatten(df_vec_vec, :b) == ref_vec_vec
     df_cat = DataFrame(a = [1, 2], b = [CategoricalArray([1, 2]), CategoricalArray([1, 2])])
-    ref_cat = DataFrame(a = [1, 1, 2, 2], b = CategoricalArray([1, 2, 1, 2]))
-    @test flatten(df_cat, :b) == ref
+    df_flat_cat = flatten(df_cat, :b) 
+    @test df_flat_cat.b isa CategoricalArray
 end
 
 end # module
