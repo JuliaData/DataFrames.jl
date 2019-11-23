@@ -359,12 +359,21 @@ end
     df_three = DataFrame(a = [1, 2, 3], b = [[1, 2], [10, 20], [100, 200, 300]])
     ref_three = DataFrame(a = [1, 1, 2, 2, 3, 3, 3], b = [1, 2, 10, 20, 100, 200, 300])
     @test flatten(df_three, :b) == ref_three
-    df = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
-    ref = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
-    @test flatten(df, :b) == ref
-    df_miss = DataFrame(a = [1, 2], b = d = [Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
-    ref = DataFrame(a = [1, 1, 2, 2], b = Union{Missing, Int}[1, 2, 3, 4])
-    @test flatten(df_miss, :b) == ref && ref.b isa Vector{Union{Missing, Int}}
+    df_gen = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
+    ref_gen = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
+    @test flatten(df_gen, :b) == ref_gen
+    df_miss = DataFrame(a = [1, 2], b = [Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
+    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
+    @test flatten(df_miss, :b) == ref
+    v1 = [[1, 2], [3, 4]]
+    v2 = [[5, 6], [7, 8]]
+    v = [v1, v2]
+    df_vec_vec = DataFrame(a = [1, 2], b = v)
+    ref_vec_vec = DataFrame(a = [1, 1, 2, 2], b = [v1 ; v2])
+    @test flatten(df_vec_vec, :b) == ref_vec_vec
+    df_cat = DataFrame(a = [1, 2], b = [CategoricalArray([1, 2]), CategoricalArray([1, 2])])
+    ref_cat = DataFrame(a = [1, 1, 2, 2], b = CategoricalArray([1, 2, 1, 2]))
+    @test flatten(df_cat, :b) == ref
 end
 
 end # module
