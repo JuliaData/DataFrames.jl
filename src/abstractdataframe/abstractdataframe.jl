@@ -1442,8 +1442,9 @@ end
 When column `col` of data frame `df` has iterable elements that define `length` (for example
 a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning 
 the column corresponding to `col` becomes a longer `Vector` where the original entries 
-are concatenated. Elements of row `i` of `df` other than `col` will be duplicated according to 
-the length of `df[i, col]`.
+are concatenated. Elements of row `i` of `df` other than `col` will be repeated according to 
+the length of `df[i, col]`. If such elements are mutable, those elements are not copied, 
+and thus changes to the returned `DataFrame` may affect `df`. 
 
 # Examples
 
