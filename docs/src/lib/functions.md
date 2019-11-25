@@ -46,9 +46,11 @@ eachrow
 eachcol
 filter
 filter!
+flatten
 hcat
 insertcols!
 mapcols
+names
 nonunique
 nrow
 ncol

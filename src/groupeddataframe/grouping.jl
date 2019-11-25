@@ -30,25 +30,17 @@ Base.parent(gd::GroupedDataFrame) = getfield(gd, :parent)
 #
 
 """
-A view of an `AbstractDataFrame` split into row groups
+    groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
-```julia
-groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
-```
+Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split into row groups.
 
-### Arguments
+# Arguments
+- `df` : an `AbstractDataFrame` to split
+- `cols` : data frame columns to group by
+- `sort` : whether to sort rows according to the values of the grouping columns `cols`
+- `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
-* `df` : an `AbstractDataFrame` to split
-* `cols` : data frame columns to group by
-* `sort` : whether to sort rows according to the values of the grouping columns `cols`
-* `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
-
-### Returns
-
-A `GroupedDataFrame` : a grouped view into `df`
-
-### Details
-
+# Details
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
@@ -69,8 +61,7 @@ See the following for additional split-apply-combine operations:
 * [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
 * [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
 
-### Examples
-
+# Examples
 ```julia
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
@@ -136,7 +127,6 @@ julia> for g in gd
 │ 1   │ 4     │ 1     │ 4     │
 │ 2   │ 4     │ 1     │ 8     │
 ```
-
 """
 function groupby(df::AbstractDataFrame, cols;
                  sort::Bool=false, skipmissing::Bool=false)
@@ -256,8 +246,9 @@ When computing the `sum` or `mean` over floating point columns, results will be 
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
-### Examples
+See also [`combine(f, gd)`](@ref) that returns a `DataFrame` rather than a `GroupedDataFrame`.
 
+# Examples
 ```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
@@ -295,11 +286,6 @@ Last Group: 1 row
 ```
 
 See [`by`](@ref) for more examples.
-
-### See also
-
-`combine(f, gd)` returns a `DataFrame` rather than a `GroupedDataFrame`
-
 """
 function Base.map(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
@@ -400,8 +386,12 @@ When computing the `sum` or `mean` over floating point columns, results will be 
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
-### Examples
+See also:
+- [`by(f, df, cols)`](@ref) is a shorthand for `combine(f, groupby(df, cols))`.
+- [`map`](@ref): `combine(f, groupby(df, cols))` is a more efficient equivalent
+of `combine(map(f, groupby(df, cols)))`.
 
+# Examples
 ```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
@@ -441,14 +431,6 @@ julia> combine(df -> sum(df.c), gd) # Slower variant
 ```
 
 See [`by`](@ref) for more examples.
-
-### See also
-
-[`by(f, df, cols)`](@ref) is a shorthand for `combine(f, groupby(df, cols))`.
-
-[`map`](@ref): `combine(f, groupby(df, cols))` is a more efficient equivalent
-of `combine(map(f, groupby(df, cols)))`.
-
 """
 function combine(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
@@ -704,9 +686,19 @@ function do_f(f, x...)
     end
 end
 
-function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
-                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+# Avoid recompilation of larger function for each set of names
+function _combine(@nospecialize(f::NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}),
                   gd::GroupedDataFrame)
+    idx, valscat = _combine(collect(f), gd)
+    rename!(valscat, collect(Symbol, propertynames(f)))
+    idx, valscat
+end
+
+# Avoid recompilation of larger function for each length
+_combine(@nospecialize(f::Tuple{Vararg{Pair}}), gd::GroupedDataFrame) =
+    _combine(collect(f), gd)
+
+function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
@@ -733,15 +725,11 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     if !all(x -> length(x) == length(outcols[1]), outcols)
         throw(ArgumentError("all functions must return values of the same length"))
     end
-    if f isa NamedTuple
-        nams = collect(Symbol, propertynames(f))
-    else
-        nams = [f[i] isa Pair{<:ColumnIndex} ?
-                    Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
-                           '_', funname(last(f[i]))) :
-                    Symbol('x', i)
-                for i in 1:length(f)]
-    end
+    nams = [f[i] isa Pair{<:ColumnIndex} ?
+                Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
+                       '_', funname(last(f[i]))) :
+                Symbol('x', i)
+            for i in 1:length(f)]
     valscat = DataFrame(collect(AbstractVector, outcols), nams, makeunique=true)
     return idx, valscat
 end
@@ -1024,8 +1012,7 @@ accurate than the standard [`sum`](@ref) function (which uses pairwise summation
 `by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))` and to the
 less efficient `combine(map(f, groupby(d, cols)))`.
 
-### Examples
-
+# Examples
 ```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
@@ -1097,7 +1084,6 @@ julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
 │ 3   │ 3     │ 2     │ 10    │
 │ 4   │ 4     │ 1     │ 12    │
 ```
-
 """
 by(d::AbstractDataFrame, cols::Any, f::Any;
    sort::Bool=false, skipmissing::Bool=false) =
@@ -1115,40 +1101,28 @@ by(d::AbstractDataFrame, cols::Any;
    sort::Bool=false, skipmissing::Bool=false, f...) =
     combine(values(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
 
-#
-# Aggregate convenience functions
-#
-
-# Applies a set of functions over a DataFrame, in the from of a cross-product
 """
+    aggregate(df::AbstractDataFrame, fs)
+    aggregate(df::AbstractDataFrame, cols, fs; sort=false, skipmissing=false)
+    aggregate(gd::GroupedDataFrame, fs; sort=false)
+
 Split-apply-combine that applies a set of functions over columns of an
-`AbstractDataFrame` or [`GroupedDataFrame`](@ref)
+`AbstractDataFrame` or [`GroupedDataFrame`](@ref).
+Return an aggregated data frame.
 
-```julia
-aggregate(df::AbstractDataFrame, fs)
-aggregate(df::AbstractDataFrame, cols, fs; sort=false, skipmissing=false)
-aggregate(gd::GroupedDataFrame, fs; sort=false)
-```
-
-### Arguments
-
-* `df` : an `AbstractDataFrame`
-* `gd` : a `GroupedDataFrame`
-* `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
-* `fs` : a function or vector of functions to be applied to vectors
+# Arguments
+- `df` : an `AbstractDataFrame`
+- `gd` : a `GroupedDataFrame`
+- `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
+- `fs` : a function or vector of functions to be applied to vectors
   within groups; expects each argument to be a column vector
-* `sort` : whether to sort rows according to the values of the grouping columns
-* `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
+- `sort` : whether to sort rows according to the values of the grouping columns
+- `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
 Each `fs` should return a value or vector. All returns must be the
 same length.
 
-### Returns
-
-* `::DataFrame`
-
-### Examples
-
+# Examples
 ```jldoctest
 julia> using Statistics
 

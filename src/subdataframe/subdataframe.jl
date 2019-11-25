@@ -16,8 +16,7 @@ If the selection of columns in a parent data frame is passed as `:` (a colon)
 then `SubDataFrame` will always have all columns from the parent,
 even if they are added or removed after its creation.
 
-### Examples
-
+# Examples
 ```julia
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),

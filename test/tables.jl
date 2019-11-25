@@ -161,8 +161,8 @@ end
     @test size(df) == (2, 2)
     @test df.a == [1, 3]
     @test df.b == [2, 4]
+    @test DataFrame(v, copycols=false) == DataFrame(v, copycols=true) == df
     @test_throws ArgumentError DataFrame!(v)
-    @test_throws ArgumentError DataFrame(v, copycols=false)
 end
 
 @testset "columnindex" begin
