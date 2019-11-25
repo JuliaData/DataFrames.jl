@@ -281,7 +281,7 @@ end
     @test occursin("Error adding value to column :second", String(take!(buf)))
 
     dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    @test_logs (:warn, r"cols=:equal as default is deprecated") push!(dfb, (second="banana", first=3))
+    push!(dfb, (second="banana", first=3))
     @test df == dfb
 
     df0 = DataFrame(first=[1,2], second=["apple","orange"])
@@ -1981,11 +1981,11 @@ end
     @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
 end
 
-@testset "vcat and push! with :identical" begin
+@testset "vcat and push! with :orderequal" begin
     for v in (Dict(:a=>10, :b=>20, :c=>30), (a=10, b=20, c=30),
               DataFrame(a=10, b=20, c=30)[1, :])
         df = DataFrame(a=1, b=2, c=3)
-        push!(df, v, cols=:identical)
+        push!(df, v, cols=:orderequal)
         @test df == DataFrame(a=[1,10], b=[2,20], c=[3,30])
     end
 
@@ -1994,24 +1994,24 @@ end
 
     # avoid printing of error to the console during test
     old_logger = global_logger(NullLogger())
-    @test_throws KeyError push!(df, v, cols=:identical)
+    @test_throws KeyError push!(df, v, cols=:orderequal)
     global_logger(old_logger)
 
     for v in ((a=10, b=20, d=30), (a=10, c=20, b=30),
               DataFrame(a=10, c=20, b=30)[1, :], Dict(:a=>10, :b=>20, :c=>30, :d=>0),
               (a=10, b=20, c=30, d=0), DataFrame(a=10, b=20, c=30, d=0)[1, :])
         df = DataFrame(a=1, b=2, c=3)
-        @test_throws ArgumentError push!(df, v, cols=:identical)
+        @test_throws ArgumentError push!(df, v, cols=:orderequal)
     end
 
     @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
-               cols=:identical) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+               cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
-                                    cols=:identical)
+                                    cols=:orderequal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, d=30),
-                                    cols=:identical)
+                                    cols=:orderequal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30, d=0),
-                                    cols=:identical)
+                                    cols=:orderequal)
 end
 
 @testset "push! with :subset" begin

@@ -364,7 +364,7 @@ end
     end
     @test df == DataFrame(x=1, y=2)
 
-    @test_throws ArgumentError push!(df, df[1, [2,1,2]], cols=:identical)
+    @test_throws ArgumentError push!(df, df[1, [2,1,2]], cols=:orderequal)
     @test df == DataFrame(x=1, y=2)
 
     @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
