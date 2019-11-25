@@ -83,13 +83,13 @@ rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol,Symbol}}) =
     rename!(index(df), args)
 
 function rename!(df::AbstractDataFrame,
-                 args::Union{AbstractVector{Pair{Symbol,AbstractString}},
-                             AbstractVector{Pair{AbstractString,Symbol}},
-                             AbstractVector{Pair{AbstractString,AbstractString}},
+                 args::Union{AbstractVector{<:Pair{Symbol,<:AbstractString}},
+                             AbstractVector{<:Pair{<:AbstractString,Symbol}},
+                             AbstractVector{<:Pair{<:AbstractString,<:AbstractString}},
                              AbstractDict{Symbol,Symbol},
-                             AbstractDict{Symbol,AbstractString},
-                             AbstractDict{AbstractString,Symbol},
-                             AbstractDict{AbstractString,AbstractString}})
+                             AbstractDict{Symbol,<:AbstractString},
+                             AbstractDict{<:AbstractString,Symbol},
+                             AbstractDict{<:AbstractString,<:AbstractString}})
     args_vec = Vector{Pair{Symbol, Symbol}}(undef, length(args))
     for (i, (from, to)) in args
         args_vec[i] = Symbol(from) => Symbol(to)

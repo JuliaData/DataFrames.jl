@@ -1188,6 +1188,7 @@ end
     @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == [:A_1, :B_1]
     @test names(df) == [:A, :B]
     @test names(rename(x->Symbol(lowercase(string(x))), df)) == [:a, :b]
+    @test names(rename(x->lowercase(string(x)), df)) == [:a, :b]
     @test names(df) == [:A, :B]
 
     @test rename!(df, :A => :A_1) === df
@@ -1199,6 +1200,7 @@ end
     @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
     @test names(df) == [:A_4, :B_4]
     @test rename!(x->Symbol(lowercase(string(x))), df) === df
+    @test rename!(x->lowercase(string(x)), df) === df
     @test names(df) == [:a_4, :b_4]
 
     df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
@@ -1230,6 +1232,34 @@ end
     @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
     @test df == cdf
+end
+
+@testset "flexible rename arguments" begin
+    df = DataFrame(x=1,y=2,z=3)
+    for ren in ([:a, :b, :c], ["a", "b", "c"],
+                ["x"=>:a, "y"=>:b, "z"=>:c],
+                [:x=>"a", :y=>"b", :z=>"c"],
+                ["x"=>"a", "y"=>"b", "z"=>"c"],
+                [:x=>:a, :y=>:b, :z=>:c],
+                Dict(["x"=>:a, "y"=>:b, "z"=>:c]),
+                Dict([:x=>"a", :y=>"b", :z=>"c"]),
+                Dict(["x"=>"a", "y"=>"b", "z"=>"c"]),
+                Dict([:x=>:a, :y=>:b, :z=>:c]))
+        rename(df, ren) == DataFrame(a=1,b=2,c=3)
+        df == DataFrame(x=1,y=2,z=3)
+        if eltype(ren) isa Pair
+            rename(df, ren...) == DataFrame(a=1,b=2,c=3)
+            df == DataFrame(x=1,y=2,z=3)
+        end
+        df2 = copy(df)
+        rename!(df2, ren) == DataFrame(a=1,b=2,c=3)
+        df2 == DataFrame(a=1,b=2,c=3)
+        df2 = copy(df)
+        if eltype(ren) isa Pair
+            rename!(df2, ren...) == DataFrame(a=1,b=2,c=3)
+            df2 == DataFrame(a=1,b=2,c=3)
+        end
+    end
 end
 
 @testset "size" begin
