@@ -79,18 +79,19 @@ function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
     return df
 end
 
+rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol,Symbol}}) =
+    rename!(index(df), args)
+
 function rename!(df::AbstractDataFrame,
-                 args::Union{AbstractVector{<:Pair{Union{Symbol,AbstractString}, Union{Symbol,AbstractString}}, AbstractDict})
+                 args::Union{AbstractVector{Pair{Symbol,AbstractString}},
+                             AbstractVector{Pair{AbstractString,Symbol}},
+                             AbstractVector{Pair{AbstractString,AbstractString}},
+                             AbstractDict{Symbol,Symbol},
+                             AbstractDict{Symbol,AbstractString},
+                             AbstractDict{AbstractString,Symbol},
+                             AbstractDict{AbstractString,AbstractString}})
     args_vec = Vector{Pair{Symbol, Symbol}}(undef, length(args))
     for (i, (from, to)) in args
-        if !(from isa Union{Symbol, AbstractString})
-            throw(ArgumentError("rename! requires from value to be a Symbol or a string" *
-                                ". Got $from of type $(typeof(from))."))
-        end
-        if !(to isa Union{Symbol, AbstractString})
-            throw(ArgumentError("rename! requires to value to be a Symbol or a string" *
-                                ". Got $to of type $(typeof(to))."))
-        end
         args_vec[i] = Symbol(from) => Symbol(to)
     end
     rename!(index(df), args_vec)
