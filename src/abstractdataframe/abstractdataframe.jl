@@ -1369,3 +1369,81 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
     end
     DataFrame(newcols, _names(df), copycols=false)
 end
+
+"""
+    flatten(df::AbstractDataFrame, col::Union{Integer, Symbol})
+
+When column `col` of data frame `df` has iterable elements that define `length` (for example
+a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning 
+the column corresponding to `col` becomes a longer `Vector` where the original entries 
+are concatenated. Elements of row `i` of `df` in columns other than `col` will be repeated
+according to the length of `df[i, col]`. Note that these elements are not copied,
+and thus if they are mutable changing them in the returned `DataFrame` will affect `df`.
+
+# Examples
+
+```
+julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
+2×2 DataFrame
+│ Row │ a     │ b      │
+│     │ Int64 │ Array… │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ [1, 2] │
+│ 2   │ 2     │ [3, 4] │
+
+julia> flatten(df1, :b)
+4×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 1     │ 2     │
+│ 3   │ 2     │ 3     │
+│ 4   │ 2     │ 4     │
+
+julia> df2 = DataFrame(a = [1, 2], b = [("p", "q"), ("r", "s")])
+2×2 DataFrame
+│ Row │ a     │ b          │
+│     │ Int64 │ Tuple…     │
+├─────┼───────┼────────────┤
+│ 1   │ 1     │ ("p", "q") │
+│ 2   │ 2     │ ("r", "s") │
+
+julia> flatten(df2, :b)
+4×2 DataFrame
+│ Row │ a     │ b      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ p      │
+│ 2   │ 1     │ q      │
+│ 3   │ 2     │ r      │
+│ 4   │ 2     │ s      │
+
+```
+"""
+function flatten(df::AbstractDataFrame, col::ColumnIndex)
+    col_to_flatten = df[!, col]
+    lengths = length.(col_to_flatten)
+    new_df = similar(df[!, Not(col)], sum(lengths))
+
+    for name in _names(new_df)
+        repeat_lengths!(new_df[!, name], df[!, name], lengths)
+    end
+
+    flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
+        reduce(vcat, col_to_flatten) :
+        collect(Iterators.flatten(col_to_flatten))
+
+    insertcols!(new_df, columnindex(df, col), col => flattened_col)
+
+    return new_df
+end
+
+function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector, lengths::AbstractVector{Int})
+    counter = 1
+    @inbounds for i in eachindex(shortold)
+        l = lengths[i]
+        longnew[counter:(counter + l - 1)] .= Ref(shortold[i])
+        counter += l
+    end
+end

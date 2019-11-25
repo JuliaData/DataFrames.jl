@@ -46,6 +46,7 @@ eachrow
 eachcol
 filter
 filter!
+flatten
 hcat
 insertcols!
 mapcols
