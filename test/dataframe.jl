@@ -269,7 +269,7 @@ end
     @test df == dfb
 
     dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    @test_logs (:warn, r"cols=:equal as default is deprecated") push!(dfb, (second="banana", first=3))
+    push!(dfb, (second="banana", first=3))
     @test df == dfb
 
     df0 = DataFrame(first=[1,2], second=["apple","orange"])

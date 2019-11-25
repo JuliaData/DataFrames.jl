@@ -368,7 +368,7 @@ end
     @test df == DataFrame(x=1, y=2)
 
     @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
-    @test push!(df, df[1, [2,1]], cols=:equal) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    @test push!(df, df[1, [2,1]], cols=:setequal) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
 
     push!(df, df[1, [2,1]], cols=:intersect)
     @test df == DataFrame(x=[1, 1, 1, 1], y=[2, 2, 2, 2])
