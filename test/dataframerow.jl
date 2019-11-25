@@ -298,7 +298,7 @@ end
     @test parentindices(sdf[2, r"a"]) == (3, [1])
     @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
-    @test_throws ArgumentError parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
+    @test_throws ArgumentError parentindices(sdf[1, [2, 2]])
     @test parent(df[2, r""]) === df
     @test parent(df[2, r"a"]) === df
     @test parent(df[2, r"x"]) === df
@@ -318,7 +318,7 @@ end
     @test parentindices(sdf[2, r"a"]) == (3, [1])
     @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
-    @test_throws ArgumentError parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
+    @test_throws ArgumentError parentindices(sdf[1, [2, 2]])
 end
 
 @testset "iteration and collect" begin
@@ -341,8 +341,8 @@ end
 @testset "duplicate column" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
     sdf = view(df, [3,1,4], [3,1,4])
-    @test_throws ArgumentError dfr1 = df[2, [2,2,2]]
-    @test_throws ArgumentError dfr2 = sdf[2, [2,2,2]]
+    @test_throws ArgumentError df[2, [2,2,2]]
+    @test_throws ArgumentError sdf[2, [2,2,2]]
 end
 
 @testset "conversion and push!" begin

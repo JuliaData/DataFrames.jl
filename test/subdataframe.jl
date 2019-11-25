@@ -241,7 +241,7 @@ end
 
 @testset "duplicate column" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
-    @test_throws ArgumentError sdf = view(df, [3,1,4], [3,3,3])
+    @test_throws ArgumentError view(df, [3,1,4], [3,3,3])
 end
 
 @testset "conversion to DataFrame" begin
