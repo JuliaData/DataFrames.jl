@@ -105,7 +105,7 @@ function rename!(f::Function, df::AbstractDataFrame)
     return df
 end
 
-rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}};
+rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
        makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
        makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
