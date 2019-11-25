@@ -1194,38 +1194,29 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:sete
     ncol(df2) == 0 && return df1
 
     if cols == :orderequal && _names(df1) != _names(df2)
-        if ncol(df1) != ncol(df2)
-            wrongnames = symdiff(Set(_names(df1)), Set(_names(df2)))
-            if length(wrongnames) > 0
-                mismatchmsg = " Column names :" *
-                              join(wrongnames, ", :", " and :") *
-                              "were found in only one of the passed data frames"
-            else
-                mismatchmsg = ""
-            end
-            throw(ArgumentError("The number of columns in the two data frames does " *
-                                "not match and passed `cols` value is `:orderequal`.") *
-                                mismatchmsg)
-        end
-        mismatches = findall(_names(df1) .!= _names(df2))
-        throw(ArgumentError("Columns number " *
-                            join(mismatches, ", ", " and ") *
-                            " do not have the same names in both passed data frames" *
-                            "and `cols=:orderequal`"))
-    end
-    if cols == :setequal
-        ns1 = Set(_names(df1))
-        ns2 = Set(_names(df2))
-        # note here that df2 could be a SubDataFrame that has multiple occurrences
-        # of the same column name, so it is possible that ncol(df1) != ncol(df2).
-        # This is not a problem as the columns with the same name contain
-        # the same data in df2 then anyway.
-        if ns1 != ns2
-            wrongnames = symdiff(ns1, ns2)
+        wrongnames = symdiff(_names(df1), _names(df2))
+        if isempty(wrongnames)
+            mismatches = findall(_names(df1) .!= _names(df2))
+            @assert !isempty(mismatches)
+            throw(ArgumentError("Columns number " *
+                                join(mismatches, ", ", " and ") *
+                                " do not have the same names in both passed data frames" *
+                                "and `cols=:orderequal`"))
+        else
+            mismatchmsg = " Column names :" *
             throw(ArgumentError("Column names :" *
                                 join(wrongnames, ", ", :" and :") *
                                 "were found in only one of the passed data frames " *
-                                "and `cols=:setequal`"))
+                                "and passed `cols` value is `:orderequal`"))
+        end
+    end
+    if cols == :setequal
+        wrongnames = symdiff(_names(df1), _names(df2))
+        if !isempty(wrongnames)
+            throw(ArgumentError("Column names :" *
+                                join(wrongnames, ", ", :" and :") *
+                                "were found in only one of the passed data frames " *
+                                "and passed `cols` value is `:setequal`"))
         end
     end
 
