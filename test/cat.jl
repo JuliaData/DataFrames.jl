@@ -267,10 +267,8 @@ end
 
     df = DataFrame(A=1:5, B=11:15, C=21:25)
     @test vcat(view(df, 1:2, :), view(df, 3:5, [3,2,1])) == df
-    @test_throws ArgumentError vcat(view(df, 1:2, [1,2,3,1,2,3]),
-                                    view(df, 3:5, [3,2,1,1,2,3])) == df
-    @test_throws ArgumentError all(==(df[1, :]), eachrow(vcat(view(df, [1,1,1], [1,2,3,1,2,3]),
-                                                              view(df, [1,1,1], [3,2,1,1,2,3]))))
+    @test_throws ArgumentError view(df, 1:2, [1,2,3,1,2,3])
+    @test_throws ArgumentError view(df, 3:5, [3,2,1,1,2,3])
 end
 
 @testset "vcat copy" begin
