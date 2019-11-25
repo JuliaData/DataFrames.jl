@@ -72,21 +72,18 @@ end
 @test i[Not(1:0)] == 1:length(i)
 
 @test names(i) == [:A,:B]
-@test rename(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
-@test names(i) == [:A,:B]
 @test rename!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
-@test_throws ArgumentError rename(i, [:a,:a])
 @test_throws ArgumentError rename!(i, [:a,:a])
-@test rename(i, [:a,:b]) == Index([:a,:b])
+@test rename!(copy(i), [:a,:b]) == Index([:a,:b])
 @test names(i) == [:a,:a_1]
 @test rename!(i, [:a,:b]) == Index([:a,:b])
-@test rename(i, Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
-@test rename(i, :a => :A) == Index([:A,:b])
-@test rename(i, :a => :a) == Index([:a,:b])
-@test rename(i, [:a => :A]) == Index([:A,:b])
-@test rename(i, [:a => :a]) == Index([:a,:b])
-@test rename(x->Symbol(uppercase(string(x))), i) == Index([:A,:B])
-@test rename(x->Symbol(lowercase(string(x))), i) == Index([:a,:b])
+@test rename!(copy(i), Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
+@test rename!(copy(i), :a => :A) == Index([:A,:b])
+@test rename!(copy(i), :a => :a) == Index([:a,:b])
+@test rename!(copy(i), [:a => :A]) == Index([:A,:b])
+@test rename!(copy(i), [:a => :a]) == Index([:a,:b])
+@test rename!(x->Symbol(uppercase(string(x))), copy(i)) == Index([:A,:B])
+@test rename!(x->Symbol(lowercase(string(x))), copy(i)) == Index([:a,:b])
 
 @test delete!(i, :a) == Index([:b])
 push!(i, :C)
