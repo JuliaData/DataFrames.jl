@@ -1127,7 +1127,7 @@ function categorical!(df::DataFrame,
 end
 
 """
-    append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:setequal)
+    append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
 
 Add the rows of `df2` to the end of `df1`.
 
@@ -1180,7 +1180,7 @@ julia> df1
 │ 6   │ 6     │ 6     │
 ```
 """
-function Base.append!(df1::DataFrame, df2::AbstractDataFrame, cols::Symbol=:setequal)
+function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
     if !(cols in (:orderequal, :setequal))
         throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal"))
     end

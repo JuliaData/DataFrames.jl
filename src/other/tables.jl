@@ -32,7 +32,7 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
     return fromcolumns(Tables.columns(x), copycols=copycols)
 end
 
-Base.append!(df::DataFrame, x, cols::Symbol=:setequal) =
+Base.append!(df::DataFrame, x; cols::Symbol=:setequal) =
     append!(df, DataFrame(x, copycols=false), cols=cols)
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
