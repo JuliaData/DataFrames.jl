@@ -189,6 +189,11 @@ Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
 Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
+Base.convert(::Type{Array}, dfr::DataFrameRow) = Vector(dfr)
+Base.convert(::Type{Array{T}}, dfr::DataFrameRow) where {T} = Vector{T}(dfr)
+Base.Array(dfr::DataFrameRow) = Vector(dfr)
+Base.Array{T}(dfr::DataFrameRow) where {T} = Vector{T}(dfr)
+
 Base.keys(r::DataFrameRow) = Tuple(_names(r))
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
