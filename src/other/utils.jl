@@ -57,4 +57,3 @@ function gennames(n::Integer)
     end
     return res
 end
-

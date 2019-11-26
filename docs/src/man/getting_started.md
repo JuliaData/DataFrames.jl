@@ -294,6 +294,8 @@ we can observe that:
 
 ### Taking a Subset
 
+#### Indexing syntax
+
 Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
 
 ```jldoctest dataframe
@@ -390,7 +392,7 @@ julia> df[!, :A] == df[:, :A]
 true
 ```
 
-In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
+In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1, :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
 
 It is also possible to use a regular expression as a selector of columns matching it:
 ```jldoctest dataframe
@@ -445,8 +447,6 @@ julia> df[:, All(Not(r"x"), :)]
 │ 1   │ 1     │ 4     │ 2     │ 3     │
 ```
 
-You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
-
 The indexing syntax can also be used to select rows based on conditions on variables:
 
 ```jldoctest dataframe
@@ -497,6 +497,85 @@ julia> df[in.(df.A, Ref([1, 5, 601])), :]
 
 Equivalently, the `in` function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
+#### Column selection using `select` and `select!`
+
+You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
+
+The `select` function creates a new data frame:
+```jldoctest dataframe
+julia> df = DataFrame(x1=1, x2=2, y=3)
+1×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> select(df, Not(:x1)) # drop column :x1 in a new data frame
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+
+julia> select(df, r"x") # select columns containing 'x' character
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+```
+
+It is important to note that `select` always returns a data frame,
+even if a single column is selected (as opposed to indexing syntax).
+```jldoctest dataframe
+julia> select(df, :x1)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia> df[:, :x1]
+1-element Array{Int64,1}:
+ 1
+```
+
+By default `select` copies columns of a passed source data frame.
+In order to avoid copying, pass `copycols=false`:
+```
+julia> df2 = select(df, :x1)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia> df2.x1 === df.x1
+false
+
+julia> df2 = select(df, :x1, copycols=false)
+1×1 DataFrame
+│ Row │ x1    │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+
+julia> df2.x1 === df.x1
+true
+```
+
+To perform the selection operation in-place use `select!`:
+```jldoctest dataframe
+julia> select!(df, Not(:x1));
+
+julia> df
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+```
+
 While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
 - the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides interfaces similar to LINQ and [dplyr](https://dplyr.tidyverse.org)
@@ -520,7 +599,18 @@ julia> describe(df)
 
 ```
 
-Of course, one can also compute descrptive statistics directly on individual columns:
+If you are interested in describing only a subset of columns then the easiest way to do it is to
+pass a subset of an original data frame to `describe` like this:
+```jldoctest dataframe
+julia> describe(df[!, [:A]))
+1×8 DataFrame
+│ Row │ variable │ mean    │ min   │ median  │ max   │ nunique │ nmissing │ eltype   │
+│     │ Symbol   │ Float64 │ Int64 │ Float64 │ Int64 │ Nothing │ Nothing  │ DataType │
+├─────┼──────────┼─────────┼───────┼─────────┼───────┼─────────┼──────────┼──────────┤
+│ 1   │ A        │ 2.5     │ 1     │ 2.5     │ 4     │         │          │ Int64    │
+```
+
+Of course, one can also compute descriptive statistics directly on individual columns:
 ```jldoctest dataframe
 julia> using Statistics
 

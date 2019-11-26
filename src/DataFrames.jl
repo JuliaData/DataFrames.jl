@@ -1,22 +1,10 @@
 module DataFrames
 
-##############################################################################
-##
-## Dependencies
-##
-##############################################################################
-
 using Statistics, Printf, REPL
 using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, DataAPI
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
 using Tables, TableTraits, IteratorInterfaceExtensions
-
-##############################################################################
-##
-## Exported methods and types (in addition to everything reexported above)
-##
-##############################################################################
 
 import DataAPI.All,
        DataAPI.Between,
@@ -44,6 +32,7 @@ export AbstractDataFrame,
        disallowmissing!,
        dropmissing,
        dropmissing!,
+       flatten,
        groupby,
        groupindices,
        groupvars,
@@ -73,12 +62,6 @@ end
 if VERSION < v"1.2"
     export hasproperty
 end
-
-##############################################################################
-##
-## Load files
-##
-##############################################################################
 
 include("other/utils.jl")
 include("other/index.jl")
