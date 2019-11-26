@@ -241,8 +241,8 @@ Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), 
 
 
 """
-    describe(df::AbstractDataFrame)
-    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
+    describe(df::AbstractDataFrame; cols=:)
+    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...; cols=:)
 
 Return descriptive statistics for a data frame as a new `DataFrame`
 where each row represents a variable and each column a summary statistic.
@@ -258,6 +258,8 @@ where each row represents a variable and each column a summary statistic.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
+- `cols` : a keyword argument allowing to select only a subset of columns from `df`
+  to describe; all standard column selection methods are allowed.
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
@@ -279,22 +281,72 @@ to each column as the only argument. For columns allowing for missing values,
 the vector is wrapped in a call to [`skipmissing`](@ref): custom functions must therefore
 support such objects (and not only vectors), and cannot access missing values.
 
+For consistency with DataAPI.jl an `io` argument can be passed to `describe` in
+a first position but it is currently ignored.
+
 # Examples
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-describe([io,] df)
-describe([io,] df, :all)
-describe([io,] df, :min, :max)
-describe([io,] df, :min, :sum => sum)
+julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j')
+10×3 DataFrame
+│ Row │ i     │ x       │ y    │
+│     │ Int64 │ Float64 │ Char │
+├─────┼───────┼─────────┼──────┤
+│ 1   │ 1     │ 0.1     │ 'a'  │
+│ 2   │ 2     │ 0.2     │ 'b'  │
+│ 3   │ 3     │ 0.3     │ 'c'  │
+│ 4   │ 4     │ 0.4     │ 'd'  │
+│ 5   │ 5     │ 0.5     │ 'e'  │
+│ 6   │ 6     │ 0.6     │ 'f'  │
+│ 7   │ 7     │ 0.7     │ 'g'  │
+│ 8   │ 8     │ 0.8     │ 'h'  │
+│ 9   │ 9     │ 0.9     │ 'i'  │
+│ 10  │ 10    │ 1.0     │ 'j'  │
+
+julia> describe(df)
+3×8 DataFrame
+│ Row │ variable │ mean   │ min │ median │ max │ nunique │ nmissing │ eltype   │
+│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Union…  │ Nothing  │ DataType │
+├─────┼──────────┼────────┼─────┼────────┼─────┼─────────┼──────────┼──────────┤
+│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │         │          │ Int64    │
+│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │         │          │ Float64  │
+│ 3   │ y        │        │ 'a' │        │ 'j' │ 10      │          │ Char     │
+
+julia> describe(df, :min, :max)
+3×3 DataFrame
+│ Row │ variable │ min │ max │
+│     │ Symbol   │ Any │ Any │
+├─────┼──────────┼─────┼─────┤
+│ 1   │ i        │ 1   │ 10  │
+│ 2   │ x        │ 0.1 │ 1.0 │
+│ 3   │ y        │ 'a' │ 'j' │
+
+julia> describe(df, :min, :sum => sum)
+3×3 DataFrame
+│ Row │ variable │ min │ sum │
+│     │ Symbol   │ Any │ Any │
+├─────┼──────────┼─────┼─────┤
+│ 1   │ i        │ 1   │ 55  │
+│ 2   │ x        │ 0.1 │ 5.5 │
+│ 3   │ y        │ 'a' │     │
+
+julia> describe(df, :min, :sum => sum, cols=:x)
+1×3 DataFrame
+│ Row │ variable │ min     │ sum     │
+│     │ Symbol   │ Float64 │ Float64 │
+├─────┼──────────┼─────────┼─────────┤
+│ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-DataAPI.describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
-    _describe(df, collect(stats))
+DataAPI.describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...;
+                 cols=:) =
+    _describe(select(df, cols, copycols=false), collect(stats))
 
-DataAPI.describe(io::IO, df::AbstractDataFrame) =
-    _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+DataAPI.describe(io::IO, df::AbstractDataFrame; cols=:) =
+    _describe(select(df, cols, copycols=false),
+              [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
 
-DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = DataAPI.describe(stdout, df, stats...)
+DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...; cols=:) =
+    DataAPI.describe(stdout, df, stats...; cols=cols)
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
