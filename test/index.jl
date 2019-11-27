@@ -81,7 +81,6 @@ end
     @test rename!(copy(i), [:a,:b]) == Index([:a,:b])
     @test names(i) == [:a,:a_1]
     @test rename!(i, [:a,:b]) == Index([:a,:b])
-    @test rename!(copy(i), Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
     @test rename!(copy(i), :a => :A) == Index([:A,:b])
     @test rename!(copy(i), :a => :a) == Index([:a,:b])
     @test rename!(copy(i), [:a => :A]) == Index([:A,:b])
