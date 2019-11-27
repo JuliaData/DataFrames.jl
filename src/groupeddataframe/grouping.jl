@@ -238,76 +238,15 @@ function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
     return i
 end
 
-"""
-    groupvalues([T::Type], gd::GroupedDataFrame)
-    groupvalues([T::Type], gd::GroupedDataFrame, i)
-    groupvalues(gd::GroupedDataFrame, i, col)
+# Get values of grouping columns for all groups
+_groupvalues(gd::GroupedDataFrame) = [_groupvalues(gd, i) for i in 1:length(gd)]
 
-Get the values of the grouping columns for `gd`, optionally specifying the group
-index `i` and grouping column `col`. `col` may be an integer index (of the
-grouping columns passed to [`groupby`](@ref)) or the column name itself. The
-optional first argument to the first two forms specifies the return type, which
-may be `NamedTuple` (default) or `Tuple`.
+# Get values of grouping columns for single group
+_groupvalues(gd::GroupedDataFrame, i::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols]
 
-# Returns
-
-Iterator over `Tuple`s/`NamedTuple`s, a single `Tuple`/`NamedTuple`, or a
-grouping column value.
-
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
-                      b = repeat([2, 1], outer=[6]),
-                      c = 1:12);
-
-julia> gd = groupby(df, [:a, :b])
-GroupedDataFrame with 6 groups based on keys: a, b
-First Group (2 rows): a = :foo, b = 2
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 2     │ 7     │
-⋮
-Last Group (2 rows): a = :baz, b = 1
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 1     │ 6     │
-│ 2   │ baz    │ 1     │ 12    │
-
-julia> collect(groupvalues(gd))
-6-element Array{NamedTuple{(:a, :b),Tuple{Symbol,Int64}},1}:
- (a = :foo, b = 2)
- (a = :bar, b = 1)
- (a = :baz, b = 2)
- (a = :foo, b = 1)
- (a = :bar, b = 2)
- (a = :baz, b = 1)
-
-julia> groupvalues(gd, 2)
-(a = :bar, b = 1)
-
-julia> groupvalues(gd, 2, 1)
-:bar
-
-julia> groupvalues(gd, 2, :a)
-:bar
-
-julia> groupvalues(Tuple, gd, 2)
-(:bar, 1)
-```
-"""
-groupvalues(T::Type, gd::GroupedDataFrame) = (groupvalues(T, gd, i) for i in 1:length(gd))
-groupvalues(gd::GroupedDataFrame) = groupvalues(NamedTuple, gd)
-
-groupvalues(::Type{Tuple}, gd::GroupedDataFrame, i::Integer) = Tuple(gd.parent[gd.idx[gd.starts[i]], gd.cols])
-groupvalues(::Type{NamedTuple}, gd::GroupedDataFrame, i::Integer) = NamedTuple{Tuple(groupvars(gd))}(groupvalues(Tuple, gd, i))
-groupvalues(gd::GroupedDataFrame, i::Integer) = groupvalues(NamedTuple, gd, i)
-
-groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
-groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) = groupvalues(gd, i, _groupvar_idx(gd, col, true))
+# Get values of single grouping column for single group
+_groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
+_groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) = _groupvalues(gd, i, _groupvar_idx(gd, col, true))
 
 # Eltypes of the grouping columns
 _grouptypes(gd::GroupedDataFrame) = Tuple(eltype(gd.parent[!, c]) for c in gd.cols)
@@ -342,15 +281,15 @@ Base.keys(key::GroupKey) = Tuple(groupvars(parent(key)))
 Base.names(key::GroupKey) = groupvars(parent(key))
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
-Base.values(key::GroupKey) = groupvalues(Tuple, parent(key), getfield(key, :idx))
+Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
 
 Base.iterate(key::GroupKey, i::Integer=1) = i <= length(key) ? (key[i], i + 1) : nothing
 
-Base.getindex(key::GroupKey, i::Integer) = groupvalues(parent(key), getfield(key, :idx), i)
+Base.getindex(key::GroupKey, i::Integer) = _groupvalues(parent(key), getfield(key, :idx), i)
 
 function Base.getindex(key::GroupKey, n::Symbol)
     try
-        return groupvalues(parent(key), getfield(key, :idx), n)
+        return _groupvalues(parent(key), getfield(key, :idx), n)
     catch e
         throw(KeyError(n))
     end
@@ -364,7 +303,10 @@ function Base.getproperty(key::GroupKey, p::Symbol)
     end
 end
 
-Base.NamedTuple(key::GroupKey) = groupvalues(NamedTuple, parent(key), getfield(key, :idx))
+function Base.NamedTuple(key::GroupKey)
+    N = NamedTuple{Tuple(groupvars(parent(key)))}
+    N(_groupvalues(parent(key), getfield(key, :idx)))
+end
 Base.Tuple(key::GroupKey) = values(key)
 
 
@@ -484,8 +426,8 @@ end
 
 # Index with tuple
 function Base.getindex(gd::GroupedDataFrame, key::Tuple)
-    for (i, v) in enumerate(groupvalues(Tuple, gd))
-        isequal(v, key) && return gd[i]
+    for i in 1:length(gd)
+        isequal(Tuple(_groupvalues(gd, i)), key) && return gd[i]
     end
     throw(KeyError(key))
 end
