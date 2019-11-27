@@ -1998,15 +1998,16 @@ end
     global_logger(old_logger)
 
     for v in ((a=10, b=20, d=30), (a=10, c=20, b=30),
-              DataFrame(a=10, c=20, b=30)[1, :], Dict(:a=>10, :b=>20, :c=>30, :d=>0),
-              (a=10, b=20, c=30, d=0), DataFrame(a=10, b=20, c=30, d=0)[1, :])
+              DataFrame(a=10, c=20, b=30)[1, :],
+              (a=10, b=20, c=30, d=0),
+              DataFrame(a=10, b=20, c=30, d=0)[1, :])
         df = DataFrame(a=1, b=2, c=3)
-        if collect(keys(v)) == names(df)
-            push!(df, v, cols=:orderequal)
-        else
-            @test_throws ArgumentError push!(df, v, cols=:orderequal)
-        end
+        @test_throws ArgumentError push!(df, v, cols=:orderequal)
     end
+
+    v = Dict(:a=>10, :b=>20, :c=>30, :d=>0)
+    df = DataFrame(a=1, b=2, c=3)
+    @test_logs (:warn, r"In the future `push!`") push!(df, v, cols=:orderequal)
 
     @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
                cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
