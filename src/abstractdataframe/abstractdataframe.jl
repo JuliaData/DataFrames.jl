@@ -795,8 +795,8 @@ Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
 
 Base.convert(::Type{Array}, df::AbstractDataFrame) = convert(Matrix, df)
 Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where {T}  = Matrix{T}(df)
-Base.Array(df::AbstractDataFrame) = Matrix(dfr)
-Base.Array{T}(df::AbstractDataFrame) where {T} = Matrix{T}(dfr)
+Base.Array(df::AbstractDataFrame) = Matrix(df)
+Base.Array{T}(df::AbstractDataFrame) where {T} = Matrix{T}(df)
 
 """
     nonunique(df::AbstractDataFrame)
