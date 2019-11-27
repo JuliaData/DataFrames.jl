@@ -81,12 +81,11 @@ end
     @test rename!(copy(i), [:a,:b]) == Index([:a,:b])
     @test names(i) == [:a,:a_1]
     @test rename!(i, [:a,:b]) == Index([:a,:b])
-    @test rename!(copy(i), :a => :A) == Index([:A,:b])
-    @test rename!(copy(i), :a => :a) == Index([:a,:b])
     @test rename!(copy(i), [:a => :A]) == Index([:A,:b])
     @test rename!(copy(i), [:a => :a]) == Index([:a,:b])
-    @test rename!(x->Symbol(uppercase(string(x))), copy(i)) == Index([:A,:B])
-    @test rename!(x->Symbol(lowercase(string(x))), copy(i)) == Index([:a,:b])
+    @test rename!(copy(i), [:a => :b, :b => :a]) == Index([:b,:a])
+    @test rename!(x -> Symbol(uppercase(string(x))), copy(i)) == Index([:A,:B])
+    @test rename!(x -> Symbol(lowercase(string(x))), copy(i)) == Index([:a,:b])
 
     @test delete!(i, :a) == Index([:b])
     push!(i, :C)
