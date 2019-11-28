@@ -1267,15 +1267,17 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         return df
     end
     if cols == :orderequal
-        if row isa NamedTuple
-            if length(row) != ncol(df) || any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
-                throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
-                                    "the same column names and in the same order"))
-            end
+        if row isa Dict
+            throw(ArgumentError("passing `Dict` as `row` when `cols` equal to "
+                                * "`:orderequal` is not allowed as it is unordered"))
+        end
+        if length(row) != ncol(df) || any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
+            throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
+                                "the same column names and in the same order"))
         end
     end
     # for AbstractDict :orderequal is allowed ant treated as :setequal
-    if cols == :setequal || (cols == :orderequal && row isa AbstractDict) || cols === :equal
+    if cols == :setequal || cols === :equal
         if cols == :equal
             Base.depwarn("`cols=:equal` is deprecated." *
                          "Use `:setequal` instead.", :push!)
