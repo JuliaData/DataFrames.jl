@@ -1276,7 +1276,6 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
                                 "the same column names and in the same order"))
         end
     end
-    # for AbstractDict :orderequal is allowed ant treated as :setequal
     if cols == :setequal || cols === :equal
         if cols == :equal
             Base.depwarn("`cols=:equal` is deprecated." *
