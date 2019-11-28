@@ -90,11 +90,7 @@ function rename!(df::AbstractDataFrame,
                              AbstractDict{Symbol,<:AbstractString},
                              AbstractDict{<:AbstractString,Symbol},
                              AbstractDict{<:AbstractString,<:AbstractString}})
-    args_vec = Vector{Pair{Symbol, Symbol}}(undef, length(args))
-    for (i, (from, to)) in args
-        args_vec[i] = Symbol(from) => Symbol(to)
-    end
-    rename!(index(df), args_vec)
+    rename!(index(df), [Symbol(from) => Symbol(to) for (from, to) in args])
     return df
 end
 
@@ -1400,8 +1396,8 @@ end
     flatten(df::AbstractDataFrame, col::Union{Integer, Symbol})
 
 When column `col` of data frame `df` has iterable elements that define `length` (for example
-a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning 
-the column corresponding to `col` becomes a longer `Vector` where the original entries 
+a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning
+the column corresponding to `col` becomes a longer `Vector` where the original entries
 are concatenated. Elements of row `i` of `df` in columns other than `col` will be repeated
 according to the length of `df[i, col]`. Note that these elements are not copied,
 and thus if they are mutable changing them in the returned `DataFrame` will affect `df`.
