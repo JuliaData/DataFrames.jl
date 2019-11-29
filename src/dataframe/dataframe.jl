@@ -1128,8 +1128,11 @@ end
 
 """
     append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
+    append!(df::DataFrame, x; cols::Symbol=:setequal)
 
-Add the rows of `df2` to the end of `df1`.
+Add the rows of `df2` to the end of `df1`. If the second argument `x` is
+not an `AbstractDataFrame` then it is converted using `DataFrame(x, copycols=false)`
+before being appended.
 
 Column names of  `df1` and `df2` must be equal.
 If `cols` is `:setequal` (the default) then column names may have different orders
@@ -1336,7 +1339,9 @@ depends on the `cols` argument value in the following way:
 * If `cols=:setequal` (this is the default)
   then `row` must contain exactly the same columns as `df` (but possibly in a different order).
 * If `cols=:orderequal` then `row` must contain the same columns in the same order
-  (this option is the same as `:setequal` if `row` is an `AbstractDict`).
+  (for `AbstractDict` this option requires that `keys(row)` matches `names(df)`
+   to allow for support of ordered dicts; however, if `row` is a `Dict` an error is thrown
+   as it is an unordered collection).
 * If `cols=:intersect` then `row` may contain more columns than `df`,
   but all column names that are present in `df` must be present in `row` and only they
   are used to populate a new row in `df`.

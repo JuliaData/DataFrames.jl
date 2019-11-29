@@ -1,6 +1,6 @@
 module TestDataFrame
 
-using Dates, DataFrames, Statistics, Random, Test, Logging
+using Dates, DataFrames, Statistics, Random, Test, Logging, DataStructures
 using DataFrames: _columns, index
 const ≅ = isequal
 const ≇ = !isequal
@@ -1089,6 +1089,15 @@ end
 
     rename!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
+
+    df = DataFrame(A = 1:2, B = 1:2)
+    df2 = DataFrame(A = 1:4, B = 1:4)
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:setequal) == df2
+    @test append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:setequal) == df2
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:orderequal) == df2
+    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:intersect)
 end
 
 @testset "test categorical!" begin
@@ -1983,7 +1992,8 @@ end
 
 @testset "vcat and push! with :orderequal" begin
     for v in ((a=10, b=20, c=30),
-              DataFrame(a=10, b=20, c=30)[1, :])
+              DataFrame(a=10, b=20, c=30)[1, :],
+              OrderedDict(:a=>10, :b=>20, :c=>30))
         df = DataFrame(a=1, b=2, c=3)
         push!(df, v, cols=:orderequal)
         @test df == DataFrame(a=[1,10], b=[2,20], c=[3,30])
@@ -1993,7 +2003,8 @@ end
               DataFrame(a=10, c=20, b=30)[1, :],
               (a=10, b=20, c=30, d=0),
               DataFrame(a=10, b=20, c=30, d=0)[1, :],
-              Dict(:a=>10, :b=>20, :c=>30))
+              Dict(:a=>10, :b=>20, :c=>30),
+              OrderedDict(:c=>10, :b=>20, :a=>30))
         df = DataFrame(a=1, b=2, c=3)
         @test_throws ArgumentError push!(df, v, cols=:orderequal)
     end
@@ -2030,6 +2041,19 @@ end
         allowmissing!(df, [:a, :b])
         push!(df, Dict(), cols=:subset)
         @test df ≅ DataFrame(a=[1,10, missing], b=[2,20, missing], c=[3,missing, missing])
+    end
+end
+
+@testset "push! with :intersect" begin
+    for row in ((y=4, x=3), Dict(y=4, x=3), (z=1, y=4, x=3), Dict(y=4, x=3, z=1))
+        df = DataFrame(x=1, y=2)
+        push!(df, row, cols=:intersect)
+        @test df == DataFrame(x=[1, 3], y=[2, 4])
+    end
+
+    for row in ((z=4, x=3), Dict(z=4, x=3), (z=1, p=4, x=3), Dict(p=4, x=3, z=1))
+        df = DataFrame(x=1, y=2)
+        @test_throws ArgumentError push!(df, row, cols=:intersect)
     end
 end
 
