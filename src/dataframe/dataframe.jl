@@ -1274,7 +1274,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             throw(ArgumentError("passing `Dict` as `row` when `cols` equal to "
                                 * "`:orderequal` is not allowed as it is unordered"))
         end
-        if length(row) != ncol(df) || any(x -> x[1] != x[2], zip(propertynames(row), _names(df)))
+        if length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
             throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
                                 "the same column names and in the same order"))
         end

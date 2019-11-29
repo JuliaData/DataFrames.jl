@@ -2046,16 +2046,25 @@ end
 end
 
 @testset "push! with :intersect" begin
-    for row in ((y=4, x=3), Dict(y=4, x=3), (z=1, y=4, x=3), Dict(y=4, x=3, z=1))
+    for row in ((y=4, x=3), Dict(:y=>4, :x=>3), (z=1, y=4, x=3), Dict(:y=>4, :x=>3, :z=>1))
         df = DataFrame(x=1, y=2)
         push!(df, row, cols=:intersect)
         @test df == DataFrame(x=[1, 3], y=[2, 4])
     end
 
-    for row in ((z=4, x=3), Dict(z=4, x=3), (z=1, p=4, x=3), Dict(p=4, x=3, z=1))
+    old_logger = global_logger(NullLogger())
+    for row in ((z=4, x=3), (z=1, p=4, x=3))
         df = DataFrame(x=1, y=2)
-        @test_throws ArgumentError push!(df, row, cols=:intersect)
+        @test_throws ErrorException push!(df, row, cols=:intersect)
+        @test df == DataFrame(x=1, y=2)
     end
+
+    for row in (Dict(:z=>4, :x=>3), Dict(:p=>4, :x=>3, :z=>1))
+        df = DataFrame(x=1, y=2)
+        @test_throws KeyError push!(df, row, cols=:intersect)
+        @test df == DataFrame(x=1, y=2)
+    end
+    global_logger(old_logger)
 end
 
 end # module
