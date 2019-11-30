@@ -1245,19 +1245,19 @@ end
                 Dict([:x=>"a", :y=>"b", :z=>"c"]),
                 Dict(["x"=>"a", "y"=>"b", "z"=>"c"]),
                 Dict([:x=>:a, :y=>:b, :z=>:c]))
-        rename(df, ren) == DataFrame(a=1,b=2,c=3)
+        @test rename(df, ren) == DataFrame(a=1,b=2,c=3)
         df == DataFrame(x=1,y=2,z=3)
         if eltype(ren) isa Pair
-            rename(df, ren...) == DataFrame(a=1,b=2,c=3)
-            df == DataFrame(x=1,y=2,z=3)
+            @test rename(df, ren...) == DataFrame(a=1,b=2,c=3)
+            @test df == DataFrame(x=1,y=2,z=3)
         end
         df2 = copy(df)
-        rename!(df2, ren) == DataFrame(a=1,b=2,c=3)
-        df2 == DataFrame(a=1,b=2,c=3)
+        @test rename!(df2, ren) == DataFrame(a=1,b=2,c=3)
+        @test df2 == DataFrame(a=1,b=2,c=3)
         df2 = copy(df)
         if eltype(ren) isa Pair
-            rename!(df2, ren...) == DataFrame(a=1,b=2,c=3)
-            df2 == DataFrame(a=1,b=2,c=3)
+            @test rename!(df2, ren...) == DataFrame(a=1,b=2,c=3)
+            @test df2 == DataFrame(a=1,b=2,c=3)
         end
     end
 end
