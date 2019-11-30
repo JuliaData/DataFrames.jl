@@ -1128,17 +1128,18 @@ end
 
 """
     append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
-    append!(df::DataFrame, x; cols::Symbol=:setequal)
+    append!(df::DataFrame, table; cols::Symbol=:setequal)
 
-Add the rows of `df2` to the end of `df1`. If the second argument `x` is
-not an `AbstractDataFrame` then it is converted using `DataFrame(x, copycols=false)`
+Add the rows of `df2` to the end of `df1`. If the second argument `table` is
+not an `AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
 before being appended.
 
 Column names of  `df1` and `df2` must be equal.
 If `cols` is `:setequal` (the default) then column names may have different orders
 and `append!` is performed by matching column names.
-If `cols` is `:orderequal` then the order of columns in `df1` and `df2` must be
-the same.
+If `cols` is `:orderequal` then the order of columns in `df1` and `df2` or `table`
+must be the same. In particular, if `table` is a `Dict` an error is thrown
+as it is an unordered collection.
 
 The above rule has the following exceptions:
 * If `df1` has no columns then copies of
@@ -1271,10 +1272,9 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     end
     if cols == :orderequal
         if row isa Dict
-            throw(ArgumentError("passing `Dict` as `row` when `cols` equal to "
-                                * "`:orderequal` is not allowed as it is unordered"))
-        end
-        if length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
+            throw(ArgumentError("passing `Dict` as `row` when `cols` is equal to " *
+                                "`:orderequal` is not allowed as it is unordered"))
+        elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
             throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
                                 "the same column names and in the same order"))
         end

@@ -1096,7 +1096,10 @@ end
     @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:setequal) == df2
     @test append!(copy(df), DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:setequal) == df2
     @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:orderequal) == df2
+    @test append!(copy(df), OrderedDict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal) == df2
+    @test_throws ArgumentError append!(df, Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError append!(df, OrderedDict(:B => 3:4, :A => [3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:intersect)
     @test df == DataFrame(A = 1:2, B = 1:2)
 end
