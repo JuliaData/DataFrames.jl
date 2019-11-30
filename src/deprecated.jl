@@ -1360,11 +1360,6 @@ import Base: map
 @deprecate head(df::AbstractDataFrame, n::Integer) first(df, n)
 @deprecate tail(df::AbstractDataFrame, n::Integer) last(df, n)
 
-import Base: convert
-@deprecate convert(::Type{Array}, df::AbstractDataFrame) convert(Matrix, df)
-@deprecate convert(::Type{Array{T}}, df::AbstractDataFrame) where {T} convert(Matrix{T}, df)
-@deprecate convert(::Type{Array}, dfr::DataFrameRow) permutedims(Vector(dfr))
-
 @deprecate SubDataFrame(df::AbstractDataFrame, rows::AbstractVector{<:Integer}) SubDataFrame(df, rows, :)
 @deprecate SubDataFrame(df::AbstractDataFrame, ::Colon) SubDataFrame(df, :, :)
 

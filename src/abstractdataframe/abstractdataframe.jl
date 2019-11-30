@@ -793,6 +793,11 @@ end
 Base.Matrix(df::AbstractDataFrame) = Base.convert(Matrix, df)
 Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
 
+Base.convert(::Type{Array}, df::AbstractDataFrame) = convert(Matrix, df)
+Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where {T}  = Matrix{T}(df)
+Base.Array(df::AbstractDataFrame) = Matrix(df)
+Base.Array{T}(df::AbstractDataFrame) where {T} = Matrix{T}(df)
+
 """
     nonunique(df::AbstractDataFrame)
     nonunique(df::AbstractDataFrame, cols)
@@ -1426,8 +1431,8 @@ end
     flatten(df::AbstractDataFrame, col::Union{Integer, Symbol})
 
 When column `col` of data frame `df` has iterable elements that define `length` (for example
-a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning 
-the column corresponding to `col` becomes a longer `Vector` where the original entries 
+a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning
+the column corresponding to `col` becomes a longer `Vector` where the original entries
 are concatenated. Elements of row `i` of `df` in columns other than `col` will be repeated
 according to the length of `df[i, col]`. Note that these elements are not copied,
 and thus if they are mutable changing them in the returned `DataFrame` will affect `df`.
