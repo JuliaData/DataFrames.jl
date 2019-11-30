@@ -1213,8 +1213,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                                 "were found in only one of the passed data frames " *
                                 "and `cols=:orderequal`"))
         end
-    end
-    if cols == :setequal
+    elseif cols == :setequal
         wrongnames = symdiff(_names(df1), _names(df2))
         if !isempty(wrongnames)
             throw(ArgumentError("Column names :" *
@@ -1278,8 +1277,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
                                 "the same column names and in the same order"))
         end
-    end
-    if cols == :setequal || cols === :equal
+    elseif cols == :setequal || cols === :equal
         if cols == :equal
             Base.depwarn("`cols=:equal` is deprecated." *
                          "Use `:setequal` instead.", :push!)
