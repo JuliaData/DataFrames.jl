@@ -97,7 +97,7 @@ end
     rename!(i2, reverse(names(i2)))
     @test names(i2) == names(i)
     for name in names(i)
-      i2[name] # Issue #715
+        i2[name] # Issue #715
     end
 end
 
