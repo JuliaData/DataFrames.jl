@@ -45,7 +45,7 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     return x
 end
 
-function rename!(x::Index, nms)
+function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     xbackup = copy(x)
     processedfrom = Set{Symbol}()
     processedto = Set{Symbol}()
@@ -54,12 +54,12 @@ function rename!(x::Index, nms)
         if from ∈ processedfrom
             copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming $from multiple times."))
+            throw(ArgumentError("Tried renaming :$from multiple times."))
         end
         if to ∈ processedto
             copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming to $to multiple times."))
+            throw(ArgumentError("Tried renaming to :$to multiple times."))
         end
         push!(processedfrom, from)
         push!(processedto, to)
@@ -67,7 +67,8 @@ function rename!(x::Index, nms)
         if !haskey(xbackup, from)
             copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming $from to $to, when $from does not exist in the Index."))
+            throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
+                                "does not exist in the Index."))
         end
         if haskey(x, to)
             toholder[to] = x.lookup[to]
@@ -79,18 +80,13 @@ function rename!(x::Index, nms)
     if !isempty(toholder)
         copy!(x.lookup, xbackup.lookup)
         x.names .= xbackup.names
-        throw(ArgumentError("Tried renaming to $(first(keys(toholder))), when it already exists in the Index."))
+        throw(ArgumentError("Tried renaming to :$(first(keys(toholder))), " *
+                            "when it already exists in the Index."))
     end
     return x
 end
 
-rename!(x::Index, nms::Pair{Symbol,Symbol}...) = rename!(x::Index, collect(nms))
-rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
-
-rename(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
-    rename!(copy(x), nms, makeunique=makeunique)
-rename(x::Index, args...) = rename!(copy(x), args...)
-rename(f::Function, x::Index) = rename!(f, copy(x))
+rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(n))) for n in x.names])
 
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)

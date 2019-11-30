@@ -67,22 +67,46 @@ _names(df::AbstractDataFrame) = _names(index(df))
 
 Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
 
-function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
+function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
+                 makeunique::Bool=false)
     rename!(index(df), vals, makeunique=makeunique)
     return df
 end
 
-function rename!(df::AbstractDataFrame, args...)
-    rename!(index(df), args...)
+function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
+                 makeunique::Bool=false)
+    rename!(index(df), Symbol.(vals), makeunique=makeunique)
     return df
 end
+
+function rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol,Symbol}})
+    rename!(index(df), args)
+    return df
+end
+
+function rename!(df::AbstractDataFrame,
+                 args::Union{AbstractVector{<:Pair{Symbol,<:AbstractString}},
+                             AbstractVector{<:Pair{<:AbstractString,Symbol}},
+                             AbstractVector{<:Pair{<:AbstractString,<:AbstractString}},
+                             AbstractDict{Symbol,Symbol},
+                             AbstractDict{Symbol,<:AbstractString},
+                             AbstractDict{<:AbstractString,Symbol},
+                             AbstractDict{<:AbstractString,<:AbstractString}})
+    rename!(index(df), [Symbol(from) => Symbol(to) for (from, to) in args])
+    return df
+end
+
+rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
+
 function rename!(f::Function, df::AbstractDataFrame)
     rename!(f, index(df))
     return df
 end
 
-rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false) =
-    rename!(copy(df), vals, makeunique=makeunique)
+rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
+       makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
+rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
+       makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 
