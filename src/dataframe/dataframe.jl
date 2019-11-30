@@ -1211,7 +1211,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
             throw(ArgumentError("Column names :" *
                                 join(wrongnames, ", ", :" and :") *
                                 "were found in only one of the passed data frames " *
-                                "and passed `cols` value is `:orderequal`"))
+                                "and `cols=:orderequal`"))
         end
     end
     if cols == :setequal
@@ -1220,7 +1220,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
             throw(ArgumentError("Column names :" *
                                 join(wrongnames, ", ", :" and :") *
                                 "were found in only one of the passed data frames " *
-                                "and passed `cols` value is `:setequal`"))
+                                "and passed `cols=:setequal`"))
         end
     end
 
@@ -1272,8 +1272,8 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     end
     if cols == :orderequal
         if row isa Dict
-            throw(ArgumentError("passing `Dict` as `row` when `cols` is equal to " *
-                                "`:orderequal` is not allowed as it is unordered"))
+            throw(ArgumentError("passing `Dict` as `row` when `cols=:orderequal` " *
+                                "is not allowed as it is unordered"))
         elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
             throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
                                 "the same column names and in the same order"))
