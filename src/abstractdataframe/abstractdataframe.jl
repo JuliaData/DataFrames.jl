@@ -79,8 +79,10 @@ function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
     return df
 end
 
-rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol,Symbol}}) =
+function rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol,Symbol}})
     rename!(index(df), args)
+    return df
+end
 
 function rename!(df::AbstractDataFrame,
                  args::Union{AbstractVector{<:Pair{Symbol,<:AbstractString}},
