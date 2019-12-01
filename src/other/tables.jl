@@ -37,7 +37,7 @@ function Base.append!(df::DataFrame, table; cols::Symbol=:setequal)
         throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
                             "`:orderequal` is not allowed as it is unordered"))
     end
-    append!(df, DataFrame(x, copycols=false), cols=cols)
+    append!(df, DataFrame(table, copycols=false), cols=cols)
 end
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
