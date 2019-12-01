@@ -1,6 +1,6 @@
 module TestDataFrame
 
-using Dates, DataFrames, Statistics, Random, Test, Logging
+using Dates, DataFrames, Statistics, Random, Test, Logging, DataStructures
 using DataFrames: _columns, index
 const ≅ = isequal
 const ≇ = !isequal
@@ -356,7 +356,9 @@ end
     @test occursin("Error adding value to column :a", String(take!(buf)))
     @test_throws AssertionError push!(df, df[1, :])
     @test df == dfc
-    @test_throws AssertionError push!(df, dfc[1, :])
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, dfc[1, :])
+    end
     @test df == dfc
 
     df = DataFrame()
@@ -381,7 +383,9 @@ end
     @test occursin("Error adding value to column :a", String(take!(buf)))
     @test_throws AssertionError push!(df, df[1, :])
     @test df == dfc
-    @test_throws AssertionError push!(df, dfc[1, :])
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, dfc[1, :])
+    end
     @test df == dfc
 
     df = DataFrame(a=1, b=2)
@@ -390,7 +394,7 @@ end
     push!(df, (1, 2))
     @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
 
-    @test_logs (:warn, r"In the future push! will not allow passing collections of type") push!(df, "ab")
+    @test_logs (:warn, r"In the future `push!` will not allow passing collections of type") push!(df, "ab")
 end
 
 @testset "select! Not" begin
@@ -1088,6 +1092,22 @@ end
 
     rename!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
+
+    df = DataFrame(A = 1:2, B = 1:2)
+    df2 = DataFrame(A = 1:4, B = 1:4)
+    @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:setequal) == df2
+    @test append!(copy(df), DataFrame(B = 3:4, A = [3.0, 4.0])) == df2
+    @test append!(copy(df), DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:setequal) == df2
+    @test append!(copy(df), Dict(:A => 3:4, :B => [3.0, 4.0])) == df2
+    @test append!(copy(df), Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:setequal) == df2
+    @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:orderequal) == df2
+    @test append!(copy(df), OrderedDict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal) == df2
+    @test_throws ArgumentError append!(df, Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError append!(df, OrderedDict(:B => 3:4, :A => [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:intersect)
+    @test df == DataFrame(A = 1:2, B = 1:2)
 end
 
 @testset "test categorical!" begin
@@ -2008,6 +2028,82 @@ end
     @test dfc == select(df, :x4, :x2, :x3, :x1)
 
     @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
+end
+
+@testset "vcat and push! with :orderequal" begin
+    for v in ((a=10, b=20, c=30),
+              DataFrame(a=10, b=20, c=30)[1, :],
+              OrderedDict(:a=>10, :b=>20, :c=>30))
+        df = DataFrame(a=1, b=2, c=3)
+        push!(df, v, cols=:orderequal)
+        @test df == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    end
+
+    for v in ((a=10, b=20, d=30), (a=10, c=20, b=30),
+              DataFrame(a=10, c=20, b=30)[1, :],
+              (a=10, b=20, c=30, d=0),
+              DataFrame(a=10, b=20, c=30, d=0)[1, :],
+              Dict(:a=>10, :b=>20, :c=>30),
+              OrderedDict(:c=>10, :b=>20, :a=>30))
+        df = DataFrame(a=1, b=2, c=3)
+        @test_throws ArgumentError push!(df, v, cols=:orderequal)
+    end
+
+    @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
+               cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
+                                    cols=:orderequal)
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, d=30),
+                                    cols=:orderequal)
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30, d=0),
+                                    cols=:orderequal)
+end
+
+@testset "push! with :subset" begin
+    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30),
+              DataFrame(a=10, b=20, d=30)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        old_logger = global_logger(NullLogger())
+        @test_throws MethodError push!(df, v, cols=:subset)
+        global_logger(old_logger)
+        @test df == DataFrame(a=1, b=2, c=3)
+    end
+    for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30),
+              DataFrame(a=10, b=20, d=30)[1, :])
+        df = DataFrame(a=1, b=2, c=3)
+        allowmissing!(df, :c)
+        push!(df, v, cols=:subset)
+        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
+        old_logger = global_logger(NullLogger())
+        @test_throws MethodError push!(df, Dict(), cols=:subset)
+        global_logger(old_logger)
+        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
+        allowmissing!(df, [:a, :b])
+        push!(df, Dict(), cols=:subset)
+        @test df ≅ DataFrame(a=[1,10, missing], b=[2,20, missing], c=[3,missing, missing])
+    end
+end
+
+@testset "push! with :intersect" begin
+    for row in ((y=4, x=3), Dict(:y=>4, :x=>3), (z=1, y=4, x=3), Dict(:y=>4, :x=>3, :z=>1))
+        df = DataFrame(x=1, y=2)
+        push!(df, row, cols=:intersect)
+        @test df == DataFrame(x=[1, 3], y=[2, 4])
+    end
+
+    old_logger = global_logger(NullLogger())
+    for row in ((z=4, x=3), (z=1, p=4, x=3))
+        df = DataFrame(x=1, y=2)
+        @test_throws ErrorException push!(df, row, cols=:intersect)
+        @test df == DataFrame(x=1, y=2)
+    end
+
+    for row in (Dict(:z=>4, :x=>3), Dict(:p=>4, :x=>3, :z=>1))
+        df = DataFrame(x=1, y=2)
+        @test_throws KeyError push!(df, row, cols=:intersect)
+        @test df == DataFrame(x=1, y=2)
+    end
+    global_logger(old_logger)
 end
 
 end # module

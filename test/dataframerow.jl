@@ -1,6 +1,6 @@
 module TestDataFrameRow
 
-using Test, DataFrames, Random
+using Test, DataFrames, Random, Logging
 const ≅ = isequal
 const ≇ = !isequal
 
@@ -351,6 +351,9 @@ end
 end
 
 @testset "conversion and push!" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
     df = DataFrame(x=1, y=2)
 
     @test df == DataFrame(df[1, :])
@@ -361,16 +364,18 @@ end
     @test_throws ArgumentError push!(df, df[1, 1:1])
     @test df == DataFrame(x=1, y=2)
 
-    @test_throws ArgumentError push!(df, df[1, [2,2]])
+    with_logger(sl) do
+        @test_throws ArgumentError push!(df, df[1, [2,2]])
+    end
     @test df == DataFrame(x=1, y=2)
 
-    @test_throws ArgumentError push!(df, df[1, [2,1,2]])
+    @test_throws ArgumentError push!(df, df[1, [2,1]], cols=:orderequal)
     @test df == DataFrame(x=1, y=2)
 
     @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
-    @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    @test push!(df, df[1, [2,1]], cols=:setequal) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
 
-    push!(df, df[1, [2,1]], columns=:intersect)
+    push!(df, df[1, [2,1]], cols=:intersect)
     @test df == DataFrame(x=[1, 1, 1, 1], y=[2, 2, 2, 2])
 
     df2 = DataFrame()

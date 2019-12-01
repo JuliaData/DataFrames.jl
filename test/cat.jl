@@ -328,10 +328,6 @@ end
     @test vcat(df1, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18],
                                       B = [4, 5, 6, 8, 10, 12],
                                       C = [7, 8, 9, 2, 4, 6])
-    # test with cols keyword argument
-    @test vcat(df1, df2, cols = :equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
-                                                     B = [4, 5, 6, 8, 10, 12],
-                                                     C = [7, 8, 9, 2, 4, 6])
     @test vcat(df1, df1, df2) == DataFrame(A = [1, 2, 3, 1, 2, 3, 14, 16, 18],
                                            B = [4, 5, 6, 4, 5, 6, 8, 10, 12],
                                            C = [7, 8, 9, 7, 8, 9, 2, 4, 6])
@@ -359,6 +355,7 @@ end
     df1 = DataFrame(A = 1, B = 2)
     df2 = DataFrame(B = 12, A = 11)
     df3 = DataFrame(A = [1, 11], B = [2, 12])
+    # this test should be rewritten after deprecation
     @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
     @test df3 == reduce(vcat, (df1, df2))
 end

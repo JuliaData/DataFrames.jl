@@ -32,7 +32,13 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
     return fromcolumns(Tables.columns(x), copycols=copycols)
 end
 
-Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
+function Base.append!(df::DataFrame, table; cols::Symbol=:setequal)
+    if table isa Dict && cols == :orderequal
+        throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
+                            "`:orderequal` is not allowed as it is unordered"))
+    end
+    append!(df, DataFrame(table, copycols=false), cols=cols)
+end
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 DataFrame(x::Vector{<:NamedTuple}; copycols::Bool=true) =

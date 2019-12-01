@@ -1127,11 +1127,21 @@ function categorical!(df::DataFrame,
 end
 
 """
-    append!(df1::DataFrame, df2::AbstractDataFrame)
+    append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
+    append!(df::DataFrame, table; cols::Symbol=:setequal)
 
-Add the rows of `df2` to the end of `df1`.
+Add the rows of `df2` to the end of `df1`. If the second argument `table` is
+not an `AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
+before being appended.
 
-Column names must be equal (including order), with the following exceptions:
+Column names of  `df1` and `df2` must be equal.
+If `cols` is `:setequal` (the default) then column names may have different orders
+and `append!` is performed by matching column names.
+If `cols` is `:orderequal` then the order of columns in `df1` and `df2` or `table`
+must be the same. In particular, if `table` is a `Dict` an error is thrown
+as it is an unordered collection.
+
+The above rule has the following exceptions:
 * If `df1` has no columns then copies of
   columns from `df2` are added to it.
 * If `df2` has no columns then calling `append!` leaves `df1` unchanged.
@@ -1174,7 +1184,11 @@ julia> df1
 │ 6   │ 6     │ 6     │
 ```
 """
-function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
+function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
+    if !(cols in (:orderequal, :setequal))
+        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal"))
+    end
+
     if ncol(df1) == 0
         for (n, v) in eachcol(df2, true)
             df1[!, n] = copy(v) # make sure df1 does not reuse df2
@@ -1183,14 +1197,39 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     end
     ncol(df2) == 0 && return df1
 
-    _names(df1) == _names(df2) || throw(ArgumentError("Column names do not match"))
+    if cols == :orderequal && _names(df1) != _names(df2)
+        wrongnames = symdiff(_names(df1), _names(df2))
+        if isempty(wrongnames)
+            mismatches = findall(_names(df1) .!= _names(df2))
+            @assert !isempty(mismatches)
+            throw(ArgumentError("Columns number " *
+                                join(mismatches, ", ", " and ") *
+                                " do not have the same names in both passed data frames" *
+                                "and `cols=:orderequal`"))
+        else
+            mismatchmsg = " Column names :" *
+            throw(ArgumentError("Column names :" *
+                                join(wrongnames, ", ", :" and :") *
+                                "were found in only one of the passed data frames " *
+                                "and `cols=:orderequal`"))
+        end
+    elseif cols == :setequal
+        wrongnames = symdiff(_names(df1), _names(df2))
+        if !isempty(wrongnames)
+            throw(ArgumentError("Column names :" *
+                                join(wrongnames, ", ", :" and :") *
+                                "were found in only one of the passed data frames " *
+                                "and passed `cols=:setequal`"))
+        end
+    end
+
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
     current_col = 0
     try
-        for j in 1:ncols
+        for (j, n) in enumerate(_names(df1))
             current_col += 1
-            append!(df1[!, j], df2[!, j])
+            append!(df1[!, j], df2[!, n])
         end
         current_col = 0
         for col in _columns(df1)
@@ -1212,34 +1251,60 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:equal)
-    if !(columns in (:equal, :intersect))
-        throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:setequal,
+                    columns::Union{Nothing,Symbol}=nothing)
+    if columns !== nothing
+        cols = columns
+        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
+    end
+    possible_cols = (:orderequal, :setequal, :intersect, :subset)
+    if !(cols in possible_cols)
+        throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
     nrows, ncols = size(df)
+    targetrows = nrows + 1
     if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
-    # Only check for equal lengths, as an error will be thrown below if some names don't match
-    if columns === :equal && length(row) != ncols
-        # TODO: add tests for this case after the deprecation period
-        Base.depwarn("In the future push! will require that `row` has the same number" *
-                      " of elements as is the number of columns in `df`. " *
-                      "Use `columns=:intersect` to disable this check.", :push!)
+    if cols == :orderequal
+        if row isa Dict
+            throw(ArgumentError("passing `Dict` as `row` when `cols=:orderequal` " *
+                                "is not allowed as it is unordered"))
+        elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
+            throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
+                                "the same column names and in the same order"))
+        end
+    elseif cols == :setequal || cols === :equal
+        if cols == :equal
+            Base.depwarn("`cols=:equal` is deprecated." *
+                         "Use `:setequal` instead.", :push!)
+        end
+        # Only check for equal lengths if :setequal is selected,
+        # as an error will be thrown below if some names don't match
+        if length(row) != ncols
+            Base.depwarn("In the future `push!` with `cols` equal to `:setequal`" *
+                         "will require `row` to have the same number of elements as is the " *
+                         "number of columns in `df`.", :push!)
+        end
     end
     current_col = 0
     try
         for (col, nm) in zip(_columns(df), _names(df))
             current_col += 1
-            push!(col, row[nm])
+            if cols === :subset
+                val = get(row, nm, missing)
+            else
+                val = row[nm]
+            end
+            push!(col, val)
         end
         current_col = 0
         for col in _columns(df)
             current_col += 1
-            @assert length(col) == nrows + 1
+            @assert length(col) == targetrows
         end
     catch err
         for col in _columns(df)
@@ -1254,7 +1319,7 @@ end
 """
     push!(df::DataFrame, row::Union{Tuple, AbstractArray})
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-          columns::Symbol=:intersect)
+          cols::Symbol=:setequal)
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
@@ -1267,12 +1332,19 @@ and columns are matched by order of appearance. In this case `row` must contain
 the same number of elements as the number of columns in `df`.
 
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
-values in `row` are matched to columns in `df` based on names (order is ignored).
-`row` may contain more columns than `df` if `columns=:intersect`
-(this is currently the default, but will change in the future), but all column names
-that are present in `df` must be present in `row`.
-Otherwise if `columns=:equal` then `row` must contain exactly the same columns as `df`
-(but possibly in a different order).
+values in `row` are matched to columns in `df` based on names. The exact behavior
+depends on the `cols` argument value in the following way:
+* If `cols=:setequal` (this is the default)
+  then `row` must contain exactly the same columns as `df` (but possibly in a different order).
+* If `cols=:orderequal` then `row` must contain the same columns in the same order
+  (for `AbstractDict` this option requires that `keys(row)` matches `names(df)`
+   to allow for support of ordered dicts; however, if `row` is a `Dict` an error is thrown
+   as it is an unordered collection).
+* If `cols=:intersect` then `row` may contain more columns than `df`,
+  but all column names that are present in `df` must be present in `row` and only they
+  are used to populate a new row in `df`.
+* If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
+  is missing in `row` then a `missing` value is pushed to `df`.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
@@ -1312,7 +1384,7 @@ julia> push!(df, df[1, :])
 │ 4   │ 1     │ 0     │
 │ 5   │ 1     │ 1     │
 
-julia> push!(df, (C="something", A=true, B=false), columns=:intersect)
+julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
 4×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │
@@ -1340,10 +1412,13 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 """
 function Base.push!(df::DataFrame, row::Any)
     if !(row isa Union{Tuple, AbstractArray})
-        Base.depwarn("In the future push! will not allow passing collections of type" *
-                     " $(typeof(row)) to be pushed into a DataFrame", :push!)
+        Base.depwarn("In the future `push!` will not allow passing collections of type" *
+                     " $(typeof(row)) to be pushed into a DataFrame. " *
+                     "Only `Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` and " *
+                     "`NamedTuple` will be allowed.", :push!)
     end
     nrows, ncols = size(df)
+    targetrows = nrows + 1
     if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
@@ -1357,7 +1432,7 @@ function Base.push!(df::DataFrame, row::Any)
         current_col = 0
         for col in _columns(df)
             current_col += 1
-            @assert length(col) == nrows + 1
+            @assert length(col) == targetrows
         end
     catch err
         #clean up partial row

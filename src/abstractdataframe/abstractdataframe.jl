@@ -980,14 +980,15 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
           makeunique=makeunique, copycols=copycols)
 
 """
-    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
+    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
 
 Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:equal` (the default): require all data frames to have the same column names.
+* `:setequal`: require all data frames to have the same column names disregarding order.
   If they appear in different orders, the order of the first provided data frame is used.
+* `:orderequal`: require all data frames to have the same column names and in the same order.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
 * `:union`: columns present in *at least one* of the provided data frames are kept.
@@ -995,9 +996,8 @@ The `cols` keyword argument determines the columns of the returned data frame:
 * A vector of `Symbol`s: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-The order of columns is determined by the order they appear in the included
-data frames, searching through the header of the first data frame, then the
-second, etc.
+The order of columns is determined by the order they appear in the included data frames,
+searching through the header of the first data frame, then the second, etc.
 
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
@@ -1063,16 +1063,16 @@ julia> vcat(d4, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+          cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
 Base.reduce(::typeof(vcat),
             dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
-            cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+            cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
     _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
-               cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
+               cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
 
     isempty(dfs) && return DataFrame()
     # Array of all headers
@@ -1084,7 +1084,18 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
 
-    if cols === :equal
+    if cols === :orderequal
+        header = unionunique
+        if length(uniqueheaders) > 1
+            throw(ArgumentError("when `cols=:orderequal` all data frames need to have the same column names " *
+                                "and be in the same order"))
+        end
+    elseif cols === :setequal || cols === :equal
+        if cols === :equal
+            Base.depwarn("`cols=:equal` is deprecated." *
+                         "Use `:setequal` instead.", :vcat)
+        end
+
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
 
@@ -1098,13 +1109,16 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                 args = join(matching, ", ", " and ")
                 return "column(s) $cols are missing from argument(s) $args"
             end
-        throw(ArgumentError(join(estrings, ", ", ", and ")))
+            throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-
     elseif cols === :intersect
         header = intersectunique
     elseif cols === :union
         header = unionunique
+    elseif cols isa Symbol
+        throw(ArgumentError("Invalid `cols` value :$cols. " *
+                            "Only `:orderequal`, `:setequal`, `:intersect`, " *
+                            "`:union`, or a vector of column names is allowed."))
     else
         header = cols
     end
