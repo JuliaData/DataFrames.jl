@@ -1,6 +1,6 @@
 module TestConstructors
 
-using Test, DataFrames
+using Test, DataFrames, CategoricalArrays
 using DataFrames: Index, _columns, index
 const ≅ = isequal
 

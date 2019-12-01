@@ -1,6 +1,6 @@
 module TestShow
 
-using DataFrames, Random, Test
+using DataFrames, Random, Test, CategoricalArrays
 
 function capture_stdout(f::Function)
     oldstdout = stdout

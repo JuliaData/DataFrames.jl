@@ -1,6 +1,6 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 """Check that groups in gd are equal to provided data frames, ignoring order"""

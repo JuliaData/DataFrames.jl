@@ -1,6 +1,6 @@
 module TestIO
 
-using Test, DataFrames, CategoricalArrays, Dates
+using Test, DataFrames, CategoricalArrays, Dates, CategoricalArrays, Missings
 using LaTeXStrings
 
 # Test LaTeX export

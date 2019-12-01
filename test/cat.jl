@@ -1,6 +1,6 @@
 module TestCat
 
-using Test, Random, DataFrames
+using Test, Random, DataFrames, CategoricalArrays
 const ≅ = isequal
 
 #

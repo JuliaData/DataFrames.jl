@@ -1,6 +1,6 @@
 module TestSort
 
-using DataFrames, Random, Test
+using DataFrames, Random, Test, CategoricalArrays
 
 dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
 dv2 = [9, 1, 8, missing, 3, 3, 7, missing]

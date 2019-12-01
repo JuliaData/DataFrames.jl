@@ -28,10 +28,14 @@ The following are normally implemented for AbstractDataFrames:
 * [`dropmissing`](@ref) : remove rows with missing values
 * [`dropmissing!`](@ref) : remove rows with missing values in-place
 * [`nonunique`](@ref) : indexes of duplicate rows
-* [`unique!`](@ref) : remove duplicate rows
+* [`unique`](@ref) : remove duplicate rows
+* [`unique!`](@ref) : remove duplicate rows in-place
 * [`disallowmissing`](@ref) : drop support for missing values in columns
+* [`disallowmissing!`](@ref) : drop support for missing values in columns in-place
 * [`allowmissing`](@ref) : add support for missing values in columns
+* [`allowmissing!`](@ref) : add support for missing values in columns in-place
 * [`categorical`](@ref) : change column types to categorical
+* [`categorical!`](@ref) : change column types to categorical in-place
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
 * `filter!` : remove rows in-place

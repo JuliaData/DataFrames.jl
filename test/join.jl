@@ -1,6 +1,6 @@
 module TestJoin
 
-using Test, DataFrames
+using Test, DataFrames, CategoricalArrays
 using DataFrames: similar_missing
 const ≅ = isequal
 

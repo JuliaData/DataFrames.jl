@@ -1,6 +1,6 @@
 module TestDataFrame
 
-using Dates, DataFrames, Statistics, Random, Test, Logging
+using Dates, DataFrames, Statistics, Random, Test, Logging, CategoricalArrays, Missings
 using DataFrames: _columns, index
 const ≅ = isequal
 const ≇ = !isequal

@@ -1,6 +1,6 @@
 module TestBroadcasting
 
-using Test, DataFrames, PooledArrays, Random
+using Test, DataFrames, PooledArrays, Random, CategoricalArrays
 
 const ≅ = isequal
 
