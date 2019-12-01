@@ -1541,3 +1541,7 @@ import Base: setproperty!
 @deprecate permutecols!(df::DataFrame, p::AbstractVector) select!(df, p)
 @deprecate names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false) rename!(x, nms, makeunique=makeunique)
 @deprecate names!(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false) rename!(df, vals, makeunique=makeunique)
+
+import DataAPI: describe
+@deprecate describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...;
+                 cols=:) describe(df, stats..., cols=cols)

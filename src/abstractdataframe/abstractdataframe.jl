@@ -305,9 +305,6 @@ to each column as the only argument. For columns allowing for missing values,
 the vector is wrapped in a call to [`skipmissing`](@ref): custom functions must therefore
 support such objects (and not only vectors), and cannot access missing values.
 
-For consistency with DataAPI.jl an `io` argument can be passed to `describe` in
-a first position but it is currently ignored.
-
 # Examples
 ```julia
 julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j')
@@ -361,16 +358,12 @@ julia> describe(df, :min, :sum => sum, cols=:x)
 │ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-DataAPI.describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...;
-                 cols=:) =
+DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...; cols=:) =
     _describe(select(df, cols, copycols=false), collect(stats))
 
-DataAPI.describe(io::IO, df::AbstractDataFrame; cols=:) =
+DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
               [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
-
-DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...; cols=:) =
-    DataAPI.describe(stdout, df, stats...; cols=cols)
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
