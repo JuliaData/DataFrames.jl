@@ -140,7 +140,6 @@ function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false,
 end
 
 function DataFrame(d::AbstractDict; copycols::Bool=true)
-    colnames = keys(d)
     if isa(d, Dict)
         colnames = sort!(collect(keys(d)))
     else
