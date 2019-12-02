@@ -253,11 +253,19 @@ end
     @test size(dx) == (0, 3)
     @test names(dx) == [:variable, :value, :a]
 
-    @test stackdf(d1, :a) == stackdf(d1, [:a])
+    @test stack(d1, :a, view=true) == stack(d1, [:a], view=true)
+    @test all(isa.(eachcol(stackdf(d1, :a)),
+                   [DataFrames.RepeatedVector;
+                    DataFrames.StackedVector;
+                    fill(DataFrames.RepeatedVector, 4)]))
+    @test all(isa.(eachcol(meltdf(d1, [:b, :c, :d, :e])),
+                   [DataFrames.RepeatedVector;
+                    DataFrames.StackedVector;
+                    fill(DataFrames.RepeatedVector, 4)]))
 
     # Tests of RepeatedVector and StackedVector indexing
-    d1s = stackdf(d1, [:a, :b])
-    @test d1s == stackdf(d1, r"[ab]")
+    d1s = stack(d1, [:a, :b], view=true)
+    @test d1s == stack(d1, r"[ab]", view=true)
     @test d1s[!, 1] isa DataFrames.RepeatedVector
     @test ndims(d1s[!, 1]) == 1
     @test ndims(typeof(d1s[!, 1])) == 1
@@ -281,24 +289,24 @@ end
     @test [d1s[!, 1][1:12]; d1s[!, 1][13:24]] == d1s[!, 1]
     @test [d1s[!, 2][1:12]; d1s[!, 2][13:24]] == d1s[!, 2]
 
-    d1s2 = stackdf(d1, [:c, :d])
-    @test d1s2 == stackdf(d1, r"[cd]")
-    d1s3 = stackdf(d1)
-    d1m = meltdf(d1, [:c, :d, :e])
-    @test d1m == meltdf(d1, r"[cde]")
+    d1s2 = stack(d1, [:c, :d], view=true)
+    @test d1s2 == stack(d1, r"[cd]", view=true)
+    d1s3 = stack(d1, view=true)
+    d1m = melt(d1, [:c, :d, :e], view=true)
+    @test d1m == melt(d1, r"[cde]", view=true)
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
     @test names(d1s) == [:variable, :value, :c, :d, :e]
     @test d1s == d1m
-    d1m = meltdf(d1[:, [1,3,4]], :a)
+    d1m = melt(d1[:, [1,3,4]], :a, view=true)
     @test names(d1m) == [:variable, :value, :a]
 
-    d1s_named = stackdf(d1, [:a, :b], variable_name=:letter, value_name=:someval)
-    @test d1s_named == stackdf(d1, r"[ab]", variable_name=:letter, value_name=:someval)
+    d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
+    @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval, view=true)
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
-    d1m_named = meltdf(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval)
-    @test d1m_named == meltdf(d1, r"[cde]", variable_name=:letter, value_name=:someval)
+    d1m_named = melt(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval, view=true)
+    @test d1m_named == melt(d1, r"[cde]", variable_name=:letter, value_name=:someval, view=true)
     @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
     d1s[!, :id] = Union{Int, Missing}[1:12; 1:12]

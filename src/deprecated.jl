@@ -1545,3 +1545,6 @@ import Base: setproperty!
 import DataAPI: describe
 @deprecate describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...;
                  cols=:) describe(df, stats..., cols=cols)
+
+@deprecate stackdf(args...; kwargs...) stack(args...; kwargs..., view=true)
+@deprecate meltdf(args...; kwargs...) melt(args...; kwargs..., view=true)

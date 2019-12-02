@@ -22,8 +22,6 @@ map
 melt
 stack
 unstack
-stackdf
-meltdf
 ```
 
 ## Basics
