@@ -248,9 +248,6 @@ _groupvalues(gd::GroupedDataFrame, i::Integer) = gd.parent[gd.idx[gd.starts[i]],
 _groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
 _groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) = _groupvalues(gd, i, _groupvar_idx(gd, col, true))
 
-# Eltypes of the grouping columns
-_grouptypes(gd::GroupedDataFrame) = Tuple(eltype(gd.parent[!, c]) for c in gd.cols)
-
 
 """
     GroupKey{T<:GroupedDataFrame}
