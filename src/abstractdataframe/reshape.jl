@@ -14,7 +14,7 @@ and with columns for each of the `id_vars`.
 
 If `view=true` then return a stacked view of a data frame (long format).
 The result is a view because the columns are special `AbstractVectors`
-that return indexed views into the original data frame.
+that return views into the original data frame.
 
 
 # Arguments
