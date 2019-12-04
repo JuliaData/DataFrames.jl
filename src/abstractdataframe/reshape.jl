@@ -32,7 +32,7 @@ that return indexed views into the original data frame.
   of each of `measure_vars`
 - `value_name` : the name of the new stacked column containing the values from
   each of `measure_vars`
-- `view` : if the stacked data frame should be a view or it should contain
+- `view` : whether the stacked data frame should be a view rather than contain
    freshly allocated vectors.
 
 # Examples
