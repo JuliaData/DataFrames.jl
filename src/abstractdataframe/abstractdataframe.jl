@@ -51,6 +51,9 @@ the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/in
 """
 abstract type AbstractDataFrame end
 
+const ColumnNameMergingType = Union{Symbol, AbstractVector{Symbol}, Function}
+const ColumnTypeMergingType = Union{Type, AbstractVector{Type}, Function}
+
 ##############################################################################
 ##
 ## Basic properties of a DataFrame
@@ -1063,16 +1066,16 @@ julia> vcat(d4, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal) =
+          cols::ColumnNameMergingType=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
 Base.reduce(::typeof(vcat),
             dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
-            cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal) =
+            cols::ColumnNameMergingType=:setequal) =
     _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 
 function _inferheadernames(dfs::AbstractVector{<:AbstractDataFrame};
-    cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal)
+    cols::ColumnNameMergingType=:setequal)
     # Array of all headers
     allheaders = map(names, dfs)
     # Array of unique headers across all data frames
@@ -1125,7 +1128,7 @@ function _inferheadernames(dfs::AbstractVector{<:AbstractDataFrame};
 end
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
-               cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal)
+               cols::ColumnNameMergingType=:setequal)
 
     isempty(dfs) && return DataFrame()
     
