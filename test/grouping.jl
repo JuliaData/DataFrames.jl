@@ -1277,11 +1277,11 @@ end
 end
 
 @testset "GroupedDataFrame dictionary interface" begin
-    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
 
     @test map(NamedTuple, keys(gd)) ≅
-        [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
+        [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
 
     @test collect(pairs(gd)) ≅ map(Pair, keys(gd), gd)
 
@@ -1294,17 +1294,27 @@ end
         @test gd[Tuple(key)] ≅ gd[i]
     end
 
-    @test get(gd, (a=:A, b=:X), nothing) ≅ gd[1]
-    @test get(gd, (a=:A, b=:Z), nothing) == nothing
+    # Equivalent value of different type
+    @test gd[(a=:A, b=1.0)] ≅ gd[1]
 
-    @test_throws KeyError gd[(a=:A, b=:Z)]
-    @test_throws KeyError gd[(a=:A, b="Z")]
+    @test get(gd, (a=:A, b=1), nothing) ≅ gd[1]
+    @test get(gd, (a=:A, b=3), nothing) == nothing
+
+    # Wrong values
+    @test_throws KeyError gd[(a=:A, b=3)]
+    @test_throws KeyError gd[(:A, 3)]
+    @test_throws KeyError gd[(a=:A, b="1")]
+    # Wrong length
     @test_throws KeyError gd[(a=:A,)]
-    @test_throws KeyError gd[(a=:A, b=:X, c=1)]
-    @test_throws KeyError gd[(:A, :Z)]
     @test_throws KeyError gd[(:A,)]
-    @test_throws KeyError gd[(:A, :X, 1)]
-    @test_throws KeyError gd[(b=:X, a=:D)]
+    @test_throws KeyError gd[(a=:A, b=1, c=1)]
+    @test_throws KeyError gd[(:A, 1, 1)]
+    # Out of order
+    @test_throws KeyError gd[(b=1, a=:A)]
+    @test_throws KeyError gd[(1, :A)]
+    # Empty
+    @test_throws KeyError gd[()]
+    @test_throws KeyError gd[NamedTuple()]
 end
 
 @testset "GroupKey and GroupKeys" begin
@@ -1321,6 +1331,8 @@ end
     @test length(gdkeys) == length(expected)
     @test size(gdkeys) == size(expected)
     @test eltype(gdkeys) == DataFrames.GroupKey{typeof(gd)}
+    @test_throws BoundsError gdkeys[0]
+    @test_throws BoundsError gdkeys[length(gdkeys) + 1]
 
     # Test each key
     cnt = 0
@@ -1354,6 +1366,10 @@ end
             @test getproperty(key, n) ≅ nt[j]
         end
 
+        # Out-of-bounds integer index
+        @test_throws BoundsError key[0]
+        @test_throws BoundsError key[length(key) + 1]
+
         # Invalid key/property of key
         @test_throws KeyError key[:foo]
         @test_throws ArgumentError key.foo
@@ -1373,7 +1389,7 @@ end
 
     # Key equality
     @test collect(keys(gd)) == gdkeys  # These are new instances
-    @test all(Ref(gdkeys[1]) .!= gdkeys[2:end])
+    @test all(Ref(gdkeys[1]) .!= gdkeys[2:end])  # Keys should not be equal to each other
     @test !any(collect(keys(gd2)) .== keys(gd3))  # Same values but different (but equal) parent
 end
 
@@ -1390,7 +1406,7 @@ end
     @test NamedTuple(keys(gd)[1]) == (a=:A, b=:X)
     @test keys(gd)[1].a == :A
 
-    names!(df, [:d, :e, :f])
+    rename!(df, [:d, :e, :f])
 
     @test names(gd) == names(df)
     @test groupvars(gd) == [:d, :e]
