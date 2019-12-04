@@ -109,7 +109,7 @@ function Base.dotview(df::DataFrame, ::typeof(!), cols)
         return ColReplaceDataFrame(df, index(df)[cols])
     end
     if !(cols isa Symbol) && cols > ncol(df)
-        throw(ArgumentError("creating new columns using an integer index by broadcasting is disallowed"))
+        throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
     LazyNewColDataFrame(df, cols)
 end

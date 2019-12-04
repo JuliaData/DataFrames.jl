@@ -135,10 +135,6 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                        `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                        (in the latter case column names must match);
 
-Note that `df[!, col] = v`, `df.col = v` and `df[:, col] = v` can be used to add a new column to a `DataFrame`.
-The difference is that `df[:, col] = v` copies `v` before adding it to `df` and `df[!, col] = v` and `df.col = v`
-add `v` without copying it.
-
 `setindex!` on `SubDataFrame`:
 * `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;

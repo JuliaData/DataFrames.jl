@@ -1490,7 +1490,7 @@ end
     @test @views typeof(df[!, 1:2]) <: SubDataFrame
 end
 
-@testset "broadcasting of df[:, col] = vector" begin
+@testset "broadcasting of df[:, col] = value" begin
     df = DataFrame(ones(3, 4))
     z = ["a", "b", "c"]
     df[:, :z] .= z
@@ -1498,6 +1498,10 @@ end
     @test df.z !== z
     @test_throws ArgumentError df[:, 6] .= z
     @test_throws MethodError df[:, 1] .= z
+
+    df = DataFrame(ones(3, 4))
+    z = fill("abc", 1, 1, 1)
+    @test_throws DimensionMismatch df[:, :z] .= z
 end
 
 end # module
