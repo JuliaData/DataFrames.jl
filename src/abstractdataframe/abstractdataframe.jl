@@ -1063,18 +1063,16 @@ julia> vcat(d4, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
+          cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
 Base.reduce(::typeof(vcat),
             dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
-            cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
+            cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal) =
     _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
-               cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
-
-    isempty(dfs) && return DataFrame()
+function _inferheadernames(dfs::AbstractVector{<:AbstractDataFrame};
+    cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal)
     # Array of all headers
     allheaders = map(names, dfs)
     # Array of unique headers across all data frames
@@ -1085,23 +1083,23 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     intersectunique = intersect(uniqueheaders...)
 
     if cols === :orderequal
-        header = unionunique
         if length(uniqueheaders) > 1
             throw(ArgumentError("when `cols=:orderequal` all data frames need to have the same column names " *
                                 "and be in the same order"))
         end
-    elseif cols === :setequal || cols === :equal
+        return unionunique
+    end
+    if cols === :setequal || cols === :equal
         if cols === :equal
             Base.depwarn("`cols=:equal` is deprecated." *
                          "Use `:setequal` instead.", :vcat)
         end
 
-        header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
 
         if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
-            filter!(u -> !issetequal(u, header), uniqueheaders)
+            filter!(u -> !issetequal(u, unionunique), uniqueheaders)
             estrings = map(enumerate(uniqueheaders)) do (i, head)
                 matching = findall(h -> head == h, allheaders)
                 headerdiff = setdiff(coldiff, head)
@@ -1111,17 +1109,27 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
             throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-    elseif cols === :intersect
-        header = intersectunique
-    elseif cols === :union
-        header = unionunique
-    elseif cols isa Symbol
+        return unionunique
+    end
+    cols === :intersect && return intersectunique
+    cols === :union && return unionunique
+    if cols isa Symbol
         throw(ArgumentError("Invalid `cols` value :$cols. " *
                             "Only `:orderequal`, `:setequal`, `:intersect`, " *
                             "`:union`, or a vector of column names is allowed."))
-    else
-        header = cols
     end
+    if cols isa Function
+        return reduce(cols, uniqueheaders)
+    end
+    return cols
+end
+
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
+               cols::Union{Symbol, AbstractVector{Symbol}, Function}=:setequal)
+
+    isempty(dfs) && return DataFrame()
+    
+    header = _inferheadernames(dfs, cols)
 
     length(header) == 0 && return DataFrame()
     all_cols = Vector{AbstractVector}(undef, length(header))
