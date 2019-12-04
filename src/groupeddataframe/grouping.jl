@@ -325,7 +325,7 @@ end
 Base.parent(gk::GroupKeys) = gk.parent
 
 Base.size(gk::GroupKeys) = (length(parent(gk)),)
-Base.IndexStyle(::Type{GroupKeys}) = IndexLinear()
+Base.IndexStyle(::Type{<:GroupKeys}) = IndexLinear()
 @Base.propagate_inbounds function Base.getindex(gk::GroupKeys, i::Integer)
     @boundscheck checkbounds(gk, i)
     return GroupKey(parent(gk), i)
