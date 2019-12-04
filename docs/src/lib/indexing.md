@@ -216,7 +216,8 @@ The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
   grouping columns. The fields of the `NamedTuple` must match the grouping columns
   columns passed to [`groupby`](@ref) (including order).
 * `gd[key::Tuple]` -> Same as previous, but omitting the names on `key`.
-* `get(gd, key, default)` -> Get group by (named) Tuple `key`, returning `default` if it does not exist.
+* `get(gd, key::Union{Tuple, NamedTuple}, default)` -> Get group for key `key`,
+  returning `default` if it does not exist.
 * `gd[key::GroupKey]` -> Get the group corresponding to the [`GroupKey`](@ref)
-  `key` (returned by [`keys(::GroupedDataFrame)`](@ref)). This should be nearly as fast
-  as integer indexing.
+  `key` (one of the elements of the vector returned by [`keys(::GroupedDataFrame)`](@ref)).
+  This should be nearly as fast as integer indexing.

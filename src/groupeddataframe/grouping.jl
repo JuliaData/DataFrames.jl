@@ -384,7 +384,7 @@ GroupKey: (a = :foo, b = 2)
 julia> keys(k)
 (:a, :b)
 
-julia> values(k)
+julia> values(k)  # Same as Tuple(k)
 (:foo, 2)
 
 julia> NamedTuple(k)
