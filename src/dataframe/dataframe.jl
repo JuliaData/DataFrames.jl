@@ -519,6 +519,10 @@ for T in (:AbstractVector, :Not, :Colon)
                                   v::AbstractVector,
                                   row_inds::$T,
                                   col_ind::ColumnIndex)
+        if row_inds isa Colon && !haskey(index(df), col_ind)
+            df[!, col_ind] = copy(v)
+            return df
+        end
         x = df[!, col_ind]
         try
             x[row_inds] = v

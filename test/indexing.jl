@@ -890,6 +890,8 @@ end
     @test df == DataFrame(a=1,b=2)
 
     # `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`
+    # the exception is `df[:, col] = v`, when col is not present in df, in which case `v` is copied
+    # and column `col` is created
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     x = df.a
@@ -903,17 +905,23 @@ end
     @test_throws ArgumentError df[1:3, :z] = ["a", "b", "c"]
     @test_throws BoundsError df[1:3, 4] = ["a", "b", "c"]
 
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    x = df.a
+    df[:, 1] = 10:12
+    @test df == DataFrame(a=10:12, b=4:6, c=7:9)
+    @test df.a === x
+
+    y = ["a", "b", "c"]
+    df[:, :y] = y
+    @test df.y == y
+    @test df.y !== y
+
+    @test_throws MethodError df[:, 1] = ["a", "b", "c"]
     # TODO: enable these tests after deprecation period
-    # df = DataFrame(a=1:3, b=4:6, c=7:9)
-    # x = df.a
-    # df[:, 1] = 10:12
-    # @test df == DataFrame(a=10:12, b=4:6, c=7:9)
-    # @test df.a === x
-    # @test_throws MethodError df[:, 1] = ["a", "b", "c"]
     # @test_throws ArgumentError df[:, 1] = [1]
     # @test_throws ArgumentError df[:, 1] = 1
-    # @test_throws ArgumentError df[:, :z] = ["a", "b", "c"]
-    # @test_throws BoundsError df[:, 4] = ["a", "b", "c"]
+    # @test_throws BoundsError df[:, 5] = ["a", "b", "c"]
+    @test_throws ArgumentError df[:, 10] = ["a", "b", "c"]
 
     # `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
     #                         `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
