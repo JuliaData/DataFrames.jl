@@ -1,8 +1,6 @@
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
           variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
-    melt(df::AbstractDataFrame, [id_vars], [measure_vars];
-         variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
 
@@ -21,12 +19,11 @@ that return views into the original data frame.
 - `df` : the AbstractDataFrame to be stacked
 - `measure_vars` : the columns to be stacked (the measurement
   variables), a normal column indexing type, like a `Symbol`,
-  `Vector{Symbol}`, Int, etc.; for `melt`, defaults to all
-  variables that are not `id_vars`. If neither `measure_vars`
+  `Vector{Symbol}`, Int, etc.; If neither `measure_vars`
   or `id_vars` are given, `measure_vars` defaults to all
   floating point columns.
 - `id_vars` : the identifier columns that are repeated during
-  stacking, a normal column indexing type; for `stack` defaults to all
+  stacking, a normal column indexing type; defaults to all
   variables that are not `measure_vars`
 - `variable_name` : the name of the new stacked column that shall hold the names
   of each of `measure_vars`
@@ -45,12 +42,10 @@ d1 = DataFrame(a = repeat([1:3;], inner = [4]),
 
 d1s = stack(d1, [:c, :d])
 d1s2 = stack(d1, [:c, :d], [:a])
-d1m = melt(d1, [:a, :b, :e])
-d1s_name = melt(d1, [:a, :b, :e], variable_name=:somemeasure)
+d1m = stack(d1, Not([:a, :b, :e]))
+d1s_name = stack(d1, Not([:a, :b, :e]), variable_name=:somemeasure)
 ```
 """
-(stack, melt)
-
 function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
                value_name::Symbol=:value, view::Bool=false)
@@ -102,28 +97,6 @@ function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
     stack(df, mv_inds, setdiff(1:ncol(df), mv_inds);
           variable_name=variable_name, value_name=value_name, view=view)
 end
-
-function melt(df::AbstractDataFrame, id_vars::ColumnIndex;
-              variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
-    melt(df, [id_vars]; variable_name=variable_name, value_name=value_name, view=view)
-end
-
-function melt(df::AbstractDataFrame, id_vars;
-              variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
-    id_inds = index(df)[id_vars]
-    stack(df, setdiff(1:ncol(df), id_inds), id_inds;
-          variable_name=variable_name, value_name=value_name, view=view)
-end
-
-function melt(df::AbstractDataFrame, id_vars, measure_vars;
-              variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
-    stack(df, measure_vars, id_vars; variable_name=variable_name,
-          value_name=value_name, view=view)
-end
-
-melt(df::AbstractDataFrame;
-     variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false) =
-    stack(df; variable_name=variable_name, value_name=value_name, view=view)
 
 """
     unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
@@ -457,18 +430,3 @@ function _stackview(df::AbstractDataFrame, measure_vars = numeric_vars(df);
     _stackview(df, m_inds, setdiff(1:ncol(df), m_inds);
                variable_name=variable_name, value_name=value_name)
 end
-
-function _meltview(df::AbstractDataFrame, id_vars; variable_name::Symbol=:variable,
-                   value_name::Symbol=:value)
-    id_inds = index(df)[id_vars]
-    _stackview(df, setdiff(1:ncol(df), id_inds), id_inds;
-               variable_name=variable_name, value_name=value_name)
-end
-
-function _meltview(df::AbstractDataFrame, id_vars, measure_vars;
-                   variable_name::Symbol=:variable, value_name::Symbol=:value)
-    _stackview(df, measure_vars, id_vars; variable_name=variable_name,
-               value_name=value_name)
-end
-_meltview(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=:value) =
-    _stackview(df; variable_name=variable_name, value_name=value_name)

@@ -90,10 +90,10 @@ const ≅ = isequal
 
     # test missing value in grouping variable
     mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
-    @test unstack(melt(mdf, :id), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(melt(mdf, :id), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
-    @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
 
     # test more than one grouping column
     wide = DataFrame(id = 1:12,
@@ -193,9 +193,9 @@ end
     x[!, :s] = [i % 2 == 0 ? randstring() : missing for i in 1:100]
     allowmissing!(x, :x1)
     x[1, :x1] = missing
-    y = melt(x, [:id, :id2])
-    @test y ≅ melt(x, r"id")
-    @test y ≅ melt(x, Not(Not(r"id")))
+    y = stack(x, Not([:id, :id2]))
+    @test y ≅ stack(x, Not(r"id"))
+    @test y ≅ stack(x, Not(Not(Not(r"id"))))
     z = unstack(y, :id, :variable, :value)
     @test all(isequal(z[!, n], x[!, n]) for n in names(z))
     z = unstack(y, :variable, :value)
@@ -218,21 +218,21 @@ end
     @test d1s2 == stack(d1, r"[cd]")
     @test d1s2 == stack(d1, Not([1, 2, 5]))
     d1s3 = stack(d1)
-    d1m = melt(d1, [:c, :d, :e])
-    @test d1m == melt(d1, r"[cde]")
+    d1m = stack(d1, Not([:c, :d, :e]))
+    @test d1m == stack(d1, Not(r"[cde]"))
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
     @test names(d1s) == [:variable, :value, :c, :d, :e]
     @test d1s == d1m
-    d1m = melt(d1[:, [1,3,4]], :a)
+    d1m = stack(d1[:, [1,3,4]], Not(:a))
     @test names(d1m) == [:variable, :value, :a]
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
-    d1m_named = melt(d1[:, [1,3,4]], :a, variable_name=:letter, value_name=:someval)
+    d1m_named = stack(d1[:, [1,3,4]], Not(:a), variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :a]
 
     # test empty measures or ids
@@ -244,21 +244,21 @@ end
     @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
     @test names(dx) == [:variable, :value]
-    dx = melt(d1, [], [:a])
-    @test dx == melt(d1, r"xxx", r"a")
+    dx = stack(d1, [:a], [])
+    @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
     @test names(dx) == [:variable, :value]
-    dx = melt(d1, :a, [])
-    @test dx == melt(d1, r"a", r"xxx")
+    dx = stack(d1, [], :a)
+    @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
     @test names(dx) == [:variable, :value, :a]
 
     @test stack(d1, :a, view=true) == stack(d1, [:a], view=true)
-    @test all(isa.(eachcol(stackdf(d1, :a)),
+    @test all(isa.(eachcol(stack(d1, :a, view=true)),
                    [DataFrames.RepeatedVector;
                     DataFrames.StackedVector;
                     fill(DataFrames.RepeatedVector, 4)]))
-    @test all(isa.(eachcol(meltdf(d1, [:b, :c, :d, :e])),
+    @test all(isa.(eachcol(stack(d1, Not([:b, :c, :d, :e]), view=true)),
                    [DataFrames.RepeatedVector;
                     DataFrames.StackedVector;
                     fill(DataFrames.RepeatedVector, 4)]))
@@ -292,21 +292,21 @@ end
     d1s2 = stack(d1, [:c, :d], view=true)
     @test d1s2 == stack(d1, r"[cd]", view=true)
     d1s3 = stack(d1, view=true)
-    d1m = melt(d1, [:c, :d, :e], view=true)
-    @test d1m == melt(d1, r"[cde]", view=true)
+    d1m = stack(d1, Not([:c, :d, :e]), view=true)
+    @test d1m == stack(d1, Not(r"[cde]"), view=true)
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
     @test names(d1s) == [:variable, :value, :c, :d, :e]
     @test d1s == d1m
-    d1m = melt(d1[:, [1,3,4]], :a, view=true)
+    d1m = stack(d1[:, [1,3,4]], Not(:a), view=true)
     @test names(d1m) == [:variable, :value, :a]
 
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval, view=true)
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
-    d1m_named = melt(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval, view=true)
-    @test d1m_named == melt(d1, r"[cde]", variable_name=:letter, value_name=:someval, view=true)
+    d1m_named = stack(d1, Not([:c, :d, :e]), variable_name=:letter, value_name=:someval, view=true)
+    @test d1m_named == stack(d1, Not(r"[cde]"), variable_name=:letter, value_name=:someval, view=true)
     @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
     d1s[!, :id] = Union{Int, Missing}[1:12; 1:12]
@@ -321,13 +321,13 @@ end
     @test d1us3 == unstack(d1s2)
 
     # test unstack with exactly one key column that is not passed
-    df1 = melt(DataFrame(rand(10,10)))
+    df1 = stack(DataFrame(rand(10,10)))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
     # test empty keycol
-    @test_throws ArgumentError unstack(melt(DataFrame(rand(3,2))), :variable, :value)
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(3,2))), :variable, :value)
 end
 
 @testset "column names duplicates" begin

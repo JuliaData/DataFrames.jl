@@ -502,4 +502,56 @@ end
 
 global_logger(old_logger)
 
+@testset "melt" begin
+    mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
+    @test unstack(melt(mdf, :id), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+    @test unstack(melt(mdf, :id), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
+    @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+    @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
+
+        Random.seed!(1234)
+    x = DataFrame(rand(100, 50))
+    x[!, :id] = [1:99; missing]
+    x[!, :id2] = string.("a", x[!, :id])
+    x[!, :s] = [i % 2 == 0 ? randstring() : missing for i in 1:100]
+    allowmissing!(x, :x1)
+    x[1, :x1] = missing
+    y = melt(x, [:id, :id2])
+    @test y ≅ melt(x, r"id")
+    @test y ≅ melt(x, Not(Not(r"id")))
+
+    d1 = DataFrame(a = Array{Union{Int, Missing}}(repeat([1:3;], inner = [4])),
+                b = Array{Union{Int, Missing}}(repeat([1:4;], inner = [3])),
+                c = Array{Union{Float64, Missing}}(randn(12)),
+                d = Array{Union{Float64, Missing}}(randn(12)),
+                e = Array{Union{String, Missing}}(map(string, 'a':'l')))
+    d1s = stack(d1, [:a, :b])
+    d1m = melt(d1, [:c, :d, :e])
+    @test d1m == melt(d1, r"[cde]")
+    @test d1s == d1m
+    d1m = melt(d1[:, [1,3,4]], :a)
+    @test names(d1m) == [:variable, :value, :a]
+    d1m_named = melt(d1[:, [1,3,4]], :a, variable_name=:letter, value_name=:someval)
+    @test names(d1m_named) == [:letter, :someval, :a]
+    dx = melt(d1, [], [:a])
+    @test dx == melt(d1, r"xxx", r"a")
+    @test size(dx) == (12, 2)
+    @test names(dx) == [:variable, :value]
+    dx = melt(d1, :a, [])
+    @test dx == stack(d1, r"xxx", r"a")
+    @test size(dx) == (0, 3)
+    @test names(dx) == [:variable, :value, :a]
+    d1m = melt(d1, [:c, :d, :e], view=true)
+    @test d1m == melt(d1, r"[cde]", view=true)
+    d1m = melt(d1[:, [1,3,4]], :a, view=true)
+    @test names(d1m) == [:variable, :value, :a]
+    d1m_named = melt(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval, view=true)
+    @test d1m_named == melt(d1, r"[cde]", variable_name=:letter, value_name=:someval, view=true)
+    @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
+    df1 = melt(DataFrame(rand(10,10)))
+    df1[!, :id] = 1:100
+    @test size(unstack(df1, :variable, :value)) == (100, 11)
+    @test_throws ArgumentError unstack(melt(DataFrame(rand(3,2))), :variable, :value)
+end
+
 end # module

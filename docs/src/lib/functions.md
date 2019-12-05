@@ -19,7 +19,6 @@ groupindices
 groupvars
 join
 map
-melt
 stack
 unstack
 ```
