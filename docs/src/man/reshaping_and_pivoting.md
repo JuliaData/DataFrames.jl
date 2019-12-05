@@ -123,7 +123,7 @@ julia> last(d, 6)
 │ 6   │ SepalWidth │ 3.0      │ virginica     │
 ```
 
-If you prefer prefers to specify the id columns then use `Not` with `stack` like this:
+If you prefer to specify the id columns then use `Not` with `stack` like this:
 
 ```jldoctest reshape
 julia> d = stack(iris, Not(:Species));
@@ -261,7 +261,7 @@ julia> first(widedf, 6)
 │ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
 ```
 
-If you pass `view=true` to `stack` then you get a data frame whose columns are views into the original wide data frame. Here is an example:
+Passing `view=true` to `stack` returns a data frame whose columns are views into the original wide data frame. Here is an example:
 
 ```jldoctest reshape
 julia> d = stack(iris, view=true);

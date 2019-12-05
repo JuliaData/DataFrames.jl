@@ -74,7 +74,7 @@ On the contrary, functions that create a view of a `DataFrame` *do not* by defin
 the columns, and therefore require particular caution. This includes `view`, which returns
 a `SubDataFrame` or a `DataFrameRow`, and `groupby`, which returns a `GroupedDataFrame`.
 
-A partial exception to this rule are the [`stack`](@ref) function with `view=true` which
+A partial exception to this rule is the [`stack`](@ref) function with `view=true` which
 creates a `DataFrame` that contains views of the columns from the source `DataFrame`.
 
 In-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@ref),
