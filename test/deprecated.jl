@@ -509,7 +509,7 @@ global_logger(old_logger)
     @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
     @test unstack(melt(mdf, Not(Not(:id))), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
 
-        Random.seed!(1234)
+    Random.seed!(1234)
     x = DataFrame(rand(100, 50))
     x[!, :id] = [1:99; missing]
     x[!, :id2] = string.("a", x[!, :id])
