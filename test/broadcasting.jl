@@ -1500,6 +1500,13 @@ end
     @test_throws MethodError df[:, 1] .= z
 
     df = DataFrame(ones(3, 4))
+    z = "abc"
+    df[:, :z] .= z
+    @test df.z == fill("abc", 3)
+    @test_throws ArgumentError df[:, 6] .= z
+    @test_throws MethodError df[:, 1] .= z
+
+    df = DataFrame(ones(3, 4))
     z = fill("abc", 1, 1, 1)
     @test_throws DimensionMismatch df[:, :z] .= z
 end
