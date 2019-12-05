@@ -500,8 +500,6 @@ end
     @test eltypes(DataFrame(x=[1], y=["a"])) == [Int, String]
 end
 
-global_logger(old_logger)
-
 @testset "melt" begin
     mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
     @test unstack(melt(mdf, :id), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
@@ -553,5 +551,7 @@ global_logger(old_logger)
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test_throws ArgumentError unstack(melt(DataFrame(rand(3,2))), :variable, :value)
 end
+
+global_logger(old_logger)
 
 end # module

@@ -1551,14 +1551,9 @@ import DataAPI: describe
 @deprecate stackdf(args...; kwargs...) stack(args...; kwargs..., view=true)
 @deprecate meltdf(args...; kwargs...) melt(args...; kwargs..., view=true)
 
-@deprecate melt(df::AbstractDataFrame, id_vars::ColumnIndex;
-                variable_name::Symbol=:variable, value_name::Symbol=:value,
-                view::Bool=false) stack(df, Not(id_vars); variable_name=variable_name,
-                                        value_name=value_name, view=view)
-
 @deprecate melt(df::AbstractDataFrame, id_vars;
                 variable_name::Symbol=:variable, value_name::Symbol=:value,
-                view::Bool=false) stack(df, id_vars), id_inds; variable_name=variable_name,
+                view::Bool=false) stack(df, Not(id_vars); variable_name=variable_name,
                                         value_name=value_name, view=view)
 
 @deprecate melt(df::AbstractDataFrame, id_vars, measure_vars;
