@@ -238,9 +238,6 @@ function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
     return i
 end
 
-# Get values of grouping columns for all groups
-_groupvalues(gd::GroupedDataFrame) = [_groupvalues(gd, i) for i in 1:length(gd)]
-
 # Get values of grouping columns for single group
 _groupvalues(gd::GroupedDataFrame, i::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols]
 
