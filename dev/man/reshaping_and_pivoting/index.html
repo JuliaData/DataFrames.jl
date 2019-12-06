@@ -100,7 +100,7 @@ julia&gt; last(d, 6)
 │ 3   │ SepalWidth │ 2.5      │ virginica     │
 │ 4   │ SepalWidth │ 3.0      │ virginica     │
 │ 5   │ SepalWidth │ 3.4      │ virginica     │
-│ 6   │ SepalWidth │ 3.0      │ virginica     │</code></pre><p><code>melt</code> is an alternative function to reshape from wide to long format. It is based on <code>stack</code>, but it prefers specification of the id columns as:</p><pre><code class="language-julia-repl">julia&gt; d = melt(iris, :Species);
+│ 6   │ SepalWidth │ 3.0      │ virginica     │</code></pre><p>If you prefer to specify the id columns then use <code>Not</code> with <code>stack</code> like this:</p><pre><code class="language-julia-repl">julia&gt; d = stack(iris, Not(:Species));
 
 julia&gt; first(d, 6)
 6×3 DataFrame
@@ -127,7 +127,7 @@ julia&gt; last(d, 6)
 │ 6   │ PetalWidth │ 1.8      │ virginica     │</code></pre><p><code>unstack</code> converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:</p><pre><code class="language-julia-repl">julia&gt; iris.id = 1:size(iris, 1)
 1:150
 
-julia&gt; longdf = melt(iris, [:Species, :id]);
+julia&gt; longdf = stack(iris, Not([:Species, :id]));
 
 julia&gt; first(longdf, 6)
 6×4 DataFrame
@@ -177,7 +177,7 @@ julia&gt; last(widedf, 6)
 │ 3   │ 147   │ 5.0         │ 1.9        │ 6.3         │ 2.5        │
 │ 4   │ 148   │ 5.2         │ 2.0        │ 6.5         │ 3.0        │
 │ 5   │ 149   │ 5.4         │ 2.3        │ 6.2         │ 3.4        │
-│ 6   │ 150   │ 5.1         │ 1.8        │ 5.9         │ 3.0        │</code></pre><p>If the remaining columns are unique, you can skip the id variable and use:</p><pre><code class="language-julia-repl">julia&gt; longdf = melt(iris, [:Species, :id]);
+│ 6   │ 150   │ 5.1         │ 1.8        │ 5.9         │ 3.0        │</code></pre><p>If the remaining columns are unique, you can skip the id variable and use:</p><pre><code class="language-julia-repl">julia&gt; longdf = stack(iris, Not([:Species, :id]));
 
 julia&gt; first(longdf, 6)
 6×4 DataFrame
@@ -215,7 +215,7 @@ julia&gt; first(widedf, 6)
 │ 3   │ setosa        │ 3     │ 1.3         │ 0.2        │ 4.7         │ 3.2        │
 │ 4   │ setosa        │ 4     │ 1.5         │ 0.2        │ 4.6         │ 3.1        │
 │ 5   │ setosa        │ 5     │ 1.4         │ 0.2        │ 5.0         │ 3.6        │
-│ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │</code></pre><p><code>stackdf</code> and <code>meltdf</code> are two additional functions that work like <code>stack</code> and <code>melt</code>, but they provide a view into the original wide DataFrame. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; d = stackdf(iris);
+│ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │</code></pre><p>Passing <code>view=true</code> to <code>stack</code> returns a data frame whose columns are views into the original wide data frame. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; d = stack(iris, view=true);
 
 julia&gt; first(d, 6)
 6×4 DataFrame
@@ -239,9 +239,9 @@ julia&gt; last(d, 6)
 │ 3   │ PetalWidth │ 1.9      │ virginica     │ 147   │
 │ 4   │ PetalWidth │ 2.0      │ virginica     │ 148   │
 │ 5   │ PetalWidth │ 2.3      │ virginica     │ 149   │
-│ 6   │ PetalWidth │ 1.8      │ virginica     │ 150   │</code></pre><p>This saves memory. To create the view, several AbstractVectors are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code> This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code> This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code> This repeats the original columns N times where N is the number of columns stacked.</p><p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
+│ 6   │ PetalWidth │ 1.8      │ virginica     │ 150   │</code></pre><p>This saves memory. To create the view, several <code>AbstractVector</code>s are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code> This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code> This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code> This repeats the original columns N times where N is the number of columns stacked.</p><p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
 
-julia&gt; d = melt(iris, :Species);
+julia&gt; d = stack(iris, Not(:Species));
 
 julia&gt; first(d, 6)
 6×3 DataFrame
