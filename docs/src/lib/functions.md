@@ -19,11 +19,8 @@ groupindices
 groupvars
 join
 map
-melt
 stack
 unstack
-stackdf
-meltdf
 ```
 
 ## Basics

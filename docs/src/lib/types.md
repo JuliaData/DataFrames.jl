@@ -55,7 +55,7 @@ but using the `eachrow` and `eachcol` functions.
 
 The `RepeatedVector` and `StackedVector` types are subtypes of `AbstractVector` and support its interface
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,
-but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
+but they are columns of a `DataFrame` returned by `stack` with `view=true`.
 
 ## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
 
@@ -74,8 +74,8 @@ On the contrary, functions that create a view of a `DataFrame` *do not* by defin
 the columns, and therefore require particular caution. This includes `view`, which returns
 a `SubDataFrame` or a `DataFrameRow`, and `groupby`, which returns a `GroupedDataFrame`.
 
-A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which
-create a `DataFrame` that contains views of the columns from the source `DataFrame`.
+A partial exception to this rule is the [`stack`](@ref) function with `view=true` which
+creates a `DataFrame` that contains views of the columns from the source `DataFrame`.
 
 In-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@ref),
 `setindex!`, `push!`, `append!`) may mutate the column vectors of the `DataFrame` they take

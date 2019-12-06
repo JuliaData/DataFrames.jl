@@ -123,10 +123,10 @@ julia> last(d, 6)
 │ 6   │ SepalWidth │ 3.0      │ virginica     │
 ```
 
-`melt` is an alternative function to reshape from wide to long format. It is based on `stack`, but it prefers specification of the id columns as:
+If you prefer to specify the id columns then use `Not` with `stack` like this:
 
 ```jldoctest reshape
-julia> d = melt(iris, :Species);
+julia> d = stack(iris, Not(:Species));
 
 julia> first(d, 6)
 6×3 DataFrame
@@ -159,7 +159,7 @@ julia> last(d, 6)
 julia> iris.id = 1:size(iris, 1)
 1:150
 
-julia> longdf = melt(iris, [:Species, :id]);
+julia> longdf = stack(iris, Not([:Species, :id]));
 
 julia> first(longdf, 6)
 6×4 DataFrame
@@ -215,7 +215,7 @@ julia> last(widedf, 6)
 If the remaining columns are unique, you can skip the id variable and use:
 
 ```jldoctest reshape
-julia> longdf = melt(iris, [:Species, :id]);
+julia> longdf = stack(iris, Not([:Species, :id]));
 
 julia> first(longdf, 6)
 6×4 DataFrame
@@ -261,10 +261,10 @@ julia> first(widedf, 6)
 │ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
 ```
 
-`stackdf` and `meltdf` are two additional functions that work like `stack` and `melt`, but they provide a view into the original wide DataFrame. Here is an example:
+Passing `view=true` to `stack` returns a data frame whose columns are views into the original wide data frame. Here is an example:
 
 ```jldoctest reshape
-julia> d = stackdf(iris);
+julia> d = stack(iris, view=true);
 
 julia> first(d, 6)
 6×4 DataFrame
@@ -291,7 +291,7 @@ julia> last(d, 6)
 │ 6   │ PetalWidth │ 1.8      │ virginica     │ 150   │
 ```
 
-This saves memory. To create the view, several AbstractVectors are defined:
+This saves memory. To create the view, several `AbstractVector`s are defined:
 
 `:variable` column -- `EachRepeatedVector`
 This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.
@@ -307,7 +307,7 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 ```jldoctest reshape
 julia> using Statistics
 
-julia> d = melt(iris, :Species);
+julia> d = stack(iris, Not(:Species));
 
 julia> first(d, 6)
 6×3 DataFrame

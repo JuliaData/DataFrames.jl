@@ -1539,9 +1539,27 @@ import Base: setproperty!
 @deprecate eltypes(df::AbstractDataFrame) eltype.(eachcol(df))
 
 @deprecate permutecols!(df::DataFrame, p::AbstractVector) select!(df, p)
-@deprecate names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false) rename!(x, nms, makeunique=makeunique)
-@deprecate names!(df::AbstractDataFrame, vals::Vector{Symbol}; makeunique::Bool=false) rename!(df, vals, makeunique=makeunique)
+@deprecate names!(x::Index, nms::Vector{Symbol};
+                  makeunique::Bool=false) rename!(x, nms, makeunique=makeunique)
+@deprecate names!(df::AbstractDataFrame, vals::Vector{Symbol};
+                  makeunique::Bool=false) rename!(df, vals, makeunique=makeunique)
 
 import DataAPI: describe
 @deprecate describe(io::IO, df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...;
-                 cols=:) describe(df, stats..., cols=cols)
+                    cols=:) describe(df, stats..., cols=cols)
+
+@deprecate stackdf(args...; kwargs...) stack(args...; kwargs..., view=true)
+@deprecate meltdf(args...; kwargs...) melt(args...; kwargs..., view=true)
+
+@deprecate melt(df::AbstractDataFrame, id_vars;
+                variable_name::Symbol=:variable, value_name::Symbol=:value,
+                view::Bool=false) stack(df, Not(id_vars); variable_name=variable_name,
+                                        value_name=value_name, view=view)
+
+@deprecate melt(df::AbstractDataFrame, id_vars, measure_vars;
+                variable_name::Symbol=:variable, value_name::Symbol=:value,
+                view::Bool=false) stack(df, measure_vars, id_vars; variable_name=variable_name,
+                                        value_name=value_name, view=view)
+@deprecate melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=:value,
+                view::Bool=false) stack(df; variable_name=variable_name, value_name=value_name,
+                                        view=view)
