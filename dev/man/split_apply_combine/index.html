@@ -87,9 +87,14 @@ julia&gt; aggregate(iris, :Species, [sum, mean])
 ├─────┼───────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼──────────────────┼─────────────────┤
 │ 1   │ setosa        │ 250.3           │ 171.4          │ 73.1            │ 12.3           │ 5.006            │ 3.428           │
 │ 2   │ versicolor    │ 296.8           │ 138.5          │ 213.0           │ 66.3           │ 5.936            │ 2.77            │
-│ 3   │ virginica     │ 329.4           │ 148.7          │ 277.6           │ 101.3          │ 6.588            │ 2.974           │</code></pre><p>If you only want to split the data set into subsets, use the <code>groupby</code> function:</p><pre><code class="language-julia-repl">julia&gt; for subdf in groupby(iris, :Species)
+│ 3   │ virginica     │ 329.4           │ 148.7          │ 277.6           │ 101.3          │ 6.588            │ 2.974           │</code></pre><p>If you only want to split the data set into subsets, use the <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a> function:</p><pre><code class="language-julia-repl">julia&gt; for subdf in groupby(iris, :Species)
            println(size(subdf, 1))
        end
 50
 50
-50</code></pre><footer><hr/><a class="previous" href="../joins/"><span class="direction">Previous</span><span class="title">Joins</span></a><a class="next" href="../reshaping_and_pivoting/"><span class="direction">Next</span><span class="title">Reshaping</span></a></footer></article></body></html>
+50</code></pre><p>To also get the values of the grouping columns along with each group, use the <code>pairs</code> function:</p><pre><code class="language-julia-repl">julia&gt; for (key, subdf) in pairs(groupby(iris, :Species))
+           println(&quot;Number of data points for $(key.Species): $(nrow(subdf))&quot;)
+       end
+Number of data points for setosa: 50
+Number of data points for versicolor: 50
+Number of data points for virginica: 50</code></pre><p>The value of <code>key</code> in the previous example is a <a href="../../lib/types/#DataFrames.GroupKey"><code>DataFrames.GroupKey</code></a> object, which can be used in a similar fashion to a <code>NamedTuple</code>.</p><footer><hr/><a class="previous" href="../joins/"><span class="direction">Previous</span><span class="title">Joins</span></a><a class="next" href="../reshaping_and_pivoting/"><span class="direction">Next</span><span class="title">Reshaping</span></a></footer></article></body></html>
