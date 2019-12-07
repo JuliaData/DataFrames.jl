@@ -125,7 +125,7 @@ julia> rename!(df, [:a, :b, :c])
 julia> rename!(df, [:a, :b, :a])
 ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make them unique using a suffix automatically.
 
-julia> rename(df, [:a, :b, :a], makeunique=true)
+julia> rename!(df, [:a, :b, :a], makeunique=true)
 1×3 DataFrame
 │ Row │ a     │ b     │ a_1   │
 │     │ Int64 │ Int64 │ Int64 │
