@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Categorical Data · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../"><img class="logo" src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="../getting_started/">Getting Started</a></li><li><a class="toctext" href="../joins/">Joins</a></li><li><a class="toctext" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="toctext" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="toctext" href="../sorting/">Sorting</a></li><li class="current"><a class="toctext" href>Categorical Data</a><ul class="internal"></ul></li><li><a class="toctext" href="../missing/">Missing Data</a></li><li><a class="toctext" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../../lib/types/">Types</a></li><li><a class="toctext" href="../../lib/functions/">Functions</a></li><li><a class="toctext" href="../../lib/indexing/">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href>Categorical Data</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/categorical.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Categorical Data</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Categorical-Data-1" href="#Categorical-Data-1">Categorical Data</a></h1><p>Often, we have to deal with factors that take on a small number of levels:</p><pre><code class="language-julia-repl">julia&gt; v = [&quot;Group A&quot;, &quot;Group A&quot;, &quot;Group A&quot;, &quot;Group B&quot;, &quot;Group B&quot;, &quot;Group B&quot;]
+6-element Array{String,1}:
+ &quot;Group A&quot;
+ &quot;Group A&quot;
+ &quot;Group A&quot;
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+</code></pre><p>The naive encoding used in an <code>Array</code> represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the <code>CategoricalArray</code> type does:</p><pre><code class="language-julia-repl">julia&gt; using CategoricalArrays
+
+julia&gt; cv = CategoricalArray(v)
+6-element CategoricalArray{String,1,UInt32}:
+ &quot;Group A&quot;
+ &quot;Group A&quot;
+ &quot;Group A&quot;
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+</code></pre><p><code>CategoricalArrays</code> support missing values.</p><pre><code class="language-julia-repl">julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
+                              &quot;Group B&quot;, &quot;Group B&quot;, missing])
+6-element CategoricalArray{Union{Missing, String},1,UInt32}:
+ &quot;Group A&quot;
+ missing
+ &quot;Group A&quot;
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+ missing</code></pre><p>In addition to representing repeated data efficiently, the <code>CategoricalArray</code> type allows us to determine efficiently the allowed levels of the variable at any time using the <code>levels</code> function (note that levels may or may not be actually used in the data):</p><pre><code class="language-julia-repl">julia&gt; levels(cv)
+2-element Array{String,1}:
+ &quot;Group A&quot;
+ &quot;Group B&quot;
+</code></pre><p>The <code>levels!</code> function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.</p><pre><code class="language-julia-repl">julia&gt; levels!(cv, [&quot;Group B&quot;, &quot;Group A&quot;]);
+
+julia&gt; levels(cv)
+2-element Array{String,1}:
+ &quot;Group B&quot;
+ &quot;Group A&quot;
+
+julia&gt; sort(cv)
+6-element CategoricalArray{Union{Missing, String},1,UInt32}:
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+ &quot;Group A&quot;
+ &quot;Group A&quot;
+ missing
+ missing
+</code></pre><p>By default, a <code>CategoricalArray</code> is able to represent 2&lt;sup&gt;32&lt;/sup&gt; different levels. You can use less memory by calling the <code>compress</code> function:</p><pre><code class="language-julia-repl">julia&gt; cv = compress(cv)
+6-element CategoricalArray{Union{Missing, String},1,UInt8}:
+ &quot;Group A&quot;
+ missing
+ &quot;Group A&quot;
+ &quot;Group B&quot;
+ &quot;Group B&quot;
+ missing
+</code></pre><p>Instead of using the <code>CategoricalArray</code> constructor directly you can use <code>categorical</code> function. It additionally accepts one positional argument <code>compress</code> which when set to <code>true</code> is equivalent to calling <code>compress</code> on the new vector:</p><pre><code class="language-julia-repl">julia&gt; cv1 = categorical([&quot;A&quot;, &quot;B&quot;], true)
+2-element CategoricalArray{String,1,UInt8}:
+ &quot;A&quot;
+ &quot;B&quot;</code></pre><p>If the <code>ordered</code> keyword argument is set to <code>true</code>, the resulting <code>CategoricalArray</code> will be ordered, which means that its levels can be tested for order (rather than throwing an error):</p><pre><code class="language-julia-repl">julia&gt; cv2 = categorical([&quot;A&quot;, &quot;B&quot;], true, ordered=true)
+2-element CategoricalArray{String,1,UInt8}:
+ &quot;A&quot;
+ &quot;B&quot;
+
+julia&gt; cv1[1] &lt; cv1[2]
+ERROR: ArgumentError: Unordered CategoricalValue objects cannot be tested for order using &lt;. Use isless instead, or call the ordered! function on the parent array to change this
+
+julia&gt; cv2[1] &lt; cv2[2]
+true</code></pre><p>You can check if a <code>CategoricalArray</code> is ordered using the <code>isordered</code> function and change between ordered and unordered using <code>ordered!</code> function.</p><pre><code class="language-julia-repl">julia&gt; isordered(cv1)
+false
+
+julia&gt; ordered!(cv1, true)
+2-element CategoricalArray{String,1,UInt8}:
+ &quot;A&quot;
+ &quot;B&quot;
+
+julia&gt; isordered(cv1)
+true
+
+julia&gt; cv1[1] &lt; cv1[2]
+true</code></pre><p>Often, you will have factors encoded inside a <code>DataFrame</code> with <code>Vector</code> columns instead of <code>CategoricalVector</code> columns. You can convert one or more columns of the <code>DataFrame</code> using the <code>categorical!</code> function, which modifies the input <code>DataFrame</code> in-place. Compression can be applied by setting the <code>compress</code> keyword argument to <code>true</code>.</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+
+julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;D&quot;, &quot;A&quot;],
+                      B = [&quot;X&quot;, &quot;X&quot;, &quot;X&quot;, &quot;Y&quot;, &quot;Y&quot;, &quot;Y&quot;])
+6×2 DataFrame
+│ Row │ A      │ B      │
+│     │ String │ String │
+├─────┼────────┼────────┤
+│ 1   │ A      │ X      │
+│ 2   │ B      │ X      │
+│ 3   │ C      │ X      │
+│ 4   │ D      │ Y      │
+│ 5   │ D      │ Y      │
+│ 6   │ A      │ Y      │
+
+julia&gt; categorical!(df, :A) # change the column `:A` to be categorical
+6×2 DataFrame
+│ Row │ A            │ B      │
+│     │ Categorical… │ String │
+├─────┼──────────────┼────────┤
+│ 1   │ A            │ X      │
+│ 2   │ B            │ X      │
+│ 3   │ C            │ X      │
+│ 4   │ D            │ Y      │
+│ 5   │ D            │ Y      │
+│ 6   │ A            │ Y      │</code></pre><p>If columns are not specified, all columns with an <code>AbstractString</code> element type are converted to be categorical. In the example below we also enable compression:</p><pre><code class="language-julia-repl">julia&gt; categorical!(df, compress=true)
+6×2 DataFrame
+│ Row │ A            │ B            │
+│     │ Categorical… │ Categorical… │
+├─────┼──────────────┼──────────────┤
+│ 1   │ A            │ X            │
+│ 2   │ B            │ X            │
+│ 3   │ C            │ X            │
+│ 4   │ D            │ Y            │
+│ 5   │ D            │ Y            │
+│ 6   │ A            │ Y            │
+
+julia&gt; eltype.(eachcol(df))
+2-element Array{DataType,1}:
+ CategoricalString{UInt8}
+ CategoricalString{UInt8}
+</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalVector</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalVector</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p><footer><hr/><a class="previous" href="../sorting/"><span class="direction">Previous</span><span class="title">Sorting</span></a><a class="next" href="../missing/"><span class="direction">Next</span><span class="title">Missing Data</span></a></footer></article></body></html>
