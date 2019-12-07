@@ -1208,6 +1208,26 @@ end
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+
+    df2 = DataFrame(A = vcat(df.A, df.A), B = repeat([:X, :Y], inner=6), C = 1:12)
+
+    gd = groupby_checked(df2, [:A, :B])
+    @inferred groupindices(gd)
+    @test groupindices(gd) == [1, 2, 3, 2, 3, 1, 4, 5, 6, 5, 6, 4]
+    @test groupvars(gd) == [:A, :B]
+    gd2 = gd[[3,2,5]]
+    @inferred groupindices(gd2)
+    @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing, missing, 3, missing, 3, missing, missing]
+    @test groupvars(gd2) == [:A, :B]
+
+    gd = groupby_checked(df2, [:A, :B], skipmissing=true)
+    @inferred groupindices(gd)
+    @test groupindices(gd) ≅ [missing, 1, 2, 1, 2, missing, missing, 3, 4, 3, 4, missing]
+    @test groupvars(gd) == [:A, :B]
+    gd2 = gd[[4,2,1]]
+    @inferred groupindices(gd2)
+    @test groupindices(gd2) ≅ [missing, 3, 2, 3, 2, missing, missing, missing, 1, missing, 1, missing]
+    @test groupvars(gd2) == [:A, :B]
 end
 
 @testset "by skipmissing and sort" begin
@@ -1254,6 +1274,166 @@ end
         "Group 1 (3 rows): \n│ Row │ x1    │ x2    │ y     │\n│     │ Int64 │ Int64 │ Int64 │\n" *
         "├─────┼───────┼───────┼───────┤\n│ 1   │ 1     │ 1     │ 1     │\n" *
         "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
+end
+
+@testset "GroupedDataFrame dictionary interface" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    @test map(NamedTuple, keys(gd)) ≅
+        [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
+
+    @test collect(pairs(gd)) ≅ map(Pair, keys(gd), gd)
+
+    for (i, key) in enumerate(keys(gd))
+        # Plain key
+        @test gd[key] ≅ gd[i]
+        # Named tuple
+        @test gd[NamedTuple(key)] ≅ gd[i]
+        # Plain tuple
+        @test gd[Tuple(key)] ≅ gd[i]
+    end
+
+    # Equivalent value of different type
+    @test gd[(a=:A, b=1.0)] ≅ gd[1]
+
+    @test get(gd, (a=:A, b=1), nothing) ≅ gd[1]
+    @test get(gd, (a=:A, b=3), nothing) == nothing
+
+    # Wrong values
+    @test_throws KeyError gd[(a=:A, b=3)]
+    @test_throws KeyError gd[(:A, 3)]
+    @test_throws KeyError gd[(a=:A, b="1")]
+    # Wrong length
+    @test_throws KeyError gd[(a=:A,)]
+    @test_throws KeyError gd[(:A,)]
+    @test_throws KeyError gd[(a=:A, b=1, c=1)]
+    @test_throws KeyError gd[(:A, 1, 1)]
+    # Out of order
+    @test_throws KeyError gd[(b=1, a=:A)]
+    @test_throws KeyError gd[(1, :A)]
+    # Empty
+    @test_throws KeyError gd[()]
+    @test_throws KeyError gd[NamedTuple()]
+end
+
+@testset "GroupKey and GroupKeys" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
+    cols = [:a, :b]
+    colstup = Tuple(cols)
+    gd = groupby_checked(df, cols)
+    gdkeys = keys(gd)
+
+    expected =
+        [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
+
+    # Check AbstractVector behavior
+    @test IndexStyle(gdkeys) === IndexLinear()
+    @test length(gdkeys) == length(expected)
+    @test size(gdkeys) == size(expected)
+    @test eltype(gdkeys) == DataFrames.GroupKey{typeof(gd)}
+    @test_throws BoundsError gdkeys[0]
+    @test_throws BoundsError gdkeys[length(gdkeys) + 1]
+
+    # Test each key
+    cnt = 0
+    for (i, key) in enumerate(gdkeys)
+        cnt += 1
+        nt = expected[i]
+
+        # Check iteration vs indexing of GroupKeys
+        @test key == gdkeys[i]
+
+        # Basic methods
+        @test parent(key) === gd
+        @test length(key) == length(cols)
+        @test names(key) == cols
+        @test keys(key) == colstup
+        @test propertynames(key) == colstup
+        @test propertynames(key, true) == colstup
+        @test values(key) ≅ values(nt)
+
+        # (Named)Tuple conversion
+        @test Tuple(key) ≅ values(nt)
+        @test NamedTuple(key) ≅ nt
+
+        # Iteration
+        @test collect(key) ≅ collect(nt)
+
+        # Integer/symbol indexing, getproperty of key
+        for (j, n) in enumerate(cols)
+            @test key[j] ≅ nt[j]
+            @test key[n] ≅ nt[j]
+            @test getproperty(key, n) ≅ nt[j]
+        end
+
+        # Out-of-bounds integer index
+        @test_throws BoundsError key[0]
+        @test_throws BoundsError key[length(key) + 1]
+
+        # Invalid key/property of key
+        @test_throws KeyError key[:foo]
+        @test_throws ArgumentError key.foo
+
+        # Using key to index GroupedDataFrame
+        @test gd[key] ≅ gd[i]
+    end
+
+    # Make sure we actually iterated over all of them
+    @test cnt == length(gd)
+
+    # Indexing using another GroupedDataFrame instance should fail
+    gd2 = groupby(df, cols, skipmissing=true)
+    gd3 = groupby(df, cols, skipmissing=true)
+    @test gd2 == gd3  # Use GDF's without missing so they compare equal
+    @test_throws ErrorException gd3[first(keys(gd2))]
+
+    # Key equality
+    @test collect(keys(gd)) == gdkeys  # These are new instances
+    @test all(Ref(gdkeys[1]) .!= gdkeys[2:end])  # Keys should not be equal to each other
+    @test !any(collect(keys(gd2)) .== keys(gd3))  # Same values but different (but equal) parent
+
+    # Printing of GroupKey
+    df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
+                   b = repeat(1:2, outer=[6]),
+                   c = 1:12)
+
+    gd = groupby(df, [:a, :b])
+
+    @test map(repr, keys(gd)) == [
+        "GroupKey: (a = :foo, b = 1)",
+        "GroupKey: (a = :bar, b = 2)",
+        "GroupKey: (a = :baz, b = 1)",
+        "GroupKey: (a = :foo, b = 2)",
+        "GroupKey: (a = :bar, b = 1)",
+        "GroupKey: (a = :baz, b = 2)",
+    ]
+end
+
+@testset "Parent DataFrame names changed" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    @test names(gd) == names(df)
+    @test groupvars(gd) == [:a, :b]
+    @test map(NamedTuple, keys(gd)) ≅
+        [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
+    @test gd[(a=:A, b=:X)] ≅ gd[1]
+    @test gd[keys(gd)[1]] ≅ gd[1]
+    @test NamedTuple(keys(gd)[1]) == (a=:A, b=:X)
+    @test keys(gd)[1].a == :A
+
+    rename!(df, [:d, :e, :f])
+
+    @test names(gd) == names(df)
+    @test groupvars(gd) == [:d, :e]
+    @test map(NamedTuple, keys(gd)) ≅
+        [(d=:A, e=:X), (d=:B, e=:X), (d=missing, e=:X), (d=:A, e=:Y), (d=:B, e=:Y), (d=missing, e=:Y)]
+    @test gd[(d=:A, e=:X)] ≅ gd[1]
+    @test gd[keys(gd)[1]] ≅ gd[1]
+    @test NamedTuple(keys(gd)[1]) == (d=:A, e=:X)
+    @test keys(gd)[1].d == :A
+    @test_throws KeyError gd[(a=:A, b=:X)]
 end
 
 end # module

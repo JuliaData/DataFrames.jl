@@ -61,6 +61,13 @@ See the following for additional split-apply-combine operations:
 * [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
 * [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
 
+`GroupedDataFrame` also supports the dictionary interface. The keys are
+[`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
+which can also be used to get the values of the grouping columns for each group.
+`Tuples` and `NamedTuple`s containing the values of the grouping columns (in the
+same order as the `cols` argument) are also accepted as indices, but this will
+be slower than using the equivalent `GroupKey`.
+
 # Examples
 ```julia
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
@@ -98,6 +105,33 @@ julia> last(gd)
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 4     │ 1     │ 4     │
 │ 2   │ 4     │ 1     │ 8     │
+
+julia> gd[(a=3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> gd[(3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> k = first(keys(gd))
+GroupKey: (a = 3)
+
+julia> gd[k]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
 
 julia> for g in gd
            println(g)
@@ -156,10 +190,12 @@ Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
+# Single integer indexing
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 
-function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray)
+# Array of integers
+function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray{T}) where {T<:Integer}
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
     if !allunique(new_starts)
@@ -176,6 +212,286 @@ end
 
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
     GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts, gd.ends)
+
+"""
+    groupindices(gd::GroupedDataFrame)
+
+Return a vector of group indices for each row of `parent(gd)`.
+
+Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
+any group are attributed `missing` (this can happen if `skipmissing=true` was
+passed when creating `gd`, or if `gd` is a subset from a larger [`GroupedDataFrame`](@ref)).
+"""
+groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
+
+"""
+    groupvars(gd::GroupedDataFrame)
+
+Return a vector of column names in `parent(gd)` used for grouping.
+"""
+groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
+
+# Get grouping variable index by its name
+function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
+    i = findfirst(==(name), groupvars(gd))
+    i === nothing && strict && throw(ArgumentError("$name is not a grouping column"))
+    return i
+end
+
+# Get values of grouping columns for single group
+_groupvalues(gd::GroupedDataFrame, i::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols]
+
+# Get values of single grouping column for single group
+_groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
+_groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) = _groupvalues(gd, i, _groupvar_idx(gd, col, true))
+
+
+"""
+    GroupKey{T<:GroupedDataFrame}
+
+Key for one of the groups of a [`GroupedDataFrame`](@ref). Contains the values
+of the corresponding grouping columns and behaves similarly to a `NamedTuple`,
+but using it to index its `GroupedDataFrame` is much more effecient than using the
+equivalent `Tuple` or `NamedTuple`.
+
+Instances of this type are returned by `keys(::GroupedDataFrame)` and are not
+meant to be constructed directly.
+
+See [`keys(::GroupedDataFrame)`](@ref) for more information.
+"""
+struct GroupKey{T<:GroupedDataFrame}
+    parent::T
+    idx::Int
+end
+
+function Base.show(io::IO, k::GroupKey)
+    print(io, "GroupKey: ")
+    show(io, NamedTuple(k))
+end
+
+Base.parent(key::GroupKey) = getfield(key, :parent)
+Base.length(key::GroupKey) = length(parent(key).cols)
+Base.keys(key::GroupKey) = Tuple(groupvars(parent(key)))
+Base.names(key::GroupKey) = groupvars(parent(key))
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
+Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
+
+Base.iterate(key::GroupKey, i::Integer=1) = i <= length(key) ? (key[i], i + 1) : nothing
+
+Base.getindex(key::GroupKey, i::Integer) = _groupvalues(parent(key), getfield(key, :idx), i)
+
+function Base.getindex(key::GroupKey, n::Symbol)
+    try
+        return _groupvalues(parent(key), getfield(key, :idx), n)
+    catch e
+        throw(KeyError(n))
+    end
+end
+
+function Base.getproperty(key::GroupKey, p::Symbol)
+    try
+        return key[p]
+    catch e
+        throw(ArgumentError("$(typeof(key)) has no property $p"))
+    end
+end
+
+function Base.NamedTuple(key::GroupKey)
+    N = NamedTuple{Tuple(groupvars(parent(key)))}
+    N(_groupvalues(parent(key), getfield(key, :idx)))
+end
+Base.Tuple(key::GroupKey) = values(key)
+
+
+"""
+    GroupKeys{T<:GroupedDataFrame} <: AbstractVector{GroupKey{T}}
+
+A vector containing all [`GroupKey`](@ref) objects for a given
+[`GroupedDataFrame`](@ref).
+
+See [`keys(::GroupedDataFrame)`](@ref) for more information.
+"""
+struct GroupKeys{T<:GroupedDataFrame} <: AbstractVector{GroupKey{T}}
+    parent::T
+end
+
+Base.parent(gk::GroupKeys) = gk.parent
+
+Base.size(gk::GroupKeys) = (length(parent(gk)),)
+Base.IndexStyle(::Type{<:GroupKeys}) = IndexLinear()
+@Base.propagate_inbounds function Base.getindex(gk::GroupKeys, i::Integer)
+    @boundscheck checkbounds(gk, i)
+    return GroupKey(parent(gk), i)
+end
+
+
+"""
+    keys(gd::GroupedDataFrame)
+
+Get the set of keys for each group of the `GroupedDataFrame` `gd` as a
+[`GroupKeys`](@ref) object. Each key is a [`GroupKey`](@ref), which behaves like
+a `NamedTuple` holding the values of the grouping columns for a given group.
+Unlike the equivalent `Tuple` and `NamedTuple`, these keys can be used to index
+into `gd` efficiently. The ordering of the keys is identical to the ordering of
+the groups of `gd` under iteration and integer indexing.
+
+# Examples
+
+```jldoctest groupkeys
+julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
+                      b = repeat([2, 1], outer=[6]),
+                      c = 1:12);
+
+julia> gd = groupby(df, [:a, :b])
+GroupedDataFrame with 6 groups based on keys: a, b
+First Group (2 rows): a = :foo, b = 2
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ foo    │ 2     │ 1     │
+│ 2   │ foo    │ 2     │ 7     │
+⋮
+Last Group (2 rows): a = :baz, b = 1
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ baz    │ 1     │ 6     │
+│ 2   │ baz    │ 1     │ 12    │
+
+julia> keys(gd)
+6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (a = :foo, b = 2)
+ GroupKey: (a = :bar, b = 1)
+ GroupKey: (a = :baz, b = 2)
+ GroupKey: (a = :foo, b = 1)
+ GroupKey: (a = :bar, b = 2)
+ GroupKey: (a = :baz, b = 1)
+```
+
+`GroupKey` objects behave similarly to `NamedTuple`s:
+
+```jldoctest groupkeys
+julia> k = keys(gd)[1]
+GroupKey: (a = :foo, b = 2)
+
+julia> keys(k)
+(:a, :b)
+
+julia> values(k)  # Same as Tuple(k)
+(:foo, 2)
+
+julia> NamedTuple(k)
+(a = :foo, b = 2)
+
+julia> k.a
+:foo
+
+julia> k[:a]
+:foo
+
+julia> k[1]
+:foo
+```
+
+Keys can be used as indices to retrieve the corresponding group from their
+`GroupedDataFrame`:
+
+```jldoctest groupkeys
+julia> gd[k]
+2×3 SubDataFrame
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ foo    │ 2     │ 1     │
+│ 2   │ foo    │ 2     │ 7     │
+
+julia> gd[keys(gd)[1]] == gd[1]
+true
+```
+"""
+Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
+
+# Index with GroupKey
+function Base.getindex(gd::GroupedDataFrame, key::GroupKey)
+    gd === parent(key) && return gd[getfield(key, :idx)]
+    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
+end
+
+# Index with tuple
+function Base.getindex(gd::GroupedDataFrame, key::Tuple)
+    for i in 1:length(gd)
+        isequal(Tuple(_groupvalues(gd, i)), key) && return gd[i]
+    end
+    throw(KeyError(key))
+end
+
+# Index with named tuple
+function Base.getindex(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
+    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+        throw(KeyError(key))
+    end
+    return gd[Tuple(key)]
+end
+
+"""
+    get(gd::GroupedDataFrame, key, default)
+
+Get a group based on the values of the grouping columns.
+
+`key` may be a `NamedTuple` or `Tuple` of grouping column values (in the same
+order as the `cols` argument to `groupby`).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[2]),
+                      b = repeat([2, 1], outer=[3]),
+                      c = 1:6);
+
+julia> gd = groupby(df, :a)
+GroupedDataFrame with 3 groups based on key: a
+First Group (2 rows): a = :foo
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ foo    │ 2     │ 1     │
+│ 2   │ foo    │ 1     │ 4     │
+⋮
+Last Group (2 rows): a = :baz
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ baz    │ 2     │ 3     │
+│ 2   │ baz    │ 1     │ 6     │
+
+julia> get(gd, (a=:bar,), nothing)
+2×3 SubDataFrame
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ bar    │ 1     │ 2     │
+│ 2   │ bar    │ 2     │ 5     │
+
+julia> get(gd, (:baz,), nothing)
+2×3 SubDataFrame
+│ Row │ a      │ b     │ c     │
+│     │ Symbol │ Int64 │ Int64 │
+├─────┼────────┼───────┼───────┤
+│ 1   │ baz    │ 2     │ 3     │
+│ 2   │ baz    │ 1     │ 6     │
+
+julia> get(gd, (:qux,), nothing)
+```
+"""
+function Base.get(gd::GroupedDataFrame, key::Union{Tuple, NamedTuple}, default)
+    try
+        return gd[key]
+    catch KeyError
+        return default
+    end
+end
+
 
 function Base.:(==)(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
     gd1.cols == gd2.cols &&
@@ -1214,21 +1530,3 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
     resize!(idx, doff - 1)
     parent(gd)[idx, :]
 end
-
-"""
-    groupindices(gd::GroupedDataFrame)
-
-Return a vector of group indices for each row of `parent(gd)`.
-
-Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
-any group are attributed `missing` (this can happen if `skipmissing=true` was
-passed when creating `gd`, or if `gd` is a subset from a larger [`GroupedDataFrame`](@ref)).
-"""
-groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
-
-"""
-    groupvars(gd::GroupedDataFrame)
-
-Return a vector of column names in `parent(gd)` used for grouping.
-"""
-groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]

@@ -128,7 +128,7 @@ julia> aggregate(iris, :Species, [sum, mean])
 │ 3   │ virginica     │ 329.4           │ 148.7          │ 277.6           │ 101.3          │ 6.588            │ 2.974           │
 ```
 
-If you only want to split the data set into subsets, use the `groupby` function:
+If you only want to split the data set into subsets, use the [`groupby`](@ref) function:
 
 ```jldoctest sac
 julia> for subdf in groupby(iris, :Species)
@@ -138,3 +138,18 @@ julia> for subdf in groupby(iris, :Species)
 50
 50
 ```
+
+To also get the values of the grouping columns along with each group, use the
+`pairs` function:
+
+```jldoctest sac
+julia> for (key, subdf) in pairs(groupby(iris, :Species))
+           println("Number of data points for $(key.Species): $(nrow(subdf))")
+       end
+Number of data points for setosa: 50
+Number of data points for versicolor: 50
+Number of data points for virginica: 50
+```
+
+The value of `key` in the previous example is a [`DataFrames.GroupKey`](@ref) object,
+which can be used in a similar fashion to a `NamedTuple`.

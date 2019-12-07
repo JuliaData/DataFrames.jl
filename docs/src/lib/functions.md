@@ -16,7 +16,10 @@ by
 combine
 groupby
 groupindices
+groupvalues
 groupvars
+keys
+get
 join
 map
 stack

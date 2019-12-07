@@ -199,3 +199,27 @@ Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as
 
 If column indexing using `Symbol` names in `cols` is performed, the order of columns in the operation is specified
 by the order of names.
+
+
+## Indexing `GroupedDataFrame`s
+
+A [`GroupedDataFrame`](@ref) can behave as either an `AbstractVector` or `AbstractDict` depending on the type
+of index used. Integers (or arrays of them) trigger vector-like indexing while `Tuples`s and `NamedTuple`s
+trigger dictionary-like indexing. An intermediate between the two is the [`GroupKey`](@ref) type
+returned by [`keys(::GroupedDataFrame)`](@ref), which behaves similarly to a `NamedTuple` but has
+performance on par with integer indexing.
+
+The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
+
+* `gd[i::Integer]` -> Get the `i`th group.
+* `gd[a::AbstractArray{<:Integer}]` -> Get a reduced `GroupedDataFrame` containing only the groups
+  with indices in `a`.
+* `gd[key::NamedTuple]` -> Get the group corresponding to the given values of the
+  grouping columns. The fields of the `NamedTuple` must match the grouping columns
+  columns passed to [`groupby`](@ref) (including order).
+* `gd[key::Tuple]` -> Same as previous, but omitting the names on `key`.
+* `get(gd, key::Union{Tuple, NamedTuple}, default)` -> Get group for key `key`,
+  returning `default` if it does not exist.
+* `gd[key::GroupKey]` -> Get the group corresponding to the [`GroupKey`](@ref)
+  `key` (one of the elements of the vector returned by [`keys(::GroupedDataFrame)`](@ref)).
+  This should be nearly as fast as integer indexing.
