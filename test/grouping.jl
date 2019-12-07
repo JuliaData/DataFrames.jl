@@ -1153,6 +1153,22 @@ end
         1\t1.0
         2\t2.0
         """
+
+    # Printing of GroupKey
+    df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
+                   b = repeat(1:2, outer=[6]),
+                   c = 1:12);
+
+    gd = groupby(df, [:a, :b])
+
+    @test map(repr, keys(gd)) == [
+        "GroupKey: (a = :foo, b = 1)",
+        "GroupKey: (a = :bar, b = 2)",
+        "GroupKey: (a = :baz, b = 1)",
+        "GroupKey: (a = :foo, b = 2)",
+        "GroupKey: (a = :bar, b = 1)",
+        "GroupKey: (a = :baz, b = 2)",
+    ]
 end
 
 @testset "DataFrame" begin
