@@ -67,6 +67,81 @@ _names(df::AbstractDataFrame) = _names(index(df))
 
 Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
 
+"""
+    rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
+    rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString}; makeunique::Bool=false)
+    rename!(df::AbstractDataFrame, (from => to)::Pair...)
+    rename!(df::AbstractDataFrame, d::AbstractDict)
+    rename!(df::AbstractDataFrame, d::AbstractArray{<:Pair})
+    rename!(f::Function, df::AbstractDataFrame)
+
+Rename columns of `df` in-place.
+Each name is changed at most once. Permutation of names is allowed.
+
+# Arguments
+- `df` : the `AbstractDataFrame`
+- `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
+  the original names or column numbers to new names
+- `f` : a function which for each column takes the old name (a `Symbol`)
+  and returns the new name that gets converted to a `Symbol`
+- `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
+  of the same length as the number of columns in `df`
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
+
+If pairs are passed to `rename!` (as positional arguments or in a dictionary or a vector)
+then:
+* `from` value can be a `Symbol`, an `AbstractString` or an `Integer`;
+* `to` value can be a `Symbol` or an `AbstractString`.
+
+Mixing symbols and strings in `to` and `from` is not allowed.
+
+See also: [`rename`](@ref)
+
+# Examples
+```julia
+julia> df = DataFrame(i = 1, x = 2, y = 3)
+1×3 DataFrame
+│ Row │ i     │ x     │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename!(df, Dict(:i => "A", :x => "X"))
+1×3 DataFrame
+│ Row │ A     │ X     │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename!(df, [:a, :b, :c])
+1×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename!(df, [:a, :b, :a])
+ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make them unique using a suffix automatically.
+
+julia> rename!(df, [:a, :b, :a], makeunique=true)
+1×3 DataFrame
+│ Row │ a     │ b     │ a_1   │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename!(df) do x
+           uppercase(string(x))
+       end
+1×3 DataFrame
+│ Row │ A     │ B     │ A_1   │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+```
+"""
 function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
                  makeunique::Bool=false)
     rename!(index(df), vals, makeunique=makeunique)
@@ -96,6 +171,15 @@ function rename!(df::AbstractDataFrame,
     return df
 end
 
+function rename!(df::AbstractDataFrame,
+                 args::Union{AbstractVector{<:Pair{<:Integer,<:AbstractString}},
+                             AbstractVector{<:Pair{<:Integer,Symbol}},
+                             AbstractDict{<:Integer,<:AbstractString},
+                             AbstractDict{<:Integer,Symbol}})
+    rename!(index(df), [_names(df)[from] => Symbol(to) for (from, to) in args])
+    return df
+end
+
 rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
 
 function rename!(f::Function, df::AbstractDataFrame)
@@ -103,60 +187,90 @@ function rename!(f::Function, df::AbstractDataFrame)
     return df
 end
 
+"""
+    rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
+    rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString}; makeunique::Bool=false)
+    rename(df::AbstractDataFrame, (from => to)::Pair...)
+    rename(df::AbstractDataFrame, d::AbstractDict)
+    rename(df::AbstractDataFrame, d::AbstractArray{<:Pair})
+    rename(f::Function, df::AbstractDataFrame)
+
+Create a new data frame that is a copy of `df` with changed column names.
+Each name is changed at most once. Permutation of names is allowed.
+
+# Arguments
+- `df` : the `AbstractDataFrame`
+- `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
+  the original names or column numbers to new names
+- `f` : a function which for each column takes the old name (a `Symbol`)
+  and returns the new name that gets converted to a `Symbol`
+- `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
+  of the same length as the number of columns in `df`
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
+
+If pairs are passed to `rename` (as positional arguments or in a dictionary or a vector)
+then:
+* `from` value can be a `Symbol`, an `AbstractString` or an `Integer`;
+* `to` value can be a `Symbol` or an `AbstractString`.
+
+Mixing symbols and strings in `to` and `from` is not allowed.
+
+See also: [`rename!`](@ref)
+
+# Examples
+```julia
+julia> df = DataFrame(i = 1, x = 2, y = 3)
+1×3 DataFrame
+│ Row │ i     │ x     │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename(df, :i => :A, :x => :X)
+1×3 DataFrame
+│ Row │ A     │ X     │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename(df, :x => :y, :y => :x)
+1×3 DataFrame
+│ Row │ i     │ y     │ x     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename(df, [1 => :A, 2 => :X])
+1×3 DataFrame
+│ Row │ A     │ X     │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename(df, Dict("i" => "A", "x" => "X"))
+1×3 DataFrame
+│ Row │ A     │ X     │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> rename(df) do x
+           uppercase(string(x))
+       end
+1×3 DataFrame
+│ Row │ I     │ X     │ Y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │```
+"""
 rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
        makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
        makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
-
-"""
-    rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
-    rename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
-    rename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
-    rename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
-    rename!(f::Function, df::AbstractDataFrame)
-    rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
-    rename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
-    rename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
-    rename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
-    rename(f::Function, df::AbstractDataFrame)
-
-Rename columns of `df`;
-`rename!` changes `df` in-place and `rename` returns a new data frame.
-Each name is changed at most once. Permutation of names is allowed.
-
-# Arguments
-- `df` : the AbstractDataFrame
-- `d` : an Associative type or an AbstractArray of pairs that maps
-  the original names to new names
-- `f` : a function which for each column takes the old name (a Symbol)
-  and returns the new name (a Symbol)
-- `vals` : new column names as a vector of `Symbol`s of the same length as
-  the number of columns in `df`
-- `makeunique` : if `false` (the default), an error will be raised
-  if duplicate names are found; if `true`, duplicate names will be suffixed
-  with `_i` (`i` starting at 1 for the first duplicate).
-
-# Examples
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename(df, :i => :A, :x => :X)
-rename(df, :x => :y, :y => :x)
-rename(df, [:i => :A, :x => :X])
-rename(df, Dict(:i => :A, :x => :X))
-rename(x -> Symbol(uppercase(string(x))), df)
-rename(df) do x
-    Symbol(uppercase(string(x)))
-end
-rename!(df, Dict(:i => :A, :x => :X))
-
-rename!(df, [:a, :b, :c])
-rename!(df, [:a, :b, :a])  # throws ArgumentError
-rename(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
-```
-"""
-(rename!, rename)
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)

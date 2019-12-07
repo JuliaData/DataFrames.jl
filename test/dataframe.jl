@@ -72,6 +72,38 @@ end
     end
 end
 
+@testset "rename with integer source" begin
+    df = DataFrame(a=1, b=2)
+    @test rename(df, 1=>:c) == DataFrame(c=1, b=2)
+    @test rename(df, big(1)=>:c) == DataFrame(c=1, b=2)
+    @test rename(df, 0x1=>:c) == DataFrame(c=1, b=2)
+    @test rename(df, 1=>:a) == DataFrame(a=1, b=2)
+    @test rename(df, 1=>"c") == DataFrame(c=1, b=2)
+    @test rename(df, [1=>:b, 2=>:a]) == DataFrame(b=1, a=2)
+    @test rename(df, [1=>"b", 2=>"a"]) == DataFrame(b=1, a=2)
+    @test rename(df, Dict(1=>:b, 2=>:a)) == DataFrame(b=1, a=2)
+    @test rename(df, Dict(1=>"b", 2=>"a")) == DataFrame(b=1, a=2)
+    @test_throws ArgumentError rename(df, 1=>:b)
+    @test_throws ArgumentError rename(df, true=>:b)
+    @test_throws BoundsError rename(df, 0=>:b)
+    @test_throws BoundsError rename(df, 3=>:b)
+
+    @test rename!(copy(df), 1=>:c) == DataFrame(c=1, b=2)
+    @test rename!(copy(df), big(1)=>:c) == DataFrame(c=1, b=2)
+    @test rename!(copy(df), 0x1=>:c) == DataFrame(c=1, b=2)
+    @test rename!(copy(df), 1=>:a) == DataFrame(a=1, b=2)
+    @test rename!(copy(df), 1=>"c") == DataFrame(c=1, b=2)
+    @test rename!(copy(df), [1=>:b, 2=>:a]) == DataFrame(b=1, a=2)
+    @test rename!(copy(df), [1=>"b", 2=>"a"]) == DataFrame(b=1, a=2)
+    @test rename!(copy(df), Dict(1=>:b, 2=>:a)) == DataFrame(b=1, a=2)
+    @test rename!(copy(df), Dict(1=>"b", 2=>"a")) == DataFrame(b=1, a=2)
+    @test_throws ArgumentError rename!(df, 1=>:b)
+    @test_throws ArgumentError rename!(df, true=>:b)
+    @test_throws BoundsError rename!(df, 0=>:b)
+    @test_throws BoundsError rename!(df, 3=>:b)
+    @test df == DataFrame(a=1, b=2)
+end
+
 @testset "equality" begin
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
     @test DataFrame(a=[1, 2], b=[4, 5]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
