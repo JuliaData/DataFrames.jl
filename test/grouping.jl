@@ -1153,22 +1153,6 @@ end
         1\t1.0
         2\t2.0
         """
-
-    # Printing of GroupKey
-    df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
-                   b = repeat(1:2, outer=[6]),
-                   c = 1:12);
-
-    gd = groupby(df, [:a, :b])
-
-    @test map(repr, keys(gd)) == [
-        "GroupKey: (a = :foo, b = 1)",
-        "GroupKey: (a = :bar, b = 2)",
-        "GroupKey: (a = :baz, b = 1)",
-        "GroupKey: (a = :foo, b = 2)",
-        "GroupKey: (a = :bar, b = 1)",
-        "GroupKey: (a = :baz, b = 2)",
-    ]
 end
 
 @testset "DataFrame" begin
@@ -1344,6 +1328,7 @@ end
         [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
 
     # Check AbstractVector behavior
+    @test IndexStyle(gdkeys) === IndexLinear()
     @test length(gdkeys) == length(expected)
     @test size(gdkeys) == size(expected)
     @test eltype(gdkeys) == DataFrames.GroupKey{typeof(gd)}
@@ -1407,6 +1392,22 @@ end
     @test collect(keys(gd)) == gdkeys  # These are new instances
     @test all(Ref(gdkeys[1]) .!= gdkeys[2:end])  # Keys should not be equal to each other
     @test !any(collect(keys(gd2)) .== keys(gd3))  # Same values but different (but equal) parent
+
+    # Printing of GroupKey
+    df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
+                   b = repeat(1:2, outer=[6]),
+                   c = 1:12)
+
+    gd = groupby(df, [:a, :b])
+
+    @test map(repr, keys(gd)) == [
+        "GroupKey: (a = :foo, b = 1)",
+        "GroupKey: (a = :bar, b = 2)",
+        "GroupKey: (a = :baz, b = 1)",
+        "GroupKey: (a = :foo, b = 2)",
+        "GroupKey: (a = :bar, b = 1)",
+        "GroupKey: (a = :baz, b = 2)",
+    ]
 end
 
 @testset "Parent DataFrame names changed" begin
