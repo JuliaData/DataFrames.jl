@@ -65,7 +65,7 @@ abstract type AbstractDataFrame end
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
-Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
+Base.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
 
 """
     rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
