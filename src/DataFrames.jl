@@ -1,7 +1,7 @@
 module DataFrames
 
 using Statistics, Printf, REPL
-using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, DataAPI
+using Reexport, SortingAlgorithms, Unicode, PooledArrays, DataAPI
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
 using Tables, TableTraits, IteratorInterfaceExtensions
