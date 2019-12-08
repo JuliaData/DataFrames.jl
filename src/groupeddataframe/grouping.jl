@@ -1100,11 +1100,7 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
         if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
             incol = gd.parent[!, first(p)]
             idx = Vector{Int}(undef, length(gd))
-            # Find a representative row for each group
-            # TODO: see whether short-circuiting would be possible without slowing down the loop
-            @inbounds for (i, g_ix) in enumerate(gd.groups)
-                g_ix > 0 && (idx[g_ix] = i)
-            end
+            fillfirst!(nothing, idx, 1:length(incol), gd)
             outcol = agg(incol, gd)
             return idx, outcol
         else
