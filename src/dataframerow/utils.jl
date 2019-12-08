@@ -263,7 +263,7 @@ function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
     end
     stops .-= 1
 
-    # drop group 1 which contains rows with missings in grouping columns (if any)
+    # group 1 corresponds to missings to drop (if any)
     popfirst!(starts)
     popfirst!(stops)
 

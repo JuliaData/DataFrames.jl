@@ -170,7 +170,7 @@ function groupby(df::AbstractDataFrame, cols;
     intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
     if isempty(intcols)
         return GroupedDataFrame(df, intcols, ones(Int, nrow(df)),
-                                collect(axes(df, 1)), [1], [nrow(df)])
+                                collect(axes(df, 1)), [1], [nrow(df)], 1)
     end
     sdf = df[!, intcols]
 
@@ -281,10 +281,16 @@ function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
 end
 
 # Get values of grouping columns for single group
-_groupvalues(gd::GroupedDataFrame, i::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols]
+function _groupvalues(gd::GroupedDataFrame, i::Integer)
+    gd.idx === nothing && compute_indices!(gd)
+    gd.parent[gd.idx[gd.starts[i]], gd.cols]
+end
 
 # Get values of single grouping column for single group
-_groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
+function _groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer)
+    gd.idx === nothing && compute_indices!(gd)
+    gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
+end
 _groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) = _groupvalues(gd, i, _groupvar_idx(gd, col, true))
 
 
@@ -646,7 +652,6 @@ Last Group: 1 row
 See [`by`](@ref) for more examples.
 """
 function Base.map(f::Any, gd::GroupedDataFrame)
-    gd.idx === nothing && compute_indices!(gd) # FIXME: needed?
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         keys = _names(gd.parent)[gd.cols]
@@ -889,22 +894,53 @@ check_aggregate(::typeof(length)) = Aggregate(length)
 # among the first rows for each group
 function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
                     gd::GroupedDataFrame; rev::Bool=false)
-    gd.idx === nothing && compute_indices!(gd)
-    nfilled = 0
-    @inbounds for i in eachindex(outcol)
-        s = gd.starts[i]
-        offsets = rev ? (nrow(gd[i])-1:-1:0) : (0:nrow(gd[i])-1)
-        for j in offsets
-            x = incol[gd.idx[s+j]]
-            if !condf === nothing || condf(x)
-                outcol[i] = x
-                nfilled += 1
-                break
+    ngroups = gd.ngroups
+    # Use group indices if they have already been computed
+    if gd.idx !== nothing && condf === nothing
+        v = rev ? gd.ends : gd.starts
+        idx = gd.idx
+        @inbounds for i in 1:ngroups
+            outcol[i] = incol[idx[v[i]]]
+        end
+    elseif gd.idx !== nothing
+        nfilled = 0
+        @inbounds for i in eachindex(outcol)
+            s = gd.starts[i]
+            offsets = rev ? (nrow(gd[i])-1:-1:0) : (0:nrow(gd[i])-1)
+            for j in offsets
+                x = incol[gd.idx[s+j]]
+                if !condf === nothing || condf(x)
+                    outcol[i] = x
+                    nfilled += 1
+                    break
+                end
             end
         end
-    end
-    if nfilled < length(outcol)
-        throw(ArgumentError("some groups contain only missing values"))
+        if nfilled < length(outcol)
+            throw(ArgumentError("some groups contain only missing values"))
+        end
+    else # Finding first row is faster than computing all group indices
+        groups = gd.groups
+        if rev
+            r = length(groups):-1:1
+        else
+            r = 1:length(groups)
+        end
+        filled = fill(false, gd.ngroups)
+        nfilled = 0
+        @inbounds for i in r
+            g_ix = groups[i]
+            x = incol[i]
+            if g_ix > 0 && (condf === nothing || condf(x)) && !filled[g_ix]
+                filled[g_ix] = true
+                outcol[g_ix] = x
+                nfilled += 1
+                nfilled == ngroups && break
+            end
+        end
+        if nfilled < length(outcol)
+            throw(ArgumentError("some groups contain only missing values"))
+        end
     end
     outcol
 end
@@ -929,13 +965,8 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             S = nonmissingtype(T)
             if isconcretetype(S) && hasmethod($initf, Tuple{S})
                 fill!(outcol, $initf(S))
-            elseif condf !== nothing
-                fillfirst!(condf, outcol, incol, gd)
             else
-                gd.idx === nothing && compute_indices!(gd)
-                @inbounds for i in eachindex(outcol)
-                    outcol[i] = incol[gd.idx[gd.starts[i]]]
-                end
+                fillfirst!(condf, outcol, incol, gd)
             end
             return outcol
         end
@@ -1019,13 +1050,7 @@ for f in (first, last)
     function (agg::Aggregate{typeof(f)})(incol::AbstractVector, gd::GroupedDataFrame)
         n = length(gd)
         outcol = similar(incol, n)
-        if agg.condf === !ismissing
-            fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
-        else
-            gd.idx === nothing && compute_indices!(gd) # TODO: compute index directly
-            v = agg.f === first ? gd.starts : gd.ends
-            map!(i -> incol[gd.idx[v[i]]], outcol, 1:n)
-        end
+        fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
         if isconcretetype(eltype(outcol))
             return outcol
         else
@@ -1037,7 +1062,7 @@ end
 function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame)
     if gd.idx === nothing
         lens = zeros(Int, length(gd))
-        @inbounds for (i, g_ix) in enumerate(gd.groups)
+        @inbounds for g_ix in gd.groups
             g_ix > 0 && (lens[g_ix] += 1)
         end
         return lens

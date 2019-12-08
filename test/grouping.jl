@@ -802,12 +802,14 @@ Base.isless(::TestType, ::Int) = true
 Base.isless(::Int, ::TestType) = false
 Base.isless(::TestType, ::TestType) = false
 
-@testset "combine with aggregation functions" for skip in (false, true), sort in (false, true)
+@testset "combine with aggregation functions (skipmissing=$skip, sort=$sort, indices=$indices)" for
+    skip in (false, true), sort in (false, true), indices in (false, true)
     Random.seed!(1)
     df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && DataFrames.compute_indices!(gd)
 
         res = combine(gd, y = :x1 => f)
         expected = combine(gd, y = :x1 => x -> f(x))
@@ -818,6 +820,7 @@ Base.isless(::TestType, ::TestType) = false
                   Union{Missing, Int, Int8})
             df.x3 = Vector{T}(df.x1)
             gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+            indices && DataFrames.compute_indices!(gd)
             res = combine(gd, y = :x3 => f)
             expected = combine(gd, y = :x3 => x -> f(x))
             @test res ≅ expected
@@ -829,6 +832,7 @@ Base.isless(::TestType, ::TestType) = false
         df.x3 = allowmissing(df.x1)
         df.x3[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && DataFrames.compute_indices!(gd)
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -841,6 +845,7 @@ Base.isless(::TestType, ::TestType) = false
     # Test complex numbers
     for f in (sum, prod, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && DataFrames.compute_indices!(gd)
 
         res = combine(gd, y = :x2 => f)
         expected = combine(gd, y = :x2 => x -> f(x))
@@ -854,6 +859,7 @@ Base.isless(::TestType, ::TestType) = false
         df.x3 = CategoricalVector{T}(df.x1)
         m && (df.x3[1] = missing)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && DataFrames.compute_indices!(gd)
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -878,6 +884,7 @@ Base.isless(::TestType, ::TestType) = false
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && DataFrames.compute_indices!(gd)
 
         res = combine(gd, y = :x1 => f)
         expected = combine(gd, y = :x1 => x -> f(x))
@@ -889,6 +896,7 @@ Base.isless(::TestType, ::TestType) = false
         df.x3 = allowmissing(df.x1)
         df.x3[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && DataFrames.compute_indices!(gd)
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -907,6 +915,7 @@ Base.isless(::TestType, ::TestType) = false
     # Test maximum when no promotion rule exists
     df = DataFrame(x = [1, 1, 2, 2], y = [1, TestType(), TestType(), TestType()])
     gd = groupby_checked(df, :x, skipmissing=skip, sort=sort)
+    indices && DataFrames.compute_indices!(gd)
     for f in (maximum, minimum)
         res = combine(gd, z = :y => maximum)
         @test res.z isa Vector{Any}
