@@ -186,7 +186,7 @@ function Base.iterate(gd::GroupedDataFrame, i=1)
 end
 
 Base.length(gd::GroupedDataFrame) = length(gd.starts)
-Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
+Base.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
