@@ -972,17 +972,24 @@ end
     @inferred ends(gd) == getfield(gd, :ends)
 end
 
-@testset "getindex" begin
+@testset "Array-like getindex" begin
     df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                    b = 1:8)
     gd = groupby_checked(df, :a)
+
+    # Invalid
+    @test_throws ArgumentError gd[true]
+    @test_throws ArgumentError gd[[1, 2, 1]]  # Duplicate
+    @test_throws MethodError gd["a"]
+
+    # Single integer
     @test gd[1] isa SubDataFrame
     @test gd[1] == view(df, [1, 5], :)
     @test_throws BoundsError gd[5]
-    @test_throws ArgumentError gd[true]
-    @test_throws ArgumentError gd[[1, 2, 1]]
-    @test_throws MethodError gd["a"]
-    gd2 = gd[[false, true, false, false]]
+
+    # Boolean array
+    idx2 = [false, true, false, false]
+    gd2 = gd[idx2]
     @test length(gd2) == 1
     @test gd2[1] == gd[2]
     @test_throws BoundsError gd[[true, false]]
@@ -990,7 +997,9 @@ end
     @test gd2.starts == [3]
     @test gd2.ends == [4]
     @test gd2.idx == gd.idx
+    @test gd[BitArray(idx2)] ≅ gd2
 
+    # Colon
     gd3 = gd[:]
     @test gd3 isa GroupedDataFrame
     @test length(gd3) == 4
@@ -998,11 +1007,14 @@ end
     for i in 1:4
         @test gd3[i] == gd[i]
     end
-    gd4 = gd[[2,1]]
+
+    # Integer array
+    idx4 = [2,1]
+    gd4 = gd[idx4]
     @test gd4 isa GroupedDataFrame
     @test length(gd4) == 2
-    for i in 1:2
-        @test gd4[i] == gd[3-i]
+    for (i, j) in enumerate(idx4)
+        @test gd4[i] == gd[j]
     end
     @test_throws BoundsError gd[1:5]
     @test gd4.groups == [2, 1, 0, 0, 2, 1, 0, 0]
