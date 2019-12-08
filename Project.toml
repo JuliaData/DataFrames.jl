@@ -4,7 +4,6 @@ version = "0.20.1"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
-Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 Future = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 InvertedIndices = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
@@ -34,7 +33,6 @@ test = ["DataStructures", "DataValues", "Dates", "Logging", "Random", "Test"]
 [compat]
 julia = "1"
 CategoricalArrays = "0.7"
-Compat = "2, 3"
 DataAPI = "1.0.1"
 InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
