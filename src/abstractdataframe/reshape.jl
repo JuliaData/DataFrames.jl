@@ -1,12 +1,13 @@
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
-          variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
+          variable_name::Symbol=:variable, value_name::Symbol=:value,
+          view::Bool=false, stringvar::Bool=false)
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
 
 Return the long-format `DataFrame` with column `variable_name` (`:value` by default)
 holding the values of the stacked columns (`measure_vars`), with
-column `variable_name` (`:variable` by default) a vector of `Symbol`s holding
+column `variable_name` (`:variable` by default) a vector holding
 the name of the corresponding `measure_vars` variable,
 and with columns for each of the `id_vars`.
 
@@ -31,6 +32,8 @@ that return views into the original data frame.
   each of `measure_vars`
 - `view` : whether the stacked data frame should be a view rather than contain
    freshly allocated vectors.
+- `stringvar` : if `true` column `variable_name` is a categorical vector
+   of strings; if `false` (currently the deprecated default) it is a vector of `Symbol`.
 
 # Examples
 ```julia
@@ -48,43 +51,56 @@ d1s_name = stack(d1, Not([:a, :b, :e]), variable_name=:somemeasure)
 """
 function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
-               value_name::Symbol=:value, view::Bool=false)
+               value_name::Symbol=:value, view::Bool=false, stringvar::Bool=false)
     if view
-        return _stackview(df, measure_vars, id_vars,
-                          variable_name=variable_name, value_name=value_name)
+        return _stackview(df, measure_vars, id_vars, variable_name=variable_name,
+                          value_name=value_name, stringvar=stringvar)
     end
     N = length(measure_vars)
-    cnames = names(df)[id_vars]
-    insert!(cnames, 1, value_name)
-    insert!(cnames, 1, variable_name)
-    DataFrame(AbstractVector[repeat(_names(df)[measure_vars], inner=nrow(df)), # variable
+    cnames = _names(df)[id_vars]
+    pushfirst!(cnames, value_name)
+    pushfirst!(cnames, variable_name)
+    if stringvar
+        nms = String.(_names(df)[measure_vars])
+        catnms = categorical(nms)
+        levels!(catnms, nms)
+    else
+        Base.depwarn("`stringvar=false` as a default is deprecated." *
+                         "In the future it will default to `true`", :vcat)
+        catnms = _names(df)[measure_vars]
+    end
+    DataFrame(AbstractVector[repeat(catnms, inner=nrow(df)), # variable
                              vcat([df[!, c] for c in measure_vars]...),           # value
                              [repeat(df[!, c], outer=N) for c in id_vars]...],    # id_var columns
               cnames, copycols=false)
 end
 
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
-               variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
+               variable_name::Symbol=:variable, value_name::Symbol=:value,
+               view::Bool=false, stringvar::Bool=false)
     stack(df, [measure_var], [id_var],
-          variable_name=variable_name, value_name=value_name, view=view)
+          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
 end
 
 function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer}, id_var::Int;
-               variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
+               variable_name::Symbol=:variable, value_name::Symbol=:value,
+               view::Bool=false, stringvar::Bool=false)
     stack(df, measure_vars, [id_var],
-          variable_name=variable_name, value_name=value_name, view=view)
+          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
 end
 
 function stack(df::AbstractDataFrame, measure_var::Int, id_vars::AbstractVector{<:Integer};
-               variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
+               variable_name::Symbol=:variable, value_name::Symbol=:value,
+               view::Bool=false, stringvar::Bool=false)
     stack(df, [measure_var], id_vars;
-          variable_name=variable_name, value_name=value_name, view=view)
+          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
 end
 
 function stack(df::AbstractDataFrame, measure_vars, id_vars;
-               variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
+               variable_name::Symbol=:variable, value_name::Symbol=:value,
+               view::Bool=false, stringvar::Bool=false)
     stack(df, index(df)[measure_vars], index(df)[id_vars];
-          variable_name=variable_name, value_name=value_name, view=view)
+          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
 end
 
 # no vars specified, by default select only numeric columns
@@ -92,10 +108,11 @@ numeric_vars(df::AbstractDataFrame) =
     [eltype(col) <: Union{AbstractFloat, Missing} for col in eachcol(df)]
 
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
-               variable_name::Symbol=:variable, value_name::Symbol=:value, view::Bool=false)
+               variable_name::Symbol=:variable, value_name::Symbol=:value,
+               view::Bool=false, stringvar::Bool=false)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, setdiff(1:ncol(df), mv_inds);
-          variable_name=variable_name, value_name=value_name, view=view)
+          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
 end
 
 """
@@ -389,44 +406,56 @@ end
 
 function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                     id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
-                    value_name::Symbol=:value)
+                    value_name::Symbol=:value, stringvar::Bool=false)
     N = length(measure_vars)
-    cnames = names(df)[id_vars]
-    insert!(cnames, 1, value_name)
-    insert!(cnames, 1, variable_name)
-    DataFrame(AbstractVector[RepeatedVector(_names(df)[measure_vars], nrow(df), 1), # variable
+    cnames = _names(df)[id_vars]
+    pushfirst!(cnames, value_name)
+    pushfirst!(cnames, variable_name)
+    if stringvar
+        nms = String.(_names(df)[measure_vars])
+        catnms = categorical(nms)
+        levels!(catnms, nms)
+    else
+        catnms = _names(df)[measure_vars]
+    end
+    DataFrame(AbstractVector[RepeatedVector(catnms, nrow(df), 1), # variable
                              StackedVector(Any[df[!, c] for c in measure_vars]),    # value
                              [RepeatedVector(df[!, c], 1, N) for c in id_vars]...], # id_var columns
               cnames, copycols=false)
 end
 
 function _stackview(df::AbstractDataFrame, measure_var::Int, id_var::Int;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value)
+                    variable_name::Symbol=:variable, value_name::Symbol=:value,
+                    stringvar::Bool=false)
     _stackview(df, [measure_var], [id_var]; variable_name=variable_name,
-               value_name=value_name)
+               value_name=value_name, stringvar=stringvar)
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars, id_var::Int;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value)
+                    variable_name::Symbol=:variable, value_name::Symbol=:value,
+                    stringvar::Bool=false)
     _stackview(df, measure_vars, [id_var]; variable_name=variable_name,
-               value_name=value_name)
+               value_name=value_name, stringvar=stringvar)
 end
 
 function _stackview(df::AbstractDataFrame, measure_var::Int, id_vars;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value)
+                    variable_name::Symbol=:variable, value_name::Symbol=:value,
+                    stringvar::Bool=false)
     _stackview(df, [measure_var], id_vars; variable_name=variable_name,
-               value_name=value_name)
+               value_name=value_name, stringvar=stringvar)
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars, id_vars;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value)
+                    variable_name::Symbol=:variable, value_name::Symbol=:value,
+                    stringvar::Bool=false)
     _stackview(df, index(df)[measure_vars], index(df)[id_vars];
-               variable_name=variable_name, value_name=value_name)
+               variable_name=variable_name, value_name=value_name, stringvar=stringvar)
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars = numeric_vars(df);
-                    variable_name::Symbol=:variable, value_name::Symbol=:value)
+                    variable_name::Symbol=:variable, value_name::Symbol=:value,
+                    stringvar::Bool=false)
     m_inds = index(df)[measure_vars]
     _stackview(df, m_inds, setdiff(1:ncol(df), m_inds);
-               variable_name=variable_name, value_name=value_name)
+               variable_name=variable_name, value_name=value_name, stringvar=stringvar)
 end

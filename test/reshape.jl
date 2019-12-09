@@ -279,6 +279,9 @@ end
     @test_throws ArgumentError d1s[!, 1][1.0]
     @test_throws ArgumentError d1s[!, 2][1.0]
 
+    d1ss = stack(d1, [:a, :b], view=true, stringvar=true)
+    @test d1ss[!, 1][[1,24]] == ["a", "b"]
+
     # Those tests check indexing RepeatedVector/StackedVector by a vector
     @test d1s[!, 1][trues(24)] == d1s[!, 1]
     @test d1s[!, 2][trues(24)] == d1s[!, 2]
@@ -384,6 +387,22 @@ end
     ref_cat = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 1, 2])
     @test df_flat_cat == ref_cat
     @test df_flat_cat.b isa CategoricalArray
+end
+
+@testset "stack categorical test" begin
+    d1 = DataFrame(a = repeat([1:3;], inner = [4]),
+                   b = repeat([1:4;], inner = [3]),
+                   c = randn(12),
+                   d = randn(12),
+                   e = map(string, 'a':'l'))
+    d1s = stack(d1, [:d, :c], stringvar=true)
+    @test d1s.variable isa CategoricalVector{String}
+    @test levels(d1s.variable) == ["d", "c"]
+    d1s = stack(d1, [:d, :c], view=true, stringvar=true)
+    @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalString}
+    @test levels(d1s.variable) == ["d", "c"]
+    @test d1s[:, 1] isa CategoricalVector{String}
+    @test levels(d1s[:, 1]) == ["d", "c"]
 end
 
 end # module
