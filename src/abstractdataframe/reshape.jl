@@ -244,6 +244,7 @@ end
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
                   colkey::Int, value::Int, keycol, valuecol, g, renamecols)
+    g.idx === nothing && compute_indices!(g)
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)

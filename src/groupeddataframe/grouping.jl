@@ -9,10 +9,10 @@ Not meant to be constructed directly, see `groupby`.
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
     cols::Vector{Int}                  # columns used for grouping
-    groups::Vector{Int}                # group indices for each row
-    idx::Union{Vector{Int},Nothing}    # indexing vector when grouped by the given cols
-    starts::Union{Vector{Int},Nothing} # starts of groups
-    ends::Union{Vector{Int},Nothing}   # ends of groups
+    groups::Vector{Int}                # group indices for each row in 0:ngroups, 0 skipped
+    idx::Union{Vector{Int},Nothing}    # indexing vector sorting rows into groups
+    starts::Union{Vector{Int},Nothing} # starts of groups after permutation by idx
+    ends::Union{Vector{Int},Nothing}   # ends of groups after permutation by idx
     ngroups::Int                       # number of groups
 end
 
@@ -177,28 +177,15 @@ function groupby(df::AbstractDataFrame, cols;
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false), groups, skipmissing)
-    if skipmissing
-        groups .-= 1
-        ngroups -= 1 # values will be skipped by compute_indices
-    end
 
     gd = GroupedDataFrame(df, intcols, groups, nothing, nothing, nothing, ngroups)
 
     # sort groups if row_group_slots hasn't already done that
-    # this requires computing the permutation
-    sort && !sorted && compute_indices!(gd, sort=true)
-
-    return gd
-end
-
-function compute_indices!(gd::GroupedDataFrame; sort::Bool=false)
-    rperm, starts, stops = compute_indices(gd.groups, gd.ngroups)
-
-    if sort
-        group_perm = sortperm(view(gd.parent[!, gd.cols], rperm[starts], :))
-        group_invperm = invperm(group_perm)
-        permute!(starts, group_perm)
-        Base.permute!!(stops, group_perm)
+    if sort && !sorted
+        # Find index of representative row for each group
+        idx = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx, 1:nrow(gd.parent), gd)
+        group_invperm = invperm(sortperm(view(gd.parent[!, gd.cols], idx, :)))
         groups = gd.groups
         @inbounds for i in eachindex(groups)
             gix = groups[i]
@@ -206,10 +193,11 @@ function compute_indices!(gd::GroupedDataFrame; sort::Bool=false)
         end
     end
 
-    gd.idx = rperm
-    gd.starts = starts
-    gd.ends = stops
+    return gd
+end
 
+function compute_indices!(gd::GroupedDataFrame)
+    gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
     return gd
 end
 
@@ -234,7 +222,7 @@ function Base.getindex(gd::GroupedDataFrame, idx::Integer)
 end
 
 # Array of integers
-function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray{<:Integer})
+function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
     gd.idx === nothing && compute_indices!(gd)
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
@@ -291,7 +279,8 @@ function _groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer)
     gd.idx === nothing && compute_indices!(gd)
     gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
 end
-_groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) = _groupvalues(gd, i, _groupvar_idx(gd, col, true))
+_groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) =
+    _groupvalues(gd, i, _groupvar_idx(gd, col, true))
 
 
 """
@@ -1094,17 +1083,23 @@ end
 _combine(@nospecialize(f::Tuple{Vararg{Pair}}), gd::GroupedDataFrame) =
     _combine(collect(f), gd)
 
+isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
+
 function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
+    if any(isagg, f)
+        # Compute indices of representative row only once for all AbstractAggregates
+        idx_agg = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+    elseif !all(isagg, f) && gd.idx === nothing
+        compute_indices!(gd)
+    end
     res = map(f) do p
         agg = check_aggregate(last(p))
-        if agg isa AbstractAggregate && p isa Pair{<:ColumnIndex}
+        if isagg(p)
             incol = gd.parent[!, first(p)]
-            idx = Vector{Int}(undef, length(gd))
-            fillfirst!(nothing, idx, 1:length(incol), gd)
             outcol = agg(incol, gd)
-            return idx, outcol
+            return idx_agg, outcol
         else
-            gd.idx === nothing && compute_indices!(gd)
             fun = do_f(last(p))
             if p isa Pair{<:ColumnIndex}
                 incols = gd.parent[!, first(p)]
@@ -1117,7 +1112,7 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
             return idx, outcols[1]
         end
     end
-    # TODO: avoid recomputing idx for each pair
+    # TODO: avoid recomputing idx for each pair when !all(isagg, f)
     idx = res[1][1]
     outcols = map(x -> x[2], res)
     if !all(x -> length(x) == length(outcols[1]), outcols)
@@ -1147,7 +1142,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
     agg = check_aggregate(fun)
     if agg isa AbstractAggregate && f isa Pair{<:ColumnIndex}
         idx = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx, 1:length(incol), gd)
+        fillfirst!(nothing, idx, 1:length(gd.groups), gd)
         outcols = (agg(incols, gd),)
         # nms is set below
     else

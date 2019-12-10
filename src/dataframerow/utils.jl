@@ -98,7 +98,8 @@ isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
 # 3) slot array for a hash map, non-zero values are
 #    the indices of the first row in a group
 # 4) whether groups are already sorted
-# Optional `groups` vector is set to the group indices of each row
+# Optional `groups` vector is set to the group indices of each row (starting at 1)
+# With skipmissing=true, rows with missing values are attributed index 0.
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          hash::Val = Val(true),
                          groups::Union{Vector{Int}, Nothing} = nothing,
@@ -111,16 +112,16 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     @assert sz >= length(rhashes)
     szm1 = sz-1
     gslots = zeros(Int, sz)
-    # If missings are to be skipped, they will all go to group 1,
-    # which will be removed by group_rows
-    ngroups = skipmissing ? 1 : 0
+    # If missings are to be skipped, they will all go to group 0,
+    # which will be removed by functions down the stream
+    ngroups = 0
     @inbounds for i in eachindex(rhashes)
         # find the slot and group index for a row
         slotix = rhashes[i] & szm1 + 1
-        # Use 0 for non-missing values to catch bugs if group is not found
-        gix = skipmissing && missings[i] ? 1 : 0
+        # Use -1 for non-missing values to catch bugs if group is not found
+        gix = skipmissing && missings[i] ? 0 : -1
         probe = 0
-        # If skipmissing=true, assign rows containing at least one missing to group 1
+        # If skipmissing=true, assign rows containing at least one missing to group 0
         if !skipmissing || !missings[i]
             while true
                 g_row = gslots[slotix]
@@ -157,12 +158,12 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
     # and this method needs to allocate a groups vector anyway
     @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
 
-    # If missings are to be skipped, they will all go to group 1,
-    # which will be removed by group_rows
+    # If skipmissing=true, rows with missings all go to group 0,
+    # which will be removed by functions down the stream
     ngroupstup = map(cols) do c
         nlevels(c) + (!skipmissing && eltype(c) >: Missing)
     end
-    ngroups = prod(ngroupstup) + skipmissing
+    ngroups = prod(ngroupstup)
 
     # Fall back to hashing if there would be too many empty combinations.
     # The first check ensures the computation of ngroups did not overflow.
@@ -179,9 +180,6 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
     end
 
     seen = fill(false, ngroups)
-    # If skipmissing=true, missings will all go to group 1,
-    # which will be removed by group_rows
-    seen[1] = skipmissing
     refmaps = map(cols) do col
         nlevs = nlevels(col)
         if col isa CategoricalVector
@@ -212,11 +210,12 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
         end
         vals = map((m, r, s) -> m[r+1] * s, refmaps, refs, strides)
         j = sum(vals) + 1
-        if skipmissing
-            j = any(x -> x < 0, vals) ? 1 : j + 1
+        if skipmissing && any(x -> x < 0, vals)
+            j = 0
+        else
+            seen[j] = true
         end
         groups[i] = j
-        seen[j] = true
     end
     if !all(seen) # Compress group indices to remove unused ones
         oldngroups = ngroups
@@ -227,7 +226,8 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
             remap[i] = ngroups
         end
         @inbounds for i in eachindex(groups)
-            groups[i] = remap[groups[i]]
+            g_ix = groups[i]
+            groups[i] = g_ix > 0 ? remap[g_ix] : 0
         end
         # To catch potential bugs inducing unnecessary computations
         @assert oldngroups != ngroups
@@ -237,6 +237,10 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
 end
 
 
+# Return a 3-tuple of a permutation that sorts rows into groups,
+# and the positions of the first and last rows in each group in that permutation
+# `groups` must contain group indices in 0:ngroups
+# Rows with group index 0 are skipped (used when skipmissing=true)
 # Partly uses the code of Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
 function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
     # count elements in each group
@@ -263,14 +267,15 @@ function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
     end
     stops .-= 1
 
-    # group 1 corresponds to missings to drop (if any)
+    # When skipmissing=true was used, group 0 corresponds to missings to drop
+    # Otherwise it's empty
     popfirst!(starts)
     popfirst!(stops)
 
     return rperm, starts, stops
 end
 
-# Build RowGroupDict for a given DataFrame
+# Build RowGroupDict for a given DataFrame, using all of its columns as grouping keys
 function group_rows(df::AbstractDataFrame)
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
