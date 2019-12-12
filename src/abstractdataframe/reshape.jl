@@ -66,9 +66,9 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
         nms = String.(_names(df)[measure_vars])
         catnms = categorical(nms)
         levels!(catnms, nms)
-    elseif vareltype <: Symbol
+    elseif vareltype === Symbol
         catnms = _names(df)[measure_vars]
-    elseif vareltype <: String
+    elseif vareltype === String
         catnms = PooledArrays.PooledArray(String.(_names(df)[measure_vars]))
     else
         throw(ArgumentError("`vareltype` keyword argument accepts only `CategoricalString`, " *

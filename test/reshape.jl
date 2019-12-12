@@ -429,7 +429,7 @@ end
     @test levels(d1s[:, 1]) == ["d", "c"]
 
     d1s = stack(d1, [:d, :c], vareltype=String)
-    @test d1s.variable isa PooledArrays.PooledArray{String}
+    @test d1s.variable isa PooledVector{String}
     @test levels(d1s.variable) == ["c", "d"]
     d1s = stack(d1, [:d, :c], view=true, vareltype=String)
     @test d1s.variable isa DataFrames.RepeatedVector{String}
