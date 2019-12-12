@@ -1,7 +1,7 @@
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
           variable_name::Symbol=:variable, value_name::Symbol=:value,
-          view::Bool=false, stringvar::Bool=false)
+          view::Bool=false, vareltype::Type=CategoricalString)
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
 
@@ -32,8 +32,9 @@ that return views into the original data frame.
   each of `measure_vars`
 - `view` : whether the stacked data frame should be a view rather than contain
    freshly allocated vectors.
-- `stringvar` : if `true` column `variable_name` is a categorical vector
-   of strings; if `false` (currently the deprecated default) it is a vector of `Symbol`.
+- `vareltype` : determines the element type of column `variable_name`. By default
+   a categorical vector is created. If `vareltype=Symbol` it is a vector of `Symbol`,
+   and if `vareltype=String` a vector of `String` is produced.
 
 # Examples
 ```julia
@@ -51,23 +52,27 @@ d1s_name = stack(d1, Not([:a, :b, :e]), variable_name=:somemeasure)
 """
 function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
-               value_name::Symbol=:value, view::Bool=false, stringvar::Bool=false)
+               value_name::Symbol=:value, view::Bool=false,
+               vareltype::Type=CategoricalString)
     if view
         return _stackview(df, measure_vars, id_vars, variable_name=variable_name,
-                          value_name=value_name, stringvar=stringvar)
+                          value_name=value_name, vareltype=vareltype)
     end
     N = length(measure_vars)
     cnames = _names(df)[id_vars]
     pushfirst!(cnames, value_name)
     pushfirst!(cnames, variable_name)
-    if stringvar
+    if vareltype <: CategoricalString
         nms = String.(_names(df)[measure_vars])
         catnms = categorical(nms)
         levels!(catnms, nms)
-    else
-        Base.depwarn("`stringvar=false` as a default is deprecated." *
-                         "In the future it will default to `true`", :vcat)
+    elseif vareltype <: Symbol
         catnms = _names(df)[measure_vars]
+    elseif vareltype <: String
+        catnms = PooledArrays.PooledArray(String.(_names(df)[measure_vars]))
+    else
+        throw(ArgumentError("`vareltype` keyword argument accepts only `CategoricalString`, " *
+                            "`String` or `Symbol` as a value."))
     end
     DataFrame(AbstractVector[repeat(catnms, inner=nrow(df)), # variable
                              vcat([df[!, c] for c in measure_vars]...),           # value
@@ -77,30 +82,30 @@ end
 
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, stringvar::Bool=false)
+               view::Bool=false, vareltype::Type=CategoricalString)
     stack(df, [measure_var], [id_var],
-          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
+          variable_name=variable_name, value_name=value_name, view=view, vareltype=vareltype)
 end
 
 function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer}, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, stringvar::Bool=false)
+               view::Bool=false, vareltype::Type=CategoricalString)
     stack(df, measure_vars, [id_var],
-          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
+          variable_name=variable_name, value_name=value_name, view=view, vareltype=vareltype)
 end
 
 function stack(df::AbstractDataFrame, measure_var::Int, id_vars::AbstractVector{<:Integer};
                variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, stringvar::Bool=false)
+               view::Bool=false, vareltype::Type=CategoricalString)
     stack(df, [measure_var], id_vars;
-          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
+          variable_name=variable_name, value_name=value_name, view=view, vareltype=vareltype)
 end
 
 function stack(df::AbstractDataFrame, measure_vars, id_vars;
                variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, stringvar::Bool=false)
+               view::Bool=false, vareltype::Type=CategoricalString)
     stack(df, index(df)[measure_vars], index(df)[id_vars];
-          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
+          variable_name=variable_name, value_name=value_name, view=view, vareltype=vareltype)
 end
 
 # no vars specified, by default select only numeric columns
@@ -109,10 +114,10 @@ numeric_vars(df::AbstractDataFrame) =
 
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, stringvar::Bool=false)
+               view::Bool=false, vareltype::Type=CategoricalString)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, setdiff(1:ncol(df), mv_inds);
-          variable_name=variable_name, value_name=value_name, view=view, stringvar=stringvar)
+          variable_name=variable_name, value_name=value_name, view=view, vareltype=vareltype)
 end
 
 """
@@ -388,11 +393,6 @@ Base.parent(v::RepeatedVector) = v.parent
 DataAPI.levels(v::RepeatedVector) = levels(parent(v))
 CategoricalArrays.isordered(v::RepeatedVector) = isordered(parent(v))
 
-function CategoricalArrays._isordered(v::RepeatedVector)
-    p = parent(v)
-    p isa AbstractCategoricalArray ? isordered(p) : false
-end
-
 function Base.getindex(v::RepeatedVector, i::Int)
     N = length(v.parent)
     idx = Base.fld1(mod1(i,v.inner*N),v.inner)
@@ -415,17 +415,22 @@ end
 
 function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                     id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
-                    value_name::Symbol=:value, stringvar::Bool=false)
+                    value_name::Symbol=:value, vareltype::Type=CategoricalString)
     N = length(measure_vars)
     cnames = _names(df)[id_vars]
     pushfirst!(cnames, value_name)
     pushfirst!(cnames, variable_name)
-    if stringvar
+    if vareltype <: CategoricalString
         nms = String.(_names(df)[measure_vars])
         catnms = categorical(nms)
         levels!(catnms, nms)
-    else
+    elseif vareltype <: Symbol
         catnms = _names(df)[measure_vars]
+    elseif vareltype <: String
+        catnms = String.(_names(df)[measure_vars])
+    else
+        throw(ArgumentError("`vareltype` keyword argument accepts only `CategoricalString`, " *
+                            "`String` or `Symbol` as a value."))
     end
     DataFrame(AbstractVector[RepeatedVector(catnms, nrow(df), 1), # variable
                              StackedVector(Any[df[!, c] for c in measure_vars]),    # value
@@ -435,36 +440,36 @@ end
 
 function _stackview(df::AbstractDataFrame, measure_var::Int, id_var::Int;
                     variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    stringvar::Bool=false)
+                    vareltype::Type=CategoricalString)
     _stackview(df, [measure_var], [id_var]; variable_name=variable_name,
-               value_name=value_name, stringvar=stringvar)
+               value_name=value_name, vareltype=vareltype)
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars, id_var::Int;
                     variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    stringvar::Bool=false)
+                    vareltype::Type=CategoricalString)
     _stackview(df, measure_vars, [id_var]; variable_name=variable_name,
-               value_name=value_name, stringvar=stringvar)
+               value_name=value_name, vareltype=vareltype)
 end
 
 function _stackview(df::AbstractDataFrame, measure_var::Int, id_vars;
                     variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    stringvar::Bool=false)
+                    vareltype::Type=CategoricalString)
     _stackview(df, [measure_var], id_vars; variable_name=variable_name,
-               value_name=value_name, stringvar=stringvar)
+               value_name=value_name, vareltype=vareltype)
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars, id_vars;
                     variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    stringvar::Bool=false)
+                    vareltype::Type=CategoricalString)
     _stackview(df, index(df)[measure_vars], index(df)[id_vars];
-               variable_name=variable_name, value_name=value_name, stringvar=stringvar)
+               variable_name=variable_name, value_name=value_name, vareltype=vareltype)
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                     variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    stringvar::Bool=false)
+                    vareltype::Type=CategoricalString)
     m_inds = index(df)[measure_vars]
     _stackview(df, m_inds, setdiff(1:ncol(df), m_inds);
-               variable_name=variable_name, value_name=value_name, stringvar=stringvar)
+               variable_name=variable_name, value_name=value_name, vareltype=vareltype)
 end

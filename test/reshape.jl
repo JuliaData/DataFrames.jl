@@ -1,6 +1,6 @@
 module TestReshape
 
-using Test, DataFrames, Random, Logging
+using Test, DataFrames, Random, Logging, PooledArrays
 const ≅ = isequal
 
 @testset "the output of unstack" begin
@@ -279,8 +279,12 @@ end
     @test_throws ArgumentError d1s[!, 1][1.0]
     @test_throws ArgumentError d1s[!, 2][1.0]
 
-    d1ss = stack(d1, [:a, :b], view=true, stringvar=true)
+    d1ss = stack(d1, [:a, :b], view=true)
     @test d1ss[!, 1][[1,24]] == ["a", "b"]
+    d1ss = stack(d1, [:a, :b], view=true, vareltype=String)
+    @test d1ss[!, 1][[1,24]] == ["a", "b"]
+    d1ss = stack(d1, [:a, :b], view=true, vareltype=Symbol)
+    @test d1ss[!, 1][[1,24]] == [:a, :b]
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
     @test d1s[!, 1][trues(24)] == d1s[!, 1]
@@ -389,20 +393,58 @@ end
     @test df_flat_cat.b isa CategoricalArray
 end
 
+@testset "test RepeatedVector for categorical" begin
+    v = categorical(["a", "b", "c"], ordered=true)
+    levels!(v, ["b", "c", "a"])
+    rv = DataFrames.RepeatedVector(v, 1, 1)
+    @test isordered(v)
+    # uncomment after CategoricalArrays.jl is fixed
+    # @test isordered(categorical(v))
+    @test levels(v) == ["b", "c", "a"]
+    @test levels(categorical(v)) == ["b", "c", "a"]
+
+    v = categorical(["a", "b", "c"])
+    levels!(v, ["b", "c", "a"])
+    rv = DataFrames.RepeatedVector(v, 1, 1)
+    @test !isordered(v)
+    # uncomment after CategoricalArrays.jl is fixed
+    # @test !isordered(categorical(v))
+    @test levels(v) == ["b", "c", "a"]
+    @test levels(categorical(v)) == ["b", "c", "a"]
+end
+
 @testset "stack categorical test" begin
     d1 = DataFrame(a = repeat([1:3;], inner = [4]),
                    b = repeat([1:4;], inner = [3]),
                    c = randn(12),
                    d = randn(12),
                    e = map(string, 'a':'l'))
-    d1s = stack(d1, [:d, :c], stringvar=true)
+    d1s = stack(d1, [:d, :c])
     @test d1s.variable isa CategoricalVector{String}
     @test levels(d1s.variable) == ["d", "c"]
-    d1s = stack(d1, [:d, :c], view=true, stringvar=true)
+    d1s = stack(d1, [:d, :c], view=true)
     @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalString}
     @test levels(d1s.variable) == ["d", "c"]
     @test d1s[:, 1] isa CategoricalVector{String}
     @test levels(d1s[:, 1]) == ["d", "c"]
+
+    d1s = stack(d1, [:d, :c], vareltype=String)
+    @test d1s.variable isa PooledArrays.PooledArray{String}
+    @test levels(d1s.variable) == ["c", "d"]
+    d1s = stack(d1, [:d, :c], view=true, vareltype=String)
+    @test d1s.variable isa DataFrames.RepeatedVector{String}
+    @test levels(d1s.variable) == ["c", "d"]
+    @test d1s[:, 1] isa Vector{String}
+    @test levels(d1s[:, 1]) == ["c", "d"]
+
+    d1s = stack(d1, [:d, :c], vareltype=Symbol)
+    @test d1s.variable isa Vector{Symbol}
+    @test levels(d1s.variable) == [:c, :d]
+    d1s = stack(d1, [:d, :c], view=true, vareltype=Symbol)
+    @test d1s.variable isa DataFrames.RepeatedVector{Symbol}
+    @test levels(d1s.variable) == [:c, :d]
+    @test d1s[:, 1] isa Vector{Symbol}
+    @test levels(d1s[:, 1]) == [:c, :d]
 end
 
 end # module
