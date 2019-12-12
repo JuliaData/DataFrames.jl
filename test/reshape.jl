@@ -450,10 +450,19 @@ end
     @test levels(d1s[:, 1]) == [:c, :d]
 
     d2 = categorical(d1, :)
+    levels!(d2.a, [2, 1, 3])
+    ordered!(d2.a, true)
     d2s = stack(d2, [:d, :c])
     for col in eachcol(d2s)
         @test col isa CategoricalVector
     end
+    @test [levels(d2.d);levels(d2.c)] == levels(d2s.value)
+    @test levels(d2.a) == levels(d2s.a)
+    @test levels(d2.b) == levels(d2s.b)
+    @test levels(d2.e) == levels(d2s.e)
+    @test isordered(d2.a) == isordered(d2s.a)
+    @test isordered(d2.b) == isordered(d2s.b)
+    @test isordered(d2.e) == isordered(d2s.e)
 end
 
 end # module
