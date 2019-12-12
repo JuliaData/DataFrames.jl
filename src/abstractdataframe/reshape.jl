@@ -385,7 +385,7 @@ struct RepeatedVector{T} <: AbstractVector{T}
 end
 
 Base.parent(v::RepeatedVector) = v.parent
-Base.levels(v::RepeatedVector) = levels(parent(v))
+DataAPI.levels(v::RepeatedVector) = levels(parent(v))
 CategoricalArrays.isordered(v::RepeatedVector) = isordered(parent(v))
 
 function CategoricalArrays._isordered(v::RepeatedVector)
