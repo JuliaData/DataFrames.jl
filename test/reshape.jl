@@ -272,7 +272,7 @@ end
     @test d1s[!, 2] isa DataFrames.StackedVector
     @test ndims(d1s[!, 2]) == 1
     @test ndims(typeof(d1s[!, 2])) == 1
-    @test d1s[!, 1][[1,24]] == [:a, :b]
+    @test d1s[!, 1][[1,24]] == ["a", "b"]
     @test d1s[!, 2][[1,24]] == [1, 4]
     @test_throws ArgumentError d1s[!, 1][true]
     @test_throws ArgumentError d1s[!, 2][true]
@@ -281,10 +281,13 @@ end
 
     d1ss = stack(d1, [:a, :b], view=true)
     @test d1ss[!, 1][[1,24]] == ["a", "b"]
-    d1ss = stack(d1, [:a, :b], view=true, vareltype=String)
+    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    d1ss = stack(d1, [:a, :b], view=true, variable_eltype=String)
     @test d1ss[!, 1][[1,24]] == ["a", "b"]
-    d1ss = stack(d1, [:a, :b], view=true, vareltype=Symbol)
+    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    d1ss = stack(d1, [:a, :b], view=true, variable_eltype=Symbol)
     @test d1ss[!, 1][[1,24]] == [:a, :b]
+    @test d1ss[!, 1] isa DataFrames.RepeatedVector
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
     @test d1s[!, 1][trues(24)] == d1s[!, 1]
@@ -428,23 +431,29 @@ end
     @test d1s[:, 1] isa CategoricalVector{String}
     @test levels(d1s[:, 1]) == ["d", "c"]
 
-    d1s = stack(d1, [:d, :c], vareltype=String)
+    d1s = stack(d1, [:d, :c], variable_eltype=String)
     @test d1s.variable isa PooledVector{String}
     @test levels(d1s.variable) == ["c", "d"]
-    d1s = stack(d1, [:d, :c], view=true, vareltype=String)
+    d1s = stack(d1, [:d, :c], view=true, variable_eltype=String)
     @test d1s.variable isa DataFrames.RepeatedVector{String}
     @test levels(d1s.variable) == ["c", "d"]
     @test d1s[:, 1] isa Vector{String}
     @test levels(d1s[:, 1]) == ["c", "d"]
 
-    d1s = stack(d1, [:d, :c], vareltype=Symbol)
+    d1s = stack(d1, [:d, :c], variable_eltype=Symbol)
     @test d1s.variable isa Vector{Symbol}
     @test levels(d1s.variable) == [:c, :d]
-    d1s = stack(d1, [:d, :c], view=true, vareltype=Symbol)
+    d1s = stack(d1, [:d, :c], view=true, variable_eltype=Symbol)
     @test d1s.variable isa DataFrames.RepeatedVector{Symbol}
     @test levels(d1s.variable) == [:c, :d]
     @test d1s[:, 1] isa Vector{Symbol}
     @test levels(d1s[:, 1]) == [:c, :d]
+
+    d2 = categorical(d1, :)
+    d2s = stack(d2, [:d, :c])
+    for col in eachcol(d2s)
+        @test col isa CategoricalVector
+    end
 end
 
 end # module
