@@ -384,6 +384,15 @@ struct RepeatedVector{T} <: AbstractVector{T}
     outer::Int
 end
 
+Base.parent(v::RepeatedVector) = v.parent
+Base.levels(v::RepeatedVector) = levels(parent(v))
+CategoricalArrays.isordered(v::RepeatedVector) = isordered(parent(v))
+
+function CategoricalArrays._isordered(v::RepeatedVector)
+    p = parent(v)
+    p isa AbstractCategoricalArray ? isordered(p) : false
+end
+
 function Base.getindex(v::RepeatedVector, i::Int)
     N = length(v.parent)
     idx = Base.fld1(mod1(i,v.inner*N),v.inner)
