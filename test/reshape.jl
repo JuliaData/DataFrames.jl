@@ -417,6 +417,7 @@ end
 end
 
 @testset "stack categorical test" begin
+    Random.seed!(1234)
     d1 = DataFrame(a = repeat([1:3;], inner = [4]),
                    b = repeat([1:4;], inner = [3]),
                    c = randn(12),
@@ -452,11 +453,17 @@ end
     d2 = categorical(d1, :)
     levels!(d2.a, [2, 1, 3])
     ordered!(d2.a, true)
+    ref_levels = shuffle!(unique([levels(d2.c); levels(d2.d)]))
+    levels!(d2.c, ref_levels)
+    ordered!(d2.c, true)
+    levels!(d2.d, ref_levels)
+    ordered!(d2.d, true)
     d2s = stack(d2, [:d, :c])
     for col in eachcol(d2s)
         @test col isa CategoricalVector
     end
-    @test [levels(d2.d);levels(d2.c)] == levels(d2s.value)
+    @test levels(d2s.value) == ref_levels
+    @test isordered(d2s.value)
     @test levels(d2.a) == levels(d2s.a)
     @test levels(d2.b) == levels(d2s.b)
     @test levels(d2.e) == levels(d2s.e)
