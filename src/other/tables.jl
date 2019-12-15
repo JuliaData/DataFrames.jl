@@ -53,10 +53,10 @@ for T in [DataFrameRows, DataFrameColumns]
         Tables.istable(::Type{<:$T}) = true
         Tables.columnaccess(::Type{<:$T}) = true
         Tables.rowaccess(::Type{<:$T}) = true
-        Tables.columns(itr::$T) = Tables.columns(getfield(itr, :df))
-        Tables.rows(itr::$T) = Tables.rows(getfield(itr, :df))
-        Tables.schema(itr::$T) = Tables.schema(getfield(itr, :df))
-        Tables.materializer(itr::$T) = Tables.materializer(getfield(itr, :df))
+        Tables.columns(itr::$T) = Tables.columns(parent(itr))
+        Tables.rows(itr::$T) = Tables.rows(parent(itr))
+        Tables.schema(itr::$T) = Tables.schema(parent(itr))
+        Tables.materializer(itr::$T) = Tables.materializer(parent(itr))
     end
 end
 
