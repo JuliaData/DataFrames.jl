@@ -49,6 +49,6 @@ DataFrame!(x::Vector{<:NamedTuple}) =
                         "`$(typeof(x))` without allocating new columns: use " *
                         "`DataFrame(x)` instead"))
 
-IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
+IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(columntable(df))
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
 TableTraits.isiterabletable(x::AbstractDataFrame) = true
