@@ -48,6 +48,15 @@ DataFrame!(x::Vector{<:NamedTuple}) =
                         "`$(typeof(x))` without allocating new columns: use " *
                         "`DataFrame(x)` instead"))
 
+const _DataFrameIter = Union{DataFrameRows, DataFrameColumns}
+Tables.istable(::Type{<:_DataFrameIter}) = true
+Tables.columnaccess(::Type{<:_DataFrameIter}) = true
+Tables.rowaccess(::Type{<:_DataFrameIter}) = true
+Tables.columns(itr::_DataFrameIter) = Tables.columns(getfield(itr, :df))
+Tables.rows(itr::_DataFrameIter) = Tables.rows(getfield(itr, :df))
+Tables.schema(itr::_DataFrameIter) = Tables.schema(getfield(itr, :df))
+Tables.materializer(itr::_DataFrameIter) = Tables.materializer(getfield(itr, :df))
+
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
 TableTraits.isiterabletable(x::AbstractDataFrame) = true

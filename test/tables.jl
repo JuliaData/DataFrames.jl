@@ -56,15 +56,15 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 @testset "Tables" begin
     df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
-    @testset "basics" begin
-        @test Tables.istable(df)
-        @test Tables.rowaccess(df)
-        @test Tables.columnaccess(df)
-        @test Tables.schema(df) === Tables.Schema((:a, :b), Tuple{Int64, Symbol})
-        @test Tables.schema(df) == Tables.schema(Tables.rows(df)) == Tables.schema(Tables.columns(df))
-        @test @inferred(Tables.materializer(df)(Tables.columns(df))) isa typeof(df)
+    @testset "basics $(nameof(typeof(table)))" for table in [df, eachrow(df), eachcol(df)]
+        @test Tables.istable(table)
+        @test Tables.rowaccess(table)
+        @test Tables.columnaccess(table)
+        @test Tables.schema(table) === Tables.Schema((:a, :b), Tuple{Int64, Symbol})
+        @test Tables.schema(table) == Tables.schema(Tables.rows(table)) == Tables.schema(Tables.columns(table))
+        @test @inferred(Tables.materializer(table)(Tables.columns(table))) isa typeof(df)
 
-        row = first(Tables.rows(df))
+        row = first(Tables.rows(table))
         @test propertynames(row) == (:a, :b)
         @test getproperty(row, :a) == 1
         @test getproperty(row, :b) == :a
