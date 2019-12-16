@@ -134,6 +134,9 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         append!(df, etu)
         @test size(df) == (6, 3)
 
+        append!(df, [nt])
+        @test size(df) == (7, 3)
+
         # categorical values
         cat = CategoricalVector(["hey", "there", "sailor"])
         cat2 = [c for c in cat] # Vector of CategoricalString
