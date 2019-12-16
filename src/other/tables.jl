@@ -55,21 +55,18 @@ Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(pare
 Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
 Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
 Tables.materializer(itr::DataFrameRows) =
-    eachrow ∘ prefer_singleton_callable(Tables.materializer(parent(itr)))
+    x -> eachrow(Tables.materializer(parent(itr))(x))
 function Tables.materializer(itr::DataFrameColumns)
-    f = prefer_singleton_callable(Tables.materializer(parent(itr)))
     if eltype(itr) <: Pair
-        return x -> eachcol(f(x), true)
+        return x -> eachcol(Tables.materializer(parent(itr))(x), true)
     else
-        return x -> eachcol(f(x), false)
+        return x -> eachcol(Tables.materializer(parent(itr))(x), false)
     end
 end
-
-# A hack to workaround the type-instability of `∘`:
-prefer_singleton_callable(::Type{T}) where T = SingletonCallable{T}()
-prefer_singleton_callable(f) = f
-struct SingletonCallable{T} end
-(::SingletonCallable{T})(x) where T = T(x)
+# Note: Don't try to factor `Tables.materializer(...)` out from the
+# closure.  It'll cause type-instability.  Ref:
+# https://github.com/JuliaData/DataFrames.jl/pull/2055#discussion_r358445036
+# https://github.com/JuliaLang/julia/issues/23618#issuecomment-566130606
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
