@@ -48,17 +48,14 @@ DataFrame!(x::Vector{<:NamedTuple}) =
                         "`$(typeof(x))` without allocating new columns: use " *
                         "`DataFrame(x)` instead"))
 
-for T in [DataFrameRows, DataFrameColumns]
-    @eval begin
-        Tables.istable(::Type{<:$T}) = true
-        Tables.columnaccess(::Type{<:$T}) = true
-        Tables.rowaccess(::Type{<:$T}) = true
-        Tables.columns(itr::$T) = Tables.columns(parent(itr))
-        Tables.rows(itr::$T) = Tables.rows(parent(itr))
-        Tables.schema(itr::$T) = Tables.schema(parent(itr))
-        Tables.materializer(itr::$T) = Tables.materializer(parent(itr))
-    end
-end
+Tables.istable(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
+Tables.columnaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
+Tables.rowaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
+Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(parent(itr))
+Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
+Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
+Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
+    Tables.materializer(parent(itr))
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
