@@ -56,16 +56,21 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 @testset "Tables" begin
     df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
-    @testset "basics" begin
-        @test Tables.istable(df)
-        @test Tables.rowaccess(df)
-        @test Tables.columnaccess(df)
-        @test Tables.schema(df) === Tables.Schema((:a, :b), Tuple{Int64, Symbol})
-        @test Tables.schema(df) == Tables.schema(Tables.rows(df)) == Tables.schema(Tables.columns(df))
-        @test @inferred(Tables.materializer(df)(Tables.columns(df))) isa typeof(df)
+    @testset "basics $(nameof(typeof(table)))" for table in [
+        df,
+        eachrow(df),
+        eachcol(df),
+        eachcol(df, true),
+    ]
+        @test Tables.istable(table)
+        @test Tables.rowaccess(table)
+        @test Tables.columnaccess(table)
+        @test Tables.schema(table) === Tables.Schema((:a, :b), Tuple{Int64, Symbol})
+        @test Tables.schema(table) == Tables.schema(Tables.rows(table)) == Tables.schema(Tables.columns(table))
+        @test @inferred(Tables.materializer(table)(Tables.columns(table))) isa typeof(table)
 
-        row = first(Tables.rows(df))
-        @test propertynames(row) == [:a, :b]
+        row = first(Tables.rows(table))
+        @test propertynames(row) == (:a, :b)
         @test getproperty(row, :a) == 1
         @test getproperty(row, :b) == :a
     end
@@ -129,6 +134,9 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         append!(df, etu)
         @test size(df) == (6, 3)
 
+        append!(df, [nt])
+        @test size(df) == (7, 3)
+
         # categorical values
         cat = CategoricalVector(["hey", "there", "sailor"])
         cat2 = [c for c in cat] # Vector of CategoricalString
@@ -182,7 +190,7 @@ end
 
      df2 = DataFrame!(eachrow(df))
      @test df == df2
-     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
      df2 = DataFrame(eachcol(df, true))
      @test df == df2
