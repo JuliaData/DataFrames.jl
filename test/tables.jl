@@ -182,7 +182,7 @@ end
 
      df2 = DataFrame!(eachrow(df))
      @test df == df2
-     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
      df2 = DataFrame(eachcol(df, true))
      @test df == df2
