@@ -228,8 +228,8 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     DataFrame(vs, _names(df), copycols=false)
 end
 
-Base.parent(dfrs::DataFrameRows) = getfield(dfrs, :df)
-Base.parent(dfcs::DataFrameColumns) = getfield(dfcs, :df)
+Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
+Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))
 
 function Base.show(io::IO, dfrs::DataFrameRows;
                    allrows::Bool = !get(io, :limit, false),
