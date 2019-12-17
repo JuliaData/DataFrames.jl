@@ -152,7 +152,7 @@ end
 Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
 Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
+Base.propertynames(r::DataFrameRow, private::Bool=false) = Tuple(_names(r))
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
