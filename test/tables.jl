@@ -56,12 +56,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 @testset "Tables" begin
     df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
-    @testset "basics $(nameof(typeof(table)))" for table in [
-        df,
-        eachrow(df),
-        eachcol(df),
-        eachcol(df, true),
-    ]
+    @testset "basics $(nameof(typeof(table)))" for table in [df, eachrow(df), eachcol(df)]
         @test Tables.istable(table)
         @test Tables.rowaccess(table)
         @test Tables.columnaccess(table)

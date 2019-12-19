@@ -56,14 +56,8 @@ Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr
 Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
 Tables.materializer(itr::DataFrameRows) =
     eachrow ∘ prefer_singleton_callable(Tables.materializer(parent(itr)))
-function Tables.materializer(itr::DataFrameColumns)
-    f = prefer_singleton_callable(Tables.materializer(parent(itr)))
-    if eltype(itr) <: Pair
-        return x -> eachcol(f(x), true)
-    else
-        return x -> eachcol(f(x), false)
-    end
-end
+Tables.materializer(itr::DataFrameColumns) =
+    eachcol ∘ prefer_singleton_callable(Tables.materializer(parent(itr)))
 
 # A hack to workaround the type-instability of `∘`:
 prefer_singleton_callable(::Type{T}) where T = SingletonCallable{T}()
