@@ -1,6 +1,6 @@
 module TestReshape
 
-using Test, DataFrames, Random, Logging
+using Test, DataFrames, Random, Logging, PooledArrays
 const ≅ = isequal
 
 @testset "the output of unstack" begin
@@ -272,12 +272,22 @@ end
     @test d1s[!, 2] isa DataFrames.StackedVector
     @test ndims(d1s[!, 2]) == 1
     @test ndims(typeof(d1s[!, 2])) == 1
-    @test d1s[!, 1][[1,24]] == [:a, :b]
+    @test d1s[!, 1][[1,24]] == ["a", "b"]
     @test d1s[!, 2][[1,24]] == [1, 4]
     @test_throws ArgumentError d1s[!, 1][true]
     @test_throws ArgumentError d1s[!, 2][true]
     @test_throws ArgumentError d1s[!, 1][1.0]
     @test_throws ArgumentError d1s[!, 2][1.0]
+
+    d1ss = stack(d1, [:a, :b], view=true)
+    @test d1ss[!, 1][[1,24]] == ["a", "b"]
+    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    d1ss = stack(d1, [:a, :b], view=true, variable_eltype=String)
+    @test d1ss[!, 1][[1,24]] == ["a", "b"]
+    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    d1ss = stack(d1, [:a, :b], view=true, variable_eltype=Symbol)
+    @test d1ss[!, 1][[1,24]] == [:a, :b]
+    @test d1ss[!, 1] isa DataFrames.RepeatedVector
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
     @test d1s[!, 1][trues(24)] == d1s[!, 1]
@@ -384,6 +394,82 @@ end
     ref_cat = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 1, 2])
     @test df_flat_cat == ref_cat
     @test df_flat_cat.b isa CategoricalArray
+end
+
+@testset "test RepeatedVector for categorical" begin
+    v = categorical(["a", "b", "c"], ordered=true)
+    levels!(v, ["b", "c", "a"])
+    rv = DataFrames.RepeatedVector(v, 1, 1)
+    @test isordered(v)
+    # uncomment after CategoricalArrays.jl is fixed
+    # @test isordered(categorical(v))
+    @test levels(v) == ["b", "c", "a"]
+    @test levels(categorical(v)) == ["b", "c", "a"]
+
+    v = categorical(["a", "b", "c"])
+    levels!(v, ["b", "c", "a"])
+    rv = DataFrames.RepeatedVector(v, 1, 1)
+    @test !isordered(v)
+    # uncomment after CategoricalArrays.jl is fixed
+    # @test !isordered(categorical(v))
+    @test levels(v) == ["b", "c", "a"]
+    @test levels(categorical(v)) == ["b", "c", "a"]
+end
+
+@testset "stack categorical test" begin
+    Random.seed!(1234)
+    d1 = DataFrame(a = repeat([1:3;], inner = [4]),
+                   b = repeat([1:4;], inner = [3]),
+                   c = randn(12),
+                   d = randn(12),
+                   e = map(string, 'a':'l'))
+    d1s = stack(d1, [:d, :c])
+    @test d1s.variable isa CategoricalVector{String}
+    @test levels(d1s.variable) == ["d", "c"]
+    d1s = stack(d1, [:d, :c], view=true)
+    @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalString}
+    @test levels(d1s.variable) == ["d", "c"]
+    @test d1s[:, 1] isa CategoricalVector{String}
+    @test levels(d1s[:, 1]) == ["d", "c"]
+
+    d1s = stack(d1, [:d, :c], variable_eltype=String)
+    @test d1s.variable isa PooledVector{String}
+    @test levels(d1s.variable) == ["c", "d"]
+    d1s = stack(d1, [:d, :c], view=true, variable_eltype=String)
+    @test d1s.variable isa DataFrames.RepeatedVector{String}
+    @test levels(d1s.variable) == ["c", "d"]
+    @test d1s[:, 1] isa Vector{String}
+    @test levels(d1s[:, 1]) == ["c", "d"]
+
+    d1s = stack(d1, [:d, :c], variable_eltype=Symbol)
+    @test d1s.variable isa Vector{Symbol}
+    @test levels(d1s.variable) == [:c, :d]
+    d1s = stack(d1, [:d, :c], view=true, variable_eltype=Symbol)
+    @test d1s.variable isa DataFrames.RepeatedVector{Symbol}
+    @test levels(d1s.variable) == [:c, :d]
+    @test d1s[:, 1] isa Vector{Symbol}
+    @test levels(d1s[:, 1]) == [:c, :d]
+
+    d2 = categorical(d1, :)
+    levels!(d2.a, [2, 1, 3])
+    ordered!(d2.a, true)
+    ref_levels = shuffle!(unique([levels(d2.c); levels(d2.d)]))
+    levels!(d2.c, ref_levels)
+    ordered!(d2.c, true)
+    levels!(d2.d, ref_levels)
+    ordered!(d2.d, true)
+    d2s = stack(d2, [:d, :c])
+    for col in eachcol(d2s)
+        @test col isa CategoricalVector
+    end
+    @test levels(d2s.value) == ref_levels
+    @test isordered(d2s.value)
+    @test levels(d2.a) == levels(d2s.a)
+    @test levels(d2.b) == levels(d2s.b)
+    @test levels(d2.e) == levels(d2s.e)
+    @test isordered(d2.a) == isordered(d2s.a)
+    @test isordered(d2.b) == isordered(d2s.b)
+    @test isordered(d2.e) == isordered(d2s.e)
 end
 
 end # module
