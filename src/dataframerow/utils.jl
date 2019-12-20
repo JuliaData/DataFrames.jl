@@ -180,6 +180,8 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
     end
 
     seen = fill(false, ngroups)
+    # Compute vector mapping missing to -1 if skipmissing=true,
+    # and sorting CategoricalArray levels (since it's cheap)
     refmaps = map(cols) do col
         nlevs = nlevels(col)
         if col isa CategoricalVector
@@ -191,10 +193,11 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
             refmap[2:end] .= CategoricalArrays.order(col.pool) .- 1
         else # PooledVector
             # First value in refmap is never used
+            # (corresponds to ref 0 which is only used by CategoricalArray)
             refmap = collect(-1:nlevs-1)
-            if eltype(col) >: Missing
+            if eltype(col) >: Missing && skipmissing
                 missingind = get(col.invpool, missing, 0)
-                if skipmissing && missingind > 0
+                if missingind > 0
                     refmap[missingind+1] = -1
                     refmap[missingind+2:end] .-= 1
                 end
@@ -210,6 +213,7 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
         end
         vals = map((m, r, s) -> m[r+1] * s, refmaps, refs, strides)
         j = sum(vals) + 1
+        # x < 0 happens with -1 in refmap, which corresponds to missing
         if skipmissing && any(x -> x < 0, vals)
             j = 0
         else
@@ -226,8 +230,8 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
             remap[i] = ngroups
         end
         @inbounds for i in eachindex(groups)
-            g_ix = groups[i]
-            groups[i] = g_ix > 0 ? remap[g_ix] : 0
+            gix = groups[i]
+            groups[i] = gix > 0 ? remap[gix] : 0
         end
         # To catch potential bugs inducing unnecessary computations
         @assert oldngroups != ngroups
@@ -245,8 +249,8 @@ end
 function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
     # count elements in each group
     stops = zeros(Int, ngroups+1)
-    @inbounds for g_ix in groups
-        stops[g_ix+1] += 1
+    @inbounds for gix in groups
+        stops[gix+1] += 1
     end
 
     # group start positions in a sorted table

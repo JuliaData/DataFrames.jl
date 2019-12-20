@@ -918,11 +918,11 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
         filled = fill(false, gd.ngroups)
         nfilled = 0
         @inbounds for i in r
-            g_ix = groups[i]
+            gix = groups[i]
             x = incol[i]
-            if g_ix > 0 && (condf === nothing || condf(x)) && !filled[g_ix]
-                filled[g_ix] = true
-                outcol[g_ix] = x
+            if gix > 0 && (condf === nothing || condf(x)) && !filled[gix]
+                filled[gix] = true
+                outcol[gix] = x
                 nfilled += 1
                 nfilled == ngroups && break
             end
@@ -1051,8 +1051,8 @@ end
 function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame)
     if gd.idx === nothing
         lens = zeros(Int, length(gd))
-        @inbounds for g_ix in gd.groups
-            g_ix > 0 && (lens[g_ix] += 1)
+        @inbounds for gix in gd.groups
+            gix > 0 && (lens[gix] += 1)
         end
         return lens
     else
