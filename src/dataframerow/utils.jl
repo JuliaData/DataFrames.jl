@@ -121,7 +121,6 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
         # Use -1 for non-missing values to catch bugs if group is not found
         gix = skipmissing && missings[i] ? 0 : -1
         probe = 0
-        # If skipmissing=true, assign rows containing at least one missing to group 0
         if !skipmissing || !missings[i]
             while true
                 g_row = gslots[slotix]
