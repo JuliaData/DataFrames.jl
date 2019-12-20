@@ -205,24 +205,24 @@ Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
 Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
+Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
+
 """
     copy(dfr::DataFrameRow)
 
 Convert a [`DataFrameRow`](@ref) to a `NamedTuple`.
 """
-Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
+Base.copy(r::DataFrameRow) = NamedTuple(r)
 
-Base.NamedTuple(dfr::DataFrameRow) = copy(dfr)
-
-Base.convert(::Type{NamedTuple}, dfr::DataFrameRow) = copy(dfr)
+Base.convert(::Type{NamedTuple}, dfr::DataFrameRow) = NamedTuple(dfr)
 Base.convert(::Type{Tuple}, dfr::DataFrameRow) = Tuple(dfr)
 
-Base.merge(a::DataFrameRow) = copy(a)
-Base.merge(a::DataFrameRow, b::NamedTuple) = merge(copy(a), b)
-Base.merge(a::NamedTuple, b::DataFrameRow) = merge(a, copy(b))
-Base.merge(a::DataFrameRow, b::DataFrameRow) = merge(copy(a), copy(b))
-Base.merge(a::DataFrameRow, b::Base.Iterators.Pairs) = merge(copy(a), b)
-Base.merge(a::DataFrameRow, itr) = merge(copy(a), itr)
+Base.merge(a::DataFrameRow) = NamedTuple(a)
+Base.merge(a::DataFrameRow, b::NamedTuple) = merge(NamedTuple(a), b)
+Base.merge(a::NamedTuple, b::DataFrameRow) = merge(a, NamedTuple(b))
+Base.merge(a::DataFrameRow, b::DataFrameRow) = merge(NamedTuple(a), NamedTuple(b))
+Base.merge(a::DataFrameRow, b::Base.Iterators.Pairs) = merge(NamedTuple(a), b)
+Base.merge(a::DataFrameRow, itr) = merge(NamedTuple(a), itr)
 
 # hash column element
 Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) =
