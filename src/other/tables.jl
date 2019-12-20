@@ -54,22 +54,8 @@ Tables.rowaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
 Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(parent(itr))
 Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
 Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
-Tables.materializer(itr::DataFrameRows) =
-    eachrow ∘ prefer_singleton_callable(Tables.materializer(parent(itr)))
-function Tables.materializer(itr::DataFrameColumns)
-    f = prefer_singleton_callable(Tables.materializer(parent(itr)))
-    if eltype(itr) <: Pair
-        return x -> eachcol(f(x), true)
-    else
-        return x -> eachcol(f(x), false)
-    end
-end
-
-# A hack to workaround the type-instability of `∘`:
-prefer_singleton_callable(::Type{T}) where T = SingletonCallable{T}()
-prefer_singleton_callable(f) = f
-struct SingletonCallable{T} end
-(::SingletonCallable{T})(x) where T = T(x)
+Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
+    Tables.materializer(parent(itr))
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
