@@ -294,7 +294,7 @@ Base.ndims(::Type{<:AbstractDataFrame}) = 2
 
 Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = df[!, col_ind]
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
+Base.propertynames(df::AbstractDataFrame, private::Bool=false) = Tuple(_names(df))
 
 ##############################################################################
 ##

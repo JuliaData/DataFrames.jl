@@ -5,6 +5,8 @@ using Test, DataFrames
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
 @test size(eachrow(df)) == (size(df, 1),)
+@test parent(eachrow(df)) === df
+@test names(eachrow(df)) == names(df)
 @test IndexStyle(eachrow(df)) == IndexLinear()
 @test sprint(summary, eachrow(df)) == "2-element DataFrameRows"
 @test Base.IndexStyle(eachrow(df)) == IndexLinear()
@@ -19,9 +21,13 @@ for row in eachrow(df)
 end
 
 @test size(eachcol(df)) == (size(df, 2),)
+@test parent(eachcol(df)) === df
+@test names(eachcol(df)) == names(df)
 @test IndexStyle(eachcol(df)) == IndexLinear()
 @test Base.IndexStyle(eachcol(df)) == IndexLinear()
 @test size(eachcol(df, true)) == (size(df, 2),)
+@test parent(eachcol(df, true)) === df
+@test names(eachcol(df, true)) == names(df)
 @test IndexStyle(eachcol(df, true)) == IndexLinear()
 @test size(eachcol(df, false)) == (size(df, 2),)
 @test IndexStyle(eachcol(df, false)) == IndexLinear()

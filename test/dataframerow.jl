@@ -206,7 +206,7 @@ end
     df = deepcopy(ref_df)
 
     r = DataFrameRow(df, 1, :)
-    @test Base.propertynames(r) == names(df)
+    @test Base.propertynames(r) == Tuple(names(df))
     @test r.a === 1
     @test r.b === 2.0
     @test copy(r[[:a,:b]]) === (a=1, b=2.0)

@@ -87,7 +87,7 @@ end
 
 Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(itr::DataFrameRows, private::Bool=false) = names(parent(itr))
+Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
 # Iteration by columns
 """
@@ -170,7 +170,7 @@ end
 
 Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(itr::DataFrameColumns, private::Bool=false) = names(parent(itr))
+Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
@@ -228,8 +228,8 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     DataFrame(vs, _names(df), copycols=false)
 end
 
-Base.parent(dfrs::DataFrameRows) = getfield(dfrs, :df)
-Base.parent(dfcs::DataFrameColumns) = getfield(dfcs, :df)
+Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
+Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))
 
 function Base.show(io::IO, dfrs::DataFrameRows;
                    allrows::Bool = !get(io, :limit, false),
