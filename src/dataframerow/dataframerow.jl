@@ -212,6 +212,18 @@ Convert a [`DataFrameRow`](@ref) to a `NamedTuple`.
 """
 Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
 
+Base.NamedTuple(dfr::DataFrameRow) = copy(dfr)
+
+Base.convert(::Type{NamedTuple}, dfr::DataFrameRow) = copy(dfr)
+Base.convert(::Type{Tuple}, dfr::DataFrameRow) = Tuple(dfr)
+
+Base.merge(a::DataFrameRow) = copy(a)
+Base.merge(a::DataFrameRow, b::NamedTuple) = merge(copy(a), b)
+Base.merge(a::NamedTuple, b::DataFrameRow) = merge(a, copy(b))
+Base.merge(a::DataFrameRow, b::DataFrameRow) = merge(copy(a), copy(b))
+Base.merge(a::DataFrameRow, b::Base.Iterators.Pairs) = merge(copy(a), b)
+Base.merge(a::DataFrameRow, itr) = merge(copy(a), itr)
+
 # hash column element
 Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) =
     hash(v[i], h)
