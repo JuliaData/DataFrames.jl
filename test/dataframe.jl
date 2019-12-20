@@ -1878,7 +1878,7 @@ end
     z = collect(10:-1:1)
     df = DataFrame(x=x, y=y, copycols=false)
 
-    @test Base.propertynames(df) == names(df)
+    @test Base.propertynames(df) == Tuple(names(df))
 
     @test df.x === x
     @test df.y === y
