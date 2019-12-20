@@ -16,6 +16,18 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     ngroups::Int                       # number of groups
 end
 
+function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
+    if f in (:idx, :starts, :ends)
+        # Group indices are computed lazily the first time they are accessed
+        if getfield(gd, f) === nothing
+            gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
+        end
+        return getfield(gd, f)::Vector{Int}
+    else
+        return getfield(gd, f)
+    end
+end
+
 Base.broadcastable(::GroupedDataFrame) =
     throw(ArgumentError("broadcasting over `GroupedDataFrame`s is reserved"))
 
@@ -196,14 +208,8 @@ function groupby(df::AbstractDataFrame, cols;
     return gd
 end
 
-function compute_indices!(gd::GroupedDataFrame)
-    gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
-    return gd
-end
-
 function Base.iterate(gd::GroupedDataFrame, i=1)
-    gd.idx === nothing && compute_indices!(gd)
-    if i > length(gd.starts)
+    if i > length(gd)
         nothing
     else
         (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]], :), i+1)
@@ -217,13 +223,11 @@ Base.last(gd::GroupedDataFrame) = gd[end]
 
 # Single integer indexing
 function Base.getindex(gd::GroupedDataFrame, idx::Integer)
-    gd.idx === nothing && compute_indices!(gd)
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 end
 
 # Array of integers
 function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
-    gd.idx === nothing && compute_indices!(gd)
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
     if !allunique(new_starts)
@@ -270,13 +274,11 @@ end
 
 # Get values of grouping columns for single group
 function _groupvalues(gd::GroupedDataFrame, i::Integer)
-    gd.idx === nothing && compute_indices!(gd)
     gd.parent[gd.idx[gd.starts[i]], gd.cols]
 end
 
 # Get values of single grouping column for single group
 function _groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer)
-    gd.idx === nothing && compute_indices!(gd)
     gd.parent[gd.idx[gd.starts[i]], gd.cols[col]]
 end
 _groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) =
@@ -885,19 +887,19 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
                     gd::GroupedDataFrame; rev::Bool=false)
     ngroups = gd.ngroups
     # Use group indices if they have already been computed
-    if gd.idx !== nothing && condf === nothing
+    idx = getfield(gd, :idx)
+    if idx !== nothing && condf === nothing
         v = rev ? gd.ends : gd.starts
-        idx = gd.idx
         @inbounds for i in 1:ngroups
             outcol[i] = incol[idx[v[i]]]
         end
-    elseif gd.idx !== nothing
+    elseif idx !== nothing
         nfilled = 0
         @inbounds for i in eachindex(outcol)
             s = gd.starts[i]
             offsets = rev ? (nrow(gd[i])-1:-1:0) : (0:nrow(gd[i])-1)
             for j in offsets
-                x = incol[gd.idx[s+j]]
+                x = incol[idx[s+j]]
                 if !condf === nothing || condf(x)
                     outcol[i] = x
                     nfilled += 1
@@ -1049,7 +1051,7 @@ for f in (first, last)
 end
 
 function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame)
-    if gd.idx === nothing
+    if getfield(gd, :idx) === nothing
         lens = zeros(Int, length(gd))
         @inbounds for gix in gd.groups
             gix > 0 && (lens[gix] += 1)
@@ -1090,8 +1092,6 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
         # Compute indices of representative row only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
-    elseif !all(isagg, f) && gd.idx === nothing
-        compute_indices!(gd)
     end
     res = map(f) do p
         agg = check_aggregate(last(p))
@@ -1146,7 +1146,6 @@ function _combine(f::Any, gd::GroupedDataFrame)
         outcols = (agg(incols, gd),)
         # nms is set below
     else
-        gd.idx === nothing && compute_indices!(gd)
         firstres = do_call(fun, gd, incols, 1)
         idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols)
     end
@@ -1599,7 +1598,6 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
                             "from GroupedDataFrame with `copycols=false`"))
     end
     length(gd) == 0 && return similar(parent(gd), 0)
-    gd.idx === nothing && compute_indices!(gd)
     idx = similar(gd.idx)
     doff = 1
     for (s,e) in zip(gd.starts, gd.ends)

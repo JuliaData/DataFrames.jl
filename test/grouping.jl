@@ -31,8 +31,8 @@ _levels!(x::CategoricalArray, levels::AbstractVector) = levels!(x, levels)
 function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     ogd = groupby(df, keys, args...; kwargs...)
 
+    # To return original object to test when indices have not been computed
     gd = deepcopy(ogd)
-    gd.idx === nothing && DataFrames.compute_indices!(gd)
 
     # checking that groups field is consistent with other fields
     # (since == and isequal do not use it)
@@ -73,7 +73,7 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
         @test allunique(eachrow(gd.parent[gd.idx[gd.starts], gd.cols]))
     end
 
-    ogd # Return original object so that tests cover case when not calling compute_indices!
+    ogd
 end
 
 @testset "parent" begin
@@ -809,7 +809,7 @@ Base.isless(::TestType, ::TestType) = false
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-        indices && DataFrames.compute_indices!(gd)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
 
         res = combine(gd, y = :x1 => f)
         expected = combine(gd, y = :x1 => x -> f(x))
@@ -820,7 +820,7 @@ Base.isless(::TestType, ::TestType) = false
                   Union{Missing, Int, Int8})
             df.x3 = Vector{T}(df.x1)
             gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-            indices && DataFrames.compute_indices!(gd)
+            indices && @test gd.idx !== nothing # Trigger computation of indices
             res = combine(gd, y = :x3 => f)
             expected = combine(gd, y = :x3 => x -> f(x))
             @test res ≅ expected
@@ -832,7 +832,7 @@ Base.isless(::TestType, ::TestType) = false
         df.x3 = allowmissing(df.x1)
         df.x3[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-        indices && DataFrames.compute_indices!(gd)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -845,7 +845,7 @@ Base.isless(::TestType, ::TestType) = false
     # Test complex numbers
     for f in (sum, prod, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-        indices && DataFrames.compute_indices!(gd)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
 
         res = combine(gd, y = :x2 => f)
         expected = combine(gd, y = :x2 => x -> f(x))
@@ -859,7 +859,7 @@ Base.isless(::TestType, ::TestType) = false
         df.x3 = CategoricalVector{T}(df.x1)
         m && (df.x3[1] = missing)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-        indices && DataFrames.compute_indices!(gd)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -884,7 +884,7 @@ Base.isless(::TestType, ::TestType) = false
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-        indices && DataFrames.compute_indices!(gd)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
 
         res = combine(gd, y = :x1 => f)
         expected = combine(gd, y = :x1 => x -> f(x))
@@ -896,7 +896,7 @@ Base.isless(::TestType, ::TestType) = false
         df.x3 = allowmissing(df.x1)
         df.x3[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
-        indices && DataFrames.compute_indices!(gd)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
         res = combine(gd, y = :x3 => f)
         expected = combine(gd, y = :x3 => x -> f(x))
         @test res ≅ expected
@@ -915,7 +915,7 @@ Base.isless(::TestType, ::TestType) = false
     # Test maximum when no promotion rule exists
     df = DataFrame(x = [1, 1, 2, 2], y = [1, TestType(), TestType(), TestType()])
     gd = groupby_checked(df, :x, skipmissing=skip, sort=sort)
-    indices && DataFrames.compute_indices!(gd)
+    indices && @test gd.idx !== nothing # Trigger computation of indices
     for f in (maximum, minimum)
         res = combine(gd, z = :y => maximum)
         @test res.z isa Vector{Any}
@@ -947,6 +947,16 @@ end
     for v in gd
         @test size(v) == (2,2)
     end
+end
+
+@testset "type stability of index fields" begin
+    gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+    idx(gd::GroupedDataFrame) = gd.idx
+    starts(gd::GroupedDataFrame) = gd.starts
+    ends(gd::GroupedDataFrame) = gd.ends
+    @inferred idx(gd) == getfield(gd, :idx)
+    @inferred starts(gd) == getfield(gd, :starts)
+    @inferred ends(gd) == getfield(gd, :ends)
 end
 
 @testset "getindex" begin
