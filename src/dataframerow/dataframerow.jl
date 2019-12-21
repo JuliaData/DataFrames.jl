@@ -211,9 +211,8 @@ Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
     copy(dfr::DataFrameRow)
 
 Construct a `NamedTuple` with the same contents as the [`DataFrameRow`](@ref).
-A  [`DataFrameRow`](@ref) is a view into a row of a  [`DataFrame`](@ref), following
-the convention that `copy` materializes the view into an independent concrete object,
-this thus creates a `NamedTuple`.
+This method returns a `NamedTuple` so that the returned object
+is not affected by changes to the parent data frame of which `dfr` is a view.
 
 """
 Base.copy(r::DataFrameRow) = NamedTuple(r)
