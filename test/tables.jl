@@ -70,7 +70,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test @inferred(Tables.materializer(table)(Tables.columns(table))) isa DataFrame
 
         row = first(Tables.rows(table))
-        @test propertynames(row) == (:a, :b)
+        @test collect(propertynames(row)) == [:a, :b]
         @test getproperty(row, :a) == 1
         @test getproperty(row, :b) == :a
     end

@@ -2,7 +2,7 @@ Tables.istable(::Type{<:AbstractDataFrame}) = true
 Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
 Tables.columns(df::AbstractDataFrame) = df
 Tables.rowaccess(::Type{<:AbstractDataFrame}) = true
-Tables.rows(df::AbstractDataFrame) = Tables.rows(columntable(df))
+Tables.rows(df::AbstractDataFrame) = eachrow(df)
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
@@ -57,6 +57,6 @@ Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent
 Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
     Tables.materializer(parent(itr))
 
-IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
+IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(columntable(df))
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
 TableTraits.isiterabletable(x::AbstractDataFrame) = true
