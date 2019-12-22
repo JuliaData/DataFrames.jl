@@ -205,7 +205,7 @@ Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
 Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
-Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(dfr))
+Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(dfr))}(values(dfr))
 
 """
     copy(dfr::DataFrameRow)
@@ -215,7 +215,7 @@ This method returns a `NamedTuple` so that the returned object
 is not affected by changes to the parent data frame of which `dfr` is a view.
 
 """
-Base.copy(r::DataFrameRow) = NamedTuple(r)
+Base.copy(dfr::DataFrameRow) = NamedTuple(dfr)
 
 Base.convert(::Type{NamedTuple}, dfr::DataFrameRow) = NamedTuple(dfr)
 Base.convert(::Type{Tuple}, dfr::DataFrameRow) = Tuple(dfr)
