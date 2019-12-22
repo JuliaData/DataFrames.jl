@@ -266,7 +266,7 @@ end
     @test get(() -> 100,r, :z) == 100
 end
 
-@testset "convert and copy" begin
+@testset "convert, copy and merge" begin
     df = DataFrame(a=[1, missing], b=[2.0, 3.0])
     dfr = DataFrameRow(df, 1, :)
 
@@ -283,6 +283,23 @@ end
     df = ref_df[:, 1:3]
     @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
     @test copy(DataFrameRow(df, 2, :)) ≅ (a = 2, b = missing, c = "B")
+
+    dfr = DataFrame(a=1, b=2)[1, :]
+    dfr2 = DataFrame(c=3, d=4)[1, :]
+    @test NamedTuple(dfr) == (a=1, b=2)
+    @test convert(NamedTuple, dfr) == (a=1, b=2)
+    @test convert(Tuple, dfr) == (1, 2)
+    @test merge(dfr) == (a=1, b=2)
+    @test merge(dfr, (c=3, d=4)) == (a=1, b=2, c=3, d=4)
+    @test merge((c=3, d=4), dfr) == (c=3, d=4, a=1, b=2)
+    @test merge(dfr, dfr2) == (a=1, b=2, c=3, d=4)
+    @test merge(dfr, pairs((c=3, d=4))) == (a=1, b=2, c=3, d=4)
+    @test merge(dfr, pairs(dfr2)) == (a=1, b=2, c=3, d=4)
+
+    testkwargs(;kw...) = collect(kw)
+    @test testkwargs(;dfr...) == [:a=>1, :b=>2]
+    @test testkwargs(;dfr..., dfr2...) == [:a=>1, :b=>2, :c=>3, :d=>4]
+    @test testkwargs(;x=0, dfr..., dfr2..., z=5) == [:x=>0, :a=>1, :b=>2, :c=>3, :d=>4, :z=>5]
 end
 
 @testset "parent and parentindices" begin
