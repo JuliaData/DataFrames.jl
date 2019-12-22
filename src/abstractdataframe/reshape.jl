@@ -267,12 +267,13 @@ end
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
                   colkey::Int, value::Int, keycol, valuecol, g, renamecols)
-    groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
+    idx, starts, ends = g.idx, g.starts, g.ends
+    groupidxs = [idx[starts[i]:ends[i]] for i in 1:length(starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] .= i
     end
-    df1 = df[g.idx[g.starts], g.cols]
+    df1 = df[idx[starts], g.cols]
     Nrow = length(g)
     Ncol = length(levels(keycol))
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
