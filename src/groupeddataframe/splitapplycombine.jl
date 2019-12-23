@@ -488,9 +488,14 @@ check_aggregate(::typeof(minimum)) = Reduce(min)
 check_aggregate(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
 check_aggregate(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
 check_aggregate(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
-check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing)
-check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
 check_aggregate(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
+# Empty groups can only happen with skipmissing and are only a problem for min and max
+function check_notempty(res, count::Integer)
+    count > 0 || throw(ArgumentError("some groups contain only missing values"))
+    res
+end
+check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing, check_notempty)
+check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing, check_notempty)
 
 # Other aggregate functions which are not strictly reductions
 struct Aggregate{F, C} <: AbstractAggregate
@@ -626,10 +631,10 @@ function groupreduce!(res, f, op, condf, adjust,
     end
     outcol = adjust === nothing ? res : map(adjust, res, counts)
     # Undo pool sharing done by groupreduce_init
-    if outcol isa CategoricalVector
+    if outcol isa CategoricalVector && outcol.pool === incol.pool
         U = Union{CategoricalArrays.leveltype(outcol),
                   eltype(outcol) >: Missing ? Missing : Union{}}
-        outcol = CategoricalArray{U, 1}(outcol.refs, incol.pool)
+        outcol = CategoricalArray{U, 1}(outcol.refs, copy(outcol.pool))
     end
     if isconcretetype(eltype(outcol))
         return outcol
@@ -660,8 +665,9 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
         T = real(eltype(means))
     end
     res = zeros(T, length(gd))
-    groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +,
-                 agg.condf, (x, l) -> x / (l-1), incol, gd)
+    groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
+                 (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
+                 incol, gd)
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
