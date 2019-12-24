@@ -1463,6 +1463,25 @@ end
     ]
 end
 
+@testset "GroupedDataFrame indexing with array of keys" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    ints = [4, 6, 2, 1]
+    gd2 = gd[ints]
+    gkeys = keys(gd)[ints]
+
+    # Test with GroupKeys, Tuples, and NamedTuples
+    for converter in [identity, Tuple, NamedTuple]
+        a = converter.(gkeys)
+        @test gd[a] ≅ gd2
+
+        # Duplicate keys
+        a2 = converter.(keys(gd)[[1, 2, 1]])
+        @test_throws ArgumentError gd[a2]
+    end
+end
+
 @testset "Parent DataFrame names changed" begin
     df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])

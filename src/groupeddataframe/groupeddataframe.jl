@@ -249,27 +249,34 @@ end
 # Non-standard indexing
 #
 
-# Index with GroupKey
-function Base.getindex(gd::GroupedDataFrame, key::GroupKey)
-    gd === parent(key) && return gd[getfield(key, :idx)]
+# The allowed key types for dictionary-like indexing
+const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
+
+# Find integer index for dictionary keys:
+function Base.to_index(gd::GroupedDataFrame, key::GroupKey)
+    gd === parent(key) && return getfield(key, :idx)
     throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
 end
 
-# Index with tuple
-function Base.getindex(gd::GroupedDataFrame, key::Tuple)
+function Base.to_index(gd::GroupedDataFrame, key::Tuple)
     for i in 1:length(gd)
-        isequal(Tuple(_groupvalues(gd, i)), key) && return gd[i]
+        isequal(Tuple(_groupvalues(gd, i)), key) && return i
     end
     throw(KeyError(key))
 end
 
-# Index with named tuple
-function Base.getindex(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
+function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
         throw(KeyError(key))
     end
-    return gd[Tuple(key)]
+    return Base.to_index(gd, Tuple(key))
 end
+
+# Dictionary-like indexing with single key
+Base.getindex(gd::GroupedDataFrame, key::GroupKeyTypes) = gd[Base.to_index(gd, key)]
+
+# Dictionary-like indexing with multiple keys
+Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:GroupKeyTypes}) = gd[[Base.to_index(gd, k) for k in idxs]]
 
 
 #
