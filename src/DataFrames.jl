@@ -67,7 +67,7 @@ include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")
-include("groupeddataframe/grouping.jl")
+include("groupeddataframe/groupeddataframe.jl")
 include("dataframerow/utils.jl")
 
 include("other/broadcasting.jl")
@@ -75,6 +75,8 @@ include("other/broadcasting.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
+
+include("groupeddataframe/splitapplycombine.jl")
 
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
