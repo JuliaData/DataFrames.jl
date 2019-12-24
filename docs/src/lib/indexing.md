@@ -212,8 +212,6 @@ performance on par with integer indexing.
 The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
 
 * `gd[i::Integer]` -> Get the `i`th group.
-* `gd[a::AbstractArray{<:Integer}]` -> Get a reduced `GroupedDataFrame` containing only the groups
-  with indices in `a`.
 * `gd[key::NamedTuple]` -> Get the group corresponding to the given values of the
   grouping columns. The fields of the `NamedTuple` must match the grouping columns
   columns passed to [`groupby`](@ref) (including order).
@@ -223,3 +221,12 @@ The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
 * `gd[key::GroupKey]` -> Get the group corresponding to the [`GroupKey`](@ref)
   `key` (one of the elements of the vector returned by [`keys(::GroupedDataFrame)`](@ref)).
   This should be nearly as fast as integer indexing.
+* `gd[a::AbstractVector]` -> Select multiple groups and return them in a new
+  `GroupedDataFrame` object. Groups may be selected by integer position using an
+  array of `Integer`s or `Bool`s, similar to a standard array. Alternatively the
+  array may contain keys of any of the types supported for dictionary-like
+  indexing (`GroupKey`, `Tuple`, or `NamedTuple`). Selected groups must be
+  unique, and different types of indices cannot be mixed.
+* `gd[n::Not]` -> Any of the above types wrapped in `Not`. The result
+   will be a new `GroupedDataFrame` containing all groups in `gd` *not* selected
+   by the wrapped index.
