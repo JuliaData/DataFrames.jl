@@ -75,6 +75,11 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
     parent(gd)[idx, :]
 end
 
+
+#
+# Accessing group indices, columns, and values
+#
+
 """
     groupindices(gd::GroupedDataFrame)
 
@@ -111,7 +116,7 @@ _groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) =
 
 
 #
-# Length and iteration
+# Vector interface and integer indexing
 #
 
 Base.length(gd::GroupedDataFrame) = gd.ngroups
@@ -124,11 +129,6 @@ function Base.iterate(gd::GroupedDataFrame, i=1)
     end
 end
 
-
-#
-# Vector interface and integer indexing
-#
-
 Compat.lastindex(gd::GroupedDataFrame) = gd.ngroups
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
@@ -137,7 +137,7 @@ Base.last(gd::GroupedDataFrame) = gd[end]
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 
-# Array of integers
+# Index with array of integers OR bools
 function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
@@ -155,14 +155,14 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
                      new_starts, new_ends, length(new_starts))
 end
 
-# Colon (creates copy)
+# Index with colon (creates copy)
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
     GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx,
                      gd.starts, gd.ends, gd.ngroups)
 
 
 #
-# Dictionary interface and indexing
+# GroupKey and GroupKeys
 #
 
 """
@@ -244,6 +244,37 @@ Base.IndexStyle(::Type{<:GroupKeys}) = IndexLinear()
     return GroupKey(parent(gk), i)
 end
 
+
+#
+# Non-standard indexing
+#
+
+# Index with GroupKey
+function Base.getindex(gd::GroupedDataFrame, key::GroupKey)
+    gd === parent(key) && return gd[getfield(key, :idx)]
+    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
+end
+
+# Index with tuple
+function Base.getindex(gd::GroupedDataFrame, key::Tuple)
+    for i in 1:length(gd)
+        isequal(Tuple(_groupvalues(gd, i)), key) && return gd[i]
+    end
+    throw(KeyError(key))
+end
+
+# Index with named tuple
+function Base.getindex(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
+    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+        throw(KeyError(key))
+    end
+    return gd[Tuple(key)]
+end
+
+
+#
+# Dictionary interface
+#
 
 """
     keys(gd::GroupedDataFrame)
@@ -330,28 +361,6 @@ true
 ```
 """
 Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
-
-# Index with GroupKey
-function Base.getindex(gd::GroupedDataFrame, key::GroupKey)
-    gd === parent(key) && return gd[getfield(key, :idx)]
-    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
-end
-
-# Index with tuple
-function Base.getindex(gd::GroupedDataFrame, key::Tuple)
-    for i in 1:length(gd)
-        isequal(Tuple(_groupvalues(gd, i)), key) && return gd[i]
-    end
-    throw(KeyError(key))
-end
-
-# Index with named tuple
-function Base.getindex(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
-    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
-        throw(KeyError(key))
-    end
-    return gd[Tuple(key)]
-end
 
 """
     get(gd::GroupedDataFrame, key, default)
