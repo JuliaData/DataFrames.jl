@@ -477,8 +477,9 @@ struct Reduce{O, C, A} <: AbstractAggregate
     op::O
     condf::C
     adjust::A
+    checkempty::Bool
 end
-Reduce(f, condf=nothing) = Reduce(f, condf, nothing)
+Reduce(f, condf=nothing, adjust=nothing) = Reduce(f, condf, adjust, false)
 
 check_aggregate(f::Any) = f
 check_aggregate(::typeof(sum)) = Reduce(Base.add_sum)
@@ -489,13 +490,8 @@ check_aggregate(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
 check_aggregate(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
 check_aggregate(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
 check_aggregate(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
-# Empty groups can only happen with skipmissing and are only a problem for min and max
-function check_notempty(res, count::Integer)
-    count > 0 || throw(ArgumentError("some groups contain only missing values"))
-    res
-end
-check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing, check_notempty)
-check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing, check_notempty)
+check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing, nothing, true)
+check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing, nothing, true)
 
 # Other aggregate functions which are not strictly reductions
 struct Aggregate{F, C} <: AbstractAggregate
@@ -614,10 +610,10 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res, f, op, condf, adjust,
+function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
                       incol::AbstractVector{T}, gd::GroupedDataFrame) where T
     n = length(gd)
-    if adjust !== nothing
+    if adjust !== nothing || checkempty
         counts = zeros(Int, n)
     end
     groups = gd.groups
@@ -626,10 +622,15 @@ function groupreduce!(res, f, op, condf, adjust,
         x = incol[i]
         if gix > 0 && (condf === nothing || condf(x))
             res[gix] = op(res[gix], f(x, gix))
-            adjust !== nothing && (counts[gix] += 1)
+            if adjust !== nothing || checkempty
+                counts[gix] += 1
+            end
         end
     end
     outcol = adjust === nothing ? res : map(adjust, res, counts)
+    if checkempty && any(iszero, counts)
+        throw(ArgumentError("some groups contain only missing values"))
+    end
     # Undo pool sharing done by groupreduce_init
     if outcol isa CategoricalVector && outcol.pool === incol.pool
         U = Union{CategoricalArrays.leveltype(outcol),
@@ -644,20 +645,21 @@ function groupreduce!(res, f, op, condf, adjust,
 end
 
 # Function barrier works around type instability of _groupreduce_init due to applicable
-groupreduce(f, op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame) =
+groupreduce(f, op, condf, adjust, checkempty::Bool,
+            incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce!(groupreduce_init(op, condf, incol, gd),
-                 f, op, condf, adjust, incol, gd)
+                 f, op, condf, adjust, checkempty, incol, gd)
 # Avoids the overhead due to Missing when computing reduction
-groupreduce(f, op, condf::typeof(!ismissing), adjust,
+groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce!(disallowmissing(groupreduce_init(op, condf, incol, gd)),
-                 f, op, condf, adjust, incol, gd)
+                 f, op, condf, adjust, checkempty, incol, gd)
 
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce((x, i) -> x, r.op, r.condf, r.adjust, incol, gd)
+    groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd)
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
-    means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, incol, gd)
+    means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
     # !ismissing check is purely an optimization to avoid a copy later
     if eltype(means) >: Missing && agg.condf !== !ismissing
         T = Union{Missing, real(eltype(means))}
@@ -667,7 +669,7 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
     res = zeros(T, length(gd))
     groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
                  (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
-                 incol, gd)
+                 false, incol, gd)
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
