@@ -133,6 +133,12 @@ Compat.lastindex(gd::GroupedDataFrame) = gd.ngroups
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
+# These seem to have to be defined for some to_indices() logic to work, as long
+# as GroupedDataFrame is not <: AbstractArray
+Base.IndexStyle(::Type{<:GroupedDataFrame}) = IndexLinear()
+Base.IndexStyle(::GroupedDataFrame) = IndexLinear()
+Base.keys(::IndexLinear, gd::GroupedDataFrame) = Base.OneTo(length(gd))
+
 # Single integer indexing
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
@@ -251,6 +257,8 @@ end
 
 # The allowed key types for dictionary-like indexing
 const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
+# All allowed scalar index types
+const GroupIndexTypes = Union{Integer, GroupKeyTypes}
 
 # Find integer index for dictionary keys:
 function Base.to_index(gd::GroupedDataFrame, key::GroupKey)
@@ -272,11 +280,34 @@ function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return Base.to_index(gd, Tuple(key))
 end
 
-# Dictionary-like indexing with single key
-Base.getindex(gd::GroupedDataFrame, key::GroupKeyTypes) = gd[Base.to_index(gd, key)]
+# Convert array of indices to integer array
+Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{<:GroupKeyTypes}) = [Base.to_index(gd, k) for k in idxs]
 
-# Dictionary-like indexing with multiple keys
-Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:GroupKeyTypes}) = gd[[Base.to_index(gd, k) for k in idxs]]
+# Non-standard indexing relies on converting to integer indices first
+Base.getindex(gd::GroupedDataFrame, idx) = gd[Base.to_index(gd, idx)]
+
+
+#
+# Indexing with Not/InvertedIndex
+#
+
+# InvertedIndex wrapping any other valid index type
+# to_indices() is needed here rather than to_index() for some reason, but we
+# only need to accept one-tuples.
+function Base.to_indices(gd::GroupedDataFrame, (idx,)::Tuple{<:Not})
+    (skip_idx,) = Base.to_indices(gd, (idx.skip,))
+    idxs = Base.OneTo(length(gd))[Not(skip_idx)]
+    return (idxs,)
+end
+
+# Nested Not
+# Base.to_index(gd::GroupedDataFrame, idx::Not{Not}) = Base.to_index(gd, idx.skip.skip)
+
+# InvertedIndex wrapping a boolean array
+# Base.getindex(gd::GroupedDataFrame, idx::Not{<:AbstractVector{Bool}}) = gd[.!idx.skip]
+
+# InvertedIndex wrapping a colon (gives empty GroupedDataFrame)
+# Base.getindex(gd::GroupedDataFrame, idx::Not{Colon}) = gd[Int[]]
 
 
 #

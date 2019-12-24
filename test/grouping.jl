@@ -1482,6 +1482,35 @@ end
     end
 end
 
+@testset "InvertedIndex with GroupedDataFrame" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    # Inverted scalar index
+    skip_i = 3
+    skip_key = keys(gd)[skip_i]
+    expected = gd[[i != skip_i for i in 1:length(gd)]]
+
+    for skip in [skip_i, skip_key, Tuple(skip_key), NamedTuple(skip_key)]
+        @test gd[Not(skip)] ≅ expected
+    end
+
+    @test_throws ArgumentError gd[Not(true)]  # Bool <: Integer, but should fail
+
+    # Inverted array index
+    skipped = [3, 5, 2]
+    skipped_bool = [i ∈ skipped for i in 1:length(gd)]
+    skipped_keys = keys(gd)[skipped]
+    expected2 = gd[.!skipped_bool]
+
+    for skip in [skipped, skipped_bool, skipped_keys, Tuple.(skipped_keys), NamedTuple.(skipped_keys)]
+        @test gd[Not(skip)] ≅ expected2
+    end
+
+    # Inverted colon
+    @test gd[Not(:)] ≅ gd[Int[]]
+end
+
 @testset "Parent DataFrame names changed" begin
     df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
