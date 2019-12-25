@@ -805,7 +805,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         eltys = map(eltype, first)
     elseif first isa DataFrameRow
         n = length(gd)
-        eltys = eltype.(eachcol(parent(first)))
+        eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
     else # NamedTuple giving a single row
         n = length(gd)
         eltys = map(typeof, first)

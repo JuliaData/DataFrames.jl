@@ -1458,4 +1458,10 @@ end
     @test_throws KeyError gd[(a=:A, b=:X)]
 end
 
+@testset "Check aggregation of DataFrameRow" begin
+    df = DataFrame(a=1)
+    dfr = DataFrame(x=1, y="1")[1, 2:2]
+    @test by(sdf -> dfr, df, :a) == DataFrame(a=1, y="1")
+end
+
 end # module
