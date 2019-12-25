@@ -980,7 +980,7 @@ end
     # Invalid
     @test_throws ArgumentError gd[true]
     @test_throws ArgumentError gd[[1, 2, 1]]  # Duplicate
-    @test_throws MethodError gd["a"]
+    @test_throws ArgumentError gd["a"]
 
     # Single integer
     @test gd[1] isa SubDataFrame
@@ -1027,6 +1027,8 @@ end
     @test gd4.starts == [3,1]
     @test gd4.ends == [4,2]
     @test gd4.idx == gd.idx
+    # Infer eltype
+    @test gd[Array{Any}(idx4)] ≅ gd4
 end
 
 @testset "== and isequal" begin
@@ -1476,6 +1478,9 @@ end
         a = converter.(gkeys)
         @test gd[a] ≅ gd2
 
+        # Infer eltype
+        @test gd[Array{Any}(a)] ≅ gd2
+
         # Duplicate keys
         a2 = converter.(keys(gd)[[1, 2, 1]])
         @test_throws ArgumentError gd[a2]
@@ -1490,9 +1495,12 @@ end
     skip_i = 3
     skip_key = keys(gd)[skip_i]
     expected = gd[[i != skip_i for i in 1:length(gd)]]
+    expected_inv = gd[[skip_i]]
 
     for skip in [skip_i, skip_key, Tuple(skip_key), NamedTuple(skip_key)]
         @test gd[Not(skip)] ≅ expected
+        # Nested
+        @test gd[Not(Not(skip))] ≅ expected_inv
     end
 
     @test_throws ArgumentError gd[Not(true)]  # Bool <: Integer, but should fail
@@ -1502,13 +1510,52 @@ end
     skipped_bool = [i ∈ skipped for i in 1:length(gd)]
     skipped_keys = keys(gd)[skipped]
     expected2 = gd[.!skipped_bool]
+    expected2_inv = gd[skipped_bool]
 
-    for skip in [skipped, skipped_bool, skipped_keys, Tuple.(skipped_keys), NamedTuple.(skipped_keys)]
+    for skip in [skipped, skipped_keys, Tuple.(skipped_keys), NamedTuple.(skipped_keys)]
         @test gd[Not(skip)] ≅ expected2
+        # Infer eltype
+        @test gd[Not(Array{Any}(skip))] ≅ expected2
+        # Nested
+        @test gd[Not(Not(skip))] ≅ expected2_inv
+        @test gd[Not(Not(Array{Any}(skip)))] ≅ expected2_inv
     end
+
+    @test gd[Not(skipped_bool)] ≅ expected2
+    @test gd[Not(Not(skipped_bool))] ≅ expected2_inv
 
     # Inverted colon
     @test gd[Not(:)] ≅ gd[Int[]]
+    @test gd[Not(Not(:))] ≅ gd
+end
+
+@testset "GroupedDataFrame array index homogeneity" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    # All scalar index types
+    idxsets = [1:length(gd), keys(gd), Tuple.(keys(gd)), NamedTuple.(keys(gd))]
+
+    # Mixing index types should fail
+    for (i, idxset1) in enumerate(idxsets)
+        idx1 = idxset1[1]
+        for (j, idxset2) in enumerate(idxsets)
+            i == j && continue
+
+            idx2 = idxset2[2]
+
+            # With Any eltype
+            a = Any[idx1, idx2]
+            @test_throws ArgumentError gd[a]
+            @test_throws ArgumentError gd[Not(a)]
+
+            # Most specific applicable eltype, which is <: GroupKeyTypes
+            T = Union{typeof(idx1), typeof(idx2)}
+            a2 = T[idx1, idx2]
+            @test_throws ArgumentError gd[a2]
+            @test_throws ArgumentError gd[Not(a2)]
+        end
+    end
 end
 
 @testset "Parent DataFrame names changed" begin

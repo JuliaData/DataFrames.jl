@@ -255,6 +255,12 @@ end
 # Non-standard indexing
 #
 
+# Non-standard indexing relies on converting to integer indices first
+# The full version (to_indices) is required rather than to_index even though
+# GroupedDataFrame behaves as a 1D array due to the behavior of Colon and Not.
+# Note that this behavior would be the default if it was <:AbstractArray
+Base.getindex(gd::GroupedDataFrame, idx...) = getindex(gd, Base.to_indices(gd, idx)...)
+
 # The allowed key types for dictionary-like indexing
 const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
 # All allowed scalar index types
@@ -280,11 +286,39 @@ function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return Base.to_index(gd, Tuple(key))
 end
 
-# Convert array of indices to integer array
-Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{<:GroupKeyTypes}) = [Base.to_index(gd, k) for k in idxs]
+# Array of (possibly non-standard) indices
+function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
+    # A concrete eltype which is <: GroupIndexTypes, don't need to check
+    isconcretetype(T) && T <: GroupIndexTypes && return [Base.to_index(gd, i) for i in idxs]
 
-# Non-standard indexing relies on converting to integer indices first
-Base.getindex(gd::GroupedDataFrame, idx) = gd[Base.to_index(gd, idx)]
+    # Edge case - array is empty
+    isempty(idxs) && return Int[]
+
+    # Infer eltype based on type of first index
+    idx1 = idxs[1]
+    E1 = typeof(idx1)
+
+    E = if E1 <: Integer && E1 !== Bool
+        Integer
+    elseif E1 <: GroupKey
+        GroupKey
+    elseif E1 <: Tuple
+        Tuple
+    elseif E1 <: NamedTuple
+        NamedTuple
+    else
+        throw(ArgumentError("Invalid index: $idx1 of type $E1"))
+    end
+
+    ints = zeros(Int, length(idxs))
+    for (i, idx) in enumerate(idxs)
+        idx isa GroupIndexTypes || throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
+        idx isa E || throw(ArgumentError("Mixed index types in array not allowed"))
+        ints[i] = Base.to_index(gd, idx)
+    end
+
+    return ints
+end
 
 
 #
@@ -300,14 +334,13 @@ function Base.to_indices(gd::GroupedDataFrame, (idx,)::Tuple{<:Not})
     return (idxs,)
 end
 
-# Nested Not
-# Base.to_index(gd::GroupedDataFrame, idx::Not{Not}) = Base.to_index(gd, idx.skip.skip)
-
 # InvertedIndex wrapping a boolean array
-# Base.getindex(gd::GroupedDataFrame, idx::Not{<:AbstractVector{Bool}}) = gd[.!idx.skip]
-
-# InvertedIndex wrapping a colon (gives empty GroupedDataFrame)
-# Base.getindex(gd::GroupedDataFrame, idx::Not{Colon}) = gd[Int[]]
+# The definition above works but we need to define a specialized method to avoid
+# ambiguity in dispatch
+function Base.to_indices(gd::GroupedDataFrame,
+                         (idx,)::Tuple{Not{<:Union{BitArray{1}, Vector{Bool}}}})
+    (Base.LogicalIndex(.!idx.skip),)
+end
 
 
 #
