@@ -987,6 +987,12 @@ end
     @test gd[1] == view(df, [1, 5], :)
     @test_throws BoundsError gd[5]
 
+    # first, last, lastindex
+    @test first(gd) == gd[1]
+    @test last(gd) == gd[4]
+    @test lastindex(gd) == 4
+    @test gd[end] == gd[4]
+
     # Boolean array
     idx2 = [false, true, false, false]
     gd2 = gd[idx2]
