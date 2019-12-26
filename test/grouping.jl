@@ -421,8 +421,6 @@ end
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1) : NamedTuple(), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? 1 : DataFrame(x1=1), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(x1=1) : 1, df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame() : DataFrame(x1=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(x1=1) : DataFrame(), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1) : (x1=[1]), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=[1]) : (x1=1), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? 1 : [1], df, :x)
@@ -643,7 +641,7 @@ end
         by(df, :a, (:c => sum,)) ==
         by(df, :a, [:c => sum]) ==
         by(df, :a, c_sum = :c => sum) ==
-        by(d -> (c_sum=sum(d.c),), df, :a)
+        by(d -> (c_sum=sum(d.c),), df, :a) ==
         by(df, :a, d -> (c_sum=sum(d.c),))
 
     @test by(:c => vexp, df, :a) ==
@@ -651,21 +649,21 @@ end
         by(df, :a, (:c => vexp,)) ==
         by(df, :a, [:c => vexp]) ==
         by(df, :a, c_function = :c => vexp) ==
-        by(d -> (c_function=vexp(d.c),), df, :a)
+        by(d -> (c_function=vexp(d.c),), df, :a) ==
         by(df, :a, d -> (c_function=vexp(d.c),))
 
     @test by(df, :a, :b => sum, :c => sum) ==
         by(df, :a, (:b => sum, :c => sum,)) ==
         by(df, :a, [:b => sum, :c => sum]) ==
         by(df, :a, b_sum = :b => sum, c_sum = :c => sum) ==
-        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a)
+        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a) ==
         by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
     @test by(df, :a, :b => vexp, :c => identity) ==
         by(df, :a, (:b => vexp, :c => identity,)) ==
         by(df, :a, [:b => vexp, :c => identity]) ==
         by(df, :a, b_function = :b => vexp, c_identity = :c => identity) ==
-        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a)
+        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a) ==
         by(df, :a, d -> (b_function=vexp(d.b), c_identity=identity(d.c)))
 
     gd = groupby(df, :a)
@@ -689,7 +687,7 @@ end
         combine(gd, c_function = :c => vexp) ==
         combine(:c => x -> (c_function=exp.(x),), gd) ==
         combine(gd, :c => x -> (c_function=exp.(x),)) ==
-        combine(d -> (c_function=exp.(d.c),), gd)
+        combine(d -> (c_function=exp.(d.c),), gd) ==
         combine(gd, d -> (c_function=exp.(d.c),))
 
     @test combine(gd, :b => sum, :c => sum) ==
@@ -1456,6 +1454,41 @@ end
     @test NamedTuple(keys(gd)[1]) == (d=:A, e=:X)
     @test keys(gd)[1].d == :A
     @test_throws KeyError gd[(a=:A, b=:X)]
+end
+
+@testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
+    for i in typemin(UInt8):typemax(UInt8), er in (DataFrame(), NamedTuple(), rand(0,0), rand(5,0))
+        df = DataFrame(a = 1:8, x1 = Bool.(collect(bitstring(UInt8(i))) .- '0'))
+        res = by(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, df, :a)
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, groupby(df, :a)))
+        if nrow(res) == 0
+            @test res == DataFrame(a=Int[])
+        else
+            @test res == df[df.x1, :]
+        end
+
+        res = by(sdf -> sdf.x1[1] ? (x1=[true],) : er, df, :a)
+        if typemin(UInt8) < i < typemax(UInt8)
+            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? (x1=true,) : er, df, :a)
+        end
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? (x1=[true],) : er, groupby(df, :a)))
+        if nrow(res) == 0
+            @test res == DataFrame(a=Int[])
+        else
+            @test res == df[df.x1, :]
+        end
+
+        res = by(sdf -> sdf.x1[1] ? hcat(true) : er, df, :a)
+        if typemin(UInt8) < i < typemax(UInt8)
+            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? true : er, df, :a)
+        end
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? hcat(true) : er, groupby(df, :a)))
+        if nrow(res) == 0
+            @test res == DataFrame(a=Int[])
+        else
+            @test res == df[df.x1, :]
+        end
+    end
 end
 
 end # module
