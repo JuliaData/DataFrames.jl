@@ -165,7 +165,7 @@ end
 
 @testset "insertcols!" begin
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test_throws BoundsError insertcols!(df, 5, :newcol => ["a", "b"], )
+    @test_throws DimensionMismatch insertcols!(df, 5, :newcol => ["a", "b"], )
     @test_throws DimensionMismatch insertcols!(df, 1, :newcol => ["a"])
     @test insertcols!(df, 1, :newcol => ["a", "b"]) == df
     @test names(df) == [:newcol, :a, :b]
@@ -187,13 +187,13 @@ end
     @test names(df) == [:a_2, :a, :a_1]
     insertcols!(df, 4, :a => [11,12], makeunique=true)
     @test names(df) == [:a_2, :a, :a_1, :a_3]
-    @test_throws BoundsError insertcols!(df, 10, :a => [11,12], makeunique=true)
+    @test_throws DimensionMismatch insertcols!(df, 10, :a => [11,12], makeunique=true)
     df = DataFrame(a=[1,2], a_1=[3,4])
     insertcols!(df, 1, :a => 11, makeunique=true)
     @test names(df) == [:a_2, :a, :a_1]
     insertcols!(df, 4, :a => 11, makeunique=true)
     @test names(df) == [:a_2, :a, :a_1, :a_3]
-    @test_throws BoundsError insertcols!(df, 10, :a => 11, makeunique=true)
+    @test_throws DimensionMismatch insertcols!(df, 10, :a => 11, makeunique=true)
 
     df = DataFrame(x = 1:2)
     @test insertcols!(df, 2, y=2:3) == DataFrame(x=1:2, y=2:3)

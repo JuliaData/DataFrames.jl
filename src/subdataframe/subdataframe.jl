@@ -34,8 +34,7 @@ end
 
 Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols)
     @boundscheck if !checkindex(Bool, axes(parent, 1), rows)
-        throw(BoundsError("attempt to access a data frame with $(nrow(parent)) " *
-                          "rows at indices $rows"))
+        throw(BoundsError(parent, (rows, cols)))
     end
     SubDataFrame(parent, SubIndex(index(parent), cols), rows)
 end

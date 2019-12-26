@@ -307,12 +307,10 @@ _check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
     cols = _columns(df)
     @boundscheck begin
         if !checkindex(Bool, axes(cols, 1), col_ind)
-            throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                              "columns at index $row_ind"))
+            throw(BoundsError(df, (row_ind, col_ind))
         end
         if !checkindex(Bool, axes(df, 1), row_ind)
-            throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                              "rows at index $row_ind"))
+            throw(BoundsError(df, (row_ind, col_ind)))
         end
     end
 
@@ -322,8 +320,7 @@ end
 @inline function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::Symbol)
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row_ind"))
+        throw(BoundsError(df, (row_ind, col_ind)))
     end
     @inbounds _columns(df)[selected_column][row_ind]
 end
@@ -332,8 +329,7 @@ end
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row_inds"))
+        throw(BoundsError(df, (row_inds, col_ind)))
     end
     @inbounds return _columns(df)[selected_column][row_inds]
 end
@@ -351,8 +347,7 @@ end
 @inline function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Signed, Unsigned})
     cols = _columns(df)
     @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
-        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                          "columns at index $col_ind"))
+        throw(BoundsError(df, (!, col_ind)))
     end
     @inbounds cols[col_ind]
 end
@@ -366,8 +361,7 @@ end
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
                                col_inds::Union{AbstractVector, Regex, Not, Between, All}) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row_inds"))
+        throw(BoundsError(df, (row_inds, col_inds)))
     end
     selected_columns = index(df)[col_inds]
     # Computing integer indices once for all columns is faster
@@ -378,8 +372,7 @@ end
 
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row_inds"))
+        throw(BoundsError(df, (row_inds, :)))
     end
     # Computing integer indices once for all columns is faster
     selected_rows = T === Bool ? findall(row_inds) : row_inds
@@ -646,7 +639,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
                      makeunique::Bool=false)
     name, item = name_col
     if !(0 < col_ind <= ncol(df) + 1)
-        throw(BoundsError("attempt to insert a column to a data frame with $(ncol(df)) columns at index $col_ind"))
+        throw(DimensionMismatch("attempt to insert a column to a data frame with $(ncol(df)) columns at index $col_ind"))
     end
     if !(size(df, 1) == length(item) || size(df, 2) == 0)
         throw(DimensionMismatch("length of new column ($(length(item))) must match the number of rows in data frame ($(nrow(df)))"))
@@ -732,7 +725,7 @@ julia> deleterows!(d, 2)
 """
 function deleterows!(df::DataFrame, inds)
     if !isempty(inds) && size(df, 2) == 0
-        throw(BoundsError())
+        throw(BoundsError(df, (inds, :)))
     end
     # we require ind to be stored and unique like in Base
     foreach(col -> deleteat!(col, inds), _columns(df))
@@ -741,7 +734,7 @@ end
 
 function deleterows!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
-        throw(BoundsError())
+        throw(BoundsError(df, (inds, :)))
     end
     drop = findall(inds)
     foreach(col -> deleteat!(col, drop), _columns(df))
@@ -966,7 +959,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
 end
 
 function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
-    length(cols) == size(df, 2) || throw(BoundsError(df, cols))
+    length(cols) == size(df, 2) || throw(BoundsError(df, (!, cols)))
     for (col, cond) in enumerate(cols)
         cond && allowmissing!(df, col)
     end
@@ -1011,7 +1004,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
 end
 
 function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool}; error::Bool=true)
-    length(cols) == size(df, 2) || throw(BoundsError(df, cols))
+    length(cols) == size(df, 2) || throw(BoundsError(df, (!, cols)))
     for (col, cond) in enumerate(cols)
         cond && disallowmissing!(df, col, error=error)
     end
