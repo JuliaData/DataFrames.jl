@@ -307,7 +307,7 @@ _check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
     cols = _columns(df)
     @boundscheck begin
         if !checkindex(Bool, axes(cols, 1), col_ind)
-            throw(BoundsError(df, (row_ind, col_ind))
+            throw(BoundsError(df, (row_ind, col_ind)))
         end
         if !checkindex(Bool, axes(df, 1), row_ind)
             throw(BoundsError(df, (row_ind, col_ind)))
