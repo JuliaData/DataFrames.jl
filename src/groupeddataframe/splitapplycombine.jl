@@ -820,17 +820,17 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
-    targetcolnames = collect(Symbol, propertynames(first))
-    outcols = first isa Union{AbstractDataFrame,
+    targetcolnames = tuple(propertynames(first)...)
+    outcols, finalcolnames = first isa Union{AbstractDataFrame,
                               NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}} ?
               _combine_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames) :
               _combine_with_first_row!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
-    idx, outcols, targetcolnames
+    idx, outcols, collect(Symbol, finalcolnames)
 end
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
-                   colnames::Vector{Symbol}) where N
+                   colnames::NTuple{N, Symbol}) where N
     if !isa(row, Union{NamedTuple, DataFrameRow})
         throw(ArgumentError("return value must not change its kind " *
                             "(single row or variable number of rows) across groups"))
@@ -866,7 +866,7 @@ function _combine_with_first_row!(first::Union{NamedTuple, DataFrameRow},
                               idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                               f::Any, gd::GroupedDataFrame,
                               incols::Union{Nothing, AbstractVector, NamedTuple},
-                              colnames::Vector{Symbol}) where N
+                              colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -898,7 +898,7 @@ function _combine_with_first_row!(first::Union{NamedTuple, DataFrameRow},
         end
         idx[i] = gdidx[starts[i]]
     end
-    outcols
+    return outcols, colnames
 end
 
 # This needs to be in a separate function
@@ -916,7 +916,7 @@ else
 end
 
 function append_rows!(rows, outcols::NTuple{N, AbstractVector},
-                      colstart::Integer, colnames::Vector{Symbol}) where N
+                      colstart::Integer, colnames::NTuple{N, Symbol}) where N
     if !isa(rows, Union{AbstractDataFrame, NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
         throw(ArgumentError("return value must not change its kind " *
                             "(single row or variable number of rows) across groups"))
@@ -949,7 +949,7 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
                               idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                               f::Any, gd::GroupedDataFrame,
                               incols::Union{Nothing, AbstractVector, NamedTuple},
-                              colnames::Vector{Symbol}) where N
+                              colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -971,14 +971,14 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
         end
         _ncol(rows) == 0 && continue
         if isempty(colnames)
-            append!(colnames, collect(Symbol, propertynames(rows)))
+            newcolnames = tuple(propertynames(rows)...)
             if rows isa AbstractDataFrame
                 eltys = eltype.(eachcol(rows))
             else
                 eltys = map(eltype, rows)
             end
             initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
-            return _combine_with_first!(rows, initialcols, idx, i, 1, f, gd, incols, colnames)
+            return _combine_with_first!(rows, initialcols, idx, i, 1, f, gd, incols, newcolnames)
         end
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
@@ -999,7 +999,7 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
         end
         append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
     end
-    outcols
+    return outcols, colnames
 end
 
 """
