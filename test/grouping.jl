@@ -841,6 +841,19 @@ Base.isless(::TestType, ::TestType) = false
         expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
+
+        # Test reduction over group with only missing values
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+        gd[1][:, :x3] .= missing
+        if f in (maximum, minimum, first, last)
+            @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
+        else
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
     end
     # Test complex numbers
     for f in (sum, prod, mean, var, std, first, last, length)
