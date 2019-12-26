@@ -1050,7 +1050,7 @@ end
     show(io, gd)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame with 4 groups based on key: A
+    $GroupedDataFrame with 4 groups based on key: A
     First Group (1 row): A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -1065,7 +1065,7 @@ end
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame with 4 groups based on key: A
+    $GroupedDataFrame with 4 groups based on key: A
     Group 1 (1 row): A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -1098,7 +1098,7 @@ end
 
 
     @test sprint(show, "text/html", gd) ==
-        "<p><b>GroupedDataFrame with 4 groups based on key: A</b></p>" *
+        "<p><b>$GroupedDataFrame with 4 groups based on key: A</b></p>" *
         "<p><i>First Group (1 row): A = 1</i></p><table class=\"data-frame\">" *
         "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
         "<th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
@@ -1109,7 +1109,7 @@ end
         "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
 
     @test sprint(show, "text/latex", gd) == """
-        GroupedDataFrame with 4 groups based on key: A
+        $GroupedDataFrame with 4 groups based on key: A
 
         First Group (1 row): A = 1
 
@@ -1136,7 +1136,7 @@ end
 
     gd = groupby(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
     @test sprint(show, gd) === """
-        GroupedDataFrame with 1 group based on keys: a, b
+        $GroupedDataFrame with 1 group based on keys: a, b
         Group 1 (1 row): a = :&, b = "&"
         │ Row │ a      │ b      │
         │     │ Symbol │ String │
@@ -1144,14 +1144,14 @@ end
         │ 1   │ &      │ &      │"""
 
     @test sprint(show, "text/html", gd) ==
-        "<p><b>GroupedDataFrame with 1 group based on keys: a, b</b></p><p><i>" *
+        "<p><b>$GroupedDataFrame with 1 group based on keys: a, b</b></p><p><i>" *
         "First Group (1 row): a = :&amp;, b = \"&amp;\"</i></p>" *
         "<table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
         "<tr><th></th><th>Symbol</th><th>String</th></tr></thead><tbody><tr><th>1</th>" *
         "<td>&amp;</td><td>&amp;</td></tr></tbody></table>"
 
     @test sprint(show, "text/latex", gd) == """
-        GroupedDataFrame with 1 group based on keys: a, b
+        $GroupedDataFrame with 1 group based on keys: a, b
 
         First Group (1 row): a = :\\&, b = "\\&"
 
