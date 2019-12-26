@@ -1062,8 +1062,10 @@ end
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, gd)
     str = String(take!(io.io))
+    summary_str = summary(gd)
+    @test summary_str == "$GroupedDataFrame with 4 groups based on key: A"
     @test str == """
-    $GroupedDataFrame with 4 groups based on key: A
+    $summary_str
     First Group (1 row): A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -1078,7 +1080,7 @@ end
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    $GroupedDataFrame with 4 groups based on key: A
+    $summary_str
     Group 1 (1 row): A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -1148,8 +1150,10 @@ end
         """
 
     gd = groupby(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
+    summary_str = summary(gd)
+    @test summary_str == "$GroupedDataFrame with 1 group based on keys: a, b"
     @test sprint(show, gd) === """
-        $GroupedDataFrame with 1 group based on keys: a, b
+        $summary_str
         Group 1 (1 row): a = :&, b = "&"
         │ Row │ a      │ b      │
         │     │ Symbol │ String │
@@ -1157,14 +1161,14 @@ end
         │ 1   │ &      │ &      │"""
 
     @test sprint(show, "text/html", gd) ==
-        "<p><b>$GroupedDataFrame with 1 group based on keys: a, b</b></p><p><i>" *
+        "<p><b>$summary_str</b></p><p><i>" *
         "First Group (1 row): a = :&amp;, b = \"&amp;\"</i></p>" *
         "<table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
         "<tr><th></th><th>Symbol</th><th>String</th></tr></thead><tbody><tr><th>1</th>" *
         "<td>&amp;</td><td>&amp;</td></tr></tbody></table>"
 
     @test sprint(show, "text/latex", gd) == """
-        $GroupedDataFrame with 1 group based on keys: a, b
+        $summary_str
 
         First Group (1 row): a = :\\&, b = "\\&"
 
