@@ -1457,7 +1457,10 @@ end
 end
 
 @testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
-    for i in typemin(UInt8):typemax(UInt8), er in (DataFrame(), NamedTuple(), rand(0,0), rand(5,0))
+    for i in typemin(UInt8):typemax(UInt8),
+        er in (DataFrame(), view(DataFrame(ones(2,2)), 2:1, 2:1),
+               view(DataFrame(ones(2,2)), 1:2, 2:1),
+               NamedTuple(), rand(0,0), rand(5,0))
         df = DataFrame(a = 1:8, x1 = Bool.(collect(bitstring(UInt8(i))) .- '0'))
         res = by(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, df, :a)
         @test res == DataFrame(map(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, groupby(df, :a)))
