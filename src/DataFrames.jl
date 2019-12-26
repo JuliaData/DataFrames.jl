@@ -6,7 +6,9 @@ using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, DataAPI
 using Base.Sort, Base.Order, Base.Iterators
 using Tables, TableTraits, IteratorInterfaceExtensions
 
-import DataAPI.All,
+import Compat.eachcol,
+       Compat.eachrow,
+       DataAPI.All,
        DataAPI.Between,
        DataAPI.describe,
        Tables.columnindex,
@@ -50,9 +52,7 @@ export AbstractDataFrame,
        unique!,
        unstack
 
-if VERSION >= v"1.1.0-DEV.792"
-    import Base.eachcol, Base.eachrow
-else
+if VERSION < v"1.1.0-DEV.792"
     export eachcol, eachrow
 end
 
