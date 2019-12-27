@@ -1485,9 +1485,10 @@ end
                NamedTuple(), rand(0,0), rand(5,0))
         df = DataFrame(a = 1:8, x1 = Bool.(collect(bitstring(UInt8(i))) .- '0'))
         res = by(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, df, :a)
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, groupby(df, :a)))
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, groupby_checked(df, :a)))
         if nrow(res) == 0
-            @test res == DataFrame(a=Int[])
+            @test res == DataFrame(a=[])
+            @test typeof(res.a) == Vector{Int}
         else
             @test res == df[df.x1, :]
         end
@@ -1496,9 +1497,10 @@ end
         if typemin(UInt8) < i < typemax(UInt8)
             @test_throws ArgumentError by(sdf -> sdf.x1[1] ? (x1=true,) : er, df, :a)
         end
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? (x1=[true],) : er, groupby(df, :a)))
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? (x1=[true],) : er, groupby_checked(df, :a)))
         if nrow(res) == 0
-            @test res == DataFrame(a=Int[])
+            @test res == DataFrame(a=[])
+            @test typeof(res.a) == Vector{Int}
         else
             @test res == df[df.x1, :]
         end
@@ -1507,9 +1509,10 @@ end
         if typemin(UInt8) < i < typemax(UInt8)
             @test_throws ArgumentError by(sdf -> sdf.x1[1] ? true : er, df, :a)
         end
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? hcat(true) : er, groupby(df, :a)))
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? hcat(true) : er, groupby_checked(df, :a)))
         if nrow(res) == 0
-            @test res == DataFrame(a=Int[])
+            @test res == DataFrame(a=[])
+            @test typeof(res.a) == Vector{Int}
         else
             @test res == df[df.x1, :]
         end
