@@ -1,5 +1,6 @@
 module TestIteration
 
+import Compat
 using Test, DataFrames
 
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
@@ -137,6 +138,12 @@ end
             end
             @test_throws ArgumentError x.a
         end
+    end
+end
+
+@testset "overload Compat functions" begin
+    @testset "DataFrames.$f === Compat.$f" for f in intersect(names(DataFrames), names(Compat))
+        @test getproperty(DataFrames, f) === getproperty(Compat, f)
     end
 end
 

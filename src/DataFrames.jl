@@ -53,6 +53,7 @@ export AbstractDataFrame,
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow
 else
+    import Compat.eachcol, Compat.eachrow
     export eachcol, eachrow
 end
 
