@@ -1479,42 +1479,29 @@ end
 end
 
 @testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
-    for i in typemin(UInt8):typemax(UInt8),
+    N = 4
+    for (i, x1) in enumerate(collect.(Iterators.product(repeat([[true, false]], N)...))),
         er in (DataFrame(), view(DataFrame(ones(2,2)), 2:1, 2:1),
                view(DataFrame(ones(2,2)), 1:2, 2:1),
-               NamedTuple(), rand(0,0), rand(5,0))
-        df = DataFrame(a = 1:8, x1 = Bool.(collect(bitstring(UInt8(i))) .- '0'))
-        res = by(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, df, :a)
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? DataFrame(x1=[true]) : er, groupby_checked(df, :a)))
-        if nrow(res) == 0
+               NamedTuple(), rand(0,0), rand(5,0),
+               DataFrame(x1=Int[]), DataFrame(x1=Any[]),
+               (x1=Int[],), (x1=Any[],), rand(0,1)),
+        fr in (DataFrame(x1=[true]), (x1=[true],), hcat(true))
+        df = DataFrame(a = 1:N, x1 = x1)
+        res = by(sdf -> sdf.x1[1] ? fr : er, df, :a)
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? fr : er, groupby_checked(df, :a)))
+        @test res == by(df, :a, :x1 => x -> x[1] ? fr : er)
+        @test res == by(df, :a, (:a, :x1) => x -> x.x1[1] ? fr : er)
+        if nrow(res) == 0 && length(propertynames(er)) == 0 && er != rand(0, 1)
             @test res == DataFrame(a=[])
             @test typeof(res.a) == Vector{Int}
         else
             @test res == df[df.x1, :]
         end
-
-        res = by(sdf -> sdf.x1[1] ? (x1=[true],) : er, df, :a)
-        if typemin(UInt8) < i < typemax(UInt8)
+        if 1 < i < 2^N
             @test_throws ArgumentError by(sdf -> sdf.x1[1] ? (x1=true,) : er, df, :a)
-        end
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? (x1=[true],) : er, groupby_checked(df, :a)))
-        if nrow(res) == 0
-            @test res == DataFrame(a=[])
-            @test typeof(res.a) == Vector{Int}
-        else
-            @test res == df[df.x1, :]
-        end
-
-        res = by(sdf -> sdf.x1[1] ? hcat(true) : er, df, :a)
-        if typemin(UInt8) < i < typemax(UInt8)
+            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? fr : (x2=[true],), df, :a)
             @test_throws ArgumentError by(sdf -> sdf.x1[1] ? true : er, df, :a)
-        end
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? hcat(true) : er, groupby_checked(df, :a)))
-        if nrow(res) == 0
-            @test res == DataFrame(a=[])
-            @test typeof(res.a) == Vector{Int}
-        else
-            @test res == df[df.x1, :]
         end
     end
 end
