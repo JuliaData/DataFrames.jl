@@ -839,6 +839,19 @@ Base.isless(::TestType, ::TestType) = false
         expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
+
+        # Test reduction over group with only missing values
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+        gd[1][:, :x3] .= missing
+        if f in (maximum, minimum, first, last)
+            @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
+        else
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
     end
     # Test complex numbers
     for f in (sum, prod, mean, var, std, first, last, length)
@@ -1048,7 +1061,7 @@ end
     show(io, gd)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame with 4 groups based on key: A
+    $GroupedDataFrame with 4 groups based on key: A
     First Group (1 row): A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -1063,7 +1076,7 @@ end
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame with 4 groups based on key: A
+    $GroupedDataFrame with 4 groups based on key: A
     Group 1 (1 row): A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -1096,7 +1109,7 @@ end
 
 
     @test sprint(show, "text/html", gd) ==
-        "<p><b>GroupedDataFrame with 4 groups based on key: A</b></p>" *
+        "<p><b>$GroupedDataFrame with 4 groups based on key: A</b></p>" *
         "<p><i>First Group (1 row): A = 1</i></p><table class=\"data-frame\">" *
         "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
         "<th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
@@ -1107,7 +1120,7 @@ end
         "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
 
     @test sprint(show, "text/latex", gd) == """
-        GroupedDataFrame with 4 groups based on key: A
+        $GroupedDataFrame with 4 groups based on key: A
 
         First Group (1 row): A = 1
 
@@ -1134,7 +1147,7 @@ end
 
     gd = groupby(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
     @test sprint(show, gd) === """
-        GroupedDataFrame with 1 group based on keys: a, b
+        $GroupedDataFrame with 1 group based on keys: a, b
         Group 1 (1 row): a = :&, b = "&"
         │ Row │ a      │ b      │
         │     │ Symbol │ String │
@@ -1142,14 +1155,14 @@ end
         │ 1   │ &      │ &      │"""
 
     @test sprint(show, "text/html", gd) ==
-        "<p><b>GroupedDataFrame with 1 group based on keys: a, b</b></p><p><i>" *
+        "<p><b>$GroupedDataFrame with 1 group based on keys: a, b</b></p><p><i>" *
         "First Group (1 row): a = :&amp;, b = \"&amp;\"</i></p>" *
         "<table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
         "<tr><th></th><th>Symbol</th><th>String</th></tr></thead><tbody><tr><th>1</th>" *
         "<td>&amp;</td><td>&amp;</td></tr></tbody></table>"
 
     @test sprint(show, "text/latex", gd) == """
-        GroupedDataFrame with 1 group based on keys: a, b
+        $GroupedDataFrame with 1 group based on keys: a, b
 
         First Group (1 row): a = :\\&, b = "\\&"
 
@@ -1454,6 +1467,15 @@ end
     @test NamedTuple(keys(gd)[1]) == (d=:A, e=:X)
     @test keys(gd)[1].d == :A
     @test_throws KeyError gd[(a=:A, b=:X)]
+end
+
+@testset "Check aggregation of DataFrameRow" begin
+    df = DataFrame(a=1)
+    dfr = DataFrame(x=1, y="1")[1, 2:2]
+    @test by(sdf -> dfr, df, :a) == DataFrame(a=1, y="1")
+
+    df = DataFrame(a=[1,1,2,2,3,3], b='a':'f', c=string.(1:6))
+    @test by(sdf -> sdf[1, [3,2,1]], df, :a) == df[1:2:5, [1,3,2]]
 end
 
 @testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
