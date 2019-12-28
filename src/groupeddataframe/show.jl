@@ -1,3 +1,11 @@
+function Base.summary(io::IO, gd::GroupedDataFrame)
+    N = length(gd)
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N == 1 ? "group" : "groups"
+    print(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: ")
+    join(io, groupvars(gd), ", ")
+end
+
 function Base.show(io::IO, gd::GroupedDataFrame;
                    allgroups::Bool = !get(io, :limit, false),
                    allrows::Bool = !get(io, :limit, false),
@@ -6,13 +14,10 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true)
     N = length(gd)
-    keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
-    keys = join(string.(keynames), ", ")
 
-    keystr = length(gd.cols) > 1 ? "keys" : "key"
-    groupstr = N == 1 ? "group" : "groups"
-    summary && print(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys")
+    summary && Base.summary(io, gd)
+
     if allgroups
         for i = 1:N
             nrows = size(gd[i], 1)
