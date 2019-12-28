@@ -833,9 +833,9 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     targetcolnames = tuple(propertynames(first)...)
     outcols, finalcolnames = if first isa Union{AbstractDataFrame,
                                                 NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
-        _combine_tables_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
+        _combine_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
     else
-        _combine_rows_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
+        _combine_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
     end
     idx, outcols, collect(Symbol, finalcolnames)
 end
@@ -873,7 +873,7 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
+function _combine_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                    f::Any, gd::GroupedDataFrame,
@@ -906,7 +906,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                     end
                 end
             end
-            return _combine_rows_with_first!(row, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_with_first!(row, newcols, idx, i, j, f, gd, incols, colnames)
         end
         idx[i] = gdidx[starts[i]]
     end
@@ -955,7 +955,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine_tables_with_first!(first::Union{AbstractDataFrame,
+function _combine_with_first!(first::Union{AbstractDataFrame,
                                      NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
                                      outcols::NTuple{N, AbstractVector},
                                      idx::Vector{Int}, rowstart::Integer, colstart::Integer,
@@ -990,7 +990,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                 eltys = map(eltype, rows)
             end
             initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
-            return _combine_tables_with_first!(rows, initialcols, idx, i, 1, f, gd, incols, newcolnames)
+            return _combine_with_first!(rows, initialcols, idx, i, 1, f, gd, incols, newcolnames)
         end
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
@@ -1007,7 +1007,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                     end
                 end
             end
-            return _combine_tables_with_first!(rows, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_with_first!(rows, newcols, idx, i, j, f, gd, incols, colnames)
         end
         append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
     end
