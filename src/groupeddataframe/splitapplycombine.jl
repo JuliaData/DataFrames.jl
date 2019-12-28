@@ -201,7 +201,8 @@ which is determined using the following rules:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives the same additional columns
   and as many rows for each group as the rows returned for that group.
-  (a table with zero columns drops the group)
+  As a special case, returning an empty table with zero columns is allowed,
+  whatever the number of columns returned for other groups.
 
 `f` must always return the same kind of object (as defined in the above list) for
 all groups, and if a named tuple or data frame, with the same fields or columns.
@@ -341,7 +342,8 @@ which is determined using the following rules:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with the same
   additional columns and as many rows for each group as the rows returned for that group.
-  (a table with zero columns drops the group)
+  As a special case, returning an empty table with zero columns is allowed,
+  whatever the number of columns returned for other groups.
 
 `f` must always return the same kind of object (as defined in the above list) for
 all groups, and if a named tuple or data frame, with the same fields or columns.
@@ -1055,7 +1057,8 @@ which is determined using the following rules:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with the same
   additional columns and as many rows for each group as the rows returned for that group.
-  (a table with zero columns drops the group)
+  As a special case, returning an empty table with zero columns is allowed,
+  whatever the number of columns returned for other groups.
 
 `f` must always return the same kind of object (as defined in the above list) for
 all groups, and if a named tuple or data frame, with the same fields or columns.
