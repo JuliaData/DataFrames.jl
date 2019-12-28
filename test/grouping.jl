@@ -1486,11 +1486,19 @@ end
                NamedTuple(), rand(0,0), rand(5,0),
                DataFrame(x1=Int[]), DataFrame(x1=Any[]),
                (x1=Int[],), (x1=Any[],), rand(0,1)),
-        fr in (DataFrame(x1=[true]), (x1=[true],), hcat(true))
+        fr in (DataFrame(x1=[true]), (x1=[true],), hcat(true), [true])
         df = DataFrame(a = 1:N, x1 = x1)
         res = by(sdf -> sdf.x1[1] ? fr : er, df, :a)
         @test res == DataFrame(map(sdf -> sdf.x1[1] ? fr : er, groupby_checked(df, :a)))
-        @test res == by(df, :a, :x1 => x -> x[1] ? fr : er)
+        if fr == [true]
+            if df.x1[1]
+                @test rename(res, 2=>:x1_function) == by(df, :a, :x1 => x -> x[1] ? fr : er)
+            else
+                @test res == by(df, :a, :x1 => x -> x[1] ? fr : er)
+            end
+        else
+            @test res == by(df, :a, :x1 => x -> x[1] ? fr : er)
+        end
         @test res == by(df, :a, (:a, :x1) => x -> x.x1[1] ? fr : er)
         if nrow(res) == 0 && length(propertynames(er)) == 0 && er != rand(0, 1)
             @test res == DataFrame(a=[])
