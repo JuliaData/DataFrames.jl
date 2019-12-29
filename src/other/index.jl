@@ -3,6 +3,10 @@
 # through cleanly.
 abstract type AbstractIndex end
 
+Base.summary(idx::AbstractIndex) = # -> String
+    @sprintf("%d-element %s", length(idx), typeof(idx).name)
+Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
+
 const ColumnIndex = Union{Signed, Unsigned, Symbol}
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...

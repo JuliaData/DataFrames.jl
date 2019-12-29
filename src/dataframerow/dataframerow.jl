@@ -80,6 +80,10 @@ row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
+Base.summary(dfr::DataFrameRow) = # -> String
+    @sprintf("%d-element %s", length(dfr), typeof(dfr).name)
+Base.summary(io::IO, dfr::DataFrameRow) = print(io, summary(dfr))
+
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
                                    colinds::Union{Colon, AbstractVector, Regex, Not, Between, All}) =
     DataFrameRow(adf, rowind, colinds)
