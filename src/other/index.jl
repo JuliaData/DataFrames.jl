@@ -3,8 +3,10 @@
 # through cleanly.
 abstract type AbstractIndex end
 
-Base.summary(idx::AbstractIndex) = # -> String
-    @sprintf("%d-element %s", length(idx), typeof(idx).name)
+function Base.summary(idx::AbstractIndex)
+    l = length(idx)
+    "data frame with $l column$(l == 1 ? "" : "s")"
+end
 Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
 
 const ColumnIndex = Union{Signed, Unsigned, Symbol}
