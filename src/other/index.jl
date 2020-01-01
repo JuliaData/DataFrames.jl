@@ -3,6 +3,12 @@
 # through cleanly.
 abstract type AbstractIndex end
 
+function Base.summary(idx::AbstractIndex)
+    l = length(idx)
+    "data frame with $l column$(l == 1 ? "" : "s")"
+end
+Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
+
 const ColumnIndex = Union{Signed, Unsigned, Symbol}
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
@@ -141,7 +147,7 @@ end
 
 function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     if !(1 <= idx <= length(x.names)+1)
-        throw(BoundsError("attempt to insert a column to a data frame with $(length(x)) columns at index $idx"))
+        throw(BoundsError(x, idx))
      end
     for i = idx:length(x.names)
         x.lookup[x.names[i]] = i + 1
@@ -155,7 +161,7 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, idx::Integer)
     if !(1 <= idx <= length(x))
-        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $idx"))
+        throw(BoundsError(x, idx))
     end
     Int(idx)
 end
@@ -164,10 +170,10 @@ end
     isempty(idx) && return idx
     minidx, maxidx = extrema(idx)
     if minidx < 1
-        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $minidx"))
+        throw(BoundsError(x, idx))
     end
     if maxidx > length(x)
-        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $maxidx"))
+        throw(BoundsError(x, idx))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     idx
@@ -177,10 +183,10 @@ end
     isempty(idx) && return idx
     minidx, maxidx = extrema(idx)
     if minidx < 1
-        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $minidx"))
+        throw(BoundsError(x, idx))
     end
     if maxidx > length(x)
-        throw(BoundsError("attempt to access a data frame with $(length(x)) columns at index $maxidx"))
+        throw(BoundsError(x, idx))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     idx
@@ -344,7 +350,7 @@ function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
     f = first(cols)
     if !checkindex(Bool, Base.OneTo(length(parent)), cols)
-        throw(BoundsError("invalid columns $cols selected"))
+        throw(BoundsError(parent, cols))
     end
     remap = (1:l) .- f .+ 1
     SubIndex(parent, cols, remap)
@@ -355,8 +361,7 @@ function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
     remap = zeros(Int, ncols)
     for (i, col) in enumerate(cols)
         if !(1 <= col <= ncols)
-            throw(BoundsError("column index must be greater than zero " *
-                              "and not larger than number columns in the parent"))
+            throw(BoundsError(parent, cols))
         end
         if remap[col] != 0
             throw(ArgumentError("duplicate selected column detected"))

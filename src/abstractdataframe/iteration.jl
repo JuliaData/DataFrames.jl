@@ -103,6 +103,10 @@ struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
     df::T
 end
 
+Base.summary(dfcs::DataFrameColumns{T, V}) where {T,V} =
+    "$(length(dfcs))-element DataFrameColumns (with names=$(V <: Pair))"
+Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
+
 """
     eachcol(df::AbstractDataFrame, names::Bool=false)
 

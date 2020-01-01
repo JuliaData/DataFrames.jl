@@ -50,8 +50,7 @@ end
 
 Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row"))
+        throw(BoundsError(df, (row, cols)))
     end
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
@@ -61,8 +60,7 @@ Base.@propagate_inbounds DataFrameRow(df::DataFrame, row::Bool, cols) =
 
 Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(sdf, 1), row)
-        throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
-                          "rows at index $row"))
+        throw(BoundsError(sdf, (row, cols)))
     end
     if index(sdf) isa Index # sdf was created using : as row selector
         colindex = SubIndex(index(sdf), cols)
@@ -81,6 +79,10 @@ Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
+
+Base.summary(dfr::DataFrameRow) = # -> String
+    @sprintf("%d-element %s", length(dfr), typeof(dfr).name)
+Base.summary(io::IO, dfr::DataFrameRow) = print(io, summary(dfr))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
                                    colinds::Union{Colon, AbstractVector, Regex, Not, Between, All}) =

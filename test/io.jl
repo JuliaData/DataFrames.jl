@@ -234,4 +234,23 @@ end
     @test_throws AssertionError sprint(show, "text/tab-separated-values", df)
 end
 
+@testset "summary tests" begin
+    df = DataFrame(ones(2,3))
+
+    for (v, s) in [(df, "2×3 DataFrame"),
+                   (view(df, :, :), "2×3 SubDataFrame"),
+                   (df[1, :], "3-element DataFrameRow"),
+                   (DataFrames.index(df), "data frame with 3 columns"),
+                   (DataFrames.index(df[1:1, 1:1]), "data frame with 1 column"),
+                   (DataFrames.index(view(df, 1:1, 1:1)), "data frame with 1 column"),
+                   (eachrow(df), "2-element DataFrameRows"),
+                   (eachcol(df), "3-element DataFrameColumns (with names=false)"),
+                   (eachcol(df, true), "3-element DataFrameColumns (with names=true)")]
+        @test summary(v) == s
+        io = IOBuffer()
+        summary(io, v)
+        @test String(take!(io)) == s
+    end
+end
+
 end # module
