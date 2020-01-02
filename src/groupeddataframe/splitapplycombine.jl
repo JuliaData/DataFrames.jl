@@ -1048,7 +1048,7 @@ If `skipmissing=true` then the resulting data frame will not contain groups
 with `missing` values in one of the `keys` columns.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
-`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
 are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
