@@ -831,11 +831,13 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
     targetcolnames = tuple(propertynames(first)...)
-    outcols, finalcolnames = if first isa Union{AbstractDataFrame,
-                                                NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
-        _combine_tables_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
+    if first isa Union{AbstractDataFrame,
+                       NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
+        outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
+                                                             f, gd, incols, targetcolnames)
     else
-        _combine_rows_with_first!(first, initialcols, idx, 1, 1, f, gd, incols, targetcolnames)
+        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, idx, 1, 1,
+                                                           f, gd, incols, targetcolnames)
     end
     idx, outcols, collect(Symbol, finalcolnames)
 end
@@ -906,7 +908,8 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                     end
                 end
             end
-            return _combine_rows_with_first!(row, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_rows_with_first!(row, newcols, idx, i, j,
+                                             f, gd, incols, colnames)
         end
         idx[i] = gdidx[starts[i]]
     end
@@ -977,7 +980,8 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
         rows = wrap(do_call(f, gdidx, starts, ends, gd, incols, i))
-        if !(rows isa Union{AbstractDataFrame, NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+        if !(rows isa Union{AbstractDataFrame,
+                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
             throw(ArgumentError("return value must not change its kind " *
                                 "(single row or variable number of rows) across groups"))
         end
@@ -990,7 +994,8 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                 eltys = map(eltype, rows)
             end
             initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
-            return _combine_tables_with_first!(rows, initialcols, idx, i, 1, f, gd, incols, newcolnames)
+            return _combine_tables_with_first!(rows, initialcols, idx, i, 1,
+                                               f, gd, incols, newcolnames)
         end
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
@@ -1007,7 +1012,8 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                     end
                 end
             end
-            return _combine_tables_with_first!(rows, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_tables_with_first!(rows, newcols, idx, i, j,
+                                               f, gd, incols, colnames)
         end
         append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
     end
