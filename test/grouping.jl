@@ -421,8 +421,6 @@ end
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1) : NamedTuple(), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? 1 : DataFrame(x1=1), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(x1=1) : 1, df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame() : DataFrame(x1=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(x1=1) : DataFrame(), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1) : (x1=[1]), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=[1]) : (x1=1), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? 1 : [1], df, :x)
@@ -643,7 +641,7 @@ end
         by(df, :a, (:c => sum,)) ==
         by(df, :a, [:c => sum]) ==
         by(df, :a, c_sum = :c => sum) ==
-        by(d -> (c_sum=sum(d.c),), df, :a)
+        by(d -> (c_sum=sum(d.c),), df, :a) ==
         by(df, :a, d -> (c_sum=sum(d.c),))
 
     @test by(:c => vexp, df, :a) ==
@@ -651,21 +649,21 @@ end
         by(df, :a, (:c => vexp,)) ==
         by(df, :a, [:c => vexp]) ==
         by(df, :a, c_function = :c => vexp) ==
-        by(d -> (c_function=vexp(d.c),), df, :a)
+        by(d -> (c_function=vexp(d.c),), df, :a) ==
         by(df, :a, d -> (c_function=vexp(d.c),))
 
     @test by(df, :a, :b => sum, :c => sum) ==
         by(df, :a, (:b => sum, :c => sum,)) ==
         by(df, :a, [:b => sum, :c => sum]) ==
         by(df, :a, b_sum = :b => sum, c_sum = :c => sum) ==
-        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a)
+        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a) ==
         by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
     @test by(df, :a, :b => vexp, :c => identity) ==
         by(df, :a, (:b => vexp, :c => identity,)) ==
         by(df, :a, [:b => vexp, :c => identity]) ==
         by(df, :a, b_function = :b => vexp, c_identity = :c => identity) ==
-        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a)
+        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a) ==
         by(df, :a, d -> (b_function=vexp(d.b), c_identity=identity(d.c)))
 
     gd = groupby(df, :a)
@@ -689,7 +687,7 @@ end
         combine(gd, c_function = :c => vexp) ==
         combine(:c => x -> (c_function=exp.(x),), gd) ==
         combine(gd, :c => x -> (c_function=exp.(x),)) ==
-        combine(d -> (c_function=exp.(d.c),), gd)
+        combine(d -> (c_function=exp.(d.c),), gd) ==
         combine(gd, d -> (c_function=exp.(d.c),))
 
     @test combine(gd, :b => sum, :c => sum) ==
@@ -1482,6 +1480,42 @@ end
 
     df = DataFrame(a=[1,1,2,2,3,3], b='a':'f', c=string.(1:6))
     @test by(sdf -> sdf[1, [3,2,1]], df, :a) == df[1:2:5, [1,3,2]]
+end
+
+@testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
+    N = 4
+    for (i, x1) in enumerate(collect.(Iterators.product(repeat([[true, false]], N)...))),
+        er in (DataFrame(), view(DataFrame(ones(2,2)), 2:1, 2:1),
+               view(DataFrame(ones(2,2)), 1:2, 2:1),
+               NamedTuple(), rand(0,0), rand(5,0),
+               DataFrame(x1=Int[]), DataFrame(x1=Any[]),
+               (x1=Int[],), (x1=Any[],), rand(0,1)),
+        fr in (DataFrame(x1=[true]), (x1=[true],), hcat(true), [true])
+        df = DataFrame(a = 1:N, x1 = x1)
+        res = by(sdf -> sdf.x1[1] ? fr : er, df, :a)
+        @test res == DataFrame(map(sdf -> sdf.x1[1] ? fr : er, groupby_checked(df, :a)))
+        if fr == [true]
+            if df.x1[1]
+                @test rename(res, 2=>:x1_function) == by(df, :a, :x1 => x -> x[1] ? fr : er)
+            else
+                @test res == by(df, :a, :x1 => x -> x[1] ? fr : er)
+            end
+        else
+            @test res == by(df, :a, :x1 => x -> x[1] ? fr : er)
+        end
+        @test res == by(df, :a, (:a, :x1) => x -> x.x1[1] ? fr : er)
+        if nrow(res) == 0 && length(propertynames(er)) == 0 && er != rand(0, 1)
+            @test res == DataFrame(a=[])
+            @test typeof(res.a) == Vector{Int}
+        else
+            @test res == df[df.x1, :]
+        end
+        if 1 < i < 2^N
+            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? (x1=true,) : er, df, :a)
+            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? fr : (x2=[true],), df, :a)
+            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? true : er, df, :a)
+        end
+    end
 end
 
 end # module

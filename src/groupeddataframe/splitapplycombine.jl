@@ -201,6 +201,8 @@ which is determined using the following rules:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives the same additional columns
   and as many rows for each group as the rows returned for that group.
+  As a special case, returning an empty table with zero columns is allowed,
+  whatever the number of columns returned for other groups.
 
 `f` must always return the same kind of object (as defined in the above list) for
 all groups, and if a named tuple or data frame, with the same fields or columns.
@@ -340,6 +342,8 @@ which is determined using the following rules:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with the same
   additional columns and as many rows for each group as the rows returned for that group.
+  As a special case, returning an empty table with zero columns is allowed,
+  whatever the number of columns returned for other groups.
 
 `f` must always return the same kind of object (as defined in the above list) for
 all groups, and if a named tuple or data frame, with the same fields or columns.
@@ -798,7 +802,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
     end
-    valscat = DataFrame(collect(AbstractVector, outcols), collect(Symbol, nms))
+    valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
 
@@ -826,9 +830,16 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
-    outcols = _combine_with_first!(first, initialcols, idx, 1, 1, f, gd, incols,
-                                   tuple(propertynames(first)...))
-    idx, outcols, propertynames(first)
+    targetcolnames = tuple(propertynames(first)...)
+    if first isa Union{AbstractDataFrame,
+                       NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
+        outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
+                                                             f, gd, incols, targetcolnames)
+    else
+        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, idx, 1, 1,
+                                                           f, gd, incols, targetcolnames)
+    end
+    idx, outcols, collect(Symbol, finalcolnames)
 end
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
@@ -864,12 +875,12 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine_with_first!(first::Union{NamedTuple, DataFrameRow},
-                              outcols::NTuple{N, AbstractVector},
-                              idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                              f::Any, gd::GroupedDataFrame,
-                              incols::Union{Nothing, AbstractVector, NamedTuple},
-                              colnames::NTuple{N, Symbol}) where N
+function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
+                                   outcols::NTuple{N, AbstractVector},
+                                   idx::Vector{Int}, rowstart::Integer, colstart::Integer,
+                                   f::Any, gd::GroupedDataFrame,
+                                   incols::Union{Nothing, AbstractVector, NamedTuple},
+                                   colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -897,11 +908,12 @@ function _combine_with_first!(first::Union{NamedTuple, DataFrameRow},
                     end
                 end
             end
-            return _combine_with_first!(row, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_rows_with_first!(row, newcols, idx, i, j,
+                                             f, gd, incols, colnames)
         end
         idx[i] = gdidx[starts[i]]
     end
-    outcols
+    return outcols, colnames
 end
 
 # This needs to be in a separate function
@@ -935,7 +947,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
             vals = getproperty(rows, cn)
         catch
             throw(ArgumentError("return value must have the same column names " *
-                                "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))
+                                "for all groups (got $colnames and $(propertynames(rows)))"))
         end
         S = eltype(vals)
         T = eltype(col)
@@ -946,24 +958,45 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine_with_first!(first::Union{AbstractDataFrame,
-                                           NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
-                              outcols::NTuple{N, AbstractVector},
-                              idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                              f::Any, gd::GroupedDataFrame,
-                              incols::Union{Nothing, AbstractVector, NamedTuple},
-                              colnames::NTuple{N, Symbol}) where N
+function _combine_tables_with_first!(first::Union{AbstractDataFrame,
+                                     NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
+                                     outcols::NTuple{N, AbstractVector},
+                                     idx::Vector{Int}, rowstart::Integer, colstart::Integer,
+                                     f::Any, gd::GroupedDataFrame,
+                                     incols::Union{Nothing, AbstractVector, NamedTuple},
+                                     colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
     ends = gd.ends
     # Handle first group
-    j = append_rows!(first, outcols, colstart, colnames)
-    @assert j === nothing # eltype is guaranteed to match
-    append!(idx, Iterators.repeated(gdidx[starts[rowstart]], _nrow(first)))
+
+    @assert _ncol(first) == N
+    if !isempty(colnames)
+        j = append_rows!(first, outcols, colstart, colnames)
+        @assert j === nothing # eltype is guaranteed to match
+        append!(idx, Iterators.repeated(gdidx[starts[rowstart]], _nrow(first)))
+    end
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
         rows = wrap(do_call(f, gdidx, starts, ends, gd, incols, i))
+        if !(rows isa Union{AbstractDataFrame,
+                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+            throw(ArgumentError("return value must not change its kind " *
+                                "(single row or variable number of rows) across groups"))
+        end
+        _ncol(rows) == 0 && continue
+        if isempty(colnames)
+            newcolnames = tuple(propertynames(rows)...)
+            if rows isa AbstractDataFrame
+                eltys = eltype.(eachcol(rows))
+            else
+                eltys = map(eltype, rows)
+            end
+            initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
+            return _combine_tables_with_first!(rows, initialcols, idx, i, 1,
+                                               f, gd, incols, newcolnames)
+        end
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -979,11 +1012,12 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
                     end
                 end
             end
-            return _combine_with_first!(rows, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_tables_with_first!(rows, newcols, idx, i, j,
+                                               f, gd, incols, colnames)
         end
         append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
     end
-    outcols
+    return outcols, colnames
 end
 
 """
@@ -1029,6 +1063,8 @@ which is determined using the following rules:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with the same
   additional columns and as many rows for each group as the rows returned for that group.
+  As a special case, returning an empty table with zero columns is allowed,
+  whatever the number of columns returned for other groups.
 
 `f` must always return the same kind of object (as defined in the above list) for
 all groups, and if a named tuple or data frame, with the same fields or columns.
