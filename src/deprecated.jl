@@ -1563,3 +1563,6 @@ import DataAPI: describe
 @deprecate melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=:value,
                 view::Bool=false) stack(df; variable_name=variable_name, value_name=value_name,
                                         view=view)
+
+import Base: lastindex
+@deprecate lastindex(df:AbstractDataFrame) ncol(df)
