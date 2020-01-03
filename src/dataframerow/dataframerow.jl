@@ -162,10 +162,52 @@ Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not, Between, All}
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
+"""
+    size(dfr::DataFrameRow, [dim])
+
+Return a tuple containing the number of elements of `dfr`.
+Optionally you can specify a dimension, where only `1` is accepted.
+
+See also: [`length`](@ref)
+
+# Examples
+```julia
+julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :];
+
+julia> size(dfr)
+(2,)
+
+julia> size(dfr, 1)
+2
+```
+"""
 Base.size(r::DataFrameRow) = (length(index(r)),)
 Base.size(r::DataFrameRow, i) = size(r)[i]
+
+"""
+    length(dfr::DataFrameRow)
+
+Return the number of elements of `dfr`.
+
+See also: [`size`](@ref)
+
+# Examples
+```julia
+julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :];
+
+julia> length(dfr)
+2
+```
+"""
 Base.length(r::DataFrameRow) = size(r, 1)
-Base.ndims(r::DataFrameRow) = 1
+
+"""
+    ndims(::DataFrameRow)
+    ndims(::Type{DataFrameRow})
+
+Return `1`.
+"""
+Base.ndims(::DataFrameRow) = 1
 Base.ndims(::Type{<:DataFrameRow}) = 1
 
 Base.lastindex(r::DataFrameRow) = length(r)

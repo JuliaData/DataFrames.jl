@@ -45,7 +45,7 @@ julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position. 
+Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position.
 
 Since `df[!, :col]` does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original `df`. To get a copy of the column use `df[:, :col]`: changing the vector returned by this syntax does not change `df`.
 
@@ -216,6 +216,41 @@ SQLite.load!(df, db, "dataframe_table")
 
 # transform a DataFrame through Query.jl package
 df = df |> @map({a=_.a + 1, _.b}) |> DataFrame
+```
+
+A particular common case of a collection that supports the
+[Tables.jl](https://github.com/JuliaData/Tables.jl) interface is
+a vector of `NamedTuple`s:
+```
+julia> v = [(a=1,b=2), (a=3,b=4)]
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)
+
+julia> df = DataFrame(v)
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+│ 2   │ 3     │ 4     │
+```
+You can also easily convert a data frame back to a vector of `NamedTuples`.
+Here we present two ways that this can be achieved, one using `Tables.rowtable`
+function, and the other performing a `copy` on each row of a data frame produced
+by `eachrow` function:
+```
+julia> using Tables
+
+julia> Tables.rowtable(df)
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)
+
+julia> copy.(eachrow(df))
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)
 ```
 
 ## Working with Data Frames
