@@ -1565,4 +1565,4 @@ import DataAPI: describe
                                         view=view)
 
 import Base: lastindex
-@deprecate lastindex(df:AbstractDataFrame) ncol(df)
+@deprecate lastindex(df::AbstractDataFrame) ncol(df)
