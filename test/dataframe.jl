@@ -165,43 +165,95 @@ end
 
 @testset "insertcols!" begin
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test_throws ArgumentError insertcols!(df, 5, :newcol => ["a", "b"], )
+    @test_throws ArgumentError insertcols!(df, 5, :newcol => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, 0, :newcol => ["a", "b"])
     @test_throws DimensionMismatch insertcols!(df, 1, :newcol => ["a"])
     @test insertcols!(df, 1, :newcol => ["a", "b"]) == df
     @test names(df) == [:newcol, :a, :b]
-    @test df[!,:a] == [1, 2]
-    @test df[!, :b] == [3.0, 4.0]
-    @test df[!, :newcol] == ["a", "b"]
+    @test df.a == [1, 2]
+    @test df.b == [3.0, 4.0]
+    @test df.newcol == ["a", "b"]
 
+    @test_throws ArgumentError insertcols!(df, 1, :newcol => ["a1", "b1"])
     @test insertcols!(df, 1, :newcol => ["a1", "b1"], makeunique=true) == df
     @test names(df) == [:newcol_1, :newcol, :a, :b]
-    @test df[!,:a] == [1, 2]
-    @test df[!, :b] == [3.0, 4.0]
-    @test df[!, :newcol] == ["a", "b"]
-    @test df[!, :newcol_1] == ["a1", "b1"]
+    @test df.a == [1, 2]
+    @test df.b == [3.0, 4.0]
+    @test df.newcol == ["a", "b"]
+    @test df.newcol_1 == ["a1", "b1"]
+
+    @test insertcols!(df, 1, :c1 => 1:2) == df
+    @test df.c1 isa Vector{Int}
+    x = [1, 2]
+    @test insertcols!(df, 1, :c2 => x, copycols=true) == df
+    @test df.c2 == x
+    @test df.c2 !== x
+    @test insertcols!(df, 1, :c3 => x) == df
+    @test df.c3 === x
 
     df = DataFrame(a=[1,2], a_1=[3,4])
     @test_throws ArgumentError insertcols!(df, 1, :a => [11,12])
-    df = DataFrame(a=[1,2], a_1=[3,4])
+    @test df == DataFrame(a=[1,2], a_1=[3,4])
     insertcols!(df, 1, :a => [11,12], makeunique=true)
     @test names(df) == [:a_2, :a, :a_1]
     insertcols!(df, 4, :a => [11,12], makeunique=true)
     @test names(df) == [:a_2, :a, :a_1, :a_3]
     @test_throws ArgumentError insertcols!(df, 10, :a => [11,12], makeunique=true)
-    df = DataFrame(a=[1,2], a_1=[3,4])
-    insertcols!(df, 1, :a => 11, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1]
-    insertcols!(df, 4, :a => 11, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1, :a_3]
-    @test_throws ArgumentError insertcols!(df, 10, :a => 11, makeunique=true)
 
-    df = DataFrame(x = 1:2)
-    @test insertcols!(df, 2, y=2:3) == DataFrame(x=1:2, y=2:3)
-    @test_throws ArgumentError insertcols!(df, 2)
+    # TODO: re-enable this test after the deprecation; this should be no-op
+    # (it only should check if `2` is in range)
+    # @test_throws ArgumentError insertcols!(df, 2)
     @test_throws ArgumentError insertcols!(df, 2, a=1, b=2)
 
     df = DataFrame()
-    @test insertcols!(df, 1, x=[1]) == DataFrame(x = [1])
+    @test insertcols!(df, 1, :x=>[1]) == DataFrame(x = [1])
+    df = DataFrame()
+    @test_throws ArgumentError insertcols!(df, 2, :x=>[1])
+    df = DataFrame()
+    @test insertcols!(df, 1, :x=>1:2) == DataFrame(x = 1:2)
+    @test df.x isa Vector{Int}
+    x = [1, 2]
+    df = DataFrame()
+    @test insertcols!(df, 1, :x=>x, copycols=true) == DataFrame(x = 1:2)
+    @test df.x !== x
+    df = DataFrame()
+    @test insertcols!(df, 1, :x=>x) == DataFrame(x = 1:2)
+    @test df.x === x
+
+    df = DataFrame()
+    v1 = 1:2
+    v2 = [3,4]
+    v3 = [5,6]
+    @test insertcols!(df, 1, :a=>v1, :b=>v2, :c=>v3) == DataFrame(a=v1, b=v2, c=v3)
+    @test df.a isa Vector{Int}
+    @test df.b === v2
+    @test df.c === v3
+
+    df = DataFrame()
+    @test insertcols!(df, 1, :a=>v1, :b=>v2, :c=>v3, copycols=true) ==
+          DataFrame(a=v1, b=v2, c=v3)
+    @test df.a isa Vector{Int}
+    @test df.b !== v2
+    @test df.c !== v3
+
+    df = DataFrame()
+    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, makeunique=true) ==
+          DataFrame(a=v1, a_1=v2, a_2=v3)
+    @test df.a isa Vector{Int}
+    @test df.a_1 === v2
+    @test df.a_2 === v3
+
+    df = DataFrame(p='a':'b',q='r':'s')
+    @test insertcols!(df, 2, :a=>v1, :b=>v2, :c=>v3) ==
+          DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
+
+    df = DataFrame(p='a':'b',q='r':'s')
+    @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
+    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, makeunique=true, copycols=true) ==
+          DataFrame(p='a':'b', p_1=v1, q_1=v2, p_2=v3, q='r':'s')
+    @test df.p_1 isa Vector{Int}
+    @test df.q_1 !== v2
+    @test df.p_2 !== v3
 end
 
 @testset "DataFrame constructors" begin
