@@ -5,7 +5,7 @@ normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:Symbol}) =
     idx[first(sel)] => last(sel)
 
 function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:Function})
-    c = idx[sel]
+    c = idx[first(sel)]
     fun = last(sel)
     newcol = Symbol(_names(idx)[c], "_", funname(fun))
     return c => fun => newcol
@@ -268,7 +268,7 @@ select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
 function select(df::DataFrame, cs...; copycols::Bool=true)
     newdf = DataFrame()
     # this line ensures that we fail early if passed source column names are missing
-    ncs = normalize_selection.(Ref(index(df)), cs)
+    ncs = [normalize_selection(index(df), c) for c in cs]
     # it should be OK to be type unstable here + in this way we aviod having to compile custom Dict
     transformed_cols = Dict()
     for nc in ncs
