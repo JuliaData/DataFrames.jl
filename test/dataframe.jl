@@ -182,13 +182,13 @@ end
     @test df.newcol == ["a", "b"]
     @test df.newcol_1 == ["a1", "b1"]
 
-    @test insertcols!(df, 1, :c1 => 1:2) == df
+    @test insertcols!(df, 1, :c1 => 1:2) === df
     @test df.c1 isa Vector{Int}
     x = [1, 2]
-    @test insertcols!(df, 1, :c2 => x, copycols=true) == df
+    @test insertcols!(df, 1, :c2 => x, copycols=true) === df
     @test df.c2 == x
     @test df.c2 !== x
-    @test insertcols!(df, 1, :c3 => x) == df
+    @test insertcols!(df, 1, :c3 => x) === df
     @test df.c3 === x
 
     df = DataFrame(a=[1,2], a_1=[3,4])
