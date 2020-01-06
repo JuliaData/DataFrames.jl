@@ -581,7 +581,7 @@ end
 
 """
     insertcols!(df::DataFrame, ind::Int, (name=>col)::Pair{Symbol,<:AbstractVector}...;
-                makeunique::Bool=false, copycols::Bool=false)
+                makeunique::Bool=false, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated `DataFrame`.
 
@@ -628,7 +628,7 @@ julia> insertcols!(d, 2, :c => 2:4, :c => 3:5, makeunique=true)
 ```
 """
 function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol, <:AbstractVector}...;
-                     makeunique::Bool=false, copycols::Bool=false)
+                     makeunique::Bool=false, copycols::Bool=true)
     if !(0 < col_ind <= ncol(df) + 1)
         throw(ArgumentError("attempt to insert a column to a data frame with " *
                             "$(ncol(df)) columns at index $col_ind"))
@@ -679,20 +679,6 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol, <:Abst
     end
     return df
 end
-
-function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol}; makeunique::Bool=false)
-    Base.depwarn("Implicit broadcasting when inserting a column is deprecated. Pass an `AbstractVector` instead. ", :insertcols!)
-    # this is not a fully correct way to upgrade a scalar but this is how upgrade_scalar
-    # worked so I keep it not to be breaking the method will be removed anyways
-    insertcols!(df, col_ind, name_col[1] => fill(name_col[2], (ncol(df) == 0) ? 1 : nrow(df)), makeunique=makeunique)
-end
-
-function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...)
-    Base.depwarn("inserting colums using a keyword argument is deprecated. Use `Pair` syntax instead. ", :insertcols!)
-    length(name_col) == 1 || throw(ArgumentError("one and only one column must be provided"))
-    insertcols!(df, col_ind, makeunique=makeunique, keys(name_col)[1] => name_col[1])
-end
-
 
 """
     copy(df::DataFrame; copycols::Bool=true)

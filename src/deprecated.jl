@@ -1563,3 +1563,20 @@ import DataAPI: describe
 @deprecate melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=:value,
                 view::Bool=false) stack(df; variable_name=variable_name, value_name=value_name,
                                         view=view)
+function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol}; makeunique::Bool=false)
+    Base.depwarn("Implicit broadcasting when inserting a column is deprecated. " *
+                 "Pass an `AbstractVector` instead. ", :insertcols!)
+    # this is not a fully correct way to upgrade a scalar but this is how upgrade_scalar
+    # worked so I keep it not to be breaking the method will be removed anyways
+    return insertcols!(df, col_ind,
+                       name_col[1] => fill(name_col[2], (ncol(df) == 0) ? 1 : nrow(df)),
+                       makeunique=makeunique)
+end
+
+function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...)
+    Base.depwarn("inserting colums using a keyword argument is deprecated, use " *
+                 "`insertcols!(df, col_ind, :$(keys(name_col)[1]) => $(name_col[1]), " *
+                 "makeunique=$makeunique)` instead. ", :insertcols!)
+    length(name_col) == 1 || throw(ArgumentError("one and only one column must be provided"))
+    return insertcols!(df, col_ind, makeunique=makeunique, keys(name_col)[1] => name_col[1])
+end
