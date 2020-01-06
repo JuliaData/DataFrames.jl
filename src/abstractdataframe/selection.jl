@@ -305,9 +305,10 @@ function select(df::DataFrame, cs...; copycols::Bool=true)
     return newdf
 end
 
-select(dfv::SubDataFrame, inds::Union{ColumnIndex, AbstractVector{<:Integer},
-                                      AbstractVector{Symbol}, Colon, All, Not, Between,
-                                      Regex}; copycols::Bool=true) =
+select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool=true) =
+    select(dfv, [ind], copycols=copycols)
+select(dfv::SubDataFrame, inds::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
+                                      Colon, All, Not, Between, Regex}; copycols::Bool=true) =
     copycols ? dfv[:, inds] : view(dfv, :, inds)
 
 function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
