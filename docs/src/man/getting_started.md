@@ -235,19 +235,11 @@ julia> df = DataFrame(v)
 │ 1   │ 1     │ 2     │
 │ 2   │ 3     │ 4     │
 ```
-You can also easily convert a data frame back to a vector of `NamedTuple`s.
-Here we present two ways that this can be achieved, one using `Tables.rowtable`
-function, and the other performing a `copy` on each row of a data frame produced
-by `eachrow` function:
+You can also easily convert a data frame back to a vector of `NamedTuple`s:
 ```
 julia> using Tables
 
 julia> Tables.rowtable(df)
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
- (a = 1, b = 2)
- (a = 3, b = 4)
-
-julia> copy.(eachrow(df))
 2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
  (a = 1, b = 2)
  (a = 3, b = 4)
