@@ -57,3 +57,8 @@ function gennames(n::Integer)
     end
     return res
 end
+
+function funname(f)
+    n = nameof(f)
+    String(n)[1] == '#' ? :function : n
+end
