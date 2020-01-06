@@ -188,7 +188,7 @@ end
     @test insertcols!(df, 1, :c2 => x, copycols=true) === df
     @test df.c2 == x
     @test df.c2 !== x
-    @test insertcols!(df, 1, :c3 => x) === df
+    @test insertcols!(df, 1, :c3 => x, copycols=false) === df
     @test df.c3 === x
 
     df = DataFrame(a=[1,2], a_1=[3,4])
@@ -217,14 +217,14 @@ end
     @test insertcols!(df, 1, :x=>x, copycols=true) == DataFrame(x = 1:2)
     @test df.x !== x
     df = DataFrame()
-    @test insertcols!(df, 1, :x=>x) == DataFrame(x = 1:2)
+    @test insertcols!(df, 1, :x=>x, copycols=false) == DataFrame(x = 1:2)
     @test df.x === x
 
     df = DataFrame()
     v1 = 1:2
     v2 = [3,4]
     v3 = [5,6]
-    @test insertcols!(df, 1, :a=>v1, :b=>v2, :c=>v3) == DataFrame(a=v1, b=v2, c=v3)
+    @test insertcols!(df, 1, :a=>v1, :b=>v2, :c=>v3, copycols=false) == DataFrame(a=v1, b=v2, c=v3)
     @test df.a isa Vector{Int}
     @test df.b === v2
     @test df.c === v3
@@ -237,7 +237,7 @@ end
     @test df.c !== v3
 
     df = DataFrame()
-    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, makeunique=true) ==
+    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, makeunique=true, copycols=false) ==
           DataFrame(a=v1, a_1=v2, a_2=v3)
     @test df.a isa Vector{Int}
     @test df.a_1 === v2
