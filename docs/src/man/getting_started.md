@@ -235,7 +235,7 @@ julia> df = DataFrame(v)
 │ 1   │ 1     │ 2     │
 │ 2   │ 3     │ 4     │
 ```
-You can also easily convert a data frame back to a vector of `NamedTuples`.
+You can also easily convert a data frame back to a vector of `NamedTuple`s.
 Here we present two ways that this can be achieved, one using `Tables.rowtable`
 function, and the other performing a `copy` on each row of a data frame produced
 by `eachrow` function:

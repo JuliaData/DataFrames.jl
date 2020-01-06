@@ -276,7 +276,7 @@ rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
     size(df::AbstractDataFrame, [dim])
 
 Return a tuple containing the number of rows and columns of `df`.
-Optionally you can specify a dimension, where `1` corresponds to rows
+Optionally a dimension `dim` can be specified, where `1` corresponds to rows
 and `2` corresponds to columns.
 
 See also: [`nrow`](@ref), [`ncol`](@ref)
@@ -313,7 +313,7 @@ Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
     ndims(::AbstractDataFrame)
     ndims(::Type{<:AbstractDataFrame})
 
-Return `2`.
+Return the number of dimensions of a data frame, which is always `2`.
 """
 Base.ndims(::AbstractDataFrame) = 2
 Base.ndims(::Type{<:AbstractDataFrame}) = 2

@@ -165,8 +165,9 @@ Base.view(r::DataFrameRow, ::Colon) = r
 """
     size(dfr::DataFrameRow, [dim])
 
-Return a tuple containing the number of elements of `dfr`.
-Optionally you can specify a dimension, where only `1` is accepted.
+Return a 1-tuple containing the number of elements of `dfr`.
+If an optional dimension `dim` is specified, it must be `1`, and the number of elements
+is returned directly as a number.
 
 See also: [`length`](@ref)
 
@@ -203,9 +204,9 @@ Base.length(r::DataFrameRow) = size(r, 1)
 
 """
     ndims(::DataFrameRow)
-    ndims(::Type{DataFrameRow})
+    ndims(::Type{<:DataFrameRow})
 
-Return `1`.
+Return the number of dimensions of a data frame row, which is always `1`.
 """
 Base.ndims(::DataFrameRow) = 1
 Base.ndims(::Type{<:DataFrameRow}) = 1

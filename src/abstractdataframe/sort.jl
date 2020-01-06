@@ -22,7 +22,7 @@ end
 """
     order(col::ColumnIndex; kwargs...)
 
-Specify sorting order for a `col` column in a data frame.
+Specify sorting order for a column `col` in a data frame.
 `kwargs` can be `lt`, `by`, `rev`, and `order` with values
 following the rules defined in [`sort!`](@ref).
 
