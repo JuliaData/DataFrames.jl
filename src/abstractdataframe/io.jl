@@ -272,7 +272,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
                 if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
                 else
-                    print(io, latex_escape(sprint(ourshow, cell)))
+                    print(io, latex_escape(sprint(ourshow, cell, context=io)))
                 end
             end
         end
