@@ -1,3 +1,9 @@
+# TODO:
+# * add transform and transfom! functions
+# * add `Col` wrapper for whole column operations
+# * update documentation
+# * add tests
+
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
 # 1) Int
@@ -27,8 +33,23 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:Base
     return c => fun => newcol
 end
 
-# TODO: decide how to handle the column name generation case when instead of
-# `ColumnIndex` we pass any valid column selection
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callable})
+    c = idx[first(sel)]
+    fun = last(sel)
+    if length(c) > 2
+        newcol = Symbol(join(_names(idx)[c[1:2]], "_"), "_⋯_", funname(fun))
+    else
+        newcol = Symbol(join(_names(idx)[c], "_"), "_", funname(fun))
+    end
+    return c => fun => newcol
+end
+
+struct TypeHolder{T} end
+
+function select_transform_helper(th::TypeHolder{T}, cols, fun, n) where T
+    fun_transform(fun, x::T) = fun(x)
+    map(i -> fun_transform(fun, T(ntuple(j -> cols[j][i], length(cols)))), 1:n)
+end
 
 function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
                                      Pair{<:Union{Int, AbstractVector{Int}},
@@ -39,13 +60,21 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
     if !isnothing(transformed_cols[newname])
         @assert !hasproperty(newdf, newname)
     end
+    col_idx = first(nc)
     if nc isa Pair{Int, Pair{ColRename, Symbol}}
-        newdf[!, newname] = copycols ? df[:, first(nc)] : df[!, first(nc)]
+        newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
     elseif nc isa Pair{Int, <:Pair{<:Base.Callable, Symbol}}
-        newdf[!, newname] = first(last(nc)).(df[!, first(nc)])
+        newdf[!, newname] = first(last(nc)).(df[!, col_idx])
     elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
-        # TODO: for now I pass a `DataFrameRow` to `fun` but it can be changed to `NamedTuple`
-        newdf[!, newname] = first(last(nc)).(eachrow(df[!, first(nc)]))
+        if length(col_idx) == 0
+            newdf[!, newname] = [first(last(nc))() for _ in axes(df, 1)]
+        else
+            cols = ntuple(i -> _columns(df)[col_idx[i]], length(col_idx))
+            colnames = ntuple(i -> _names(df)[col_idx[i]], length(col_idx))
+            newdf[!, newname] = select_transform_helper(TypeHolder{NamedTuple{colnames,
+                                                                              Tuple{eltype.(cols)...}}}(),
+                                                        cols, first(last(nc)), nrow(df))
+        end
     else
         throw(ErrorException("code should never reach this branch"))
     end
@@ -164,43 +193,6 @@ function select!(df::DataFrame, cs...)
     end
     return df
 end
-
-"""
-    transform!(df::DataFrame, cs...)
-
-The same as [`select!`](@ref) but retains all columns existing in `df`.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-
-julia> transform!(df, :a=><(1.5)=>:c)
-3×3 DataFrame
-│ Row │ a     │ b     │ c    │
-│     │ Int64 │ Int64 │ Bool │
-├─────┼───────┼───────┼──────┤
-│ 1   │ 1     │ 4     │ 1    │
-│ 2   │ 2     │ 5     │ 0    │
-│ 3   │ 3     │ 6     │ 0    │
-
-julia> transform!(df, :b=>(x->x^2)=>:b)
-3×3 DataFrame
-│ Row │ a     │ b     │ c    │
-│     │ Int64 │ Int64 │ Bool │
-├─────┼───────┼───────┼──────┤
-│ 1   │ 1     │ 16    │ 1    │
-│ 2   │ 2     │ 25    │ 0    │
-│ 3   │ 3     │ 36    │ 0    │
-```
-"""
-transform!(df::DataFrame, cs...) = select!(df, :, cs...)
 
 """
     select(df::AbstractDataFrame, inds...; copycols::Bool=true)
@@ -345,7 +337,13 @@ select(dfv::SubDataFrame, inds::Union{AbstractVector{<:Integer}, AbstractVector{
 
 function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
     if copycols
-        return select(copy(dfv), inds..., copycols=false)
+        newinds = [normalize_selection(index(df), c) for c in cs]
+        usedcols = Int[]
+        for ni in newinds
+            # ni is guaranteed to be a Pair with first being an index or an index
+            append!(usedcols, ni isa Pair ? first(ni) : ni)
+        end
+        return _select(dfv[:, usedcols], newinds, copycols=false)
     else
         # we do not support transformations here
         # newinds should not be large so making it Vector{Any} should be OK
@@ -361,31 +359,3 @@ function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
         return view(dfv, :, All(newinds...))
     end
 end
-
-"""
-    transform(df::AbstractDataFrame, cs...; kwargs...)
-
-The same as [`select`](@ref) but retains all columns existing in `df`.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-
-julia> transform(df, :a=><(1.5)=>:c)
-3×3 DataFrame
-│ Row │ a     │ b     │ c    │
-│     │ Int64 │ Int64 │ Bool │
-├─────┼───────┼───────┼──────┤
-│ 1   │ 1     │ 4     │ 1    │
-│ 2   │ 2     │ 5     │ 0    │
-│ 3   │ 3     │ 6     │ 0    │
-```
-"""
-transform(df::AbstractDataFrame, cs...; kwargs...) = select(df, :, cs...; kwargs...)

@@ -56,8 +56,6 @@ ncol
 rename!
 rename
 repeat
-transform
-transform!
 select
 select!
 show
