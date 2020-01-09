@@ -254,6 +254,11 @@ end
     @test df.p_1 isa Vector{Int}
     @test df.q_1 !== v2
     @test df.p_2 !== v3
+
+    df = DataFrame(a=1:3, b=4:6)
+    @test insertcols!(copy(df), :c=>7:9) == insertcols!(copy(df), 3, :c=>7:9)
+    df = DataFrame()
+    @test insertcols!(df, :a=>1:3) == DataFrame(a=1:3)
 end
 
 @testset "DataFrame constructors" begin
