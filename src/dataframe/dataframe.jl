@@ -582,8 +582,12 @@ end
 """
     insertcols!(df::DataFrame, ind::Int, (name=>col)::Pair{Symbol,<:AbstractVector}...;
                 makeunique::Bool=false, copycols::Bool=true)
+    insertcols!(df::DataFrame, (name=>col)::Pair{Symbol,<:AbstractVector}...;
+                makeunique::Bool=false, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated `DataFrame`.
+If `ind` argument is omitted it is by default set to `ncol(df)+1`
+(the column is inserted as a last column of a `DataFrame`).
 
 # Arguments
 - `df` : the DataFrame to which we want to add a column
@@ -679,6 +683,10 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol, <:Abst
     end
     return df
 end
+
+insertcols!(df::DataFrame, name_cols::Pair{Symbol, <:AbstractVector}...;
+            makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(df, ncol(df)+1, name_cols..., makeunique=makeunique, copycols=copycols)
 
 """
     copy(df::DataFrame; copycols::Bool=true)
