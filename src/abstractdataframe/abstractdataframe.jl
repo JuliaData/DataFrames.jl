@@ -72,7 +72,7 @@ Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
     rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString}; makeunique::Bool=false)
     rename!(df::AbstractDataFrame, (from => to)::Pair...)
     rename!(df::AbstractDataFrame, d::AbstractDict)
-    rename!(df::AbstractDataFrame, d::AbstractArray{<:Pair})
+    rename!(df::AbstractDataFrame, d::AbstractVector{<:Pair})
     rename!(f::Function, df::AbstractDataFrame)
 
 Rename columns of `df` in-place.
@@ -192,7 +192,7 @@ end
     rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString}; makeunique::Bool=false)
     rename(df::AbstractDataFrame, (from => to)::Pair...)
     rename(df::AbstractDataFrame, d::AbstractDict)
-    rename(df::AbstractDataFrame, d::AbstractArray{<:Pair})
+    rename(df::AbstractDataFrame, d::AbstractVector{<:Pair})
     rename(f::Function, df::AbstractDataFrame)
 
 Create a new data frame that is a copy of `df` with changed column names.
