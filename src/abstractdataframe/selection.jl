@@ -337,7 +337,7 @@ select(dfv::SubDataFrame, inds::Union{AbstractVector{<:Integer}, AbstractVector{
 
 function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
     if copycols
-        newinds = [normalize_selection(index(df), c) for c in cs]
+        newinds = [normalize_selection(index(df), c) for c in inds]
         usedcols = Int[]
         for ni in newinds
             # ni is guaranteed to be a Pair with first being an index or an index
