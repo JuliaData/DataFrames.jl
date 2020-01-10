@@ -284,7 +284,8 @@ select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
 select(df::DataFrame, cs...; copycols::Bool=true) =
     _select(df, [normalize_selection(index(df), c) for c in cs], copycols)
 
-function _select(df::DataFrame, ncs, copycols::Bool)
+# Do not to use _select with a SubDataFrame when copycols=false
+function _select(df::AbstractDataFrame, ncs, copycols::Bool)
     newdf = DataFrame()
     # it should be OK to be type unstable here + in this way we aviod having to compile custom Dict
     transformed_cols = Dict()
@@ -328,13 +329,7 @@ select(dfv::SubDataFrame, inds::Union{AbstractVector{<:Integer}, AbstractVector{
 
 function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
     if copycols
-        newinds = [normalize_selection(index(dfv), c) for c in inds]
-        usedcols = Int[]
-        for ni in newinds
-            # ni is guaranteed to be a Pair with first being an index or an index
-            append!(usedcols, ni isa Pair ? first(ni) : ni)
-        end
-        return _select(dfv[:, unique!(usedcols)], newinds, false)
+        return _select(dfv, [normalize_selection(index(dfv), c) for c in inds], true)
     else
         # we do not support transformations here
         # newinds should not be large so making it Vector{Any} should be OK
