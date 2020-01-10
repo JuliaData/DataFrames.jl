@@ -44,13 +44,6 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callabl
     return c => fun => newcol
 end
 
-struct TypeHolder{T} end
-
-function select_transform_helper(th::TypeHolder{T}, cols, fun, n) where T
-    fun_transform(fun, x::T) = fun(x)
-    map(i -> fun_transform(fun, T(ntuple(j -> cols[j][i], length(cols)))), 1:n)
-end
-
 function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
                                      Pair{<:Union{Int, AbstractVector{Int}},
                                           <:Pair{<:Base.Callable, Symbol}}},
@@ -69,11 +62,9 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
         if length(col_idx) == 0
             newdf[!, newname] = [first(last(nc))() for _ in axes(df, 1)]
         else
-            cols = ntuple(i -> _columns(df)[col_idx[i]], length(col_idx))
-            colnames = ntuple(i -> _names(df)[col_idx[i]], length(col_idx))
-            newdf[!, newname] = select_transform_helper(TypeHolder{NamedTuple{colnames,
-                                                                              Tuple{eltype.(cols)...}}}(),
-                                                        cols, first(last(nc)), nrow(df))
+            rowiterator = Tables.rows(Tables.columntable(df[!, col_idx]))
+            newdf[!, newname] = map(first(last(nc)),
+                                    Tables.namedtupleiterator(eltype(rowiterator), rowiterator))
         end
     else
         throw(ErrorException("code should never reach this branch"))
