@@ -275,16 +275,6 @@ import DataAPI: describe
 import Base: lastindex
 @deprecate lastindex(df::AbstractDataFrame) ncol(df)
 
-function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol}; makeunique::Bool=false)
-    Base.depwarn("Implicit broadcasting when inserting a column is deprecated. " *
-                 "Pass an `AbstractVector` instead. ", :insertcols!)
-    # this is not a fully correct way to upgrade a scalar but this is how upgrade_scalar
-    # worked so I keep it not to be breaking the method will be removed anyways
-    return insertcols!(df, col_ind,
-                       name_col[1] => fill(name_col[2], (ncol(df) == 0) ? 1 : nrow(df)),
-                       makeunique=makeunique)
-end
-
 function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...)
     Base.depwarn("inserting colums using a keyword argument is deprecated, use " *
                  "`insertcols!(df, col_ind, :$(keys(name_col)[1]) => $(name_col[1]), " *

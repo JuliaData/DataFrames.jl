@@ -259,6 +259,16 @@ end
     @test insertcols!(copy(df), :c=>7:9) == insertcols!(copy(df), 3, :c=>7:9)
     df = DataFrame()
     @test insertcols!(df, :a=>1:3) == DataFrame(a=1:3)
+
+    df = DataFrame(a=[1,2], a_1=[3,4])
+    insertcols!(df, 1, :a => 11, makeunique=true)
+    @test names(df) == [:a_2, :a, :a_1]
+    @test df[!, 1] == [11, 11]
+    insertcols!(df, 4, :a => 12, makeunique=true)
+    @test names(df) == [:a_2, :a, :a_1, :a_3]
+    @test df[!, 4] == [12, 12]
+    df = DataFrame()
+    @test insertcols!(df, :a=>"a", :b=>1:2) == DataFrame(a=["a", "a"], b=1:2)
 end
 
 @testset "DataFrame constructors" begin

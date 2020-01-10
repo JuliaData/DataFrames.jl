@@ -522,11 +522,6 @@ end
 end
 
 @testset "insertcols!" begin
-    df = DataFrame(a=[1,2], a_1=[3,4])
-    insertcols!(df, 1, :a => 11, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1]
-    insertcols!(df, 4, :a => 11, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1, :a_3]
     df = DataFrame(x = 1:2)
     @test insertcols!(df, 2, y=2:3) == DataFrame(x=1:2, y=2:3)
 end
