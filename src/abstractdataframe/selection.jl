@@ -343,7 +343,7 @@ function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
             # ni is guaranteed to be a Pair with first being an index or an index
             append!(usedcols, ni isa Pair ? first(ni) : ni)
         end
-        return _select(dfv[:, usedcols], newinds, copycols=false)
+        return _select(dfv[:, unique!(usedcols)], newinds, false)
     else
         # we do not support transformations here
         # newinds should not be large so making it Vector{Any} should be OK
