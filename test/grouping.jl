@@ -1004,6 +1004,7 @@ end
     @test gd2.ends == [4]
     @test gd2.idx == gd.idx
     @test gd[BitArray(idx2)] ≅ gd2
+    @test gd[1:2][false:true] ≅ gd[[2]]  # AbstractArray{Bool}
 
     # Colon
     gd3 = gd[:]
@@ -1022,13 +1023,19 @@ end
     for (i, j) in enumerate(idx4)
         @test gd4[i] == gd[j]
     end
-    @test_throws BoundsError gd[1:5]
     @test gd4.groups == [2, 1, 0, 0, 2, 1, 0, 0]
     @test gd4.starts == [3,1]
     @test gd4.ends == [4,2]
     @test gd4.idx == gd.idx
+
     # Infer eltype
     @test gd[Array{Any}(idx4)] ≅ gd4
+    # Mixed (non-Bool) integer types should work
+    @test gd[Any[idx4[1], Unsigned(idx4[2])]] ≅ gd4
+    @test_throws ArgumentError gd[Any[2, true]]
+
+    # Out-of-bounds
+    @test_throws BoundsError gd[1:5]
 end
 
 @testset "== and isequal" begin
@@ -1521,8 +1528,14 @@ end
         @test gd[Not(Not(Array{Any}(skip)))] ≅ expected2_inv
     end
 
+    # Mixed integer arrays
+    @test gd[Not(Any[Unsigned(skipped[1]), skipped[2:end]...])] ≅ expected2
+    @test_throws ArgumentError gd[Not(Any[2, true])]
+
+    # Boolean array
     @test gd[Not(skipped_bool)] ≅ expected2
     @test gd[Not(Not(skipped_bool))] ≅ expected2_inv
+    @test gd[1:2][Not(false:true)] ≅ gd[[1]]  # Not{AbstractArray{Bool}}
 
     # Inverted colon
     @test gd[Not(:)] ≅ gd[Int[]]
