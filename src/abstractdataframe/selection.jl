@@ -49,12 +49,12 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
                                           <:Pair{<:Base.Callable, Symbol}}},
                            df::DataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
+    col_idx = first(nc)
     transform_spec = last(nc)
     newname = last(transform_spec)
     if !isnothing(transformed_cols[newname])
         @assert !hasproperty(newdf, newname)
     end
-    col_idx = first(nc)
     if nc isa Pair{Int, Pair{ColRename, Symbol}}
         newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
     elseif nc isa Pair{Int, <:Pair{<:Base.Callable, Symbol}}
@@ -310,8 +310,8 @@ select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
 select(df::DataFrame, cs...; copycols::Bool=true) =
     _select(df, [normalize_selection(index(df), c) for c in cs], copycols)
 
-# Do not to use _select with a SubDataFrame when copycols=false
-function _select(df::AbstractDataFrame, ncs, copycols::Bool)
+function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
+    @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
     # the role of transformed_cols is the following
     # * make sure that we do not use the same target column name twice in transformations;
@@ -343,7 +343,7 @@ function _select(df::AbstractDataFrame, ncs, copycols::Bool)
     # later by `:a=>sin=>:a` because we know from `transformed_cols` variable that
     # it will be computed later via a transformation
     transformed_cols = Dict{Symbol, Any}()
-    for nc in ncs
+    for nc in normalized_cs
         if nc isa Pair
             newname = last(last(nc))
             @assert newname isa Symbol
@@ -354,7 +354,7 @@ function _select(df::AbstractDataFrame, ncs, copycols::Bool)
             transformed_cols[newname] = nc
         end
     end
-    for nc in ncs
+    for nc in normalized_cs
         if nc isa Union{Int, AbstractVector{Int}}
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
             for i in nc
