@@ -957,9 +957,12 @@ end
 
 @testset "iteration protocol" begin
     gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+    count = 0
     for v in gd
-        @test size(v) == (2,2)
+        count += 1
+        @test v ≅ gd[count]
     end
+    @test count == length(gd)
 end
 
 @testset "type stability of index fields" begin
