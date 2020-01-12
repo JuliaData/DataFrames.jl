@@ -649,7 +649,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
         for (n, _) in name_cols
             if hasproperty(df, n)
                 throw(ArgumentError("Column $n is already present in the data frame " *
-                                "which is not allowed when `makeunique=true`"))
+                                    "which is not allowed when `makeunique=true`"))
             end
         end
     end
@@ -665,8 +665,15 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
             if target_row_count == -1
                 target_row_count = length(v)
             elseif length(v) != target_row_count
-                throw(DimensionMismatch("length of new column $n which is $(length(v)) must match" *
-                                        " the target number of rows in data frame ($target_row_count)"))
+                if target_row_count == nrow(df)
+                    throw(DimensionMismatch("length of new column $n which is " *
+                                            "$(length(v)) must match the number " *
+                                            "of rows in data frame ($(nrow(df)))"))
+                else
+                    throw(DimensionMismatch("all vectors passed to be inserted into " *
+                                            "a data frame must have the same length."))
+
+                end
             end
         elseif v isa AbstractArray
             throw(ArgumentError("AbstractArray other than AbstractVector is not allowed " *
@@ -679,9 +686,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
 
     for (name, item) in name_cols
         if !(item isa AbstractVector)
-            if iterm isa AbstractArray
-                throw(ErrorException("This line of code should never be reached"))
-            end
+            @assert !(item isa AbstractArray)
             # fill a vector with iterm if it is not an array
             if ncol(df) == 0
                 target_row_count = 1
@@ -709,18 +714,15 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
         end
 
         if hasproperty(df, name)
-            if makeunique
-                k = 1
-                while true
-                    nn = Symbol("$(name)_$k")
-                    if !hasproperty(df, nn)
-                        name = nn
-                        break
-                    end
-                    k += 1
+            @assert makeunique
+            k = 1
+            while true
+                nn = Symbol("$(name)_$k")
+                if !hasproperty(df, nn)
+                    name = nn
+                    break
                 end
-            else
-                throw(ErrorException("This line of code should never be reached"))
+                k += 1
             end
         end
         insert!(index(df), col_ind, name)
