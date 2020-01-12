@@ -641,9 +641,48 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
                             "$(ncol(df)) columns at index $col_ind"))
     end
 
+    if !makeunique
+        if !allunique(first.(name_cols))
+            throw(ArgumentError("Names of columns to be inserted into a data frame must be " *
+                                "unique when `makeunique=true`"))
+        end
+        for (n, _) in name_cols
+            if hasproperty(df, n)
+                throw(ArgumentError("Column $n is already present in the data frame " *
+                                "which is not allowed when `makeunique=true`"))
+            end
+        end
+    end
+
+    if ncol(df) == 0
+        target_row_count = -1
+    else
+        target_row_count = nrow(df)
+    end
+
+    for (n, v) in name_cols
+        if v isa AbstractVector
+            if target_row_count == -1
+                target_row_count = length(v)
+            elseif length(v) != target_row_count
+                throw(DimensionMismatch("length of new column $n which is $(length(v)) must match" *
+                                        " the target number of rows in data frame ($target_row_count)"))
+            end
+        elseif v isa AbstractArray
+            throw(ArgumentError("AbstractArray other than AbstractVector is not allowed " *
+                                "to be added as a column of a data frame."))
+        end
+    end
+    if target_row_count == -1
+        target_row_count = 1
+    end
+
     for (name, item) in name_cols
-        if !(item isa AbstractArray)
-            # perform implicit broadcasting of an item that is not an array
+        if !(item isa AbstractVector)
+            if iterm isa AbstractArray
+                throw(ErrorException("This line of code should never be reached"))
+            end
+            # fill a vector with iterm if it is not an array
             if ncol(df) == 0
                 target_row_count = 1
                 for (_, v) in name_cols
@@ -655,12 +694,8 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
             else
                 target_row_count = nrow(df)
             end
-            target_row_count
             item = fill!(Tables.allocatecolumn(typeof(item), target_row_count),
                          item)
-        elseif !(item isa AbstractVector)
-            throw(ArgumentError("AbstractArray other than AbstractVector is not allowed " *
-                                "to be added as a column of a data frame."))
         end
 
         if ncol(df) == 0
@@ -671,11 +706,6 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
             end
             col_ind += 1
             continue
-        end
-
-        if nrow(df) != length(item)
-            throw(DimensionMismatch("length of new column ($(length(item))) must match" *
-                                    " the number of rows in data frame ($(nrow(df)))"))
         end
 
         if hasproperty(df, name)
@@ -690,8 +720,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
                     k += 1
                 end
             else
-                throw(ArgumentError("Duplicate variable name $name. Pass makeunique=true" *
-                                    " to make it unique using a suffix automatically."))
+                throw(ErrorException("This line of code should never be reached"))
             end
         end
         insert!(index(df), col_ind, name)
