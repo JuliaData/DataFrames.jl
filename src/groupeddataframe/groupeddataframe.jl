@@ -312,7 +312,7 @@ function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
 
     ints = zeros(Int, length(idxs))
     for (i, idx) in enumerate(idxs)
-        idx isa GroupIndexTypes || throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
+        (idx isa GroupIndexTypes && !(idx isa Bool)) || throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
         idx isa E || throw(ArgumentError("Mixed index types in array not allowed"))
         ints[i] = Base.to_index(gd, idx)
     end
@@ -335,10 +335,14 @@ function Base.to_indices(gd::GroupedDataFrame, (idx,)::Tuple{<:Not})
 end
 
 # InvertedIndex wrapping a boolean array
-# The definition above works but we need to define a specialized method to avoid
+# The definition above works but we need to define specialized methods to avoid
 # ambiguity in dispatch
 function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:Union{BitArray{1}, Vector{Bool}}}})
+    (Base.LogicalIndex(.!idx.skip),)
+end
+function Base.to_indices(gd::GroupedDataFrame,
+                         (idx,)::Tuple{Not{<:AbstractVector{Bool}}})
     (Base.LogicalIndex(.!idx.skip),)
 end
 
