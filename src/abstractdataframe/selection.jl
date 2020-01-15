@@ -41,9 +41,9 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callabl
     c = idx[first(sel)]
     fun = last(sel)
     if length(c) > 3
-        newcol = Symbol(join(_names(idx)[c[1:2]], "_"), "_etc_", funname(fun))
+        newcol = Symbol(join(@views _names(idx)[c[1:2]], '_'), "_etc_", funname(fun))
     else
-        newcol = Symbol(join(_names(idx)[c], "_"), "_", funname(fun))
+        newcol = Symbol(join(@views _names(idx)[c], '_'), '_', funname(fun))
     end
     return c => fun => newcol
 end
@@ -102,7 +102,7 @@ with `_`.
 
 If a collection of column names is passed to `select` then requesting duplicate column names
 in target data frame are accepted (e.g. `select(df, [:a], :, r"a")` is allowed)
-and they get deduplicated.
+and only the first occurrence is used.
 The exception is for single column selection, column renaming and column transformation
 operations, where it is not alloweded to select/rename/transform into the same column
 name more than once, e.g. `select(df, :a, :a => sin => :a)` or `select(df, :a, :a => :a)`
