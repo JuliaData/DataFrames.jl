@@ -399,13 +399,25 @@ function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
         # we do not support transformations here
         # newinds should not be large so making it Vector{Any} should be OK
         newinds = []
+        seen_single_column = Set{Int}()
         for ind in inds
-            newind = normalize_selection(index(dfv), ind)
-            if newind isa Pair
-                throw(ArgumentError("transforming and renaming columns of a " *
-                                    "`SubDataFrame` is not allowed when `copycols=false`"))
+            if ind isa ColumnIndex
+                ind_idx = index(dfv)[ind]
+                if ind_idx in seen_single_column
+                    throw(ArgumentError("passing duplicates of single column selection" *
+                                        "in `select` is not allowed"))
+                else
+                    push!(seen_single_column, ind_idx)
+                end
+                push!(new_column_name, ind_idx)
+            else
+                newind = normalize_selection(index(dfv), ind)
+                if newind isa Pair
+                    throw(ArgumentError("transforming and renaming columns of a " *
+                                        "`SubDataFrame` is not allowed when `copycols=false`"))
+                end
+                push!(newinds, newind)
             end
-            push!(newinds, newind)
         end
         return view(dfv, :, All(newinds...))
     end
