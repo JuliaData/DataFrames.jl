@@ -159,7 +159,8 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th>" * 
                  "<th>x1</th></tr><tr><th></th><th>String</th></tr></thead><tbody>" * 
-                 "<p>1 rows × 1 columns</p><tr><th>1</th><td>aaaaaaaaaa</td></tr></tbody></table>"
+                 "<p>1 rows × 1 columns</p><tr>" * 
+                 "<th>1</th><td>aaaaaaaaaaaaaaaaaaaa</td></tr></tbody></table>"
 
     # test that columns get omitted if they overflow the io width 
     # when io buffer has a width limit that will cutoff all columns
@@ -168,7 +169,8 @@ end
     str = String(take!(io.io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th></tr>" * 
                  "<tr><th></th></tr></thead><tbody>" * 
-                 "<p>1 rows × 1 columns (omitted printing of 1 columns)</p>"
+                 "<p>1 rows × 1 columns (omitted printing of 1 columns)</p>" * 
+                 "</tbody></table>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2)), rowid=10)

@@ -120,7 +120,10 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
             header *= " (omitted printing of $(size(df, 2)-mxcol) columns)"
         end
         write(io, "<p>$header</p>")
-        mxcol == 0 && return
+        if mxcol == 0
+            write(io, "</tbody></table>")
+            mxcol == 0 && return
+        end
     end
     for row in 1:mxrow
         write(io, "<tr>")
