@@ -137,6 +137,23 @@ end
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
                  "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64⍰</th></tr></thead>" *
                  "<tbody><tr><th>1</th><td>#undef</td><td>1.5</td></tr></tbody></table>"
+    
+    # test that columns get omitted if they overflow the io width 
+    io = IOBuffer()  # when io buffer has no width limit
+    show(io, MIME"text/html"(), DataFrame(x1 = "a"^20))
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th>" * 
+                 "<th>x1</th></tr><tr><th></th><th>String</th></tr></thead><tbody>" * 
+                 "<p>1 rows × 1 columns</p><tr><th>1</th><td>aaaaaaaaaa</td></tr></tbody></table>"
+
+    # test that columns get omitted if they overflow the io width 
+    # when io buffer has a width limit that will cutoff all columns
+    io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
+    show(io, MIME"text/html"(), DataFrame(x1 = "a"^20))
+    str = String(take!(io.io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th></tr>" * 
+                 "<tr><th></th></tr></thead><tbody>" * 
+                 "<p>1 rows × 1 columns (omitted printing of 1 columns)</p>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2)), rowid=10)

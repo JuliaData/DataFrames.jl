@@ -92,7 +92,8 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
         maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
-        mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
+        ttymxcol = searchsortedfirst(cumsum(maxwidths), tty_cols) - 1
+        mxcol = min(mxcol, ttymxcol)
     end
 
     cnames = _names(df)[1:mxcol]
@@ -114,12 +115,12 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</thead>")
     write(io, "<tbody>")
     if summary
-        omitmsg = if mxcol < size(df, 2)
-                      " (omitted printing of $(size(df, 2)-mxcol) columns)"
-                  else
-                      ""
-                  end
-        write(io, "<p>$(digitsep(size(df, 1))) rows × $(digitsep(ncol(df))) columns$omitmsg</p>")
+        header = "$(digitsep(size(df, 1))) rows × $(digitsep(ncol(df))) columns"
+        if mxcol < size(df, 2)
+            header *= " (omitted printing of $(size(df, 2)-mxcol) columns)"
+        end
+        write(io, "<p>$header</p>")
+        mxcol == 0 && return
     end
     for row in 1:mxrow
         write(io, "<tr>")

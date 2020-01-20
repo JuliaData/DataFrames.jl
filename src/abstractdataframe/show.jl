@@ -405,14 +405,28 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
+    colwidths = maxwidths .+ length(" ") .+ length(" |")  # add border + padding
+    colwidths[end] += length("|")  # add row column initial border
     chunkbounds = getchunkbounds(maxwidths, splitcols, displaysize(io)[2])
     nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
+    overflowsdisplay = false
     header = displaysummary ? summary(df) : ""
+
+    # when allcols=true and any column overflows display, print omission message
+    if allcols && any(colwidths[end] .+ colwidths[1:end-1] .> displaysize(io)[2])
+        header *= ". Display too narrow: Omitted printing of $ncols columns"
+        overflowsdisplay = true
+    end
+
+    # when allcols=false and all cols won't fit, print omission message
     if !allcols && length(chunkbounds) > 2
         header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
+        overflowsdisplay = chunkbounds[end] - chunkbounds[2] == ncols
     end
+
     println(io, header)
+    overflowsdisplay && return
 
     for chunkindex in 1:nchunks
         leftcol = chunkbounds[chunkindex] + 1

@@ -184,6 +184,23 @@ end
     │ 23  │ 10802633 │ 17029758 │ 12105159 │
     │ 24  │ 14660095 │ 13529407 │ 19204569 │
     │ 25  │ 16992761 │ 15379139 │ 13043102 │"""
+
+    # print omission message if allrows=true and any column overflows display
+    df_wide = DataFrame(x1 = "a" ^ 1000, x2 = 1)
+    io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
+    show(io, df_wide, allrows=true, allcols=true)
+    str = String(take!(io.io))
+    @test str == """
+    1×2 DataFrame. Display too narrow: Omitted printing of 2 columns
+    """
+
+    # print only omission message if allrows=false and no columns fit on display
+    io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
+    show(io, df_wide, allrows=true, allcols=false)
+    str = String(take!(io.io))
+    @test str == """
+    1×2 DataFrame. Omitted printing of 2 columns
+    """
 end
 
 @testset "IOContext parameters test" begin
