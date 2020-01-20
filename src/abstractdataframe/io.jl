@@ -242,7 +242,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
         mxrow = min(mxrow, tty_rows)
         maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
-        mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
+        ttymxcol = searchsortedfirst(cumsum(maxwidths), tty_cols) - 1
+        mxcol = min(mxcol, ttymxcol)
     end
 
     cnames = _names(df)[1:mxcol]
