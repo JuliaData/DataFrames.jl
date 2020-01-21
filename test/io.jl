@@ -41,20 +41,23 @@ end
     show(ioc, "text/latex", df)
     @test length(String(take!(ioc.io))) < 10000
 
-    # latex omits columns if provided an io context with width limit
+    # latex only prints omission message when all columns omitted
     df = DataFrame(x1 = "a" ^ 1000)
     ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => true)
     show(ioc, "text/latex", df)
     str = String(take!(ioc.io))
-    @test str == """
-        \\begin{tabular}{r|c}
-        \t&  & \\\\
-        \t\\hline
-        \t&  & \\\\
-        \t\\hline
-        \t1 & \$\\dots\$ \\\\
-        \\end{tabular}
-        """
+    @test str == "\\emph{omitted printing of 1 columns}\n"
+
+    # latex omits columns if provided an io context with width limit
+    df = DataFrame(x1 = 1, x2 = "a" ^ 1000)
+    ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => true)
+    show(ioc, "text/latex", df)
+    str = String(take!(ioc.io))
+    @test str == "\\begin{tabular}{r|cc}\n" * 
+                 "\t& x1 & \\\\\n\t\\hline\n\t& Int64 & \\\\\n" * 
+                 "\t\\hline\n\t1 & 1 & \$\\dots\$ \\\\\n\\" * 
+                 "end{tabular}\n" *
+                 "\\emph{omitted printing of 1 columns}\n"
 end
 
 #Test HTML output for IJulia and similar

@@ -405,28 +405,20 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    colwidths = maxwidths .+ length(" ") .+ length(" |")  # add border + padding
-    colwidths[end] += length("|")  # add row column initial border
-    chunkbounds = getchunkbounds(maxwidths, splitcols, displaysize(io)[2])
-    nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
+    colwidths = maxwidths .+ textwidth(" ") .+ textwidth(" |")  # padding+border
+    colwidths[end] += textwidth("|")  # add row column initial border
+    coltextwidths = colwidths[end] .+ colwidths[1:end-1]
+    coloverflows = coltextwidths .> displaysize(io)[2]
+    chunkbounds = getchunkbounds(maxwidths, splitcols || !allcols, displaysize(io)[2])
 
-    overflowsdisplay = false
+    nchunks = length(chunkbounds) - 1
+    nchunks = allcols ? nchunks : (chunkbounds[2] < 1 ? 0 : min(nchunks, 1))
+    nchunks = !allcols && splitcols && any(coloverflows) ? 0 : nchunks
+
     header = displaysummary ? summary(df) : ""
-
-    # when allcols=true and any column overflows display, print omission message
-    if allcols && any(colwidths[end] .+ colwidths[1:end-1] .> displaysize(io)[2])
-        header *= ". Display too narrow: Omitted printing of $ncols columns"
-        overflowsdisplay = true
-    end
-
-    # when allcols=false and all cols won't fit, print omission message
-    if !allcols && length(chunkbounds) > 2
-        header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
-        overflowsdisplay = chunkbounds[end] - chunkbounds[2] == ncols
-    end
-
+    nomit = ncols - sum(chunkbounds[1:nchunks+1])
+    header *= nomit > 0 ? ". Omitted printing of $(nomit) columns" : ""
     println(io, header)
-    overflowsdisplay && return
 
     for chunkindex in 1:nchunks
         leftcol = chunkbounds[chunkindex] + 1

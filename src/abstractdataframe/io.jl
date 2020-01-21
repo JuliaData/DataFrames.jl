@@ -122,7 +122,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         write(io, "<p>$header</p>")
         if mxcol == 0
             write(io, "</tbody></table>")
-            mxcol == 0 && return
+            return
         end
     end
     for row in 1:mxrow
@@ -249,6 +249,14 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         mxcol = min(mxcol, ttymxcol)
     end
 
+    nomit = size(df, 2) - mxcol
+    caption = nomit > 0 ? "omitted printing of $nomit columns" : ""
+
+    if mxcol == 0 && size(df, 2) > 0
+        write(io, "\\emph{$caption}\n")
+        return
+    end
+
     cnames = _names(df)[1:mxcol]
     alignment = repeat("c", mxcol)
     write(io, "\\begin{tabular}{r|")
@@ -293,6 +301,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         write(io, " \\\\\n")
     end
     write(io, "\\end{tabular}\n")
+    nomit > 0 && write(io, "\\emph{$caption}\n")
+    return
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)

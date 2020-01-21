@@ -185,22 +185,32 @@ end
     │ 24  │ 14660095 │ 13529407 │ 19204569 │
     │ 25  │ 16992761 │ 15379139 │ 13043102 │"""
 
-    # print omission message if allrows=true and any column overflows display
-    df_wide = DataFrame(x1 = "a" ^ 1000, x2 = 1)
-    io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
-    show(io, df_wide, allrows=true, allcols=true)
-    str = String(take!(io.io))
-    @test str == """
-    1×2 DataFrame. Display too narrow: Omitted printing of 2 columns
-    """
+    # test that long columns always print if allcols=true
+    for splitcols=[true, false]
+        df_wide = DataFrame(x1 = "a" ^ 1000, x2 = 1)
+        io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
+        show(io, df_wide, splitcols=splitcols, allcols=true)
+        str = String(take!(io.io))
+        @test occursin("a" ^ 1000, str)
+    end
 
-    # print only omission message if allrows=false and no columns fit on display
+    # long columns trigger omission when splitcols=false
+    df_wide = DataFrame(x1 = 1, x2 = "a" ^ 1000, x3 = :a)
     io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
-    show(io, df_wide, allrows=true, allcols=false)
+    show(io, df_wide, splitcols=false, allcols=false)
     str = String(take!(io.io))
-    @test str == """
-    1×2 DataFrame. Omitted printing of 2 columns
-    """
+    @test str == """1×3 DataFrame. Omitted printing of 2 columns
+                 │ Row │ x1    │
+                 │     │ Int64 │
+                 ├─────┼───────┤
+                 │ 1   │ 1     │"""
+  
+    # any long columns case all columns to be omitted when splitcols=true
+    df_wide = DataFrame(x1 = 1, x2 = "a" ^ 1000, x3 = :a)
+    io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
+    show(io, df_wide, splitcols=true, allcols=false)
+    str = String(take!(io.io))
+    @test str == "1×3 DataFrame. Omitted printing of 3 columns\n"
 end
 
 @testset "IOContext parameters test" begin
