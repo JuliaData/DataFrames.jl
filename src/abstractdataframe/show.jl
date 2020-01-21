@@ -360,8 +360,10 @@ NOTE: The value of `maxwidths[end]` must be the string width of
   required to render each column.
 - `allcols::Bool = false`: Whether to print all columns, rather than
   a subset that fits the device width.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the screen width
-  rather than printing all columns in the same block.
+- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
+  screen width rather than printing all columns in the same block. Unless
+  `allcols==true`, all columns will be omitted if any single chunk overflows
+  the screen width. 
 - `rowlabel::Symbol`: What label should be printed when rendering the
   numeric ID's of each row? Defaults to `:Row`.
 - `displaysummary::Bool`: Should a brief string summary of the
