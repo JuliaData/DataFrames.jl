@@ -195,33 +195,33 @@ end
     end
 
     # long columns trigger omission when splitcols=false
-    df_wide = DataFrame(x1 = 1, x2 = "a" ^ 1000, x3 = :a)
+    df_wide = DataFrame(x1 = "a", x2 = "a" ^ 1000, x3 = "a")
     io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
     show(io, df_wide, splitcols=false, allcols=false)
     str = String(take!(io.io))
     @test str == """
     1×3 DataFrame. Omitted printing of 2 columns
-    │ Row │ x1    │
-    │     │ Int64 │
-    ├─────┼───────┤
-    │ 1   │ 1     │"""
+    │ Row │ x1     │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ a      │"""
   
     # when splitcols=true, but allcols=false, print in a single chunk,
     # omitting any columns that would overflow display
-    df_wide = DataFrame(x1 = 1, x2 = 2, x3 = "a" ^ 1000, x4 = :a)
+    df_wide = DataFrame(x1 = "a", x2 = "a", x3 = "a" ^ 1000, x4 = "a")
     io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
     show(io, df_wide, splitcols=true, allcols=false)
     str = String(take!(io.io))
     @test str == """
     1×4 DataFrame. Omitted printing of 3 columns
-    │ Row │ x1    │
-    │     │ Int64 │
-    ├─────┼───────┤
-    │ 1   │ 1     │"""
+    │ Row │ x1     │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ a      │"""
 
     # ensure no columns get printed when the first column overflows display
     # and allcols=false
-    df_wide = DataFrame(x1 = "a" ^ 1000, x2 = :a)
+    df_wide = DataFrame(x1 = "a" ^ 1000, x2 = "a")
     io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
     for splitcols=[true, false]
         show(io, df_wide, splitcols=true, allcols=false)
