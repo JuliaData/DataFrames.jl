@@ -199,18 +199,25 @@ end
     io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
     show(io, df_wide, splitcols=false, allcols=false)
     str = String(take!(io.io))
-    @test str == """1×3 DataFrame. Omitted printing of 2 columns
-                 │ Row │ x1    │
-                 │     │ Int64 │
-                 ├─────┼───────┤
-                 │ 1   │ 1     │"""
+    @test str == """
+    1×3 DataFrame. Omitted printing of 2 columns
+    │ Row │ x1    │
+    │     │ Int64 │
+    ├─────┼───────┤
+    │ 1   │ 1     │"""
   
-    # any long columns case all columns to be omitted when splitcols=true
-    df_wide = DataFrame(x1 = 1, x2 = "a" ^ 1000, x3 = :a)
+    # when splitcols=true, but allcols=false, print in a single chunk,
+    # omitting any columns that would overflow display
+    df_wide = DataFrame(x1 = 1, x2 = 2, x3 = "a" ^ 1000, x4 = :a)
     io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
     show(io, df_wide, splitcols=true, allcols=false)
     str = String(take!(io.io))
-    @test str == "1×3 DataFrame. Omitted printing of 3 columns\n"
+    @test str == """
+    1×4 DataFrame. Omitted printing of 3 columns
+    │ Row │ x1    │
+    │     │ Int64 │
+    ├─────┼───────┤
+    │ 1   │ 1     │"""
 end
 
 @testset "IOContext parameters test" begin

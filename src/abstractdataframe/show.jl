@@ -173,20 +173,15 @@ function getprintedwidth(maxwidths::Vector{Int}) # -> Int
 end
 
 """
-    getchunkbounds(maxwidths::Vector{Int},
+    getchunkedcols(maxwidths::Vector{Int},
                    splitcols::Bool,
                    availablewidth::Int)
 
-When rendering an `AbstractDataFrame` to a REPL window in chunks, each of
-which will fit within the width of the REPL window, this function will
-return the indices of the columns that should be included in each chunk.
-
-NOTE: The resulting bounds should be interpreted as follows: the
-i-th chunk bound is the index MINUS 1 of the first column in the
-i-th chunk. The (i + 1)-th chunk bound is the EXACT index of the
-last column in the i-th chunk. For example, the bounds [0, 3, 5]
-imply that the first chunk contains columns 1-3 and the second chunk
-contains columns 4-5.
+When rendering an `AbstractDataFrame` to a REPL window in chunks, each of which
+will fit within the width of the REPL window, this function will return an
+array of chunk column indices that should be included in each chunk. For
+example, if printing is divided into two chunks containing columns 1 through 3
+and 4 through 5 respectively, `getchunkedcols` will return [[1, 2, 3], [4, 5]].
 
 # Arguments
 - `maxwidths::Vector{Int}`: The maximum width needed to render each
@@ -203,38 +198,38 @@ julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
 
 julia> maxwidths = DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
 3-element Array{Int64,1}:
- 1
- 1
+ 5
+ 6
  3
 
-julia> DataFrames.getchunkbounds(maxwidths, true, displaysize()[2])
-2-element Array{Int64,1}:
- 0
- 2
+julia> DataFrames.getchunkedcols(maxwidths, true, displaysize()[2])
+1-element Array{Array{Any,1},1}:
+ [1, 2]
 ```
 """
-function getchunkbounds(maxwidths::Vector{Int},
-                        splitcols::Bool,
-                        availablewidth::Int) # -> Vector{Int}
+function getchunkedcols(maxwidths::Vector{Int},
+                         splitcols::Bool,
+                         availablewidth::Int) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
     if splitcols
-        chunkbounds = [0]
+        chunkedcols = [[]] # begin with a single chunk with no columns
         # Include 2 spaces + 2 | characters for row/col label
         totalwidth = rowmaxwidth + 4
         for j in 1:ncols
             # Include 2 spaces + | character in per-column character count
             totalwidth += maxwidths[j] + 3
-            if totalwidth > availablewidth
-                push!(chunkbounds, j - 1)
+            if j > 1 && totalwidth > availablewidth
+                push!(chunkedcols, [j])
                 totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
+            else
+                push!(chunkedcols[end], j)
             end
         end
-        push!(chunkbounds, ncols)
     else
-        chunkbounds = [0, ncols]
+        chunkedcols = [[1:ncols...]]
     end
-    return chunkbounds
+    return chunkedcols
 end
 
 """
@@ -361,9 +356,8 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `allcols::Bool = false`: Whether to print all columns, rather than
   a subset that fits the device width.
 - `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
-  screen width rather than printing all columns in the same block. Unless
-  `allcols==true`, all columns will be omitted if any single chunk overflows
-  the screen width. 
+  screen width rather than printing all columns in the same block. By default
+  this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol`: What label should be printed when rendering the
   numeric ID's of each row? Defaults to `:Row`.
 - `displaysummary::Bool`: Should a brief string summary of the
@@ -410,21 +404,27 @@ function showrows(io::IO,
     colwidths = maxwidths .+ textwidth(" ") .+ textwidth(" |")  # padding+border
     colwidths[end] += textwidth("|")  # add row column initial border
     coltextwidths = colwidths[end] .+ colwidths[1:end-1]
-    coloverflows = coltextwidths .> displaysize(io)[2]
-    chunkbounds = getchunkbounds(maxwidths, splitcols || !allcols, displaysize(io)[2])
 
-    nchunks = length(chunkbounds) - 1
-    nchunks = allcols ? nchunks : (chunkbounds[2] < 1 ? 0 : min(nchunks, 1))
-    nchunks = !allcols && splitcols && any(coloverflows) ? 0 : nchunks
+    chunkedcols = getchunkedcols(maxwidths, splitcols || !allcols, displaysize(io)[2])
+    chunkwidths = [colwidths[end] + sum(colwidths[cols]) for cols=chunkedcols]
+    chunkoverflows = chunkwidths .> displaysize(io)[2]
+
+    if !allcols && any(chunkoverflows)
+        chunkedcols = chunkedcols[1:(findfirst(chunkoverflows) - 1)]
+    end
+
+    if !allcols && length(chunkedcols) > 0
+        chunkedcols = chunkedcols[[1]]
+    end
 
     header = displaysummary ? summary(df) : ""
-    nomit = ncols - sum(chunkbounds[1:nchunks+1])
+    nomit = length(chunkedcols) > 0 ? ncols - sum(length.(chunkedcols)) : ncols
     header *= nomit > 0 ? ". Omitted printing of $(nomit) columns" : ""
     println(io, header)
 
-    for chunkindex in 1:nchunks
-        leftcol = chunkbounds[chunkindex] + 1
-        rightcol = chunkbounds[chunkindex + 1]
+    for (chunkindex, chunkcols) in enumerate(chunkedcols)
+        leftcol = chunkcols[1]
+        rightcol = chunkcols[end]
 
         # Print column names
         @printf io "│ %s" rowlabel
@@ -433,7 +433,7 @@ function showrows(io::IO,
             write(io, ' ')
         end
         print(io, " │ ")
-        for j in leftcol:rightcol
+        for j in chunkcols
             s = _names(df)[j]
             ourshow(io, s)
             padding = maxwidths[j] - ourstrwidth(io, s)
@@ -454,7 +454,7 @@ function showrows(io::IO,
             write(io, ' ')
         end
         print(io, " │ ")
-        for j in leftcol:rightcol
+        for j in chunkcols
             s = compacttype(eltype(df[!, j]), maxwidths[j])
             printstyled(io, s, color=:light_black)
             padding = maxwidths[j] - ourstrwidth(io, s)
@@ -474,7 +474,7 @@ function showrows(io::IO,
             write(io, '─')
         end
         write(io, '┼')
-        for j in leftcol:rightcol
+        for j in chunkcols
             for itr in 1:(maxwidths[j] + 2)
                 write(io, '─')
             end
@@ -507,7 +507,7 @@ function showrows(io::IO,
         end
 
         # Print newlines to separate chunks
-        if chunkindex < nchunks
+        if chunkindex < length(chunkedcols)
             print(io, "\n\n")
         end
     end
@@ -587,9 +587,9 @@ while `splitcols` defaults to `true`.
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` does not have the `IOContext` property
   `limit` set.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the screen width
-  rather than printing all columns in the same block. Only applies if `allcols` is `true`.
-  By default this is the case only if `io` has the `IOContext` property `limit` set.
+- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
+  screen width rather than printing all columns in the same block. By default
+  this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 
