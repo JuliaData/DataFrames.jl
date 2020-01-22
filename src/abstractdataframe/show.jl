@@ -208,26 +208,27 @@ julia> DataFrames.getchunkedcols(maxwidths, true, displaysize()[2])
 ```
 """
 function getchunkedcols(maxwidths::Vector{Int},
-                         splitcols::Bool,
-                         availablewidth::Int) # -> Vector{Int}
+                        splitcols::Bool,
+                        availablewidth::Int) # -> Vector{UnitRange{Int}}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
     if splitcols
-        chunkedcols = [[]] # begin with a single chunk with no columns
+        chunkedcols = UnitRange{Int}[]
         # Include 2 spaces + 2 | characters for row/col label
         totalwidth = rowmaxwidth + 4
+        nchunkedcols = 0
         for j in 1:ncols
             # Include 2 spaces + | character in per-column character count
             totalwidth += maxwidths[j] + 3
             if j > 1 && totalwidth > availablewidth
-                push!(chunkedcols, [j])
+                push!(chunkedcols, (nchunkedcols+1):(j-1))
+                nchunkedcols = (j-1)
                 totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
-            else
-                push!(chunkedcols[end], j)
             end
         end
+        ncols > 0 && push!(chunkedcols, (nchunkedcols+1):ncols)
     else
-        chunkedcols = [[1:ncols...]]
+        chunkedcols = [1:ncols]
     end
     return chunkedcols
 end
@@ -351,13 +352,14 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `rowindices2::AbstractVector{Int}`: The indices of the second subset
   of rows to be rendered. An ellipsis will be printed before
   rendering this second subset of rows.
-- `maxwidths::Vector{Int}`: The pre-computed maximum string width
-  required to render each column.
+- `maxwidths::Vector{Int}`: The pre-computed maximum string width required to
+  render each column, with the row index column width at the appended to the
+  end.
 - `allcols::Bool = false`: Whether to print all columns, rather than
   a subset that fits the device width.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
-  screen width rather than printing all columns in the same block. By default
-  this is the case only if `io` has the `IOContext` property `limit` set.
+- `splitcols::Bool = false`: Whether to split printing in chunks of columns
+  fitting the `IO` display width rather than printing all columns in the same
+  block. 
 - `rowlabel::Symbol`: What label should be printed when rendering the
   numeric ID's of each row? Defaults to `:Row`.
 - `displaysummary::Bool`: Should a brief string summary of the
@@ -405,20 +407,18 @@ function showrows(io::IO,
     colwidths[end] += textwidth("|")  # add row column initial border
     coltextwidths = colwidths[end] .+ colwidths[1:end-1]
 
-    chunkedcols = getchunkedcols(maxwidths, splitcols || !allcols, displaysize(io)[2])
-    chunkwidths = [colwidths[end] + sum(colwidths[cols]) for cols=chunkedcols]
+    onechunk = allcols && !splitcols
+    chunkedcols = getchunkedcols(maxwidths, !onechunk, displaysize(io)[2])
+    chunkedcols = allcols ? chunkedcols : chunkedcols[[1]]
+    chunkwidths = [colwidths[end] + sum(@view colwidths[c]) for c in chunkedcols]
     chunkoverflows = chunkwidths .> displaysize(io)[2]
 
     if !allcols && any(chunkoverflows)
         chunkedcols = chunkedcols[1:(findfirst(chunkoverflows) - 1)]
     end
 
-    if !allcols && length(chunkedcols) > 0
-        chunkedcols = chunkedcols[[1]]
-    end
-
     header = displaysummary ? summary(df) : ""
-    nomit = length(chunkedcols) > 0 ? ncols - sum(length.(chunkedcols)) : ncols
+    nomit = isempty(chunkedcols) ? ncols : ncols - sum(length, chunkedcols)
     header *= nomit > 0 ? ". Omitted printing of $(nomit) columns" : ""
     println(io, header)
 

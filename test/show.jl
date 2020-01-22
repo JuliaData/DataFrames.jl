@@ -218,6 +218,18 @@ end
     │     │ Int64 │
     ├─────┼───────┤
     │ 1   │ 1     │"""
+
+    # ensure no columns get printed when the first column overflows display
+    # and allcols=false
+    df_wide = DataFrame(x1 = "a" ^ 1000, x2 = :a)
+    io = IOContext(IOBuffer(), :displaysize=>(10,20), :limit=>true)
+    for splitcols=[true, false]
+        show(io, df_wide, splitcols=true, allcols=false)
+        str = String(take!(io.io))
+        @test str == """
+        1×2 DataFrame. Omitted printing of 2 columns
+        """
+    end
 end
 
 @testset "IOContext parameters test" begin
