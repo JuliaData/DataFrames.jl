@@ -272,6 +272,26 @@ rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 
+"""
+    size(df::AbstractDataFrame, [dim])
+
+Return a tuple containing the number of rows and columns of `df`.
+Optionally a dimension `dim` can be specified, where `1` corresponds to rows
+and `2` corresponds to columns.
+
+See also: [`nrow`](@ref), [`ncol`](@ref)
+
+# Examples
+```julia
+julia> df = DataFrame(a=1:3, b='a':'c');
+
+julia> size(df)
+(3, 2)
+
+julia> size(df, 1)
+3
+```
+"""
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
     if i == 1
@@ -288,6 +308,12 @@ Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 
+"""
+    ndims(::AbstractDataFrame)
+    ndims(::Type{<:AbstractDataFrame})
+
+Return the number of dimensions of a data frame, which is always `2`.
+"""
 Base.ndims(::AbstractDataFrame) = 2
 Base.ndims(::Type{<:AbstractDataFrame}) = 2
 
