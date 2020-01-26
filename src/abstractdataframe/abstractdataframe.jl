@@ -863,9 +863,13 @@ end
 
 """
     filter(function, df::AbstractDataFrame)
+    filter(col => function, df::AbstractDataFrame)
 
 Return a copy of data frame `df` containing only rows for which `function`
-returns `true`. The function is passed a `DataFrameRow` as its only argument.
+returns `true`. The function is passed a `DataFrameRow` as its only argument
+if `col` is not specified.
+If `col` is passed then elements of column `col` are passed to the function.
+Passing `col` leads to a more efficient execution of the operation.
 
 # Examples
 ```
@@ -886,15 +890,28 @@ julia> filter(row -> row[:x] > 1, df)
 ├─────┼───────┼────────┤
 │ 1   │ 3     │ b      │
 │ 2   │ 2     │ a      │
+
+julia> filter(:x => >(1), df)
+2×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 2     │ a      │
 ```
 """
-Base.filter(f, df::AbstractDataFrame) = df[collect(f(r)::Bool for r in eachrow(df)), :]
+Base.filter(f, df::AbstractDataFrame) = df[_filter_helper(f, eachrow(df)), :]
+Base.filter(p::Pair{<:ColumnIndex, <:Any}, df::AbstractDataFrame) =
+    df[_filter_helper(last(p), df[!, first(p)]), :]
+_filter_helper(f, itr) = collect(f(r)::Bool for r in itr)
 
 """
     filter!(function, df::AbstractDataFrame)
 
-Remove rows from data frame `df` for which `function` returns `false`.
-The function is passed a `DataFrameRow` as its only argument.
+Remove rows from data frame `df` for which `function` returns `false`. The function
+is passed a `DataFrameRow` as its only argument if `col` is not specified.
+If `col` is passed then elements of column `col` are passed to the function.
+Passing `col` leads to a more efficient execution of the operation.
 
 # Examples
 ```
@@ -917,10 +934,22 @@ julia> df
 ├─────┼───────┼────────┤
 │ 1   │ 3     │ b      │
 │ 2   │ 2     │ a      │
+
+julia> filter!(:x => ==(3), df);
+
+julia> df
+1×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) =
-    deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
+    deleterows!(df, _filter!_felper(f, eachrow(df)))
+Base.filter!(p::Pair{<:ColumnIndex, <:Any}, df::AbstractDataFrame) =
+    deleterows!(df, _filter!_helper(last(p), df[!, first(p)]))
+_filter!_helper(f, itr) = findall(collect(!f(r)::Bool for r in itr))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
