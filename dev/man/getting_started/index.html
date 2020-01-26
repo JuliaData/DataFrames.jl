@@ -11,7 +11,7 @@ julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quo
 │ 2   │ 2     │ F      │
 │ 3   │ 3     │ F      │
 │ 4   │ 4     │ M      │
-</code></pre><p>Columns can be directly (i.e. without copying) accessed via <code>df.col</code> or <code>df[!, :col]</code>. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (<code>:col</code> or <code>Symbol(&quot;col&quot;)</code>) rather than strings (<code>&quot;col&quot;</code>). Columns can also be accessed using an integer index specifying their position. </p><p>Since <code>df[!, :col]</code> does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original <code>df</code>. To get a copy of the column use <code>df[:, :col]</code>: changing the vector returned by this syntax does not change <code>df</code>.</p><pre><code class="language-julia-repl">julia&gt; df.A
+</code></pre><p>Columns can be directly (i.e. without copying) accessed via <code>df.col</code> or <code>df[!, :col]</code>. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (<code>:col</code> or <code>Symbol(&quot;col&quot;)</code>) rather than strings (<code>&quot;col&quot;</code>). Columns can also be accessed using an integer index specifying their position.</p><p>Since <code>df[!, :col]</code> does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original <code>df</code>. To get a copy of the column use <code>df[:, :col]</code>: changing the vector returned by this syntax does not change <code>df</code>.</p><pre><code class="language-julia-repl">julia&gt; df.A
 4-element Array{Int64,1}:
  1
  2
@@ -118,7 +118,23 @@ CSV.write(&quot;dataframe.csv&quot;, df)
 SQLite.load!(df, db, &quot;dataframe_table&quot;)
 
 # transform a DataFrame through Query.jl package
-df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><h2><a class="nav-anchor" id="Working-with-Data-Frames-1" href="#Working-with-Data-Frames-1">Working with Data Frames</a></h2><h3><a class="nav-anchor" id="Examining-the-Data-1" href="#Examining-the-Data-1">Examining the Data</a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><p>A particular common case of a collection that supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface is a vector of <code>NamedTuple</code>s:</p><pre><code class="language-none">julia&gt; v = [(a=1,b=2), (a=3,b=4)]
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)
+
+julia&gt; df = DataFrame(v)
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+│ 2   │ 3     │ 4     │</code></pre><p>You can also easily convert a data frame back to a vector of <code>NamedTuple</code>s:</p><pre><code class="language-none">julia&gt; using Tables
+
+julia&gt; Tables.rowtable(df)
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)</code></pre><h2><a class="nav-anchor" id="Working-with-Data-Frames-1" href="#Working-with-Data-Frames-1">Working with Data Frames</a></h2><h3><a class="nav-anchor" id="Examining-the-Data-1" href="#Examining-the-Data-1">Examining the Data</a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
 500×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
