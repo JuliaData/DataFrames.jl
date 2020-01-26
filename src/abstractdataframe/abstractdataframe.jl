@@ -911,7 +911,7 @@ function Base.filter(p::Pair, df::AbstractDataFrame)
     else
         rowiterator = Tables.rows(Tables.columntable(df[!, cols]))
         nt_itr = Tables.namedtupleiterator(eltype(rowiterator), rowiterator)
-        return df[_filter_helper(last(p), nt_itr]
+        return df[_filter_helper(last(p), nt_itr), :]
     end
 end
 
