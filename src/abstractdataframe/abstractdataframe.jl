@@ -863,13 +863,15 @@ end
 
 """
     filter(function, df::AbstractDataFrame)
-    filter(col => function, df::AbstractDataFrame)
+    filter(cols => function, df::AbstractDataFrame)
 
 Return a copy of data frame `df` containing only rows for which `function`
 returns `true`. The function is passed a `DataFrameRow` as its only argument
-if `col` is not specified.
-If `col` is passed then elements of column `col` are passed to the function.
-Passing `col` leads to a more efficient execution of the operation.
+if `cols` is not specified.
+If `cols` is passed then elements of column `cols` are passed to the function,
+if `cols` is a single column or as a `NamedTuple` if multiple columns are passed
+(any valid column selector is accepted). Passing `cols` leads to a more efficient
+execution of the operation for large data frames.
 
 # Examples
 ```
@@ -901,8 +903,18 @@ julia> filter(:x => >(1), df)
 ```
 """
 Base.filter(f, df::AbstractDataFrame) = df[_filter_helper(f, eachrow(df)), :]
-Base.filter(p::Pair{<:ColumnIndex, <:Any}, df::AbstractDataFrame) =
-    df[_filter_helper(last(p), df[!, first(p)]), :]
+
+function Base.filter(p::Pair, df::AbstractDataFrame)
+    cols = first(p)
+    if cols isa ColumnIndex
+        return df[_filter_helper(last(p), df[!, cols]), :]
+    else
+        rowiterator = Tables.rows(Tables.columntable(df[!, cols]))
+        nt_itr = Tables.namedtupleiterator(eltype(rowiterator), rowiterator)
+        return df[_filter_helper(last(p), nt_itr]
+    end
+end
+
 _filter_helper(f, itr) = collect(f(r)::Bool for r in itr)
 
 """
@@ -910,8 +922,10 @@ _filter_helper(f, itr) = collect(f(r)::Bool for r in itr)
 
 Remove rows from data frame `df` for which `function` returns `false`. The function
 is passed a `DataFrameRow` as its only argument if `col` is not specified.
-If `col` is passed then elements of column `col` are passed to the function.
-Passing `col` leads to a more efficient execution of the operation.
+If `cols` is passed then elements of column `cols` are passed to the function,
+if `cols` is a single column or as a `NamedTuple` if multiple columns are passed
+(any valid column selector is accepted). Passing `cols` leads to a more efficient
+execution of the operation for large data frames.
 
 # Examples
 ```
@@ -946,9 +960,19 @@ julia> df
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) =
-    deleterows!(df, _filter!_felper(f, eachrow(df)))
-Base.filter!(p::Pair{<:ColumnIndex, <:Any}, df::AbstractDataFrame) =
-    deleterows!(df, _filter!_helper(last(p), df[!, first(p)]))
+    deleterows!(df, _filter!_helper(f, eachrow(df)))
+
+function Base.filter!(p::Pair, df::AbstractDataFrame)
+    cols = first(p)
+    if cols isa ColumnIndex
+        return deleterows!(df, _filter!_helper(last(p), df[!, cols]))
+    else
+        rowiterator = Tables.rows(Tables.columntable(df[!, cols]))
+        nt_itr = Tables.namedtupleiterator(eltype(rowiterator), rowiterator)
+        return deleterows!(df, _filter!_helper(last(p), nt_itr))
+    end
+end
+
 _filter!_helper(f, itr) = findall(collect(!f(r)::Bool for r in itr))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
