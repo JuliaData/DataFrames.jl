@@ -672,7 +672,6 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
                 else
                     throw(DimensionMismatch("all vectors passed to be inserted into " *
                                             "a data frame must have the same length."))
-
                 end
             end
         elseif v isa AbstractArray
@@ -687,53 +686,34 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
     for (name, item) in name_cols
         if !(item isa AbstractVector)
             @assert !(item isa AbstractArray)
-            # fill a vector with iterm if it is not an array
-            if ncol(df) == 0
-                target_row_count = 1
-                for (_, v) in name_cols
-                    if v isa AbstractVector
-                        target_row_count = length(v)
-                        break
-                    end
-                end
-            else
-                target_row_count = nrow(df)
-            end
-            item = fill!(Tables.allocatecolumn(typeof(item), target_row_count),
-                         item)
-        end
-
-        if ncol(df) == 0
-            if copycols
-                df[:, name] = item
-            else
-                df[!, name] = item
-            end
-            col_ind += 1
-            continue
-        end
-
-        if hasproperty(df, name)
-            @assert makeunique
-            k = 1
-            while true
-                nn = Symbol("$(name)_$k")
-                if !hasproperty(df, nn)
-                    name = nn
-                    break
-                end
-                k += 1
-            end
-        end
-        insert!(index(df), col_ind, name)
-        if item isa AbstractRange
+            item_new = fill!(Tables.allocatecolumn(typeof(item), target_row_count),
+                             item)
+        elseif item isa AbstractRange
             item_new = collect(item)
         elseif copycols
             item_new = copy(item)
         else
             item_new = item
         end
-        insert!(_columns(df), col_ind, item_new)
+        if ncol(df) == 0
+            df[!, name] = item_new
+        else
+            if hasproperty(df, name)
+                @assert makeunique
+                k = 1
+                while true
+                    nn = Symbol("$(name)_$k")
+                    if !hasproperty(df, nn)
+                        name = nn
+                        break
+                    end
+                    k += 1
+                end
+            end
+
+            insert!(index(df), col_ind, name)
+            insert!(_columns(df), col_ind, item_new)
+        end
         col_ind += 1
     end
     return df
