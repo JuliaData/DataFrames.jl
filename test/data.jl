@@ -375,8 +375,8 @@ end
     @test filter!([:x] => r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
 
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter(: => r -> r[:x] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!(: => r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter((:) => r -> r[:x] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!((:) => r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
 
     df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
     @test_throws TypeError filter(r -> r[:x] > 1, df)
