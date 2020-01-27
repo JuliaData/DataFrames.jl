@@ -116,7 +116,7 @@ struct DataFrame <: AbstractDataFrame
                         columns[i] = fill!(Tables.allocatecolumn(typeof(x), maxlen), x)
                         lengths[i] = maxlen
                     end
-                if col isa Ref
+                elseif col isa Ref
                     x = col[]
                     columns[i] = fill!(Tables.allocatecolumn(typeof(x), maxlen), x)
                     lengths[i] = maxlen
