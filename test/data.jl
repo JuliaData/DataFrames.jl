@@ -387,8 +387,8 @@ end
     @test_throws TypeError filter!(1 => x -> x > 1, df)
     @test_throws TypeError filter([:x] => r -> r[:x] > 1, df)
     @test_throws TypeError filter!([:x] => r -> r[:x] > 1, df)
-    @test_throws TypeError filter([: => r -> r[:x] > 1, df)
-    @test_throws TypeError filter!(: => r -> r[:x] > 1, df)
+    @test_throws TypeError filter([(:) => r -> r[:x] > 1, df)
+    @test_throws TypeError filter!((:) => r -> r[:x] > 1, df)
 end
 
 end # module
