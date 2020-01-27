@@ -274,3 +274,11 @@ import DataAPI: describe
 
 import Base: lastindex
 @deprecate lastindex(df::AbstractDataFrame) ncol(df)
+
+function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...)
+    Base.depwarn("inserting colums using a keyword argument is deprecated, use " *
+                 "`insertcols!(df, col_ind, :$(keys(name_col)[1]) => $(name_col[1]), " *
+                 "makeunique=$makeunique)` instead. ", :insertcols!)
+    length(name_col) == 1 || throw(ArgumentError("one and only one column must be provided"))
+    return insertcols!(df, col_ind, makeunique=makeunique, keys(name_col)[1] => name_col[1])
+end
