@@ -271,13 +271,13 @@ end
     @test insertcols!(df, :a => "a", :b => 1:2) == DataFrame(a=["a", "a"], b=1:2)
 
     df = DataFrame()
-    insertcols(df, :a => Ref(1), :b => fill(1))
+    insertcols!(df, :a => Ref(1), :b => fill(1))
     @test df == DataFrame(a=[1], b=[1])
     df = DataFrame()
-    insertcols(df, :a => Ref(1), :b => fill(1), :c => 1:3)
+    insertcols!(df, :a => Ref(1), :b => fill(1), :c => 1:3)
     @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
     df = DataFrame(c=1:3)
-    insertcols(df, 1, :a => Ref(1), :b => fill(1))
+    insertcols!(df, 1, :a => Ref(1), :b => fill(1))
     @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
 end
 
