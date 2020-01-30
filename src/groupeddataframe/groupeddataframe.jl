@@ -133,7 +133,7 @@ Compat.lastindex(gd::GroupedDataFrame) = gd.ngroups
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
-# These seem to have to be defined for some to_indices() logic to work, as long
+# These have to be defined for some to_indices() logic to work, as long
 # as GroupedDataFrame is not <: AbstractArray
 Base.IndexStyle(::Type{<:GroupedDataFrame}) = IndexLinear()
 Base.IndexStyle(::GroupedDataFrame) = IndexLinear()
@@ -266,7 +266,7 @@ const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
 # All allowed scalar index types
 const GroupIndexTypes = Union{Integer, GroupKeyTypes}
 
-# Find integer index for dictionary keys:
+# Find integer index for dictionary keys
 function Base.to_index(gd::GroupedDataFrame, key::GroupKey)
     gd === parent(key) && return getfield(key, :idx)
     throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
@@ -289,12 +289,14 @@ end
 # Array of (possibly non-standard) indices
 function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
     # A concrete eltype which is <: GroupIndexTypes, don't need to check
-    isconcretetype(T) && T <: GroupIndexTypes && return [Base.to_index(gd, i) for i in idxs]
+    if isconcretetype(T) && T <: GroupIndexTypes
+        return [Base.to_index(gd, i) for i in idxs]
+    end
 
     # Edge case - array is empty
     isempty(idxs) && return Int[]
 
-    # Infer eltype based on type of first index
+    # Infer eltype based on type of first index, expect rest to match
     idx1 = idxs[1]
     E1 = typeof(idx1)
 
@@ -310,9 +312,12 @@ function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
         throw(ArgumentError("Invalid index: $idx1 of type $E1"))
     end
 
-    ints = zeros(Int, length(idxs))
+    # Convert each index to integer format
+    ints = Vector{Int}(undef, length(idxs))
     for (i, idx) in enumerate(idxs)
-        (idx isa GroupIndexTypes && !(idx isa Bool)) || throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
+        if !(idx isa GroupIndexTypes) || idx isa Bool
+            throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
+        end
         idx isa E || throw(ArgumentError("Mixed index types in array not allowed"))
         ints[i] = Base.to_index(gd, idx)
     end
@@ -326,8 +331,8 @@ end
 #
 
 # InvertedIndex wrapping any other valid index type
-# to_indices() is needed here rather than to_index() for some reason, but we
-# only need to accept one-tuples.
+# to_indices() is needed here rather than to_index() in order to override the
+# to_indices(::Any, ::Tuple{Not}) methods defined in InvertedIndices.jl
 function Base.to_indices(gd::GroupedDataFrame, (idx,)::Tuple{<:Not})
     (skip_idx,) = Base.to_indices(gd, (idx.skip,))
     idxs = Base.OneTo(length(gd))[Not(skip_idx)]
@@ -339,11 +344,11 @@ end
 # ambiguity in dispatch
 function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:Union{BitArray{1}, Vector{Bool}}}})
-    (Base.LogicalIndex(.!idx.skip),)
+    (findall(!, idx.skip),)
 end
 function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:AbstractVector{Bool}}})
-    (Base.LogicalIndex(.!idx.skip),)
+    (findall(!, idx.skip),)
 end
 
 
