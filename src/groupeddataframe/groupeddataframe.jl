@@ -288,8 +288,8 @@ end
 
 # Array of (possibly non-standard) indices
 function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
-    # A concrete eltype which is <: GroupIndexTypes, don't need to check
-    if isconcretetype(T) && T <: GroupIndexTypes
+    # A concrete eltype which is <: GroupKeyTypes, don't need to check
+    if isconcretetype(T) && T <: GroupKeyTypes
         return [Base.to_index(gd, i) for i in idxs]
     end
 
