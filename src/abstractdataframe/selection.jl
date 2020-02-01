@@ -9,8 +9,10 @@
 # 1) Int
 # 2) AbstractVector{Int}
 # 3) Pair{Int, Pair{ColRename, Symbol}}
-# 3) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
-# 4) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
+# 4) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
+# 5) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
+# 6) Pair{Int, Pair{Row, Symbol}}
+# 7) Pair{AbstractVector{Int}, Pair{Row, Symbol}}
 # in this way we can easily later decide on the codepath using type signatures
 
 """
@@ -20,11 +22,26 @@ A singleton type indicating that column renaming operation was requested in `sel
 """
 struct ColRename end
 
+"""
+    Row
+
+A type used for selection operations to signal that the wrapped function should
+be applied to each element (row) of the selection.
+"""
+struct Row{T}
+    fun::T
+end
+
 normalize_selection(idx::AbstractIndex, sel) = idx[sel]
 
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
     c = idx[sel]
-    return c => ColRename() => _names[c]
+    return c => ColRename() => _names(idx)[c]
+end
+
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol})
+    c = idx[first(sel)]
+    return c => ColRename() => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any,<:Pair{<:Base.Callable,Symbol}})
@@ -32,11 +49,23 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any,<:Pair{<:Base.C
     return idx[c] => last(sel)
 end
 
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:Base.Callable})
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any,<:Pair{<:Row,Symbol}})
+    c = first(sel)
+    return idx[c] => last(sel)
+end
+
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex,<:Base.Callable})
     c = idx[first(sel)]
     fun = last(sel)
     newcol = Symbol(_names(idx)[c], "_", funname(fun))
     return c => fun => newcol
+end
+
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:Row})
+    c = idx[first(sel)]
+    row = last(sel)
+    newcol = Symbol(_names(idx)[c], "_", funname(row.fun))
+    return c => row => newcol
 end
 
 function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callable})
@@ -45,14 +74,25 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callabl
     if length(c) > 3
         newcol = Symbol(join(@views _names(idx)[c[1:2]], '_'), "_etc_", funname(fun))
     else
-        newcol = Symbol(join(@views _names(idx)[c], '_'), '_', funname(fun))
+        newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
     end
     return c => fun => newcol
 end
 
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Row})
+    c = idx[first(sel)]
+    row = last(sel)
+    if length(c) > 3
+        newcol = Symbol(join(@views _names(idx)[c[1:2]], '_'), "_etc_", funname(row.fun))
+    else
+        newcol = Symbol(join(@views _names(idx)[c], '_'), '_', funname(row.fun))
+    end
+    return c => row => newcol
+end
+
 function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
                                      Pair{<:Union{Int, AbstractVector{Int}},
-                                          <:Pair{<:Base.Callable, Symbol}}},
+                                          <:Pair{<:Union{Base.Callable, Row}, Symbol}}},
                            df::DataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx = first(nc)
@@ -63,16 +103,22 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
     end
     if nc isa Pair{Int, Pair{ColRename, Symbol}}
         newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
+    elseif nc isa Pair{Int, <:Pair{<:Row, Symbol}}
+        newdf[!, newname] = (first(transform_spec).fun).(df[!, col_idx])
     elseif nc isa Pair{Int, <:Pair{<:Base.Callable, Symbol}}
-        newdf[!, newname] = first(transform_spec).(df[!, col_idx])
-    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
+        res = first(transform_spec)(df[!, col_idx])
+        newdf[!, newname] = res isa AbstractVector ? res : [res]
+    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Row, Symbol}}
         if length(col_idx) == 0
-            newdf[!, newname] = [first(transform_spec)() for _ in axes(df, 1)]
+            newdf[!, newname] = map(_ -> (first(transform_spec).fun)(), axes(df, 1))
         else
             rowiterator = Tables.rows(Tables.columntable(df[!, col_idx]))
-            newdf[!, newname] = map(first(transform_spec),
+            newdf[!, newname] = map(first(transform_spec).fun,
                                     Tables.namedtupleiterator(eltype(rowiterator), rowiterator))
         end
+    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
+        res = first(transform_spec)(Tables.columntable(df[!, col_idx]))
+        newdf[!, newname] = res isa AbstractVector ? res : [res]
     else
         throw(ErrorException("code should never reach this branch"))
     end
@@ -144,7 +190,7 @@ julia> df = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select!(df, :a => sin => :c, :b)
+julia> select!(df, :a => Row(sin) => :c, :b)
 3×2 DataFrame
 │ Row │ c        │ b     │
 │     │ Float64  │ Int64 │
@@ -153,14 +199,14 @@ julia> select!(df, :a => sin => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select(df, :, [:c, :b] => x -> x.c+x.b)
+julia> select(df, :, [:c, :b] => x -> x.c + x.b .- sum(x.b) / length(x.b))
 3×3 DataFrame
 │ Row │ c        │ b     │ c_b_function │
 │     │ Float64  │ Int64 │ Float64      │
 ├─────┼──────────┼───────┼──────────────┤
-│ 1   │ 0.841471 │ 4     │ 4.84147      │
-│ 2   │ 0.909297 │ 5     │ 5.9093       │
-│ 3   │ 0.14112  │ 6     │ 6.14112      │
+│ 1   │ 0.841471 │ 4     │ -0.158529    │
+│ 2   │ 0.909297 │ 5     │ 0.909297     │
+│ 3   │ 0.14112  │ 6     │ 1.14112      │
 ```
 
 """
@@ -292,7 +338,7 @@ julia> select(df, :a=>:c, :b)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select(df, :a => sin => :c, :b)
+julia> select(df, :a => Row(sin) => :c, :b)
 3×2 DataFrame
 │ Row │ c        │ b     │
 │     │ Float64  │ Int64 │
@@ -301,14 +347,14 @@ julia> select(df, :a => sin => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select(df, :, [:a, :b] => x -> x.a+x.b)
+julia> select(df, :, [:a, :b] => x -> x.a + x.b .- sum(x.b) / length(x.b))
 3×3 DataFrame
 │ Row │ a     │ b     │ a_b_function │
-│     │ Int64 │ Int64 │ Int64        │
+│     │ Int64 │ Int64 │ Float64      │
 ├─────┼───────┼───────┼──────────────┤
-│ 1   │ 1     │ 4     │ 5            │
-│ 2   │ 2     │ 5     │ 7            │
-│ 3   │ 3     │ 6     │ 9            │
+│ 1   │ 1     │ 4     │ 0.0          │
+│ 2   │ 2     │ 5     │ 2.0          │
+│ 3   │ 3     │ 6     │ 4.0          │
 ```
 
 """
@@ -345,7 +391,7 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     # │ 1   │ 1     │ 3     │
     # │ 2   │ 2     │ 4     │
     #
-    # julia> select(df, :, :a=>sin=>:a, :a, 1)
+    # julia> select(df, :, :a=>Row(sin)=>:a, :a, 1)
     # 2×2 DataFrame
     # │ Row │ a        │ b     │
     # │     │ Float64  │ Int64 │
