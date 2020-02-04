@@ -208,6 +208,11 @@ end
      df2 = DataFrame(eachcol(df))
      @test names(df2) == [:x1, :x2, :x3, :x4]
      @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
+     @test Tables.rowtable(df) == Tables.rowtable(eachcol(df))
+     @test Tables.columntable(df) == Tables.columntable(eachrow(df))
+     @test Tables.columntable(df) == Tables.columntable(eachcol(df))
 end
 
 end # module

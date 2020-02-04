@@ -3,6 +3,7 @@ Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
 Tables.columns(df::AbstractDataFrame) = df
 Tables.rowaccess(::Type{<:AbstractDataFrame}) = true
 Tables.rows(df::AbstractDataFrame) = eachrow(df)
+Tables.rowtable(df::AbstractDataFrame) = Tables.rowtable(Tables.columntable(df))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
@@ -54,6 +55,7 @@ Tables.rowaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
 Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(parent(itr))
 Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
 Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
+Tables.rowtable(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rowtable(parent(itr))
 Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
     Tables.materializer(parent(itr))
 
