@@ -199,7 +199,7 @@ julia> select!(df, :a => Row(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select(df, :, [:c, :b] => x -> x.c + x.b .- sum(x.b) / length(x.b))
+julia> select!(df, :, [:c, :b] => x -> x.c + x.b .- sum(x.b) / length(x.b))
 3×3 DataFrame
 │ Row │ c        │ b     │ c_b_function │
 │     │ Float64  │ Int64 │ Float64      │
