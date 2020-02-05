@@ -7,16 +7,24 @@ Tables.rows(df::AbstractDataFrame) = eachrow(df)
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
 
+Tables.getcolumn(df::AbstractDataFrame, i::Int) = df[!, i]
+Tables.getcolumn(df::AbstractDataFrame, nm::Symbol) = df[!, nm]
+Tables.columnnames(df::AbstractDataFrame) = names(df)
+
+Tables.getcolumn(dfr::DataFrameRow, i::Int) = dfr[i]
+Tables.getcolumn(dfr::DataFrameRow, nm::Symbol) = dfr[nm]
+Tables.columnnames(dfr::DataFrameRow) = names(dfr)
+
 getvector(x::AbstractVector) = x
-getvector(x) = collect(x)
+getvector(x) = [x[i] for i = 1:length(x)]
 # note that copycols is ignored in this definition (Tables.CopiedColumns implies copies have already been made)
-fromcolumns(x::Tables.CopiedColumns; copycols::Bool=true) =
-    DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)],
-              Index(collect(Symbol, propertynames(x))),
+fromcolumns(x::Tables.CopiedColumns, names; copycols::Bool=true) =
+    DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
+              Index(collect(Symbol, names)),
               copycols=false)
-fromcolumns(x; copycols::Bool=true) =
-    DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)],
-              Index(collect(Symbol, propertynames(x))),
+fromcolumns(x, names; copycols::Bool=true) =
+    DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
+              Index(collect(Symbol, names)),
               copycols=copycols)
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
@@ -29,7 +37,8 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
                              copycols=copycols)
         end
     end
-    return fromcolumns(Tables.columns(x), copycols=copycols)
+    cols = Tables.columns(x)
+    return fromcolumns(cols, Tables.columnnames(cols), copycols=copycols)
 end
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal)
@@ -41,9 +50,9 @@ function Base.append!(df::DataFrame, table; cols::Symbol=:setequal)
 end
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
-DataFrame(x::Vector{<:NamedTuple}; copycols::Bool=true) =
+DataFrame(x::AbstractVector{<:NamedTuple}; copycols::Bool=true) =
     fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), copycols=false)
-DataFrame!(x::Vector{<:NamedTuple}) =
+DataFrame!(x::AbstractVector{<:NamedTuple}) =
     throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
                         "`$(typeof(x))` without allocating new columns: use " *
                         "`DataFrame(x)` instead"))
