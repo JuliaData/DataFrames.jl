@@ -32,6 +32,9 @@ struct Row{T}
     fun::T
 end
 
+# add a method to funname defined in other/utils.jl
+funname(row::Row) = funname(row.fun)
+
 normalize_selection(idx::AbstractIndex, sel) = idx[sel]
 
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
@@ -54,21 +57,16 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any,<:Pair{<:Row,Sy
     return idx[c] => last(sel)
 end
 
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex,<:Base.Callable})
+function normalize_selection(idx::AbstractIndex,
+                             sel::Pair{<:ColumnIndex,<:Union{Base.Callable, Row}})
     c = idx[first(sel)]
     fun = last(sel)
     newcol = Symbol(_names(idx)[c], "_", funname(fun))
     return c => fun => newcol
 end
 
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:Row})
-    c = idx[first(sel)]
-    row = last(sel)
-    newcol = Symbol(_names(idx)[c], "_", funname(row.fun))
-    return c => row => newcol
-end
-
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callable})
+function normalize_selection(idx::AbstractIndex,
+                             sel::Pair{<:Any, <:Union{Base.Callable,Row}})
     c = idx[first(sel)]
     fun = last(sel)
     if length(c) > 3
@@ -77,17 +75,6 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Base.Callabl
         newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
     end
     return c => fun => newcol
-end
-
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any, <:Row})
-    c = idx[first(sel)]
-    row = last(sel)
-    if length(c) > 3
-        newcol = Symbol(join(@views _names(idx)[c[1:2]], '_'), "_etc_", funname(row.fun))
-    else
-        newcol = Symbol(join(@views _names(idx)[c], '_'), '_', funname(row.fun))
-    end
-    return c => row => newcol
 end
 
 function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
