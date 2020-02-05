@@ -47,12 +47,8 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol
     return c => ColRename() => last(sel)
 end
 
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any,<:Pair{<:Base.Callable,Symbol}})
-    c = first(sel)
-    return idx[c] => last(sel)
-end
-
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:Any,<:Pair{<:Row,Symbol}})
+function normalize_selection(idx::AbstractIndex,
+                             sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, Row}, Symbol}})
     c = first(sel)
     return idx[c] => last(sel)
 end
