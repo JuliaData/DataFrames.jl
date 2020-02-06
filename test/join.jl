@@ -25,9 +25,7 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
     innerjoin(name, job, on = :ID)
     innerjoin(name, job, on = [:ID])
 
-    # Soon we won't allow natural joins
-    @test_throws ArgumentError join(name, job)
-
+    @test_throws ArgumentError innerjoin(name, job)
 
     @test innerjoin(name, job, on = :ID) == inner
     @test outerjoin(name, job, on = :ID) ≅ outer
@@ -68,7 +66,7 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
     @test size(crossjoin(df1, df1, makeunique=true)) == (4, 4)
 
     # Cross joins don't take keys
-    @test_throws ArgumentError crossjoin(df1, df2, on = :A)
+    @test_throws MethodError crossjoin(df1, df2, on = :A)
 end
 
 @testset "Test empty inputs 1" begin

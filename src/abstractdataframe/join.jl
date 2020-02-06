@@ -440,7 +440,7 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=indicator,
           validate=validate)
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,,
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
               dfs..., on=on, makeunique=makeunique, validate=validate)
