@@ -282,3 +282,70 @@ function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_c
     length(name_col) == 1 || throw(ArgumentError("one and only one column must be provided"))
     return insertcols!(df, col_ind, makeunique=makeunique, keys(name_col)[1] => name_col[1])
 end
+
+function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   on::Union{<:OnType, AbstractVector} = Symbol[],
+                   kind::Symbol = :inner, makeunique::Bool=false,
+                   indicator::Union{Nothing, Symbol} = nothing,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if kind == :inner
+        Base.depwarn("inner joining data frames using join is deprecated, use " *
+                     "innerjoin function instead", :join)
+        innerjoin(df1, df2, on=on, makeunique=makeunique,
+                  indicator=indicator, validate=validate)
+    elseif kind == :left
+        Base.depwarn("left joining data frames using join is deprecated, use " *
+                     "leftjoin function instead", :join)
+        leftjoin(df1, df2, on=on, makeunique=makeunique,
+                 indicator=indicator, validate=validate)
+    elseif kind == :right
+        Base.depwarn("right joining data frames using join is deprecated, use " *
+                     "rightjoin function instead", :join)
+        rightjoin(df1, df2, on=on, makeunique=makeunique,
+                  indicator=indicator, validate=validate)
+    elseif kind == :outer
+        Base.depwarn("outer joining data frames using join is deprecated, use " *
+                     "outerjoin function instead", :join)
+        outerjoin(df1, df2, on=on, makeunique=makeunique,
+                  indicator=indicator, validate=validate)
+    elseif kind == :semi
+        Base.depwarn("semi joining data frames using join is deprecated, use " *
+                     "semijoin function instead", :join)
+        semijoin(df1, df2, on=on, makeunique=makeunique,
+                 indicator=indicator, validate=validate)
+    elseif kind == :anti
+        Base.depwarn("anti joining data frames using join is deprecated, use " *
+                     "antijoin function instead", :join)
+        antijoin(df1, df2, on=on, makeunique=makeunique,
+                 indicator=indicator, validate=validate)
+    elseif kind == :cross
+        Base.depwarn("cross joining data frames using join is deprecated, use " *
+                     "crossjoin function instead", :join)
+        crossjoin(df1, df2, makeunique=makeunique)
+    else
+        throw(ArgumentError("Unknown kind of join requested: $kind"))
+    end
+end
+
+function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame,
+                   dfs::AbstractDataFrame...;
+                   on::Union{Symbol, AbstractVector{Symbol}} = Symbol[],
+                   kind::Symbol = :inner, makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if kind == :inner
+        Base.depwarn("inner joining data frames using join is deprecated, use " *
+                     "innerjoin function instead", :join)
+        innerjoin(df1, df2, dfs..., on=on, makeunique=makeunique, validate=validate)
+    elseif kind == :outer
+        Base.depwarn("outer joining data frames using join is deprecated, use " *
+                     "outerjoin function instead", :join)
+        outerjoin(df1, df2, dfs..., on=on, makeunique=makeunique, validate=validate)
+    elseif kind == :cross
+        Base.depwarn("cross joining data frames using join is deprecated, use " *
+                     "crossjoin function instead", :join)
+        crossjoin(df1, df2, dfs..., makeunique=makeunique)
+    else
+        throw(ArgumentError("Only inner, outer, and cross joins are supported when " *
+                            "joining more than two data frames"))
+    end
+end

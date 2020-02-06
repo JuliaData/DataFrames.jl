@@ -526,6 +526,20 @@ end
     @test insertcols!(df, 2, y=2:3) == DataFrame(x=1:2, y=2:3)
 end
 
+@testset "join" begin
+    name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
+                    Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"])
+    job = DataFrame(ID = Union{Int, Missing}[1, 2, 2, 4],
+                    Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"])
+    @test_throws ArgumentError join(name, job)
+    @test_throws ArgumentError join(name, job, on=:ID, kind=:other)
+
+    df1 = DataFrame(id=[1,2,3], x=[1,2,3])
+    df2 = DataFrame(id=[1,2,4], y=[1,2,4])
+    df3 = DataFrame(id=[1,3,4], z=[1,3,4])
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:xxx)
+end
+
 global_logger(old_logger)
 
 end # module
