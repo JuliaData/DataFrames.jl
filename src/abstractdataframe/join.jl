@@ -380,7 +380,7 @@ ordering of the left data frame takes precedence over the ordering of the right 
 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
-In this case the `indicator` keyword argument is not supported.
+In this case the `validate` keyword argument is applied recursively with left associativity.
 
 See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -696,7 +696,8 @@ ordering of the left data frame takes precedence over the ordering of the right 
 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
-In this case the `indicator` keyword argument is not supported.
+In this case the `indicator` keyword argument is not supported
+and `validate` keyword argument is applied recursively with left associativity.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
