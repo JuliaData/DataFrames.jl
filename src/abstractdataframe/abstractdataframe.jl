@@ -866,12 +866,16 @@ end
     filter(cols => function, df::AbstractDataFrame)
 
 Return a copy of data frame `df` containing only rows for which `function`
-returns `true`. The function is passed a `DataFrameRow` as its only argument
-if `cols` is not specified.
-If `cols` is passed then elements of column `cols` are passed to the function,
-if `cols` is a single column or as a `NamedTuple` if multiple columns are passed
-(any valid column selector is accepted). Passing `cols` leads to a more efficient
-execution of the operation for large data frames.
+returns `true`.
+
+If `cols` is not specified then he function is passed `DataFrameRow`s as its only argument.
+If `cols` is a single column then then elements of column `cols` are passed to the function.
+If `cols` represents multiple columns (any valid column selector is accepted) then
+`NamedTuple`s formed with elements of the selected columns are passed to the function.
+
+Passing `cols` leads to a more efficient execution of the operation for large data frames.
+
+See also: [`filter!`](@ref)
 
 # Examples
 ```
@@ -885,7 +889,7 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 │ 3   │ 2     │ a      │
 │ 4   │ 1     │ b      │
 
-julia> filter(row -> row[:x] > 1, df)
+julia> filter(row -> row.x > 1, df)
 2×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
@@ -900,6 +904,14 @@ julia> filter(:x => x -> x > 1, df)
 ├─────┼───────┼────────┤
 │ 1   │ 3     │ b      │
 │ 2   │ 2     │ a      │
+
+julia> filter([:x, :y] => x -> x.y == "b", df)
+2×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 4   │ 1     │ b      │
 ```
 """
 Base.filter(f, df::AbstractDataFrame) = df[_filter_helper(f, eachrow(df)), :]
@@ -920,12 +932,16 @@ _filter_helper(f, itr) = collect(f(r)::Bool for r in itr)
 """
     filter!(function, df::AbstractDataFrame)
 
-Remove rows from data frame `df` for which `function` returns `false`. The function
-is passed a `DataFrameRow` as its only argument if `col` is not specified.
-If `cols` is passed then elements of column `cols` are passed to the function,
-if `cols` is a single column or as a `NamedTuple` if multiple columns are passed
-(any valid column selector is accepted). Passing `cols` leads to a more efficient
-execution of the operation for large data frames.
+Remove rows from data frame `df` for which `function` returns `false`.
+
+If `cols` is not specified then he function is passed `DataFrameRow`s as its only argument.
+If `cols` is a single column then then elements of column `cols` are passed to the function.
+If `cols` represents multiple columns (any valid column selector is accepted) then
+`NamedTuple`s formed with elements of the selected columns are passed to the function.
+
+Passing `cols` leads to a more efficient execution of the operation for large data frames.
+
+See also: [`filter`](@ref)
 
 # Examples
 ```
@@ -939,7 +955,7 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 │ 3   │ 2     │ a      │
 │ 4   │ 1     │ b      │
 
-julia> filter!(row -> row[:x] > 1, df);
+julia> filter!(row -> row.x > 1, df);
 
 julia> df
 2×2 DataFrame
@@ -949,7 +965,7 @@ julia> df
 │ 1   │ 3     │ b      │
 │ 2   │ 2     │ a      │
 
-julia> filter!(:x => ==(3), df);
+julia> filter!(:x => x -> x == 3, df);
 
 julia> df
 1×2 DataFrame
@@ -957,6 +973,16 @@ julia> df
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 3     │ b      │
+
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
+
+julia> filter!([:x, :y] => x -> x.y == "b", df)
+2×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 4   │ 1     │ b      │
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) =
