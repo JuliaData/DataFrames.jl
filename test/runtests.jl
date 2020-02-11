@@ -6,7 +6,7 @@ fatalerrors = length(ARGS) > 0 && ARGS[1] == "-f"
 quiet = length(ARGS) > 0 && ARGS[1] == "-q"
 anyerrors = false
 
-using Test, Random, DataFrames
+using DataFrames, Dates, Test, Random
 
 my_tests = ["utils.jl",
             "cat.jl",

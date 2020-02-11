@@ -24,11 +24,23 @@ end
 Render a value to an IO object. Unlike
 `show`, render strings without surrounding quote marks.
 """
-ourshow(io::IO, x::Any) =
-    show(IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x)), x)
+function ourshow(io::IO, x::Any)
+    ctxt = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
+    show(ctxt, "text/plain", x)
+end
+
 ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
 ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
 ourshow(io::IO, x::Nothing) = nothing
+
+# AbstractChar: https://github.com/JuliaLang/julia/pull/34730 (1.5.0-DEV.261)
+# Irrational: https://github.com/JuliaLang/julia/pull/34741 (1.5.0-DEV.266)
+if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
+    function ourshow(io::IO, x::T) where T <: Union{AbstractChar, Irrational}
+        ctxt = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
+        show(ctxt, x)
+    end
+end
 
 """Return compact string representation of type T"""
 function compacttype(T::Type, maxwidth::Int=8)
