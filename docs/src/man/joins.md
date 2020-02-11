@@ -39,18 +39,18 @@ julia> innerjoin(people, jobs, on = :ID)
 In relational database theory, this operation is generally referred to as a join.
 The columns used to determine which rows should be combined during a join are called keys.
 
-There are seven kinds of joins supported by the DataFrames package:
+There are seven kinds of joins supported by the following functions in DataFrames.jl package:
 
--   Inner: The output contains rows for values of the key that exist in both the first (left) and second (right) arguments to `innerjoin`.
--   Left: The output contains rows for values of the key that exist in the first (left) argument to `leftjoin`,
+-   `innerjoin`: the output contains rows for values of the key that exist in all passed data frames.
+-   `leftjoin`: the output contains rows for values of the key that exist in the first (left) argument,
     whether or not that value exists in the second (right) argument.
--   Right: The output contains rows for values of the key that exist in the second (right) argument to `rightjoin`,
+-   `rightjoin`: the output contains rows for values of the key that exist in the second (right) argument,
     whether or not that value exists in the first (left) argument.
--   Outer: The output contains rows for values of the key that exist in the first (left) or second (right) argument to `outerjoin`.
--   Semi: Like an inner join, but output is restricted to columns from the first (left) argument to `semijoin`.
--   Anti: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument to `antijoin`.
-    As with semi joins, output is restricted to columns from the first (left) argument.
--   Cross: The output is the cartesian product of rows from the first (left) and second (right) arguments to `crossjoin`.
+-   `outerjoin`: the output contains rows for values of the key that exist in any of the passed data frames.
+-   `semijoin`: Like an inner join, but output is restricted to columns from the first (left) argument.
+-   `antijoin`: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument.
+    As with `semijoin`, output is restricted to columns from the first (left) argument.
+-   `crossjoin`: The output is the cartesian product of rows from all passed data frames.
 
 See [the Wikipedia page on SQL joins](https://en.wikipedia.org/wiki/Join_(SQL)) for more information.
 

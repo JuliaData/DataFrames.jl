@@ -347,12 +347,12 @@ end
 
 """
     innerjoin(df1, df2; on = Symbol[], makeunique = false,
-              indicator = nothing, validate = (false, false))
+              validate = (false, false))
     innerjoin(df1, df2, dfs...; on = Symbol[], makeunique = false,
               validate = (false, false))
 
-Inner join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perform an inner join two or more data frame objects and return a `DataFrame` containing
+the result. Only include rows with keys that match in all passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -369,11 +369,6 @@ the result.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
-   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
-   the column name will be modified if `makeunique=true`.
-   This argument is only supported when joining exactly two data frames.
 - `validate` : whether to check that columns passed as the `on` argument
    define unique keys in each input data frame (according to [`isequal`](@ref)).
    Can be a tuple or a pair, with the first element indicating whether to
@@ -386,6 +381,9 @@ ordering of the left data frame takes precedence over the ordering of the right 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
 In this case the `indicator` keyword argument is not supported.
+
+See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
 ```julia
@@ -434,10 +432,9 @@ julia> innerjoin(name, job2, on = [:ID => :identifier])
 ```
 """
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=indicator,
+    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=nothing,
           validate=validate)
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
@@ -449,8 +446,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
     leftjoin(df1, df2; on = Symbol[], makeunique = false,
              indicator = nothing, validate = (false, false))
 
-Left join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perform a left join two or more data frame objects and return a `DataFrame` containing
+the result. Include all rows from `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -479,6 +476,9 @@ All columns of the returned data table will support missing values.
 
 When merging `on` categorical columns that differ in the ordering of their levels, the
 ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
 ```julia
@@ -539,8 +539,8 @@ leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     rightjoin(df1, df2; on = Symbol[], makeunique = false,
               indicator = nothing, validate = (false, false))
 
-Right join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perform a right join two or more data frame objects and return a `DataFrame` containing
+the result. Include all rows from `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -569,6 +569,9 @@ All columns of the returned data table will support missing values.
 
 When merging `on` categorical columns that differ in the ordering of their levels, the
 ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
 ```julia
@@ -631,8 +634,8 @@ rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     outerjoin(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
               validate = (false, false))
 
-Outer join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perfrom an outer join two or more data frame objects and return a `DataFrame` containing
+the result. Include rows with keys that appear in any of the passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -668,6 +671,9 @@ ordering of the left data frame takes precedence over the ordering of the right 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
 In this case the `indicator` keyword argument is not supported.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
 ```julia
@@ -732,11 +738,10 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
               dfs..., on=on, makeunique=makeunique, validate=validate)
 
 """
-    semijoin(df1, df2; on = Symbol[], makeunique = false,
-             indicator = nothing, validate = (false, false))
+    semijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
 
-Semi join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perform a semi join two or more data frame objects and return a `DataFrame` containing
+the result. Return a subset of rows of `df1` that match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -763,6 +768,9 @@ the result.
 
 When merging `on` categorical columns that differ in the ordering of their levels, the
 ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
 ```julia
@@ -811,18 +819,16 @@ julia> semijoin(name, job2, on = [:ID => :identifier])
 ```
 """
 semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:semi, makeunique=makeunique, indicator=indicator,
+    _join(df1, df2, on=on, kind=:semi, makeunique=makeunique, indicator=nothing,
           validate=validate)
 
 """
-    antijoin(df1, df2; on = Symbol[], makeunique = false,
-             indicator = nothing, validate = (false, false))
+    antijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
 
-Anti join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perform an anti join two or more data frame objects and return a `DataFrame` containing
+the result. Return a subset of rows of `df1` that do not match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -837,10 +843,6 @@ the result.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
-   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
-   the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
    define unique keys in each input data frame (according to [`isequal`](@ref)).
    Can be a tuple or a pair, with the first element indicating whether to
@@ -849,6 +851,9 @@ the result.
 
 When merging `on` categorical columns that differ in the ordering of their levels, the
 ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
 ```julia
@@ -895,17 +900,16 @@ julia> antijoin(name, job2, on = [:ID => :identifier])
 ```
 """
 antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:anti, makeunique=makeunique, indicator=indicator,
+    _join(df1, df2, on=on, kind=:anti, makeunique=makeunique, indicator=nothing,
           validate=validate)
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)
 
-Cross join two or more data frame objects and return a `DataFrame` containing
-the result.
+Perform a cross join two or more data frame objects and return a `DataFrame` containing
+the result. Return the cartesian product of rows from all passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -918,6 +922,9 @@ the result.
 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).
 
 # Examples
 ```julia
