@@ -429,6 +429,14 @@ julia> innerjoin(name, job2, on = :ID => :identifier)
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 1     │ John Doe │ Lawyer │
 │ 2   │ 2     │ Jane Doe │ Doctor │
+
+julia> innerjoin(name, job2, on = [:ID => :identifier])
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
 ```
 """
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -517,6 +525,15 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 1   │ 1          │ Lawyer │
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
+
+julia> leftjoin(name, job2, on = :ID => :identifier)
+3×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String    │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
 
 julia> leftjoin(name, job2, on = [:ID => :identifier])
 3×3 DataFrame
@@ -610,6 +627,15 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 1   │ 1          │ Lawyer │
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
+
+julia> rightjoin(name, job2, on = :ID => :identifier)
+3×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String⍰  │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+│ 3   │ 4     │ missing  │ Farmer │
 
 julia> rightjoin(name, job2, on = [:ID => :identifier])
 3×3 DataFrame
@@ -714,6 +740,16 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
+julia> outerjoin(name, job2, on = :ID => :identifier)
+4×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String⍰   │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+│ 4   │ 4     │ missing   │ Farmer  │
+
 julia> outerjoin(name, job2, on = [:ID => :identifier])
 4×3 DataFrame
 │ Row │ ID    │ Name      │ Job     │
@@ -809,6 +845,14 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
+julia> semijoin(name, job2, on = :ID => :identifier)
+2×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 1     │ John Doe │
+│ 2   │ 2     │ Jane Doe │
+
 julia> semijoin(name, job2, on = [:ID => :identifier])
 2×2 DataFrame
 │ Row │ ID    │ Name     │
@@ -890,6 +934,13 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 1   │ 1          │ Lawyer │
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
+
+julia> antijoin(name, job2, on = :ID => :identifier)
+1×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 3     │ Joe Blogs │
 
 julia> antijoin(name, job2, on = [:ID => :identifier])
 1×2 DataFrame
