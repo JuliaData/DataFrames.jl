@@ -424,7 +424,7 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
-julia> innerjoin(name, job2, on = [:ID => :identifier])
+julia> innerjoin(name, job2, on = :ID => :identifier)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
