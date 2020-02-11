@@ -28,12 +28,19 @@ struct ColRename end
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
 """
-struct Row{T}
+struct ByRow{T}
     fun::T
 end
 
+(f::ByRow)(col::AbstractVector) = (f.fun).(col)
+
+function (f::ByRow)(cols::NamedTuple{C, <:Tuple{Vararg{AbstractVector}}}) where C
+    rowiterator = Tables.rows(cols)
+    map(f.fun, Tables.namedtupleiterator(eltype(rowiterator), rowiterator))
+end
+
 # add a method to funname defined in other/utils.jl
-funname(row::Row) = funname(row.fun)
+funname(row::ByRow) = funname(row.fun)
 
 normalize_selection(idx::AbstractIndex, sel) = idx[sel]
 
@@ -48,13 +55,13 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, Row}, Symbol}})
+                             sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
     c = first(sel)
     return idx[c] => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:ColumnIndex,<:Union{Base.Callable, Row}})
+                             sel::Pair{<:ColumnIndex,<:Union{Base.Callable, ByRow}})
     c = idx[first(sel)]
     fun = last(sel)
     newcol = Symbol(_names(idx)[c], "_", funname(fun))
@@ -62,7 +69,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any, <:Union{Base.Callable,Row}})
+                             sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
     c = idx[first(sel)]
     fun = last(sel)
     if length(c) > 3
@@ -75,7 +82,7 @@ end
 
 function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
                                      Pair{<:Union{Int, AbstractVector{Int}},
-                                          <:Pair{<:Union{Base.Callable, Row}, Symbol}}},
+                                          <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}},
                            df::DataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx = first(nc)
@@ -86,22 +93,16 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
     end
     if nc isa Pair{Int, Pair{ColRename, Symbol}}
         newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
-    elseif nc isa Pair{Int, <:Pair{<:Row, Symbol}}
-        newdf[!, newname] = (first(transform_spec).fun).(df[!, col_idx])
     elseif nc isa Pair{Int, <:Pair{<:Base.Callable, Symbol}}
         res = first(transform_spec)(df[!, col_idx])
         newdf[!, newname] = res isa AbstractVector ? res : [res]
-    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Row, Symbol}}
-        if length(col_idx) == 0
+    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
+        if length(col_idx) == 0 && first(transform_spec) isa ByRow
             newdf[!, newname] = map(_ -> (first(transform_spec).fun)(), axes(df, 1))
         else
-            rowiterator = Tables.rows(Tables.columntable(df[!, col_idx]))
-            newdf[!, newname] = map(first(transform_spec).fun,
-                                    Tables.namedtupleiterator(eltype(rowiterator), rowiterator))
+            res = first(transform_spec)(Tables.columntable(df[!, col_idx]))
+            newdf[!, newname] = res isa AbstractVector ? res : [res]
         end
-    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
-        res = first(transform_spec)(Tables.columntable(df[!, col_idx]))
-        newdf[!, newname] = res isa AbstractVector ? res : [res]
     else
         throw(ErrorException("code should never reach this branch"))
     end
