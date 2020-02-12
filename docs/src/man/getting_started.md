@@ -785,6 +785,56 @@ not be mutated without caution.
 The exact rules of handling columns of a `DataFrame` are explained in
 [The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
 
+## Replacing Data
+
+Use the broadcasting syntax to apply replacement operations to `DataFrames`.
+
+Note: in-place replacement in a `DataFrame` requires the type of the replacement value match the respective column data type.
+
+It follows that replacing `"None"` with `missing` requires a call to `allowmissing!(df)`.
+
+```jldoctest
+julia> df = DataFrame(a = ["a", "None", "b", "None"], b = [1,2,3,4], c = ["None", "x", "y", "z"])
+4×3 DataFrame
+│ Row │ a       │ b      │ c       │
+│     │ String⍰ │ Int64⍰ │ String⍰ │
+├─────┼─────────┼────────┼─────────┤
+│ 1   │ a       │ 1      │ None    │
+│ 2   │ None    │ 2      │ x       │
+│ 3   │ b       │ 3      │ y       │
+│ 4   │ None    │ 4      │ z       │
+
+julia> @. df = ifelse(df == "None", "c", df)
+4×3 DataFrame
+│ Row │ a      │ b     │ c      │
+│     │ String │ Int64 │ String │
+├─────┼────────┼───────┼────────┤
+│ 1   │ a      │ 1     │ c      │
+│ 2   │ c      │ 2     │ x      │
+│ 3   │ b      │ 3     │ y      │
+│ 4   │ c      │ 4     │ z      │
+
+julia> allowmissing!(df)
+4×3 DataFrame
+│ Row │ a       │ b      │ c       │
+│     │ String⍰ │ Int64⍰ │ String⍰ │
+├─────┼─────────┼────────┼─────────┤
+│ 1   │ a       │ 1      │ c       │
+│ 2   │ c       │ 2      │ x       │
+│ 3   │ b       │ 3      │ y       │
+│ 4   │ c       │ 4      │ z       │
+
+julia> df2 = @. ifelse(df == "c", missing, df)
+4×3 DataFrame
+│ Row │ a       │ b     │ c       │
+│     │ String⍰ │ Int64 │ String⍰ │
+├─────┼─────────┼───────┼─────────┤
+│ 1   │ a       │ 1     │ missing │
+│ 2   │ missing │ 2     │ x       │
+│ 3   │ b       │ 3     │ y       │
+│ 4   │ missing │ 4     │ z       │
+```
+
 ## Importing and Exporting Data (I/O)
 
 For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
