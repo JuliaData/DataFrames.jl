@@ -660,7 +660,7 @@ rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     outerjoin(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
               validate = (false, false))
 
-Perfrom an outer join two or more data frame objects and return a `DataFrame` containing
+Perform an outer join two or more data frame objects and return a `DataFrame` containing
 the result. Include rows with keys that appear in any of the passed data frames.
 
 # Arguments
