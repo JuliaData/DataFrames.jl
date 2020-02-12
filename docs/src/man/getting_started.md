@@ -787,22 +787,22 @@ The exact rules of handling columns of a `DataFrame` are explained in
 
 ## Replacing Data
 
-Use the broadcasting syntax to apply replacement operations to `DataFrames`.
+Use the broadcasting syntax to apply replacement operations to data frames.
 
-Note: in-place replacement in a `DataFrame` requires the type of the replacement value match the respective column data type.
+Note: in-place replacement in a data frame requires the type of the replacement value match the respective column data type.
 
-It follows that replacing `"None"` with `missing` requires a call to `allowmissing!(df)`.
+It follows that replacing `"None"` with `missing` in-place requires a call to `allowmissing!(df)` in the example below.
 
 ```jldoctest
 julia> df = DataFrame(a = ["a", "None", "b", "None"], b = [1,2,3,4], c = ["None", "x", "y", "z"])
 4×3 DataFrame
-│ Row │ a       │ b      │ c       │
-│     │ String⍰ │ Int64⍰ │ String⍰ │
-├─────┼─────────┼────────┼─────────┤
-│ 1   │ a       │ 1      │ None    │
-│ 2   │ None    │ 2      │ x       │
-│ 3   │ b       │ 3      │ y       │
-│ 4   │ None    │ 4      │ z       │
+│ Row │ a      │ b     │ c      │
+│     │ String │ Int64 │ String │
+├─────┼────────┼───────┼────────┤
+│ 1   │ a      │ 1     │ None   │
+│ 2   │ None   │ 2     │ x      │
+│ 3   │ b      │ 3     │ y      │
+│ 4   │ None   │ 4     │ z      │
 
 julia> @. df = ifelse(df == "None", "c", df)
 4×3 DataFrame
