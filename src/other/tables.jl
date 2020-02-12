@@ -20,11 +20,11 @@ getvector(x) = [x[i] for i = 1:length(x)]
 # note that copycols is ignored in this definition (Tables.CopiedColumns implies copies have already been made)
 fromcolumns(x::Tables.CopiedColumns, names; copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
-              Index(collect(Symbol, names)),
+              Index(names),
               copycols=false)
 fromcolumns(x, names; copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
-              Index(collect(Symbol, names)),
+              Index(names),
               copycols=copycols)
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
@@ -38,7 +38,8 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
         end
     end
     cols = Tables.columns(x)
-    return fromcolumns(cols, Tables.columnnames(cols), copycols=copycols)
+    names = collect(Symbol, Tables.columnnames(cols))
+    return fromcolumns(cols, names, copycols=copycols)
 end
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal)
@@ -50,8 +51,8 @@ function Base.append!(df::DataFrame, table; cols::Symbol=:setequal)
 end
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
-DataFrame(x::AbstractVector{<:NamedTuple}; copycols::Bool=true) =
-    fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), copycols=false)
+DataFrame(x::AbstractVector{NamedTuple{names, T}}; copycols::Bool=true) where {names, T} =
+    fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), collect(names), copycols=false)
 DataFrame!(x::AbstractVector{<:NamedTuple}) =
     throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
                         "`$(typeof(x))` without allocating new columns: use " *
