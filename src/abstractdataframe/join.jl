@@ -351,7 +351,7 @@ end
     innerjoin(df1, df2, dfs...; on = Symbol[], makeunique = false,
               validate = (false, false))
 
-Perform an inner join two or more data frame objects and return a `DataFrame` containing
+Perform an inner join of two or more data frame objects and return a `DataFrame` containing
 the result. Only include rows with keys that match in all passed data frames.
 
 # Arguments
