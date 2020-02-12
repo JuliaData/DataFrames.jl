@@ -39,7 +39,7 @@ julia> innerjoin(people, jobs, on = :ID)
 In relational database theory, this operation is generally referred to as a join.
 The columns used to determine which rows should be combined during a join are called keys.
 
-There are seven kinds of joins supported by the following functions in DataFrames.jl package:
+The following functions are provided to perform seven kinds of joins:
 
 -   `innerjoin`: the output contains rows for values of the key that exist in all passed data frames.
 -   `leftjoin`: the output contains rows for values of the key that exist in the first (left) argument,
