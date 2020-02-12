@@ -73,6 +73,10 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test collect(propertynames(row)) == [:a, :b]
         @test getproperty(row, :a) == 1
         @test getproperty(row, :b) == :a
+        @test Tables.getcolumn(row, :a) == 1
+        @test Tables.getcolumn(row, 1) == 1
+        @test collect(Tables.columnnames(row)) == [:a, :b]
+        @test Tables.getcolumn(row, Int64, 1, :a) == 1
     end
 
     @testset "Row-style" begin
@@ -97,7 +101,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         and_back = DataFrame(cols)
         @test and_back isa DataFrame
         @test names(and_back) == [:a, :b]
-        @test and_back.a == df.a
+        @test and_back.a == df.a == Tables.getcolumn(df, :a) == Tables.getcolumn(df, 1)
         @test and_back.b == df.b
     end
 
@@ -177,8 +181,8 @@ end
     df = DataFrame(rand(3,4))
     @test columnindex.(Ref(df), names(df)) == 1:4
     @test columnindex(df, :a) == 0
-    @test_throws ErrorException columnindex(df, 1)
-    @test_throws ErrorException columnindex(df, "x1")
+    # @test_throws ErrorException columnindex(df, 1)
+    # @test_throws ErrorException columnindex(df, "x1")
 end
 
 @testset "eachrow and eachcol integration" begin
