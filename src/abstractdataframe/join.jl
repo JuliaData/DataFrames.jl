@@ -352,7 +352,7 @@ end
               validate = (false, false))
 
 Perform an inner join of two or more data frame objects and return a `DataFrame` containing
-the result. Only include rows with keys that match in all passed data frames.
+the result. An inner join includes rows with keys that match in all passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -454,8 +454,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
     leftjoin(df1, df2; on = Symbol[], makeunique = false,
              indicator = nothing, validate = (false, false))
 
-Perform a left join two or more data frame objects and return a `DataFrame` containing
-the result. Include all rows from `df1`.
+Perform a left join of twodata frame objects and return a `DataFrame` containing
+the result. A left join includes all rows from `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -556,8 +556,8 @@ leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     rightjoin(df1, df2; on = Symbol[], makeunique = false,
               indicator = nothing, validate = (false, false))
 
-Perform a right join two or more data frame objects and return a `DataFrame` containing
-the result. Include all rows from `df2`.
+Perform a right join on twodata frame objects and return a `DataFrame` containing
+the result. A right join includes all rows from `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -660,8 +660,8 @@ rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     outerjoin(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
               validate = (false, false))
 
-Perform an outer join two or more data frame objects and return a `DataFrame` containing
-the result. Include rows with keys that appear in any of the passed data frames.
+Perform an outer join of two or more data frame objects and return a `DataFrame` containing
+the result. An outer join includes rows with keys that appear in any of the passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -777,8 +777,8 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 """
     semijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
 
-Perform a semi join two or more data frame objects and return a `DataFrame` containing
-the result. Return a subset of rows of `df1` that match with the keys in `df2`.
+Perform a semi join of two data frame objects and return a `DataFrame` containing the result.
+A semi join returns a subset of rows of `df1` that match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -872,8 +872,8 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 """
     antijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
 
-Perform an anti join two or more data frame objects and return a `DataFrame` containing
-the result. Return a subset of rows of `df1` that do not match with the keys in `df2`.
+Perform an anti join of two data frame objects and return a `DataFrame` containing the result.
+An anti join returns a subset of rows of `df1` that do not match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -960,8 +960,8 @@ antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 """
     crossjoin(df1, df2, dfs...; makeunique = false)
 
-Perform a cross join two or more data frame objects and return a `DataFrame` containing
-the result. Return the cartesian product of rows from all passed data frames.
+Perform a cross join of two or more data frame objects and return a `DataFrame` containing
+the result. A cross join returns the cartesian product of rows from all passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
