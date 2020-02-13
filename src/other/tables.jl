@@ -67,6 +67,13 @@ Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent
 Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
     Tables.materializer(parent(itr))
 
+Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, i::Int) =
+    Tables.getcolumn(parent(itr), i)
+Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, nm::Symbol) =
+    Tables.getcolumn(parent(itr), nm)
+Tables.columnnames(itr::Union{DataFrameRows,DataFrameColumns}) =
+    Tables.columnnames(parent(itr))
+
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(columntable(df))
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
 TableTraits.isiterabletable(x::AbstractDataFrame) = true

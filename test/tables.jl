@@ -212,6 +212,16 @@ end
      df2 = DataFrame(eachcol(df))
      @test names(df2) == [:x1, :x2, :x3, :x4]
      @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+     @test Tables.getcolumn(eachcol(df), 1) == Tables.getcolumn(df, 1)
+     @test Tables.getcolumn(eachcol(df), :a) == Tables.getcolumn(df, :a)
+     @test Tables.columnnames(eachcol(df), :a) == Tables.columnnames(df, :a)
+     @test Tables.getcolumn(eachcol(df, true), 1) == Tables.getcolumn(df, 1)
+     @test Tables.getcolumn(eachcol(df, true), :a) == Tables.getcolumn(df, :a)
+     @test Tables.columnnames(eachcol(df, true), :a) == Tables.columnnames(df, :a)
+     @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
+     @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
+     @test Tables.columnnames(eachrow(df), :a) == Tables.columnnames(df, :a)
 end
 
 end # module
