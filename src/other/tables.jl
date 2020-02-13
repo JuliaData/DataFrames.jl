@@ -7,8 +7,16 @@ Tables.rows(df::AbstractDataFrame) = Tables.rows(columntable(df))
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
 
+Tables.getcolumn(df::AbstractDataFrame, i::Int) = df[!, i]
+Tables.getcolumn(df::AbstractDataFrame, nm::Symbol) = df[!, nm]
+Tables.columnnames(df::AbstractDataFrame) = names(df)
+
+Tables.getcolumn(dfr::DataFrameRow, i::Int) = dfr[i]
+Tables.getcolumn(dfr::DataFrameRow, nm::Symbol) = dfr[nm]
+Tables.columnnames(dfr::DataFrameRow) = names(dfr)
+
 getvector(x::AbstractVector) = x
-getvector(x) = collect(x)
+getvector(x) = [x[i] for i = 1:length(x)]
 # note that copycols is ignored in this definition (Tables.CopiedColumns implies copies have already been made)
 fromcolumns(x::Tables.CopiedColumns, names; copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
