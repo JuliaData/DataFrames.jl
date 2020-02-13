@@ -43,7 +43,7 @@ using Test, DataFrames
     @test eltype.(eachcol(mapcols(Vector{Float64}, df))) == [Float64, Float64]
     @test eltype(map(Vector{Float64}, eachcol(df))) == Vector{Float64}
 
-    @test_throws MethodError for x in df; end
+    @test_throws ErrorException for x in df; end
 end
 
 @testset "mapcols" begin
