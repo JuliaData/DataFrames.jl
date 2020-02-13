@@ -215,13 +215,13 @@ end
 
      @test Tables.getcolumn(eachcol(df), 1) == Tables.getcolumn(df, 1)
      @test Tables.getcolumn(eachcol(df), :a) == Tables.getcolumn(df, :a)
-     @test Tables.columnnames(eachcol(df), :a) == Tables.columnnames(df, :a)
+     @test Tables.columnnames(eachcol(df)) == Tables.columnnames(df)
      @test Tables.getcolumn(eachcol(df, true), 1) == Tables.getcolumn(df, 1)
      @test Tables.getcolumn(eachcol(df, true), :a) == Tables.getcolumn(df, :a)
-     @test Tables.columnnames(eachcol(df, true), :a) == Tables.columnnames(df, :a)
+     @test Tables.columnnames(eachcol(df, true)) == Tables.columnnames(df)
      @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
      @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
-     @test Tables.columnnames(eachrow(df), :a) == Tables.columnnames(df, :a)
+     @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)
 end
 
 end # module
