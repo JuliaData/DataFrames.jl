@@ -556,7 +556,7 @@ leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     rightjoin(df1, df2; on = Symbol[], makeunique = false,
               indicator = nothing, validate = (false, false))
 
-Perform a right join on twodata frame objects and return a `DataFrame` containing
+Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
 
 # Arguments
@@ -778,7 +778,7 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
     semijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
 
 Perform a semi join of two data frame objects and return a `DataFrame` containing the result.
-A semi join returns a subset of rows of `df1` that match with the keys in `df2`.
+A semi join returns the subset of rows of `df1` that match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -873,7 +873,7 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     antijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
 
 Perform an anti join of two data frame objects and return a `DataFrame` containing the result.
-An anti join returns a subset of rows of `df1` that do not match with the keys in `df2`.
+An anti join returns the subset of rows of `df1` that do not match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
