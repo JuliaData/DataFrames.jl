@@ -692,14 +692,11 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
 
     for (name, item) in name_cols
         if !(item isa AbstractVector)
-            if item isa AbstractArray
-                @assert ndims(item) == 0
-                x = item[]
-                item_new = fill!(Tables.allocatecolumn(typeof(x), target_row_count), x)
-            elseif item isa Ref
+            if item isa Union{AbstractArray{<:Any, 0}, Ref}
                 x = item[]
                 item_new = fill!(Tables.allocatecolumn(typeof(x), target_row_count), x)
             else
+                @assert !(item isa AbstractArray)
                 item_new = fill!(Tables.allocatecolumn(typeof(item), target_row_count), item)
             end
         elseif item isa AbstractRange
