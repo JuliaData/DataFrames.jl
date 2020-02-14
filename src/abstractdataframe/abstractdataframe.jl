@@ -868,7 +868,7 @@ end
 Return a copy of data frame `df` containing only rows for which `function`
 returns `true`.
 
-If `cols` is not specified then he function is passed `DataFrameRow`s as its only argument.
+If `cols` is not specified then the function is passed `DataFrameRow`s.
 If `cols` is a single column then then elements of column `cols` are passed to the function.
 If `cols` represents multiple columns (any valid column selector is accepted) then
 `NamedTuple`s formed with elements of the selected columns are passed to the function.
