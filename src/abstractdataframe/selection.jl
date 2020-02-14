@@ -34,7 +34,7 @@ end
 
 (f::ByRow)(col::AbstractVector) = (f.fun).(col)
 
-function (f::ByRow)(cols::NamedTuple{C, <:Tuple{Vararg{AbstractVector}}}) where C
+function (f::ByRow)(cols::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}})
     rowiterator = Tables.rows(cols)
     map(f.fun, Tables.namedtupleiterator(eltype(rowiterator), rowiterator))
 end
