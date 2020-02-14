@@ -1,7 +1,6 @@
 module TestDeprecated
 
 using Test, DataFrames, Random, Logging
-import DataFrames: identifier
 
 const ≅ = isequal
 
