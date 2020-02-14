@@ -52,7 +52,7 @@ An exception are `DataFrame(kwargs...)` and `DataFrame(pairs::Pair{Symbol,<:Any}
 form constructors which additionally allow a column to be of any other type that is not
 an `AbstractArray`, in which case the passed value is automatically repeated to fill
 a new vector of the appropriate length. As a particular rule values stored in
-`Ref` or `0`-dimentional `AbstractArray` are unwrapped and treated in the same way.
+a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated in the same way.
 
 # Notes
 The `DataFrame` constructor by default copies all columns vectors passed to it.
@@ -602,7 +602,7 @@ If `ind` is omitted it is set to `ncol(df)+1`
 - `name` : the name of the new column
 - `col` : an `AbstractVector` giving the contents of the new column or a value of any
   type other than `AbstractArray` which will be repeated to fill a new vector;
-  As a particular rule a values stored in `Ref` or `0`-dimentional `AbstractArray`
+  As a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
   are unwrapped and treated in the same way.
 - `makeunique` : Defines what to do if `name` already exists in `df`;
   if it is `false` an error will be thrown; if it is `true` a new unique name will
