@@ -229,7 +229,7 @@ end
                             Tables.namedtupleiterator(eachcol(df)),
                             Tables.namedtupleiterator(eachcol(df, true)))
         @testa a isa NamedTuple
-        @test a === b === c === d === e
+        @test a === b === c === d
     end
 
     @test Tables.getcolumn(eachcol(df), 1) == Tables.getcolumn(df, 1)
