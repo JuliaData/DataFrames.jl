@@ -268,7 +268,17 @@ end
     @test names(df) == [:a_2, :a, :a_1, :a_3]
     @test df[!, 4] == [12, 12]
     df = DataFrame()
-    @test insertcols!(df, :a=>"a", :b=>1:2) == DataFrame(a=["a", "a"], b=1:2)
+    @test insertcols!(df, :a => "a", :b => 1:2) == DataFrame(a=["a", "a"], b=1:2)
+
+    df = DataFrame()
+    insertcols!(df, :a => Ref(1), :b => fill(1))
+    @test df == DataFrame(a=[1], b=[1])
+    df = DataFrame()
+    insertcols!(df, :a => Ref(1), :b => fill(1), :c => 1:3)
+    @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+    df = DataFrame(c=1:3)
+    insertcols!(df, 1, :a => Ref(1), :b => fill(1))
+    @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
 end
 
 @testset "DataFrame constructors" begin
