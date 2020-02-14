@@ -56,8 +56,11 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
-    c = first(sel)
-    return idx[c] => last(sel)
+    c = idx[first(sel)]
+    if length(c) == 0
+        throw(ArgumentError("at least one column must be passed to a transformation function"))
+    end
+    return c => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex,
@@ -71,6 +74,9 @@ end
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
     c = idx[first(sel)]
+    if length(c) == 0
+        throw(ArgumentError("at least one column must be passed to a transformation function"))
+    end
     fun = last(sel)
     if length(c) > 3
         newcol = Symbol(join(@views _names(idx)[c[1:2]], '_'), "_etc_", funname(fun))
@@ -97,12 +103,8 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
         res = first(transform_spec)(df[!, col_idx])
         newdf[!, newname] = res isa AbstractVector ? res : [res]
     elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
-        if length(col_idx) == 0 && first(transform_spec) isa ByRow
-            newdf[!, newname] = map(_ -> (first(transform_spec).fun)(), axes(df, 1))
-        else
-            res = first(transform_spec)(Tables.columntable(df[!, col_idx]))
-            newdf[!, newname] = res isa AbstractVector ? res : [res]
-        end
+        res = first(transform_spec)(Tables.columntable(df[!, col_idx]))
+        newdf[!, newname] = res isa AbstractVector ? res : [res]
     else
         throw(ErrorException("code should never reach this branch"))
     end
