@@ -787,52 +787,95 @@ The exact rules of handling columns of a `DataFrame` are explained in
 
 ## Replacing Data
 
-Use the broadcasting syntax to apply replacement operations to data frames.
+Example replacement operations on individual columns, subsets of columns, entire data frames, and using `missing` is shown below in this order.
 
-Note: in-place replacement in a data frame requires the type of the replacement value match the respective column data type.
+Note:
 
-It follows that replacing `"None"` with `missing` in-place requires a call to `allowmissing!(df)` in the example below.
+* The broadcasting syntax is necesary apply replacement operations to every column in a data frame.
+* In-place replacement in a data frame requires the type of the replacement value match the respective column data type.
+* It follows that replacing `"None"` with `missing` in-place requires a call to `allowmissing!(df)` in the final example below.
 
 ```jldoctest
-julia> df = DataFrame(a = ["a", "None", "b", "None"], b = [1,2,3,4], c = ["None", "x", "y", "z"])
-4×3 DataFrame
-│ Row │ a      │ b     │ c      │
-│     │ String │ Int64 │ String │
-├─────┼────────┼───────┼────────┤
-│ 1   │ a      │ 1     │ None   │
-│ 2   │ None   │ 2     │ x      │
-│ 3   │ b      │ 3     │ y      │
-│ 4   │ None   │ 4     │ z      │
+julia> df = DataFrame(a = ["a", "None", "b", "None"], b = [1,2,3,4], c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ None   │ x      │
+│ 2   │ None   │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ None   │
+│ 4   │ None   │ 4     │ h      │ z      │
 
-julia> @. df = ifelse(df == "None", "c", df)
-4×3 DataFrame
-│ Row │ a      │ b     │ c      │
-│     │ String │ Int64 │ String │
-├─────┼────────┼───────┼────────┤
-│ 1   │ a      │ 1     │ c      │
-│ 2   │ c      │ 2     │ x      │
-│ 3   │ b      │ 3     │ y      │
-│ 4   │ c      │ 4     │ z      │
+# individual column
+julia> replace!(df.a, "None"=> "c")
+4-element Array{String,1}:
+ "a"
+ "c"
+ "b"
+ "c"
 
+julia> df
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ None   │ x      │
+│ 2   │ c      │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ None   │
+│ 4   │ c      │ 4     │ h      │ z      │
+
+# replacement on a subset of columns [:c, :d]
+julia> df[:, [:c, :d]] = ifelse.(df[:, [:c, :d]] .== "None", "c", df[:, [:c, :d]])
+4×2 DataFrame
+│ Row │ c      │ d      │
+│     │ String │ String │
+├─────┼────────┼────────┤
+│ 1   │ c      │ x      │
+│ 2   │ j      │ y      │
+│ 3   │ k      │ c      │
+│ 4   │ h      │ z      │
+
+julia> df
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ c      │ x      │
+│ 2   │ c      │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ c      │
+│ 4   │ c      │ 4     │ h      │ z      │
+
+# replacement on entire dataframe
+julia> df = ifelse.(df .== "c", "None", df)
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ None   │ x      │
+│ 2   │ None   │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ None   │
+│ 4   │ None   │ 4     │ h      │ z      │
+
+# replacement using `missing`
 julia> allowmissing!(df)
-4×3 DataFrame
-│ Row │ a       │ b      │ c       │
-│     │ String⍰ │ Int64⍰ │ String⍰ │
-├─────┼─────────┼────────┼─────────┤
-│ 1   │ a       │ 1      │ c       │
-│ 2   │ c       │ 2      │ x       │
-│ 3   │ b       │ 3      │ y       │
-│ 4   │ c       │ 4      │ z       │
+4×4 DataFrame
+│ Row │ a       │ b      │ c       │ d       │
+│     │ String⍰ │ Int64⍰ │ String⍰ │ String⍰ │
+├─────┼─────────┼────────┼─────────┼─────────┤
+│ 1   │ a       │ 1      │ None    │ x       │
+│ 2   │ None    │ 2      │ j       │ y       │
+│ 3   │ b       │ 3      │ k       │ None    │
+│ 4   │ None    │ 4      │ h       │ z       │
 
-julia> df2 = @. ifelse(df == "c", missing, df)
-4×3 DataFrame
-│ Row │ a       │ b     │ c       │
-│     │ String⍰ │ Int64 │ String⍰ │
-├─────┼─────────┼───────┼─────────┤
-│ 1   │ a       │ 1     │ missing │
-│ 2   │ missing │ 2     │ x       │
-│ 3   │ b       │ 3     │ y       │
-│ 4   │ missing │ 4     │ z       │
+julia> df = ifelse.(df .== "None", missing, df)
+4×4 DataFrame
+│ Row │ a       │ b     │ c       │ d       │
+│     │ String⍰ │ Int64 │ String⍰ │ String⍰ │
+├─────┼─────────┼───────┼─────────┼─────────┤
+│ 1   │ a       │ 1     │ missing │ x       │
+│ 2   │ missing │ 2     │ j       │ y       │
+│ 3   │ b       │ 3     │ k       │ missing │
+│ 4   │ missing │ 4     │ h       │ z       │
 ```
 
 ## Importing and Exporting Data (I/O)
