@@ -109,7 +109,7 @@ struct DataFrame <: AbstractDataFrame
         if minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for (i, col) in enumerate(columns)
-                if (col isa AbstractArray && ndims(col) == 0) || col isa Ref
+                if col isa Union{AbstractArray{<:Any, 0}, Ref}
                     x = col[]
                     columns[i] = fill!(Tables.allocatecolumn(typeof(x), maxlen), x)
                     lengths[i] = maxlen
