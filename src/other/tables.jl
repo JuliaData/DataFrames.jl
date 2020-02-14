@@ -4,6 +4,8 @@ Tables.columns(df::AbstractDataFrame) = df
 Tables.rowaccess(::Type{<:AbstractDataFrame}) = true
 Tables.rows(df::AbstractDataFrame) = eachrow(df)
 Tables.rowtable(df::AbstractDataFrame) = Tables.rowtable(Tables.columntable(df))
+Tables.namedtupleiterator(df::AbstractDataFrame) =
+    Tables.namedtupleiterator(Tables.columntable(df))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
@@ -66,6 +68,8 @@ Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(pare
 Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
 Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
 Tables.rowtable(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rowtable(parent(itr))
+Tables.namedtupleiterator(itr::Union{DataFrameRows,DataFrameColumns}) =
+    Tables.namedtupleiterator(parent(itr))
 Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
     Tables.materializer(parent(itr))
 
@@ -76,6 +80,7 @@ Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, nm::Symbol) =
 Tables.columnnames(itr::Union{DataFrameRows,DataFrameColumns}) =
     Tables.columnnames(parent(itr))
 
-IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(columntable(df))
+IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) =
+    Tables.datavaluerows(Tables.columntable(df))
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
 TableTraits.isiterabletable(x::AbstractDataFrame) = true

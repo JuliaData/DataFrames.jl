@@ -81,7 +81,11 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 
     @testset "Row-style" begin
         bare_rows = Tables.rowtable(df)
-        for (actual, expected) in zip(bare_rows, eachrow(df))
+        bare_rows_iterator = Tables.namedtupleiterator(df)
+        for (actual, actual2, expected) in zip(bare_rows, bare_rows_iterator, eachrow(df))
+            @test actual isa NamedTuple
+            @test actual.a === actual2.a
+            @test actual.b === actual2.b
             @test actual.a == expected.a
             @test actual.b == expected.b
         end
@@ -186,47 +190,57 @@ end
 end
 
 @testset "eachrow and eachcol integration" begin
-     df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+    df = DataFrame(rand(3,4), [:a, :b, :c, :d])
 
-     df2 = DataFrame(eachrow(df))
-     @test df == df2
-     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    df2 = DataFrame(eachrow(df))
+    @test df == df2
+    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-     df2 = DataFrame!(eachrow(df))
-     @test df == df2
-     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    df2 = DataFrame!(eachrow(df))
+    @test df == df2
+    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-     df2 = DataFrame(eachcol(df, true))
-     @test df == df2
-     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    df2 = DataFrame(eachcol(df, true))
+    @test df == df2
+    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-     df2 = DataFrame!(eachcol(df, true))
-     @test df == df2
-     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    df2 = DataFrame!(eachcol(df, true))
+    @test df == df2
+    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-     df2 = DataFrame(eachcol(df))
-     @test names(df2) == [:x1, :x2, :x3, :x4]
-     @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
-     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    df2 = DataFrame(eachcol(df))
+    @test names(df2) == [:x1, :x2, :x3, :x4]
+    @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-     df2 = DataFrame(eachcol(df))
-     @test names(df2) == [:x1, :x2, :x3, :x4]
-     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    df2 = DataFrame(eachcol(df))
+    @test names(df2) == [:x1, :x2, :x3, :x4]
+    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
-     @test Tables.rowtable(df) == Tables.rowtable(eachcol(df))
-     @test Tables.columntable(df) == Tables.columntable(eachrow(df))
-     @test Tables.columntable(df) == Tables.columntable(eachcol(df))
+    @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
+    @test Tables.rowtable(df) == Tables.rowtable(eachcol(df))
+    @test Tables.rowtable(df) == Tables.rowtable(eachcol(df, true))
+    @test Tables.columntable(df) == Tables.columntable(eachrow(df))
+    @test Tables.columntable(df) == Tables.columntable(eachcol(df))
+    @test Tables.columntable(df) == Tables.columntable(eachcol(df, true))
 
-     @test Tables.getcolumn(eachcol(df), 1) == Tables.getcolumn(df, 1)
-     @test Tables.getcolumn(eachcol(df), :a) == Tables.getcolumn(df, :a)
-     @test Tables.columnnames(eachcol(df)) == Tables.columnnames(df)
-     @test Tables.getcolumn(eachcol(df, true), 1) == Tables.getcolumn(df, 1)
-     @test Tables.getcolumn(eachcol(df, true), :a) == Tables.getcolumn(df, :a)
-     @test Tables.columnnames(eachcol(df, true)) == Tables.columnnames(df)
-     @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
-     @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
-     @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)
+    for (a, b, c, d) in zip(Tables.rowtable(df),
+                            Tables.namedtupleiterator(eachrow(df)),
+                            Tables.namedtupleiterator(eachcol(df)),
+                            Tables.namedtupleiterator(eachcol(df, true)))
+        @testa a isa NamedTuple
+        @test a === b === c === d === e
+    end
+
+    @test Tables.getcolumn(eachcol(df), 1) == Tables.getcolumn(df, 1)
+    @test Tables.getcolumn(eachcol(df), :a) == Tables.getcolumn(df, :a)
+    @test Tables.columnnames(eachcol(df)) == Tables.columnnames(df)
+    @test Tables.getcolumn(eachcol(df, true), 1) == Tables.getcolumn(df, 1)
+    @test Tables.getcolumn(eachcol(df, true), :a) == Tables.getcolumn(df, :a)
+    @test Tables.columnnames(eachcol(df, true)) == Tables.columnnames(df)
+    @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
+    @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
+    @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)
 end
 
 end # module
