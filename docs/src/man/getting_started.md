@@ -791,8 +791,8 @@ Example replacement operations on individual columns, subsets of columns, entire
 
 Note:
 
-* The broadcasting syntax is necesary apply replacement operations to every column in a data frame.
-* In-place replacement in a data frame requires the type of the replacement value match the respective column data type.
+* The broadcasting syntax is necessary apply replacement operations to every column in a data frame.
+* In-place replacement in a data frame requires the type of the replacement value to match the respective column data type.
 * It follows that replacing `"None"` with `missing` in-place requires a call to `allowmissing!(df)` in the final example below.
 
 ```jldoctest
