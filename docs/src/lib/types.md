@@ -118,6 +118,7 @@ DataFrame
 DataFrameRow
 GroupedDataFrame
 GroupKey
+GroupKeys
 SubDataFrame
 DataFrameRows
 DataFrameColumns

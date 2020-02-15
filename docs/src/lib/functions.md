@@ -8,9 +8,16 @@ CurrentModule = DataFrames
 Pages = ["functions.md"]
 ```
 
-## Grouping, Joining, and Split-Apply-Combine
+## Joining, Grouping, and Split-Apply-Combine
 
 ```@docs
+innerjoin
+leftjoin
+rightjoin
+outerjoin
+antijoin
+semijoin
+crossjoin
 aggregate
 by
 combine
@@ -19,7 +26,6 @@ groupindices
 groupvars
 keys
 get
-join
 map
 stack
 unstack
@@ -48,17 +54,21 @@ filter!
 flatten
 hcat
 insertcols!
+length
 mapcols
 names
+ndims
 nonunique
 nrow
 ncol
+order
 rename!
 rename
 repeat
 select
 select!
 show
+size
 sort
 sort!
 unique!

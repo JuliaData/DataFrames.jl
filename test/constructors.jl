@@ -389,4 +389,10 @@ end
     @test names(df) == [:A, :B, :C]
 end
 
+@testset "expansion of Ref and 0-dimensional arrays" begin
+    @test DataFrame(a=Ref(1), b=fill(1)) == DataFrame(a=[1], b=[1])
+    @test DataFrame(a=Ref(1), b=fill(1), c=1:3) ==
+          DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+end
+
 end # module
