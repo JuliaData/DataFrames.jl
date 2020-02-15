@@ -75,6 +75,11 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
     parent(gd)[idx, :]
 end
 
+
+#
+# Accessing group indices, columns, and values
+#
+
 """
     groupindices(gd::GroupedDataFrame)
 
@@ -111,7 +116,7 @@ _groupvalues(gd::GroupedDataFrame, i::Integer, col::Symbol) =
 
 
 #
-# Length and iteration
+# Vector interface and integer indexing
 #
 
 Base.length(gd::GroupedDataFrame) = gd.ngroups
@@ -124,20 +129,21 @@ function Base.iterate(gd::GroupedDataFrame, i=1)
     end
 end
 
-
-#
-# Vector interface and integer indexing
-#
-
 Compat.lastindex(gd::GroupedDataFrame) = gd.ngroups
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
+
+# These have to be defined for some to_indices() logic to work, as long
+# as GroupedDataFrame is not <: AbstractArray
+Base.IndexStyle(::Type{<:GroupedDataFrame}) = IndexLinear()
+Base.IndexStyle(::GroupedDataFrame) = IndexLinear()
+Base.keys(::IndexLinear, gd::GroupedDataFrame) = Base.OneTo(length(gd))
 
 # Single integer indexing
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 
-# Array of integers
+# Index with array of integers OR bools
 function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
@@ -155,14 +161,14 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
                      new_starts, new_ends, length(new_starts))
 end
 
-# Colon (creates copy)
+# Index with colon (creates copy)
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
     GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx,
                      gd.starts, gd.ends, gd.ngroups)
 
 
 #
-# Dictionary interface and indexing
+# GroupKey and GroupKeys
 #
 
 """
@@ -244,6 +250,111 @@ Base.IndexStyle(::Type{<:GroupKeys}) = IndexLinear()
     return GroupKey(parent(gk), i)
 end
 
+
+#
+# Non-standard indexing
+#
+
+# Non-standard indexing relies on converting to integer indices first
+# The full version (to_indices) is required rather than to_index even though
+# GroupedDataFrame behaves as a 1D array due to the behavior of Colon and Not.
+# Note that this behavior would be the default if it was <:AbstractArray
+Base.getindex(gd::GroupedDataFrame, idx...) = getindex(gd, Base.to_indices(gd, idx)...)
+
+# The allowed key types for dictionary-like indexing
+const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
+# All allowed scalar index types
+const GroupIndexTypes = Union{Integer, GroupKeyTypes}
+
+# Find integer index for dictionary keys
+function Base.to_index(gd::GroupedDataFrame, key::GroupKey)
+    gd === parent(key) && return getfield(key, :idx)
+    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
+end
+
+function Base.to_index(gd::GroupedDataFrame, key::Tuple)
+    for i in 1:length(gd)
+        isequal(Tuple(_groupvalues(gd, i)), key) && return i
+    end
+    throw(KeyError(key))
+end
+
+function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
+    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+        throw(KeyError(key))
+    end
+    return Base.to_index(gd, Tuple(key))
+end
+
+# Array of (possibly non-standard) indices
+function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
+    # A concrete eltype which is <: GroupKeyTypes, don't need to check
+    if isconcretetype(T) && T <: GroupKeyTypes
+        return [Base.to_index(gd, i) for i in idxs]
+    end
+
+    # Edge case - array is empty
+    isempty(idxs) && return Int[]
+
+    # Infer eltype based on type of first index, expect rest to match
+    idx1 = idxs[1]
+    E1 = typeof(idx1)
+
+    E = if E1 <: Integer && E1 !== Bool
+        Integer
+    elseif E1 <: GroupKey
+        GroupKey
+    elseif E1 <: Tuple
+        Tuple
+    elseif E1 <: NamedTuple
+        NamedTuple
+    else
+        throw(ArgumentError("Invalid index: $idx1 of type $E1"))
+    end
+
+    # Convert each index to integer format
+    ints = Vector{Int}(undef, length(idxs))
+    for (i, idx) in enumerate(idxs)
+        if !(idx isa GroupIndexTypes) || idx isa Bool
+            throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
+        end
+        idx isa E || throw(ArgumentError("Mixed index types in array not allowed"))
+        ints[i] = Base.to_index(gd, idx)
+    end
+
+    return ints
+end
+
+
+#
+# Indexing with Not/InvertedIndex
+#
+
+# InvertedIndex wrapping any other valid index type
+# to_indices() is needed here rather than to_index() in order to override the
+# to_indices(::Any, ::Tuple{Not}) methods defined in InvertedIndices.jl
+function Base.to_indices(gd::GroupedDataFrame, (idx,)::Tuple{<:Not})
+    (skip_idx,) = Base.to_indices(gd, (idx.skip,))
+    idxs = Base.OneTo(length(gd))[Not(skip_idx)]
+    return (idxs,)
+end
+
+# InvertedIndex wrapping a boolean array
+# The definition above works but we need to define specialized methods to avoid
+# ambiguity in dispatch
+function Base.to_indices(gd::GroupedDataFrame,
+                         (idx,)::Tuple{Not{<:Union{BitArray{1}, Vector{Bool}}}})
+    (findall(!, idx.skip),)
+end
+function Base.to_indices(gd::GroupedDataFrame,
+                         (idx,)::Tuple{Not{<:AbstractVector{Bool}}})
+    (findall(!, idx.skip),)
+end
+
+
+#
+# Dictionary interface
+#
 
 """
     keys(gd::GroupedDataFrame)
@@ -330,28 +441,6 @@ true
 ```
 """
 Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
-
-# Index with GroupKey
-function Base.getindex(gd::GroupedDataFrame, key::GroupKey)
-    gd === parent(key) && return gd[getfield(key, :idx)]
-    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
-end
-
-# Index with tuple
-function Base.getindex(gd::GroupedDataFrame, key::Tuple)
-    for i in 1:length(gd)
-        isequal(Tuple(_groupvalues(gd, i)), key) && return gd[i]
-    end
-    throw(KeyError(key))
-end
-
-# Index with named tuple
-function Base.getindex(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
-    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
-        throw(KeyError(key))
-    end
-    return gd[Tuple(key)]
-end
 
 """
     get(gd::GroupedDataFrame, key, default)

@@ -231,9 +231,9 @@ end
                     b2 = rand(Union{Symbol, Missing}[:A,:B,:C], 5),
                     v2 = Vector{Union{Float64, Missing}}(randn(5)))
 
-    m1 = join(df1, df2, on = :a, kind=:inner)
+    m1 = innerjoin(df1, df2, on = :a)
     @test m1[!, :a] == df1[!, :a][df1[!, :a] .<= 5] # preserves df1 order
-    m2 = join(df1, df2, on = :a, kind = :outer)
+    m2 = outerjoin(df1, df2, on = :a)
     @test m2[!, :a] == df1[!, :a] # preserves df1 order
     @test m2[!, :b] == df1[!, :b] # preserves df1 order
     @test m2[indexin(df1[!, :a], m2[!, :a]), :b] == df1[!, :b]
@@ -248,16 +248,16 @@ end
     df2 = DataFrame(a = Union{Int, Missing}[1, 2, 4],
                     c = Union{String, Missing}["New World", "Old World", "New World"])
 
-    m1 = join(df1, df2, on = :a, kind = :inner)
+    m1 = innerjoin(df1, df2, on = :a)
     @test m1[!, :a] == [1, 2]
 
-    m2 = join(df1, df2, on = :a, kind = :left)
+    m2 = leftjoin(df1, df2, on = :a)
     @test m2[!, :a] == [1, 2, 3]
 
-    m3 = join(df1, df2, on = :a, kind = :right)
+    m3 = rightjoin(df1, df2, on = :a)
     @test m3[!, :a] == [1, 2, 4]
 
-    m4 = join(df1, df2, on = :a, kind = :outer)
+    m4 = outerjoin(df1, df2, on = :a)
     @test m4[!, :a] == [1, 2, 3, 4]
 
     # test with missings (issue #185)
@@ -269,11 +269,11 @@ end
     df2[!, :A] = ["a", missing, "c"]
     df2[!, :C] = Union{Int, Missing}[1, 2, 4]
 
-    m1 = join(df1, df2, on = :A)
+    m1 = innerjoin(df1, df2, on = :A)
     @test size(m1) == (3,3)
     @test m1[!, :A] ≅ ["a","a", missing]
 
-    m2 = join(df1, df2, on = :A, kind = :outer)
+    m2 = outerjoin(df1, df2, on = :A)
     @test size(m2) == (5,3)
     @test m2[!, :A] ≅ ["a", "b", "a", missing, "c"]
 end
@@ -289,9 +289,9 @@ end
                     v2 = Vector{Union{Float64, Missing}}(randn(5)))
     df2[1,:a] = missing
 
-    m1 = join(df1, df2, on = [:a,:b])
+    m1 = innerjoin(df1, df2, on = [:a,:b])
     @test m1[!, :a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
-    m2 = join(df1, df2, on = [:a,:b], kind = :outer)
+    m2 = outerjoin(df1, df2, on = [:a,:b])
     @test ismissing(m2[10,:v2])
     @test m2[!, :a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
 
@@ -307,8 +307,8 @@ end
     spltdf(df1)
     spltdf(df2)
 
-    m1 = join(df1, df2, on = :a, makeunique=true)
-    m2 = join(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
+    m1 = innerjoin(df1, df2, on = :a, makeunique=true)
+    m2 = innerjoin(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
     @test m1[!, :a] == m2[!, :a]
 end
 

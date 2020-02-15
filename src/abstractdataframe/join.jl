@@ -225,92 +225,10 @@ function update_row_maps!(left_table::AbstractDataFrame,
     return to_bimap(left_ixs), to_bimap(leftonly_ixs), to_bimap(right_ixs), to_bimap(rightonly_ixs)
 end
 
-"""
-    join(df1, df2; on = Symbol[], kind = :inner, makeunique = false,
-         indicator = nothing, validate = (false, false))
-    join(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
-         validate = (false, false))
-
-Join two or more `DataFrame` objects and return a `DataFrame` containing
-the result.
-
-# Arguments
-- `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
-
-# Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed). If more than two data frames are joined
-  then only a column name or a vector of column names are allowed.
-  `on` is a required argument for all joins except for `kind = :cross`.
-
-- `kind` : the type of join, options include:
-
-  - `:inner` : only include rows with keys that match in both `df1`
-    and `df2`, the default
-  - `:outer` : include all rows from `df1` and `df2`
-  - `:left` : include all rows from `df1`
-  - `:right` : include all rows from `df2`
-  - `:semi` : return rows of `df1` that match with the keys in `df2`
-  - `:anti` : return rows of `df1` that do not match with the keys in `df2`
-  - `:cross` : a full Cartesian product of the key combinations; every
-    row of `df1` is matched with every row of `df2`
-
-  When joining more than two data frames only `:inner`, `:outer` and `:cross`
-  joins are allowed.
-
-- `makeunique` : if `false` (the default), an error will be raised
-  if duplicate names are found in columns not joined on;
-  if `true`, duplicate names will be suffixed with `_i`
-  (`i` starting at 1 for the first duplicate).
-
-- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
-   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
-   the column name will be modified if `makeunique=true`.
-   This argument is only supported when joining exactly two data frames.
-
-- `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
-   Can be a tuple or a pair, with the first element indicating whether to
-   run check for `df1` and the second element for `df2`.
-   By default no check is performed.
-
-For the three join operations that may introduce missing values (`:outer`, `:left`,
-and `:right`), all columns of the returned data table will support missing values.
-
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left `DataFrame` takes precedence over the ordering of the right `DataFrame`.
-
-If more than two data frames are passed, the join is performed
-recursively with left associativity.
-In this case the `indicator` keyword argument is not supported.
-
-# Examples
-```julia
-name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
-
-join(name, job, on = :ID)
-join(name, job, on = :ID, kind = :outer)
-join(name, job, on = :ID, kind = :left)
-join(name, job, on = :ID, kind = :right)
-join(name, job, on = :ID, kind = :semi)
-join(name, job, on = :ID, kind = :anti)
-join(name, job, kind = :cross)
-
-job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
-join(name, job2, on = :ID => :identifier)
-join(name, job2, on = [:ID => :identifier])
-```
-"""
-function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
-                   on::Union{<:OnType, AbstractVector} = Symbol[],
-                   kind::Symbol = :inner, makeunique::Bool=false,
-                   indicator::Union{Nothing, Symbol} = nothing,
-                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
+               on::Union{<:OnType, AbstractVector}, kind::Symbol, makeunique::Bool,
+               indicator::Union{Nothing, Symbol},
+               validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}})
     _check_consistency(df1)
     _check_consistency(df2)
 
@@ -331,10 +249,7 @@ function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         df2[!, df2_ind] = trues(nrow(df2))
     end
 
-    if kind == :cross
-        (on == []) || throw(ArgumentError("Cross joins don't use argument 'on'."))
-        return crossjoin(df1, df2, makeunique=makeunique)
-    elseif on == []
+    if on == []
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
@@ -430,23 +345,681 @@ function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return joined
 end
 
-function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame,
-                   dfs::AbstractDataFrame...;
-                   on::Union{Symbol, AbstractVector{Symbol}} = Symbol[],
-                   kind::Symbol = :inner, makeunique::Bool=false,
-                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
-    if !(kind in (:inner, :outer, :cross))
-        throw(ArgumentError("Only inner, outer, and cross joins are supported when " *
-                            "joining more than two data frames"))
-    end
-    join(join(df1, df2, on=on, kind=kind, makeunique=makeunique, validate=validate),
-         dfs..., on=on, kind=kind, makeunique=makeunique, validate=validate)
-end
+"""
+    innerjoin(df1, df2; on = Symbol[], makeunique = false,
+              validate = (false, false))
+    innerjoin(df1, df2, dfs...; on = Symbol[], makeunique = false,
+              validate = (false, false))
 
+Perform an inner join of two or more data frame objects and return a `DataFrame` containing
+the result. An inner join includes rows with keys that match in all passed data frames.
+
+# Arguments
+- `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `on` : A column name to join `df1` and `df2` on. If the columns on which
+  `df1` and `df2` will be joined have different names, then a `left=>right`
+  pair can be passed. It is also allowed to perform a join on multiple columns,
+  in which case a vector of column names or column name pairs can be passed
+  (mixing names and pairs is allowed). If more than two data frames are joined
+  then only a column name or a vector of column names are allowed.
+  `on` is a required argument.
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+- `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+If more than two data frames are passed, the join is performed
+recursively with left associativity.
+In this case the `validate` keyword argument is applied recursively with left associativity.
+
+See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
+
+# Examples
+```julia
+julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+3×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ John Doe  │
+│ 2   │ 2     │ Jane Doe  │
+│ 3   │ 3     │ Joe Blogs │
+
+julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ Lawyer │
+│ 2   │ 2     │ Doctor │
+│ 3   │ 4     │ Farmer │
+
+julia> innerjoin(name, job, on = :ID)
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+
+julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ identifier │ Job    │
+│     │ Int64      │ String │
+├─────┼────────────┼────────┤
+│ 1   │ 1          │ Lawyer │
+│ 2   │ 2          │ Doctor │
+│ 3   │ 4          │ Farmer │
+
+julia> innerjoin(name, job2, on = :ID => :identifier)
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+
+julia> innerjoin(name, job2, on = [:ID => :identifier])
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+```
+"""
+innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=nothing,
+          validate=validate)
+innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
+              dfs..., on=on, makeunique=makeunique, validate=validate)
+
+"""
+    leftjoin(df1, df2; on = Symbol[], makeunique = false,
+             indicator = nothing, validate = (false, false))
+
+Perform a left join of twodata frame objects and return a `DataFrame` containing
+the result. A left join includes all rows from `df1`.
+
+# Arguments
+- `df1`, `df2`: the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `on` : A column name to join `df1` and `df2` on. If the columns on which
+  `df1` and `df2` will be joined have different names, then a `left=>right`
+  pair can be passed. It is also allowed to perform a join on multiple columns,
+  in which case a vector of column names or column name pairs can be passed
+  (mixing names and pairs is allowed).
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
+   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
+   the column name will be modified if `makeunique=true`.
+- `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
+All columns of the returned data table will support missing values.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
+
+# Examples
+```julia
+julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+3×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ John Doe  │
+│ 2   │ 2     │ Jane Doe  │
+│ 3   │ 3     │ Joe Blogs │
+
+julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ Lawyer │
+│ 2   │ 2     │ Doctor │
+│ 3   │ 4     │ Farmer │
+
+julia> leftjoin(name, job, on = :ID)
+3×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String    │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+
+julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ identifier │ Job    │
+│     │ Int64      │ String │
+├─────┼────────────┼────────┤
+│ 1   │ 1          │ Lawyer │
+│ 2   │ 2          │ Doctor │
+│ 3   │ 4          │ Farmer │
+
+julia> leftjoin(name, job2, on = :ID => :identifier)
+3×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String    │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+
+julia> leftjoin(name, job2, on = [:ID => :identifier])
+3×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String    │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+```
+"""
+leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+         on::Union{<:OnType, AbstractVector} = Symbol[],
+         makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
+          validate=validate)
+
+"""
+    rightjoin(df1, df2; on = Symbol[], makeunique = false,
+              indicator = nothing, validate = (false, false))
+
+Perform a right join on two data frame objects and return a `DataFrame` containing
+the result. A right join includes all rows from `df2`.
+
+# Arguments
+- `df1`, `df2`: the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `on` : A column name to join `df1` and `df2` on. If the columns on which
+  `df1` and `df2` will be joined have different names, then a `left=>right`
+  pair can be passed. It is also allowed to perform a join on multiple columns,
+  in which case a vector of column names or column name pairs can be passed
+  (mixing names and pairs is allowed).
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
+   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
+   the column name will be modified if `makeunique=true`.
+- `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
+All columns of the returned data table will support missing values.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
+
+# Examples
+```julia
+julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+3×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ John Doe  │
+│ 2   │ 2     │ Jane Doe  │
+│ 3   │ 3     │ Joe Blogs │
+
+julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ Lawyer │
+│ 2   │ 2     │ Doctor │
+│ 3   │ 4     │ Farmer │
+
+julia> rightjoin(name, job, on = :ID)
+3×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String⍰  │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+│ 3   │ 4     │ missing  │ Farmer │
+
+julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ identifier │ Job    │
+│     │ Int64      │ String │
+├─────┼────────────┼────────┤
+│ 1   │ 1          │ Lawyer │
+│ 2   │ 2          │ Doctor │
+│ 3   │ 4          │ Farmer │
+
+julia> rightjoin(name, job2, on = :ID => :identifier)
+3×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String⍰  │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+│ 3   │ 4     │ missing  │ Farmer │
+
+julia> rightjoin(name, job2, on = [:ID => :identifier])
+3×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String⍰  │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+│ 3   │ 4     │ missing  │ Farmer │
+```
+"""
+rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
+          validate=validate)
+
+"""
+    outerjoin(df1, df2; on = Symbol[], kind = :inner, makeunique = false,
+              indicator = nothing, validate = (false, false))
+    outerjoin(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
+              validate = (false, false))
+
+Perform an outer join of two or more data frame objects and return a `DataFrame` containing
+the result. An outer join includes rows with keys that appear in any of the passed data frames.
+
+# Arguments
+- `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `on` : A column name to join `df1` and `df2` on. If the columns on which
+  `df1` and `df2` will be joined have different names, then a `left=>right`
+  pair can be passed. It is also allowed to perform a join on multiple columns,
+  in which case a vector of column names or column name pairs can be passed
+  (mixing names and pairs is allowed). If more than two data frames are joined
+  then only a column name or a vector of column names are allowed.
+  `on` is a required argument.
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
+   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
+   the column name will be modified if `makeunique=true`.
+   This argument is only supported when joining exactly two data frames.
+- `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
+All columns of the returned data table will support missing values.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+If more than two data frames are passed, the join is performed
+recursively with left associativity.
+In this case the `indicator` keyword argument is not supported
+and `validate` keyword argument is applied recursively with left associativity.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
+
+# Examples
+```julia
+julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+3×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ John Doe  │
+│ 2   │ 2     │ Jane Doe  │
+│ 3   │ 3     │ Joe Blogs │
+
+julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ Lawyer │
+│ 2   │ 2     │ Doctor │
+│ 3   │ 4     │ Farmer │
+
+julia> outerjoin(name, job, on = :ID)
+4×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String⍰   │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+│ 4   │ 4     │ missing   │ Farmer  │
+
+julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ identifier │ Job    │
+│     │ Int64      │ String │
+├─────┼────────────┼────────┤
+│ 1   │ 1          │ Lawyer │
+│ 2   │ 2          │ Doctor │
+│ 3   │ 4          │ Farmer │
+
+julia> outerjoin(name, job2, on = :ID => :identifier)
+4×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String⍰   │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+│ 4   │ 4     │ missing   │ Farmer  │
+
+julia> outerjoin(name, job2, on = [:ID => :identifier])
+4×3 DataFrame
+│ Row │ ID    │ Name      │ Job     │
+│     │ Int64 │ String⍰   │ String⍰ │
+├─────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer  │
+│ 2   │ 2     │ Jane Doe  │ Doctor  │
+│ 3   │ 3     │ Joe Blogs │ missing │
+│ 4   │ 4     │ missing   │ Farmer  │
+```
+"""
+outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
+          validate=validate)
+outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
+              dfs..., on=on, makeunique=makeunique, validate=validate)
+
+"""
+    semijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
+
+Perform a semi join of two data frame objects and return a `DataFrame` containing the result.
+A semi join returns the subset of rows of `df1` that match with the keys in `df2`.
+
+# Arguments
+- `df1`, `df2`: the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `on` : A column name to join `df1` and `df2` on. If the columns on which
+  `df1` and `df2` will be joined have different names, then a `left=>right`
+  pair can be passed. It is also allowed to perform a join on multiple columns,
+  in which case a vector of column names or column name pairs can be passed
+  (mixing names and pairs is allowed).
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+- `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
+   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
+   the column name will be modified if `makeunique=true`.
+- `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
+
+# Examples
+```julia
+julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+3×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ John Doe  │
+│ 2   │ 2     │ Jane Doe  │
+│ 3   │ 3     │ Joe Blogs │
+
+julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ Lawyer │
+│ 2   │ 2     │ Doctor │
+│ 3   │ 4     │ Farmer │
+
+julia> semijoin(name, job, on = :ID)
+2×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 1     │ John Doe │
+│ 2   │ 2     │ Jane Doe │
+
+julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ identifier │ Job    │
+│     │ Int64      │ String │
+├─────┼────────────┼────────┤
+│ 1   │ 1          │ Lawyer │
+│ 2   │ 2          │ Doctor │
+│ 3   │ 4          │ Farmer │
+
+julia> semijoin(name, job2, on = :ID => :identifier)
+2×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 1     │ John Doe │
+│ 2   │ 2     │ Jane Doe │
+
+julia> semijoin(name, job2, on = [:ID => :identifier])
+2×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 1     │ John Doe │
+│ 2   │ 2     │ Jane Doe │
+```
+"""
+semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    _join(df1, df2, on=on, kind=:semi, makeunique=makeunique, indicator=nothing,
+          validate=validate)
+
+"""
+    antijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
+
+Perform an anti join of two data frame objects and return a `DataFrame` containing the result.
+An anti join returns the subset of rows of `df1` that do not match with the keys in `df2`.
+
+# Arguments
+- `df1`, `df2`: the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `on` : A column name to join `df1` and `df2` on. If the columns on which
+  `df1` and `df2` will be joined have different names, then a `left=>right`
+  pair can be passed. It is also allowed to perform a join on multiple columns,
+  in which case a vector of column names or column name pairs can be passed
+  (mixing names and pairs is allowed).
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+- `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left data frame takes precedence over the ordering of the right data frame.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
+
+# Examples
+```julia
+julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+3×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ John Doe  │
+│ 2   │ 2     │ Jane Doe  │
+│ 3   │ 3     │ Joe Blogs │
+
+julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ Lawyer │
+│ 2   │ 2     │ Doctor │
+│ 3   │ 4     │ Farmer │
+
+julia> antijoin(name, job, on = :ID)
+1×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 3     │ Joe Blogs │
+
+julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+3×2 DataFrame
+│ Row │ identifier │ Job    │
+│     │ Int64      │ String │
+├─────┼────────────┼────────┤
+│ 1   │ 1          │ Lawyer │
+│ 2   │ 2          │ Doctor │
+│ 3   │ 4          │ Farmer │
+
+julia> antijoin(name, job2, on = :ID => :identifier)
+1×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 3     │ Joe Blogs │
+
+julia> antijoin(name, job2, on = [:ID => :identifier])
+1×2 DataFrame
+│ Row │ ID    │ Name      │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 3     │ Joe Blogs │
+```
+"""
+antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    _join(df1, df2, on=on, kind=:anti, makeunique=makeunique, indicator=nothing,
+          validate=validate)
+
+"""
+    crossjoin(df1, df2, dfs...; makeunique = false)
+
+Perform a cross join of two or more data frame objects and return a `DataFrame` containing
+the result. A cross join returns the cartesian product of rows from all passed data frames.
+
+# Arguments
+- `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
+
+# Keyword Arguments
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
+
+If more than two data frames are passed, the join is performed
+recursively with left associativity.
+
+See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
+          [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).
+
+# Examples
+```julia
+julia> df1 = DataFrame(X=1:3)
+3×1 DataFrame
+│ Row │ X     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> df2 = DataFrame(Y=["a", "b"])
+2×1 DataFrame
+│ Row │ Y      │
+│     │ String │
+├─────┼────────┤
+│ 1   │ a      │
+│ 2   │ b      │
+
+julia> crossjoin(df1, df2)
+6×2 DataFrame
+│ Row │ X     │ Y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ a      │
+│ 2   │ 1     │ b      │
+│ 3   │ 2     │ a      │
+│ 4   │ 2     │ b      │
+│ 5   │ 3     │ a      │
+│ 6   │ 3     │ b      │
+```
+"""
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
+    _check_consistency(df1)
+    _check_consistency(df2)
     r1, r2 = size(df1, 1), size(df2, 1)
     colindex = merge(index(df1), index(df2), makeunique=makeunique)
     cols = Any[[repeat(c, inner=r2) for c in eachcol(df1)];
                [repeat(c, outer=r1) for c in eachcol(df2)]]
     DataFrame(cols, colindex, copycols=false)
 end
+
+crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+          makeunique::Bool=false) =
+    crossjoin(crossjoin(df1, df2, makeunique=makeunique), dfs..., makeunique=makeunique)

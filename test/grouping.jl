@@ -955,9 +955,12 @@ end
 
 @testset "iteration protocol" begin
     gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+    count = 0
     for v in gd
-        @test size(v) == (2,2)
+        count += 1
+        @test v ≅ gd[count]
     end
+    @test count == length(gd)
 end
 
 @testset "type stability of index fields" begin
@@ -970,17 +973,30 @@ end
     @inferred ends(gd) == getfield(gd, :ends)
 end
 
-@testset "getindex" begin
+@testset "Array-like getindex" begin
     df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                    b = 1:8)
     gd = groupby_checked(df, :a)
+
+    # Invalid
+    @test_throws ArgumentError gd[true]
+    @test_throws ArgumentError gd[[1, 2, 1]]  # Duplicate
+    @test_throws ArgumentError gd["a"]
+
+    # Single integer
     @test gd[1] isa SubDataFrame
     @test gd[1] == view(df, [1, 5], :)
     @test_throws BoundsError gd[5]
-    @test_throws ArgumentError gd[true]
-    @test_throws ArgumentError gd[[1, 2, 1]]
-    @test_throws MethodError gd["a"]
-    gd2 = gd[[false, true, false, false]]
+
+    # first, last, lastindex
+    @test first(gd) == gd[1]
+    @test last(gd) == gd[4]
+    @test lastindex(gd) == 4
+    @test gd[end] == gd[4]
+
+    # Boolean array
+    idx2 = [false, true, false, false]
+    gd2 = gd[idx2]
     @test length(gd2) == 1
     @test gd2[1] == gd[2]
     @test_throws BoundsError gd[[true, false]]
@@ -988,7 +1004,10 @@ end
     @test gd2.starts == [3]
     @test gd2.ends == [4]
     @test gd2.idx == gd.idx
+    @test gd[BitArray(idx2)] ≅ gd2
+    @test gd[1:2][false:true] ≅ gd[[2]]  # AbstractArray{Bool}
 
+    # Colon
     gd3 = gd[:]
     @test gd3 isa GroupedDataFrame
     @test length(gd3) == 4
@@ -996,17 +1015,28 @@ end
     for i in 1:4
         @test gd3[i] == gd[i]
     end
-    gd4 = gd[[2,1]]
+
+    # Integer array
+    idx4 = [2,1]
+    gd4 = gd[idx4]
     @test gd4 isa GroupedDataFrame
     @test length(gd4) == 2
-    for i in 1:2
-        @test gd4[i] == gd[3-i]
+    for (i, j) in enumerate(idx4)
+        @test gd4[i] == gd[j]
     end
-    @test_throws BoundsError gd[1:5]
     @test gd4.groups == [2, 1, 0, 0, 2, 1, 0, 0]
     @test gd4.starts == [3,1]
     @test gd4.ends == [4,2]
     @test gd4.idx == gd.idx
+
+    # Infer eltype
+    @test gd[Array{Any}(idx4)] ≅ gd4
+    # Mixed (non-Bool) integer types should work
+    @test gd[Any[idx4[1], Unsigned(idx4[2])]] ≅ gd4
+    @test_throws ArgumentError gd[Any[2, true]]
+
+    # Out-of-bounds
+    @test_throws BoundsError gd[1:5]
 end
 
 @testset "== and isequal" begin
@@ -1445,6 +1475,105 @@ end
         "GroupKey: (a = :bar, b = 1)",
         "GroupKey: (a = :baz, b = 2)",
     ]
+end
+
+@testset "GroupedDataFrame indexing with array of keys" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    ints = [4, 6, 2, 1]
+    gd2 = gd[ints]
+    gkeys = keys(gd)[ints]
+
+    # Test with GroupKeys, Tuples, and NamedTuples
+    for converter in [identity, Tuple, NamedTuple]
+        a = converter.(gkeys)
+        @test gd[a] ≅ gd2
+
+        # Infer eltype
+        @test gd[Array{Any}(a)] ≅ gd2
+
+        # Duplicate keys
+        a2 = converter.(keys(gd)[[1, 2, 1]])
+        @test_throws ArgumentError gd[a2]
+    end
+end
+
+@testset "InvertedIndex with GroupedDataFrame" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    # Inverted scalar index
+    skip_i = 3
+    skip_key = keys(gd)[skip_i]
+    expected = gd[[i != skip_i for i in 1:length(gd)]]
+    expected_inv = gd[[skip_i]]
+
+    for skip in [skip_i, skip_key, Tuple(skip_key), NamedTuple(skip_key)]
+        @test gd[Not(skip)] ≅ expected
+        # Nested
+        @test gd[Not(Not(skip))] ≅ expected_inv
+    end
+
+    @test_throws ArgumentError gd[Not(true)]  # Bool <: Integer, but should fail
+
+    # Inverted array index
+    skipped = [3, 5, 2]
+    skipped_bool = [i ∈ skipped for i in 1:length(gd)]
+    skipped_keys = keys(gd)[skipped]
+    expected2 = gd[.!skipped_bool]
+    expected2_inv = gd[skipped_bool]
+
+    for skip in [skipped, skipped_keys, Tuple.(skipped_keys), NamedTuple.(skipped_keys)]
+        @test gd[Not(skip)] ≅ expected2
+        # Infer eltype
+        @test gd[Not(Array{Any}(skip))] ≅ expected2
+        # Nested
+        @test gd[Not(Not(skip))] ≅ expected2_inv
+        @test gd[Not(Not(Array{Any}(skip)))] ≅ expected2_inv
+    end
+
+    # Mixed integer arrays
+    @test gd[Not(Any[Unsigned(skipped[1]), skipped[2:end]...])] ≅ expected2
+    @test_throws ArgumentError gd[Not(Any[2, true])]
+
+    # Boolean array
+    @test gd[Not(skipped_bool)] ≅ expected2
+    @test gd[Not(Not(skipped_bool))] ≅ expected2_inv
+    @test gd[1:2][Not(false:true)] ≅ gd[[1]]  # Not{AbstractArray{Bool}}
+
+    # Inverted colon
+    @test gd[Not(:)] ≅ gd[Int[]]
+    @test gd[Not(Not(:))] ≅ gd
+end
+
+@testset "GroupedDataFrame array index homogeneity" begin
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    gd = groupby_checked(df, [:a, :b])
+
+    # All scalar index types
+    idxsets = [1:length(gd), keys(gd), Tuple.(keys(gd)), NamedTuple.(keys(gd))]
+
+    # Mixing index types should fail
+    for (i, idxset1) in enumerate(idxsets)
+        idx1 = idxset1[1]
+        for (j, idxset2) in enumerate(idxsets)
+            i == j && continue
+
+            idx2 = idxset2[2]
+
+            # With Any eltype
+            a = Any[idx1, idx2]
+            @test_throws ArgumentError gd[a]
+            @test_throws ArgumentError gd[Not(a)]
+
+            # Most specific applicable eltype, which is <: GroupKeyTypes
+            T = Union{typeof(idx1), typeof(idx2)}
+            a2 = T[idx1, idx2]
+            @test_throws ArgumentError gd[a2]
+            @test_throws ArgumentError gd[Not(a2)]
+        end
+    end
 end
 
 @testset "Parent DataFrame names changed" begin
