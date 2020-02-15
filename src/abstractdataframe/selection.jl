@@ -35,8 +35,7 @@ end
 (f::ByRow)(col::AbstractVector) = (f.fun).(col)
 
 function (f::ByRow)(cols::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}})
-    rowiterator = Tables.rows(cols)
-    map(f.fun, Tables.namedtupleiterator(eltype(rowiterator), rowiterator))
+    map(f.fun, Tables.namedtupleiterator(cols)
 end
 
 # add a method to funname defined in other/utils.jl
