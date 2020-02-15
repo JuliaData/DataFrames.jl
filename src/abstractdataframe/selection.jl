@@ -57,8 +57,9 @@ end
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
     c = idx[first(sel)]
-    if length(c) == 0
-        throw(ArgumentError("at least one column must be passed to a transformation function"))
+    if length(c) == 0 && first(last(sel)) isa ByRow
+        throw(ArgumentError("at least one column must be passed to a " *
+                            "`ByRow` transformation function"))
     end
     return c => last(sel)
 end
@@ -74,8 +75,9 @@ end
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
     c = idx[first(sel)]
-    if length(c) == 0
-        throw(ArgumentError("at least one column must be passed to a transformation function"))
+    if length(c) == 0 && first(last(sel)) isa ByRow
+        throw(ArgumentError("at least one column must be passed to a " *
+                            "`ByRow` transformation function"))
     end
     fun = last(sel)
     if length(c) > 3
