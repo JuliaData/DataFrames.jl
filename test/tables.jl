@@ -228,7 +228,7 @@ end
                             Tables.namedtupleiterator(eachrow(df)),
                             Tables.namedtupleiterator(eachcol(df)),
                             Tables.namedtupleiterator(eachcol(df, true)))
-        @testa a isa NamedTuple
+        @test a isa NamedTuple
         @test a === b === c === d
     end
 
