@@ -1,8 +1,8 @@
 # TODO:
 # * add transform and transfom! functions
-# * add `Col` wrapper for whole column operations
 # * update documentation
 # * add tests
+# * add Splat to column selector
 
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
@@ -23,7 +23,7 @@ A singleton type indicating that column renaming operation was requested in `sel
 struct ColRename end
 
 """
-    Row
+    ByRow
 
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
@@ -123,11 +123,16 @@ In particular, regular expressions, `All`, `Between`, and `Not` selectors are su
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
 `new_column_name` must be a `Symbol`, and `fun` a function or a type.
-If `old_column` is a `Symbol` or an integer then `fun` is applied to each element
-(row) of `old_column`.
+If `old_column` is a `Symbol` or an integer then `fun` is applied to a column `old_column`.
 Otherwise `old_column` can be any column indexing syntax, but in this case `fun`
-will be passed a `NamedTuple` representing each row, holding only
-the columns specified by `old_column`.
+will be passed a `NamedTuple` holding only the columns specified by `old_column`.
+
+It is allowed to wrap `fun` in `ByRow` struct. In this case
+if `old_column` is a `Symbol` or an integer then `fun` is applied to each element
+(row) of `old_column`. Otherwise `old_column` can be any column indexing syntax,
+but in this case `fun` will be passed a `NamedTuple` representing each row, holding only
+the columns specified by `old_column`. If `ByRow` is used it is not allowed
+that `old_column` selects an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
 In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
@@ -177,7 +182,7 @@ julia> df = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select!(df, :a => Row(sin) => :c, :b)
+julia> select!(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
 │ Row │ c        │ b     │
 │     │ Float64  │ Int64 │
@@ -255,11 +260,16 @@ are supported.
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
 `new_column_name` must be a `Symbol`, and `fun` a function or a type.
-If `old_column` is a `Symbol` or an integer then `fun` is applied to each element
-(row) of `old_column`.
+If `old_column` is a `Symbol` or an integer then `fun` is applied to a column `old_column`.
 Otherwise `old_column` can be any column indexing syntax, but in this case `fun`
-will be passed a `NamedTuple` representing each row, holding only
-the columns specified by `old_column`.
+will be passed a `NamedTuple` holding only the columns specified by `old_column`.
+
+It is allowed to wrap `fun` in `ByRow` struct. In this case
+if `old_column` is a `Symbol` or an integer then `fun` is applied to each element
+(row) of `old_column`. Otherwise `old_column` can be any column indexing syntax,
+but in this case `fun` will be passed a `NamedTuple` representing each row, holding only
+the columns specified by `old_column`. If `ByRow` is used it is not allowed
+that `old_column` selects an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
 In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
@@ -325,7 +335,7 @@ julia> select(df, :a=>:c, :b)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select(df, :a => Row(sin) => :c, :b)
+julia> select(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
 │ Row │ c        │ b     │
 │     │ Float64  │ Int64 │
@@ -378,7 +388,7 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     # │ 1   │ 1     │ 3     │
     # │ 2   │ 2     │ 4     │
     #
-    # julia> select(df, :, :a=>Row(sin)=>:a, :a, 1)
+    # julia> select(df, :, :a=>ByRow(sin)=>:a, :a, 1)
     # 2×2 DataFrame
     # │ Row │ a        │ b     │
     # │     │ Float64  │ Int64 │
