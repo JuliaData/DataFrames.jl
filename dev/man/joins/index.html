@@ -16,14 +16,14 @@ julia&gt; jobs = DataFrame(ID = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Docto
 ├─────┼───────┼────────┤
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 40    │ Doctor │
-</code></pre><p>We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the <code>join</code> function:</p><pre><code class="language-julia-repl">julia&gt; join(people, jobs, on = :ID)
+</code></pre><p>We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the <code>innerjoin</code> function:</p><pre><code class="language-julia-repl">julia&gt; innerjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 20    │ John Doe │ Lawyer │
 │ 2   │ 40    │ Jane Doe │ Doctor │
-</code></pre><p>In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.</p><p>There are seven kinds of joins supported by the DataFrames package:</p><ul><li>Inner: The output contains rows for values of the key that exist in both the first (left) and second (right) arguments to <code>join</code>.</li><li>Left: The output contains rows for values of the key that exist in the first (left) argument to <code>join</code>, whether or not that value exists in the second (right) argument.</li><li>Right: The output contains rows for values of the key that exist in the second (right) argument to <code>join</code>, whether or not that value exists in the first (left) argument.</li><li>Outer: The output contains rows for values of the key that exist in the first (left) or second (right) argument to <code>join</code>.</li><li>Semi: Like an inner join, but output is restricted to columns from the first (left) argument to <code>join</code>.</li><li>Anti: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument to <code>join</code>. As with semi joins, output is restricted to columns from the first (left) argument.</li><li>Cross: The output is the cartesian product of rows from the first (left) and second (right) arguments to <code>join</code>.</li></ul><p>See <a href="https://en.wikipedia.org/wiki/Join_(SQL)">the Wikipedia page on SQL joins</a> for more information.</p><p>You can control the kind of join that <code>join</code> performs using the <code>kind</code> keyword argument:</p><pre><code class="language-julia-repl">julia&gt; jobs = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Astronaut&quot;])
+</code></pre><p>In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.</p><p>The following functions are provided to perform seven kinds of joins:</p><ul><li><code>innerjoin</code>: the output contains rows for values of the key that exist in all passed data frames.</li><li><code>leftjoin</code>: the output contains rows for values of the key that exist in the first (left) argument,   whether or not that value exists in the second (right) argument.</li><li><code>rightjoin</code>: the output contains rows for values of the key that exist in the second (right) argument,   whether or not that value exists in the first (left) argument.</li><li><code>outerjoin</code>: the output contains rows for values of the key that exist in any of the passed data frames.</li><li><code>semijoin</code>: Like an inner join, but output is restricted to columns from the first (left) argument.</li><li><code>antijoin</code>: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument.   As with <code>semijoin</code>, output is restricted to columns from the first (left) argument.</li><li><code>crossjoin</code>: The output is the cartesian product of rows from all passed data frames.</li></ul><p>See <a href="https://en.wikipedia.org/wiki/Join_(SQL)">the Wikipedia page on SQL joins</a> for more information.</p><p>Here are examples of different kinds of join:</p><pre><code class="language-julia-repl">julia&gt; jobs = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Astronaut&quot;])
 2×2 DataFrame
 │ Row │ ID    │ Job       │
 │     │ Int64 │ String    │
@@ -31,14 +31,14 @@ julia&gt; jobs = DataFrame(ID = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Docto
 │ 1   │ 20    │ Lawyer    │
 │ 2   │ 60    │ Astronaut │
 
-julia&gt; join(people, jobs, on = :ID, kind = :inner)
+julia&gt; innerjoin(people, jobs, on = :ID)
 1×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 20    │ John Doe │ Lawyer │
 
-julia&gt; join(people, jobs, on = :ID, kind = :left)
+julia&gt; leftjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job     │
 │     │ Int64 │ String   │ String⍰ │
@@ -46,7 +46,7 @@ julia&gt; join(people, jobs, on = :ID, kind = :left)
 │ 1   │ 20    │ John Doe │ Lawyer  │
 │ 2   │ 40    │ Jane Doe │ missing │
 
-julia&gt; join(people, jobs, on = :ID, kind = :right)
+julia&gt; rightjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
 │     │ Int64 │ String⍰  │ String    │
@@ -54,7 +54,7 @@ julia&gt; join(people, jobs, on = :ID, kind = :right)
 │ 1   │ 20    │ John Doe │ Lawyer    │
 │ 2   │ 60    │ missing  │ Astronaut │
 
-julia&gt; join(people, jobs, on = :ID, kind = :outer)
+julia&gt; outerjoin(people, jobs, on = :ID)
 3×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
 │     │ Int64 │ String⍰  │ String⍰   │
@@ -63,20 +63,20 @@ julia&gt; join(people, jobs, on = :ID, kind = :outer)
 │ 2   │ 40    │ Jane Doe │ missing   │
 │ 3   │ 60    │ missing  │ Astronaut │
 
-julia&gt; join(people, jobs, on = :ID, kind = :semi)
+julia&gt; semijoin(people, jobs, on = :ID)
 1×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
 ├─────┼───────┼──────────┤
 │ 1   │ 20    │ John Doe │
 
-julia&gt; join(people, jobs, on = :ID, kind = :anti)
+julia&gt; antijoin(people, jobs, on = :ID)
 1×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
 ├─────┼───────┼──────────┤
 │ 1   │ 40    │ Jane Doe │
-</code></pre><p>Cross joins are the only kind of join that does not use a key:</p><pre><code class="language-julia-repl">julia&gt; join(people, jobs, kind = :cross, makeunique = true)
+</code></pre><p>Cross joins are the only kind of join that does not use a <code>on</code> key:</p><pre><code class="language-julia-repl">julia&gt; crossjoin(people, jobs, makeunique = true)
 4×4 DataFrame
 │ Row │ ID    │ Name     │ ID_1  │ Job       │
 │     │ Int64 │ String   │ Int64 │ String    │
@@ -85,7 +85,7 @@ julia&gt; join(people, jobs, on = :ID, kind = :anti)
 │ 2   │ 20    │ John Doe │ 60    │ Astronaut │
 │ 3   │ 40    │ Jane Doe │ 20    │ Lawyer    │
 │ 4   │ 40    │ Jane Doe │ 60    │ Astronaut │
-</code></pre><p>In order to join data tables on keys which have different names in the left and right tables, you may pass <code>(left, right)</code> tuples or <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
+</code></pre><p>In order to join data frames on keys which have different names in the left and right tables, you may pass <code>(left, right)</code> tuples or <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
 2×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
@@ -101,7 +101,7 @@ julia&gt; b = DataFrame(IDNew = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Docto
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 40    │ Doctor │
 
-julia&gt; join(a, b, on = :ID =&gt; :IDNew, kind = :inner)
+julia&gt; innerjoin(a, b, on = :ID =&gt; :IDNew)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
@@ -134,7 +134,7 @@ julia&gt; b = DataFrame(Location = [&quot;Amsterdam&quot;, &quot;London&quot;, &
 │ 4   │ New York  │ Doctor │ d      │
 │ 5   │ New York  │ Doctor │ e      │
 
-julia&gt; join(a, b, on = [(:City, :Location), (:Job, :Work)])
+julia&gt; innerjoin(a, b, on = [(:City, :Location), (:Job, :Work)])
 9×4 DataFrame
 │ Row │ City      │ Job    │ Category │ Name   │
 │     │ String    │ String │ Int64    │ String │
@@ -148,7 +148,7 @@ julia&gt; join(a, b, on = [(:City, :Location), (:Job, :Work)])
 │ 7   │ New York  │ Doctor │ 4        │ e      │
 │ 8   │ New York  │ Doctor │ 5        │ d      │
 │ 9   │ New York  │ Doctor │ 5        │ e      │
-</code></pre><p>Additionally, notice that in the last join rows 2 and 3 had the same values on <code>on</code> variables in both joined <code>DataFrame</code>s. In such a situation <code>:inner</code>, <code>:outer</code>, <code>:left</code> and <code>:right</code> joins will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined <code>DataFrame</code>s.</p><p>In order to check that columns passed as the <code>on</code> argument define unique keys (according to <code>isequal</code>) in each input data frame you can set the <code>validate</code> keyword argument to a two-element tuple or a pair of <code>Bool</code> values, with each element indicating whether to run check for the corresponding data frame. Here is an example for the join operation described above:</p><pre><code class="language-julia-repl">julia&gt; join(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
+</code></pre><p>Additionally, notice that in the last join rows 2 and 3 had the same values on <code>on</code> variables in both joined <code>DataFrame</code>s. In such a situation <code>innerjoin</code>, <code>outerjoin</code>, <code>leftjoin</code> and <code>rightjoin</code> will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined <code>DataFrame</code>s.</p><p>In order to check that columns passed as the <code>on</code> argument define unique keys (according to <code>isequal</code>) in each input data frame you can set the <code>validate</code> keyword argument to a two-element tuple or a pair of <code>Bool</code> values, with each element indicating whether to run check for the corresponding data frame. Here is an example for the join operation described above:</p><pre><code class="language-julia-repl">julia&gt; innerjoin(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
 ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3</code></pre><p>Finally, using the <code>indicator</code> keyword argument you can add a column to the resulting data frame indicating whether the given row appeared only in the left, the right or both data frames. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John&quot;, &quot;Jane&quot;])
 2×2 DataFrame
 │ Row │ ID    │ Name   │
@@ -165,7 +165,7 @@ julia&gt; b = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Doctor&q
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 60    │ Doctor │
 
-julia&gt; join(a, b, on=:ID, validate=(true, true), indicator=:source, kind=:outer)
+julia&gt; outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
 3×4 DataFrame
 │ Row │ ID    │ Name    │ Job     │ source       │
 │     │ Int64 │ String⍰ │ String⍰ │ Categorical… │
