@@ -921,8 +921,7 @@ function Base.filter(p::Pair, df::AbstractDataFrame)
     if cols isa ColumnIndex
         return df[_filter_helper(last(p), df[!, cols]), :]
     else
-        rowiterator = Tables.rows(Tables.columntable(df[!, cols]))
-        nt_itr = Tables.namedtupleiterator(eltype(rowiterator), rowiterator)
+        nt_itr = Tables.namedtupleiterator(df[!, cols])
         return df[_filter_helper(last(p), nt_itr), :]
     end
 end
@@ -993,8 +992,7 @@ function Base.filter!(p::Pair, df::AbstractDataFrame)
     if cols isa ColumnIndex
         return deleterows!(df, _filter!_helper(last(p), df[!, cols]))
     else
-        rowiterator = Tables.rows(Tables.columntable(df[!, cols]))
-        nt_itr = Tables.namedtupleiterator(eltype(rowiterator), rowiterator)
+        nt_itr = Tables.namedtupleiterator(df[!, cols])
         return deleterows!(df, _filter!_helper(last(p), nt_itr))
     end
 end
