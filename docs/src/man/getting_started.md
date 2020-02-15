@@ -825,7 +825,7 @@ julia> df
 │ 4   │ c      │ 4     │ h      │ z      │
 
 # replacement on a subset of columns [:c, :d]
-julia> df[:, [:c, :d]] = ifelse.(df[:, [:c, :d]] .== "None", "c", df[:, [:c, :d]])
+julia> df[:, [:c, :d]] = ifelse.(df[!, [:c, :d]] .== "None", "c", df[!, [:c, :d]])
 4×2 DataFrame
 │ Row │ c      │ d      │
 │     │ String │ String │
