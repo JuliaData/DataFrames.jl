@@ -219,25 +219,19 @@ end
 
     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
     @test Tables.rowtable(df) == Tables.rowtable(eachcol(df))
-    @test Tables.rowtable(df) == Tables.rowtable(eachcol(df, true))
     @test Tables.columntable(df) == Tables.columntable(eachrow(df))
     @test Tables.columntable(df) == Tables.columntable(eachcol(df))
-    @test Tables.columntable(df) == Tables.columntable(eachcol(df, true))
 
-    for (a, b, c, d) in zip(Tables.rowtable(df),
-                            Tables.namedtupleiterator(eachrow(df)),
-                            Tables.namedtupleiterator(eachcol(df)),
-                            Tables.namedtupleiterator(eachcol(df, true)))
+    for (a, b, c) in zip(Tables.rowtable(df),
+                         Tables.namedtupleiterator(eachrow(df)),
+                         Tables.namedtupleiterator(eachcol(df)))
         @test a isa NamedTuple
-        @test a === b === c === d
+        @test a === b === c
     end
 
     @test Tables.getcolumn(eachcol(df), 1) == Tables.getcolumn(df, 1)
     @test Tables.getcolumn(eachcol(df), :a) == Tables.getcolumn(df, :a)
     @test Tables.columnnames(eachcol(df)) == Tables.columnnames(df)
-    @test Tables.getcolumn(eachcol(df, true), 1) == Tables.getcolumn(df, 1)
-    @test Tables.getcolumn(eachcol(df, true), :a) == Tables.getcolumn(df, :a)
-    @test Tables.columnnames(eachcol(df, true)) == Tables.columnnames(df)
     @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
     @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
     @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)

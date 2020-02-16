@@ -775,7 +775,7 @@ true
 julia> df[1] !== x
 true
 
-julia> eachcol(df, false)[1] === df.x
+julia> eachcol(df)[1] === df.x
 true
 ```
 

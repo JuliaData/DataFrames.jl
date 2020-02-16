@@ -347,27 +347,13 @@ end
         │ 1   │ 3.14159 │"""
 
     @test sprint(show, eachcol(df)) == """
-        1×1 DataFrameColumns (with names=false)
+        1×1 DataFrameColumns
         │ Row │ x       │
         │     │ Float64 │
         ├─────┼─────────┤
         │ 1   │ 3.14159 │"""
 
     @test sprint((io, x) -> show(io, x, summary=false), eachcol(df)) == """
-
-        │ Row │ x       │
-        │     │ Float64 │
-        ├─────┼─────────┤
-        │ 1   │ 3.14159 │"""
-
-    @test sprint(show, eachcol(df, true)) == """
-        1×1 DataFrameColumns (with names=true)
-        │ Row │ x       │
-        │     │ Float64 │
-        ├─────┼─────────┤
-        │ 1   │ 3.14159 │"""
-
-    @test sprint((io, x) -> show(io, x, summary=false), eachcol(df, true)) == """
 
         │ Row │ x       │
         │     │ Float64 │

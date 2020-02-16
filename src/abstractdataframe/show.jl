@@ -105,7 +105,7 @@ function getmaxwidths(df::AbstractDataFrame,
     undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
 
     j = 1
-    for (name, col) in eachcol(df, true)
+    for (name, col) in pairs(eachcol(df))
         # (1) Consider length of column name
         maxwidth = ourstrwidth(io, name)
 

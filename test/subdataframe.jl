@@ -268,4 +268,18 @@ end
     @test df2.y == [12, 13]
 end
 
+@testset "setindex! in view" begin
+    df = DataFrame(A = Vector{Union{Int, Missing}}(1:4), B = Union{String, Missing}["M", "F", "F", "M"])
+
+    s1 = view(df, 1:3, :)
+    s1[2,:A] = 4
+    @test df[2, :A] == 4
+    @test view(s1, 1:2, :) == view(df, 1:2, :)
+
+    s2 = view(df, 1:2:3, :)
+    s2[2, :B] = "M"
+    @test df[3, :B] == "M"
+    @test view(s2, 1:1:2, :) == view(df, [1,3], :)
+end
+
 end # module
