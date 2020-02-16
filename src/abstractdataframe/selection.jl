@@ -33,10 +33,8 @@ struct ByRow{T}
 end
 
 (f::ByRow)(col::AbstractVector) = (f.fun).(col)
-
-function (f::ByRow)(cols::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}})
-    map(f.fun, Tables.namedtupleiterator(cols)
-end
+(f::ByRow)(cols::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
+    map(f.fun, Tables.namedtupleiterator(cols))
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
