@@ -1,14 +1,16 @@
 module DataFrames
 
 using Statistics, Printf, REPL
-using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, DataAPI
+using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
-using Tables, TableTraits, IteratorInterfaceExtensions
+using TableTraits, IteratorInterfaceExtensions
 
-import DataAPI.All,
+import DataAPI,
+       DataAPI.All,
        DataAPI.Between,
        DataAPI.describe,
+       Tables,
        Tables.columnindex,
        Future.copy!
 
@@ -20,6 +22,7 @@ export AbstractDataFrame,
        DataFrameRow,
        GroupedDataFrame,
        SubDataFrame,
+       Tables,
        aggregate,
        allowmissing!,
        antijoin,
