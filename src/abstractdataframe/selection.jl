@@ -88,7 +88,7 @@ end
 function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
                                      Pair{<:Union{Int, AbstractVector{Int}},
                                           <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}},
-                           df::DataFrame, newdf::DataFrame,
+                           df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx = first(nc)
     transform_spec = last(nc)
