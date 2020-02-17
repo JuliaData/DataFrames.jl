@@ -1,6 +1,6 @@
 module TestTables
 
-using Test, Tables, DataFrames
+using Test, DataFrames
 
 struct NamedTupleIterator{T <: NamedTuple}
     elements::Vector{T}
