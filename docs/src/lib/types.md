@@ -57,7 +57,7 @@ The `RepeatedVector` and `StackedVector` types are subtypes of `AbstractVector` 
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,
 but they are columns of a `DataFrame` returned by `stack` with `view=true`.
 
-The `Row` type is a special type used for selection operations to signal that the wrapped function should be applied
+The `ByRow` type is a special type used for selection operations to signal that the wrapped function should be applied
 to each element (row) of the selection.
 
 ## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
