@@ -94,8 +94,9 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 """
     DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
-An `AbstractVector` that allows for an iteration over columns of an `AbstractDataFrame`.
-Additionally it is allowed to index `DataFrameColumns` using column names.
+An `AbstractVector` that allows iteration over columns of an `AbstractDataFrame`.
+Indexing into `DataFrameColumns` objects using integer or symbol indices
+returns the corresponding column (without copying).
 """
 struct DataFrameColumns{T<:AbstractDataFrame} <: AbstractVector{AbstractVector}
     df::T
@@ -108,7 +109,7 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
     eachcol(df::AbstractDataFrame)
 
 Return a `DataFrameColumns` that is an `AbstractVector`
-that alows to iterate an `AbstractDataFrame` column by column.
+that allows iterating an `AbstractDataFrame` column by column.
 Additionally it is allowed to index `DataFrameColumns` using column names.
 
 # Examples
@@ -158,16 +159,17 @@ Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(it
 Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))
 
 """
-    keys(::DataFrameColumns)
+    keys(dfc::DataFrameColumns)
 
-Get a vector of column names of a parent data frame.
+Get a vector of column names of `dfc`.
 """
 Base.keys(itr::DataFrameColumns) = names(parent(itr))
 
 """
     pairs(dfc::DataFrameColumns)
 
-An iterator that accesses each column of a parent data frame, returning `name => col`,
+Return an iterator of pairs associating the name of each column of `dfc`
+with the corresponding column vector, i.e. `name => col`
 where `name` is the column name of the column `col`.
 """
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
