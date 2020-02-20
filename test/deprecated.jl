@@ -544,45 +544,9 @@ end
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
 
-
-    # show for eachcol(df, true) is breaking but this is a minor thing
-
-    # df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
-    # io = IOBuffer()
-    # show(io, "text/html", eachcol(df, true))
-    # str = String(take!(io))
-    # @test str == "<p>2×2 DataFrameColumns</p>" *
-    #              "<table class=\"data-frame\"><thead><tr><th>" *
-    #              "</th><th>Fish</th><th>Mass</th></tr>" *
-    #              "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
-    #              "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-    #              "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
-
-    # df = DataFrame(ones(2,3))
-    # (v, s) = (eachcol(df, true), "3-element DataFrameColumns")
-    # @test summary(v) == s
-    # io = IOBuffer()
-    # summary(io, v)
-    # @test String(take!(io)) == s
-
-    # df = DataFrame(x = [float(pi)])
-    # @test sprint(show, eachcol(df, true)) == """
-    #     1×1 DataFrameColumns
-    #     │ Row │ x       │
-    #     │     │ Float64 │
-    #     ├─────┼─────────┤
-    #     │ 1   │ 3.14159 │"""
-    # @test sprint((io, x) -> show(io, x, summary=false), eachcol(df, true)) == """
-
-    #     │ Row │ x       │
-    #     │     │ Float64 │
-    #     ├─────┼─────────┤
-    #     │ 1   │ 3.14159 │"""
-
     df = DataFrame(rand(3,4), [:a, :b, :c, :d])
     df2 = DataFrame(eachcol(df, true))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
     df2 = DataFrame!(eachcol(df, true))
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
