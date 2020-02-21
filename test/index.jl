@@ -78,6 +78,7 @@ end
     @test names(i) == [:A,:B]
     @test rename!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
     @test_throws ArgumentError rename!(i, [:a,:a])
+    @test_throws DimensionMismatch rename!(i, [:a,:b,:c])
     @test rename!(copy(i), [:a,:b]) == Index([:a,:b])
     @test names(i) == [:a,:a_1]
     @test rename!(i, [:a,:b]) == Index([:a,:b])

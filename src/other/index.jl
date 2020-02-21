@@ -41,7 +41,7 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
         end
     end
     if length(nms) != length(x)
-        throw(ArgumentError("Length of nms doesn't match length of x."))
+        throw(DimensionMismatch("Length of nms doesn't match length of x."))
     end
     make_unique!(x.names, nms, makeunique=makeunique)
     empty!(x.lookup)
