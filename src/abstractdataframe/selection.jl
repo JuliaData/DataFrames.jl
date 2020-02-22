@@ -90,7 +90,7 @@ function normalize_selection(idx::AbstractIndex,
     end
     fun = last(sel)
     if length(c) > 3
-        newcol = Symbol(join(@views _names(idx)[c[1:2]], '_'), "_etc_", funname(fun))
+        newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc_", funname(fun))
     else
         newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
     end
