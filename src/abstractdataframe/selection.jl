@@ -32,9 +32,7 @@ struct ByRow{T}
     fun::T
 end
 
-(f::ByRow)(col::AbstractVector) = (f.fun).(col)
-(f::ByRow)(cols::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
-    map(f.fun, Tables.namedtupleiterator(cols))
+(f::ByRow)(cols::AbstractVector...) = [f.fun(row...) for row in zip(cols...)]
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
@@ -53,7 +51,14 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
-    c = idx[first(sel)]
+    rawc = first(sel)
+    if rawc isa AbstractVector{Int}
+        c = rawc
+    elseif rawc isa AbstractVector{Symbol}
+        c = [idx[n] for n in rawc]
+    else
+        c = idx[rawc]
+    end
     if length(c) == 0 && first(last(sel)) isa ByRow
         throw(ArgumentError("at least one column must be passed to a " *
                             "`ByRow` transformation function"))
@@ -71,7 +76,14 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
-    c = idx[first(sel)]
+    rawc = first(sel)
+    if rawc isa AbstractVector{Int}
+        c = rawc
+    elseif rawc isa AbstractVector{Symbol}
+        c = [idx[n] for n in rawc]
+    else
+        c = idx[rawc]
+    end
     if length(c) == 0 && first(last(sel)) isa ByRow
         throw(ArgumentError("at least one column must be passed to a " *
                             "`ByRow` transformation function"))
@@ -98,11 +110,12 @@ function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
     end
     if nc isa Pair{Int, Pair{ColRename, Symbol}}
         newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
-    elseif nc isa Pair{Int, <:Pair{<:Base.Callable, Symbol}}
+    elseif nc isa Pair{Int, <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}
         res = first(transform_spec)(df[!, col_idx])
         newdf[!, newname] = res isa AbstractVector ? res : [res]
-    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
-        res = first(transform_spec)(Tables.columntable(df[!, col_idx]))
+    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}
+        cdf = _columns(df)
+        res = first(transform_spec)((cdf[i] for i in col_idx)...)
         newdf[!, newname] = res isa AbstractVector ? res : [res]
     else
         throw(ErrorException("code should never reach this branch"))
