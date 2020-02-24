@@ -25,8 +25,17 @@ Render a value to an IO object. Unlike
 `show`, render strings without surrounding quote marks.
 """
 function ourshow(io::IO, x::Any)
-    ctxt = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
-    show(ctxt, "text/plain", x)
+    io = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
+
+    # First try 3-arg show
+    sx = sprint(show, "text/plain", x, context=io)
+
+    # If the output contains line breaks, try 2-arg show instead.
+    if occursin('\n', sx)
+        sx = sprint(show, x, context=io)
+    end
+
+    print(io, sx)
 end
 
 ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
@@ -37,8 +46,8 @@ ourshow(io::IO, x::Nothing) = nothing
 # Irrational: https://github.com/JuliaLang/julia/pull/34741 (1.5.0-DEV.266)
 if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
     function ourshow(io::IO, x::T) where T <: Union{AbstractChar, Irrational}
-        ctxt = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
-        show(ctxt, x)
+        io = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
+        show(io, x)
     end
 end
 
