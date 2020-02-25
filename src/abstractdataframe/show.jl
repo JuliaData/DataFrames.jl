@@ -21,12 +21,14 @@ end
 """
     DataFrames.ourshow(io::IO, x::Any)
 
-Render a value to an IO object. Unlike
-`show`, render strings without surrounding quote marks.
+Render a value to an `IO` object compactly and omitting type information, by
+calling 3-argument `show`, or 2-argument `show` if the former contains line breaks.
+Unlike `show`, render strings without surrounding quote marks.
 """
 function ourshow(io::IO, x::Any)
     io = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
 
+    # This mirrors the behavior of Base.print_matrix_row
     # First try 3-arg show
     sx = sprint(show, "text/plain", x, context=io)
 
