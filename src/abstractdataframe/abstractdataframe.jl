@@ -1602,35 +1602,47 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, col::Union{Integer, Symbol})
+    flatten(df::AbstractDataFrame, cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
 
-When column `col` of data frame `df` has iterable elements that define `length` (for example
-a `Vector` of `Vector`s), return a `DataFrame` where each element of `col` is flattened, meaning
-the column corresponding to `col` becomes a longer `Vector` where the original entries
-are concatenated. Elements of row `i` of `df` in columns other than `col` will be repeated
-according to the length of `df[i, col]`. Note that these elements are not copied,
-and thus if they are mutable changing them in the returned `DataFrame` will affect `df`.
+When columns `cols` of data frame `df` have iterable elements that define `length` (for
+example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
+ `cols` is flattened, meaning the column corresponding to `col` becomes a longer `Vector`
+where the original entries are concatenated. Elements of row `i` of `df` in columns other
+than `cols` will be repeated according to the length of `df[i, col]`. These lengths must
+therefore be the same for each `col` in `cols`, or else an error is raised. Note that these
+ elements are not copied, and thus if they are mutable changing them in the returned
+ `DataFrame` will affect `df`.
 
 # Examples
 
 ```
-julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
-2×2 DataFrame
-│ Row │ a     │ b      │
-│     │ Int64 │ Array… │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ [1, 2] │
-│ 2   │ 2     │ [3, 4] │
+julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
+2×3 DataFrame
+│ Row │ a     │ b      │ c      │
+│     │ Int64 │ Array… │ Array… │
+├─────┼───────┼────────┼────────┤
+│ 1   │ 1     │ [1, 2] │ [5, 6] │
+│ 2   │ 2     │ [3, 4] │ [7, 8] │
 
 julia> flatten(df1, :b)
-4×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 1     │ 2     │
-│ 3   │ 2     │ 3     │
-│ 4   │ 2     │ 4     │
+4×3 DataFrame
+│ Row │ a     │ b     │ c      │
+│     │ Int64 │ Int64 │ Array… │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 1     │ 1     │ [5, 6] │
+│ 2   │ 1     │ 2     │ [5, 6] │
+│ 3   │ 2     │ 3     │ [7, 8] │
+│ 4   │ 2     │ 4     │ [7, 8] │
+
+julia> flatten(df1, [:b, :c])
+4×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 5     │
+│ 2   │ 1     │ 2     │ 6     │
+│ 3   │ 2     │ 3     │ 7     │
+│ 4   │ 2     │ 4     │ 8     │
 
 julia> df2 = DataFrame(a = [1, 2], b = [("p", "q"), ("r", "s")])
 2×2 DataFrame
@@ -1650,22 +1662,41 @@ julia> flatten(df2, :b)
 │ 3   │ 2     │ r      │
 │ 4   │ 2     │ s      │
 
+julia> df3 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
+2×3 DataFrame
+│ Row │ a     │ b      │ c      │
+│     │ Int64 │ Array… │ Array… │
+├─────┼───────┼────────┼────────┤
+│ 1   │ 1     │ [1, 2] │ [5, 6] │
+│ 2   │ 2     │ [3, 4] │ [7]    │
+
+julia> flatten(df3, [:b, :c])
+ERROR: ArgumentError: Vector lengths across columns in col, within the same row, must be the same
 ```
 """
-function flatten(df::AbstractDataFrame, col::ColumnIndex)
-    col_to_flatten = df[!, col]
-    lengths = length.(col_to_flatten)
-    new_df = similar(df[!, Not(col)], sum(lengths))
+function flatten(df::AbstractDataFrame,
+                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
+    idxcols = index(df)[cols]
+    col1 = idxcols isa AbstractVector ? idxcols[1] : idxcols
+    lengths = length.(df[!, col1])
+    for col in idxcols
+        if length.(df[!, col]) != length.(df[!, col1])
+            throw(ArgumentError("Vector lengths across columns in col, within the same row, must be the same"))
+        end
+    end
 
+    new_df = similar(df[!, Not(cols)], sum(lengths))
     for name in _names(new_df)
         repeat_lengths!(new_df[!, name], df[!, name], lengths)
     end
+    for col in idxcols
+        col_to_flatten = df[!, col]
+        flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
+            reduce(vcat, col_to_flatten) :
+            collect(Iterators.flatten(col_to_flatten))
 
-    flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
-        reduce(vcat, col_to_flatten) :
-        collect(Iterators.flatten(col_to_flatten))
-
-    insertcols!(new_df, columnindex(df, col), col => flattened_col)
+        insertcols!(new_df, col, names(df)[col] => flattened_col)
+    end
 
     return new_df
 end
