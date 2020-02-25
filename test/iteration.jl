@@ -65,6 +65,8 @@ end
     @test sdf == df[[3,1,4], [3,1,4]]
     @test eachrow(sdf) == eachrow(df[[3,1,4], [3,1,4]])
     @test size(eachrow(sdf)) == (3,)
+    @test eachcol(sdf) == eachcol(df[[3,1,4], [3,1,4]])
+    @test size(eachcol(sdf)) == (3,)
 end
 
 @testset "parent mutation" begin
