@@ -1677,10 +1677,11 @@ ERROR: ArgumentError: Vector lengths across columns in col, within the same row,
 function flatten(df::AbstractDataFrame,
                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
     idxcols = index(df)[cols]
-    col1 = idxcols isa AbstractVector ? idxcols[1] : idxcols
+    col1 = first(idxcols)
     lengths = length.(df[!, col1])
     for col in idxcols
-        if length.(df[!, col]) != length.(df[!, col1])
+        v = df[!, col]
+        if any(x -> length(x[1]) != x[2], zip(v, lengths))
             throw(ArgumentError("Vector lengths across columns in col, within the same row, must be the same"))
         end
     end
