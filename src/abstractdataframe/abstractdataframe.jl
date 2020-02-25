@@ -1606,12 +1606,12 @@ end
 
 When columns `cols` of data frame `df` have iterable elements that define `length` (for
 example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
- `cols` is flattened, meaning the column corresponding to `col` becomes a longer `Vector`
+`cols` is flattened, meaning the column corresponding to `col` becomes a longer `Vector`
 where the original entries are concatenated. Elements of row `i` of `df` in columns other
 than `cols` will be repeated according to the length of `df[i, col]`. These lengths must
 therefore be the same for each `col` in `cols`, or else an error is raised. Note that these
- elements are not copied, and thus if they are mutable changing them in the returned
- `DataFrame` will affect `df`.
+elements are not copied, and thus if they are mutable changing them in the returned
+`DataFrame` will affect `df`.
 
 # Examples
 
