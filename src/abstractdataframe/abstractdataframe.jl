@@ -1682,7 +1682,8 @@ function flatten(df::AbstractDataFrame,
     for col in idxcols
         v = df[!, col]
         if any(x -> length(x[1]) != x[2], zip(v, lengths))
-            throw(ArgumentError("Vector lengths across columns in col, within the same row, must be the same"))
+            r = findfirst(!=(0), length.(v) .- lengths)
+            throw(ArgumentError("Lengths of iterables stored in columns $col1 and $col are not the the same in row $r"))
         end
     end
 
