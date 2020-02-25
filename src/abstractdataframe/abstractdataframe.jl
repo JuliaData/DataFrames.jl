@@ -1676,6 +1676,8 @@ ERROR: ArgumentError: Vector lengths across columns in col, within the same row,
 """
 function flatten(df::AbstractDataFrame,
                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
+    _check_consistency(df)
+
     idxcols = index(df)[cols]
     col1 = first(idxcols)
     lengths = length.(df[!, col1])
