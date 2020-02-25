@@ -399,17 +399,17 @@ end
 @testset "flatten multiple columns" begin
     df = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4], c = [5, 6, 7, 8])
-    @test flatten(df, [:b, :c])        == ref
-    @test flatten(df, 2:3)             == ref
-    @test flatten(df, r"[bc]")         == ref
-    @test flatten(df, Not(:a))         == ref
+    @test flatten(df, [:b, :c]) == ref
+    @test flatten(df, 2:3) == ref
+    @test flatten(df, r"[bc]") == ref
+    @test flatten(df, Not(:a)) == ref
     @test flatten(df, Between(:b, :c)) == ref
     df_allcols = DataFrame(b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
     ref_allcols = DataFrame(b = [1, 2, 3, 4], c = [5, 6, 7, 8])
     @test flatten(df_allcols, All()) == ref_allcols
-    @test flatten(df_allcols, :)     == ref_allcols
-    df_vec_bad = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
-    @test_throws ArgumentError flatten(df_vec_bad, [:b, :c])
+    @test flatten(df_allcols, :) == ref_allcols
+    df_bad = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
+    @test_throws ArgumentError flatten(df_bad, [:b, :c])
 end
 
 @testset "test RepeatedVector for categorical" begin
