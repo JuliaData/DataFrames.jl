@@ -937,9 +937,9 @@ _filter_helper(df, f, cols...) = df[[f(row...)::Bool for row in zip(cols...)], :
 Remove rows from data frame `df` for which `function` returns `false`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` argument is passed then it should be valid column selector (additionally
-allowing column duplicates are allowed if a vector of `Int` or `Symbol is passed),
-the the function is passed elements of the selected columns as consecutive positional arguments.
+If `cols` is specified then it should be a valid column selector
+(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
+the function is passed elements of the selected columns as separate positional arguments.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -996,9 +996,9 @@ Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
 Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
     (cdf = _columns(df); _filter!_helper(df, f, (cdf[i] for i in cols)...))
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
-  filter!([index(df)[col] for col in cols] => f, df)
+    filter!([index(df)[col] for col in cols] => f, df)
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
-  filter!(index(df)[cols] => f, df)
+    filter!(index(df)[cols] => f, df)
 
 _filter!_helper(df, f, cols...) =
     deleterows!(df, findall([!(f(row...)::Bool) for row in zip(cols...)]))
