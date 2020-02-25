@@ -400,6 +400,7 @@ end
     df = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4], c = [5, 6, 7, 8])
     @test flatten(df, [:b, :c]) == ref
+    @test flatten(df, [:c, :b]) == ref
     @test flatten(df, 2:3) == ref
     @test flatten(df, r"[bc]") == ref
     @test flatten(df, Not(:a)) == ref

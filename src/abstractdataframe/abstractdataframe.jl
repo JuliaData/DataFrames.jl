@@ -1691,6 +1691,7 @@ function flatten(df::AbstractDataFrame,
     for name in _names(new_df)
         repeat_lengths!(new_df[!, name], df[!, name], lengths)
     end
+    length(idxcols) > 1 && sort!(idxcols)
     for col in idxcols
         col_to_flatten = df[!, col]
         flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
