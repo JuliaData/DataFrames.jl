@@ -1,6 +1,6 @@
 module TestShow
 
-using DataFrames, Random, Test
+using DataFrames, Dates, Random, Test
 
 function capture_stdout(f::Function)
     oldstdout = stdout
@@ -16,17 +16,17 @@ end
 
 @testset "Basic show test with allrows and allcols" begin
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
-                   C = Float32[1.0, 2.0, 3.0, 4.0])
+                   C = Float32[1.0, 2.0, 3.0, 4.0], D = ['\'', '∀', '\$', '\n'])
 
     refstr = """
-    4×3 DataFrame
-    │ Row │ A     │ B           │ C       │
-    │     │ Int64 │ String      │ Float32 │
-    ├─────┼───────┼─────────────┼─────────┤
-    │ 1   │ 1     │ x"          │ 1.0     │
-    │ 2   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
-    │ 3   │ 3     │ z\$          │ 3.0     │
-    │ 4   │ 4     │ A\\nC        │ 4.0     │"""
+    4×4 DataFrame
+    │ Row │ A     │ B           │ C       │ D    │
+    │     │ Int64 │ String      │ Float32 │ Char │
+    ├─────┼───────┼─────────────┼─────────┼──────┤
+    │ 1   │ 1     │ x"          │ 1.0     │ '\\'' │
+    │ 2   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │ '∀'  │
+    │ 3   │ 3     │ z\$          │ 3.0     │ '\$'  │
+    │ 4   │ 4     │ A\\nC        │ 4.0     │ '\\n' │"""
 
     for allrows in [true, false], allcols in [true, false]
         io = IOBuffer()
@@ -279,7 +279,8 @@ end
     │ 1   │ a      │"""
 end
 
-@testset "Test showing special types: strings with escapes, categorical and BigFloat" begin
+@testset "Test showing special types" begin
+    # strings with escapes
     df = DataFrame(a = ["1\n1", "2\t2", "3\r3", "4\$4", "5\"5", "6\\6"])
     @test sprint(show, df) == """
     6×1 DataFrame
@@ -293,6 +294,7 @@ end
     │ 5   │ 5"5    │
     │ 6   │ 6\\\\6   │"""
 
+    # categorical
     df = DataFrame(a = categorical([1,2,3]), b = categorical(["a", "b", missing]))
     @test sprint(show, df) == """
     3×2 DataFrame
@@ -303,6 +305,7 @@ end
     │ 2   │ 2            │ b             │
     │ 3   │ 3            │ missing       │"""
 
+    # BigFloat
     df = DataFrame(a = [big(1.0), missing])
     @test sprint(show, df) == """
     2×1 DataFrame
@@ -311,6 +314,33 @@ end
     ├─────┼───────────┤
     │ 1   │ 1.0       │
     │ 2   │ missing   │"""
+
+    # date types
+    df = DataFrame(a = Date(2020, 2, 11), b = DateTime(2020, 2, 11, 15), c = Day(1))
+    @test sprint(show, df) == """
+    1×3 DataFrame
+    │ Row │ a          │ b                   │ c     │
+    │     │ Date       │ DateTime            │ Day   │
+    ├─────┼────────────┼─────────────────────┼───────┤
+    │ 1   │ 2020-02-11 │ 2020-02-11T15:00:00 │ 1 day │"""
+
+    # Irrational
+    df = DataFrame(a = π)
+    if VERSION < v"1.2.0-DEV.276"
+        @test sprint(show, df) == """
+        1×1 DataFrame
+        │ Row │ a                      │
+        │     │ Irrational{:π}         │
+        ├─────┼────────────────────────┤
+        │ 1   │ π = 3.1415926535897... │"""
+    else
+        @test sprint(show, df) == """
+        1×1 DataFrame
+        │ Row │ a         │
+        │     │ Irration… │
+        ├─────┼───────────┤
+        │ 1   │ π         │"""
+    end
 end
 
 @testset "Test using :compact parameter of IOContext" begin
