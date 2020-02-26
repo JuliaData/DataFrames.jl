@@ -2,7 +2,8 @@
 # * add transform and transfom! functions
 # * update documentation
 # * add tests
-# * add Splat to column selector
+# * add NT (or better name) to column selector passing NamedTuple
+#   (also in other places: filter, combine)
 
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
@@ -32,7 +33,7 @@ struct ByRow{T}
     fun::T
 end
 
-(f::ByRow)(cols::AbstractVector...) = [f.fun(row...) for row in zip(cols...)]
+(f::ByRow)(cols::AbstractVector...) = f.fun.(row...)
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
