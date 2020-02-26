@@ -361,9 +361,48 @@ end
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test filter(r -> r[:x] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
     @test filter!(r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter(:x => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!(:x => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter(1 => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!(1 => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter([:x] => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!([:x] => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter((:) => (r...) -> r[1] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!((:) => (r...) -> r[1] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter([:x, :x] => ==, df) == df
+    @test filter!([:x, :x] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter([2, 2] => !=, df) == DataFrame(x=Int[], y=String[])
+    @test filter!([2, 2] => !=, df) === df == DataFrame(x=Int[], y=String[])
+
+    for sel in [r"x", [1,2], [:x1, :x2], :, Not(r"y")]
+        df = DataFrame(x1 = [3, 1, 2, 1], x2 = ["b", "c", "aa", "bbb"])
+        @test filter(sel => (a, b) -> a == length(b), df) == DataFrame(x1=[1, 2], x2=["c", "aa"])
+        @test filter!(sel => (a, b) -> a == length(b), df) === df == DataFrame(x1=[1, 2], x2=["c", "aa"])
+    end
+
     df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
     @test_throws TypeError filter(r -> r[:x] > 1, df)
     @test_throws TypeError filter!(r -> r[:x] > 1, df)
+    @test_throws TypeError filter(:x => x -> x > 1, df)
+    @test_throws TypeError filter!(:x => x -> x > 1, df)
+    @test_throws TypeError filter(1 => x -> x > 1, df)
+    @test_throws TypeError filter!(1 => x -> x > 1, df)
+    @test_throws TypeError filter([:x] => x -> x > 1, df)
+    @test_throws TypeError filter!([:x] => x -> x > 1, df)
+    @test_throws TypeError filter((:) => (r...) -> r[1] > 1, df)
+    @test_throws TypeError filter!((:) => (r...) -> r[1] > 1, df)
 end
 
 end # module

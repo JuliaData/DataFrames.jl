@@ -867,9 +867,19 @@ end
 
 """
     filter(function, df::AbstractDataFrame)
+    filter(cols => function, df::AbstractDataFrame)
 
 Return a copy of data frame `df` containing only rows for which `function`
-returns `true`. The function is passed a `DataFrameRow` as its only argument.
+returns `true`.
+
+If `cols` is not specified then the function is passed `DataFrameRow`s.
+If `cols` is specified then it should be a valid column selector
+(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
+the function is passed elements of the selected columns as separate positional arguments.
+
+Passing `cols` leads to a more efficient execution of the operation for large data frames.
+
+See also: [`filter!`](@ref)
 
 # Examples
 ```
@@ -883,22 +893,57 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 │ 3   │ 2     │ a      │
 │ 4   │ 1     │ b      │
 
-julia> filter(row -> row[:x] > 1, df)
+julia> filter(row -> row.x > 1, df)
 2×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 3     │ b      │
 │ 2   │ 2     │ a      │
+
+julia> filter(:x => x -> x > 1, df)
+2×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 2     │ a      │
+
+julia> filter([:x, :y] => (x, y) -> x == 1 || y == "b", df)
+3×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 1     │ b      │
 ```
 """
-Base.filter(f, df::AbstractDataFrame) = df[collect(f(r)::Bool for r in eachrow(df)), :]
+Base.filter(f, df::AbstractDataFrame) = _filter_helper(df, f, eachrow(df))
+Base.filter((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
+    _filter_helper(df, f, df[!, col])
+Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
+    (cdf = _columns(df); _filter_helper(df, f, (cdf[i] for i in cols)...))
+Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
+    filter([index(df)[col] for col in cols] => f, df)
+Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
+    filter(index(df)[cols] => f, df)
+
+_filter_helper(df, f, cols...) = df[((x...) -> f(x...)::Bool).(cols...), :]
 
 """
     filter!(function, df::AbstractDataFrame)
 
 Remove rows from data frame `df` for which `function` returns `false`.
-The function is passed a `DataFrameRow` as its only argument.
+
+If `cols` is not specified then the function is passed `DataFrameRow`s.
+If `cols` is specified then it should be a valid column selector
+(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
+the function is passed elements of the selected columns as separate positional arguments.
+
+Passing `cols` leads to a more efficient execution of the operation for large data frames.
+
+See also: [`filter`](@ref)
 
 # Examples
 ```
@@ -912,7 +957,7 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 │ 3   │ 2     │ a      │
 │ 4   │ 1     │ b      │
 
-julia> filter!(row -> row[:x] > 1, df);
+julia> filter!(row -> row.x > 1, df);
 
 julia> df
 2×2 DataFrame
@@ -921,10 +966,42 @@ julia> df
 ├─────┼───────┼────────┤
 │ 1   │ 3     │ b      │
 │ 2   │ 2     │ a      │
+
+julia> filter!(:x => x -> x == 3, df);
+
+julia> df
+1×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
+
+julia> filter!([:x, :y] => (x, y) -> x == 1 || y == "b", df);
+
+julia> df
+3×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 1     │ b      │
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) =
-    deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
+Base.filter!(f, df::AbstractDataFrame) = _filter!_helper(df, f, eachrow(df))
+Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
+    _filter!_helper(df, f, df[!, col])
+Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
+    (cdf = _columns(df); _filter!_helper(df, f, (cdf[i] for i in cols)...))
+Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
+    filter!([index(df)[col] for col in cols] => f, df)
+Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
+    filter!(index(df)[cols] => f, df)
+
+_filter!_helper(df, f, cols...) =
+    deleterows!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
