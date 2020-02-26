@@ -929,7 +929,7 @@ Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
     filter(index(df)[cols] => f, df)
 
-_filter_helper(df, f, cols...) = df[[f(row...)::Bool for row in zip(cols...)], :]
+_filter_helper(df, f, cols...) = df[((x...) -> f(x...)::Bool).(cols...), :]
 
 """
     filter!(function, df::AbstractDataFrame)
@@ -1001,7 +1001,7 @@ Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
 
 _filter!_helper(df, f, cols...) =
-    deleterows!(df, findall([!(f(row...)::Bool) for row in zip(cols...)]))
+    deleterows!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
