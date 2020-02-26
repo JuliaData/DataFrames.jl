@@ -398,6 +398,7 @@ end
 
 @testset "flatten multiple columns" begin
     df = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
+    @test flatten(df, []) == df
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4], c = [5, 6, 7, 8])
     @test flatten(df, [:b, :c]) == ref
     @test flatten(df, [:c, :b]) == ref

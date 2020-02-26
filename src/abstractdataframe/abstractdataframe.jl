@@ -1681,6 +1681,7 @@ function flatten(df::AbstractDataFrame,
     _check_consistency(df)
 
     idxcols = index(df)[cols]
+    isempty(idxcols) && return copy(df)
     col1 = first(idxcols)
     lengths = length.(df[!, col1])
     for col in idxcols
