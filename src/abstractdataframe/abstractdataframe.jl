@@ -1602,7 +1602,8 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
+    flatten(df::AbstractDataFrame, cols::Union{ColumnIndex, AbstractVector, Regex, Not,
+            Between, All, Colon})
 
 When columns `cols` of data frame `df` have iterable elements that define `length` (for
 example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
@@ -1671,7 +1672,8 @@ julia> df3 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
 │ 2   │ 2     │ [3, 4] │ [7]    │
 
 julia> flatten(df3, [:b, :c])
-ERROR: ArgumentError: Vector lengths across columns in col, within the same row, must be the same
+ERROR: ArgumentError: Lengths of iterables stored in columns 2 and 3 are not the the same in
+row 2
 ```
 """
 function flatten(df::AbstractDataFrame,
@@ -1685,7 +1687,8 @@ function flatten(df::AbstractDataFrame,
         v = df[!, col]
         if any(x -> length(x[1]) != x[2], zip(v, lengths))
             r = findfirst(!=(0), length.(v) .- lengths)
-            throw(ArgumentError("Lengths of iterables stored in columns $col1 and $col are not the the same in row $r"))
+            throw(ArgumentError("Lengths of iterables stored in columns $col1 and $col are"
+                                * " not the the same in row $r"))
         end
     end
 
