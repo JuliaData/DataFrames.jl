@@ -92,7 +92,7 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 # Iteration by columns
 
 """
-    DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
+    DataFrameColumns{<:AbstractDataFrame} <: AbstractVector{AbstractVector}
 
 An `AbstractVector` that allows iteration over columns of an `AbstractDataFrame`.
 Indexing into `DataFrameColumns` objects using integer or symbol indices
