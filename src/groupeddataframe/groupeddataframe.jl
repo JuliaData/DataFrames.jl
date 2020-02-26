@@ -172,13 +172,14 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
         end
     end
     GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx,
-                     new_starts, new_ends, length(new_starts))
+                     new_starts, new_ends, length(new_starts), nothing)
 end
 
 # Index with colon (creates copy)
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx,
-                     gd.starts, gd.ends, gd.ngroups)
+    GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
+                     getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
+                     getfield(gd, :keymap))
 
 
 #
