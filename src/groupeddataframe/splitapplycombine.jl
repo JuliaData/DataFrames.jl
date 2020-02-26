@@ -142,7 +142,7 @@ function groupby(df::AbstractDataFrame, cols;
     intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
     if isempty(intcols)
         return GroupedDataFrame(df, intcols, ones(Int, nrow(df)),
-                                collect(axes(df, 1)), [1], [nrow(df)], 1)
+                                collect(axes(df, 1)), [1], [nrow(df)], 1, nothing)
     end
     sdf = df[!, intcols]
 
@@ -150,7 +150,7 @@ function groupby(df::AbstractDataFrame, cols;
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false), groups, skipmissing)
 
-    gd = GroupedDataFrame(df, intcols, groups, nothing, nothing, nothing, ngroups)
+    gd = GroupedDataFrame(df, intcols, groups, nothing, nothing, nothing, ngroups, nothing)
 
     # sort groups if row_group_slots hasn't already done that
     if sort && !sorted
@@ -281,7 +281,7 @@ function Base.map(f::Any, gd::GroupedDataFrame)
                        without(valscat, intersect(keys, _names(valscat))))
         if length(idx) == 0
             return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
-                                    Int[], Int[], Int[], 0)
+                                    Int[], Int[], Int[], 0, Dict{Any,Int}())
         end
         starts = Vector{Int}(undef, length(gd))
         ends = Vector{Int}(undef, length(gd))
@@ -299,10 +299,10 @@ function Base.map(f::Any, gd::GroupedDataFrame)
         resize!(ends, j)
         ends[end] = length(idx)
         return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
-                                collect(1:length(idx)), starts, ends, j)
+                                collect(1:length(idx)), starts, ends, j, nothing)
     else
         return GroupedDataFrame(gd.parent[1:0, gd.cols], collect(1:length(gd.cols)),
-                                Int[], Int[], Int[], Int[], 0)
+                                Int[], Int[], Int[], Int[], 0, Dict{Any,Int}())
     end
 end
 
