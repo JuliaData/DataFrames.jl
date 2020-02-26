@@ -61,7 +61,6 @@ import Base: delete!, insert!, merge!
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
-@deprecate map(f::Union{Function,Type}, dfc::DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)
 
 @deprecate head(df::AbstractDataFrame) first(df, 6)
 @deprecate tail(df::AbstractDataFrame) last(df, 6)
@@ -347,3 +346,5 @@ function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame,
                             "joining more than two data frames"))
     end
 end
+
+@deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : eachcol(df)

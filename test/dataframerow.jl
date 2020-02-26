@@ -475,4 +475,15 @@ end
     @test eltype(Vector(dfr)) == Int
 end
 
+@testset "DataFrameRow" begin
+    df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
+    row = DataFrameRow(df, 1, :)
+
+    row[:A] = 100
+    @test df[1, :A] == 100
+
+    row[1] = 101
+    @test df[1, :A] == 101
+end
+
 end # module

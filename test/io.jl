@@ -79,17 +79,7 @@ end
     io = IOBuffer()
     show(io, "text/html", eachcol(df))
     str = String(take!(io))
-    @test str == "<p>2×2 DataFrameColumns (with names=false)</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
-
-    io = IOBuffer()
-    show(io, "text/html", eachcol(df, true))
-    str = String(take!(io))
-    @test str == "<p>2×2 DataFrameColumns (with names=true)</p>" *
+    @test str == "<p>2×2 DataFrameColumns</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
@@ -244,8 +234,7 @@ end
                    (DataFrames.index(df[1:1, 1:1]), "data frame with 1 column"),
                    (DataFrames.index(view(df, 1:1, 1:1)), "data frame with 1 column"),
                    (eachrow(df), "2-element DataFrameRows"),
-                   (eachcol(df), "3-element DataFrameColumns (with names=false)"),
-                   (eachcol(df, true), "3-element DataFrameColumns (with names=true)")]
+                   (eachcol(df), "3-element DataFrameColumns")]
         @test summary(v) == s
         io = IOBuffer()
         summary(io, v)

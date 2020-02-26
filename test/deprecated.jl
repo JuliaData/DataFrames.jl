@@ -222,13 +222,13 @@ end
         @test df[r"[ab]"] == DataFrame(a=1:3, b=4:6)
         @test df[Not(Not(r"[ab]"))] == DataFrame(a=1:3, b=4:6)
         @test df[Not(3)] == DataFrame(a=1:3, b=4:6)
-        @test eachcol(df, false)[1] === df[1]
-        @test eachcol(view(df,1:2), false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[1:2], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[r"[ab]"], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[Not(Not(r"[ab]"))], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[Not(r"[c]")], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[1:2], false)[1] !== eachcol(df, false)[1]
+        @test eachcol(df)[1] === df[1]
+        @test eachcol(view(df,1:2))[1] == eachcol(df)[1]
+        @test eachcol(df[1:2])[1] == eachcol(df)[1]
+        @test eachcol(df[r"[ab]"])[1] == eachcol(df)[1]
+        @test eachcol(df[Not(Not(r"[ab]"))])[1] == eachcol(df)[1]
+        @test eachcol(df[Not(r"[c]")])[1] == eachcol(df)[1]
+        @test eachcol(df[1:2])[1] !== eachcol(df)[1]
         @test df[:] == df
         @test df[r""] == df
         @test df[Not(Not(r""))] == df
@@ -237,13 +237,13 @@ end
         @test df[r""] !== df
         @test df[Not(Not(r""))] !== df
         @test df[Not(1:0)] !== df
-        @test eachcol(view(df, :), false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[:], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[r""], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[Not(1:0)], false)[1] == eachcol(df, false)[1]
-        @test eachcol(df[:], false)[1] !== eachcol(df, false)[1]
-        @test eachcol(df[r""], false)[1] !== eachcol(df, false)[1]
-        @test eachcol(df[Not(1:0)], false)[1] !== eachcol(df, false)[1]
+        @test eachcol(view(df, :))[1] == eachcol(df)[1]
+        @test eachcol(df[:])[1] == eachcol(df)[1]
+        @test eachcol(df[r""])[1] == eachcol(df)[1]
+        @test eachcol(df[Not(1:0)])[1] == eachcol(df)[1]
+        @test eachcol(df[:])[1] !== eachcol(df)[1]
+        @test eachcol(df[r""])[1] !== eachcol(df)[1]
+        @test eachcol(df[Not(1:0)])[1] !== eachcol(df)[1]
     end
     @testset "getindex df[col] and df[cols]" begin
         x = [1, 2, 3]
@@ -537,6 +537,72 @@ end
     df2 = DataFrame(id=[1,2,4], y=[1,2,4])
     df3 = DataFrame(id=[1,3,4], z=[1,3,4])
     @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:xxx)
+end
+
+@testset "eachcol(df, true)" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    @test eachcol(df)[1] === last(eachcol(df, true)[1])
+    @test eachcol(df)[1] === last(eachcol(df, true)[1])
+
+    df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+    df2 = DataFrame(eachcol(df, true))
+    @test df == df2
+    df2 = DataFrame!(eachcol(df, true))
+    @test df == df2
+    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+
+    @test Tables.rowtable(df) == Tables.rowtable((;eachcol(df, true)...))
+    @test Tables.columntable(df) == Tables.columntable((;eachcol(df, true)...))
+
+    for (a, b, c, d) in zip(Tables.rowtable(df),
+                            Tables.namedtupleiterator(eachrow(df)),
+                            Tables.namedtupleiterator(eachcol(df)),
+                            Tables.namedtupleiterator((;eachcol(df, true)...)))
+        @test a isa NamedTuple
+        @test a === b === c === d
+    end
+
+    @test Tables.getcolumn((;eachcol(df, true)...), 1) == Tables.getcolumn(df, 1)
+    @test Tables.getcolumn((;eachcol(df, true)...), :a) == Tables.getcolumn(df, :a)
+    @test Tables.columnnames((;eachcol(df, true)...)) == Tuple(Tables.columnnames(df))
+
+    df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
+    @test size(eachcol(df, true)) == (size(df, 2),)
+    @test parent(DataFrame(eachcol(df, true))) == df
+    @test names(DataFrame(eachcol(df, true))) == names(df)
+    @test IndexStyle(eachcol(df, true)) == IndexLinear()
+    @test size(eachcol(df, false)) == (size(df, 2),)
+    @test IndexStyle(eachcol(df, false)) == IndexLinear()
+    @test length(eachcol(df, true)) == size(df, 2)
+    @test length(eachcol(df, false)) == size(df, 2)
+    @test eachcol(df, true)[1] == (:A => df[:, 1])
+    @test eachcol(df, false)[1] == df[:, 1]
+    @test collect(eachcol(df, true)) isa Vector{Pair{Symbol, AbstractVector}}
+    @test collect(eachcol(df, true)) == [:A => [1, 2], :B => [2, 3]]
+    @test collect(eachcol(df, false)) isa Vector{AbstractVector}
+    @test collect(eachcol(df, false)) == [[1, 2], [2, 3]]
+    @test eltype(eachcol(df, true)) == Pair{Symbol, AbstractVector}
+    @test eltype(eachcol(df, false)) == AbstractVector
+    for col in eachcol(df, true)
+        @test typeof(col) <: Pair{Symbol, <:AbstractVector}
+    end
+    for col in eachcol(df, false)
+        @test isa(col, AbstractVector)
+    end
+    @test map(minimum, eachcol(df, false)) == [1, 2]
+    @test eltype(map(Vector{Float64}, eachcol(df, false))) == Vector{Float64}
+
+    df = DataFrame([11:16 21:26 31:36 41:46])
+    sdf = view(df, [3,1,4], [3,1,4])
+    @test eachcol(sdf, true) == eachcol(df[[3,1,4], [3,1,4]], true)
+    @test eachcol(sdf, false) == eachcol(df[[3,1,4], [3,1,4]], false)
+    @test size(eachcol(sdf, true)) == (3,)
+    @test size(eachcol(sdf, false)) == (3,)
+
+    df_base = DataFrame([11:16 21:26 31:36 41:46])
+    for df in (df_base, view(df_base, 1:3, 1:3))
+        @test df == DataFrame(eachcol(df, true))
+    end
 end
 
 global_logger(old_logger)

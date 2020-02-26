@@ -1011,7 +1011,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(undef, n, p)
     idx = 1
-    for (name, col) in eachcol(df, true)
+    for (name, col) in pairs(eachcol(df))
         try
             copyto!(res, idx, col)
         catch err

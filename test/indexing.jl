@@ -19,9 +19,6 @@ using Test, DataFrames
         @test dfx[!, 1] === df[!, names(dfx)[1]]
     end
 
-    @test eachcol(df)[1] === last(eachcol(df, true)[1])
-    @test eachcol(df)[1] === last(eachcol(df, true)[1])
-
     @test df[1, 1] == 1
     @test df[1, 1:2] isa DataFrameRow
     @test df[1, r"[ab]"] isa DataFrameRow

@@ -90,30 +90,27 @@ Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr),
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
 # Iteration by columns
-"""
-    DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
-Iterator over columns of an `AbstractDataFrame` constructed using
-[`eachcol(df, true)`](@ref) if `V` is a `Pair{Symbol,AbstractVector}`. Then each
-returned value is a pair consisting of column name and column vector.
-If `V` is an `AbstractVector` (a value returned by [`eachcol(df, false)`](@ref))
-then each returned value is a column vector.
 """
-struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
+    DataFrameColumns{<:AbstractDataFrame} <: AbstractVector{AbstractVector}
+
+An `AbstractVector` that allows iteration over columns of an `AbstractDataFrame`.
+Indexing into `DataFrameColumns` objects using integer or symbol indices
+returns the corresponding column (without copying).
+"""
+struct DataFrameColumns{T<:AbstractDataFrame} <: AbstractVector{AbstractVector}
     df::T
 end
 
-Base.summary(dfcs::DataFrameColumns{T, V}) where {T,V} =
-    "$(length(dfcs))-element DataFrameColumns (with names=$(V <: Pair))"
+Base.summary(dfcs::DataFrameColumns)= "$(length(dfcs))-element DataFrameColumns"
 Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 
 """
-    eachcol(df::AbstractDataFrame, names::Bool=false)
+    eachcol(df::AbstractDataFrame)
 
-Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by column.
-If `names` is equal to `false` (the default) iteration returns column vectors.
-If `names` is equal to `true` pairs consisting of column name and column vector
-are yielded.
+Return a `DataFrameColumns` that is an `AbstractVector`
+that allows iterating an `AbstractDataFrame` column by column.
+Additionally it is allowed to index `DataFrameColumns` using column names.
 
 # Examples
 ```jldoctest
@@ -143,38 +140,39 @@ julia> sum.(eachcol(df))
 2-element Array{Int64,1}:
  10
  50
-
-julia> collect(eachcol(df, true))
-2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:
- :x => [1, 2, 3, 4]
- :y => [11, 12, 13, 14]
 ```
 """
-@inline function eachcol(df::T, names::Bool=false) where T<: AbstractDataFrame
-    if names
-        DataFrameColumns{T, Pair{Symbol, AbstractVector}}(df)
-    else
-        DataFrameColumns{T, AbstractVector}(df)
-    end
-end
+eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
 
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
-@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
-                                                     Pair{Symbol, AbstractVector}}, j::Int)
-    @boundscheck checkbounds(itr, j)
-    @inbounds _names(parent(itr))[j] => parent(itr)[!, j]
-end
-
-@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector}, j::Int)
+@inline function Base.getindex(itr::DataFrameColumns, j::Int)
     @boundscheck checkbounds(itr, j)
     @inbounds parent(itr)[!, j]
 end
 
+Base.getindex(itr::DataFrameColumns, j::Symbol) = parent(itr)[!, j]
+
 Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))
+
+"""
+    keys(dfc::DataFrameColumns)
+
+Get a vector of column names of `dfc`.
+"""
+Base.keys(itr::DataFrameColumns) = names(parent(itr))
+
+"""
+    pairs(dfc::DataFrameColumns)
+
+Return an iterator of pairs associating the name of each column of `dfc`
+with the corresponding column vector, i.e. `name => col`
+where `name` is the column name of the column `col`.
+"""
+Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
@@ -265,24 +263,24 @@ Base.show(dfrs::DataFrameRows;
     show(stdout, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
          rowlabel=rowlabel, summary=summary)
 
-function Base.show(io::IO, dfcs::DataFrameColumns{T,V};
+function Base.show(io::IO, dfcs::DataFrameColumns;
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
                    splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
-                   summary::Bool = true) where {T, V}
+                   summary::Bool = true)
     df = parent(dfcs)
-    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns (with names=$(V <: Pair))")
+    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns")
     _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=false)
 end
 
-Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns{T,V};
+Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
           allrows::Bool = !get(io, :limit, false),
           allcols::Bool = !get(io, :limit, false),
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) where {T, V} =
+          summary::Bool = true) =
     show(io, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
          rowlabel=rowlabel, summary=summary)
 

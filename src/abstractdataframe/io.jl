@@ -162,11 +162,11 @@ function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::
     _show(io, mime, df, summary=false)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns{T,V};
-                   summary::Bool=true) where {T,V}
+function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns;
+                   summary::Bool=true)
     df = parent(dfcs)
     if summary
-        write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameColumns (with names=$(V <: Pair))</p>")
+        write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameColumns</p>")
     end
     _show(io, mime, df, summary=false)
 end
