@@ -1478,29 +1478,35 @@ end
 end
 
 @testset "GroupedDataFrame indexing with array of keys" begin
-    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
-    gd = groupby_checked(df, [:a, :b])
+    df_ref = DataFrame(a = repeat([:A, :B, missing], outer=4),
+                       b = repeat(1:2, inner=6), c = 1:12)
+    Random.seed!(1234)
+    for df in [df, df[randperm(nrow(df)), :]], grpcols = [[:a, :b], :a, :b],
+              dosort in [true, false], doskipmissing in [true, false]
+        gd = groupby_checked(df, grpcols, sort=dosort, skipmissing=doskipmissing)
 
-    ints = [4, 6, 2, 1]
-    gd2 = gd[ints]
-    gkeys = keys(gd)[ints]
+        ints = [4, 6, 2, 1]
+        gd2 = gd[ints]
+        gkeys = keys(gd)[ints]
 
-    # Test with GroupKeys, Tuples, and NamedTuples
-    for converter in [identity, Tuple, NamedTuple]
-        a = converter.(gkeys)
-        @test gd[a] ≅ gd2
+        # Test with GroupKeys, Tuples, and NamedTuples
+        for converter in [identity, Tuple, NamedTuple]
+            a = converter.(gkeys)
+            @test gd[a] ≅ gd2
 
-        # Infer eltype
-        @test gd[Array{Any}(a)] ≅ gd2
+            # Infer eltype
+            @test gd[Array{Any}(a)] ≅ gd2
 
-        # Duplicate keys
-        a2 = converter.(keys(gd)[[1, 2, 1]])
-        @test_throws ArgumentError gd[a2]
+            # Duplicate keys
+            a2 = converter.(keys(gd)[[1, 2, 1]])
+            @test_throws ArgumentError gd[a2]
+        end
     end
 end
 
 @testset "InvertedIndex with GroupedDataFrame" begin
-    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4),
+                   b = repeat(1:2, inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
 
     # Inverted scalar index
@@ -1548,7 +1554,8 @@ end
 end
 
 @testset "GroupedDataFrame array index homogeneity" begin
-    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
+    df = DataFrame(a = repeat([:A, :B, missing], outer=4),
+                   b = repeat(1:2, inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
 
     # All scalar index types

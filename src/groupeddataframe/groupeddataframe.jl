@@ -23,9 +23,10 @@ end
 
 function genkeymap(gd, cols)
     d = Dict{Any,Int}()
+    gdidx = gd.idx
     sizehint!(d, length(gd.starts))
-    @inbounds for (i, s) in enumerate(gd.starts)
-        d[getindex.(cols, s)] = i
+    for (i, s) in enumerate(gd.starts)
+        d[getindex.(cols, gdidx[s])] = i
     end
     d
 end
