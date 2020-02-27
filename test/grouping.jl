@@ -1481,7 +1481,7 @@ end
     df_ref = DataFrame(a = repeat([:A, :B, missing], outer=4),
                        b = repeat(1:2, inner=6), c = 1:12)
     Random.seed!(1234)
-    for df in [df, df[randperm(nrow(df)), :]], grpcols = [[:a, :b], :a, :b],
+    for df in [df_ref, df_ref[randperm(nrow(df)), :]], grpcols = [[:a, :b], :a, :b],
               dosort in [true, false], doskipmissing in [true, false]
         gd = groupby_checked(df, grpcols, sort=dosort, skipmissing=doskipmissing)
 
