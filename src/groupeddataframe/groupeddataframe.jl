@@ -24,7 +24,7 @@ end
 function genkeymap(gd, cols)
     d = Dict{Any,Int}()
     sizehint!(d, length(gd.starts))
-    for (i, s) in enumerate(gd.starts)
+    @inbounds for (i, s) in enumerate(gd.starts)
         d[getindex.(cols, s)] = i
     end
     d
@@ -37,7 +37,8 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
             gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
         end
         return getfield(gd, f)::Vector{Int}
-    elseif f == :keymap
+    elseif f === :keymap
+        # Keymap is computed lazily the first time it is accessed
         if getfield(gd, f) === nothing
             gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
         end
