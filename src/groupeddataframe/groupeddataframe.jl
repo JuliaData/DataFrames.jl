@@ -22,10 +22,10 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
 end
 
 function genkeymap(gd, cols)
-# currently we use Dict{Any,Int} because then filed :keymap in GroupedDataFrame has a concrete
-# type which makes the access to it faster as we do not have a dynamic dispatch when indexing
-# into it. In the future an optimization of this approach can be investigated
-# (also taking compilation time into account).
+    # currently we use Dict{Any,Int} because then filed :keymap in GroupedDataFrame
+    # has a concrete type which makes the access to it faster as we do not have a dynamic
+    # dispatch when indexing into it. In the future an optimization of this approach
+    # can be investigated (also taking compilation time into account).
     d = Dict{Any,Int}()
     gdidx = gd.idx
     sizehint!(d, length(gd.starts))

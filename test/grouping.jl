@@ -1483,6 +1483,7 @@ end
     Random.seed!(1234)
     for df in [df_ref, df_ref[randperm(nrow(df_ref)), :]], grpcols = [[:a, :b], :a, :b],
         dosort in [true, false], doskipmissing in [true, false]
+
         gd = groupby_checked(df, grpcols, sort=dosort, skipmissing=doskipmissing)
 
         ints = unique(min.(length(gd), [4, 6, 2, 1]))
