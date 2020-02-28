@@ -84,7 +84,7 @@ function normalize_selection(idx::AbstractIndex,
     else
         c = idx[rawc]
     end
-    if length(c) == 0 && first(last(sel)) isa ByRow
+    if length(c) == 0 && last(sel) isa ByRow
         throw(ArgumentError("at least one column must be passed to a " *
                             "`ByRow` transformation function"))
     end
@@ -418,7 +418,7 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
             newname = last(last(nc))
             @assert newname isa Symbol
             if haskey(transformed_cols, newname)
-                throw(ArgumentError("duplicate target transformed or renamed " *
+                throw(ArgumentError("duplicate target " *
                                     "column name $newname passed"))
             end
             transformed_cols[newname] = nc

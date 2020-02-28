@@ -1,6 +1,8 @@
 module TestSelect
 
-using DataFrames
+using DataFrames, Test, Random
+
+Random.seed!(1234)
 
 @testset "select! Not" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
@@ -581,6 +583,75 @@ end
     @test dfc == select(df, :x4, :x2, :x3, :x1)
 
     @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
+end
+
+@testset "select and select! renaming" begin
+    df = DataFrame(rand(10, 4))
+    @test select(df, :x1 => :x2, :x2 => :x1) == rename(df[:, 1:2], [:x2, :x1])
+    @test select(df, :x2 => :x1, :x1 => :x2) == DataFrame(x1=df.x2, x2=df.x1)
+    @test MethodError select(df, [:x1, :x2] => :x3)
+    @test MethodError select!(df, [:x1, :x2] => :x3)
+
+    df2 = select(df, :x1 => :x2, :x2 => :x1)
+    @test df2.x1 == df.x2
+    @test df2.x1 !== df.x2
+    df2 = select(df, :x1 => :x2, :x2 => :x1, copycols=false)
+    @test df2.x1 === df.x2
+
+    df2 = select(df, :x1, :x1 => :x2)
+    @test df2.x1 == df2.x2
+    @test df2.x1 !== df2.x2
+
+    df2 = select(df, :x1, :x1 => :x2, copycols=false)
+    @test df2.x1 === df2.x2
+
+    x1 = df.x1
+    x2 = df.x2
+    select!(df, :x1 => :x2, :x2 => :x1)
+    @test x1 === df.x2
+    @test x2 === df.x1
+    @test names(df) == [:x2, :x1]
+
+    df = DataFrame(rand(10, 4))
+    select!(df, :x1, :x1 => :x2)
+    @test df2.x1 === df2.x2
+
+    df = DataFrame(rand(10, 4))
+    df2 = select(df, :, :x1 => :x3)
+    @test df2 == DataFrame(eachcol(df)[[1,2,1,4]])
+    @test df2.x1 !== df2.x3
+    df2 = select(df, :, :x1 => :x3, copycols=false)
+    @test df2 == DataFrame(eachcol(df)[[1,2,1,4]])
+    @test df2.x1 === df2.x3
+    @test select(df, :x1 => :x3, :) == DataFrame(eachcol(df)[[1,1,2,4]],
+                                                 [:x3, :x1, :x2, :x4])
+    select!(df, :, :x1 => :x3)
+    @test df2 == df
+    @test all(i -> df2[!, i] === df[!, i], ncol(df2))
+end
+
+@testset "select and select! empty selection" begin
+    df = DataFrame(rand(10, 4))
+    @test select(df, r"z") == DataFrame()
+    @test_throws ArgumentError select(df, r"z" => ByRow(rand))
+end
+
+@testset "select and select! duplicates" begin
+    df = DataFrame(rand(10, 4))
+    df_ref = copy(df)
+
+    @test_throws ArgumentError select(df, :x1, :x1)
+    @test_throws ArgumentError select(df, :x1, :x5)
+    @test select(df, :x2, r"x", :x1, :) == df[:, [:x2, :x1, :x3, :x4]]
+
+    @test_throws ArgumentError select(df, :x1, :x2 => :x1)
+
+    @test_throws ArgumentError select!(df, :x1, :x1)
+    @test_throws ArgumentError select!(df, :x1, :x5)
+    @test df == df_ref
+
+    select!(df, :x2, r"x", :x1, :)
+    @test df == df_ref[:, [:x2, :x1, :x3, :x4]]
 end
 
 end # module
