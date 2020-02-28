@@ -1485,7 +1485,7 @@ end
               dosort in [true, false], doskipmissing in [true, false]
         gd = groupby_checked(df, grpcols, sort=dosort, skipmissing=doskipmissing)
 
-        ints = unique(max.(length(gd), [4, 6, 2, 1]))
+        ints = unique(min.(length(gd), [4, 6, 2, 1]))
         gd2 = gd[ints]
         gkeys = keys(gd)[ints]
 
