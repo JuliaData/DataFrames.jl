@@ -135,15 +135,15 @@ In particular, regular expressions, `All`, `Between`, and `Not` selectors are su
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
 `new_column_name` must be a `Symbol`, and `fun` a function or a type.
-If `old_column` is a `Symbol` or an integer then `fun` is applied to a column `old_column`.
-Otherwise `old_column` can be any column indexing syntax, but in this case `fun`
-will be passed a `NamedTuple` holding only the columns specified by `old_column`.
+If `old_column` is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
+Otherwise `old_column` can be any column indexing syntax, in which case `fun`
+will be passed the column vectors specified by `old_column` as separate arguments.
 
-It is allowed to wrap `fun` in `ByRow` struct. In this case
+To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow` struct. In this case
 if `old_column` is a `Symbol` or an integer then `fun` is applied to each element
 (row) of `old_column`. Otherwise `old_column` can be any column indexing syntax,
-but in this case `fun` will be passed a `NamedTuple` representing each row, holding only
-the columns specified by `old_column`. If `ByRow` is used it is not allowed
+in which case `fun` will be passed one argument for each of the columns specified by `old_column`.
+If `ByRow` is used it is not allowed
 that `old_column` selects an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
