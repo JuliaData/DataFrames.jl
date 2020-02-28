@@ -1689,8 +1689,8 @@ function flatten(df::AbstractDataFrame,
         if any(x -> length(x[1]) != x[2], zip(v, lengths))
             r = findfirst(x -> x != 0, length.(v) .- lengths)
             colnames = names(df)
-            throw(ArgumentError("Lengths of iterables stored in columns $(colnames[col1])"
-                                 * " and $(colnames[col]) are not the the same in row $r"))
+            throw(ArgumentError("Lengths of iterables stored in columns $(colnames[col1])" *
+                                " and $(colnames[col]) are not the the same in row $r"))
         end
     end
 
