@@ -1602,8 +1602,8 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, cols::Union{ColumnIndex, AbstractVector, Regex, Not,
-            Between, All, Colon})
+    flatten(df::AbstractDataFrame,
+            cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
 
 When columns `cols` of data frame `df` have iterable elements that define `length` (for
 example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
