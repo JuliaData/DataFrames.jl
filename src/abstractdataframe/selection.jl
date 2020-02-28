@@ -1,9 +1,8 @@
 # TODO:
 # * add transform and transfom! functions
-# * update documentation
-# * add tests
 # * add NT (or better name) to column selector passing NamedTuple
 #   (also in other places: filter, combine)
+# * add select/select!/transform/transform! for GroupedDataFrame
 
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
@@ -134,24 +133,24 @@ In particular, regular expressions, `All`, `Between`, and `Not` selectors are su
 
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
-`new_column_name` must be a `Symbol`, and `fun` a function or a type.
-If `old_column` is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
+`new_column_name` must be a `Symbol`, and `fun` a function or a type. If `old_column`
+is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
 Otherwise `old_column` can be any column indexing syntax, in which case `fun`
 will be passed the column vectors specified by `old_column` as separate arguments.
 
-To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow` struct. In this case
-if `old_column` is a `Symbol` or an integer then `fun` is applied to each element
-(row) of `old_column`. Otherwise `old_column` can be any column indexing syntax,
-in which case `fun` will be passed one argument for each of the columns specified by `old_column`.
-If `ByRow` is used it is not allowed
-that `old_column` selects an empty set of columns.
+To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
+struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
+to each element (row) of `old_column`. Otherwise `old_column` can be any column
+indexing syntax, in which case `fun` will be passed one argument for each of the
+columns specified by `old_column`. If `ByRow` is used it is not allowed that
+`old_column` selects an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
 In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
 Up to three column names are used for multiple input columns and they are joined
 using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
-the new column name `a_b_etc_fun`.
+the new column name `:a_b_etc_fun`.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
@@ -159,7 +158,7 @@ and only the first occurrence is used. In particular a syntax to move column `:c
 to the first position in the data frame is `select!(df, :col, :)`.
 On the contrary, output column names of renaming, transformation and single column
 selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
-`select!(df, :a, :a => sin => :a)` are not allowed.
+`select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
 Note that including the same column several times in the data frame via renaming
 when `copycols=false` will create column aliases. An example of such a situation is
@@ -260,8 +259,7 @@ end
 """
     select(df::AbstractDataFrame, inds...; copycols::Bool=true)
 
-Create a new data frame that contains columns from `df`
-specified by `inds` and return it.
+Create a new data frame that contains columns from `df` specified by `inds` and return it.
 
 Arguments passed as `inds...` can be any index that is allowed for column indexing.
 In particular, regular expressions, `All`, `Between`, and `Not` selectors are supported.
@@ -271,36 +269,36 @@ are supported.
 
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
-`new_column_name` must be a `Symbol`, and `fun` a function or a type.
-If `old_column` is a `Symbol` or an integer then `fun` is applied to a column `old_column`.
-Otherwise `old_column` can be any column indexing syntax, but in this case `fun`
-will be passed a `NamedTuple` holding only the columns specified by `old_column`.
+`new_column_name` must be a `Symbol`, and `fun` a function or a type. If `old_column`
+is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
+Otherwise `old_column` can be any column indexing syntax, in which case `fun`
+will be passed the column vectors specified by `old_column` as separate arguments.
 
-It is allowed to wrap `fun` in `ByRow` struct. In this case
-if `old_column` is a `Symbol` or an integer then `fun` is applied to each element
-(row) of `old_column`. Otherwise `old_column` can be any column indexing syntax,
-but in this case `fun` will be passed a `NamedTuple` representing each row, holding only
-the columns specified by `old_column`. If `ByRow` is used it is not allowed
-that `old_column` selects an empty set of columns.
+To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
+struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
+to each element (row) of `old_column`. Otherwise `old_column` can be any column
+indexing syntax, in which case `fun` will be passed one argument for each of the
+columns specified by `old_column`. If `ByRow` is used it is not allowed that
+`old_column` selects an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
 In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
 Up to three column names are used for multiple input columns and they are joined
 using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
-the new column name `a_b_etc_fun`.
+the new column name `:a_b_etc_fun`.
 
-If a collection of column names is passed to `select` then requesting duplicate column
-names in target data frame are accepted (e.g. `select(df, [:a], :, r"a")` is allowed)
+If a collection of column names is passed to `select!` then requesting duplicate column
+names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
 and only the first occurrence is used. In particular a syntax to move column `:col`
-to the first position in the data frame is `select(df, :col, :)`.
+to the first position in the data frame is `select!(df, :col, :)`.
 On the contrary, output column names of renaming, transformation and single column
-selection operations must be unique, so e.g. `select(df, :a, :a => :a)` or
-`select(df, :a, :a => sin => :a)` are not allowed.
+selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
+`select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
-If `df` is a `DataFrame` a new `DataFrame` is returned.
-If `copycols=true` (the default), then returned `DataFrame` is guaranteed not to share columns with `df`.
-If `copycols=false`, then returned `DataFrame` shares column vectors with `df` where possible.
+If `df` is a `DataFrame` a new `DataFrame` is returned. If `copycols=true` (the default),
+then returned `DataFrame` is guaranteed not to share columns with `df`. If
+`copycols=false`, then returned `DataFrame` shares column vectors with `df` where possible.
 
 If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
 and a `DataFrame` with freshly allocated columns otherwise.
@@ -385,11 +383,14 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     # the role of transformed_cols is the following
     # * make sure that we do not use the same target column name twice in transformations;
     #   note though that it can appear in no-transformation selection like
-    #    `select(df, :, :a => sin => :a), where :a is produced both by `:` and by `:a => sin => :a`
-    # * make sure that if some column is produced by transformation like `:a => sin => :a`
-    #   and it appears earlier or later in non-transforming selection like `:` or `:a`
-    #   then the transformation is computed and inserted in to the target data frame once and only once
-    #   the first time the target column is requested to be produced.
+    #   `select(df, :, :a => ByRow(sin) => :a), where :a is produced both by `:`
+    #   and by `:a => ByRow(sin) => :a`
+    # * make sure that if some column is produced by transformation like
+    #   `:a => ByRow(sin) => :a` and it appears earlier or later in non-transforming
+    #   selection like `:` or `:a` then the transformation is computed and inserted
+    #   in to the target data frame once and only once the first time the target column
+    #   is requested to be produced.
+    #
     # For example in:
     #
     # julia> df = DataFrame(a=1:2, b=3:4)
@@ -400,7 +401,7 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     # │ 1   │ 1     │ 3     │
     # │ 2   │ 2     │ 4     │
     #
-    # julia> select(df, :, :a=>ByRow(sin)=>:a, :a, 1)
+    # julia> select(df, :, :a => ByRow(sin) => :a, :a, 1)
     # 2×2 DataFrame
     # │ Row │ a        │ b     │
     # │     │ Float64  │ Int64 │

@@ -114,6 +114,7 @@ without caution because:
 
 ```@docs
 AbstractDataFrame
+ByRow
 DataFrame
 DataFrameRow
 GroupedDataFrame
@@ -124,5 +125,4 @@ DataFrameRows
 DataFrameColumns
 RepeatedVector
 StackedVector
-Row
 ```

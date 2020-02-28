@@ -522,11 +522,14 @@ julia> df[in.(df.A, Ref([1, 5, 601])), :]
 │ 3   │ 601   │ 7     │ 301   │
 ```
 
-Equivalently, the `in` function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
+Equivalently, the `in` function can be called with a single argument to create
+a function object that tests whether each value belongs to the subset
+(partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
 #### Column selection using `select` and `select!`
 
-You can also use the [`select`](@ref) and [`select!`](@ref) functions to select columns in a data frame.
+You can also use the [`select`](@ref) and [`select!`](@ref) functions to select,
+rename and transform columns in a data frame.
 
 The `select` function creates a new data frame:
 ```jldoctest dataframe
@@ -550,6 +553,27 @@ julia> select(df, r"x") # select columns containing 'x' character
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 1     │ 2     │
+
+julia> select(df, :x1 => :a1, :x2 => :a2) # rename columns
+1×2 DataFrame
+│ Row │ a1    │ a2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+
+julia> select(df, :x1, :x2 => (x -> 2x) => :x2) # transform columns
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+
+julia> select(df, :x1, :x2 => ByRow(UInt8) => :x2) # transform columns by row
+1×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ UInt8 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0x02  │
 ```
 
 It is important to note that `select` always returns a data frame,
