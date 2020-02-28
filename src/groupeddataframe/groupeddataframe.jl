@@ -12,12 +12,27 @@ Not meant to be constructed directly, see `groupby`.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
-    cols::Vector{Int}                  # columns used for grouping
-    groups::Vector{Int}                # group indices for each row in 0:ngroups, 0 skipped
-    idx::Union{Vector{Int},Nothing}    # indexing vector sorting rows into groups
-    starts::Union{Vector{Int},Nothing} # starts of groups after permutation by idx
-    ends::Union{Vector{Int},Nothing}   # ends of groups after permutation by idx
-    ngroups::Int                       # number of groups
+    cols::Vector{Int}                    # columns used for grouping
+    groups::Vector{Int}                  # group indices for each row in 0:ngroups, 0 skipped
+    idx::Union{Vector{Int},Nothing}      # indexing vector sorting rows into groups
+    starts::Union{Vector{Int},Nothing}   # starts of groups after permutation by idx
+    ends::Union{Vector{Int},Nothing}     # ends of groups after permutation by idx
+    ngroups::Int                         # number of groups
+    keymap::Union{Dict{Any,Int},Nothing} # mapping of key tuples to group indices
+end
+
+function genkeymap(gd, cols)
+    # currently we use Dict{Any,Int} because then field :keymap in GroupedDataFrame
+    # has a concrete type which makes the access to it faster as we do not have a dynamic
+    # dispatch when indexing into it. In the future an optimization of this approach
+    # can be investigated (also taking compilation time into account).
+    d = Dict{Any,Int}()
+    gdidx = gd.idx
+    sizehint!(d, length(gd.starts))
+    for (i, s) in enumerate(gd.starts)
+        d[getindex.(cols, gdidx[s])] = i
+    end
+    d
 end
 
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
@@ -27,6 +42,12 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
             gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
         end
         return getfield(gd, f)::Vector{Int}
+    elseif f === :keymap
+        # Keymap is computed lazily the first time it is accessed
+        if getfield(gd, f) === nothing
+            gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
+        end
+        return getfield(gd, f)::Dict{Any,Int}
     else
         return getfield(gd, f)
     end
@@ -158,13 +179,14 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
         end
     end
     GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx,
-                     new_starts, new_ends, length(new_starts))
+                     new_starts, new_ends, length(new_starts), nothing)
 end
 
 # Index with colon (creates copy)
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx,
-                     gd.starts, gd.ends, gd.ngroups)
+    GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
+                     getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
+                     getfield(gd, :keymap))
 
 
 #
@@ -269,15 +291,11 @@ const GroupIndexTypes = Union{Integer, GroupKeyTypes}
 # Find integer index for dictionary keys
 function Base.to_index(gd::GroupedDataFrame, key::GroupKey)
     gd === parent(key) && return getfield(key, :idx)
-    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame other than the one it was derived from."))
+    throw(ErrorException("Cannot use a GroupKey to index a GroupedDataFrame " *
+                         "other than the one it was derived from."))
 end
 
-function Base.to_index(gd::GroupedDataFrame, key::Tuple)
-    for i in 1:length(gd)
-        isequal(Tuple(_groupvalues(gd, i)), key) && return i
-    end
-    throw(KeyError(key))
-end
+Base.to_index(gd::GroupedDataFrame, key::Tuple) = gd.keymap[key]
 
 function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
