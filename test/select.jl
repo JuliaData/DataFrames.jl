@@ -589,8 +589,8 @@ end
     df = DataFrame(rand(10, 4))
     @test select(df, :x1 => :x2, :x2 => :x1) == rename(df[:, 1:2], [:x2, :x1])
     @test select(df, :x2 => :x1, :x1 => :x2) == DataFrame(x1=df.x2, x2=df.x1)
-    @test MethodError select(df, [:x1, :x2] => :x3)
-    @test MethodError select!(df, [:x1, :x2] => :x3)
+    @test_throws MethodError select(df, [:x1, :x2] => :x3)
+    @test_throws MethodError select!(df, [:x1, :x2] => :x3)
 
     df2 = select(df, :x1 => :x2, :x2 => :x1)
     @test df2.x1 == df.x2
