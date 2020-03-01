@@ -37,7 +37,16 @@ end
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
 
-normalize_selection(idx::AbstractIndex, sel) = idx[sel]
+normalize_selection(idx::AbstractIndex, sel) =
+    try
+        idx[sel]
+    catch e
+        if e isa MethodError && e.f === getindex && e.args === (idx, sel)
+            throw(ArgumentError("Unrecognized selection pattern $sel"))
+        else
+            rethrow(e)
+        end
+    end
 
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
     c = idx[sel]
@@ -97,36 +106,42 @@ function normalize_selection(idx::AbstractIndex,
     return c => fun => newcol
 end
 
-function select_transform!(nc::Union{Pair{Int, Pair{ColRename, Symbol}},
-                                     Pair{<:Union{Int, AbstractVector{Int}},
-                                          <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}},
+function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
-    col_idx = first(nc)
-    transform_spec = last(nc)
-    newname = last(transform_spec)
-    if !isnothing(transformed_cols[newname])
-        @assert !hasproperty(newdf, newname)
-    end
-    if nc isa Pair{Int, Pair{ColRename, Symbol}}
-        newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
-    elseif nc isa Pair{Int, <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}
-        res = first(transform_spec)(df[!, col_idx])
-        if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
-            throw(ArgumentError("return value from function $(first(transform_spec)) " *
-                                "of type $(typeof(res)) is currently not allowed."))
-        end
-        newdf[!, newname] = res isa AbstractVector ? res : [res]
-    elseif nc isa Pair{<:AbstractVector{Int}, <:Pair{<:Union{Base.Callable, ByRow}, Symbol}}
-        cdf = _columns(df)
-        res = first(transform_spec)((cdf[i] for i in col_idx)...)
-        if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
-            throw(ArgumentError("return value from function $(first(transform_spec)) " *
-                                "of type $(typeof(res)) is currently not allowed."))
-        end
-        newdf[!, newname] = res isa AbstractVector ? res : [res]
+    col_idx, (_, newname) = nc
+    # it is allowed to request column tranformation only once
+    @assert !hasproperty(newdf, newname)
+    newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
+    # mark that column transformation was applied
+    # nothing is not possible otherwise as a value in this dict
+    transformed_cols[newname] = nothing
+end
+
+function select_transform!(nc:: Pair{<:Union{Int, AbstractVector{Int}},
+                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
+                           df::AbstractDataFrame, newdf::DataFrame,
+                           transformed_cols::Dict{Symbol, Any}, copycols::Bool)
+    col_idx, (fun, newname) = nc
+    @assert !hasproperty(newdf, newname)
+    if col_idx isa Int
+        res = fun(df[!, col_idx])
     else
-        throw(ErrorException("code should never reach this branch"))
+        cdf = _columns(df)
+        res = fun((cdf[i] for i in col_idx)...)
+    end
+    if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+        throw(ArgumentError("return value from function $fun " *
+                            "of type $(typeof(res)) is currently not allowed."))
+    end
+    if res isa AbstractVector
+        if copycols && !(first(fun isa ByRow))
+            newdf[!, newname] = copy(res)
+        else
+            newdf[!, newname] = res
+        end
+    else
+        newdf[!, newname] = [res]
     end
     transformed_cols[newname] = nothing
 end
@@ -434,19 +449,26 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
             newname = last(last(nc))
             @assert newname isa Symbol
             if haskey(transformed_cols, newname)
-                throw(ArgumentError("duplicate target " *
-                                    "column name $newname passed"))
+                throw(ArgumentError("duplicate target column name $newname passed"))
             end
             transformed_cols[newname] = nc
         end
     end
     for nc in normalized_cs
-        if nc isa Union{Int, AbstractVector{Int}}
+        if nc isa AbstractVector{Int}
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
             for i in nc
                 newname = _names(df)[i]
+                # as nc is a multiple column selection without transformations
+                # we allow duplicate column names with selections applied earlier
+                # and ignore them for convinience, to allow for e.g. select(df, :x1, :)
                 if !hasproperty(newdf, newname)
                     if haskey(transformed_cols, newname)
+                        # if newdf does not have a column newname
+                        # but a column transformation was requested for this column
+                        # then apply the transformation immediately
+                        # in such a case nct may not be nothing, as if it were
+                        # nothing then newname should be preasent in newdf already
                         nct = transformed_cols[newname]
                         @assert nct !== nothing
                         select_transform!(nct, df, newdf, transformed_cols, copycols)

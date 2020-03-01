@@ -589,8 +589,10 @@ end
     df = DataFrame(rand(10, 4))
     @test select(df, :x1 => :x2, :x2 => :x1) == rename(df[:, 1:2], [:x2, :x1])
     @test select(df, :x2 => :x1, :x1 => :x2) == DataFrame(x1=df.x2, x2=df.x1)
-    @test_throws MethodError select(df, [:x1, :x2] => :x3)
-    @test_throws MethodError select!(df, [:x1, :x2] => :x3)
+    @test_throws ArgumentError select(df, [:x1, :x2] => :x3)
+    @test_throws ArgumentError select!(df, [:x1, :x2] => :x3)
+    @test_throws BoundsError select(df, 0 => :x3)
+    @test_throws BoundsError select!(df, 0 => :x3)
 
     df2 = select(df, :x1 => :x2, :x2 => :x1)
     @test df2.x1 == df.x2
@@ -632,8 +634,19 @@ end
 
 @testset "select and select! empty selection" begin
     df = DataFrame(rand(10, 4))
+    x = [1,2,3]
+
     @test select(df, r"z") == DataFrame()
+    @test select(df, r"z" => () -> x) == DataFrame(_function=x)
+    @test select(df, r"z" => () -> x)[!, 1] === x
+    @test_throws MethodError select(df, r"z" => x -> 1)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand))
+
+    @test select(df, r"z", copycols=false) == DataFrame()
+    @test select(df, r"z" => () -> x, copycols=false) == DataFrame(_function=x)
+    @test select(df, r"z" => () -> x, copycols=true)[!, 1] === x
+    @test_throws MethodError select(df, r"z" => x -> 1, copycols=false)
+    @test_throws ArgumentError select(df, r"z" => ByRow(rand), copycols=false)
 end
 
 @testset "select and select! duplicates" begin
@@ -645,6 +658,7 @@ end
     @test select(df, :x2, r"x", :x1, :) == df[:, [:x2, :x1, :x3, :x4]]
 
     @test_throws ArgumentError select(df, :x1, :x2 => :x1)
+    @test select(df, [:x1], :x2 => :x1) == DataFrame(x1 = df.x2)
 
     @test_throws ArgumentError select!(df, :x1, :x1)
     @test_throws ArgumentError select!(df, :x1, :x5)
