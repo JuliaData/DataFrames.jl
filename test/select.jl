@@ -638,13 +638,13 @@ end
 
     @test select(df, r"z") == DataFrame()
     @test select(df, r"z" => () -> x) == DataFrame(_function=x)
-    @test select(df, r"z" => () -> x)[!, 1] === x
+    @test select(df, r"z" => () -> x)[!, 1] !== x
     @test_throws MethodError select(df, r"z" => x -> 1)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand))
 
     @test select(df, r"z", copycols=false) == DataFrame()
     @test select(df, r"z" => () -> x, copycols=false) == DataFrame(_function=x)
-    @test select(df, r"z" => () -> x, copycols=true)[!, 1] === x
+    @test select(df, r"z" => () -> x, copycols=false)[!, 1] === x
     @test_throws MethodError select(df, r"z" => x -> 1, copycols=false)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand), copycols=false)
 end

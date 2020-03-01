@@ -478,7 +478,16 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                 end
             end
         else
-            select_transform!(nc, df, newdf, transformed_cols, copycols)
+            # nc is normalized so it has a form src_cols => fun => Symbol
+            newname = last(last(nc))
+            if hasproperty(newdf, newname)
+                # it is possible that the transformation has already been applied
+                # via multiple column selection, like in select(df, :, :x1 => :y1)
+                # but then transformed_cols[newname] must be nothing
+                @assert transformed_cols[newname] === nothing
+            else
+                select_transform!(nc, df, newdf, transformed_cols, copycols)
+            end
         end
     end
     return newdf
