@@ -11,9 +11,8 @@
 # 3) Pair{Int, Pair{ColRename, Symbol}}
 # 4) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
 # 5) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
-# 6) Pair{Int, Pair{Row, Symbol}}
-# 7) Pair{AbstractVector{Int}, Pair{Row, Symbol}}
-# in this way we can easily later decide on the codepath using type signatures
+# 6) Pair{Int, Pair{ByRow, Symbol}}
+# 7) Pair{AbstractVector{Int}, Pair{ByRow, Symbol}}
 
 """
     ColRename
