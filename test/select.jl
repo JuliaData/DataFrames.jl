@@ -638,27 +638,27 @@ end
     df = DataFrame(rand(10, 4))
     for fun in (+, ByRow(+)), copycols in [true, false]
         @test select(df, 1 => fun, copycols=copycols) ==
-              DataFrame(:var"x1_+" => df.x1)
+              DataFrame(Symbol("x1_+") => df.x1)
         @test select(df, 1:2 => fun, copycols=copycols) ==
-              DataFrame(:var"x1_x2_+" => df.x1 + df.x2)
+              DataFrame(Symbol("x1_x2_+") => df.x1 + df.x2)
         @test select(df, 1:3 => fun, copycols=copycols) ==
-              DataFrame(:var"x1_x2_x3_+" => df.x1 + df.x2 + df.x3)
+              DataFrame(Symbol("x1_x2_x3_+") => df.x1 + df.x2 + df.x3)
         @test select(df, 1:4 => fun, copycols=copycols) ==
-              DataFrame(:var"x1_x2_etc_+" => sum.(eachrow(df)))
+              DataFrame(Symbol("x1_x2_etc_+") => sum.(eachrow(df)))
     end
     for fun in (+, ByRow(+))
         dfc = copy(df)
         select!(dfc, 1 => fun)
-        @test dfc == DataFrame(:var"x1_+" => df.x1)
+        @test dfc == DataFrame(Symbol("x1_+") => df.x1)
         dfc = copy(df)
         select!(dfc, 1:2 => fun)
-        @test dfc == DataFrame(:var"x1_x2_+" => df.x1 + df.x2)
+        @test dfc == DataFrame(Symbol("x1_x2_+") => df.x1 + df.x2)
         dfc = copy(df)
         select!(dfc, 1:3 => fun)
-        @test dfc == DataFrame(:var"x1_x2_x3_+" => df.x1 + df.x2 + df.x3)
+        @test dfc == DataFrame(Symbol("x1_x2_x3_+") => df.x1 + df.x2 + df.x3)
         dfc = copy(df)
         select!(dfc, 1:4 => fun)
-        @test dfc == DataFrame(:var"x1_x2_etc_+" => sum.(eachrow(df)))
+        @test dfc == DataFrame(Symbol("x1_x2_etc_+") => sum.(eachrow(df)))
     end
 end
 
@@ -677,8 +677,8 @@ end
     @test df2.x1 == df.x1 + df.x2
     @test df2.x3 == df.x1 ./ df.x2
 
-    @test select(df, [:x1, :x1] => +) == DataFrame(:var"x1_x1_+" => 2*df.x1)
-    @test select(df, [1, 1] => +) == DataFrame(:var"x1_x1_+" => 2*df.x1)
+    @test select(df, [:x1, :x1] => +) == DataFrame(Symbol("x1_x1_+") => 2*df.x1)
+    @test select(df, [1, 1] => +) == DataFrame(Symbol("x1_x1_+") => 2*df.x1)
 
     df2 = select(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
                  [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4, copycols=false)
@@ -794,13 +794,13 @@ end
 
     for fun in (+, ByRow(+))
         @test select(sdf, 1 => fun) ==
-              DataFrame(:var"x1_+" => sdf.x1)
+              DataFrame(Symbol("x1_+") => sdf.x1)
         @test select(sdf, 1:2 => fun) ==
-              DataFrame(:var"x1_x2_+" => sdf.x1 + sdf.x2)
+              DataFrame(Symbol("x1_x2_+") => sdf.x1 + sdf.x2)
         @test select(sdf, 1:3 => fun) ==
-              DataFrame(:var"x1_x2_x3_+" => sdf.x1 + sdf.x2 + sdf.x3)
+              DataFrame(Symbol("x1_x2_x3_+") => sdf.x1 + sdf.x2 + sdf.x3)
         @test select(sdf, 1:4 => fun) ==
-              DataFrame(:var"x1_x2_etc_+" => sum.(eachrow(sdf)))
+              DataFrame(Symbol("x1_x2_etc_+") => sum.(eachrow(sdf)))
     end
 
     @test_throws ArgumentError select(sdf, :x1, :x1)
