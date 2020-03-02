@@ -41,7 +41,7 @@ normalize_selection(idx::AbstractIndex, sel) =
         idx[sel]
     catch e
         if e isa MethodError && e.f === getindex && e.args === (idx, sel)
-            throw(ArgumentError("Unrecognized selection pattern $sel"))
+            throw(ArgumentError("Unrecognized column selector: $sel"))
         else
             rethrow(e)
         end
@@ -65,7 +65,15 @@ function normalize_selection(idx::AbstractIndex,
     elseif rawc isa AbstractVector{Symbol}
         c = [idx[n] for n in rawc]
     else
-        c = idx[rawc]
+        c = try
+                idx[rawc]
+            catch e
+                if e isa MethodError && e.f === getindex && e.args === (idx, rawc)
+                    throw(ArgumentError("Unrecognized column selector: $rawc"))
+                else
+                    rethrow(e)
+                end
+            end
     end
     if length(c) == 0 && first(last(sel)) isa ByRow
         throw(ArgumentError("at least one column must be passed to a " *
@@ -90,7 +98,15 @@ function normalize_selection(idx::AbstractIndex,
     elseif rawc isa AbstractVector{Symbol}
         c = [idx[n] for n in rawc]
     else
-        c = idx[rawc]
+        c = try
+                idx[rawc]
+            catch e
+                if e isa MethodError && e.f === getindex && e.args === (idx, rawc)
+                    throw(ArgumentError("Unrecognized column selector: $rawc"))
+                else
+                    rethrow(e)
+                end
+            end
     end
     if length(c) == 0 && last(sel) isa ByRow
         throw(ArgumentError("at least one column must be passed to a " *
@@ -126,7 +142,7 @@ function select_transform!(nc:: Pair{<:Union{Int, AbstractVector{Int}},
     if col_idx isa Int
         res = fun(df[!, col_idx])
     else
-        cdf = _columns(df)
+        cdf = eachcol(df)
         res = fun((cdf[i] for i in col_idx)...)
     end
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
@@ -511,17 +527,16 @@ function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
                 ind_idx = index(dfv)[ind]
                 if ind_idx in seen_single_column
                     throw(ArgumentError("selecting the same column multiple times using" *
-                                        "`Symbol` or integer is not allowed ($ind was " *
+                                        " Symbol or integer is not allowed ($ind was " *
                                         "passed more than once"))
                 else
                     push!(seen_single_column, ind_idx)
                 end
-                push!(new_column_name, ind_idx)
             else
                 newind = normalize_selection(index(dfv), ind)
                 if newind isa Pair
                     throw(ArgumentError("transforming and renaming columns of a " *
-                                        "`SubDataFrame` is not allowed when `copycols=false`"))
+                                        "SubDataFrame is not allowed when `copycols=false`"))
                 end
                 push!(newinds, newind)
             end

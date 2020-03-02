@@ -572,6 +572,8 @@ end
     @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
 
     dfv = view(df, :, :)
+    @test select(dfv, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
     @test select(dfv, :x2, :x4, All()) == select(dfv, :x2, :x4, :x1, :x3)
     @test select(dfv, :x4, Between(:x2, :x4), All()) == select(dfv, :x4, :x2, :x3, :x1)
 
@@ -632,6 +634,74 @@ end
     @test all(i -> df2[!, i] === df[!, i], ncol(df2))
 end
 
+@testset "select and select! many columns naming" begin
+    df = DataFrame(rand(10, 4))
+    for fun in (+, ByRow(+)), copycols in [true, false]
+        @test select(df, 1 => fun, copycols=copycols) ==
+              DataFrame(:var"x1_+" => df.x1)
+        @test select(df, 1:2 => fun, copycols=copycols) ==
+              DataFrame(:var"x1_x2_+" => df.x1 + df.x2)
+        @test select(df, 1:3 => fun, copycols=copycols) ==
+              DataFrame(:var"x1_x2_x3_+" => df.x1 + df.x2 + df.x3)
+        @test select(df, 1:4 => fun, copycols=copycols) ==
+              DataFrame(:var"x1_x2_etc_+" => sum.(eachrow(df)))
+    end
+    for fun in (+, ByRow(+))
+        dfc = copy(df)
+        select!(dfc, 1 => fun)
+        @test dfc == DataFrame(:var"x1_+" => df.x1)
+        dfc = copy(df)
+        select!(dfc, 1:2 => fun)
+        @test dfc == DataFrame(:var"x1_x2_+" => df.x1 + df.x2)
+        dfc = copy(df)
+        select!(dfc, 1:3 => fun)
+        @test dfc == DataFrame(:var"x1_x2_x3_+" => df.x1 + df.x2 + df.x3)
+        dfc = copy(df)
+        select!(dfc, 1:4 => fun)
+        @test dfc == DataFrame(:var"x1_x2_etc_+" => sum.(eachrow(df)))
+    end
+end
+
+@testset "select and select! many different transforms" begin
+    df = DataFrame(rand(10, 4))
+
+    df2 = select(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
+                 [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
+    @test names(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
+    @test df.x2 == df2.x2
+    @test df.x2 !== df2.x2
+    @test df.x1 == df2.x4
+    @test df.x4 !== df2.x1
+    @test df2.r1 == df.x1 .^ 2
+    @test df2.r1 == df2.r2
+    @test df2.x1 == df.x1 + df.x2
+    @test df2.x3 == df.x1 ./ df.x2
+
+    @test select(df, [:x1, :x1] => +) == DataFrame(:var"x1_x1_+" => 2*df.x1)
+    @test select(df, [1, 1] => +) == DataFrame(:var"x1_x1_+" => 2*df.x1)
+
+    df2 = select(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
+                 [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4, copycols=false)
+    @test names(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
+    @test df.x2 === df2.x2
+    @test df.x1 === df2.x4
+    @test df2.r1 == df.x1 .^ 2
+    @test df2.r1 == df2.r2
+    @test df2.x1 == df.x1 + df.x2
+    @test df2.x3 == df.x1 ./ df.x2
+
+    x1, x2, x3, x4 = df.x1, df.x2, df.x3, df.x4
+    select!(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
+            [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
+    @test names(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
+    @test x2 === df.x2
+    @test x1 === df.x4
+    @test df.r1 == x1 .^ 2
+    @test df.r1 == df.r2
+    @test df.x1 == x1 + x2
+    @test df.x3 == x1 ./ x2
+end
+
 @testset "select and select! reserved return values" begin
     df = DataFrame(x=1)
     df2 = copy(df)
@@ -672,6 +742,21 @@ end
     @test select(df, r"z" => () -> x, copycols=false)[!, 1] === x
     @test_throws MethodError select(df, r"z" => x -> 1, copycols=false)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand), copycols=false)
+
+    @test_throws MethodError select!(df, r"z" => x -> 1)
+    @test_throws ArgumentError select!(df, r"z" => ByRow(rand))
+    @test_throws ErrorException select!(df, r"z" => () -> x, copycols=false)
+    select!(df, r"z" => () -> x)
+    @test df == DataFrame(_function=x)
+end
+
+@testset "wrong selection patterns" begin
+    df = DataFrame(rand(10, 4))
+
+    @test_throws ArgumentError select(df, "z")
+    @test_throws ArgumentError select(df, "z" => :x1)
+    @test_throws ArgumentError select(df, "z" => identity)
+    @test_throws ArgumentError select(df, "z" => identity => :x1)
 end
 
 @testset "select and select! duplicates" begin
@@ -683,6 +768,10 @@ end
     @test select(df, :x2, r"x", :x1, :) == df[:, [:x2, :x1, :x3, :x4]]
 
     @test_throws ArgumentError select(df, :x1, :x2 => :x1)
+    @test_throws ArgumentError select(df, :x3 => :x1, :x2 => :x1)
+    @test_throws ArgumentError select(df, :x1, :x2 => identity => :x1)
+    @test_throws ArgumentError select(df, :x1 => :x1, :x2 => identity => :x1)
+    @test_throws ArgumentError select(df, :x3 => identity => :x1, :x2 => identity => :x1)
     @test select(df, [:x1], :x2 => :x1) == DataFrame(x1 = df.x2)
 
     @test_throws ArgumentError select!(df, :x1, :x1)
@@ -691,6 +780,37 @@ end
 
     select!(df, :x2, r"x", :x1, :)
     @test df == df_ref[:, [:x2, :x1, :x3, :x4]]
+end
+
+@testset "SubDataFrame selection" begin
+    df = DataFrame(rand(12, 5))
+    sdf = view(df, 1:10, 1:4)
+    df_ref = copy(sdf)
+
+    @test select(sdf, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
+                 [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4) ==
+          select(df_ref, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
+                 [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
+
+    for fun in (+, ByRow(+))
+        @test select(sdf, 1 => fun) ==
+              DataFrame(:var"x1_+" => sdf.x1)
+        @test select(sdf, 1:2 => fun) ==
+              DataFrame(:var"x1_x2_+" => sdf.x1 + sdf.x2)
+        @test select(sdf, 1:3 => fun) ==
+              DataFrame(:var"x1_x2_x3_+" => sdf.x1 + sdf.x2 + sdf.x3)
+        @test select(sdf, 1:4 => fun) ==
+              DataFrame(:var"x1_x2_etc_+" => sum.(eachrow(sdf)))
+    end
+
+    @test_throws ArgumentError select(sdf, :x1, :x1)
+    @test_throws ArgumentError select(sdf, :x1, :x1, copycols=false)
+    @test select(sdf, :x1, [:x1]) == sdf[:, [:x1]]
+    @test select(sdf, :x1, [:x1]) isa DataFrame
+    @test select(sdf, :x1, [:x1], copycols=false) == sdf[:, [:x1]]
+    @test select(sdf, :x1, [:x1], copycols=false) isa SubDataFrame
+    @test_throws ArgumentError select(sdf, :x1 => :r1, copycols=false)
+    @test_throws ArgumentError select(sdf, :x1 => identity => :r1, copycols=false)
 end
 
 end # module
