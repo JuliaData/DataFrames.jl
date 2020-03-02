@@ -31,7 +31,7 @@ struct ByRow{T}
     fun::T
 end
 
-(f::ByRow)(cols::AbstractVector...) = f.fun.(row...)
+(f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)

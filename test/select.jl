@@ -632,6 +632,31 @@ end
     @test all(i -> df2[!, i] === df[!, i], ncol(df2))
 end
 
+@testset "select and select! reserved return values" begin
+    df = DataFrame(x=1)
+    df2 = copy(df)
+    for retval in [df2, (a=1, b=2), df2[1, :], ones(2,2)]
+        @test_throws ArgumentError select(df, :x => x -> retval)
+        @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
+        @test_throws ArgumentError select!(df, :x => x -> retval)
+        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        cdf = copy(df)
+        select!(cdf, :x => ByRow(x -> retval))
+        @test cdf == DataFrame(x_function = [retval])
+    end
+
+    for retval in [(1, 2), ones(2,2,2)]
+        @test select(df, :x => x -> retval) == DataFrame(x_function = [retval])
+        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        cdf = copy(df)
+        select!(cdf, :x => x -> retval)
+        @test cdf == DataFrame(x_function = [retval])
+        cdf = copy(df)
+        select!(cdf, :x => ByRow(x -> retval))
+        @test cdf == DataFrame(x_function = [retval])
+    end
+end
+
 @testset "select and select! empty selection" begin
     df = DataFrame(rand(10, 4))
     x = [1,2,3]
