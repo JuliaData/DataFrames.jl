@@ -10,7 +10,7 @@ julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/
 julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ Categorical…? │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────────┤
 │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa        │
 │ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa        │
@@ -22,7 +22,7 @@ julia> first(iris, 6)
 julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ Categorical…? │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────────┤
 │ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica     │
 │ 2   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ virginica     │
@@ -36,7 +36,7 @@ julia> d = stack(iris, 1:4);
 julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol      │ Float64? │ Categorical…? │
 ├─────┼─────────────┼──────────┼───────────────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │
 │ 2   │ SepalLength │ 4.9      │ setosa        │
@@ -48,7 +48,7 @@ julia> first(d, 6)
 julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
-│     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol     │ Float64? │ Categorical…? │
 ├─────┼────────────┼──────────┼───────────────┤
 │ 1   │ PetalWidth │ 2.5      │ virginica     │
 │ 2   │ PetalWidth │ 2.3      │ virginica     │
@@ -66,7 +66,7 @@ julia> d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth]);
 julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol      │ Float64? │ Categorical…? │
 ├─────┼─────────────┼──────────┼───────────────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │
 │ 2   │ SepalLength │ 4.9      │ setosa        │
@@ -78,7 +78,7 @@ julia> first(d, 6)
 julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
-│     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol     │ Float64? │ Categorical…? │
 ├─────┼────────────┼──────────┼───────────────┤
 │ 1   │ PetalWidth │ 2.5      │ virginica     │
 │ 2   │ PetalWidth │ 2.3      │ virginica     │
@@ -101,7 +101,7 @@ julia> d = stack(iris, [:SepalLength, :SepalWidth], :Species);
 julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol      │ Float64? │ Categorical…? │
 ├─────┼─────────────┼──────────┼───────────────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │
 │ 2   │ SepalLength │ 4.9      │ setosa        │
@@ -113,7 +113,7 @@ julia> first(d, 6)
 julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
-│     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol     │ Float64? │ Categorical…? │
 ├─────┼────────────┼──────────┼───────────────┤
 │ 1   │ SepalWidth │ 3.3      │ virginica     │
 │ 2   │ SepalWidth │ 3.0      │ virginica     │
@@ -131,7 +131,7 @@ julia> d = stack(iris, Not(:Species));
 julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol      │ Float64? │ Categorical…? │
 ├─────┼─────────────┼──────────┼───────────────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │
 │ 2   │ SepalLength │ 4.9      │ setosa        │
@@ -143,7 +143,7 @@ julia> first(d, 6)
 julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
-│     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol     │ Float64? │ Categorical…? │
 ├─────┼────────────┼──────────┼───────────────┤
 │ 1   │ PetalWidth │ 2.5      │ virginica     │
 │ 2   │ PetalWidth │ 2.3      │ virginica     │
@@ -164,7 +164,7 @@ julia> longdf = stack(iris, Not([:Species, :id]));
 julia> first(longdf, 6)
 6×4 DataFrame
 │ Row │ variable    │ value    │ Species       │ id    │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │ Int64 │
+│     │ Symbol      │ Float64? │ Categorical…? │ Int64 │
 ├─────┼─────────────┼──────────┼───────────────┼───────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │ 1     │
 │ 2   │ SepalLength │ 4.9      │ setosa        │ 2     │
@@ -176,7 +176,7 @@ julia> first(longdf, 6)
 julia> last(longdf, 6)
 6×4 DataFrame
 │ Row │ variable   │ value    │ Species       │ id    │
-│     │ Symbol     │ Float64⍰ │ Categorical…⍰ │ Int64 │
+│     │ Symbol     │ Float64? │ Categorical…? │ Int64 │
 ├─────┼────────────┼──────────┼───────────────┼───────┤
 │ 1   │ PetalWidth │ 2.5      │ virginica     │ 145   │
 │ 2   │ PetalWidth │ 2.3      │ virginica     │ 146   │
@@ -190,7 +190,7 @@ julia> widedf = unstack(longdf, :id, :variable, :value);
 julia> first(widedf, 6)
 6×5 DataFrame
 │ Row │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
-│     │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
+│     │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
 ├─────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ 1     │ 1.4         │ 0.2        │ 5.1         │ 3.5        │
 │ 2   │ 2     │ 1.4         │ 0.2        │ 4.9         │ 3.0        │
@@ -202,7 +202,7 @@ julia> first(widedf, 6)
 julia> last(widedf, 6)
 6×5 DataFrame
 │ Row │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
-│     │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
+│     │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
 ├─────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ 145   │ 5.7         │ 2.5        │ 6.7         │ 3.3        │
 │ 2   │ 146   │ 5.2         │ 2.3        │ 6.7         │ 3.0        │
@@ -220,7 +220,7 @@ julia> longdf = stack(iris, Not([:Species, :id]));
 julia> first(longdf, 6)
 6×4 DataFrame
 │ Row │ variable    │ value    │ Species       │ id    │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │ Int64 │
+│     │ Symbol      │ Float64? │ Categorical…? │ Int64 │
 ├─────┼─────────────┼──────────┼───────────────┼───────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │ 1     │
 │ 2   │ SepalLength │ 4.9      │ setosa        │ 2     │
@@ -234,7 +234,7 @@ julia> widedf = unstack(longdf, :variable, :value);
 julia> first(widedf, 6)
 6×6 DataFrame
 │ Row │ Species       │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
-│     │ Categorical…⍰ │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
+│     │ Categorical…? │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
 ├─────┼───────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ setosa        │ 1     │ 1.4         │ 0.2        │ 5.1         │ 3.5        │
 │ 2   │ setosa        │ 2     │ 1.4         │ 0.2        │ 4.9         │ 3.0        │
@@ -251,7 +251,7 @@ julia> widedf = unstack(longdf);
 julia> first(widedf, 6)
 6×6 DataFrame
 │ Row │ Species       │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
-│     │ Categorical…⍰ │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
+│     │ Categorical…? │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
 ├─────┼───────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ setosa        │ 1     │ 1.4         │ 0.2        │ 5.1         │ 3.5        │
 │ 2   │ setosa        │ 2     │ 1.4         │ 0.2        │ 4.9         │ 3.0        │
@@ -269,7 +269,7 @@ julia> d = stack(iris, view=true);
 julia> first(d, 6)
 6×4 DataFrame
 │ Row │ variable    │ value    │ Species       │ id    │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │ Int64 │
+│     │ Symbol      │ Float64? │ Categorical…? │ Int64 │
 ├─────┼─────────────┼──────────┼───────────────┼───────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │ 1     │
 │ 2   │ SepalLength │ 4.9      │ setosa        │ 2     │
@@ -281,7 +281,7 @@ julia> first(d, 6)
 julia> last(d, 6)
 6×4 DataFrame
 │ Row │ variable   │ value    │ Species       │ id    │
-│     │ Symbol     │ Float64⍰ │ Categorical…⍰ │ Int64 │
+│     │ Symbol     │ Float64? │ Categorical…? │ Int64 │
 ├─────┼────────────┼──────────┼───────────────┼───────┤
 │ 1   │ PetalWidth │ 2.5      │ virginica     │ 145   │
 │ 2   │ PetalWidth │ 2.3      │ virginica     │ 146   │
@@ -312,7 +312,7 @@ julia> d = stack(iris, Not(:Species));
 julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
-│     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
+│     │ Symbol      │ Float64? │ Categorical…? │
 ├─────┼─────────────┼──────────┼───────────────┤
 │ 1   │ SepalLength │ 5.1      │ setosa        │
 │ 2   │ SepalLength │ 4.9      │ setosa        │
@@ -327,7 +327,7 @@ julia> first(x, 6)
 
 6×3 DataFrame
 │ Row │ variable    │ Species       │ vsum    │
-│     │ Symbol      │ Categorical…⍰ │ Float64 │
+│     │ Symbol      │ Categorical…? │ Float64 │
 ├─────┼─────────────┼───────────────┼─────────┤
 │ 1   │ SepalLength │ setosa        │ 5.006   │
 │ 2   │ SepalLength │ versicolor    │ 5.936   │
@@ -339,7 +339,7 @@ julia> first(x, 6)
 julia> first(unstack(x, :Species, :vsum), 6)
 5×4 DataFrame
 │ Row │ variable    │ setosa   │ versicolor │ virginica │
-│     │ Symbol      │ Float64⍰ │ Float64⍰   │ Float64⍰  │
+│     │ Symbol      │ Float64? │ Float64?   │ Float64?  │
 ├─────┼─────────────┼──────────┼────────────┼───────────┤
 │ 1   │ PetalLength │ 1.462    │ 4.26       │ 5.552     │
 │ 2   │ PetalWidth  │ 0.246    │ 1.326      │ 2.026     │

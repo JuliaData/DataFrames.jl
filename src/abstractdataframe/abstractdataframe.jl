@@ -668,7 +668,7 @@ julia> df = DataFrame(i = 1:5,
                       y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
 │ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64⍰  │ String⍰ │
+│     │ Int64 │ Int64?  │ String? │
 ├─────┼───────┼─────────┼─────────┤
 │ 1   │ 1     │ missing │ missing │
 │ 2   │ 2     │ 4       │ missing │
@@ -744,7 +744,7 @@ julia> df = DataFrame(i = 1:5,
                       y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
 │ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64⍰  │ String⍰ │
+│     │ Int64 │ Int64?  │ String? │
 ├─────┼───────┼─────────┼─────────┤
 │ 1   │ 1     │ missing │ missing │
 │ 2   │ 2     │ 4       │ missing │
@@ -763,7 +763,7 @@ julia> dropmissing(df)
 julia> dropmissing(df, disallowmissing=false)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
+│     │ Int64 │ Int64? │ String? │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
@@ -771,7 +771,7 @@ julia> dropmissing(df, disallowmissing=false)
 julia> dropmissing(df, :x)
 3×3 DataFrame
 │ Row │ i     │ x     │ y       │
-│     │ Int64 │ Int64 │ String⍰ │
+│     │ Int64 │ Int64 │ String? │
 ├─────┼───────┼───────┼─────────┤
 │ 1   │ 2     │ 4     │ missing │
 │ 2   │ 4     │ 2     │ d       │
@@ -815,7 +815,7 @@ julia> df = DataFrame(i = 1:5,
                       y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
 │ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64⍰  │ String⍰ │
+│     │ Int64 │ Int64?  │ String? │
 ├─────┼───────┼─────────┼─────────┤
 │ 1   │ 1     │ missing │ missing │
 │ 2   │ 2     │ 4       │ missing │
@@ -834,7 +834,7 @@ julia> dropmissing!(copy(df))
 julia> dropmissing!(copy(df), disallowmissing=false)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
+│     │ Int64 │ Int64? │ String? │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
@@ -842,7 +842,7 @@ julia> dropmissing!(copy(df), disallowmissing=false)
 julia> dropmissing!(copy(df), :x)
 3×3 DataFrame
 │ Row │ i     │ x     │ y       │
-│     │ Int64 │ Int64 │ String⍰ │
+│     │ Int64 │ Int64 │ String? │
 ├─────┼───────┼───────┼─────────┤
 │ 1   │ 2     │ 4     │ missing │
 │ 2   │ 4     │ 2     │ d       │
@@ -1250,7 +1250,7 @@ julia> vcat(df1, df2)
 julia> vcat(df1, df3, cols=:union)
 6×3 DataFrame
 │ Row │ A     │ B       │ C       │
-│     │ Int64 │ Int64⍰  │ Int64⍰  │
+│     │ Int64 │ Int64?  │ Int64?  │
 ├─────┼───────┼─────────┼─────────┤
 │ 1   │ 1     │ 1       │ missing │
 │ 2   │ 2     │ 2       │ missing │
@@ -1504,7 +1504,7 @@ If `error=false` then columns containing a `missing` value will be skipped inste
 julia> df = DataFrame(a=Union{Int,Missing}[1,2])
 2×1 DataFrame
 │ Row │ a      │
-│     │ Int64⍰ │
+│     │ Int64? │
 ├─────┼────────┤
 │ 1   │ 1      │
 │ 2   │ 2      │
@@ -1521,7 +1521,7 @@ julia> disallowmissing(df)
 julia> df = DataFrame(a=[1,missing])
 2×2 DataFrame
 │ Row │ a       │ b      │
-│     │ Int64⍰  │ Int64⍰ │
+│     │ Int64?  │ Int64? │
 ├─────┼─────────┼────────┤
 │ 1   │ 1       │ 1      │
 │ 2   │ missing │ 2      │
@@ -1529,7 +1529,7 @@ julia> df = DataFrame(a=[1,missing])
 julia> disallowmissing(df, error=false)
 2×2 DataFrame
 │ Row │ a       │ b     │
-│     │ Int64⍰  │ Int64 │
+│     │ Int64?  │ Int64 │
 ├─────┼─────────┼───────┤
 │ 1   │ 1       │ 1     │
 │ 2   │ missing │ 2     │
@@ -1578,7 +1578,7 @@ julia> df = DataFrame(a=[1,2])
 julia> allowmissing(df)
 2×1 DataFrame
 │ Row │ a      │
-│     │ Int64⍰ │
+│     │ Int64? │
 ├─────┼────────┤
 │ 1   │ 1      │
 │ 2   │ 2      │

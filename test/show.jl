@@ -241,7 +241,7 @@ end
     @test sprint(show, df, context=:color=>true) == """
         2×2 DataFrame
         │ Row │ Fish   │ Mass     │
-        │     │ \e[90mString\e[39m │ \e[90mFloat64⍰\e[39m │
+        │     │ \e[90mString\e[39m │ \e[90mFloat64?\e[39m │
         ├─────┼────────┼──────────┤
         │ 1   │ Suzy   │ 1.5      │
         │ 2   │ Amir   │ \e[90mmissing\e[39m  │"""
@@ -252,7 +252,7 @@ end
     @test sprint(show, df, context=:color=>true) == """
         3×3 DataFrame
         │ Row │ A       │ B       │ C       │
-        │     │ \e[90mSymbol⍰\e[39m │ \e[90mString⍰\e[39m │ \e[90mAny\e[39m     │
+        │     │ \e[90mSymbol?\e[39m │ \e[90mString?\e[39m │ \e[90mAny\e[39m     │
         ├─────┼─────────┼─────────┼─────────┤
         │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
         │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
@@ -299,7 +299,7 @@ end
     @test sprint(show, df) == """
     3×2 DataFrame
     │ Row │ a            │ b             │
-    │     │ Categorical… │ Categorical…⍰ │
+    │     │ Categorical… │ Categorical…? │
     ├─────┼──────────────┼───────────────┤
     │ 1   │ 1            │ a             │
     │ 2   │ 2            │ b             │
@@ -310,7 +310,7 @@ end
     @test sprint(show, df) == """
     2×1 DataFrame
     │ Row │ a         │
-    │     │ BigFloat⍰ │
+    │     │ BigFloat? │
     ├─────┼───────────┤
     │ 1   │ 1.0       │
     │ 2   │ missing   │"""

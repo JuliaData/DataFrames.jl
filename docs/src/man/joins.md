@@ -75,7 +75,7 @@ julia> innerjoin(people, jobs, on = :ID)
 julia> leftjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job     │
-│     │ Int64 │ String   │ String⍰ │
+│     │ Int64 │ String   │ String? │
 ├─────┼───────┼──────────┼─────────┤
 │ 1   │ 20    │ John Doe │ Lawyer  │
 │ 2   │ 40    │ Jane Doe │ missing │
@@ -83,7 +83,7 @@ julia> leftjoin(people, jobs, on = :ID)
 julia> rightjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
-│     │ Int64 │ String⍰  │ String    │
+│     │ Int64 │ String?  │ String    │
 ├─────┼───────┼──────────┼───────────┤
 │ 1   │ 20    │ John Doe │ Lawyer    │
 │ 2   │ 60    │ missing  │ Astronaut │
@@ -91,7 +91,7 @@ julia> rightjoin(people, jobs, on = :ID)
 julia> outerjoin(people, jobs, on = :ID)
 3×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
-│     │ Int64 │ String⍰  │ String⍰   │
+│     │ Int64 │ String?  │ String?   │
 ├─────┼───────┼──────────┼───────────┤
 │ 1   │ 20    │ John Doe │ Lawyer    │
 │ 2   │ 40    │ Jane Doe │ missing   │
@@ -242,7 +242,7 @@ julia> b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Doctor"])
 julia> outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
 3×4 DataFrame
 │ Row │ ID    │ Name    │ Job     │ source       │
-│     │ Int64 │ String⍰ │ String⍰ │ Categorical… │
+│     │ Int64 │ String? │ String? │ Categorical… │
 ├─────┼───────┼─────────┼─────────┼──────────────┤
 │ 1   │ 20    │ John    │ Lawyer  │ both         │
 │ 2   │ 40    │ Jane    │ missing │ left_only    │

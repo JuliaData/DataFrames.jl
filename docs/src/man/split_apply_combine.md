@@ -32,7 +32,7 @@ julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/
 julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ Categorical…? │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────────┤
 │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa        │
 │ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa        │
@@ -44,7 +44,7 @@ julia> first(iris, 6)
 julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ Categorical…? │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────────┤
 │ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica     │
 │ 2   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ virginica     │
@@ -56,7 +56,7 @@ julia> last(iris, 6)
 julia> by(iris, :Species, :PetalLength => mean)
 3×2 DataFrame
 │ Row │ Species    │ PetalLength_mean │
-│     │ String⍰    │ Float64          │
+│     │ String?    │ Float64          │
 ├─────┼────────────┼──────────────────┤
 │ 1   │ setosa     │ 1.462            │
 │ 2   │ versicolor │ 4.26             │
@@ -65,7 +65,7 @@ julia> by(iris, :Species, :PetalLength => mean)
 julia> by(iris, :Species, N = :Species => length) # Chosen column is arbitrary
 3×2 DataFrame
 │ Row │ Species       │ N     │
-│     │ Categorical…⍰ │ Int64 │
+│     │ Categorical…? │ Int64 │
 ├─────┼───────────────┼───────┤
 │ 1   │ setosa        │ 50    │
 │ 2   │ versicolor    │ 50    │
@@ -74,7 +74,7 @@ julia> by(iris, :Species, N = :Species => length) # Chosen column is arbitrary
 julia> by(iris, :Species, N = :Species => length, mean = :PetalLength => mean) # Column for length is arbitrary
 3×3 DataFrame
 │ Row │ Species    │ N     │ mean    │
-│     │ String⍰    │ Int64 │ Float64 │
+│     │ String?    │ Int64 │ Float64 │
 ├─────┼────────────┼───────┼─────────┤
 │ 1   │ setosa     │ 50    │ 1.462   │
 │ 2   │ versicolor │ 50    │ 4.26    │
@@ -84,7 +84,7 @@ julia> by(iris, :Species, [:PetalLength, :SepalLength] =>
               x -> (a=mean(x.PetalLength)/mean(x.SepalLength), b=sum(x.PetalLength)))
 3×3 DataFrame
 │ Row │ Species    │ a        │ b       │
-│     │ String⍰    │ Float64  │ Float64 │
+│     │ String?    │ Float64  │ Float64 │
 ├─────┼────────────┼──────────┼─────────┤
 │ 1   │ setosa     │ 0.29205  │ 73.1    │
 │ 2   │ versicolor │ 0.717655 │ 213.0   │
@@ -99,7 +99,7 @@ julia> by(iris, :Species) do df
        end
 3×3 DataFrame
 │ Row │ Species       │ m       │ s²        │
-│     │ Categorical…⍰ │ Float64 │ Float64   │
+│     │ Categorical…? │ Float64 │ Float64   │
 ├─────┼───────────────┼─────────┼───────────┤
 │ 1   │ setosa        │ 1.462   │ 0.0301592 │
 │ 2   │ versicolor    │ 4.26    │ 0.220816  │
@@ -112,7 +112,7 @@ A second approach to the Split-Apply-Combine strategy is implemented in the `agg
 julia> aggregate(iris, :Species, length)
 3×5 DataFrame
 │ Row │ Species       │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │
-│     │ Categorical…⍰ │ Int64              │ Int64             │ Int64              │ Int64             │
+│     │ Categorical…? │ Int64              │ Int64             │ Int64              │ Int64             │
 ├─────┼───────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┤
 │ 1   │ setosa        │ 50                 │ 50                │ 50                 │ 50                │
 │ 2   │ versicolor    │ 50                 │ 50                │ 50                 │ 50                │
@@ -121,7 +121,7 @@ julia> aggregate(iris, :Species, length)
 julia> aggregate(iris, :Species, [sum, mean])
 3×9 DataFrame. Omitted printing of 2 columns
 │ Row │ Species       │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ SepalLength_mean │ SepalWidth_mean │
-│     │ Categorical…⍰ │ Float64         │ Float64        │ Float64         │ Float64        │ Float64          │ Float64         │
+│     │ Categorical…? │ Float64         │ Float64        │ Float64         │ Float64        │ Float64          │ Float64         │
 ├─────┼───────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼──────────────────┼─────────────────┤
 │ 1   │ setosa        │ 250.3           │ 171.4          │ 73.1            │ 12.3           │ 5.006            │ 3.428           │
 │ 2   │ versicolor    │ 296.8           │ 138.5          │ 213.0           │ 66.3           │ 5.936            │ 2.77            │

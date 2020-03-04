@@ -306,7 +306,7 @@ julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
 │ Row │ a     │ b        │ c            │ d         │
-│     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
+│     │ Int64 │ Float64? │ Categorical… │ Rationa…? │
 ├─────┼───────┼──────────┼──────────────┼───────────┤
 │ 1   │ 1     │ 1.0      │ 'a'          │ 1//2      │
 │ 2   │ 2     │ missing  │ 'b'          │ missing   │
@@ -315,7 +315,7 @@ julia> DataFrame(a = 1:2, b = [1.0, missing],
 we can observe that:
 
 * the first column `:a` can hold elements of type `Int64`;
-* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `⍰` printed after the name of type;
+* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `?` printed after the name of type;
 * the third column `:c` can hold categorical data; here we notice `…`, which indicates that the actual name of the type was long and got truncated;
 * the type information in fourth column `:d` presents a situation where the name is both truncated and the type allows `Missing`.
 
