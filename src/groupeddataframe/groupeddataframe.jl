@@ -219,6 +219,8 @@ end
 Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
 Base.keys(key::GroupKey) = Tuple(groupvars(parent(key)))
+Base.haskey(key::GroupKey, idx::Symbol) = idx in groupvars(parent(key))
+Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
 Base.names(key::GroupKey) = groupvars(parent(key))
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
@@ -459,6 +461,19 @@ true
 ```
 """
 Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
+
+# assume that GroupKey was generated so that we do not have to check the index
+Base.haskey(gd::GroupedDataFrame, key::GroupKey) = gd === parent(key)
+Base.haskey(gd::GroupedDataFrame, key::Tuple) = haskey(gd.keymap, key)
+
+function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
+    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+        return false
+    end
+    return haskey(gd, Tuple(key))
+end
+
+Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) = 1 <= key <= length(gd)
 
 """
     get(gd::GroupedDataFrame, key, default)

@@ -1610,6 +1610,33 @@ end
     @test_throws KeyError gd[(a=:A, b=:X)]
 end
 
+@testset "haskey for GroupKey" begin
+    gdf = groupby(DataFrame(a=1, b=2, c=3), [:a, :b])
+    k = keys(gdf)[1]
+    @test !haskey(k, 0)
+    @test haskey(k, 1)
+    @test haskey(k, 2)
+    @test !haskey(k, 3)
+    @test haskey(k, :a)
+    @test haskey(k, :b)
+    @test !haskey(k, :c)
+    @test !haskey(k, :d)
+
+    @test !haskey(gdf, 0)
+    @test haskey(gdf, 1)
+    @test !haskey(gdf, 2)
+    @test_throws MethodError haskey(gdf, true)
+
+    @test haskey(gdf, k)
+    @test !haskey(gdf, keys(groupby(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
+    @test haskey(gdf, (1,2))
+    @test !haskey(gdf, (1,3))
+    @test haskey(gdf, (a=1,b=2))
+    @test !haskey(gdf, (a=1,b=3))
+    @test !haskey(gdf, (a=1,c=3))
+    @test !haskey(gdf, (a=1,c=2))
+end
+
 @testset "Check aggregation of DataFrameRow" begin
     df = DataFrame(a=1)
     dfr = DataFrame(x=1, y="1")[1, 2:2]
