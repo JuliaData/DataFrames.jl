@@ -1473,7 +1473,7 @@ function Base.push!(df::DataFrame, row::Any)
     targetrows = nrows + 1
     if length(row) != ncols
         msg = "Length of `row` does not match `DataFrame` column count."
-        throw(ArgumentError(msg))
+        throw(DimensionMismatch(msg))
     end
     current_col = 0
     try

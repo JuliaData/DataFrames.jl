@@ -87,6 +87,7 @@ end
     @test_throws ArgumentError rename(df, true=>:b)
     @test_throws BoundsError rename(df, 0=>:b)
     @test_throws BoundsError rename(df, 3=>:b)
+    @test_throws DimensionMismatch rename(df, [:p, :q, :r])
 
     @test rename!(copy(df), 1=>:c) == DataFrame(c=1, b=2)
     @test rename!(copy(df), big(1)=>:c) == DataFrame(c=1, b=2)
@@ -101,6 +102,7 @@ end
     @test_throws ArgumentError rename!(df, true=>:b)
     @test_throws BoundsError rename!(df, 0=>:b)
     @test_throws BoundsError rename!(df, 3=>:b)
+    @test_throws DimensionMismatch rename!(df, [:p, :q, :r])
     @test df == DataFrame(a=1, b=2)
 end
 
@@ -347,7 +349,7 @@ end
     @test occursin("Error adding value to column :first", String(take!(buf)))
 
     dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    @test_throws ArgumentError push!(dfb, (1,"2",3))
+    @test_throws DimensionMismatch push!(dfb, (1,"2",3))
     @test dfc == dfb
 
     dfb = DataFrame(first=[1,2], second=["apple","orange"])

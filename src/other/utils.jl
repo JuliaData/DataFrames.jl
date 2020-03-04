@@ -1,6 +1,6 @@
 function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol}; makeunique::Bool=false)
     if length(names) != length(src)
-        throw(ArgumentError("Length of src doesn't match length of names."))
+        throw(DimensionMismatch("Length of src doesn't match length of names."))
     end
     seen = Set{Symbol}()
     dups = Int[]
