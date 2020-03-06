@@ -16,8 +16,8 @@ Throughout the rest of this tutorial, we will assume that you have installed the
     By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly
     fit the screen size (like in the REPL).
 
-    You can override this behavior by setting the `ENV["COLUMNS"]` or `ENV["LINES"]` variables to hold the maximum
-    width and height of output in characters respectively before using the `notebook` function.
+    You can override this behavior by changing the values of `ENV["COLUMNS"]` or `ENV["LINES"]`
+    variables to hold the maximum width and height of output in characters respectively.
 
     Alternatively, you may want to set the maximum number of data frame rows to print to `100` and the maximum
     output width in characters to `1000` for every Julia session using some Jupyter kernel file (numbers `100`
