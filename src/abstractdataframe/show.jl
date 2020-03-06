@@ -122,7 +122,8 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
-                      rowid=nothing) # -> Vector{Int}
+                      rowid=nothing,
+                      show_eltype = true) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
@@ -131,7 +132,6 @@ function getmaxwidths(df::AbstractDataFrame,
     for (name, col) in pairs(eachcol(df))
         # (1) Consider length of column name
         maxwidth = ourstrwidth(io, name)
-
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
             if isassigned(col, i)
@@ -140,7 +140,11 @@ function getmaxwidths(df::AbstractDataFrame,
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
-        maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col))))
+        if show_eltype
+            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col))))
+        else
+            maxwidths[j] = maxwidth
+        end
         j += 1
     end
 
@@ -565,7 +569,7 @@ function _show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid)
+    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid, coltypes)
     width = getprintedwidth(maxwidths)
     showrows(io,
              df,
@@ -640,7 +644,7 @@ Base.show(io::IO,
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          coltypes::Bool = true ) =
+          coltypes::Bool = true) =
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=summary, coltypes=coltypes)
 
