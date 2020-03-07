@@ -241,12 +241,12 @@ julia> b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Doctor"])
 
 julia> outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
 3×4 DataFrame
-│ Row │ ID    │ Name    │ Job     │ source       │
-│     │ Int64 │ String? │ String? │ Categorical… │
-├─────┼───────┼─────────┼─────────┼──────────────┤
-│ 1   │ 20    │ John    │ Lawyer  │ both         │
-│ 2   │ 40    │ Jane    │ missing │ left_only    │
-│ 3   │ 60    │ missing │ Doctor  │ right_only   │
+│ Row │ ID    │ Name    │ Job     │ source     │
+│     │ Int64 │ String? │ String? │ Cat…       │
+├─────┼───────┼─────────┼─────────┼────────────┤
+│ 1   │ 20    │ John    │ Lawyer  │ both       │
+│ 2   │ 40    │ Jane    │ missing │ left_only  │
+│ 3   │ 60    │ missing │ Doctor  │ right_only │
 ```
 
 Note that this time we also used the `validate` keyword argument and it did not produce errors as the keys defined in both source data frames were unique.

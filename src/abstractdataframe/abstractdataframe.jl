@@ -1630,19 +1630,19 @@ julia> df = DataFrame(a=[1,2], b=["a","b"])
 
 julia> categorical(df)
 2×2 DataFrame
-│ Row │ a     │ b            │
-│     │ Int64 │ Categorical… │
-├─────┼───────┼──────────────┤
-│ 1   │ 1     │ a            │
-│ 2   │ 2     │ b            │
+│ Row │ a     │ b    │
+│     │ Int64 │ Cat… │
+├─────┼───────┼──────┤
+│ 1   │ 1     │ a    │
+│ 2   │ 2     │ b    │
 
 julia> categorical(df, :)
 2×2 DataFrame
-│ Row │ a            │ b            │
-│     │ Categorical… │ Categorical… │
-├─────┼──────────────┼──────────────┤
-│ 1   │ 1            │ a            │
-│ 2   │ 2            │ b            │
+│ Row │ a    │ b    │
+│     │ Cat… │ Cat… │
+├─────┼──────┼──────┤
+│ 1   │ 1    │ a    │
+│ 2   │ 2    │ b    │
 ```
 """
 function CategoricalArrays.categorical(df::AbstractDataFrame,

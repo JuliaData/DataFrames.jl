@@ -15,7 +15,7 @@ using Test, DataFrames, CategoricalArrays, Dates
         \\begin{tabular}{r|cccccc}
         \t& A & B & C & D & E & F\\\\
         \t\\hline
-        \t& $(Int) & String & String & Float64? & Categorical…? & String\\\\
+        \t& $(Int) & String & String & Float64? & Cat…? & String\\\\
         \t\\hline
         \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\#undef \\\\
         \t2 & 2 & M\\&F & B & 2.0 &  & \\#undef \\\\

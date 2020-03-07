@@ -298,12 +298,12 @@ end
     df = DataFrame(a = categorical([1,2,3]), b = categorical(["a", "b", missing]))
     @test sprint(show, df) == """
     3×2 DataFrame
-    │ Row │ a            │ b             │
-    │     │ Categorical… │ Categorical…? │
-    ├─────┼──────────────┼───────────────┤
-    │ 1   │ 1            │ a             │
-    │ 2   │ 2            │ b             │
-    │ 3   │ 3            │ missing       │"""
+    │ Row │ a    │ b       │
+    │     │ Cat… │ Cat…?   │
+    ├─────┼──────┼─────────┤
+    │ 1   │ 1    │ a       │
+    │ 2   │ 2    │ b       │
+    │ 3   │ 3    │ missing │"""
 
     # BigFloat
     df = DataFrame(a = [big(1.0), missing])
