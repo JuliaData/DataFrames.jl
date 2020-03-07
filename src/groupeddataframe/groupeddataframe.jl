@@ -462,13 +462,30 @@ true
 """
 Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
 
-# assume that GroupKey was generated so that we do not have to check the index
-Base.haskey(gd::GroupedDataFrame, key::GroupKey) = gd === parent(key)
-Base.haskey(gd::GroupedDataFrame, key::Tuple) = haskey(gd.keymap, key)
+function Base.haskey(gd::GroupedDataFrame, key::GroupKey)
+    if gd === parent(key)
+        if 1 <= getfield(key, :idx) <= length(gd)
+            return true
+        else
+            throw(BoundsError(gd, getfield(key, :idx)))
+        end
+    else
+        throw(ArgumentError("The parent of key does not match the passed GroupedDataFrame"))
+    end
+end
+
+function Base.haskey(gd::GroupedDataFrame, key::Tuple)
+    if length(key) != length(gd.cols)
+        return throw(ArgumentError("The length of key does not match the " *
+                                   "number of grouping columns"))
+    end
+    return haskey(gd.keymap, key)
+end
 
 function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
-    if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
-        return false
+    if any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+        return throw(ArgumentError("The column names of keys do not match " *
+                                   "the names of grouping columns"))
     end
     return haskey(gd, Tuple(key))
 end

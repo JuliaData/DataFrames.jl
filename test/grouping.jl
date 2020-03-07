@@ -1628,13 +1628,17 @@ end
     @test_throws MethodError haskey(gdf, true)
 
     @test haskey(gdf, k)
-    @test !haskey(gdf, keys(groupby(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
+    @test_throws ArgumentError haskey(gdf, keys(groupby(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
+    @test_throws BoundsError haskey(gdf, DataFrames.GroupKey(gdf, 0))
+    @test_throws BoundsError haskey(gdf, DataFrames.GroupKey(gdf, 2))
     @test haskey(gdf, (1,2))
     @test !haskey(gdf, (1,3))
+    @test_throws ArgumentError haskey(gdf, (1,2,3))
     @test haskey(gdf, (a=1,b=2))
     @test !haskey(gdf, (a=1,b=3))
-    @test !haskey(gdf, (a=1,c=3))
-    @test !haskey(gdf, (a=1,c=2))
+    @test_throws ArgumentError haskey(gdf, (a=1,c=3))
+    @test_throws ArgumentError haskey(gdf, (a=1,c=2))
+    @test_throws ArgumentError haskey(gdf, (a=1,b=2,c=3))
 end
 
 @testset "Check aggregation of DataFrameRow" begin
