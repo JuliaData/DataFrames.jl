@@ -335,7 +335,7 @@ end
 StackedVector(d::AbstractVector) =
     StackedVector{promote_type(map(eltype, d)...)}(d)
 
-function Base.getindex(v::StackedVector, i::Int)
+function Base.getindex(v::StackedVector{T}, i::Int)::T where T
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0; cumsum(lengths)]
     j = searchsortedlast(cumlengths .+ 1, i)
@@ -346,7 +346,7 @@ function Base.getindex(v::StackedVector, i::Int)
     if k < 1 || k > length(v.components[j])
         error("indexing bounds error")
     end
-    v.components[j][k]
+    return v.components[j][k]
 end
 
 Base.IndexStyle(::Type{StackedVector}) = Base.IndexLinear()
