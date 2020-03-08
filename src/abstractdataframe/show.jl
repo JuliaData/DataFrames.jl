@@ -68,9 +68,16 @@ function compacttype(T::Type, maxwidth::Int=8)
     else
         suffix = ""
     end
-    T <: Union{CategoricalString, CategoricalValue} && return "Cat…"*suffix
+    if T <: Union{CategoricalString, CategoricalValue}
+        catlong = "Categorical…"*suffix
+        if length(catlong) ≤ maxwidth
+            return catlong
+        else
+            return "Cat…"*suffix
+        end
+    end
     # we abbreviate consistently to total of 8 characters
-    match(Regex("^.\\w{0,$(7-length(suffix))}"), sT).match * "…"*suffix
+    match(Regex("^.\\w{0,$(7-length(suffix))}"), sT).match * "…" * suffix
 end
 
 """
