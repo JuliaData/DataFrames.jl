@@ -490,4 +490,18 @@ end
     @test isordered(d2.e) == isordered(d2s.e)
 end
 
+@testset "test stack eltype" begin
+    df = DataFrame(rand(4,5))
+    sdf = stack(df)
+    @test eltype(sdf.variable) <: CategoricalString
+    @test eltype(typeof(sdf.variable)) <: CategoricalString
+    @test eltype(sdf.value) <: Float64
+    @test eltype(typeof(sdf.value)) <: Float64
+    sdf2 = first(sdf, 3)
+    @test eltype(sdf2.variable) <: CategoricalString
+    @test eltype(typeof(sdf2.variable)) <: CategoricalString
+    @test eltype(sdf2.value) <: Float64
+    @test eltype(typeof(sdf2.value)) <: Float64
+end
+
 end # module
