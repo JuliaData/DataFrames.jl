@@ -132,6 +132,7 @@ function getmaxwidths(df::AbstractDataFrame,
     for (name, col) in pairs(eachcol(df))
         # (1) Consider length of column name
         maxwidth = ourstrwidth(io, name)
+
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
             if isassigned(col, i)
@@ -396,7 +397,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
   AbstractDataFrame be rendered to the I/O stream before printing the
   contents of the renderable rows? Defaults to `true`.
 - `displaycoltype::Bool = true`: Whether to print the column type
-   under the column name in the heading. Defaults to true.
+   under the column name in the heading. Defaults to `true`.
 - `rowid = nothing`: Used to handle showing `DataFrameRow`
 
 # Examples
@@ -619,7 +620,7 @@ while `splitcols` defaults to `true`.
   By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
-- `coltypes::Bool = true`: Whether to print the column types under column names in data frame.
+- `coltypes::Bool = true`: Whether to print the column types under column names.
 
 # Examples
 ```jldoctest
