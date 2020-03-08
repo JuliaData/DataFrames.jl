@@ -484,7 +484,7 @@ end
 
 function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     if any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
-        return throw(ArgumentError("The column names of keys do not match " *
+        return throw(ArgumentError("The column names of key do not match " *
                                    "the names of grouping columns"))
     end
     return haskey(gd, Tuple(key))
