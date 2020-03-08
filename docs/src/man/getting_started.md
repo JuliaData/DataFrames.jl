@@ -305,11 +305,11 @@ Also notice that when `DataFrame` is printed to the console or rendered in HTML 
 julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
-│ Row │ a     │ b        │ c    │ d         │
-│     │ Int64 │ Float64? │ Cat… │ Rationa…? │
-├─────┼───────┼──────────┼──────┼───────────┤
-│ 1   │ 1     │ 1.0      │ 'a'  │ 1//2      │
-│ 2   │ 2     │ missing  │ 'b'  │ missing   │
+│ Row │ a     │ b        │ c    │ d        │
+│     │ Int64 │ Float64? │ Cat… │ Ration…? │
+├─────┼───────┼──────────┼──────┼──────────┤
+│ 1   │ 1     │ 1.0      │ 'a'  │ 1//2     │
+│ 2   │ 2     │ missing  │ 'b'  │ missing  │
 ```
 
 we can observe that:

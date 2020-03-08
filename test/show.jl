@@ -309,11 +309,11 @@ end
     df = DataFrame(a = [big(1.0), missing])
     @test sprint(show, df) == """
     2×1 DataFrame
-    │ Row │ a         │
-    │     │ BigFloat? │
-    ├─────┼───────────┤
-    │ 1   │ 1.0       │
-    │ 2   │ missing   │"""
+    │ Row │ a        │
+    │     │ BigFlo…? │
+    ├─────┼──────────┤
+    │ 1   │ 1.0      │
+    │ 2   │ missing  │"""
 
     # date types
     df = DataFrame(a = Date(2020, 2, 11), b = DateTime(2020, 2, 11, 15), c = Day(1))
@@ -336,10 +336,10 @@ end
     else
         @test sprint(show, df) == """
         1×1 DataFrame
-        │ Row │ a         │
-        │     │ Irration… │
-        ├─────┼───────────┤
-        │ 1   │ π         │"""
+        │ Row │ a        │
+        │     │ Irratio… │
+        ├─────┼──────────┤
+        │ 1   │ π        │"""
     end
 end
 
@@ -406,6 +406,19 @@ end
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(DataFrames._columns(df), df[:, :a])
     @test_throws AssertionError sprint(show, df)
+end
+
+@testset "wide characters in type name" begin
+    struct ⛵⛵⛵⛵⛵
+    end
+    Base.show(io::IO, ::⛵⛵⛵⛵⛵) = show(io, "⛵")
+
+    @test sprint(show, DataFrame(a=⛵⛵⛵⛵⛵())) == """
+    1×1 DataFrame
+    │ Row │ a       │
+    │     │ ⛵⛵⛵… │
+    ├─────┼─────────┤
+    │ 1   │ "⛵"    │"""
 end
 
 end # module

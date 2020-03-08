@@ -55,29 +55,48 @@ end
 
 """Return compact string representation of type T"""
 function compacttype(T::Type, maxwidth::Int=8)
+    maxwidth = max(8, maxwidth)
+
     T === Any && return "Any"
     T === Missing && return "Missing"
+
     sT = string(T)
-    length(sT) ≤ maxwidth && return sT
+    textwidth(sT) ≤ maxwidth && return sT
+
     if T >: Missing
         T = nonmissingtype(T)
         sT = string(T)
         suffix = "?"
-        # handle the case when after removing Missing union type name is short
-        length(sT) ≤ 8 && return sT * suffix
+        maxwidth -= 1 # we will add "?" at the end
+        textwidth(sT) ≤ maxwidth && return sT * suffix
     else
         suffix = ""
     end
+
+    maxwidth -= 1 # we will add "…" at the end
+
     if T <: Union{CategoricalString, CategoricalValue}
-        catlong = "Categorical…"*suffix
-        if length(catlong) ≤ maxwidth
-            return catlong
+        return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+    elseif T isa Union
+        return "Union…" * suffix
+    elseif T isa UnionAll
+        sT = string(Base.unwrap_unionall(T).name)
+    else
+        T::DataType
+        sT = string(T.name)
+    end
+
+    cumwidth = 0
+    stop = 0
+    for (i, c) in enumerate(sT)
+        cumwidth += textwidth(c)
+        if cumwidth ≤ maxwidth
+            stop = i
         else
-            return "Cat…"*suffix
+            break
         end
     end
-    # we abbreviate consistently to total of 8 characters
-    match(Regex("^.\\w{0,$(7-length(suffix))}"), sT).match * "…" * suffix
+    return first(sT, stop) * "…" * suffix
 end
 
 """
