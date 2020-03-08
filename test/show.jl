@@ -1,6 +1,14 @@
+# this needs to be defined outside of the module to make
+# Julia print type name without module name when displaying it
+struct ⛵⛵⛵⛵⛵
+end
+Base.show(io::IO, ::⛵⛵⛵⛵⛵) = show(io, "⛵")
+
 module TestShow
 
 using DataFrames, Dates, Random, Test
+
+import Main: ⛵⛵⛵⛵⛵
 
 function capture_stdout(f::Function)
     oldstdout = stdout
@@ -409,10 +417,6 @@ end
 end
 
 @testset "wide characters in type name" begin
-    struct ⛵⛵⛵⛵⛵
-    end
-    Base.show(io::IO, ::⛵⛵⛵⛵⛵) = show(io, "⛵")
-
     @test sprint(show, DataFrame(a=⛵⛵⛵⛵⛵())) == """
     1×1 DataFrame
     │ Row │ a       │
