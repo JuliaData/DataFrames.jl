@@ -308,16 +308,16 @@ unstack(df::AbstractDataFrame; renamecols::Function=identity) =
     unstack(df, :variable, :value, renamecols=renamecols)
 
 """
-    StackedVector <: AbstractVector{Any}
+    StackedVector <: AbstractVector
 
-An AbstractVector{Any} that is a linear, concatenated view into
+An `AbstractVector` that is a linear, concatenated view into
 another set of AbstractVectors
 
 NOTE: Not exported.
 
 # Constructor
 ```julia
-StackedVector(d::AbstractVector...)
+StackedVector(d::AbstractVector)
 ```
 
 # Arguments
@@ -328,11 +328,14 @@ StackedVector(d::AbstractVector...)
 StackedVector(Any[[1,2], [9,10], [11,12]])  # [1,2,9,10,11,12]
 ```
 """
-struct StackedVector <: AbstractVector{Any}
+struct StackedVector{T} <: AbstractVector{T}
     components::Vector{Any}
 end
 
-function Base.getindex(v::StackedVector,i::Int)
+StackedVector(d::AbstractVector) =
+    StackedVector{promote_type(map(eltype, d)...)}(d)
+
+function Base.getindex(v::StackedVector, i::Int)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0; cumsum(lengths)]
     j = searchsortedlast(cumlengths .+ 1, i)
@@ -349,7 +352,7 @@ end
 Base.IndexStyle(::Type{StackedVector}) = Base.IndexLinear()
 Base.size(v::StackedVector) = (length(v),)
 Base.length(v::StackedVector) = sum(map(length, v.components))
-Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
+Base.eltype(v::Type{StackedVector{T}}) where {T} = T
 Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
     similar(v.components[1], T, dims...)
 
@@ -405,7 +408,7 @@ end
 Base.IndexStyle(::Type{<:RepeatedVector}) = Base.IndexLinear()
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(parent(v))
-Base.eltype(v::RepeatedVector{T}) where {T} = T
+Base.eltype(v::Type{RepeatedVector{T}}) where {T} = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(parent(v)), v.inner, v.outer)
 Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(parent(v), T, dims)
 Base.unique(v::RepeatedVector) = unique(parent(v))
