@@ -54,7 +54,7 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
 end
 
 """Return compact string representation of type T"""
-function compacttype(T::Type, maxwidth::Int=8)
+function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     maxwidth = max(8, maxwidth)
 
     T === Any && return "Any"
@@ -67,7 +67,8 @@ function compacttype(T::Type, maxwidth::Int=8)
         T = nonmissingtype(T)
         sT = string(T)
         suffix = "?"
-        maxwidth -= 1 # we will add "?" at the end
+        # ignore "?" for initial width counting but respect it for display
+        initial || (maxwidth -= 1)
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
         suffix = ""
@@ -75,8 +76,13 @@ function compacttype(T::Type, maxwidth::Int=8)
 
     maxwidth -= 1 # we will add "…" at the end
 
-    if T <: Union{CategoricalString, CategoricalValue}
-        return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+    if T <: CategoricalString || T <: CategoricalValue
+        sT = string(T.name)
+        if textwidth(sT) ≤ maxwidth
+            return sT * "…" * suffix
+        else
+            return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+        end
     elseif T isa Union
         return "Union…" * suffix
     elseif T isa UnionAll
@@ -496,7 +502,7 @@ function showrows(io::IO,
         end
         print(io, " │ ")
         for j in leftcol:rightcol
-            s = compacttype(eltype(df[!, j]), maxwidths[j])
+            s = compacttype(eltype(df[!, j]), maxwidths[j], false)
             printstyled(io, s, color=:light_black)
             padding = maxwidths[j] - ourstrwidth(io, s)
             for itr in 1:padding

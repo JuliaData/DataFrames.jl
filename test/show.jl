@@ -317,11 +317,11 @@ end
     df = DataFrame(a = [big(1.0), missing])
     @test sprint(show, df) == """
     2×1 DataFrame
-    │ Row │ a        │
-    │     │ BigFlo…? │
-    ├─────┼──────────┤
-    │ 1   │ 1.0      │
-    │ 2   │ missing  │"""
+    │ Row │ a         │
+    │     │ BigFloat? │
+    ├─────┼───────────┤
+    │ 1   │ 1.0       │
+    │ 2   │ missing   │"""
 
     # date types
     df = DataFrame(a = Date(2020, 2, 11), b = DateTime(2020, 2, 11, 15), c = Day(1))
@@ -416,13 +416,48 @@ end
     @test_throws AssertionError sprint(show, df)
 end
 
-@testset "wide characters in type name" begin
+@testset "wide type name" begin
     @test sprint(show, DataFrame(a=⛵⛵⛵⛵⛵())) == """
     1×1 DataFrame
     │ Row │ a       │
     │     │ ⛵⛵⛵… │
     ├─────┼─────────┤
     │ 1   │ "⛵"    │"""
+
+    @test sprint(show, DataFrame(a=categorical([2^54]))) == """
+    1×1 DataFrame
+    │ Row │ a                 │
+    │     │ CategoricalValue… │
+    ├─────┼───────────────────┤
+    │ 1   │ 18014398509481984 │"""
+
+    @test sprint(show, DataFrame(a=categorical([2^53]))) == """
+    1×1 DataFrame
+    │ Row │ a                │
+    │     │ Categorical…     │
+    ├─────┼──────────────────┤
+    │ 1   │ 9007199254740992 │"""
+
+    @test sprint(show, DataFrame(a=categorical([2^37]))) == """
+    1×1 DataFrame
+    │ Row │ a            │
+    │     │ Categorical… │
+    ├─────┼──────────────┤
+    │ 1   │ 137438953472 │"""
+
+    @test sprint(show, DataFrame(a=categorical([2^36]))) == """
+    1×1 DataFrame
+    │ Row │ a           │
+    │     │ Cat…        │
+    ├─────┼─────────────┤
+    │ 1   │ 68719476736 │"""
+
+    @test sprint(show, DataFrame(a=Union{Function,Missing}[missing])) == """
+    1×1 DataFrame
+    │ Row │ a         │
+    │     │ Function? │
+    ├─────┼───────────┤
+    │ 1   │ missing   │"""
 end
 
 end # module
