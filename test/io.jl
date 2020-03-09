@@ -15,7 +15,7 @@ using Test, DataFrames, CategoricalArrays, Dates
         \\begin{tabular}{r|cccccc}
         \t& A & B & C & D & E & F\\\\
         \t\\hline
-        \t& $(Int) & String & String & Float64⍰ & Categorical…⍰ & String\\\\
+        \t& $(Int) & String & String & Float64? & Cat…? & String\\\\
         \t\\hline
         \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\#undef \\\\
         \t2 & 2 & M\\&F & B & 2.0 &  & \\#undef \\\\
@@ -50,7 +50,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<p>2 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
@@ -61,7 +61,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<p>2 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
@@ -72,7 +72,7 @@ end
     @test str == "<p>2×2 DataFrameRows</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
@@ -82,7 +82,7 @@ end
     @test str == "<p>2×2 DataFrameColumns</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
@@ -91,7 +91,7 @@ end
     str = String(take!(io))
     @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
                  "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th></th>" *
-                 "<th>String</th><th>Float64⍰</th></tr></thead><tbody><tr><th>1</th>" *
+                 "<th>String</th><th>Float64?</th></tr></thead><tbody><tr><th>1</th>" *
                  "<td>#undef</td><td>1.5</td></tr></tbody></table>"
 
     io = IOBuffer()
@@ -99,7 +99,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
@@ -108,7 +108,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
@@ -117,7 +117,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
@@ -125,7 +125,7 @@ end
     show(io, MIME"text/html"(), df[1, :], summary=false)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
-                 "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64⍰</th></tr></thead>" *
+                 "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64?</th></tr></thead>" *
                  "<tbody><tr><th>1</th><td>#undef</td><td>1.5</td></tr></tbody></table>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),

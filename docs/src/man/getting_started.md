@@ -305,17 +305,17 @@ Also notice that when `DataFrame` is printed to the console or rendered in HTML 
 julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
-│ Row │ a     │ b        │ c            │ d         │
-│     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
-├─────┼───────┼──────────┼──────────────┼───────────┤
-│ 1   │ 1     │ 1.0      │ 'a'          │ 1//2      │
-│ 2   │ 2     │ missing  │ 'b'          │ missing   │
+│ Row │ a     │ b        │ c    │ d         │
+│     │ Int64 │ Float64? │ Cat… │ Rationa…? │
+├─────┼───────┼──────────┼──────┼───────────┤
+│ 1   │ 1     │ 1.0      │ 'a'  │ 1//2      │
+│ 2   │ 2     │ missing  │ 'b'  │ missing   │
 ```
 
 we can observe that:
 
 * the first column `:a` can hold elements of type `Int64`;
-* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `⍰` printed after the name of type;
+* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `?` printed after the name of type;
 * the third column `:c` can hold categorical data; here we notice `…`, which indicates that the actual name of the type was long and got truncated;
 * the type information in fourth column `:d` presents a situation where the name is both truncated and the type allows `Missing`.
 
@@ -864,7 +864,7 @@ When replacing values with `missing`, if the columns do not already allow for mi
 julia> df2 = ifelse.(df .== "None", missing, df)
 4×4 DataFrame
 │ Row │ a       │ b     │ c       │ d       │
-│     │ String⍰ │ Int64 │ String⍰ │ String⍰ │
+│     │ String? │ Int64 │ String? │ String? │
 ├─────┼─────────┼───────┼─────────┼─────────┤
 │ 1   │ a       │ 1     │ missing │ x       │
 │ 2   │ missing │ 2     │ j       │ y       │
@@ -875,7 +875,7 @@ julia> df2 = ifelse.(df .== "None", missing, df)
 julia> allowmissing!(df)
 4×4 DataFrame
 │ Row │ a       │ b      │ c       │ d       │
-│     │ String⍰ │ Int64⍰ │ String⍰ │ String⍰ │
+│     │ String? │ Int64? │ String? │ String? │
 ├─────┼─────────┼────────┼─────────┼─────────┤
 │ 1   │ a       │ 1      │ None    │ x       │
 │ 2   │ None    │ 2      │ j       │ y       │
@@ -885,7 +885,7 @@ julia> allowmissing!(df)
 julia> df .= ifelse.(df .== "None", missing, df)
 4×4 DataFrame
 │ Row │ a       │ b     │ c       │ d       │
-│     │ String⍰ │ Int64 │ String⍰ │ String⍰ │
+│     │ String? │ Int64 │ String? │ String? │
 ├─────┼─────────┼───────┼─────────┼─────────┤
 │ 1   │ a       │ 1     │ missing │ x       │
 │ 2   │ missing │ 2     │ j       │ y       │

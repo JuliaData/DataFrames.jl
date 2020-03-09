@@ -10,7 +10,7 @@ julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa │
 │ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │
@@ -20,7 +20,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
 │ 1   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
 │ 2   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
@@ -32,7 +32,7 @@ julia> sort!(iris);
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 4.3         │ 3.0        │ 1.1         │ 0.1        │ Iris-setosa │
 │ 2   │ 4.4         │ 2.9        │ 1.4         │ 0.2        │ Iris-setosa │
@@ -42,7 +42,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
 │ 1   │ 7.7         │ 2.8        │ 6.7         │ 2.0        │ Iris-virginica │
 │ 2   │ 7.7         │ 3.0        │ 6.1         │ 2.3        │ Iris-virginica │
@@ -63,7 +63,7 @@ julia> sort!(iris, rev = true);
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
 │ 1   │ 7.9         │ 3.8        │ 6.4         │ 2.0        │ Iris-virginica │
 │ 2   │ 7.7         │ 3.8        │ 6.7         │ 2.2        │ Iris-virginica │
@@ -73,7 +73,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 4.4         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
 │ 2   │ 4.4         │ 3.0        │ 1.3         │ 0.2        │ Iris-setosa │
@@ -85,7 +85,7 @@ julia> sort!(iris, [:Species, :SepalWidth]);
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 4.5         │ 2.3        │ 1.3         │ 0.3        │ Iris-setosa │
 │ 2   │ 4.4         │ 2.9        │ 1.4         │ 0.2        │ Iris-setosa │
@@ -95,7 +95,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
 │ 1   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
 │ 2   │ 7.2         │ 3.6        │ 6.1         │ 2.5        │ Iris-virginica │
@@ -107,7 +107,7 @@ julia> sort!(iris, (order(:Species, by=length), order(:SepalLength, rev=true)));
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 5.8         │ 4.0        │ 1.2         │ 0.2        │ Iris-setosa │
 │ 2   │ 5.7         │ 3.8        │ 1.7         │ 0.3        │ Iris-setosa │
@@ -117,7 +117,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species         │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰         │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?         │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────────┤
 │ 1   │ 5.1         │ 2.5        │ 3.0         │ 1.1        │ Iris-versicolor │
 │ 2   │ 5.0         │ 2.0        │ 3.5         │ 1.0        │ Iris-versicolor │
@@ -144,7 +144,7 @@ julia> julia> sort!(iris, (:Species, :PetalLength), rev=(true, false));
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
 │ 1   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ Iris-virginica │
 │ 2   │ 6.2         │ 2.8        │ 4.8         │ 1.8        │ Iris-virginica │
@@ -154,7 +154,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
 │ 2   │ 5.1         │ 3.3        │ 1.7         │ 0.5        │ Iris-setosa │
@@ -166,7 +166,7 @@ julia> sort!(iris, (order(:Species, rev=true), :PetalLength));
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
 │ 1   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ Iris-virginica │
 │ 2   │ 6.2         │ 2.8        │ 4.8         │ 1.8        │ Iris-virginica │
@@ -176,7 +176,7 @@ julia> first(iris, 4)
 julia> last(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ String⍰     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
 │ 1   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
 │ 2   │ 5.1         │ 3.3        │ 1.7         │ 0.5        │ Iris-setosa │

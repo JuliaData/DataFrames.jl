@@ -1,6 +1,14 @@
+# this needs to be defined outside of the module to make
+# Julia print type name without module name when displaying it
+struct ⛵⛵⛵⛵⛵
+end
+Base.show(io::IO, ::⛵⛵⛵⛵⛵) = show(io, "⛵")
+
 module TestShow
 
 using DataFrames, Dates, Random, Test
+
+import Main: ⛵⛵⛵⛵⛵
 
 function capture_stdout(f::Function)
     oldstdout = stdout
@@ -241,7 +249,7 @@ end
     @test sprint(show, df, context=:color=>true) == """
         2×2 DataFrame
         │ Row │ Fish   │ Mass     │
-        │     │ \e[90mString\e[39m │ \e[90mFloat64⍰\e[39m │
+        │     │ \e[90mString\e[39m │ \e[90mFloat64?\e[39m │
         ├─────┼────────┼──────────┤
         │ 1   │ Suzy   │ 1.5      │
         │ 2   │ Amir   │ \e[90mmissing\e[39m  │"""
@@ -252,7 +260,7 @@ end
     @test sprint(show, df, context=:color=>true) == """
         3×3 DataFrame
         │ Row │ A       │ B       │ C       │
-        │     │ \e[90mSymbol⍰\e[39m │ \e[90mString⍰\e[39m │ \e[90mAny\e[39m     │
+        │     │ \e[90mSymbol?\e[39m │ \e[90mString?\e[39m │ \e[90mAny\e[39m     │
         ├─────┼─────────┼─────────┼─────────┤
         │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
         │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
@@ -298,19 +306,19 @@ end
     df = DataFrame(a = categorical([1,2,3]), b = categorical(["a", "b", missing]))
     @test sprint(show, df) == """
     3×2 DataFrame
-    │ Row │ a            │ b             │
-    │     │ Categorical… │ Categorical…⍰ │
-    ├─────┼──────────────┼───────────────┤
-    │ 1   │ 1            │ a             │
-    │ 2   │ 2            │ b             │
-    │ 3   │ 3            │ missing       │"""
+    │ Row │ a    │ b       │
+    │     │ Cat… │ Cat…?   │
+    ├─────┼──────┼─────────┤
+    │ 1   │ 1    │ a       │
+    │ 2   │ 2    │ b       │
+    │ 3   │ 3    │ missing │"""
 
     # BigFloat
     df = DataFrame(a = [big(1.0), missing])
     @test sprint(show, df) == """
     2×1 DataFrame
     │ Row │ a         │
-    │     │ BigFloat⍰ │
+    │     │ BigFloat? │
     ├─────┼───────────┤
     │ 1   │ 1.0       │
     │ 2   │ missing   │"""
@@ -336,10 +344,10 @@ end
     else
         @test sprint(show, df) == """
         1×1 DataFrame
-        │ Row │ a         │
-        │     │ Irration… │
-        ├─────┼───────────┤
-        │ 1   │ π         │"""
+        │ Row │ a        │
+        │     │ Irratio… │
+        ├─────┼──────────┤
+        │ 1   │ π        │"""
     end
 end
 
@@ -406,6 +414,50 @@ end
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(DataFrames._columns(df), df[:, :a])
     @test_throws AssertionError sprint(show, df)
+end
+
+@testset "wide type name" begin
+    @test sprint(show, DataFrame(a=⛵⛵⛵⛵⛵())) == """
+    1×1 DataFrame
+    │ Row │ a       │
+    │     │ ⛵⛵⛵… │
+    ├─────┼─────────┤
+    │ 1   │ "⛵"    │"""
+
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^54]))) == """
+    1×1 DataFrame
+    │ Row │ a                 │
+    │     │ CategoricalValue… │
+    ├─────┼───────────────────┤
+    │ 1   │ 18014398509481984 │"""
+
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^53]))) == """
+    1×1 DataFrame
+    │ Row │ a                │
+    │     │ Categorical…     │
+    ├─────┼──────────────────┤
+    │ 1   │ 9007199254740992 │"""
+
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^37]))) == """
+    1×1 DataFrame
+    │ Row │ a            │
+    │     │ Categorical… │
+    ├─────┼──────────────┤
+    │ 1   │ 137438953472 │"""
+
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^36]))) == """
+    1×1 DataFrame
+    │ Row │ a           │
+    │     │ Cat…        │
+    ├─────┼─────────────┤
+    │ 1   │ 68719476736 │"""
+
+    @test sprint(show, DataFrame(a=Union{Function,Missing}[missing])) == """
+    1×1 DataFrame
+    │ Row │ a         │
+    │     │ Function? │
+    ├─────┼───────────┤
+    │ 1   │ missing   │"""
 end
 
 end # module
