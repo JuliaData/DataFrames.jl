@@ -37,8 +37,8 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 ```
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
-Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
-    _show(io, mime, df, summary=summary)
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, coltypes::Bool=true) =
+    _show(io, mime, df, summary=summary, coltypes=coltypes)
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
     _show(io, mime, df)
 Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
@@ -77,7 +77,7 @@ function html_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
+               summary::Bool=true, rowid::Union{Int,Nothing}=nothing, coltypes::Bool=true)
     _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
@@ -104,13 +104,15 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         write(io, "<th>$(html_escape(String(column_name)))</th>")
     end
     write(io, "</tr>")
-    write(io, "<tr>")
-    write(io, "<th></th>")
-    for j in 1:mxcol
-        s = html_escape(compacttype(eltype(df[!, j])))
-        write(io, "<th>$s</th>")
+    if coltypes
+        write(io, "<tr>")
+        write(io, "<th></th>")
+        for j in 1:mxcol
+            s = html_escape(compacttype(eltype(df[!, j])))
+            write(io, "<th>$s</th>")
+        end
+        write(io, "</tr>")
     end
-    write(io, "</tr>")
     write(io, "</thead>")
     write(io, "<tbody>")
     if summary
@@ -150,25 +152,25 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</table>")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true, coltypes::Bool=true)
     r, c = parentindices(dfr)
     summary && write(io, "<p>DataFrameRow ($(length(dfr)) columns)</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=false, rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), summary=false, rowid=r, coltypes=coltypes)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::Bool=true, coltypes::Bool=true)
     df = parent(dfrs)
     summary && write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameRows</p>")
-    _show(io, mime, df, summary=false)
+    _show(io, mime, df, summary=false, coltypes=coltypes)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns;
-                   summary::Bool=true)
+                   summary::Bool=true, coltypes::Bool=true)
     df = parent(dfcs)
     if summary
         write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameColumns</p>")
     end
-    _show(io, mime, df, summary=false)
+    _show(io, mime, df, summary=false, coltypes=coltypes)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
