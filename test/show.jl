@@ -424,28 +424,28 @@ end
     ├─────┼─────────┤
     │ 1   │ "⛵"    │"""
 
-    @test sprint(show, DataFrame(a=categorical([2^54]))) == """
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^54]))) == """
     1×1 DataFrame
     │ Row │ a                 │
     │     │ CategoricalValue… │
     ├─────┼───────────────────┤
     │ 1   │ 18014398509481984 │"""
 
-    @test sprint(show, DataFrame(a=categorical([2^53]))) == """
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^53]))) == """
     1×1 DataFrame
     │ Row │ a                │
     │     │ Categorical…     │
     ├─────┼──────────────────┤
     │ 1   │ 9007199254740992 │"""
 
-    @test sprint(show, DataFrame(a=categorical([2^37]))) == """
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^37]))) == """
     1×1 DataFrame
     │ Row │ a            │
     │     │ Categorical… │
     ├─────┼──────────────┤
     │ 1   │ 137438953472 │"""
 
-    @test sprint(show, DataFrame(a=categorical([2^36]))) == """
+    @test sprint(show, DataFrame(a=categorical([Int64(2)^36]))) == """
     1×1 DataFrame
     │ Row │ a           │
     │     │ Cat…        │
