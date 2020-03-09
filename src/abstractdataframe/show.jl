@@ -54,23 +54,55 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
 end
 
 """Return compact string representation of type T"""
-function compacttype(T::Type, maxwidth::Int=8)
+function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
+    maxwidth = max(8, maxwidth)
+
     T === Any && return "Any"
     T === Missing && return "Missing"
+
     sT = string(T)
-    length(sT) ≤ maxwidth && return sT
+    textwidth(sT) ≤ maxwidth && return sT
+
     if T >: Missing
         T = nonmissingtype(T)
         sT = string(T)
-        suffix = "⍰"
-        # handle the case when after removing Missing union type name is short
-        length(sT) ≤ 8 && return sT * suffix
+        suffix = "?"
+        # ignore "?" for initial width counting but respect it for display
+        initial || (maxwidth -= 1)
+        textwidth(sT) ≤ maxwidth && return sT * suffix
     else
         suffix = ""
     end
-    T <: Union{CategoricalString, CategoricalValue} && return "Categorical…"*suffix
-    # we abbreviate consistently to total of 8 characters
-    match(Regex("^.\\w{0,$(7-length(suffix))}"), sT).match * "…"*suffix
+
+    maxwidth -= 1 # we will add "…" at the end
+
+    if T <: CategoricalString || T <: CategoricalValue
+        sT = string(T.name)
+        if textwidth(sT) ≤ maxwidth
+            return sT * "…" * suffix
+        else
+            return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+        end
+    elseif T isa Union
+        return "Union…" * suffix
+    elseif T isa UnionAll
+        sT = string(Base.unwrap_unionall(T).name)
+    else
+        T::DataType
+        sT = string(T.name)
+    end
+
+    cumwidth = 0
+    stop = 0
+    for (i, c) in enumerate(sT)
+        cumwidth += textwidth(c)
+        if cumwidth ≤ maxwidth
+            stop = i
+        else
+            break
+        end
+    end
+    return first(sT, stop) * "…" * suffix
 end
 
 """
@@ -480,7 +512,7 @@ function showrows(io::IO,
             end
             print(io, " │ ")
             for j in leftcol:rightcol
-                s = compacttype(eltype(df[!, j]), maxwidths[j])
+                s = compacttype(eltype(df[!, j]), maxwidths[j], false)
                 printstyled(io, s, color=:light_black)
                 padding = maxwidths[j] - ourstrwidth(io, s)
                 for itr in 1:padding

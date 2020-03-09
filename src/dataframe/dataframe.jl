@@ -1113,11 +1113,11 @@ julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
 
 julia> categorical!(df)
 2×3 DataFrame
-│ Row │ X            │ Y     │ Z            │
-│     │ Categorical… │ Int64 │ Categorical… │
-├─────┼──────────────┼───────┼──────────────┤
-│ 1   │ a            │ 1     │ p            │
-│ 2   │ b            │ 2     │ q            │
+│ Row │ X    │ Y     │ Z    │
+│     │ Cat… │ Int64 │ Cat… │
+├─────┼──────┼───────┼──────┤
+│ 1   │ a    │ 1     │ p    │
+│ 2   │ b    │ 2     │ q    │
 
 julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:
@@ -1135,11 +1135,11 @@ julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
 
 julia> categorical!(df, :Y, compress=true)
 2×3 DataFrame
-│ Row │ X      │ Y            │ Z      │
-│     │ String │ Categorical… │ String │
-├─────┼────────┼──────────────┼────────┤
-│ 1   │ a      │ 1            │ p      │
-│ 2   │ b      │ 2            │ q      │
+│ Row │ X      │ Y    │ Z      │
+│     │ String │ Cat… │ String │
+├─────┼────────┼──────┼────────┤
+│ 1   │ a      │ 1    │ p      │
+│ 2   │ b      │ 2    │ q      │
 
 julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:

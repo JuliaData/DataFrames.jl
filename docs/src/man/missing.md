@@ -73,7 +73,7 @@ julia> df = DataFrame(i = 1:5,
 julia> dropmissing(df)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
+│     │ Int64 │ Int64? │ String? │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
@@ -85,7 +85,7 @@ One can specify the column(s) in which to search for rows containing `missing` v
 julia> dropmissing(df, :x)
 3×3 DataFrame
 │ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
+│     │ Int64 │ Int64? │ String? │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 2     │ 4      │ missing │
 │ 2   │ 4     │ 2      │ d       │

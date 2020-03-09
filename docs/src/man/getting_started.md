@@ -16,8 +16,8 @@ Throughout the rest of this tutorial, we will assume that you have installed the
     By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly
     fit the screen size (like in the REPL).
 
-    You can override this behavior by setting the `ENV["COLUMNS"]` or `ENV["LINES"]` variables to hold the maximum
-    width and height of output in characters respectively before using the `notebook` function.
+    You can override this behavior by changing the values of the `ENV["COLUMNS"]` and `ENV["LINES"]`
+    variables to hold the maximum width and height of output in characters respectively.
 
     Alternatively, you may want to set the maximum number of data frame rows to print to `100` and the maximum
     output width in characters to `1000` for every Julia session using some Jupyter kernel file (numbers `100`
@@ -305,17 +305,17 @@ Also notice that when `DataFrame` is printed to the console or rendered in HTML 
 julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
-│ Row │ a     │ b        │ c            │ d         │
-│     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
-├─────┼───────┼──────────┼──────────────┼───────────┤
-│ 1   │ 1     │ 1.0      │ 'a'          │ 1//2      │
-│ 2   │ 2     │ missing  │ 'b'          │ missing   │
+│ Row │ a     │ b        │ c    │ d         │
+│     │ Int64 │ Float64? │ Cat… │ Rationa…? │
+├─────┼───────┼──────────┼──────┼───────────┤
+│ 1   │ 1     │ 1.0      │ 'a'  │ 1//2      │
+│ 2   │ 2     │ missing  │ 'b'  │ missing   │
 ```
 
 we can observe that:
 
 * the first column `:a` can hold elements of type `Int64`;
-* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `⍰` printed after the name of type;
+* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `?` printed after the name of type;
 * the third column `:c` can hold categorical data; here we notice `…`, which indicates that the actual name of the type was long and got truncated;
 * the type information in fourth column `:d` presents a situation where the name is both truncated and the type allows `Missing`.
 
@@ -784,6 +784,115 @@ not be mutated without caution.
 
 The exact rules of handling columns of a `DataFrame` are explained in
 [The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
+
+## Replacing Data
+
+Several approaches can be used to replace some values with others in a data frame. Some apply the replacement to all values in a data frame, and others to individual columns or subset of columns.
+
+Do note that in-place replacement requires that the replacement value can be converted to the column's element type. In particular, this implies that replacing a value with `missing` requires a call to `allowmissing!` if the column did not allow for missing values.
+
+Replacement operations affecting a single column can be performed using `replace!`:
+```jldoctest replace
+julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ None   │ x      │
+│ 2   │ None   │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ None   │
+│ 4   │ None   │ 4     │ h      │ z      │
+
+julia> replace!(df.a, "None" => "c")
+4-element Array{String,1}:
+ "a"
+ "c"
+ "b"
+ "c"
+
+julia> df
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ None   │ x      │
+│ 2   │ c      │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ None   │
+│ 4   │ c      │ 4     │ h      │ z      │
+```
+This is equivalent to `df.a = replace(df.a, "None" => "c")`, but operates in-place, without allocating a new column vector.
+
+Replacement operations on multiple columns or on the whole data frame can be performed in-place using the broadcasting syntax:
+```jldoctest replace
+# replacement on a subset of columns [:c, :d]
+julia> df[:, [:c, :d]] .= ifelse.(df[!, [:c, :d]] .== "None", "c", df[!, [:c, :d]])
+4×2 DataFrame
+│ Row │ c      │ d      │
+│     │ String │ String │
+├─────┼────────┼────────┤
+│ 1   │ c      │ x      │
+│ 2   │ j      │ y      │
+│ 3   │ k      │ c      │
+│ 4   │ h      │ z      │
+
+julia> df
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ c      │ x      │
+│ 2   │ c      │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ c      │
+│ 4   │ c      │ 4     │ h      │ z      │
+
+# replacement on entire data frame
+julia> df .= ifelse.(df .== "c", "None", df)
+4×4 DataFrame
+│ Row │ a      │ b     │ c      │ d      │
+│     │ String │ Int64 │ String │ String │
+├─────┼────────┼───────┼────────┼────────┤
+│ 1   │ a      │ 1     │ None   │ x      │
+│ 2   │ None   │ 2     │ j      │ y      │
+│ 3   │ b      │ 3     │ k      │ None   │
+│ 4   │ None   │ 4     │ h      │ z      │
+```
+Do note that in the above examples, changing `.=` to just `=` will allocate new column vectors instead of applying the operation in-place.
+
+When replacing values with `missing`, if the columns do not already allow for missing values, one has to either avoid in-place operation and use `=` instead of `.=`, or call `allowmissing!` beforehand:
+```jldoctest replace
+# do not operate in-place (`df = ` would also work)
+julia> df2 = ifelse.(df .== "None", missing, df)
+4×4 DataFrame
+│ Row │ a       │ b     │ c       │ d       │
+│     │ String? │ Int64 │ String? │ String? │
+├─────┼─────────┼───────┼─────────┼─────────┤
+│ 1   │ a       │ 1     │ missing │ x       │
+│ 2   │ missing │ 2     │ j       │ y       │
+│ 3   │ b       │ 3     │ k       │ missing │
+│ 4   │ missing │ 4     │ h       │ z       │
+
+# operate in-place after allowing for missing
+julia> allowmissing!(df)
+4×4 DataFrame
+│ Row │ a       │ b      │ c       │ d       │
+│     │ String? │ Int64? │ String? │ String? │
+├─────┼─────────┼────────┼─────────┼─────────┤
+│ 1   │ a       │ 1      │ None    │ x       │
+│ 2   │ None    │ 2      │ j       │ y       │
+│ 3   │ b       │ 3      │ k       │ None    │
+│ 4   │ None    │ 4      │ h       │ z       │
+
+julia> df .= ifelse.(df .== "None", missing, df)
+4×4 DataFrame
+│ Row │ a       │ b     │ c       │ d       │
+│     │ String? │ Int64 │ String? │ String? │
+├─────┼─────────┼───────┼─────────┼─────────┤
+│ 1   │ a       │ 1     │ missing │ x       │
+│ 2   │ missing │ 2     │ j       │ y       │
+│ 3   │ b       │ 3     │ k       │ missing │
+│ 4   │ missing │ 4     │ h       │ z       │
+```
+
 
 ## Importing and Exporting Data (I/O)
 

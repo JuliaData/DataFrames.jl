@@ -219,6 +219,8 @@ end
 Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
 Base.keys(key::GroupKey) = Tuple(groupvars(parent(key)))
+Base.haskey(key::GroupKey, idx::Symbol) = idx in groupvars(parent(key))
+Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
 Base.names(key::GroupKey) = groupvars(parent(key))
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
@@ -459,6 +461,36 @@ true
 ```
 """
 Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
+
+function Base.haskey(gd::GroupedDataFrame, key::GroupKey)
+    if gd === parent(key)
+        if 1 <= getfield(key, :idx) <= length(gd)
+            return true
+        else
+            throw(BoundsError(gd, getfield(key, :idx)))
+        end
+    else
+        throw(ArgumentError("The parent of key does not match the passed GroupedDataFrame"))
+    end
+end
+
+function Base.haskey(gd::GroupedDataFrame, key::Tuple)
+    if length(key) != length(gd.cols)
+        return throw(ArgumentError("The length of key does not match the " *
+                                   "number of grouping columns"))
+    end
+    return haskey(gd.keymap, key)
+end
+
+function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
+    if any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+        return throw(ArgumentError("The column names of key do not match " *
+                                   "the names of grouping columns"))
+    end
+    return haskey(gd, Tuple(key))
+end
+
+Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) = 1 <= key <= length(gd)
 
 """
     get(gd::GroupedDataFrame, key, default)

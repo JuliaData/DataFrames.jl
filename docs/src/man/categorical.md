@@ -162,15 +162,15 @@ julia> df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
 
 julia> categorical!(df, :A) # change the column `:A` to be categorical
 6×2 DataFrame
-│ Row │ A            │ B      │
-│     │ Categorical… │ String │
-├─────┼──────────────┼────────┤
-│ 1   │ A            │ X      │
-│ 2   │ B            │ X      │
-│ 3   │ C            │ X      │
-│ 4   │ D            │ Y      │
-│ 5   │ D            │ Y      │
-│ 6   │ A            │ Y      │
+│ Row │ A    │ B      │
+│     │ Cat… │ String │
+├─────┼──────┼────────┤
+│ 1   │ A    │ X      │
+│ 2   │ B    │ X      │
+│ 3   │ C    │ X      │
+│ 4   │ D    │ Y      │
+│ 5   │ D    │ Y      │
+│ 6   │ A    │ Y      │
 ```
 
 If columns are not specified, all columns with an `AbstractString` element type
@@ -179,15 +179,15 @@ are converted to be categorical. In the example below we also enable compression
 ```jldoctest categorical
 julia> categorical!(df, compress=true)
 6×2 DataFrame
-│ Row │ A            │ B            │
-│     │ Categorical… │ Categorical… │
-├─────┼──────────────┼──────────────┤
-│ 1   │ A            │ X            │
-│ 2   │ B            │ X            │
-│ 3   │ C            │ X            │
-│ 4   │ D            │ Y            │
-│ 5   │ D            │ Y            │
-│ 6   │ A            │ Y            │
+│ Row │ A    │ B    │
+│     │ Cat… │ Cat… │
+├─────┼──────┼──────┤
+│ 1   │ A    │ X    │
+│ 2   │ B    │ X    │
+│ 3   │ C    │ X    │
+│ 4   │ D    │ Y    │
+│ 5   │ D    │ Y    │
+│ 6   │ A    │ Y    │
 
 julia> eltype.(eachcol(df))
 2-element Array{DataType,1}:
