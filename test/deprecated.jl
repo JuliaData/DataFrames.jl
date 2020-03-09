@@ -496,9 +496,9 @@ end
     @test d1m == melt(d1, r"[cde]")
     @test d1s == d1m
     d1m = melt(d1[:, [1,3,4]], :a)
-    @test names(d1m) == [:variable, :value, :a]
+    @test names(d1m) == [:a, :variable, :value]
     d1m_named = melt(d1[:, [1,3,4]], :a, variable_name=:letter, value_name=:someval)
-    @test names(d1m_named) == [:letter, :someval, :a]
+    @test names(d1m_named) == [:a, :letter, :someval]
     dx = melt(d1, [], [:a])
     @test dx == melt(d1, r"xxx", r"a")
     @test size(dx) == (12, 2)
@@ -506,14 +506,14 @@ end
     dx = melt(d1, :a, [])
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:variable, :value, :a]
+    @test names(dx) == [:a, :variable, :value]
     d1m = melt(d1, [:c, :d, :e], view=true)
     @test d1m == melt(d1, r"[cde]", view=true)
     d1m = melt(d1[:, [1,3,4]], :a, view=true)
-    @test names(d1m) == [:variable, :value, :a]
+    @test names(d1m) == [:a, :variable, :value]
     d1m_named = melt(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval, view=true)
     @test d1m_named == melt(d1, r"[cde]", variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
+    @test names(d1m_named) == [:c, :d, :e, :letter, :someval]
     df1 = melt(DataFrame(rand(10,10)))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
