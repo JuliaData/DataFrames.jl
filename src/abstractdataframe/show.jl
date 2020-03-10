@@ -155,7 +155,7 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
                       rowid=nothing,
-                      show_eltype = true) # -> Vector{Int}
+                      show_eltype=true) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
