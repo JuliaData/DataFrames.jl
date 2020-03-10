@@ -242,7 +242,7 @@ end
     end
 end
 
-@testset "eltypes tests"
+@testset "eltypes tests" begin
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
