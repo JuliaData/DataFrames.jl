@@ -462,6 +462,7 @@ end
 
 @testset "wide type name" begin
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+    df.A = map(x -> Int32(x), df[:A])
 
     io = IOBuffer()
     show(io, df, eltypes=true)
@@ -469,7 +470,7 @@ end
     @test str == """
     3×2 DataFrame
     │ Row │ A     │ B      │
-    │     │ Int64 │ String │
+    │     │ Int32 │ String │
     ├─────┼───────┼────────┤
     │ 1   │ 1     │ x      │
     │ 2   │ 2     │ y      │
