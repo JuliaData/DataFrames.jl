@@ -300,8 +300,10 @@ function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; eltypes::B
     _show(io, mime, view(parent(dfr), [r], c), rowid=r, eltypes=eltypes)
 end
 
-Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows; eltypes::Bool=true) = _show(io, mime, parent(dfrs), eltypes=eltypes)
-Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns; eltypes::Bool=true) = _show(io, mime, parent(dfcs), eltypes=eltypes)
+Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows; eltypes::Bool=true) =
+	_show(io, mime, parent(dfrs), eltypes=eltypes)
+Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns; eltypes::Bool=true) =
+	_show(io, mime, parent(dfcs), eltypes=eltypes)
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
