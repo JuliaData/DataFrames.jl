@@ -249,12 +249,12 @@ end
     io = IOBuffer()
     show(io, MIME("text/plain"), df, eltypes=true)
     str = String(take!(io))
-    @test str == "3×2 DataFrame\n│ Row │ A     │ B      │\n│     │ Int32 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ x      │\n│ 2   │ 2     │ y      │\n│ 3   │ 3     │ z      │"
+    @test str == """3×2 DataFrame\n│ Row │ A     │ B      │\n│     │ Int32 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ x      │\n│ 2   │ 2     │ y      │\n│ 3   │ 3     │ z      │"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), df, eltypes=false)
     str = String(take!(io))
-    @test str == "3×2 DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ x │\n│ 2   │ 2 │ y │\n│ 3   │ 3 │ z │"
+    @test str == """3×2 DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ x │\n│ 2   │ 2 │ y │\n│ 3   │ 3 │ z │"""
 
     io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=true)
@@ -278,12 +278,12 @@ end
     io = IOBuffer()
     show(io, MIME("text/latex"), df, eltypes=true)
     str = String(take!(io))
-    @test str == "\\begin{tabular}{r|cc}\n\t& A & B\\\\\n\t\\hline\n\t& Int32 & String\\\\\n\t\\hline\n\t1 & 1 & x \\\\\n\t2 & 2 & y \\\\\n\t3 & 3 & z \\\\\n\\end{tabular}\n"
+    @test str == """\\begin{tabular}{r|cc}\n\t& A & B\\\\\n\t\\hline\n\t& Int32 & String\\\\\n\t\\hline\n\t1 & 1 & x \\\\\n\t2 & 2 & y \\\\\n\t3 & 3 & z \\\\\n\\end{tabular}\n"""
 
     io = IOBuffer()
     show(io, MIME("text/latex"), df, eltypes=false)
     str = String(take!(io))
-    @test str == "\\begin{tabular}{r|cc}\n\t& A & B\\\\\n\t\\hline\n\t1 & 1 & x \\\\\n\t2 & 2 & y \\\\\n\t3 & 3 & z \\\\\n\\end{tabular}\n"
+    @test str == """\\begin{tabular}{r|cc}\n\t& A & B\\\\\n\t\\hline\n\t1 & 1 & x \\\\\n\t2 & 2 & y \\\\\n\t3 & 3 & z \\\\\n\\end{tabular}\n"""
 
 end
 
