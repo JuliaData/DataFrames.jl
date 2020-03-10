@@ -39,8 +39,8 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, eltypes::Bool=true) =
     _show(io, mime, df, summary=summary, eltypes=eltypes)
-Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
-    _show(io, mime, df)
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
+    _show(io, mime, df, eltypes=eltypes)
 Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = ',')
 Base.show(io::IO, mime::MIME"text/tab-separated-values", df::AbstractDataFrame) =
@@ -228,7 +228,7 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing, eltypes=true)
     _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
@@ -258,12 +258,14 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     mxcol < size(df, 2) && write(io, " & ")
     write(io, "\\\\\n")
     write(io, "\t\\hline\n")
-    write(io, "\t& ")
-    header = join(map(c -> latex_escape(string(compacttype(c))), eltype.(eachcol(df)[1:mxcol])), " & ")
-    write(io, header)
-    mxcol < size(df, 2) && write(io, " & ")
-    write(io, "\\\\\n")
-    write(io, "\t\\hline\n")
+    if eltypes
+        write(io, "\t& ")
+        header = join(map(c -> latex_escape(string(compacttype(c))), eltype.(eachcol(df)[1:mxcol])), " & ")
+        write(io, header)
+        mxcol < size(df, 2) && write(io, " & ")
+        write(io, "\\\\\n")
+        write(io, "\t\\hline\n")
+    end
     for row in 1:mxrow
         write(io, "\t")
         write(io, @sprintf("%d", rowid === nothing ? row : rowid))
@@ -292,13 +294,13 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\\end{tabular}\n")
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; eltypes::Bool=true)
     r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), rowid=r, eltypes=eltypes)
 end
 
-Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows) = _show(io, mime, parent(dfrs))
-Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns) = _show(io, mime, parent(dfcs))
+Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows; eltypes::Bool=true) = _show(io, mime, parent(dfrs), eltypes=eltypes)
+Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns; eltypes::Bool=true) = _show(io, mime, parent(dfcs), eltypes=eltypes)
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
