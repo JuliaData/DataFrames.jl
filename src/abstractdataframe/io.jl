@@ -50,7 +50,7 @@ Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame;
           allcols::Bool = !get(io, :limit, false),
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
-          summary::Bool = true, 
+          summary::Bool = true,
           eltypes::Bool = true) =
     show(io, df, allrows=allrows, allcols=allcols,
          splitcols=splitcols, rowlabel=rowlabel, summary=summary, eltypes=eltypes)
