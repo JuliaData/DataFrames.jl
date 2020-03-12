@@ -733,7 +733,7 @@ end
 
     @test select(df, r"z") == DataFrame()
     @test select(df, r"z" => () -> x) == DataFrame(_function=x)
-    @test select(df, r"z" => () -> x)[!, 1] !== x
+    @test select(df, r"z" => () -> x)[!, 1] === x # no copy even for copycols=true
     @test_throws MethodError select(df, r"z" => x -> 1)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand))
 
@@ -811,6 +811,28 @@ end
     @test select(sdf, :x1, [:x1], copycols=false) isa SubDataFrame
     @test_throws ArgumentError select(sdf, :x1 => :r1, copycols=false)
     @test_throws ArgumentError select(sdf, :x1 => identity => :r1, copycols=false)
+end
+
+@testset "copycols special cases" begin
+    df = DataFrame(a=1:3, b=4:6)
+    c = [7, 8]
+    df2 = select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)
+    @test df2.c1 === df2.c2
+    df2 = select(df, :a => identity => :c1, :a => :c2)
+    @test df2.c1 !== df2.c2
+    df2 = select(df, :a => identity => :c1)
+    @test df2.c1 !== df.a
+    df2 = select(df, :a => (x -> df.b) => :c1)
+    @test df2.c1 === df.b
+    df2 = select(view(df, 1:2, :), :a => parent => :c1)
+    @test df2.c1 !== df.a
+    df2 = select(view(df, 1:2, :), :a => (x -> view(x, 1:1)) => :c1)
+    @test df2.c1 isa Vector
+    df2 = select(df, :a, :a => :b, :a => identity => :c, copycols=false)
+    @test df2.b === df2.c == df.a
+    a = df.a
+    select!(df, :a, :a => :b, :a => identity => :c)
+    @test df.b === df.c == a
 end
 
 end # module

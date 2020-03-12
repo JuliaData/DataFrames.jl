@@ -139,10 +139,10 @@ function select_transform!(nc:: Pair{<:Union{Int, AbstractVector{Int}},
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx, (fun, newname) = nc
     @assert !hasproperty(newdf, newname)
+    cdf = eachcol(df)
     if col_idx isa Int
         res = fun(df[!, col_idx])
     else
-        cdf = eachcol(df)
         res = fun((cdf[i] for i in col_idx)...)
     end
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
@@ -150,7 +150,8 @@ function select_transform!(nc:: Pair{<:Union{Int, AbstractVector{Int}},
                             "of type $(typeof(res)) is currently not allowed."))
     end
     if res isa AbstractVector
-        if copycols && !(first(fun isa ByRow))
+        if copycols && !(fun isa ByRow) && (res isa SubArray ||
+            any(i -> parent(res) === parent(cdf[i]), col_idx))
             newdf[!, newname] = copy(res)
         else
             newdf[!, newname] = res
@@ -203,8 +204,8 @@ selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
 `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
 Note that including the same column several times in the data frame via renaming
-when `copycols=false` will create column aliases. An example of such a situation is
-`select!(df, :a, :a => :b, :a => :c, copycols=false)`.
+or transformations that do not allocate will create column aliases.
+An example of such a situation is `select!(df, :a, :a => :b, :a => identity => :c)`.
 
 # Examples
 ```jldoctest
@@ -342,16 +343,33 @@ On the contrary, output column names of renaming, transformation and single colu
 selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
 `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
-If `df` is a `DataFrame` a new `DataFrame` is returned. If `copycols=true` (the default),
-then returned `DataFrame` is guaranteed not to share columns with `df`. If
-`copycols=false`, then returned `DataFrame` shares column vectors with `df` where possible.
+If `df` is a `DataFrame` a new `DataFrame` is returned.
+If `copycols=false`, then returned `DataFrame` shares column vectors with `df` where possible.
+If `copycols=true` (the default), then returned `DataFrame` will not share columns with `df`.
+The only exception for this rule is `old_column => fun => new_column_name` transformation
+when `fun` returns a vector that is not allocated by `fun` but at the same time it is neither
+a vector derived from a vector passed in `old_column` nor it is a `SubArray`.
+In such a case a new `DataFrame` might contain aliases. Such a situation might happen eg.
+in the following code
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> c = [7, 8, 9];
+
+julia> df2 = select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2);
+```
+Now `df2` contains columns `:c1` and `:c2` that are aliases although we have used
+`copycols=true` in `select` (which is a default).
+Although this is allowed, such style of usage of the `select` function is discouraged,
+normally `fun` in `old_column => fun => new_column_name` should allocate a fresh vector.
 
 If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
 and a `DataFrame` with freshly allocated columns otherwise.
 
-Note that including the same column several times in the data frame via renaming
-when `copycols=false` will create column aliases. An example of such a situation is
-`select(df, :a, :a => :b, :a => :c, copycols=false)`.
+Note that including the same column several times in the data frame via renaming or
+transformations that do not allocate when `copycols=false` will create column aliases.
+An example of such a situation is
+`select(df, :a, :a => :b, :a => identity => :c, copycols=false)`.
 
 # Examples
 ```jldoctest
