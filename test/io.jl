@@ -258,10 +258,56 @@ end
     │ 3   │ 3     │ z      │"""
 
     io = IOBuffer()
+    show(io, MIME("text/plain"), eachcol(df), eltypes=true)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrameColumns
+    │ Row │ A     │ B      │
+    │     │ Int32 │ String │
+    ├─────┼───────┼────────┤
+    │ 1   │ 1     │ x      │
+    │ 2   │ 2     │ y      │
+    │ 3   │ 3     │ z      │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/plain"), eachrow(df), eltypes=true)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrameRows
+    │ Row │ A     │ B      │
+    │     │ Int32 │ String │
+    ├─────┼───────┼────────┤
+    │ 1   │ 1     │ x      │
+    │ 2   │ 2     │ y      │
+    │ 3   │ 3     │ z      │"""
+
+    io = IOBuffer()
     show(io, MIME("text/plain"), df, eltypes=false)
     str = String(take!(io))
     @test str == """
     3×2 DataFrame
+    │ Row │ A │ B │
+    ├─────┼───┼───┤
+    │ 1   │ 1 │ x │
+    │ 2   │ 2 │ y │
+    │ 3   │ 3 │ z │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/plain"), eachcol(df), eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrameColumns
+    │ Row │ A │ B │
+    ├─────┼───┼───┤
+    │ 1   │ 1 │ x │
+    │ 2   │ 2 │ y │
+    │ 3   │ 3 │ z │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/plain"), eachrow(df), eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrameRows
     │ Row │ A │ B │
     ├─────┼───┼───┤
     │ 1   │ 1 │ x │
@@ -279,6 +325,24 @@ end
                  "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
 
     io = IOBuffer()
+    show(io, MIME("text/html"), eachcol(df), eltypes=true)
+    str = String(take!(io))
+    @test str == "<p>3×2 DataFrameColumns</p><table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>A</th><th>B</th></tr>" *
+                 "<tr><th></th><th>Int32</th><th>String</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME("text/html"), eachrow(df), eltypes=true)
+    str = String(take!(io))
+    @test str == "<p>3×2 DataFrameRows</p><table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>A</th><th>B</th></tr>" *
+                 "<tr><th></th><th>Int32</th><th>String</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+
+    io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=false)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
@@ -288,32 +352,50 @@ end
                  "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
 
     io = IOBuffer()
-    show(io, MIME("text/latex"), df, eltypes=true)
+    show(io, MIME("text/html"), eachcol(df), eltypes=false)
     str = String(take!(io))
-    @test str == """
-    \\begin{tabular}{r|cc}
-    \t& A & B\\\\
-    \t\\hline
-    \t& Int32 & String\\\\
-    \t\\hline
-    \t1 & 1 & x \\\\
-    \t2 & 2 & y \\\\
-    \t3 & 3 & z \\\\
-    \\end{tabular}
-    """
+    @test str == "<p>3×2 DataFrameColumns</p><table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>A</th><th>B</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
 
     io = IOBuffer()
-    show(io, MIME("text/latex"), df, eltypes=false)
+    show(io, MIME("text/html"), eachrow(df), eltypes=false)
     str = String(take!(io))
-    @test str == """
-    \\begin{tabular}{r|cc}
-    \t& A & B\\\\
-    \t\\hline
-    \t1 & 1 & x \\\\
-    \t2 & 2 & y \\\\
-    \t3 & 3 & z \\\\
-    \\end{tabular}
-    """
+    @test str == "<p>3×2 DataFrameRows</p><table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>A</th><th>B</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+
+    for x in [df, eachcol(df), eachrow(df)]
+        io = IOBuffer()
+        show(io, MIME("text/latex"), x, eltypes=true)
+        str = String(take!(io))
+        @test str == """
+        \\begin{tabular}{r|cc}
+        \t& A & B\\\\
+        \t\\hline
+        \t& Int32 & String\\\\
+        \t\\hline
+        \t1 & 1 & x \\\\
+        \t2 & 2 & y \\\\
+        \t3 & 3 & z \\\\
+        \\end{tabular}
+        """
+
+        io = IOBuffer()
+        show(io, MIME("text/latex"), x, eltypes=false)
+        str = String(take!(io))
+        @test str == """
+        \\begin{tabular}{r|cc}
+        \t& A & B\\\\
+        \t\\hline
+        \t1 & 1 & x \\\\
+        \t2 & 2 & y \\\\
+        \t3 & 3 & z \\\\
+        \\end{tabular}
+        """
+    end
 end
 
 end # module

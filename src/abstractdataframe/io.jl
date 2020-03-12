@@ -37,7 +37,8 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 ```
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
-Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, eltypes::Bool=true) =
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
+          summary::Bool=true, eltypes::Bool=true) =
     _show(io, mime, df, summary=summary, eltypes=eltypes)
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
     _show(io, mime, df, eltypes=eltypes)
@@ -78,7 +79,7 @@ function html_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               summary::Bool=true, rowid::Union{Int,Nothing}=nothing, eltypes::Bool=true)
+               summary::Bool=true, eltypes::Bool=true, rowid::Union{Int,Nothing}=nothing)
     _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
@@ -153,13 +154,15 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</table>")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true, eltypes::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
+                   summary::Bool=true, eltypes::Bool=true)
     r, c = parentindices(dfr)
     summary && write(io, "<p>DataFrameRow ($(length(dfr)) columns)</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=false, rowid=r, eltypes=eltypes)
+    _show(io, mime, view(parent(dfr), [r], c), summary=false, eltypes=eltypes, rowid=r)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; summary::Bool=true, eltypes::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows;
+                   summary::Bool=true, eltypes::Bool=true)
     df = parent(dfrs)
     summary && write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameRows</p>")
     _show(io, mime, df, summary=false, eltypes=eltypes)
@@ -230,7 +233,7 @@ function latex_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
-               rowid=nothing, eltypes::Bool=true)
+               eltypes::Bool=true, rowid=nothing)
     _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
@@ -298,7 +301,7 @@ end
 
 function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; eltypes::Bool=true)
     r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), rowid=r, eltypes=eltypes)
+    _show(io, mime, view(parent(dfr), [r], c), eltypes=eltypes, rowid=r)
 end
 
 Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows; eltypes::Bool=true) =
