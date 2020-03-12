@@ -461,8 +461,7 @@ end
 end
 
 @testset "wide type name" begin
-    df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-    df.A = map(x -> Int32(x), df[:A])
+    df = DataFrame(A = Int32.(1:3), B = ["x", "y", "z"])
 
     io = IOBuffer()
     show(io, df, eltypes=true)

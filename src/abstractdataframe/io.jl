@@ -229,7 +229,8 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing, eltypes=true)
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
+               rowid=nothing, eltypes::Bool=true)
     _check_consistency(df)
     if rowid !== nothing
         if size(df, 2) == 0
