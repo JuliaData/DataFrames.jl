@@ -242,4 +242,78 @@ end
     end
 end
 
+@testset "eltypes tests" begin
+    df = DataFrame(A = Int32.(1:3), B = ["x", "y", "z"])
+
+    io = IOBuffer()
+    show(io, MIME("text/plain"), df, eltypes=true)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrame
+    │ Row │ A     │ B      │
+    │     │ Int32 │ String │
+    ├─────┼───────┼────────┤
+    │ 1   │ 1     │ x      │
+    │ 2   │ 2     │ y      │
+    │ 3   │ 3     │ z      │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/plain"), df, eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrame
+    │ Row │ A │ B │
+    ├─────┼───┼───┤
+    │ 1   │ 1 │ x │
+    │ 2   │ 2 │ y │
+    │ 3   │ 3 │ z │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/html"), df, eltypes=true)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>A</th><th>B</th></tr>" *
+                 "<tr><th></th><th>Int32</th><th>String</th></tr></thead><tbody>" *
+                 "<p>3 rows × 2 columns</p>" *
+                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME("text/html"), df, eltypes=false)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>A</th><th>B</th></tr></thead><tbody>" *
+                 "<p>3 rows × 2 columns</p>" *
+                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME("text/latex"), df, eltypes=true)
+    str = String(take!(io))
+    @test str == """
+    \\begin{tabular}{r|cc}
+    \t& A & B\\\\
+    \t\\hline
+    \t& Int32 & String\\\\
+    \t\\hline
+    \t1 & 1 & x \\\\
+    \t2 & 2 & y \\\\
+    \t3 & 3 & z \\\\
+    \\end{tabular}
+    """
+
+    io = IOBuffer()
+    show(io, MIME("text/latex"), df, eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    \\begin{tabular}{r|cc}
+    \t& A & B\\\\
+    \t\\hline
+    \t1 & 1 & x \\\\
+    \t2 & 2 & y \\\\
+    \t3 & 3 & z \\\\
+    \\end{tabular}
+    """
+end
+
 end # module

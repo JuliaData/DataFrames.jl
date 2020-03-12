@@ -154,7 +154,8 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
-                      rowid=nothing) # -> Vector{Int}
+                      rowid=nothing,
+                      show_eltype::Bool=true) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
@@ -172,7 +173,11 @@ function getmaxwidths(df::AbstractDataFrame,
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
-        maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col))))
+        if show_eltype
+            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col))))
+        else
+            maxwidths[j] = maxwidth
+        end
         j += 1
     end
 
@@ -395,6 +400,7 @@ end
              allcols::Bool = false,
              rowlabel::Symbol = :Row,
              displaysummary::Bool = true,
+             eltypes::Bool = true,
              rowid=nothing)
 
 Render a subset of rows (possibly in chunks) of an `AbstractDataFrame` to an
@@ -422,6 +428,8 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `displaysummary::Bool`: Should a brief string summary of the
   AbstractDataFrame be rendered to the I/O stream before printing the
   contents of the renderable rows? Defaults to `true`.
+- `eltypes::Bool = true`: Whether to print the column type
+   under the column name in the heading. Defaults to `true`.
 - `rowid = nothing`: Used to handle showing `DataFrameRow`
 
 # Examples
@@ -449,6 +457,7 @@ function showrows(io::IO,
                   allcols::Bool = false,
                   rowlabel::Symbol = :Row,
                   displaysummary::Bool = true,
+                  eltypes::Bool = true,
                   rowid=nothing) # -> Void
     ncols = size(df, 2)
 
@@ -495,23 +504,25 @@ function showrows(io::IO,
         end
 
         # Print column types
-        print(io, "│ ")
-        padding = rowmaxwidth
-        for itr in 1:padding
-            write(io, ' ')
-        end
-        print(io, " │ ")
-        for j in leftcol:rightcol
-            s = compacttype(eltype(df[!, j]), maxwidths[j], false)
-            printstyled(io, s, color=:light_black)
-            padding = maxwidths[j] - ourstrwidth(io, s)
+        if eltypes
+            print(io, "│ ")
+            padding = rowmaxwidth
             for itr in 1:padding
                 write(io, ' ')
             end
-            if j == rightcol
-                print(io, " │\n")
-            else
-                print(io, " │ ")
+            print(io, " │ ")
+            for j in leftcol:rightcol
+                s = compacttype(eltype(df[!, j]), maxwidths[j], false)
+                printstyled(io, s, color=:light_black)
+                padding = maxwidths[j] - ourstrwidth(io, s)
+                for itr in 1:padding
+                    write(io, ' ')
+                end
+                if j == rightcol
+                    print(io, " │\n")
+                else
+                    print(io, " │ ")
+                end
             end
         end
 
@@ -569,6 +580,7 @@ function _show(io::IO,
                splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
+               eltypes::Bool = true,
                rowid=nothing)
     _check_consistency(df)
     nrows = size(df, 1)
@@ -590,7 +602,7 @@ function _show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid)
+    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid, eltypes)
     width = getprintedwidth(maxwidths)
     showrows(io,
              df,
@@ -601,6 +613,7 @@ function _show(io::IO,
              allcols,
              rowlabel,
              summary,
+             eltypes,
              rowid)
     return
 end
@@ -639,6 +652,7 @@ while `splitcols` defaults to `true`.
   By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
+- `eltypes::Bool = true`: Whether to print the column types under column names.
 
 # Examples
 ```jldoctest
@@ -662,16 +676,18 @@ Base.show(io::IO,
           allcols::Bool = !get(io, :limit, false),
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          eltypes::Bool = true) =
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary)
+          rowlabel=rowlabel, summary=summary, eltypes=eltypes)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          eltypes::Bool = true) =
     show(stdout, df,
          allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
