@@ -467,6 +467,36 @@ end
         \"b\"\t\"c\"
         \"b\"\t0
         """
+
+    io = IOBuffer()
+    show(io, dfr, eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    DataFrameRow
+    │ Row │ b │ c │
+    ├─────┼───┼───┤
+    │ 2   │ b │ 0 │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/plain"), dfr, eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    DataFrameRow
+    │ Row │ b │ c │
+    ├─────┼───┼───┤
+    │ 2   │ b │ 0 │"""
+
+    io = IOBuffer()
+    show(io, MIME("text/html"), dfr, eltypes=false)
+    str = String(take!(io))
+    @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
+                 "<thead><tr><th></th><th>b</th><th>c</th></tr></thead>" *
+                 "<tbody><tr><th>2</th><td>b</td><td>0</td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME("text/latex"), dfr, eltypes=false)
+    str = String(take!(io))
+    @test str == "\\begin{tabular}{r|cc}\n\t& b & c\\\\\n\t\\hline\n\t2 & b & 0 \\\\\n\\end{tabular}\n"
 end
 
 @testset "check Vector type" begin

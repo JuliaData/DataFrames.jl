@@ -242,11 +242,12 @@ function Base.show(io::IO, dfrs::DataFrameRows;
                    allcols::Bool = !get(io, :limit, false),
                    splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
-                   summary::Bool = true)
+                   summary::Bool = true,
+                   eltypes::Bool = true)
     df = parent(dfrs)
     summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameRows")
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false)
+          rowlabel=rowlabel, summary=false, eltypes=eltypes)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
@@ -254,29 +255,32 @@ Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
           allcols::Bool = !get(io, :limit, false),
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          eltypes::Bool = true) =
     show(io, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
 
 Base.show(dfrs::DataFrameRows;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          eltypes::Bool = true) =
     show(stdout, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
 
 function Base.show(io::IO, dfcs::DataFrameColumns;
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
                    splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
-                   summary::Bool = true)
+                   summary::Bool = true,
+                   eltypes::Bool = true)
     df = parent(dfcs)
     summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns")
     _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false)
+          rowlabel=rowlabel, summary=false, eltypes=eltypes)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
@@ -284,15 +288,17 @@ Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
           allcols::Bool = !get(io, :limit, false),
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          eltypes::Bool = true) =
     show(io, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
 
 Base.show(dfcs::DataFrameColumns;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          eltypes::Bool = true) =
     show(stdout, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes)

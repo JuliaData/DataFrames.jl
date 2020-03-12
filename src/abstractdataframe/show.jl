@@ -1,4 +1,4 @@
-Base.summary(df::AbstractDataFrame) = # -> String
+Base.summary(df::AbstractDataFrame)::String =
     @sprintf("%d×%d %s", size(df)..., typeof(df).name)
 Base.summary(io::IO, df::AbstractDataFrame) = print(io, summary(df))
 
@@ -11,7 +11,7 @@ let
 
     Determine the number of characters that would be used to print a value.
     """
-    function ourstrwidth(io::IO, x::Any) # -> Int
+    function ourstrwidth(io::IO, x::Any)::Int
         truncate(buffer, 0)
         ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
         textwidth(String(take!(buffer)))
@@ -110,7 +110,9 @@ end
                             io::IO,
                             rowindices1::AbstractVector{Int},
                             rowindices2::AbstractVector{Int},
-                            rowlabel::Symbol)
+                            rowlabel::Symbol,
+                            rowid=nothing,
+                            show_eltype::Bool=true)
 
 Calculate, for each column of an AbstractDataFrame, the maximum
 string width used to render the name of that column, its type, and the
@@ -135,6 +137,9 @@ implicit row ID column contained in every `AbstractDataFrame`.
   ellipses.
 - `rowlabel::AbstractString`: The label that will be used when rendered the
   numeric ID's of each row. Typically, this will be set to "Row".
+- `rowid`: Used to handle showing `DataFrameRow`.
+- `show_eltype`: Whether to print the column type
+   under the column name in the heading. Defaults to `true`.
 
 # Examples
 ```jldoctest
@@ -155,7 +160,7 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
                       rowid=nothing,
-                      show_eltype::Bool=true) # -> Vector{Int}
+                      show_eltype::Bool=true)::Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
@@ -222,7 +227,7 @@ julia> DataFrames.getprintedwidth(maxwidths)
 15
 ```
 """
-function getprintedwidth(maxwidths::Vector{Int}) # -> Int
+function getprintedwidth(maxwidths::Vector{Int})::Int
     # Include length of line-initial |
     totalwidth = 1
     for i in 1:length(maxwidths)
@@ -275,7 +280,7 @@ julia> DataFrames.getchunkbounds(maxwidths, true, displaysize()[2])
 """
 function getchunkbounds(maxwidths::Vector{Int},
                         splitcols::Bool,
-                        availablewidth::Int) # -> Vector{Int}
+                        availablewidth::Int)::Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
     if splitcols
@@ -340,7 +345,7 @@ function showrowindices(io::IO,
                         maxwidths::Vector{Int},
                         leftcol::Int,
                         rightcol::Int,
-                        rowid) # -> Void
+                        rowid)::Nothing
     rowmaxwidth = maxwidths[end]
 
     for i in rowindices
@@ -458,7 +463,7 @@ function showrows(io::IO,
                   rowlabel::Symbol = :Row,
                   displaysummary::Bool = true,
                   eltypes::Bool = true,
-                  rowid=nothing) # -> Void
+                  rowid=nothing)::Nothing
     ncols = size(df, 2)
 
     if isempty(rowindices1)
