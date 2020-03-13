@@ -2217,4 +2217,128 @@ end
     global_logger(old_logger)
 end
 
+@testset "push!(df, row) with :union" begin
+    df = DataFrame()
+    push!(df, (a=1, b=2))
+    a = df.a
+    push!(df, (a=1, c=2), cols=:union)
+    @test df ≅ DataFrame(a=[1,1], b=[2, missing], c=[missing, 2])
+    @test df.a === a
+    @test eltype(df.a) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, (a=1, c=2), cols=:union)
+    @test df == DataFrame(a=[1], c=[2])
+    @test eltype(df.a) === Int
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, (c=2,), cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[2])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, (c=missing,), cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[missing])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Missing
+
+    push!(df, (c="a", d=1), cols=:union)
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    push!(df, (a="b",), cols=:union)
+    @test df ≅ DataFrame(a=[missing, missing, "b"],
+                         c=[missing, "a", missing],
+                         d=[missing, 1, missing])
+    @test eltype(df.a) === Any
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    a = [1]
+    df = DataFrame!(a=a)
+    push!(df, (a=1,), cols=:union)
+    @test df.a === a
+    push!(df, (a=1.0,), cols=:union)
+    @test df.a !== a
+    @test eltype(df.a) === Float64
+
+    x = [1]
+    df = DataFrame!(a=x, b=x)
+    @test_throws AssertionError push!(df, (a=1, b=2, c=3), cols=:union)
+    @test df == DataFrame!(a=x, b=x)
+    @test df.a === df.b === x
+
+    # note that this is correct although we have a problem with aliasing
+    # as we eventually reallocate column :b to a correct length
+    # and aliasing does not affect rows that already existed in df
+    push!(df, (a=1, b=2.0, c=3), cols=:union)
+    @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
+    @test df.a === x
+    @test eltype(df.b) === Float64
+
+    df = DataFrame()
+    push!(df, DataFrame(a=1, b=2)[1, :])
+    a = df.a
+    push!(df, DataFrame(a=1, c=2)[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[1,1], b=[2, missing], c=[missing, 2])
+    @test df.a === a
+    @test eltype(df.a) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, DataFrame(a=1, c=2)[1, :], cols=:union)
+    @test df == DataFrame(a=[1], c=[2])
+    @test eltype(df.a) === Int
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, DataFrame(c=2)[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[2])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, DataFrame(c=missing)[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[missing])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Missing
+
+    push!(df, DataFrame(c="a", d=1)[1, :], cols=:union)
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    push!(df, DataFrame(a="b")[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[missing, missing, "b"],
+                         c=[missing, "a", missing],
+                         d=[missing, 1, missing])
+    @test eltype(df.a) === Any
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    a = [1]
+    df = DataFrame!(a=a)
+    push!(df, DataFrame(a=1)[1, :], cols=:union)
+    @test df.a === a
+    push!(df, DataFrame(a=1.0)[1, :], cols=:union)
+    @test df.a !== a
+    @test eltype(df.a) === Float64
+
+    x = [1]
+    df = DataFrame!(a=x, b=x)
+    @test_throws AssertionError push!(df, DataFrame(a=1, b=2, c=3)[1, :], cols=:union)
+    @test df == DataFrame!(a=x, b=x)
+    @test df.a === df.b === x
+
+    # note that this is correct although we have a problem with aliasing
+    # as we eventually reallocate column :b to a correct length
+    # and aliasing does not affect rows that already existed in df
+    push!(df, DataFrame(a=1, b=2.0, c=3)[1, :], cols=:union)
+    @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
+    @test df.a === x
+    @test eltype(df.b) === Float64
+end
+
 end # module
