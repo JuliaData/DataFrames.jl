@@ -343,12 +343,32 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead.", :push!)
     end
 
-    possible_cols = (:orderequal, :setequal, :intersect, :subset)
+    possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
+
     nrows, ncols = size(df)
     targetrows = nrows + 1
+
+    if parent(dfr) === df && index(dfr) isa Index
+        # in this case we are sure that all we do is safe
+        r = row(dfr)
+        for col in _columns(df)
+            # use a barrier function to improve performance
+            pushhelper!(col, r)
+        end
+        for (colname, col) in zip(_names(df), _columns(df))
+            if length(col) != targetrows
+                for col2 in _columns(df)
+                    resize!(col2, nrows)
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
+        end
+        return df
+    end
+
     if ncols == 0
         for (n, v) in pairs(dfr)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
@@ -356,44 +376,74 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
         return df
     end
 
+    if cols == :union
+        for (i, colname) in enumerate(_names(df))
+            col = _columns(df)[i]
+            if haskey(dfr, colname)
+                val = dfr[colname]
+            else
+                val = missing
+            end
+            S = typeof(val)
+            T = eltype(col)
+            V = promote_type(S, T)
+            if S <: T || V <: T
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(V, targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
+        end
+        for (colname, col) in zip(_names(df), _columns(df))
+            if length(col) != targetrows
+                for col2 in _columns(df)
+                    resize!(col2, nrows)
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
+        end
+        for colname in setdiff(keys(dfr), _names(df))
+            val = dfr[colname]
+            S = typeof(val)
+            if nrows == 0
+                newcol = [val]
+            else
+                newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
+                fill!(newcol, missing)
+                newcol[end] = val
+            end
+            df[!, colname] = newcol
+        end
+        return df
+    end
+
     current_col = 0
     try
-        if parent(dfr) === df && index(dfr) isa Index
-            # in this case we are sure that all we do is safe
-            r = row(dfr)
-            for col in _columns(df)
-                # use a barrier function to improve performance
-                pushhelper!(col, r)
+        if cols === :orderequal
+            if _names(df) != _names(dfr)
+                msg = "when `cols=:orderequal` pushed row must have the same column " *
+                      "names and in the same order as the target data frame"
+                throw(ArgumentError(msg))
             end
-        else
-            # DataFrameRow can contain duplicate columns and we disallow this
-            # corner case when push!-ing
-            # Only check for equal lengths, as an error will be thrown below if some names don't match
-            if cols === :orderequal
-                if _names(df) != _names(dfr)
-                    msg = "when `cols=:equal` pushed row must have the same column " *
-                          "names and in the same order as the target data frame"
-                    throw(ArgumentError(msg))
-                end
-            elseif cols === :setequal || cols === :equal
-                if cols === :equal
-                    Base.depwarn("`cols=:equal` is deprecated." *
-                                 "Use `:setequal` instead.", :push!)
-                end
-                msg = "Number of columns of `DataFrameRow` does not match that of " *
-                      "target data frame (got $(length(dfr)) and $ncols)."
-                ncols == length(dfr) || throw(ArgumentError(msg))
+        elseif cols === :setequal || cols === :equal
+            if cols === :equal
+                Base.depwarn("`cols=:equal` is deprecated." *
+                             "Use `:setequal` instead.", :push!)
             end
-
-            for (col, nm) in zip(_columns(df), _names(df))
-                current_col += 1
-                if cols === :subset
-                    val = get(dfr, nm, missing)
-                else
-                    val = dfr[nm]
-                end
-                push!(col, val)
+            msg = "Number of columns of `DataFrameRow` does not match that of " *
+                  "target data frame (got $(length(dfr)) and $ncols)."
+            ncols == length(dfr) || throw(ArgumentError(msg))
+        end
+        for (col, nm) in zip(_columns(df), _names(df))
+            current_col += 1
+            if cols === :subset
+                val = get(dfr, nm, missing)
+            else
+                val = dfr[nm]
             end
+            push!(col, val)
         end
         for col in _columns(df)
             @assert length(col) == targetrows
@@ -407,5 +457,5 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
         end
         rethrow(err)
     end
-    df
+    return df
 end

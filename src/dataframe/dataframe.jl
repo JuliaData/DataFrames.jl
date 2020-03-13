@@ -1309,25 +1309,74 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
     end
-    possible_cols = (:orderequal, :setequal, :intersect, :subset)
+    possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
+
     nrows, ncols = size(df)
     targetrows = nrows + 1
+
     if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
+
+    if cols == :union
+        if !all(x -> x isa Symbol, keys(row))
+            throw(ArgumentError("when `cols=:union all keys of row must be Symbol"))
+        end
+        for (i, colname) in enumerate(_names(df))
+            col = _columns(df)[i]
+            if haskey(row, colname)
+                val = row[colname]
+            else
+                val = missing
+            end
+            S = typeof(val)
+            T = eltype(col)
+            V = promote_type(S, T)
+            if S <: T || V <: T
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(V, targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
+        end
+        for (colname, col) in zip(_names(df), _columns(df))
+            if length(col) != targetrows
+                for col2 in _columns(df)
+                    resize!(col2, nrows)
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
+        end
+        for colname in setdiff(keys(row), _names(df))
+            val = row[colname]
+            S = typeof(val)
+            if nrows == 0
+                newcol = [val]
+            else
+                newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
+                fill!(newcol, missing)
+                newcol[end] = val
+            end
+            df[!, colname] = newcol
+        end
+        return df
+    end
+
     if cols == :orderequal
         if row isa Dict
             throw(ArgumentError("passing `Dict` as `row` when `cols=:orderequal` " *
                                 "is not allowed as it is unordered"))
         elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
-            throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
-                                "the same column names and in the same order"))
+            throw(ArgumentError("when `cols=:orderequal` pushed row must have the same column " *
+                                "names and in the same order as the target data frame"))
         end
     elseif cols == :setequal || cols === :equal
         if cols == :equal
@@ -1365,7 +1414,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         @error "Error adding value to column :$(names(df)[current_col])."
         rethrow(err)
     end
-    df
+    return df
 end
 
 """
@@ -1397,6 +1446,11 @@ depends on the `cols` argument value in the following way:
   are used to populate a new row in `df`.
 * If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
   is missing in `row` then a `missing` value is pushed to `df`.
+* If `cols=:union` then `push!` adds columns missing in `df` that are present in `row`,
+  for columns present in `df` but missing in `row` a `missing` value is pushed,
+  and (as opposed to all other values of `cols` keyword argument) if eltype of a
+  column present in `df` does not allow the type of a pushed argument then a new column
+  with a promoted eltype allowing it is freshly allocated and stored in `df`
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
