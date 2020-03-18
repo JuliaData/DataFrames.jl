@@ -1,5 +1,3 @@
-stack_didnotwarn = true
-
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
           variable_name::Symbol=:variable, value_name::Symbol=:value,
@@ -57,11 +55,6 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
                id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
                value_name::Symbol=:value, view::Bool=false,
                variable_eltype::Type=CategoricalString)
-    if stack_didnotwarn
-        @warn "currently stack places id_vars as first columns in the returned " *
-              "data frame (they were last columns in the past)"
-        global stack_didnotwarn = false
-    end
     if view
         return _stackview(df, measure_vars, id_vars, variable_name=variable_name,
                           value_name=value_name, variable_eltype=variable_eltype)
