@@ -14,30 +14,37 @@ Random.seed!(1234)
 
     d = copy(df)
     select!(d, Not([:a, :e, :c]))
-    @test names(d) == [:b, :d]
+    @test d == DataFrame(b=2, d=4)
+    DataFrames._check_consistency(d)
     select!(d, Not(:b))
     @test d == DataFrame(d=4)
     DataFrames._check_consistency(d)
 
     d = copy(df)
     select!(d, Not(r"[aec]"))
-    @test names(d) == [:b, :d]
+    @test d == DataFrame(b=2, d=4)
+    DataFrames._check_consistency(d)
     select!(d, Not(r"b"))
     @test d == DataFrame(d=4)
+    DataFrames._check_consistency(d)
 
     d = copy(df)
     select!(d, Not([2, 5, 3]))
-    @test names(d) == [:a, :d]
+    @test d == DataFrame(a=1, d=4)
+    DataFrames._check_consistency(d)
     select!(d, Not(2))
     @test d == DataFrame(a=1)
+    DataFrames._check_consistency(d)
 
     d = copy(df)
     select!(d, Not(2:3))
     @test d == DataFrame(a=1, d=4, e=5)
+    DataFrames._check_consistency(d)
 
     d = copy(df)
     select!(d, Not([false, true, true, false, false]))
     @test d == DataFrame(a=1, d=4, e=5)
+    DataFrames._check_consistency(d)
 end
 
 @testset "select Not" begin
@@ -50,7 +57,6 @@ end
 
     df2 = copy(df)
     d = select(df, Not([:a, :e, :c]))
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d.b !== df.b
     @test d.d !== df.d
@@ -58,7 +64,6 @@ end
 
     df2 = copy(df)
     d = select(df, Not(r"[aec]"))
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d == df[:, r"[bd]"]
     @test d.b !== df.b
@@ -66,7 +71,6 @@ end
     @test df == df2
 
     d = select(df, Not([2, 5, 3]))
-    @test names(d) == [:a, :d]
     @test d.a !== df.a
     @test d.d !== df.d
     @test d == df[:, [:a, :d]]
@@ -93,14 +97,12 @@ end
     @test df == df2
 
     d = select(df, Not([:a, :e, :c]), copycols=false)
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d.b === df.b
     @test d.d === df.d
     @test df == df2
 
     d = select(df, Not(r"[aec]"), copycols=false)
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d == df[:, r"[bd]"]
     @test d.b === df.b
@@ -108,7 +110,6 @@ end
     @test df == df2
 
     d = select(df, Not([2, 5, 3]), copycols=false)
-    @test names(d) == [:a, :d]
     @test d.a === df.a
     @test d.d === df.d
     @test d == df[:, [:a, :d]]
@@ -145,7 +146,6 @@ end
     df2 = copy(df)
     d = select(df, Not([:a, :e, :c]))
     @test d isa DataFrame
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d.b !== df.b
     @test d.d !== df.d
@@ -154,7 +154,6 @@ end
     df2 = copy(df)
     d = select(df, Not(r"[aec]"))
     @test d isa DataFrame
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d == df[:, r"[bd]"]
     @test d.b !== df.b
@@ -163,7 +162,6 @@ end
 
     d = select(df, Not([2, 5, 3]))
     @test d isa DataFrame
-    @test names(d) == [:a, :d]
     @test d.a !== df.a
     @test d.d !== df.d
     @test d == df[:, [:a, :d]]
@@ -194,7 +192,6 @@ end
 
     d = select(df, Not([:a, :e, :c]), copycols=false)
     @test d isa SubDataFrame
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d.b === df.b
     @test d.d === df.d
@@ -202,7 +199,6 @@ end
 
     d = select(df, Not(r"[aec]"), copycols=false)
     @test d isa SubDataFrame
-    @test names(d) == [:b, :d]
     @test d == df[:, [:b, :d]]
     @test d == df[:, r"[bd]"]
     @test d.b === df.b
@@ -211,7 +207,6 @@ end
 
     d = select(df, Not([2, 5, 3]), copycols=false)
     @test d isa SubDataFrame
-    @test names(d) == [:a, :d]
     @test d.a === df.a
     @test d.d === df.d
     @test d == df[:, [:a, :d]]
@@ -732,13 +727,13 @@ end
     x = [1,2,3]
 
     @test select(df, r"z") == DataFrame()
-    @test select(df, r"z" => () -> x) == DataFrame(_function=x)
+    @test select(df, r"z" => () -> x) == DataFrame(:function => x)
     @test select(df, r"z" => () -> x)[!, 1] === x # no copy even for copycols=true
     @test_throws MethodError select(df, r"z" => x -> 1)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand))
 
     @test select(df, r"z", copycols=false) == DataFrame()
-    @test select(df, r"z" => () -> x, copycols=false) == DataFrame(_function=x)
+    @test select(df, r"z" => () -> x, copycols=false) == DataFrame(:function => x)
     @test select(df, r"z" => () -> x, copycols=false)[!, 1] === x
     @test_throws MethodError select(df, r"z" => x -> 1, copycols=false)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand), copycols=false)
@@ -747,7 +742,7 @@ end
     @test_throws ArgumentError select!(df, r"z" => ByRow(rand))
     @test_throws ErrorException select!(df, r"z" => () -> x, copycols=false)
     select!(df, r"z" => () -> x)
-    @test df == DataFrame(_function=x)
+    @test df == DataFrame(:function => x)
 end
 
 @testset "wrong selection patterns" begin
@@ -780,6 +775,11 @@ end
 
     select!(df, :x2, r"x", :x1, :)
     @test df == df_ref[:, [:x2, :x1, :x3, :x4]]
+
+    df = DataFrame(rand(10, 2))
+    @test select(df, [:x1, :x1] => -) == DataFrame(Symbol("x1_x1_-") => zeros(10))
+    select!(df, [:x1, :x1] => -)
+    @test df == DataFrame(Symbol("x1_x1_-") => zeros(10))
 end
 
 @testset "SubDataFrame selection" begin
@@ -829,10 +829,10 @@ end
     df2 = select(view(df, 1:2, :), :a => (x -> view(x, 1:1)) => :c1)
     @test df2.c1 isa Vector
     df2 = select(df, :a, :a => :b, :a => identity => :c, copycols=false)
-    @test df2.b === df2.c == df.a
+    @test df2.b === df2.c === df.a
     a = df.a
     select!(df, :a, :a => :b, :a => identity => :c)
-    @test df.b === df.c == a
+    @test df.b === df.c === a
 end
 
 end # module

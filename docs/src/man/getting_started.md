@@ -533,47 +533,53 @@ rename and transform columns in a data frame.
 
 The `select` function creates a new data frame:
 ```jldoctest dataframe
-julia> df = DataFrame(x1=1, x2=2, y=3)
-1×3 DataFrame
+julia> df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
+2×3 DataFrame
 │ Row │ x1    │ x2    │ y     │
 │     │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+│ 1   │ 1     │ 3     │ 5     │
+│ 2   │ 2     │ 4     │ 6     │
 
 julia> select(df, Not(:x1)) # drop column :x1 in a new data frame
-1×2 DataFrame
+2×2 DataFrame
 │ Row │ x2    │ y     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 2     │ 3     │
+│ 1   │ 3     │ 5     │
+│ 2   │ 4     │ 6     │
 
 julia> select(df, r"x") # select columns containing 'x' character
-1×2 DataFrame
+2×2 DataFrame
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │
+│ 1   │ 1     │ 3     │
+│ 2   │ 2     │ 4     │
 
 julia> select(df, :x1 => :a1, :x2 => :a2) # rename columns
-1×2 DataFrame
+2×2 DataFrame
 │ Row │ a1    │ a2    │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │
+│ 1   │ 1     │ 3     │
+│ 2   │ 2     │ 4     │
 
-julia> select(df, :x1, :x2 => (x -> 2x) => :x2) # transform columns
-1×2 DataFrame
+julia> select(df, :x1, :x2 => (x -> x .- minimum(x)) => :x2) # transform columns
+2×2 DataFrame
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 1     │
 
-julia> select(df, :x1, :x2 => ByRow(UInt8) => :x2) # transform columns by row
-1×2 DataFrame
-│ Row │ x1    │ x2    │
-│     │ Int64 │ UInt8 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0x02  │
+julia> select(df, :x2, :x2 => ByRow(sqrt)) # transform columns by row
+2×2 DataFrame
+│ Row │ x2    │ x2_sqrt │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 3     │ 1.73205 │
+│ 2   │ 4     │ 2.0     │
 ```
 
 It is important to note that `select` always returns a data frame,

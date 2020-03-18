@@ -115,6 +115,8 @@ function normalize_selection(idx::AbstractIndex,
     fun = last(sel)
     if length(c) > 3
         newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc_", funname(fun))
+    elseif isempty(c)
+        newcol = Symbol(funname(fun))
     else
         newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
     end
@@ -205,7 +207,7 @@ selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
 `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
 Note that including the same column several times in the data frame via renaming
-or transformations that return the same object with copying will create column aliases.
+or transformations that return the same object without copying will create column aliases.
 An example of such a situation is `select!(df, :a, :a => :b, :a => identity => :c)`.
 
 # Examples
@@ -246,7 +248,7 @@ julia> select!(df, :a => ByRow(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select!(df, :, [:c, :b] => x -> x.c + x.b .- sum(x.b) / length(x.b))
+julia> select!(df, :, [:c, :b] => (c,b) -> c .+ b .- sum(b)/length(b))
 3×3 DataFrame
 │ Row │ c        │ b     │ c_b_function │
 │     │ Float64  │ Int64 │ Float64      │
@@ -326,8 +328,8 @@ To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByR
 struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
 to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
 any column indexing syntax, in which case `fun` will be passed one argument for each of
-the columns specified by `old_column`. If `ByRow` is used it is not allowed that
-`old_column` selects an empty set of columns.
+the columns specified by `old_column`. If `ByRow` is used it is not allowed for
+`old_column` to select an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
 In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
@@ -359,8 +361,8 @@ If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false
 and a `DataFrame` with freshly allocated columns otherwise.
 
 Note that including the same column several times in the data frame via renaming or
-transformations that do not allocate when `copycols=false` will create column aliases.
-An example of such a situation is
+transformations that return the same object when `copycols=false` will create column
+aliases. An example of such a situation is
 `select(df, :a, :a => :b, :a => identity => :c, copycols=false)`.
 
 # Examples
@@ -392,7 +394,7 @@ julia> select(df, Not(:b)) # drop column :b from df
 │ 2   │ 2     │
 │ 3   │ 3     │
 
-julia> select(df, :a=>:c, :b)
+julia> select(df, :a => :c, :b)
 3×2 DataFrame
 │ Row │ c     │ b     │
 │     │ Int64 │ Int64 │
@@ -410,7 +412,7 @@ julia> select(df, :a => ByRow(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select(df, :, [:a, :b] => x -> x.a .+ x.b .- sum(x.b)/length(x.b))
+julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
 │ Row │ a     │ b     │ a_b_function │
 │     │ Int64 │ Int64 │ Float64      │
