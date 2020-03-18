@@ -134,7 +134,7 @@ end
     @test df == df2
 end
 
-@testset "select Not view" begin
+@testset "select Not on SubDataFrame" begin
     df = view(DataFrame(a=1, b=2, c=3, d=4, e=5), :, :)
     @test_throws BoundsError select(df, Not(0))
     @test_throws BoundsError select(df, Not(6))
@@ -396,7 +396,7 @@ end
     @test d.b === df.b
 end
 
-@testset "select view" begin
+@testset "select on SubDataFrame" begin
     df = view(DataFrame(a=1, b=2, c=3, d=4, e=5), :, :)
     @test_throws BoundsError select(df, 0)
     @test_throws BoundsError select(df, 6)
@@ -566,7 +566,7 @@ end
     @test select!(copy(df), [1, 3]) == df[:, [1, 3]]
 end
 
-@testset "select and select! with multiple columns passed" begin
+@testset "select and select! with multiple selectors passed" begin
     df = DataFrame(rand(10, 4))
     @test select(df, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
     @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)

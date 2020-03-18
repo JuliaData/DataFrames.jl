@@ -133,8 +133,8 @@ function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
     transformed_cols[newname] = nothing
 end
 
-function select_transform!(nc:: Pair{<:Union{Int, AbstractVector{Int}},
-                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
+function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
+                                    <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx, (fun, newname) = nc
@@ -150,8 +150,9 @@ function select_transform!(nc:: Pair{<:Union{Int, AbstractVector{Int}},
                             "of type $(typeof(res)) is currently not allowed."))
     end
     if res isa AbstractVector
-        if copycols && !(fun isa ByRow) && (res isa SubArray ||
-            any(i -> parent(res) === parent(cdf[i]), col_idx))
+        respar = parent(res)
+        if copycols && !(fun isa ByRow) &&
+            (res isa SubArray || any(i -> respar === parent(cdf[i]), col_idx))
             newdf[!, newname] = copy(res)
         else
             newdf[!, newname] = res
@@ -185,8 +186,8 @@ To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByR
 struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
 to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
 any column indexing syntax, in which case `fun` will be passed one argument for each of
-the columns specified by `old_column`. If `ByRow` is used it is not allowed that
-`old_column` selects an empty set of columns.
+the columns specified by `old_column`. If `ByRow` is used it is not allowed for
+`old_column` to select an empty set of columns.
 
 Column transformation can also be specified using the short `old_column => fun` form.
 In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
@@ -204,7 +205,7 @@ selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
 `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
 Note that including the same column several times in the data frame via renaming
-or transformations that do not allocate will create column aliases.
+or transformations that return the same object with copying will create column aliases.
 An example of such a situation is `select!(df, :a, :a => :b, :a => identity => :c)`.
 
 # Examples
@@ -344,24 +345,15 @@ selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
 `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
 If `df` is a `DataFrame` a new `DataFrame` is returned.
-If `copycols=false`, then returned `DataFrame` shares column vectors with `df` where possible.
-If `copycols=true` (the default), then returned `DataFrame` will not share columns with `df`.
-The only exception for this rule is `old_column => fun => new_column_name` transformation
-when `fun` returns a vector that is not allocated by `fun` but at the same time it is neither
-a vector derived from a vector passed in `old_column` nor it is a `SubArray`.
-In such a case a new `DataFrame` might contain aliases. Such a situation might happen eg.
-in the following code
-```jldoctest
-julia> df = DataFrame(a=1:3, b=4:6);
-
-julia> c = [7, 8, 9];
-
-julia> df2 = select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2);
-```
-Now `df2` contains columns `:c1` and `:c2` that are aliases although we have used
-`copycols=true` in `select` (which is a default).
-Although this is allowed, such style of usage of the `select` function is discouraged,
-normally `fun` in `old_column => fun => new_column_name` should allocate a fresh vector.
+If `copycols=false`, then the returned `DataFrame` shares column vectors with `df` where possible.
+If `copycols=true` (the default), then the returned `DataFrame` will not share columns with `df`.
+The only exception for this rule is the `old_column => fun => new_column` transformation
+when `fun` returns a vector that is not allocated by `fun` but is neither a `SubArray` nor one
+of the input vectors.
+In such a case a new `DataFrame` might contain aliases. Such a situation can only happen
+with transformations which returns vectors other than their inputs, e.g. with
+`select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)`  when `c` is a vector object
+or with `select(df, :a => (x -> df.c) => :c2)`.
 
 If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
 and a `DataFrame` with freshly allocated columns otherwise.
@@ -418,7 +410,7 @@ julia> select(df, :a => ByRow(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select(df, :, [:a, :b] => x -> x.a + x.b .- sum(x.b) / length(x.b))
+julia> select(df, :, [:a, :b] => x -> x.a .+ x.b .- sum(x.b)/length(x.b))
 3×3 DataFrame
 │ Row │ a     │ b     │ a_b_function │
 │     │ Int64 │ Int64 │ Float64      │
