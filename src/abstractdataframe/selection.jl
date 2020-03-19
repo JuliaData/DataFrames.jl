@@ -1,5 +1,4 @@
 # TODO:
-# * add transform and transfom! functions
 # * add NT (or better name) to column selector passing NamedTuple
 #   (also in other places: filter, combine)
 # * add select/select!/transform/transform! for GroupedDataFrame
@@ -303,6 +302,16 @@ function select!(df::DataFrame, cs...)
 end
 
 """
+    transform!(df::DataFrame, inds...)
+
+Mutate `df` in place to add columns specified by `inds...` and return it.
+Equivalent to `select!(df, :, inds...)`.
+
+See [`select!`](@ref) for a detailed rules how the transformation is applied
+"""
+transform!(df::DataFrame, inds...) = select!(df, :, inds...)
+
+"""
     select(df::AbstractDataFrame, inds...; copycols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `inds` and return it.
@@ -555,6 +564,18 @@ function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
                 push!(newinds, newind)
             end
         end
-        return view(dfv, :, All(newinds...))
+        return view(dfv, :, isempty(newinds) ? [] : All(newinds...))
     end
 end
+
+"""
+    transform(df::AbstractDataFrame, inds...; copycols::Bool=true)
+
+Create a new data frame that contains columns from `df` and adds columns
+specified by `inds` and return it.
+Equivalent to `select(df, :, inds..., copycols=copycols)`.
+
+See [`select!`](@ref) for a detailed rules how the transformation is applied
+"""
+transform(df::AbstractDataFrame, inds...; copycols::Bool=true) =
+    select(df, :, inds..., copycols=copycols)

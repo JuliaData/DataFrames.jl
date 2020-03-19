@@ -475,6 +475,8 @@ end
     @test view(sdf, Not(Int[]), :) == df[2:4, 2:4]
     @test view(sdf, Not(Int[]), r"") == df[2:4, 2:4]
     @test view(sdf, Not(Int[]), Not(1:0)) == df[2:4, 2:4]
+
+    @test ncol(view(sdf, 1:2, [])) == 0
 end
 
 @testset "getindex DataFrameRow" begin
