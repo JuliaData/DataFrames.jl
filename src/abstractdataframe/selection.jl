@@ -357,8 +357,10 @@ with transformations which returns vectors other than their inputs, e.g. with
 `select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)`  when `c` is a vector object
 or with `select(df, :a => (x -> df.c) => :c2)`.
 
-If `df` is a `SubDataFrame` then a `SubDataFrame` is returned if `copycols=false`
-and a `DataFrame` with freshly allocated columns otherwise.
+If `df` is a `SubDataFrame` and `copycols=true` then a `DataFrame` is returned and
+the same copying rules apply as for a `DataFrame` input:
+this means in particular that selected columns will be copied.
+If `copycols=false`, a `SubDataFrame` is returned without copying columns.
 
 Note that including the same column several times in the data frame via renaming or
 transformations that return the same object when `copycols=false` will create column
