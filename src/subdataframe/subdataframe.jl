@@ -173,10 +173,3 @@ function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
 end
 
 Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)
-
-select(dfv::SubDataFrame, inds; copycols::Bool=true) =
-    copycols ? dfv[:, inds] : view(dfv, :, inds)
-select(dfv::SubDataFrame, inds::ColumnIndex; copycols::Bool=true) =
-    select(dfv, [inds], copycols=copycols)
-select(dfv::SubDataFrame, ind, inds...; copycols::Bool=true) =
-    select(dfv, All(ind, inds...), copycols=copycols)

@@ -1264,11 +1264,6 @@ function aggregate(d::AbstractDataFrame, cols, fs::Any;
     aggregate(groupby(d, cols, sort=sort, skipmissing=skipmissing), fs)
 end
 
-function funname(f)
-    n = nameof(f)
-    String(n)[1] == '#' ? :function : n
-end
-
 _makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
     [Symbol(colname, '_', funname(f)) for f in fs for colname in cn]
 
