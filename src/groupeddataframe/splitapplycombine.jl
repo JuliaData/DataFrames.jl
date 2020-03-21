@@ -478,6 +478,14 @@ wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
 
+wrap_table(x::DataFrameRow) =
+    throw(ArgumentError("return value must not change its kind " *
+                        "(single row or variable number of rows) across groups"))
+wrap_table(x::Union{AbstractDataFrame, NamedTuple}) = x
+wrap_table(x::AbstractMatrix) =
+    NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
+wrap_table(x::Any) = (x1=x,)
+
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
@@ -978,12 +986,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     end
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        rows = wrap(do_call(f, gdidx, starts, ends, gd, incols, i))
-        if !(rows isa Union{AbstractDataFrame,
-                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-            throw(ArgumentError("return value must not change its kind " *
-                                "(single row or variable number of rows) across groups"))
-        end
+        rows = wrap_table(do_call(f, gdidx, starts, ends, gd, incols, i))
         _ncol(rows) == 0 && continue
         if isempty(colnames)
             newcolnames = tuple(propertynames(rows)...)
