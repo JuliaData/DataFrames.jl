@@ -266,7 +266,7 @@ Last Group: 1 row
 
 See [`by`](@ref) for more examples.
 """
-function Base.map(f::Any, gd::GroupedDataFrame)
+function Base.map(f::Function, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         keys = _names(gd.parent)[gd.cols]
@@ -414,10 +414,45 @@ julia> combine(df -> sum(df.c), gd) # Slower variant
 
 See [`by`](@ref) for more examples.
 """
-function combine(f::Any, gd::GroupedDataFrame)
+combine(f::Function, gd::GroupedDataFrame; keepkeys::Bool=true) =
+    combine_helper(f, gd, keepkeys=keepkeys)
+combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
+    combine_helper(f, gd, keepkeys=keepkeys)
+
+function DataFrames.combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
+    if any(x -> first(x) isa Tuple, cs)
+        Base.depwarn("passing a Tuple as column selector is deprecated, use " *
+                     "an AbstractVector instead", :combine)
+        cs = collect(cs)
+        for (i, v) in enumerate(cs)
+            if first(v) isa Tuple
+                cs[i] = collect(first(v)) => last(v)
+            end
+        end
+    end
+    cs_norm = [normalize_selection(index(parent(gd)), c) for c in cs]
+    inverse_cs_norm = [to => (from =>fun) for (from, (fun, to)) in cs_norm]
+    @assert !isempty(inverse_cs_norm)
+    nt_cs = (; inverse_cs_norm...)
+    return combine_helper(nt_cs, gd, keepkeys=keepkeys)
+end
+
+function combine(gd::GroupedDataFrame; f...)
+    if length(f) == 0
+        throw(ArgumentError("combine(gd) is not allowed, use DataFrame(gd) " *
+                            "to combine a GroupedDataFrame into a DataFrame"))
+    else
+        Base.depwarn("combine(gd; f...) is deprecated, use " *
+                     "source_cols => fun => :target_col syntax instead", :combine)
+        combine_helper(values(f), gd, keepkeys=true)
+    end
+end
+
+function combine_helper(@nospecialize(f), gd::GroupedDataFrame; keepkeys::Bool=true)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
-        keys = _names(gd.parent)[gd.cols]
+        keepkeys || return valscat
+        keys = groupvars(gd)
         for key in keys
             if hasproperty(valscat, key) &&
                !isequal(valscat[!, key], view(gd.parent[!, key], idx))
@@ -428,19 +463,7 @@ function combine(f::Any, gd::GroupedDataFrame)
         return hcat!(gd.parent[idx, gd.cols],
                      without(valscat, intersect(keys, _names(valscat))))
     else
-        return gd.parent[1:0, gd.cols]
-    end
-end
-combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
-combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
-combine(gd::GroupedDataFrame, f::Pair) = combine(f, gd)
-
-function combine(gd::GroupedDataFrame; f...)
-    if length(f) == 0
-        Base.depwarn("combine(gd) is deprecated, use DataFrame(gd) instead", :combine)
-        combine(identity, gd)
-    else
-        combine(values(f), gd)
+        return keepkeys ? gd.parent[1:0, gd.cols] : DataFrame()
     end
 end
 
@@ -461,8 +484,9 @@ end
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
+    # we retain indcols as NamedTuple here to allow in the future not to auto-splat
     idx = idx[starts[i]:ends[i]]
-    f(map(c -> view(c, idx), incols))
+    f((view(c, idx) for c in incols)...)
 end
 do_call(f::Any, idx::AbstractVector{<:Integer},
         starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
@@ -725,10 +749,6 @@ function _combine(@nospecialize(f::NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}),
     idx, valscat
 end
 
-# Avoid recompilation of larger function for each length
-_combine(@nospecialize(f::Tuple{Vararg{Pair}}), gd::GroupedDataFrame) =
-    _combine(collect(f), gd)
-
 isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
 
 function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
@@ -752,7 +772,7 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
             if p isa Pair{<:ColumnIndex}
                 incols = gd.parent[!, first(p)]
             else
-                df = gd.parent[!, collect(first(p))]
+                df = gd.parent[!, first(p)]
                 incols = NamedTuple{Tuple(names(df))}(eachcol(df))
             end
             firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
@@ -766,42 +786,12 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
     if !all(x -> length(x) == length(outcols[1]), outcols)
         throw(ArgumentError("all functions must return values of the same length"))
     end
-    nams = [f[i] isa Pair{<:ColumnIndex} ?
-                Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
-                       '_', funname(last(f[i]))) :
-                Symbol('x', i)
-            for i in 1:length(f)]
-    valscat = DataFrame(collect(AbstractVector, outcols), nams, makeunique=true)
+    valscat = DataFrame(collect(AbstractVector, outcols))
     return idx, valscat
 end
 
-function _combine(f::Any, gd::GroupedDataFrame)
-    if f isa Pair{<:ColumnIndex}
-        incols = gd.parent[!, first(f)]
-        fun = last(f)
-    elseif f isa Pair
-        df = gd.parent[! , collect(first(f))]
-        incols = NamedTuple{Tuple(names(df))}(eachcol(df))
-        fun = last(f)
-    else
-        incols = nothing
-        fun = f
-    end
-    agg = check_aggregate(fun)
-    if agg isa AbstractAggregate && f isa Pair && first(f) isa ColumnIndex
-        idx = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx, 1:length(gd.groups), gd)
-        outcols = (agg(incols, gd),)
-        # nms is set below
-    else
-        firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-        idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols)
-    end
-    if f isa Pair && first(f) isa ColumnIndex &&
-        (agg isa AbstractAggregate ||
-         !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
-         nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
-    end
+function _combine(fun::Function, gd::GroupedDataFrame)
+    idx, outcols, nms = _combine_with_first(wrap(fun(gd[1])), fun, gd, nothing)
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
@@ -1166,21 +1156,21 @@ julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
 │ 4   │ 4     │ 1     │ 12    │
 ```
 """
-by(d::AbstractDataFrame, cols::Any, f::Any;
-   sort::Bool=false, skipmissing::Bool=false) =
-    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
-by(f::Any, d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false) =
-    by(d, cols, f, sort=sort, skipmissing=skipmissing)
-by(d::AbstractDataFrame, cols::Any, f::Pair;
-   sort::Bool=false, skipmissing::Bool=false) =
-    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+by(d::AbstractDataFrame, cols::Any, f::Function;
+   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
+    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
+            keepkeys=keepkeys)
+by(f::Function, d::AbstractDataFrame, cols::Any;
+   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
+    by(d, cols, f, sort=sort, skipmissing=skipmissing, keepkeys=keepkeys)
 by(d::AbstractDataFrame, cols::Any, f::Pair...;
-   sort::Bool=false, skipmissing::Bool=false) =
-    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing))
+   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
+            f..., keepkeys=keepkeys)
 by(d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false, f...) =
-    combine(values(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
+   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true, f...) =
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing);
+            keepkeys=keepkeys, f...)
 
 """
     aggregate(df::AbstractDataFrame, fs)
