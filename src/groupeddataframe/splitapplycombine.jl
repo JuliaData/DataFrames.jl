@@ -2,6 +2,8 @@
 # groupby(), map(), combine(), by(), aggregate() and related
 #
 
+@nospecialize
+
 """
     groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
@@ -448,7 +450,7 @@ function combine(gd::GroupedDataFrame; f...)
     end
 end
 
-function combine_helper(@nospecialize(f), gd::GroupedDataFrame; keepkeys::Bool=true)
+function combine_helper(f, gd::GroupedDataFrame; keepkeys::Bool=true)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         keepkeys || return valscat
@@ -467,6 +469,8 @@ function combine_helper(@nospecialize(f), gd::GroupedDataFrame; keepkeys::Bool=t
     end
 end
 
+@specialize
+
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
 wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
@@ -483,7 +487,7 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
 end
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
-                 gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
+                 gd::GroupedDataFrame, incols::Tuple, i::Integer)
     # we retain indcols as NamedTuple here to allow in the future not to auto-splat
     idx = idx[starts[i]:ends[i]]
     f((view(c, idx) for c in incols)...)
@@ -741,8 +745,10 @@ function do_f(f, x...)
     end
 end
 
+@nospecialize
+
 # Avoid recompilation of larger function for each set of names
-function _combine(@nospecialize(f::NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}),
+function _combine(f::NamedTuple{<:Any, <:Tuple{Vararg{Pair}}},
                   gd::GroupedDataFrame)
     idx, valscat = _combine(collect(f), gd)
     rename!(valscat, collect(Symbol, propertynames(f)))
@@ -761,25 +767,26 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
         # This can speed up some aggregates that would not trigger this on their own
         @assert gd.idx !== nothing
     end
-    res = map(f) do p
-        if isagg(p)
-            incol = gd.parent[!, first(p)]
-            agg = check_aggregate(last(p))
-            outcol = agg(incol, gd)
-            return idx_agg, outcol
-        else
-            fun = do_f(last(p))
-            if p isa Pair{<:ColumnIndex}
-                incols = gd.parent[!, first(p)]
-            else
-                df = gd.parent[!, first(p)]
-                incols = NamedTuple{Tuple(names(df))}(eachcol(df))
-            end
-            firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-            idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
-            return idx, outcols[1]
-        end
-    end
+    res = Vector{Any}(undef, length(f))
+    for (i, p) in enumerate(f)
+           if isagg(p)
+               incol = gd.parent[!, first(p)]
+               agg = check_aggregate(last(p))
+               outcol = agg(incol, gd)
+               res[i] = idx_agg, outcol
+           else
+               fun = do_f(last(p))
+               if p isa Pair{<:ColumnIndex}
+                   incols = gd.parent[!, first(p)]
+               else
+                   df = gd.parent[!, first(p)]
+                   incols = Tuple(eachcol(df))
+               end
+               firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
+               idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
+               res[i] = idx, outcols[1]
+           end
+      end
     # TODO: avoid recomputing idx for each pair when !all(isagg, f)
     idx = res[1][1]
     outcols = map(x -> x[2], res)
@@ -798,7 +805,7 @@ end
 
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
-                             incols::Union{Nothing, AbstractVector, NamedTuple})
+                             incols::Union{Nothing, AbstractVector, Tuple})
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -831,6 +838,8 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     end
     idx, outcols, collect(Symbol, finalcolnames)
 end
+
+@specialize
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
@@ -869,7 +878,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                    f::Any, gd::GroupedDataFrame,
-                                   incols::Union{Nothing, AbstractVector, NamedTuple},
+                                   incols::Union{Nothing, AbstractVector, Tuple},
                                    colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     gdidx = gd.idx
@@ -953,7 +962,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      outcols::NTuple{N, AbstractVector},
                                      idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                      f::Any, gd::GroupedDataFrame,
-                                     incols::Union{Nothing, AbstractVector, NamedTuple},
+                                     incols::Union{Nothing, AbstractVector, Tuple},
                                      colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     gdidx = gd.idx
@@ -1009,6 +1018,8 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     end
     return outcols, colnames
 end
+
+@nospecialize
 
 """
     by(df::AbstractDataFrame, keys, cols=>f...;
@@ -1171,6 +1182,8 @@ by(d::AbstractDataFrame, cols::Any;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true, f...) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing);
             keepkeys=keepkeys, f...)
+
+@specialize
 
 """
     aggregate(df::AbstractDataFrame, fs)
