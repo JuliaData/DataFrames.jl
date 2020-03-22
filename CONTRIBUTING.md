@@ -13,6 +13,7 @@ Thanks for taking the plunge!
 * Aim for atomic commits, if possible, e.g. `change 'foo' behavior like so` & `'bar' handles such and such corner case`, rather than `update 'foo' and 'bar'` & `fix typo` & `fix 'bar' better`
 * Pull requests are tested against release and development branches of Julia, so using `Pkg.test("DataFrames")` as you develop can be helpful
 * The style guidelines outlined below are not the personal style of most contributors, but for consistency throughout the project, we've adopted them
+* It is recommended to disable GitHub Actions on your fork; check Settings > Actions
 
 ## Style Guidelines
 
