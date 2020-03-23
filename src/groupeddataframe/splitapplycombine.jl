@@ -421,7 +421,7 @@ combine(f::Function, gd::GroupedDataFrame; keepkeys::Bool=true) =
 combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
     combine_helper(f, gd, keepkeys=keepkeys)
 
-function DataFrames.combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
+function combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
     if any(x -> first(x) isa Tuple, cs)
         x = cs[findfirst(x -> first(x) isa Tuple, cs)]
         Base.depwarn("passing a Tuple $(first(x)) as column selector is deprecated" *
@@ -445,8 +445,8 @@ function combine(gd::GroupedDataFrame; f...)
         throw(ArgumentError("combine(gd) is not allowed, use DataFrame(gd) " *
                             "to combine a GroupedDataFrame into a DataFrame"))
     else
-        Base.depwarn("combine(gd; f...) is deprecated, use " *
-                     "source_cols => fun => :target_col syntax instead", :combine)
+        Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated, use " *
+                     "`combine(gd, source_cols => fun => :target_col, ...)` instead", :combine)
         vf = values(f)
         combine_helper(collect(Pair, vf), gd, collect(keys(vf)), keepkeys=true)
     end
