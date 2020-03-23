@@ -199,7 +199,7 @@ and transformed using the `old_column => fun => new_column_name` syntax.
 is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
 Otherwise `old_column` can be any column indexing syntax, in which case `fun`
 will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then: it will be wrapped
+If `fun` returns a value of type other than `AbstractVector` then: it will be spread
 into a vector matching the target number of rows in the data frame
 (as a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
  are unwrapped and treated in the same way),
@@ -342,7 +342,7 @@ and transformed using the `old_column => fun => new_column_name` syntax.
 is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
 Otherwise `old_column` can be any column indexing syntax, in which case `fun`
 will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then: it will be wrapped
+If `fun` returns a value of type other than `AbstractVector` then: it will be spread
 into a vector matching the target number of rows in the data frame
 (as a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
  are unwrapped and treated in the same way),
