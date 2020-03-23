@@ -423,9 +423,10 @@ combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
 
 function DataFrames.combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
     if any(x -> first(x) isa Tuple, cs)
-        Base.depwarn("passing a Tuple as column selector is deprecated, use " *
-                     "an AbstractVector instead", :combine)
-        cs = collect(cs)
+        x = cs[findfirst(x -> first(x) isa Tuple, cs)]
+        Base.depwarn("passing a Tuple $(first(x)) as column selector is deprecated" *
+                     ", use a vector $(collect(first(x))) instead", :combine)
+        cs = collect(Any, cs)
         for (i, v) in enumerate(cs)
             if first(v) isa Tuple
                 cs[i] = collect(first(v)) => last(v)
@@ -433,10 +434,10 @@ function DataFrames.combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=tr
         end
     end
     cs_norm = [normalize_selection(index(parent(gd)), c) for c in cs]
-    inverse_cs_norm = [to => (from =>fun) for (from, (fun, to)) in cs_norm]
-    @assert !isempty(inverse_cs_norm)
-    nt_cs = (; inverse_cs_norm...)
-    return combine_helper(nt_cs, gd, keepkeys=keepkeys)
+    @assert !isempty(cs_norm)
+    f = Pair[first(x) => first(last(x)) for x in cs_norm]
+    nms = Symbol[last(last(x)) for x in cs_norm]
+    return combine_helper(f, gd, nms, keepkeys=keepkeys)
 end
 
 function combine(gd::GroupedDataFrame; f...)
@@ -446,13 +447,14 @@ function combine(gd::GroupedDataFrame; f...)
     else
         Base.depwarn("combine(gd; f...) is deprecated, use " *
                      "source_cols => fun => :target_col syntax instead", :combine)
-        combine_helper(values(f), gd, keepkeys=true)
+        vf = values(f)
+        combine_helper(collect(Pair, vf), gd, collect(keys(vf)), keepkeys=true)
     end
 end
 
-function combine_helper(f, gd::GroupedDataFrame; keepkeys::Bool=true)
+function combine_helper(f, gd::GroupedDataFrame, nms=nothing; keepkeys::Bool=true)
     if length(gd) > 0
-        idx, valscat = _combine(f, gd)
+        idx, valscat = isnothing(nms) ? _combine(f, gd) : _combine(f, gd, nms)
         keepkeys || return valscat
         keys = groupvars(gd)
         for key in keys
@@ -481,10 +483,7 @@ wrap(x::Any) = (x1=x,)
 wrap_table(x::DataFrameRow) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
-wrap_table(x::Union{AbstractDataFrame, NamedTuple}) = x
-wrap_table(x::AbstractMatrix) =
-    NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
-wrap_table(x::Any) = (x1=x,)
+wrap_table(x::Any) = wrap(x)
 
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
 function do_call(f::Any, idx::AbstractVector{<:Integer},
@@ -496,7 +495,6 @@ end
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
-    # we retain indcols as NamedTuple here to allow in the future not to auto-splat
     idx = idx[starts[i]:ends[i]]
     f((view(c, idx) for c in incols)...)
 end
@@ -755,17 +753,9 @@ end
 
 @nospecialize
 
-# Avoid recompilation of larger function for each set of names
-function _combine(f::NamedTuple{<:Any, <:Tuple{Vararg{Pair}}},
-                  gd::GroupedDataFrame)
-    idx, valscat = _combine(collect(f), gd)
-    rename!(valscat, collect(Symbol, propertynames(f)))
-    idx, valscat
-end
-
 isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
 
-function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
+function _combine(f::Vector{<:Pair}, gd::GroupedDataFrame, nms::Vector{Symbol})
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
@@ -777,32 +767,31 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame)
     end
     res = Vector{Any}(undef, length(f))
     for (i, p) in enumerate(f)
-           if isagg(p)
-               incol = gd.parent[!, first(p)]
-               agg = check_aggregate(last(p))
-               outcol = agg(incol, gd)
-               res[i] = idx_agg, outcol
-           else
-               fun = do_f(last(p))
-               if p isa Pair{<:ColumnIndex}
-                   incols = gd.parent[!, first(p)]
-               else
-                   df = gd.parent[!, first(p)]
-                   incols = Tuple(eachcol(df))
-               end
-               firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-               idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
-               res[i] = idx, outcols[1]
-           end
-      end
+        if isagg(p)
+            incol = gd.parent[!, first(p)]
+            agg = check_aggregate(last(p))
+            outcol = agg(incol, gd)
+            res[i] = idx_agg, outcol
+        else
+            fun = do_f(last(p))
+            if p isa Pair{<:ColumnIndex}
+                incols = gd.parent[!, first(p)]
+            else
+                df = gd.parent[!, first(p)]
+                incols = Tuple(eachcol(df))
+            end
+            firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
+            idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
+            res[i] = idx, outcols[1]
+        end
+    end
     # TODO: avoid recomputing idx for each pair when !all(isagg, f)
     idx = res[1][1]
     outcols = map(x -> x[2], res)
     if !all(x -> length(x) == length(outcols[1]), outcols)
         throw(ArgumentError("all functions must return values of the same length"))
     end
-    valscat = DataFrame(collect(AbstractVector, outcols))
-    return idx, valscat
+    return idx, DataFrame(collect(AbstractVector, outcols), nms)
 end
 
 function _combine(fun::Function, gd::GroupedDataFrame)
@@ -1182,9 +1171,8 @@ by(d::AbstractDataFrame, cols::Any, f::Pair...;
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)
 by(d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true, f...) =
-    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing);
-            keepkeys=keepkeys, f...)
+   sort::Bool=false, skipmissing::Bool=false, f...) =
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
 
 @specialize
 
