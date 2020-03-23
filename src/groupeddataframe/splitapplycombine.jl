@@ -421,7 +421,7 @@ combine(f::Function, gd::GroupedDataFrame; keepkeys::Bool=true) =
 combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
     combine_helper(f, gd, keepkeys=keepkeys)
 
-function DataFrames.combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
+function combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
     if any(x -> first(x) isa Tuple, cs)
         Base.depwarn("passing a Tuple as column selector is deprecated, use " *
                      "an AbstractVector instead", :combine)
