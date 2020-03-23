@@ -125,11 +125,20 @@ end
 
 function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
-                           transformed_cols::Dict{Symbol, Any}, copycols::Bool)
+                           transformed_cols::Dict{Symbol, Any}, copycols::Bool,
+                           allow_resizing_newdf::Base.RefValue{Bool})
     col_idx, (_, newname) = nc
     # it is allowed to request column tranformation only once
     @assert !hasproperty(newdf, newname)
+    # disallow shortening to 0 rows
+    if allow_resizing_newdf[] && nrow(newdf) == 1 && nrow(df) > 1
+        newdfcols = _columns(newdf)
+        for (i, col) in enumerate(newdfcols)
+            newdfcols[i] = fill(first(col), nrow(df))
+        end
+    end
     newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
+    allow_resizing_newdf[] = false
     # mark that column transformation was applied
     # nothing is not possible otherwise as a value in this dict
     transformed_cols[newname] = nothing
@@ -138,7 +147,8 @@ end
 function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
-                           transformed_cols::Dict{Symbol, Any}, copycols::Bool)
+                           transformed_cols::Dict{Symbol, Any}, copycols::Bool,
+                           allow_resizing_newdf::Base.RefValue{Bool})
     col_idx, (fun, newname) = nc
     @assert !hasproperty(newdf, newname)
     cdf = eachcol(df)
@@ -152,6 +162,14 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                             "of type $(typeof(res)) is currently not allowed."))
     end
     if res isa AbstractVector
+        # disallow shortening to 0 rows
+        if allow_resizing_newdf[] && nrow(newdf) == 1 && length(res) > 1
+            newdfcols = _columns(newdf)
+            for (i, col) in enumerate(newdfcols)
+                newdfcols[i] = fill(first(col), length(res))
+            end
+        end
+        allow_resizing_newdf[] = false
         respar = parent(res)
         if copycols && !(fun isa ByRow) &&
             (res isa SubArray || any(i -> respar === parent(cdf[i]), col_idx))
@@ -160,7 +178,9 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
             newdf[!, newname] = res
         end
     else
-        newdf[!, newname] = [res]
+        res_unwrap = res isa Union{AbstractArray{<:Any, 0}, Ref} ? res[] : res
+        # disallow squashing a scalar to 0 rows
+        newdf[!, newname] = fill(res_unwrap, max(1, nrow(newdf)))
     end
     transformed_cols[newname] = nothing
 end
@@ -179,9 +199,12 @@ and transformed using the `old_column => fun => new_column_name` syntax.
 is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
 Otherwise `old_column` can be any column indexing syntax, in which case `fun`
 will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then it will be wrapped
-into a 1-element vector, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
-`DataFrameRow`, `AbstractMatrix`, in which case an error is thrown as currently these
+If `fun` returns a value of type other than `AbstractVector` then: it will be wrapped
+into a vector matching the target number of rows in the data frame
+(as a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
+ are unwrapped and treated in the same way),
+unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
+`AbstractMatrix`, in which case an error is thrown as currently these
 return types are not allowed.
 
 To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
@@ -319,9 +342,12 @@ and transformed using the `old_column => fun => new_column_name` syntax.
 is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
 Otherwise `old_column` can be any column indexing syntax, in which case `fun`
 will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then it will be wrapped
-into a 1-element vector, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
-`DataFrameRow`, `AbstractMatrix`, in which case an error is thrown as currently these
+If `fun` returns a value of type other than `AbstractVector` then: it will be wrapped
+into a vector matching the target number of rows in the data frame
+(as a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
+ are unwrapped and treated in the same way),
+unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
+`AbstractMatrix`, in which case an error is thrown as currently these
 return types are not allowed.
 
 To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
@@ -483,6 +509,9 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
             transformed_cols[newname] = nc
         end
     end
+    # we allow resizing newdf only if up to some point only scalars were put
+    # in it. The moment we put any vector into newdf its number of rows becomes fixed
+    allow_resizing_newdf = Ref(true)
     for nc in normalized_cs
         if nc isa AbstractVector{Int}
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
@@ -500,9 +529,18 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                         # nothing then newname should be preasent in newdf already
                         nct = transformed_cols[newname]
                         @assert nct !== nothing
-                        select_transform!(nct, df, newdf, transformed_cols, copycols)
+                        select_transform!(nct, df, newdf, transformed_cols, copycols,
+                                          allow_resizing_newdf)
                     else
+                        # disallow shortening to 0 rows
+                        if allow_resizing_newdf[] && nrow(newdf) == 1 && nrow(df) > 1
+                            newdfcols = _columns(newdf)
+                            for (i, col) in enumerate(newdfcols)
+                                newdfcols[i] = fill(first(col), nrow(df))
+                            end
+                        end
                         newdf[!, newname] = copycols ? df[:, i] : df[!, i]
+                        allow_resizing_newdf[] = false
                     end
                 end
             end
@@ -515,7 +553,8 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                 # but then transformed_cols[newname] must be nothing
                 @assert transformed_cols[newname] === nothing
             else
-                select_transform!(nc, df, newdf, transformed_cols, copycols)
+                select_transform!(nc, df, newdf, transformed_cols, copycols,
+                                  allow_resizing_newdf)
             end
         end
     end
