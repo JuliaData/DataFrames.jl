@@ -2,8 +2,6 @@
 # groupby(), map(), combine(), by(), aggregate() and related
 #
 
-@nospecialize
-
 """
     groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
@@ -139,6 +137,7 @@ julia> for g in gd
 """
 function groupby(df::AbstractDataFrame, cols;
                  sort::Bool=false, skipmissing::Bool=false)
+    @nospecialize
     _check_consistency(df)
     idxcols = index(df)[cols]
     intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
@@ -269,6 +268,7 @@ Last Group: 1 row
 See [`by`](@ref) for more examples.
 """
 function Base.map(f::Function, gd::GroupedDataFrame)
+    @nospecialize
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         keys = _names(gd.parent)[gd.cols]
@@ -416,12 +416,18 @@ julia> combine(df -> sum(df.c), gd) # Slower variant
 
 See [`by`](@ref) for more examples.
 """
-combine(f::Function, gd::GroupedDataFrame; keepkeys::Bool=true) =
+function combine(f::Function, gd::GroupedDataFrame; keepkeys::Bool=true)
+    @nospecialize
     combine_helper(f, gd, keepkeys=keepkeys)
-combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
+end
+
+function combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true)
+    @nospecialize
     combine_helper(f, gd, keepkeys=keepkeys)
+end
 
 function combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
+    @nospecialize
     if any(x -> first(x) isa Tuple, cs)
         x = cs[findfirst(x -> first(x) isa Tuple, cs)]
         Base.depwarn("passing a Tuple $(first(x)) as column selector is deprecated" *
@@ -441,6 +447,7 @@ function combine(gd::GroupedDataFrame, cs::Pair...; keepkeys::Bool=true)
 end
 
 function combine(gd::GroupedDataFrame; f...)
+    @nospecialize
     if length(f) == 0
         throw(ArgumentError("combine(gd) is not allowed, use DataFrame(gd) " *
                             "to combine a GroupedDataFrame into a DataFrame"))
@@ -453,6 +460,7 @@ function combine(gd::GroupedDataFrame; f...)
 end
 
 function combine_helper(f, gd::GroupedDataFrame, nms=nothing; keepkeys::Bool=true)
+    @nospecialize
     if length(gd) > 0
         idx, valscat = isnothing(nms) ? _combine(f, gd) : _combine(f, gd, nms)
         keepkeys || return valscat
@@ -470,8 +478,6 @@ function combine_helper(f, gd::GroupedDataFrame, nms=nothing; keepkeys::Bool=tru
         return keepkeys ? gd.parent[1:0, gd.cols] : DataFrame()
     end
 end
-
-@specialize
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
@@ -751,11 +757,13 @@ function do_f(f, x...)
     end
 end
 
-@nospecialize
-
-isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
+function isagg(p::Pair)
+    @nospecialize
+    check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
+end
 
 function _combine(f::Vector{<:Pair}, gd::GroupedDataFrame, nms::Vector{Symbol})
+    @nospecialize
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
@@ -795,6 +803,7 @@ function _combine(f::Vector{<:Pair}, gd::GroupedDataFrame, nms::Vector{Symbol})
 end
 
 function _combine(fun::Function, gd::GroupedDataFrame)
+    @nospecialize
     idx, outcols, nms = _combine_with_first(wrap(fun(gd[1])), fun, gd, nothing)
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
@@ -803,6 +812,7 @@ end
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple})
+    @nospecialize
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -835,8 +845,6 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     end
     idx, outcols, collect(Symbol, finalcolnames)
 end
-
-@specialize
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
@@ -1011,8 +1019,6 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     return outcols, colnames
 end
 
-@nospecialize
-
 """
     by(df::AbstractDataFrame, keys, cols=>f...;
        sort::Bool=false, skipmissing::Bool=false)
@@ -1159,22 +1165,31 @@ julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
 │ 4   │ 4     │ 1     │ 12    │
 ```
 """
-by(d::AbstractDataFrame, cols::Any, f::Function;
-   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
+function by(d::AbstractDataFrame, cols::Any, f::Function;
+            sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
+    @nospecialize
     combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
             keepkeys=keepkeys)
-by(f::Function, d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
+end
+
+function by(f::Function, d::AbstractDataFrame, cols::Any;
+            sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
+    @nospecialize
     by(d, cols, f, sort=sort, skipmissing=skipmissing, keepkeys=keepkeys)
-by(d::AbstractDataFrame, cols::Any, f::Pair...;
-   sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
+end
+
+function by(d::AbstractDataFrame, cols::Any, f::Pair...;
+            sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
+    @nospecialize
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)
-by(d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false, f...) =
-    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
+end
 
-@specialize
+function by(d::AbstractDataFrame, cols::Any;
+            sort::Bool=false, skipmissing::Bool=false, f...)
+    @nospecialize
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
+end
 
 """
     aggregate(df::AbstractDataFrame, fs)
