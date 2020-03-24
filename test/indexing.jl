@@ -1415,4 +1415,8 @@ end
     end
 end
 
+if VERSION >= v"1.4"
+    include("indexing_begin_tests.jl")
+end
+
 end # module
