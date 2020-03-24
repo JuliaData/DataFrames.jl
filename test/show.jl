@@ -460,4 +460,31 @@ end
     │ 1   │ missing   │"""
 end
 
+@testset "wide type name" begin
+    df = DataFrame(A = Int32.(1:3), B = ["x", "y", "z"])
+
+    io = IOBuffer()
+    show(io, df, eltypes=true)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrame
+    │ Row │ A     │ B      │
+    │     │ Int32 │ String │
+    ├─────┼───────┼────────┤
+    │ 1   │ 1     │ x      │
+    │ 2   │ 2     │ y      │
+    │ 3   │ 3     │ z      │"""
+
+    io = IOBuffer()
+    show(io, df, eltypes=false)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrame
+    │ Row │ A │ B │
+    ├─────┼───┼───┤
+    │ 1   │ 1 │ x │
+    │ 2   │ 2 │ y │
+    │ 3   │ 3 │ z │"""
+end
+
 end # module

@@ -236,6 +236,8 @@ end
     @test DataFrames.parentcols(SubIndex(i, r"x1.")) == [2, 3]
     @test isempty(DataFrames.parentcols(SubIndex(i, r"xx")))
     @test DataFrames.parentcols(SubIndex(i, r"")) == 1:5
+    @test DataFrames.parentcols(SubIndex(i, All())) == 1:5
+    @test DataFrames.parentcols(SubIndex(i, Between(:x1, :x12))) == 1:2
 
     i2 = SubIndex(i, r"")
     @test i2[r"x1."] == [2, 3]
@@ -250,6 +252,8 @@ end
     @test DataFrames.parentcols(SubIndex(i2, r"x1.")) == [2, 3]
     @test isempty(DataFrames.parentcols(SubIndex(i2, r"xx")))
     @test DataFrames.parentcols(SubIndex(i2, r"")) == 1:5
+    @test DataFrames.parentcols(SubIndex(i2, All())) == 1:5
+    @test DataFrames.parentcols(SubIndex(i2, Between(:x1, :x12))) == 1:2
 
     i3 = SubIndex(i, r"x1.")
     @test i3[r"x1.$"] == [1]
@@ -264,6 +268,9 @@ end
     @test DataFrames.parentcols(SubIndex(i3, r"x1.$")) == [1]
     @test isempty(DataFrames.parentcols(SubIndex(i3, r"xx")))
     @test DataFrames.parentcols(SubIndex(i3, r"")) == 1:2
+    @test DataFrames.parentcols(SubIndex(i3, All())) == 1:2
+    @test_throws BoundsError DataFrames.parentcols(SubIndex(i3, Between(:x1, :x12))) == 1:2
+    @test DataFrames.parentcols(SubIndex(i3, Between(:x12, :x12))) == 1:1
 end
 
 @testset "Not indexing" begin

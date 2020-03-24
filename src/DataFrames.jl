@@ -17,6 +17,7 @@ import DataAPI,
 export AbstractDataFrame,
        All,
        Between,
+       ByRow,
        DataFrame,
        DataFrame!,
        DataFrameRow,
@@ -83,6 +84,7 @@ include("dataframerow/utils.jl")
 
 include("other/broadcasting.jl")
 
+include("abstractdataframe/selection.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
