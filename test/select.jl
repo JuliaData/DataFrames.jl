@@ -740,7 +740,13 @@ end
 
     @test_throws MethodError select!(df, r"z" => x -> 1)
     @test_throws ArgumentError select!(df, r"z" => ByRow(rand))
-    @test_throws ErrorException select!(df, r"z" => () -> x, copycols=false)
+
+    if VERSION >= v"1.4"
+        @test_throws MethodError select!(df, r"z" => () -> x, copycols=false)
+    else
+        @test_throws ErrorException select!(df, r"z" => () -> x, copycols=false)
+    end
+
     select!(df, r"z" => () -> x)
     @test df == DataFrame(:function => x)
 end
