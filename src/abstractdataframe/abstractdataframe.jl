@@ -267,7 +267,8 @@ julia> rename(df) do x
 │ Row │ I     │ X     │ Y     │
 │     │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │```
+│ 1   │ 1     │ 2     │ 3     │
+```
 """
 rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
        makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
