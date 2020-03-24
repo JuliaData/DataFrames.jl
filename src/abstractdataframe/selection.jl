@@ -7,18 +7,10 @@
 # will end up in one of four canonical forms
 # 1) Int
 # 2) AbstractVector{Int}
-# 3) Pair{Int, Pair{ColRename, Symbol}}
 # 4) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
 # 5) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
 # 6) Pair{Int, Pair{ByRow, Symbol}}
 # 7) Pair{AbstractVector{Int}, Pair{ByRow, Symbol}}
-
-"""
-    ColRename
-
-A singleton type indicating that column renaming operation was requested in `select`.
-"""
-struct ColRename end
 
 """
     ByRow
@@ -48,12 +40,12 @@ normalize_selection(idx::AbstractIndex, sel) =
 
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
     c = idx[sel]
-    return c => ColRename() => _names(idx)[c]
+    return c => identity => _names(idx)[c]
 end
 
 function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol})
     c = idx[first(sel)]
-    return c => ColRename() => last(sel)
+    return c => identity => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex,
@@ -122,23 +114,12 @@ function normalize_selection(idx::AbstractIndex,
     return c => fun => newcol
 end
 
-function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
-                           df::AbstractDataFrame, newdf::DataFrame,
-                           transformed_cols::Dict{Symbol, Any}, copycols::Bool)
-    col_idx, (_, newname) = nc
-    # it is allowed to request column tranformation only once
-    @assert !hasproperty(newdf, newname)
-    newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
-    # mark that column transformation was applied
-    # nothing is not possible otherwise as a value in this dict
-    transformed_cols[newname] = nothing
-end
-
 function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx, (fun, newname) = nc
+    # it is allowed to request column tranformation only once
     @assert !hasproperty(newdf, newname)
     cdf = eachcol(df)
     if col_idx isa Int
@@ -161,6 +142,8 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
     else
         newdf[!, newname] = [res]
     end
+    # mark that column transformation was applied
+    # nothing is not possible otherwise as a value in this dict
     transformed_cols[newname] = nothing
 end
 
