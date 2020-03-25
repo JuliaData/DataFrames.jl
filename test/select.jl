@@ -898,9 +898,10 @@ end
               DataFrame(:a => 1:3, :b => 4:6,
                         Symbol("a_-") => -1:-1:-3,
                         Symbol("b_-") => -4:-1:-6)
+        @test select(df, :a, [] .=> sum, :b => :x, [:b, :a] .=> identity) ==
+              DataFrame(a=1:3, x=4:6, b_identity=4:6, a_identity=1:3)
+        @test select(df, names(df) .=> sum .=> [:A, :B]) == DataFrame(A=6, B=15)
     end
-    @test select(df, :a, [] .=> sum, :b => :x, [:b, :a] .=> identity) ==
-          DataFrame(a=1:3, x=4:6, b_identity=4:6, a_identity=1:3)
 end
 
 end # module

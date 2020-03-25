@@ -182,6 +182,9 @@ using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
 
+Column renaming and transformation operations can be passed wrapped in vectors
+(this is useful when combined with broadcasting).
+
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
 and only the first occurrence is used. In particular a syntax to move column `:col`
@@ -214,14 +217,7 @@ julia> select!(df, 2)
 │ 2   │ 5     │
 │ 3   │ 6     │
 
-julia> df = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
+julia> df = DataFrame(a=1:3, b=4:6);
 
 julia> select!(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
@@ -240,6 +236,17 @@ julia> select!(df, :, [:c, :b] => (c,b) -> c .+ b .- sum(b)/length(b))
 │ 1   │ 0.841471 │ 4     │ -0.158529    │
 │ 2   │ 0.909297 │ 5     │ 0.909297     │
 │ 3   │ 0.14112  │ 6     │ 1.14112      │
+
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> select!(df, names(df) .=> sum .=> [:A, :B]);
+
+julia> df
+1×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 6     │ 15    │
 ```
 
 """
@@ -332,6 +339,9 @@ using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
 
+Column renaming and transformation operations can be passed wrapped in vectors
+(this is useful when combined with broadcasting).
+
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
 and only the first occurrence is used. In particular a syntax to move column `:col`
@@ -416,6 +426,13 @@ julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 │ 1   │ 1     │ 4     │ 0.0          │
 │ 2   │ 2     │ 5     │ 2.0          │
 │ 3   │ 3     │ 6     │ 4.0          │
+
+julia> select(df, names(df) .=> sum .=> [:A, :B])
+1×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 6     │ 15    │
 ```
 
 """
