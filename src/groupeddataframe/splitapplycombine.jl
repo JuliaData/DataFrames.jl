@@ -419,22 +419,30 @@ combine(f::Function, gd::GroupedDataFrame; keepkeys::Bool=true) =
 combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
     combine_helper(f, gd, keepkeys=keepkeys)
 
-function combine(gd::GroupedDataFrame, @nospecialize(cs::Pair...); keepkeys::Bool=true)
+function combine(gd::GroupedDataFrame,
+                 @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}}...);
+                 keepkeys::Bool=true)
     @assert !isempty(cs)
-    if any(x -> first(x) isa Tuple, cs)
-        x = cs[findfirst(x -> first(x) isa Tuple, cs)]
+    cs_vec = Pair[]
+    for p in cs
+        if p isa Pair
+            push!(cs_vec, p)
+        else
+           @assert p isa AbstractVector{<:Pair}
+           append!(cs_vec, p)
+        end
+    end
+    if any(x -> first(x) isa Tuple, cs_vec)
+        x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
         Base.depwarn("passing a Tuple $(first(x)) as column selector is deprecated" *
                      ", use a vector $(collect(first(x))) instead", :combine)
-        cs_vec = collect(Any, cs)
         for (i, v) in enumerate(cs_vec)
             if first(v) isa Tuple
                 cs_vec[i] = collect(first(v)) => last(v)
             end
         end
-        cs_norm = Pair[normalize_selection(index(parent(gd)), c) for c in cs_vec]
-    else
-        cs_norm = Pair[normalize_selection(index(parent(gd)), c) for c in cs]
     end
+    cs_norm = Pair[normalize_selection(index(parent(gd)), c) for c in cs_vec]
     f = Pair[first(x) => first(last(x)) for x in cs_norm]
     nms = Symbol[last(last(x)) for x in cs_norm]
     return combine_helper(f, gd, nms, keepkeys=keepkeys)
@@ -478,10 +486,14 @@ wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
 
-wrap_table(x::DataFrameRow) =
+wrap_table(x::Any) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
-wrap_table(x::Any) = wrap(x)
+wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
+                    AbstractDataFrame,
+                    AbstractVector,
+                    AbstractMatrix}) = wrap(x)
+
 
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
 function do_call(f::Any, idx::AbstractVector{<:Integer},
@@ -1160,7 +1172,7 @@ by(f::Function, d::AbstractDataFrame, cols::Any;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     by(d, cols, f, sort=sort, skipmissing=skipmissing, keepkeys=keepkeys)
 
-by(d::AbstractDataFrame, cols::Any, f::Pair...;
+by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)
