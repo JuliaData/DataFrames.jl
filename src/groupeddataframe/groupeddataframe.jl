@@ -119,6 +119,14 @@ Return a vector of column names in `parent(gd)` used for grouping.
 """
 groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
 
+"""
+    valuevars(gd::GroupedDataFrame)
+
+Return a vector of column names in `parent(gd)` not used for grouping.
+"""
+groupvars(gd::GroupedDataFrame) = _names(gd)[Not(gd.cols)]
+
+
 # Get grouping variable index by its name
 function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
     i = findfirst(==(name), groupvars(gd))

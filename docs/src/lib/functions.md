@@ -24,6 +24,7 @@ combine
 groupby
 groupindices
 groupvars
+valuevars
 keys
 get
 map

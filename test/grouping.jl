@@ -1256,25 +1256,29 @@ end
     @test eltype.(eachcol(DataFrame(gd))) == [Union{Missing, Symbol}, Int]
 end
 
-@testset "groupindices and groupvars" begin
+@testset "groupindices, groupvars, and valuevars" begin
     df = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
     gd = groupby_checked(df, :A)
     @inferred groupindices(gd)
     @test groupindices(gd) == [1, 2, 3, 2, 3, 1]
     @test groupvars(gd) == [:A]
+    @test valuevars(gd) == [:B]
     gd2 = gd[[3,2]]
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+    @test valuevars(gd2) == [:B]
 
     gd = groupby_checked(df, :A, skipmissing=true)
     @inferred groupindices(gd)
     @test groupindices(gd) ≅ [missing, 1, 2, 1, 2, missing]
     @test groupvars(gd) == [:A]
+    @test valuevars(gd) == [:B]
     gd2 = gd[[2,1]]
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [:A]
+    @test valuevars(gd2) == [:B]
 
     df2 = DataFrame(A = vcat(df.A, df.A), B = repeat([:X, :Y], inner=6), C = 1:12)
 
@@ -1282,19 +1286,23 @@ end
     @inferred groupindices(gd)
     @test groupindices(gd) == [1, 2, 3, 2, 3, 1, 4, 5, 6, 5, 6, 4]
     @test groupvars(gd) == [:A, :B]
+    @test valuevars(gd) == [:C]
     gd2 = gd[[3,2,5]]
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing, missing, 3, missing, 3, missing, missing]
     @test groupvars(gd2) == [:A, :B]
+    @test valuevars(gd) == [:C]
 
     gd = groupby_checked(df2, [:A, :B], skipmissing=true)
     @inferred groupindices(gd)
     @test groupindices(gd) ≅ [missing, 1, 2, 1, 2, missing, missing, 3, 4, 3, 4, missing]
     @test groupvars(gd) == [:A, :B]
+    @test valuevars(gd) == [:C]
     gd2 = gd[[4,2,1]]
     @inferred groupindices(gd2)
     @test groupindices(gd2) ≅ [missing, 3, 2, 3, 2, missing, missing, missing, 1, missing, 1, missing]
     @test groupvars(gd2) == [:A, :B]
+    @test valuevars(gd) == [:C]
 end
 
 @testset "by skipmissing and sort" begin
@@ -1309,18 +1317,22 @@ end
     df = DataFrame(x1=Int64[1,2,2], x2=Int64[1,1,2], y=Int64[1,2,3])
     gdf = groupby_checked(df, r"x")
     @test groupvars(gdf) == [:x1, :x2]
+    @test valuevars(gdf) == [:y]
     @test groupindices(gdf) == [1,2,3]
 
     gdf = groupby_checked(df, Not(r"x"))
     @test groupvars(gdf) == [:y]
+    @test valuevars(gdf) == [:x1, :x2]
     @test groupindices(gdf) == [1,2,3]
 
     gdf = groupby_checked(df, [])
     @test groupvars(gdf) == []
+    @test valuevars(gdf) == [:x1, :x2, :y]
     @test groupindices(gdf) == [1,1,1]
 
     gdf = groupby_checked(df, r"z")
     @test groupvars(gdf) == []
+    @test valuevars(gdf) == [:x1, :x2, :y]
     @test groupindices(gdf) == [1,1,1]
 
     @test by(df, [], a=:x1=>sum, b=:x2=>length) == DataFrame(a=5, b=3)
@@ -1590,6 +1602,7 @@ end
 
     @test names(gd) == names(df)
     @test groupvars(gd) == [:a, :b]
+    @test valuevars(gd) == [:c]
     @test map(NamedTuple, keys(gd)) ≅
         [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
     @test gd[(a=:A, b=:X)] ≅ gd[1]
@@ -1601,6 +1614,7 @@ end
 
     @test names(gd) == names(df)
     @test groupvars(gd) == [:d, :e]
+    @test valuevars(gd) == [:f]
     @test map(NamedTuple, keys(gd)) ≅
         [(d=:A, e=:X), (d=:B, e=:X), (d=missing, e=:X), (d=:A, e=:Y), (d=:B, e=:Y), (d=missing, e=:Y)]
     @test gd[(d=:A, e=:X)] ≅ gd[1]

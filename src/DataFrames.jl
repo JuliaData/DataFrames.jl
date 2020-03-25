@@ -59,7 +59,8 @@ export AbstractDataFrame,
        semijoin,
        stack,
        unique!,
-       unstack
+       unstack,
+       valuevars
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow
