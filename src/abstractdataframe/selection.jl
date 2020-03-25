@@ -22,6 +22,8 @@ struct ByRow{T}
     fun::T
 end
 
+Base.broadcastable(x::ByRow) = Ref(x)
+
 (f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)
 
 # add a method to funname defined in other/utils.jl
@@ -426,8 +428,17 @@ select(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol}
 select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
     select(df, [c], copycols=copycols)
 
-select(df::DataFrame, cs...; copycols::Bool=true) =
-    _select(df, [normalize_selection(index(df), c) for c in cs], copycols)
+function select(df::DataFrame, cs...; copycols::Bool=true)
+    cs_vec = []
+    for v in cs
+        if v isa AbstractVector{<:Pair}
+            append!(cs_vec, v)
+        else
+            push!(cs_vec, v)
+        end
+    end
+    _select(df, [normalize_selection(index(df), c) for c in cs_vec], copycols)
+end
 
 function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
@@ -522,7 +533,15 @@ select(dfv::SubDataFrame, inds::Union{AbstractVector{<:Integer}, AbstractVector{
 
 function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
     if copycols
-        return _select(dfv, [normalize_selection(index(dfv), c) for c in inds], true)
+        cs_vec = []
+        for v in inds
+            if v isa AbstractVector{<:Pair}
+                append!(cs_vec, v)
+            else
+                push!(cs_vec, v)
+            end
+        end
+        return _select(dfv, [normalize_selection(index(dfv), c) for c in cs_vec], true)
     else
         # we do not support transformations here
         # newinds should not be large so making it Vector{Any} should be OK
