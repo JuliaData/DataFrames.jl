@@ -460,7 +460,9 @@ function combine(gd::GroupedDataFrame; f...)
     end
 end
 
-function combine_helper(f, gd::GroupedDataFrame, nms=nothing; keepkeys::Bool=true)
+function combine_helper(f, gd::GroupedDataFrame,
+                        nms::Union{AbstractVector{Symbol},Nothing}=nothing;
+                        keepkeys::Bool=true)
     if length(gd) > 0
         idx, valscat = isnothing(nms) ? _combine(f, gd) : _combine(f, gd, nms)
         keepkeys || return valscat
