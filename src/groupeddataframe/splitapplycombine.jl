@@ -461,7 +461,7 @@ function combine(gd::GroupedDataFrame; f...)
 end
 
 function combine_helper(f, gd::GroupedDataFrame,
-                        nms::Union{Vector{Symbol},Nothing}=nothing;
+                        nms::Union{AbstractVector{Symbol},Nothing}=nothing;
                         keepkeys::Bool=true)
     if length(gd) > 0
         idx, valscat = _combine(f, gd, nms)
@@ -496,6 +496,16 @@ wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
                     AbstractVector,
                     AbstractMatrix}) = wrap(x)
 
+wrap_row(x::Any) = wrap(x)
+wrap_row(x::Union{AbstractVecOrMat, DataFrame}) =
+    throw(ArgumentError("return value must not change its kind " *
+                        "(single row or variable number of rows) across groups"))
+function wrap_row(x::NamedTuple)
+    if any(x -> x isa AbstractVector, row)
+        throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
+    end
+    return x
+end
 
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
 function do_call(f::Any, idx::AbstractVector{<:Integer},
@@ -765,7 +775,7 @@ end
 
 isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
 
-function _combine(f::Vector{Pair}, gd::GroupedDataFrame, nms::Vector{Symbol})
+function _combine(f::AbstractVector{Pair}, gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
@@ -849,12 +859,7 @@ end
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
                    colnames::NTuple{N, Symbol}) where N
-    if !isa(row, Union{NamedTuple, DataFrameRow})
-        throw(ArgumentError("return value must not change its kind " *
-                            "(single row or variable number of rows) across groups"))
-    elseif row isa NamedTuple && any(x -> x isa AbstractVector, row)
-        throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
-    elseif _ncol(row) != N
+    if _ncol(row) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(length(row)))"))
     end
@@ -895,7 +900,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     idx[rowstart] = gdidx[starts[rowstart]]
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        row = wrap(do_call(f, gdidx, starts, ends, gd, incols, i))
+        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i))
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
