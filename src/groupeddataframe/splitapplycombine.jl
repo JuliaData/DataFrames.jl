@@ -428,8 +428,8 @@ function combine(gd::GroupedDataFrame,
         if p isa Pair
             push!(cs_vec, p)
         else
-           @assert p isa AbstractVector{<:Pair}
-           append!(cs_vec, p)
+            @assert p isa AbstractVector{<:Pair}
+            append!(cs_vec, p)
         end
     end
     if any(x -> first(x) isa Tuple, cs_vec)
