@@ -268,7 +268,7 @@ See [`by`](@ref) for more examples.
 """
 function Base.map(f::Function, gd::GroupedDataFrame)
     if length(gd) > 0
-        idx, valscat = _combine(f, gd)
+        idx, valscat = _combine(f, gd, nothing)
         keys = _names(gd.parent)[gd.cols]
         for key in keys
             if hasproperty(valscat, key) &&
@@ -461,10 +461,10 @@ function combine(gd::GroupedDataFrame; f...)
 end
 
 function combine_helper(f, gd::GroupedDataFrame,
-                        nms::Union{AbstractVector{Symbol},Nothing}=nothing;
+                        nms::Union{Vector{Symbol},Nothing}=nothing;
                         keepkeys::Bool=true)
     if length(gd) > 0
-        idx, valscat = isnothing(nms) ? _combine(f, gd) : _combine(f, gd, nms)
+        idx, valscat = _combine(f, gd, nms)
         keepkeys || return valscat
         keys = groupvars(gd)
         for key in keys
@@ -804,7 +804,7 @@ function _combine(f::Vector{Pair}, gd::GroupedDataFrame, nms::Vector{Symbol})
     return idx, DataFrame(collect(AbstractVector, outcols), nms)
 end
 
-function _combine(fun::Function, gd::GroupedDataFrame)
+function _combine(fun::Function, gd::GroupedDataFrame, ::Nothing)
     idx, outcols, nms = _combine_with_first(wrap(fun(gd[1])), fun, gd, nothing)
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
