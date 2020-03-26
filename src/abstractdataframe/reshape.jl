@@ -5,11 +5,11 @@
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
 
-Return the long-format `DataFrame` with column `variable_name` (`:value` by default)
-holding the values of the stacked columns (`measure_vars`), with
+Return the long-format `DataFrame` with: columns for each of the `id_vars`,
+column `variable_name` (`:value` by default)
+holding the values of the stacked columns (`measure_vars`), and
 column `variable_name` (`:variable` by default) a vector holding
-the name of the corresponding `measure_vars` variable,
-and with columns for each of the `id_vars`.
+the name of the corresponding `measure_vars` variable.
 
 If `view=true` then return a stacked view of a data frame (long format).
 The result is a view because the columns are special `AbstractVectors`
@@ -61,8 +61,8 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     end
     N = length(measure_vars)
     cnames = _names(df)[id_vars]
-    pushfirst!(cnames, value_name)
-    pushfirst!(cnames, variable_name)
+    push!(cnames, variable_name)
+    push!(cnames, value_name)
     if variable_eltype <: CategoricalString
         nms = String.(_names(df)[measure_vars])
         catnms = categorical(nms)
@@ -75,9 +75,9 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
         throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
                             "`String` or `Symbol` as a value."))
     end
-    DataFrame(AbstractVector[repeat(catnms, inner=nrow(df)),                      # variable
-                             vcat([df[!, c] for c in measure_vars]...),           # value
-                             [repeat(df[!, c], outer=N) for c in id_vars]...],    # id_var columns
+    DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in id_vars]..., # id_var columns
+                             repeat(catnms, inner=nrow(df)),                  # variable
+                             vcat([df[!, c] for c in measure_vars]...)],      # value
               cnames, copycols=false)
 end
 
@@ -424,8 +424,8 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{<:Intege
                     value_name::Symbol=:value, variable_eltype::Type=CategoricalString)
     N = length(measure_vars)
     cnames = _names(df)[id_vars]
-    pushfirst!(cnames, value_name)
-    pushfirst!(cnames, variable_name)
+    push!(cnames, variable_name)
+    push!(cnames, value_name)
     if variable_eltype <: CategoricalString
         nms = String.(_names(df)[measure_vars])
         catnms = categorical(nms)
@@ -438,9 +438,9 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{<:Intege
         throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
                             "`String` or `Symbol` as a value."))
     end
-    DataFrame(AbstractVector[RepeatedVector(catnms, nrow(df), 1), # variable
-                             StackedVector(Any[df[!, c] for c in measure_vars]),    # value
-                             [RepeatedVector(df[!, c], 1, N) for c in id_vars]...], # id_var columns
+    DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
+                             RepeatedVector(catnms, nrow(df), 1),                  # variable
+                             StackedVector(Any[df[!, c] for c in measure_vars])],  # value
               cnames, copycols=false)
 end
 
