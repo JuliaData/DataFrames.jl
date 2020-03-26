@@ -159,8 +159,10 @@ Mutate `df` in place to retain only columns specified by `args...` and return it
 Arguments passed as `args...` can be:
 
 * Any index that is allowed for column indexing. In particular, symbols, integers,
-  regular expressions, `All`, `Between`, and `Not` selectors are supported.
-* Column transformation operations using the `Pair` notation that is described below.
+  vectors of symbols, vectors of integers, vectors of bools, regular expressions,
+  `All`, `Between`, and `Not` selectors are supported.
+* Column transformation operations using the `Pair` notation that is described below
+  and vectors of such pairs.
 
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
@@ -315,9 +317,11 @@ Create a new data frame that contains columns from `df` specified by `args` and 
 
 Arguments passed as `args...` can be:
 
-* Any index that is allowed for column indexing. In particular, regular expressions,
+* Any index that is allowed for column indexing. In particular, symbols, integers,
+  vectors of symbols, vectors of integers, vectors of bools, regular expressions,
   `All`, `Between`, and `Not` selectors are supported.
-* Column transformation operations using the `Pair` notation that is described below.
+* Column transformation operations using the `Pair` notation that is described below
+  and vectors of such pairs.
 
 Also if `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
 are supported.
