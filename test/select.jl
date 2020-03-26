@@ -697,6 +697,15 @@ end
     @test df.x3 == x1 ./ x2
 end
 
+@testset "nrow in select" begin
+    df_ref = DataFrame(ones(3,4))
+    for df in [df_ref, view(df, 1:2, 1:2),
+               df_ref[1:2, []], view(df, 1:2, []),
+               df_ref[[], 1:2], view(df, [], 1:2)]
+        @test select(df, nrow => :z, nrow) == DataFrame(z=nrow(df), nrow=nrow(df))
+    end
+end
+
 @testset "select and select! reserved return values" begin
     df = DataFrame(x=1)
     df2 = copy(df)
