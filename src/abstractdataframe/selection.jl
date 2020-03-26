@@ -299,7 +299,7 @@ end
 Mutate `df` in place to add columns specified by `inds...` and return it.
 Equivalent to `select!(df, :, inds...)`.
 
-See [`select!`](@ref) for a detailed rules how the transformation is applied
+See [`select!`](@ref) for detailed rules regarding accepted values for `inds`.
 """
 transform!(df::DataFrame, inds...) = select!(df, :, inds...)
 
@@ -594,7 +594,7 @@ Create a new data frame that contains columns from `df` and adds columns
 specified by `inds` and return it.
 Equivalent to `select(df, :, inds..., copycols=copycols)`.
 
-See [`select`](@ref) for a detailed rules how the transformation is applied
+See [`select`](@ref) for detailed rules regarding accepted values for `inds`.
 """
 transform(df::AbstractDataFrame, inds...; copycols::Bool=true) =
     select(df, :, inds..., copycols=copycols)
