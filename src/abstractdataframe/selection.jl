@@ -158,8 +158,8 @@ Mutate `df` in place to retain only columns specified by `args...` and return it
 
 Arguments passed as `args...` can be:
 
-* Any index that is allowed for column indexing. In particular, regular expressions,
-  `All`, `Between`, and `Not` selectors are supported.
+* Any index that is allowed for column indexing. In particular, symbols, integers,
+  regular expressions, `All`, `Between`, and `Not` selectors are supported.
 * Column transformation operations using the `Pair` notation that is described below.
 
 Columns can be renamed using the `old_column => new_column_name` syntax,
