@@ -497,7 +497,10 @@ wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
                     AbstractMatrix}) = wrap(x)
 
 wrap_row(x::Any) = wrap(x)
-wrap_row(x::Union{AbstractVecOrMat, DataFrame}) =
+# note that also NamedTuple() is correctly captured by this definition
+# as it is more specific than the one below
+wrap_row(x::Union{AbstractVecOrMat, AbstractDataFrame,
+                  NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
 function wrap_row(x::NamedTuple)
