@@ -1361,3 +1361,131 @@ function Base.push!(df::DataFrame, row::Any)
     end
     df
 end
+<<<<<<< HEAD
+=======
+
+"""
+    permutecols!(df::DataFrame, p::AbstractVector)
+
+Permute the columns of `df` in-place, according to permutation `p`. Elements of `p` may be
+either column indices (`Int`) or names (`Symbol`), but cannot be a combination of both. All
+columns must be listed.
+
+### Examples
+
+```julia
+julia> df = DataFrame(a=1:5, b=2:6, c=3:7)
+5×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+│ 2   │ 2     │ 3     │ 4     │
+│ 3   │ 3     │ 4     │ 5     │
+│ 4   │ 4     │ 5     │ 6     │
+│ 5   │ 5     │ 6     │ 7     │
+
+julia> permutecols!(df, [2, 1, 3]);
+
+julia> df
+5×3 DataFrame
+│ Row │ b     │ a     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 3     │
+│ 2   │ 3     │ 2     │ 4     │
+│ 3   │ 4     │ 3     │ 5     │
+│ 4   │ 5     │ 4     │ 6     │
+│ 5   │ 6     │ 5     │ 7     │
+
+julia> permutecols!(df, [:c, :a, :b]);
+
+julia> df
+5×3 DataFrame
+│ Row │ c     │ a     │ b     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 1     │ 2     │
+│ 2   │ 4     │ 2     │ 3     │
+│ 3   │ 5     │ 3     │ 4     │
+│ 4   │ 6     │ 4     │ 5     │
+│ 5   │ 7     │ 5     │ 6     │
+```
+"""
+function permutecols!(df::DataFrame, p::AbstractVector)
+    if !(length(p) == size(df, 2) && isperm(p))
+        throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
+    end
+    permute!(_columns(df), p)
+    @inbounds permute!(index(df), p)
+    df
+end
+
+function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
+    permutecols!(df, index(df)[p])
+end
+
+##############################################################################
+##
+## Expand & Complete dataframes
+##
+##############################################################################
+
+function _expandhelper(col, iterprod, idx)
+    @inbounds for v in iterprod
+        push!(col, v[idx])
+    end
+end
+
+function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bool=false, fill=missing, replaceallmissing::Bool=false)
+    colind = index(df)[indexcols]
+    dummydf = similar(select(df, colind, copycols=false), 0)
+
+    if row_group_slots(ntuple(i -> df[!, colind][!, i], ncol(df[!, colind])), Val(false))[1] != nrow(df[!, colind])
+        if error
+            throw(ArgumentError("duplicate rows in input"))
+        else
+            @warn "duplicate rows in input; expand will only return unique combinations"
+        end
+    end
+
+    # Create a vect of vectors of unique values in each column
+    uniqueVals = []
+    for col in colind
+        # levels drops missing, handle the case where missing values are present
+        # All levels are retained, missing is added only if present
+        if any(ismissing, df[!, col])
+            tempcol = vcat(levels(df[!, col]), missing)
+        else
+            tempcol = levels(df[!, col])
+        end
+        push!(uniqueVals, tempcol)
+    end
+
+    # Get a long vector of every possible combination
+    p = Iterators.product(uniqueVals...)
+
+    for i in axes(colind, 1)
+        _expandhelper(dummydf[!, i], p, i)
+    end
+    if !complete
+        return dummydf
+    else
+        joined = join(dummydf, df; on=_names(df)[colind], kind=:left, indicator=:source)
+
+        # Replace missing values with the fill
+        if !ismissing(fill)
+            for n in ncol(dummydf)+1:ncol(joined)-1
+                if replaceallmissing
+                    joined[!, n] = coalesce.(joined[!, n], Ref(fill))
+                else
+                    joined[!, n] .= ifelse.(joined[!, end] .== "left_only", Ref(fill), joined[!, n])
+                end
+            end
+        end
+
+        select!(joined, 1:ncol(joined)-1)
+        return joined
+    end
+end
+>>>>>>> 0179d8e495ad5deabdfebb1a7c503892598018a2
