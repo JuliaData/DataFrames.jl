@@ -1428,7 +1428,7 @@ function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bo
     dummydf = similar(select(df, colind, copycols=false), 0)
 
     if row_group_slots(ntuple(i -> df[!, colind][!, i], ncol(df[!, colind])), Val(false))[1] != nrow(df[!, colind])
-        if error == true
+        if error
             throw(ArgumentError("duplicate rows in input"))
         else
             @warn "duplicate rows in input; expand will only return unique combinations"
