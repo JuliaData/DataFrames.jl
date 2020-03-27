@@ -501,7 +501,7 @@ wrap_row(x::Union{AbstractVecOrMat, DataFrame}) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
 function wrap_row(x::NamedTuple)
-    if any(x -> x isa AbstractVector, row)
+    if any(v -> v isa AbstractVector, x)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     end
     return x
