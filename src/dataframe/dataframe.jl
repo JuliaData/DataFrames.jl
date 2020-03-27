@@ -1454,7 +1454,7 @@ function expand(df::AbstractDataFrame, indexcols; error::Bool=true, complete::Bo
     for i in axes(colind, 1)
         _expandhelper(dummydf[!, i], p, i)
     end
-    if complete == false
+    if !complete
         return dummydf
     else
         joined = join(dummydf, df; on=_names(df)[colind], kind=:left, indicator=:source)
