@@ -373,6 +373,18 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
+"""
+    isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame)
+
+    Test for "approximate" equality between two DataFrames
+"""
+
+function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    Matrix(df1) ≈ Matrix(df2) || return false
+end
+
 ##############################################################################
 ##
 ## Description
