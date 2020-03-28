@@ -120,6 +120,7 @@ end
     @test isapprox(DataFrame(a=[1.0, 2.0, 3.0], b=[4.00000000001, 5.0, 6.0]), DataFrame(a=[1, 2, 3], b=[4, 5, 6]))
     @test !isapprox(DataFrame(a=[22.0, 3.1, 4.0], b=[4.7, 8.999999999999, 59.6]), DataFrame(a=[22.0, 3.0, 4.0], b=[4.7, 9.0, 59.6]))
     @test isapprox(DataFrame(a=[22.0, 3.1, 4.0], b=[4.7, 8.999999999999, 59.6]), DataFrame(a=[22.0, 3.1, 4.0], b=[4.7, 9.0, 59.6]))
+    @test DataFrame(a=[1.0, 2.0, 3.0], b=[4.00000000001, 5.0, 6.0]) ≈ DataFrame(a=[1, 2, 3], b=[4, 5, 6])
 
 end
 
