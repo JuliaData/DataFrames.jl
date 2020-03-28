@@ -20,12 +20,6 @@ sort!(df; cols=[:b, :a])
 @test first.(collect(pairs(DataFrameRow(df, 1, :)))) == [:a, :b]
 @test last.(collect(pairs(DataFrameRow(df, 1, :)))) == [df[1, 1], df[1, 2]]
 
-# deprecated combine
-
-df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
-gd = groupby(df, :a)
-@test combine(gd) == combine(identity, gd)
-
 @testset "categorical constructor" begin
     df = DataFrame([Int, String], [:a, :b], [false, true], 3)
     @test !(df[:a] isa CategoricalVector)
@@ -628,6 +622,9 @@ end
         combine(gd, (:b,) => sum, (:c,) => sum)
     @test combine(gd, [:b => vexp, :c => identity]) ==
         combine(gd, b_function = :b => vexp, c_identity = :c => identity)
+
+    @test by(df, :a, sdf -> sdf[1, :]) == by(sdf -> sdf[1, :], df, :a)
+    @test combine(gd, sdf -> sdf[1, :]) == combine(sdf -> sdf[1, :], gd)
 end
 
 global_logger(old_logger)
