@@ -1594,7 +1594,7 @@ end
               DataFrame(a=10, b=20, d=30)[1, :])
         df = DataFrame(a=1, b=2, c=3)
         old_logger = global_logger(NullLogger())
-        @test_throws MethodError push!(df, v, cols=:subset)
+        @test_throws MethodError push!(df, v, cols=:subset, promote=false)
         global_logger(old_logger)
         @test df == DataFrame(a=1, b=2, c=3)
     end
@@ -1602,10 +1602,10 @@ end
               DataFrame(a=10, b=20, d=30)[1, :])
         df = DataFrame(a=1, b=2, c=3)
         allowmissing!(df, :c)
-        push!(df, v, cols=:subset)
+        push!(df, v, cols=:subset, promote=false)
         @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
         old_logger = global_logger(NullLogger())
-        @test_throws MethodError push!(df, Dict(), cols=:subset)
+        @test_throws MethodError push!(df, Dict(), cols=:subset, promote=false)
         global_logger(old_logger)
         @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
         allowmissing!(df, [:a, :b])
@@ -1758,6 +1758,31 @@ end
     @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
     @test df.a === x
     @test eltype(df.b) === Float64
+end
+
+@testset "push!(df, row) with promote options" begin
+    df = DataFrame(a=1)
+    with_logger(SimpleLogger(IOBuffer())) do
+        @test_throws MethodError push!(df, ["a"])
+    end
+    @test push!(df, ["a"], promote=true) == DataFrame(a=[1, "a"])
+
+    for v in [(a="a",), DataFrame(a="a")[1, :]]
+        for cols in [:orderequal, :setequal, :intersect]
+            df = DataFrame(a=1)
+            with_logger(SimpleLogger(IOBuffer())) do
+                @test_throws MethodError push!(df, v, cols=cols)
+            end
+            @test push!(df, v, cols=cols, promote=true) == DataFrame(a=[1, "a"])
+        end
+        for cols in [:subset, :union]
+        df = DataFrame(a=1, b=1)
+            with_logger(SimpleLogger(IOBuffer())) do
+                @test_throws MethodError push!(df, v, cols=cols, promote=false)
+            end
+            @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1,missing])
+        end
+    end
 end
 
 end # module

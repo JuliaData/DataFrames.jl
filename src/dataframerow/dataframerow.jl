@@ -337,7 +337,8 @@ end
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
 function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
-                    columns::Union{Nothing,Symbol}=nothing)
+                    columns::Union{Nothing,Symbol}=nothing,
+                    promote::Bool=(cols in [:union, :subset]))
     if columns !== nothing
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead.", :push!)
@@ -387,7 +388,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             S = typeof(val)
             T = eltype(col)
             V = promote_type(S, T)
-            if S <: T || V <: T
+            if S <: T || V <: T || !promote
                 push!(col, val)
             else
                 newcol = Tables.allocatecolumn(V, targetrows)
@@ -443,7 +444,18 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             else
                 val = dfr[nm]
             end
-            push!(col, val)
+            S = typeof(val)
+            T = eltype(col)
+            V = promote_type(S, T)
+            if S <: T || V <: T || !promote
+                # if S <: T || V <: T this should never throw an exception
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(V, targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[columnindex(df, nm)] = newcol
+            end
         end
         for col in _columns(df)
             @assert length(col) == targetrows

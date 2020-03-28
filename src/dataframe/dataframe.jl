@@ -1169,7 +1169,7 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:setequal,
-                    columns::Union{Nothing,Symbol}=nothing)
+                    columns::Union{Nothing,Symbol}=nothing, promote::Bool=(cols in [:union, :subset]))
     if columns !== nothing
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
@@ -1203,7 +1203,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             S = typeof(val)
             T = eltype(col)
             V = promote_type(S, T)
-            if S <: T || V <: T
+            if S <: T || V <: T || !promote
                 push!(col, val)
             else
                 newcol = Tables.allocatecolumn(V, targetrows)
@@ -1265,7 +1265,18 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             else
                 val = row[nm]
             end
-            push!(col, val)
+            S = typeof(val)
+            T = eltype(col)
+            V = promote_type(S, T)
+            if S <: T || V <: T || !promote
+                # if S <: T || V <: T this should never throw an exception
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(V, targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[columnindex(df, nm)] = newcol
+            end
         end
         current_col = 0
         for col in _columns(df)
@@ -1283,9 +1294,9 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
 end
 
 """
-    push!(df::DataFrame, row::Union{Tuple, AbstractArray})
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-          cols::Symbol=:setequal)
+          cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
@@ -1312,10 +1323,11 @@ depends on the `cols` argument value in the following way:
 * If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
   is missing in `row` then a `missing` value is pushed to `df`.
 * If `cols=:union` then `push!` adds columns missing in `df` that are present in `row`,
-  for columns present in `df` but missing in `row` a `missing` value is pushed,
-  and (as opposed to all other values of `cols` keyword argument) if eltype of a
-  column present in `df` does not allow the type of a pushed argument then a new column
-  with a promoted eltype allowing it is freshly allocated and stored in `df`
+  for columns present in `df` but missing in `row` a `missing` value is pushed.
+
+If `promote=true` and eltype of a column present in `df` does not allow the type
+of a pushed argument then a new column with a promoted eltype allowing it is freshly
+allocated and stored in `df`. If `promote=false` an error is thrown.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
@@ -1325,14 +1337,7 @@ that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(A=1:3, B=1:3)
-3×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
+julia> df = DataFrame(A=1:3, B=1:3);
 
 julia> push!(df, (true, false))
 4×2 DataFrame
@@ -1344,30 +1349,7 @@ julia> push!(df, (true, false))
 │ 3   │ 3     │ 3     │
 │ 4   │ 1     │ 0     │
 
-julia> push!(df, df[1, :])
-5×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 1     │
-
 julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
-4×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 1     │
-│ 6   │ 1     │ 0     │
-
-julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 5×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │
@@ -1376,12 +1358,35 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 │ 2   │ 2     │ 2     │
 │ 3   │ 3     │ 3     │
 │ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 1     │
-│ 6   │ 1     │ 0     │
-│ 7   │ 1     │ 2     │
+│ 5   │ 1     │ 0     │
+
+julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
+6×3 DataFrame
+│ Row │ A       │ B       │ C        │
+│     │ Float64 │ Int64?  │ Float64? │
+├─────┼─────────┼─────────┼──────────┤
+│ 1   │ 1.0     │ 1       │ missing  │
+│ 2   │ 2.0     │ 2       │ missing  │
+│ 3   │ 3.0     │ 3       │ missing  │
+│ 4   │ 1.0     │ 0       │ missing  │
+│ 5   │ 1.0     │ 0       │ missing  │
+│ 6   │ 1.0     │ missing │ 1.0      │
+
+julia> push!(df, NamedTuple(), cols=:subset)
+7×3 DataFrame
+│ Row │ A        │ B       │ C        │
+│     │ Float64? │ Int64?  │ Float64? │
+├─────┼──────────┼─────────┼──────────┤
+│ 1   │ 1.0      │ 1       │ missing  │
+│ 2   │ 2.0      │ 2       │ missing  │
+│ 3   │ 3.0      │ 3       │ missing  │
+│ 4   │ 1.0      │ 0       │ missing  │
+│ 5   │ 1.0      │ 0       │ missing  │
+│ 6   │ 1.0      │ missing │ 1.0      │
+│ 7   │ missing  │ missing │ missing  │
 ```
 """
-function Base.push!(df::DataFrame, row::Any)
+function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
     if !(row isa Union{Tuple, AbstractArray})
         Base.depwarn("In the future `push!` will not allow passing collections of type" *
                      " $(typeof(row)) to be pushed into a DataFrame. " *
@@ -1396,9 +1401,20 @@ function Base.push!(df::DataFrame, row::Any)
     end
     current_col = 0
     try
-        for (col, t) in zip(_columns(df), row)
+        for (i, (col, val)) in enumerate(zip(_columns(df), row))
             current_col += 1
-            push!(col, t)
+            S = typeof(val)
+            T = eltype(col)
+            V = promote_type(S, T)
+            if S <: T || V <: T || !promote
+                # if S <: T || V <: T this should never throw an exception
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(V, targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
         end
         current_col = 0
         for col in _columns(df)
