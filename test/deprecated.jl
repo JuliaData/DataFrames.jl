@@ -622,9 +622,6 @@ end
         combine(gd, (:b,) => sum, (:c,) => sum)
     @test combine(gd, [:b => vexp, :c => identity]) ==
         combine(gd, b_function = :b => vexp, c_identity = :c => identity)
-
-    @test by(df, :a, sdf -> sdf[1, :]) == by(sdf -> sdf[1, :], df, :a)
-    @test combine(gd, sdf -> sdf[1, :]) == combine(sdf -> sdf[1, :], gd)
 end
 
 global_logger(old_logger)

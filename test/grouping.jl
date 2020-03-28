@@ -642,7 +642,8 @@ end
         by(:c => sum => :c_sum, df, :a) ==
         by(df, :a, [:c => sum]) ==
         by(df, :a, [:c => sum => :c_sum]) ==
-        by(d -> (c_sum=sum(d.c),), df, :a)
+        by(d -> (c_sum=sum(d.c),), df, :a) ==
+        by(df, :a, d -> (c_sum=sum(d.c),))
 
     @test by(df, :a, :c => vexp) ==
         by(:c => vexp, df, :a) ==
@@ -650,19 +651,24 @@ end
         by(:c => vexp => :c_function, df, :a) ==
         by(df, :a, [:c => vexp]) ==
         by(df, :a, [:c => vexp => :c_function]) ==
-        by(d -> (c_function=vexp(d.c),), df, :a)
+        by(d -> (c_function=vexp(d.c),), df, :a) ==
+        by(df, :a, d -> (c_function=vexp(d.c),))
 
     @test by(df, :a, :b => sum, :c => sum) ==
         by(df, :a, :b => sum => :b_sum, :c => sum => :c_sum) ==
         by(df, :a, [:b => sum, :c => sum]) ==
         by(df, :a, [:b => sum => :b_sum, :c => sum => :c_sum]) ==
-        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a)
+        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a) ==
+        by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
     @test by(df, :a, :b => vexp, :c => identity) ==
         by(df, :a, :b => vexp => :b_function, :c => identity => :c_identity) ==
         by(df, :a, [:b => vexp, :c => identity]) ==
         by(df, :a, [:b => vexp => :b_function, :c => identity => :c_identity]) ==
-        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a)
+        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a) ==
+        by(df, :a, d -> (b_function=vexp(d.b), c_identity=identity(d.c))) ==
+        by(df, :a, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=identity(c))) ==
+        by([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=identity(c)), df, :a)
 
     gd = groupby(df, :a)
 
@@ -674,7 +680,8 @@ end
         combine(:c => sum => :c_sum, gd) ==
         combine(gd, [:c => sum]) ==
         combine(gd, [:c => sum => :c_sum]) ==
-        combine(d -> (c_sum=sum(d.c),), gd)
+        combine(d -> (c_sum=sum(d.c),), gd) ==
+        combine(gd, d -> (c_sum=sum(d.c),))
 
     @test combine(gd, :c => vexp) ==
         combine(:c => vexp, gd) ==
@@ -682,27 +689,42 @@ end
         combine(:c => vexp => :c_function, gd) ==
         combine(gd, [:c => vexp]) ==
         combine(gd, [:c => vexp => :c_function]) ==
-        combine(d -> (c_function=exp.(d.c),), gd)
+        combine(d -> (c_function=exp.(d.c),), gd) ==
+        combine(gd, d -> (c_function=exp.(d.c),))
+
 
     @test combine(gd, :b => sum, :c => sum) ==
         combine(gd, :b => sum => :b_sum, :c => sum => :c_sum) ==
         combine(gd, [:b => sum, :c => sum]) ==
         combine(gd, [:b => sum => :b_sum, :c => sum => :c_sum]) ==
-        combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
+        combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd) ==
+        combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
     @test combine(gd, :b => vexp, :c => identity) ==
         combine(gd, :b => vexp => :b_function, :c => identity => :c_identity) ==
         combine(gd, [:b => vexp, :c => identity]) ==
         combine(gd, [:b => vexp => :b_function, :c => identity => :c_identity]) ==
-        combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd)
+        combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd) ==
+        combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c)) ==
+        combine([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c), gd) ==
+        combine(gd, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c))
 
     @test by(x -> extrema(x.c), df, :a) == by(:c => (x -> extrema(x)) => :x1, df, :a)
     @test by(x -> x.b+x.c, df, :a) == by([:b,:c] => (+) => :x1, df, :a)
-    @test by(x -> (p=x.b, q=x.c), df, :a) == by([:b,:c] => (b,c) -> (p=b,q=c), df, :a)
+    @test by(x -> (p=x.b, q=x.c), df, :a) ==
+          by([:b,:c] => (b,c) -> (p=b,q=c), df, :a) ==
+          by(df, :a, x -> (p=x.b, q=x.c)) ==
+          by(df, :a, [:b,:c] => (b,c) -> (p=b,q=c))
     @test by(x -> DataFrame(p=x.b, q=x.c), df, :a) ==
-          by([:b,:c] => (b,c) -> DataFrame(p=b,q=c), df, :a)
-    @test by(x -> [1 2; 3 4], df, :a) == by([:b,:c] => (b,c) -> [1 2; 3 4], df, :a)
+          by([:b,:c] => (b,c) -> DataFrame(p=b,q=c), df, :a) ==
+          by(df, :a, x -> DataFrame(p=x.b, q=x.c)) ==
+          by(df, :a, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
+    @test by(x -> [1 2; 3 4], df, :a) ==
+          by([:b,:c] => (b,c) -> [1 2; 3 4], df, :a) ==
+          by(df, :a, x -> [1 2; 3 4]) ==
+          by(df, :a, [:b,:c] => (b,c) -> [1 2; 3 4])
     @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
+    @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
 end
 
 struct TestType end
@@ -1647,14 +1669,15 @@ end
     @test Matrix(res) == Matrix(res2)
 end
 
-@testset "disallowed return values in Pair interface" begin
+@testset "last Pair interface with multiple return values" begin
     df = DataFrame(g=[1,1,1,2,2,2], x1=1:6)
-    @test_throws ArgumentError by(df, :g, :x1 => x -> DataFrame())
-    @test_throws ArgumentError by(df, :g, :x1 => x -> (x=1,y=2))
-    @test_throws ArgumentError by(df, :g, :x1 => x -> (x=[1],y=[2]))
+    @test by(df, :g, :x1 => x -> DataFrame()) == by( :x1 => x -> DataFrame(), df, :g)
+    @test by(df, :g, :x1 => x -> (x=1,y=2)) == by( :x1 => x -> (x=1,y=2), df, :g)
+    @test by(df, :g, :x1 => x -> (x=[1],y=[2])) == by( :x1 => x -> (x=[1],y=[2]), df, :g)
     @test_throws ArgumentError by(df, :g, :x1 => x -> (x=[1],y=2))
-    @test_throws ArgumentError by(df, :g, :x1 => x -> rand(2,2))
-    @test_throws ArgumentError by(df, :g, :x1 => x -> df[1, :])
+    @test_throws ArgumentError by(:x1 => x -> (x=[1],y=2), df, :g)
+    @test by(df, :g, :x1 => x -> ones(2,2)) == by(:x1 => x -> ones(2,2), df, :g)
+    @test by(df, :g, :x1 => x -> df[1, Not(:g)]) == by( :x1 => x -> df[1, Not(:g)], df, :g)
 end
 
 @testset "keepkeys" begin

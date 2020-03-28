@@ -349,8 +349,6 @@ end
 
 @deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : eachcol(df)
 
-@deprecate combine(gd::GroupedDataFrame, f::Function) combine(f, gd)
-@deprecate by(d::AbstractDataFrame, cols::Any, f::Function;
-              sort::Bool=false, skipmissing::Bool=false) by(f, d, cols, sort=sort, skipmissing=skipmissing)
+# this is deprecated because it calls deprecated combine
 by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool=false, f...) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
