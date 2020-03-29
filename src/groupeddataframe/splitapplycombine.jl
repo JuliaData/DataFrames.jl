@@ -176,7 +176,7 @@ which is determined using the following rules:
 - A single value gives a `DataFrame` with a single additional column and one row per group.
 - A named tuple of single values or a [`DataFrameRow`](@ref) gives a `DataFrame` with
   one additional column for each field and one row per group.
-- A vector gives a data frame with a single additional column and as many rows
+- A vector gives a `DataFrame` with a single additional column and as many rows
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with the same
   additional columns and as many rows for each group as the rows returned for that group.
@@ -186,7 +186,7 @@ which is determined using the following rules:
 `f` must always return the same kind of object (a single value or a table as defined
 in the above list) for all groups, and with the same column names (defined explicitly
 or auto-generated). If an empty vector, data frame, or named tuple is returned then
-a given group is dropped from the result.
+the corresponding group is dropped from the result.
 In particular, named tuples cannot mix single values and vectors.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
@@ -404,7 +404,7 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
 
-julia> combine(gd, :b=>identity=>:b, :c=>identity=>:c,
+julia> combine(gd, :b => identity => :b, :c => identity => :c,
                [:b, :c] => ByRow(*), keepkeys=false) # auto-splatting and keepkeys
 8×3 DataFrame
 │ Row │ b     │ c     │ b_c_* │
@@ -789,7 +789,7 @@ end
 
 isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
 
-function _combine(f::AbstractVector{Pair}, gd::GroupedDataFrame, nms::AbstractVector{Symbol})
+function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
@@ -862,7 +862,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
             throw(ArgumentError("setting column name for tabular return value is disallowed"))
         end
     else
-         nms = [last(last(f))]
+        nms = [last(last(f))]
     end
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat

@@ -1265,7 +1265,7 @@ end
     @test gdf[1:1] == gdf
 
     @test map(nrow, gdf) == groupby_checked(DataFrame(x1=3), [])
-    @test map(x -> (x2_identity = x.x2,), gdf) == groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
+    @test map(:x => identity => :x2_identity, gdf) == groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
     @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
@@ -1635,8 +1635,7 @@ end
 
 @testset "hard tabular return value cases" begin
     Random.seed!(1)
-    df = DataFrame(b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
-                   x = Vector{Union{Float64, Missing}}(randn(8)))
+    df = DataFrame(b = repeat([2, 1], outer=[4]), x = randn(8))
     res = by(sdf -> sdf.x[1:2], df, :b)
     @test names(res) == [:b, :x1]
     res2 = by(:x => x -> x[1:2], df, :b)
@@ -1671,13 +1670,13 @@ end
 
 @testset "last Pair interface with multiple return values" begin
     df = DataFrame(g=[1,1,1,2,2,2], x1=1:6)
-    @test by(df, :g, :x1 => x -> DataFrame()) == by( :x1 => x -> DataFrame(), df, :g)
-    @test by(df, :g, :x1 => x -> (x=1,y=2)) == by( :x1 => x -> (x=1,y=2), df, :g)
-    @test by(df, :g, :x1 => x -> (x=[1],y=[2])) == by( :x1 => x -> (x=[1],y=[2]), df, :g)
+    @test by(df, :g, :x1 => x -> DataFrame()) == by(:x1 => x -> DataFrame(), df, :g)
+    @test by(df, :g, :x1 => x -> (x=1, y=2)) == by(:x1 => x -> (x=1, y=2), df, :g)
+    @test by(df, :g, :x1 => x -> (x=[1], y=[2])) == by(:x1 => x -> (x=[1], y=[2]), df, :g)
     @test_throws ArgumentError by(df, :g, :x1 => x -> (x=[1],y=2))
-    @test_throws ArgumentError by(:x1 => x -> (x=[1],y=2), df, :g)
-    @test by(df, :g, :x1 => x -> ones(2,2)) == by(:x1 => x -> ones(2,2), df, :g)
-    @test by(df, :g, :x1 => x -> df[1, Not(:g)]) == by( :x1 => x -> df[1, Not(:g)], df, :g)
+    @test_throws ArgumentError by(:x1 => x -> (x=[1], y=2), df, :g)
+    @test by(df, :g, :x1 => x -> ones(2, 2)) == by(:x1 => x -> ones(2, 2), df, :g)
+    @test by(df, :g, :x1 => x -> df[1, Not(:g)]) == by(:x1 => x -> df[1, Not(:g)], df, :g)
 end
 
 @testset "keepkeys" begin
