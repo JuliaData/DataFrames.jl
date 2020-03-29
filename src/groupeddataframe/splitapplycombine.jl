@@ -199,12 +199,12 @@ accurate than the standard [`sum`](@ref) function (which uses pairwise summation
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
 Column names are automatically generated when necessary using the names `x1`, `x2` and so on
-if `f` is a `Function` or an `AbstractMatrix` is returned by it
+if `f` is a `Base.Callable` or an `AbstractMatrix` is returned by it
 and using the rules defined in [`select`](@ref) otherwise.
 """
 
 """
-    map(f::Union{Function, Pair}, gd::GroupedDataFrame)
+    map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
 
 Apply `f` to each group of rows and return a [`GroupedDataFrame`](@ref).
 
@@ -237,7 +237,7 @@ Last Group: 1 row
 
 See [`by`](@ref) for more examples.
 """
-function Base.map(f::Union{Function, Pair}, gd::GroupedDataFrame)
+function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd, nothing)
         keys = _names(gd.parent)[gd.cols]
@@ -281,7 +281,7 @@ const F_ARGUMENT_RULES =
 """
 If the last arguments consist of more than one `Pair`s, or vectors
 of such `Pair`s, then allowed transformations follow the rules specified for
-[`select`](@ref). Function defined by `f` is passed `SubArray` views as positional
+[`select`](@ref). Base.Callable defined by `f` is passed `SubArray` views as positional
 arguments for each column specified to selected and can return an abstract vector or
 a single value (defined precisely below) which will produce each a separate column.
 
@@ -304,9 +304,9 @@ they are required to be equal.
 """
     combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...;
             keepkeys::Bool=true)
-    combine(f::Union{Function, Pair}, gd::GroupedDataFrame;
+    combine(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame;
             keepkeys::Bool=true)
-    combine(gd::GroupedDataFrame, f::Union{Function, Pair};
+    combine(gd::GroupedDataFrame, f::Union{Base.Callable, Pair};
             keepkeys::Bool=true)
 
 Transform a [`GroupedDataFrame`](@ref) into a `DataFrame`.
@@ -422,13 +422,26 @@ julia> combine(gd, :b => identity => :b, :c => identity => :c,
 
 See [`by`](@ref) for more examples.
 """
-combine(f::Union{Function, Pair}, gd::GroupedDataFrame; keepkeys::Bool=true) =
+combine(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame; keepkeys::Bool=true) =
+    combine(gd, f, keepkeys=keepkeys)
+combine(gd::GroupedDataFrame, f::Base.Callable; keepkeys::Bool=true) =
     combine_helper(f, gd, keepkeys=keepkeys)
-# methods below need to be separate to avoid dispatch ambiguity
-combine(gd::GroupedDataFrame, f::Function; keepkeys::Bool=true) =
-    combine_helper(f, gd, keepkeys=keepkeys)
-combine(gd::GroupedDataFrame, f::Pair; keepkeys::Bool=true) =
-    combine_helper(f, gd, keepkeys=keepkeys)
+
+function combine(gd::GroupedDataFrame, f::Pair; keepkeys::Bool=true)
+    # move handling of aggregate to specialized combine
+    if isagg(first(f) => last(f) isa Pair ? first(last(f)) : last(f))
+        return combine(gd, [f], keepkeys=keepkeys)
+    end
+
+    if first(f) isa Tuple
+        Base.depwarn("passing a Tuple $(first(f)) as column selector is deprecated" *
+                     ", use a vector $(collect(first(f))) instead", :combine)
+            cs = collect(first(f))
+    else
+        cs = first(f)
+    end
+    return combine_helper(cs => last(f), gd, keepkeys=keepkeys)
+end
 
 function combine(gd::GroupedDataFrame,
                  @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}}...);
@@ -499,25 +512,40 @@ wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
 
-wrap_table(x::Any) =
+wrap_table(x::Any, ::Val) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
-wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
-                    AbstractDataFrame,
-                    AbstractVector,
-                    AbstractMatrix}) = wrap(x)
+function wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
+                             AbstractDataFrame, AbstractMatrix}, ::Val{T}) where T
+    T || throw(ArgumentError("mixing single and multiple column values is not allowed"))
+    wrap(x)
+end
 
-wrap_row(x::Any) = wrap(x)
+function wrap_table(x::AbstractVector, ::Val{T}) where T
+    T && throw(ArgumentError("mixing single and multiple column values is not allowed"))
+    wrap(x)
+end
+
+function wrap_row(x::Any, ::Val{T}) where T
+    # NamedTuple is not possible in this branch
+    if (x isa DataFrameRow) ⊻ T
+        throw(ArgumentError("mixing single and multiple column values is not allowed"))
+    end
+    wrap(x)
+end
+
 # note that also NamedTuple() is correctly captured by this definition
 # as it is more specific than the one below
-wrap_row(x::Union{AbstractVecOrMat, AbstractDataFrame,
-                  NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}) =
+wrap_row(::Union{AbstractVecOrMat, AbstractDataFrame,
+                 NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}, ::Val) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
-function wrap_row(x::NamedTuple)
+
+function wrap_row(x::NamedTuple, ::Val{T}) where T
     if any(v -> v isa AbstractVector, x)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     end
+    T || throw(ArgumentError("mixing single and multiple column values is not allowed"))
     return x
 end
 
@@ -718,7 +746,7 @@ function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
     end
 end
 
-# Function barrier works around type instability of _groupreduce_init due to applicable
+# function barrier works around type instability of _groupreduce_init due to applicable
 groupreduce(f, op, condf, adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce!(groupreduce_init(op, condf, incol, gd),
@@ -781,13 +809,15 @@ function do_f(f, x...)
         res = f(x...)
         if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
             throw(ArgumentError("a single value or vector result is required when passing " *
-                                "a vector or tuple of functions (got $(typeof(res)))"))
+                                "multiple functions (got $(typeof(res)))"))
         end
         res
     end
 end
 
 isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
+
+const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
 function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     if any(isagg, f)
@@ -815,7 +845,9 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::Abstract
                 incols = Tuple(eachcol(df))
             end
             firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-            idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
+            wasmulti = firstres isa MULTI_COLS_TYPE
+            idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
+                                                  Val(wasmulti))
             res[i] = idx, outcols[1]
         end
     end
@@ -828,40 +860,37 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::Abstract
     return idx, DataFrame(collect(AbstractVector, outcols), nms)
 end
 
-function _combine(fun::Function, gd::GroupedDataFrame, ::Nothing)
-    idx, outcols, nms = _combine_with_first(wrap(fun(gd[1])), fun, gd, nothing)
+function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
+    firstres = fun(gd[1])
+    wasmulti = firstres isa MULTI_COLS_TYPE
+    idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, nothing,
+                                            Val(wasmulti))
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
 
 function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     f = normalize_selection(index(parent(gd)), p)
-    if first(f) isa Int
+    if first(p) isa Int
         incols = parent(gd)[!, first(f)]
         fun = first(last(f))
     else
         incols = ntuple(i -> parent(gd)[!, first(f)[i]], length(first(f)))
         fun = first(last(f))
     end
-    agg = check_aggregate(fun)
-    if agg isa AbstractAggregate && first(f) isa Int
-        idx = gd.idx[gd.starts]
-        outcols = (agg(incols, gd),)
-        firstres = nothing
-    else
-        firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-        if firstres isa AbstractVector
-            wfirstres = (;last(last(f)) => firstres,)
-        else
-            wfirstres = wrap(firstres)
-        end
-        idx, outcols, nms = _combine_with_first(wfirstres, fun, gd, incols)
-    end
-    if isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
+    # here we know that p is not isagg(f)
+    firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
+    wasmulti = firstres isa MULTI_COLS_TYPE
+    idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols,
+                                            Val(wasmulti))
+    # disallow passing target column name to genuine tables
+    if firstres isa MULTI_COLS_TYPE
         if p isa Pair{<:Any, <:Pair{<:Any, Symbol}}
             throw(ArgumentError("setting column name for tabular return value is disallowed"))
         end
     else
+        # fetch auto generated or passed target column name to nms overwritting
+        # what _combine_with_first produced
         nms = [last(last(f))]
     end
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
@@ -870,7 +899,8 @@ end
 
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
-                             incols::Union{Nothing, AbstractVector, Tuple})
+                             incols::Union{Nothing, AbstractVector, Tuple},
+                             wasmulti::Val)
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -896,10 +926,12 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     if first isa Union{AbstractDataFrame,
                        NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
-                                                             f, gd, incols, targetcolnames)
+                                                             f, gd, incols, targetcolnames,
+                                                             wasmulti)
     else
         outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, idx, 1, 1,
-                                                           f, gd, incols, targetcolnames)
+                                                           f, gd, incols, targetcolnames,
+                                                           wasmulti)
     end
     idx, outcols, collect(Symbol, finalcolnames)
 end
@@ -937,7 +969,8 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                    f::Any, gd::GroupedDataFrame,
                                    incols::Union{Nothing, AbstractVector, Tuple},
-                                   colnames::NTuple{N, Symbol}) where N
+                                   colnames::NTuple{N, Symbol},
+                                   wasmulti::Val) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -948,7 +981,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     idx[rowstart] = gdidx[starts[rowstart]]
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i))
+        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), wasmulti)
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -966,7 +999,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                 end
             end
             return _combine_rows_with_first!(row, newcols, idx, i, j,
-                                             f, gd, incols, colnames)
+                                             f, gd, incols, colnames, wasmulti)
         end
         idx[i] = gdidx[starts[i]]
     end
@@ -988,7 +1021,7 @@ else
 end
 
 function append_rows!(rows, outcols::NTuple{N, AbstractVector},
-                      colstart::Integer, colnames::NTuple{N, Symbol}, fcallres) where N
+                      colstart::Integer, colnames::NTuple{N, Symbol}) where N
     if !isa(rows, Union{AbstractDataFrame, NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
         throw(ArgumentError("return value must not change its kind " *
                             "(single row or variable number of rows) across groups"))
@@ -1001,12 +1034,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
         cn = colnames[j]
         local vals
         try
-            if fcallres isa AbstractVector
-                @assert N == 1  # in this case rows must be a one element NamedTuple
-                vals = rows[1] # we ignore the automatically assigned column name
-            else
-                vals = getproperty(rows, cn)
-            end
+            vals = getproperty(rows, cn)
         catch
             throw(ArgumentError("return value must have the same column names " *
                                 "for all groups (got $colnames and $(propertynames(rows)))"))
@@ -1026,7 +1054,8 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                      f::Any, gd::GroupedDataFrame,
                                      incols::Union{Nothing, AbstractVector, Tuple},
-                                     colnames::NTuple{N, Symbol}) where N
+                                     colnames::NTuple{N, Symbol},
+                                     wasmulti::Val) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -1035,14 +1064,13 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
 
     @assert _ncol(first) == N
     if !isempty(colnames)
-        j = append_rows!(first, outcols, colstart, colnames, nothing)
+        j = append_rows!(first, outcols, colstart, colnames)
         @assert j === nothing # eltype is guaranteed to match
         append!(idx, Iterators.repeated(gdidx[starts[rowstart]], _nrow(first)))
     end
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        fcallres = do_call(f, gdidx, starts, ends, gd, incols, i)
-        rows = wrap_table(fcallres)
+        rows = wrap_table(do_call(f, gdidx, starts, ends, gd, incols, i), wasmulti)
         _ncol(rows) == 0 && continue
         if isempty(colnames)
             newcolnames = tuple(propertynames(rows)...)
@@ -1053,9 +1081,9 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
             end
             initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
             return _combine_tables_with_first!(rows, initialcols, idx, i, 1,
-                                               f, gd, incols, newcolnames)
+                                               f, gd, incols, newcolnames, wasmulti)
         end
-        j = append_rows!(rows, outcols, 1, colnames, fcallres)
+        j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
             let i = i, j = j, outcols=outcols, rows=rows # Workaround for julia#15276
@@ -1071,7 +1099,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                 end
             end
             return _combine_tables_with_first!(rows, newcols, idx, i, j,
-                                               f, gd, incols, colnames)
+                                               f, gd, incols, colnames, wasmulti)
         end
         append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
     end
@@ -1081,9 +1109,9 @@ end
 """
     by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(f::Union{Function, Pair}, d::AbstractDataFrame, cols::Any;
+    by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(d::AbstractDataFrame, cols::Any, f::Union{Function, Pair};
+    by(d::AbstractDataFrame, cols::Any, f::Union{Base.Callable, Pair};
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
 
 Split-apply-combine in one step: apply `f` to each grouping in `df`
@@ -1143,11 +1171,11 @@ julia> by(df, :a) do d # do syntax for the slower variant
 │ 4   │ 4     │ 12    │
 ```
 """
-by(f::Union{Function, Pair}, d::AbstractDataFrame, cols::Any;
+by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
             keepkeys=keepkeys)
-by(d::AbstractDataFrame, cols::Any, f::Function;
+by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
             keepkeys=keepkeys)

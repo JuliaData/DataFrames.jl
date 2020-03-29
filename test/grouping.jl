@@ -725,6 +725,84 @@ end
           by(df, :a, [:b,:c] => (b,c) -> [1 2; 3 4])
     @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
     @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
+
+    for f in (map, combine)
+        for col in (:c, 3)
+            @test f(col => sum, gd) == f(d -> (c_sum=sum(d.c),), gd)
+            @test f(col => x -> sum(x), gd) == f(d -> (c_function=sum(d.c),), gd)
+            @test f(col => x -> (z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
+            @test f(col => x -> DataFrame(z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
+            @test f(col => identity, gd) == f(d -> (c_identity=d.c,), gd)
+            @test f(col => x -> (z=x,), gd) == f(d -> (z=d.c,), gd)
+
+            @test f(col => sum => :xyz, gd) ==
+                f(d -> (xyz=sum(d.c),), gd)
+            @test f(col => (x -> sum(x)) => :xyz, gd) ==
+                f(d -> (xyz=sum(d.c),), gd)
+            @test f(col => (x -> (sum(x),)) => :xyz, gd) ==
+                f(d -> (xyz=(sum(d.c),),), gd)
+            @test_throws ArgumentError f(col => (x -> (z=sum(x),),) => :xyz, gd)
+            @test_throws ArgumentError f(col => (x -> DataFrame(z=sum(x),),) => :xyz, gd)
+            @test_throws ArgumentError f(col => (x -> (z=x,),) => :xyz, gd)
+            @test_throws ArgumentError f(col => x -> (z=1, xzz=[1]), gd)
+
+            for wrap in (vcat, tuple)
+                @test_throws MethodError f(wrap(col => sum), gd)
+                @test_throws MethodError f(wrap(col => x -> sum(x)), gd)
+                @test_throws MethodError f(wrap(col => x -> (sum(x),)), gd)
+                @test_throws MethodError f(wrap(col => x -> (z=sum(x),)), gd)
+                @test_throws MethodError f(wrap(col => x -> DataFrame(z=sum(x),)), gd)
+                @test_throws MethodError f(wrap(col => x -> (z=x,)), gd)
+                @test_throws MethodError f(wrap(col => x -> (z=1, xzz=[1])), gd)
+            end
+        end
+        for cols in ([:b, :c], 2:3, [2, 3], [false, true, true])
+            @test f(cols => (b,c) -> (y=exp.(b), z=c), gd) ==
+                f(d -> (y=exp.(d.b), z=d.c), gd)
+            @test f(cols => (b,c) -> [exp.(b) c], gd) ==
+                f(d -> [exp.(d.b) d.c], gd)
+            @test f(cols => ((b,c) -> sum(b) + sum(c)) => :xyz, gd) ==
+                f(d -> (xyz=sum(d.b) + sum(d.c),), gd)
+            if eltype(cols) === Bool
+                cols2 = [[false, true, false], [false, false, true]]
+                @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
+                @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
+                @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
+            else
+                cols2 = cols
+                if f === combine
+                    @test f(gd, cols2[1] => sum => :xyz, cols2[2] => sum => :xzz) ==
+                        f(d -> (xyz=sum(d.b), xzz=sum(d.c)), gd)
+                    @test f(gd, cols2[1] => sum => :xyz, cols2[1] => sum => :xzz) ==
+                        f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
+                    @test f(gd, cols2[1] => sum => :xyz, cols2[2] => (x -> first(x)) => :xzz) ==
+                        f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
+                    @test_throws ArgumentError f(gd, cols2[1] => vexp => :xyz, cols2[2] => sum => :xzz)
+                end
+            end
+
+            @test_throws ArgumentError f(cols => (b,c) -> (y=exp.(b), z=sum(c)), gd)
+            @test_throws ArgumentError f(cols2 => ((b,c) -> DataFrame(y=exp.(b), z=sum(c))) => :xyz, gd)
+            @test_throws ArgumentError f(cols2 => ((b,c) -> [exp.(b) c]) => :xyz, gd)
+
+            for wrap in (vcat, tuple)
+                @test_throws MethodError f(wrap(cols => x -> sum(x.b) + sum(x.c)), gd)
+                if eltype(cols) === Bool
+                    cols2 = [[false, true, false], [false, false, true]]
+                    @test_throws MethodError f(wrap(cols2[1] => x -> sum(x.b), cols2[2] => x -> sum(x.c)), gd)
+                    @test_throws MethodError f(wrap(cols2[1] => x -> sum(x.b), cols2[2] => x -> first(x.c)), gd)
+                else
+                    cols2 = cols
+                    @test_throws MethodError f(wrap(cols[1] => sum, cols[2] => sum), gd)
+                    @test_throws MethodError f(wrap(cols[1] => sum, cols[2] => x -> first(x)), gd)
+                    @test_throws MethodError f(wrap(cols2[1] => vexp, cols2[2] => sum), gd)
+                end
+
+                @test_throws MethodError f(wrap(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c))), gd)
+                @test_throws MethodError f(wrap(cols => x -> [exp.(x.b) x.c]), gd)
+            end
+        end
+    end
 end
 
 struct TestType end
@@ -1265,7 +1343,7 @@ end
     @test gdf[1:1] == gdf
 
     @test map(nrow, gdf) == groupby_checked(DataFrame(x1=3), [])
-    @test map(:x => identity => :x2_identity, gdf) == groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
+    @test map(:x2 => identity => :x2_identity, gdf) == groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
     @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
@@ -1595,7 +1673,7 @@ end
                NamedTuple(), rand(0,0), rand(5,0),
                DataFrame(x1=Int[]), DataFrame(x1=Any[]),
                (x1=Int[],), (x1=Any[],), rand(0,1)),
-        fr in (DataFrame(x1=[true]), (x1=[true],), [true])
+        fr in (DataFrame(x1=[true]), (x1=[true],))
 
         df = DataFrame(a = 1:N, x1 = x1)
         res = by(sdf -> sdf.x1[1] ? fr : er, df, :a)
@@ -1644,28 +1722,40 @@ end
     res2 = by(:x => (x -> x[1:2]) => :z, df, :b)
     @test names(res2) == [:b, :z]
     @test Matrix(res) == Matrix(res2)
-    res2 = by(df, :b) do sdf
+
+    @test_throws ArgumentError by(df, :b) do sdf
         if sdf.b[1] == 2
             return (c=sdf.x[1:2],)
         else
             return sdf.x[1:2]
         end
     end
-    @test names(res2) == [:b, :c]
-    @test Matrix(res) == Matrix(res2)
     @test_throws ArgumentError by(df, :b) do sdf
-            if sdf.b[1] == 1
-                return (c=sdf.x[1:2],)
-            else
-                return sdf.x[1:2]
-            end
+        if sdf.b[1] == 1
+            return (c=sdf.x[1:2],)
+        else
+            return sdf.x[1:2]
         end
+    end
+    @test_throws ArgumentError by(df, :b) do sdf
+        if sdf.b[1] == 2
+            return (c=sdf.x[1],)
+        else
+            return sdf.x[1]
+        end
+    end
+    @test_throws ArgumentError by(df, :b) do sdf
+        if sdf.b[1] == 1
+            return (c=sdf.x[1],)
+        else
+            return sdf.x[1]
+        end
+    end
 
-    @test_throws ArgumentError by([:b, :x] => ((b,x) -> b[1] == 1 ? x[1:2] : (c=x[1:2],)) => :v, df, :b)
-    @test_throws ArgumentError by([:b, :x] => ((b,x) -> b[1] == 2 ? x[1:2] : (c=x[1:2],)) => :v, df, :b)
-    res2 = by([:b, :x] => ((b,x) -> b[1] == 2 ? x[1:2] : (v=x[1:2],)) => :v, df, :b)
-    @test names(res2) == [:b, :v]
-    @test Matrix(res) == Matrix(res2)
+    for i in 1:2, v1 in [1, 1:2], v2 in [1, 1:2]
+        @test_throws ArgumentError by([:b, :x] => ((b,x) -> b[1] == i ? x[v1] : (c=x[v2],)) => :v, df, :b)
+        @test_throws ArgumentError by([:b, :x] => ((b,x) -> b[1] == i ? x[v1] : (v=x[v2],)) => :v, df, :b)
+    end
 end
 
 @testset "last Pair interface with multiple return values" begin
