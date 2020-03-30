@@ -908,7 +908,7 @@ end
 function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p)
     if source_cols isa Int
-        incols = source_cols isa Int ? parent(gd)[!, source_cols] :
+        incols = parent(gd)[!, source_cols]
     else
         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
     end
