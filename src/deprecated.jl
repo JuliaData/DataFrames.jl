@@ -350,5 +350,8 @@ end
 @deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : eachcol(df)
 
 # this is deprecated because it calls deprecated combine
-by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool=false, f...) =
-    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
+function by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool=false, f...)
+    Base.depwarn("`by(gd, cols; target_col = source_cols => fun, ...)` is deprecated," *
+                 " use `by(gd, cols, source_cols => fun => :target_col, ...)` instead", :by)
+    return combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
+end

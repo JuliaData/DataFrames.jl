@@ -649,6 +649,8 @@ end
         by(:c => vexp, df, :a) ==
         by(df, :a, :c => vexp => :c_function) ==
         by(:c => vexp => :c_function, df, :a) ==
+        by(:c => c -> (c_function = vexp(c),), df, :a) ==
+        by(df, :a, :c => c -> (c_function = vexp(c),)) ==
         by(df, :a, [:c => vexp]) ==
         by(df, :a, [:c => vexp => :c_function]) ==
         by(d -> (c_function=vexp(d.c),), df, :a) ==
@@ -670,6 +672,23 @@ end
         by(df, :a, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=identity(c))) ==
         by([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=identity(c)), df, :a)
 
+    @test by(x -> extrema(x.c), df, :a) == by(:c => (x -> extrema(x)) => :x1, df, :a)
+    @test by(x -> x.b+x.c, df, :a) == by([:b,:c] => (+) => :x1, df, :a)
+    @test by(x -> (p=x.b, q=x.c), df, :a) ==
+          by([:b,:c] => (b,c) -> (p=b,q=c), df, :a) ==
+          by(df, :a, x -> (p=x.b, q=x.c)) ==
+          by(df, :a, [:b,:c] => (b,c) -> (p=b,q=c))
+    @test by(x -> DataFrame(p=x.b, q=x.c), df, :a) ==
+          by([:b,:c] => (b,c) -> DataFrame(p=b,q=c), df, :a) ==
+          by(df, :a, x -> DataFrame(p=x.b, q=x.c)) ==
+          by(df, :a, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
+    @test by(x -> [1 2; 3 4], df, :a) ==
+          by([:b,:c] => (b,c) -> [1 2; 3 4], df, :a) ==
+          by(df, :a, x -> [1 2; 3 4]) ==
+          by(df, :a, [:b,:c] => (b,c) -> [1 2; 3 4])
+    @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
+    @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
+
     gd = groupby(df, :a)
 
     # Only test that different combine syntaxes work,
@@ -687,11 +706,12 @@ end
         combine(:c => vexp, gd) ==
         combine(gd, :c => vexp => :c_function) ==
         combine(:c => vexp => :c_function, gd) ==
+        combine(:c => c -> (c_function = vexp(c),), gd) ==
+        combine(gd, :c => c -> (c_function = vexp(c),)) ==
         combine(gd, [:c => vexp]) ==
         combine(gd, [:c => vexp => :c_function]) ==
         combine(d -> (c_function=exp.(d.c),), gd) ==
         combine(gd, d -> (c_function=exp.(d.c),))
-
 
     @test combine(gd, :b => sum, :c => sum) ==
         combine(gd, :b => sum => :b_sum, :c => sum => :c_sum) ==
@@ -709,22 +729,22 @@ end
         combine([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c), gd) ==
         combine(gd, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c))
 
-    @test by(x -> extrema(x.c), df, :a) == by(:c => (x -> extrema(x)) => :x1, df, :a)
-    @test by(x -> x.b+x.c, df, :a) == by([:b,:c] => (+) => :x1, df, :a)
-    @test by(x -> (p=x.b, q=x.c), df, :a) ==
-          by([:b,:c] => (b,c) -> (p=b,q=c), df, :a) ==
-          by(df, :a, x -> (p=x.b, q=x.c)) ==
-          by(df, :a, [:b,:c] => (b,c) -> (p=b,q=c))
-    @test by(x -> DataFrame(p=x.b, q=x.c), df, :a) ==
-          by([:b,:c] => (b,c) -> DataFrame(p=b,q=c), df, :a) ==
-          by(df, :a, x -> DataFrame(p=x.b, q=x.c)) ==
-          by(df, :a, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
-    @test by(x -> [1 2; 3 4], df, :a) ==
-          by([:b,:c] => (b,c) -> [1 2; 3 4], df, :a) ==
-          by(df, :a, x -> [1 2; 3 4]) ==
-          by(df, :a, [:b,:c] => (b,c) -> [1 2; 3 4])
-    @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
-    @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
+    @test combine(x -> extrema(x.c), gd) == combine(:c => (x -> extrema(x)) => :x1, gd)
+    @test combine(x -> x.b+x.c, gd) == combine([:b,:c] => (+) => :x1, gd)
+    @test combine(x -> (p=x.b, q=x.c), gd) ==
+          combine([:b,:c] => (b,c) -> (p=b,q=c), gd) ==
+          combine(gd, x -> (p=x.b, q=x.c)) ==
+          combine(gd, [:b,:c] => (b,c) -> (p=b,q=c))
+    @test combine(x -> DataFrame(p=x.b, q=x.c), gd) ==
+          combine([:b,:c] => (b,c) -> DataFrame(p=b,q=c), gd) ==
+          combine(gd, x -> DataFrame(p=x.b, q=x.c)) ==
+          combine(gd, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
+    @test combine(x -> [1 2; 3 4], gd) ==
+          combine([:b,:c] => (b,c) -> [1 2; 3 4], gd) ==
+          combine(gd, x -> [1 2; 3 4]) ==
+          combine(gd, [:b,:c] => (b,c) -> [1 2; 3 4])
+    @test_throws ArgumentError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
+    @test_throws ArgumentError combine(gd, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
 
     for f in (map, combine)
         for col in (:c, 3)
@@ -745,16 +765,6 @@ end
             @test_throws ArgumentError f(col => (x -> DataFrame(z=sum(x),),) => :xyz, gd)
             @test_throws ArgumentError f(col => (x -> (z=x,),) => :xyz, gd)
             @test_throws ArgumentError f(col => x -> (z=1, xzz=[1]), gd)
-
-            for wrap in (vcat, tuple)
-                @test_throws MethodError f(wrap(col => sum), gd)
-                @test_throws MethodError f(wrap(col => x -> sum(x)), gd)
-                @test_throws MethodError f(wrap(col => x -> (sum(x),)), gd)
-                @test_throws MethodError f(wrap(col => x -> (z=sum(x),)), gd)
-                @test_throws MethodError f(wrap(col => x -> DataFrame(z=sum(x),)), gd)
-                @test_throws MethodError f(wrap(col => x -> (z=x,)), gd)
-                @test_throws MethodError f(wrap(col => x -> (z=1, xzz=[1])), gd)
-            end
         end
         for cols in ([:b, :c], 2:3, [2, 3], [false, true, true])
             @test f(cols => (b,c) -> (y=exp.(b), z=c), gd) ==
@@ -784,23 +794,6 @@ end
             @test_throws ArgumentError f(cols => (b,c) -> (y=exp.(b), z=sum(c)), gd)
             @test_throws ArgumentError f(cols2 => ((b,c) -> DataFrame(y=exp.(b), z=sum(c))) => :xyz, gd)
             @test_throws ArgumentError f(cols2 => ((b,c) -> [exp.(b) c]) => :xyz, gd)
-
-            for wrap in (vcat, tuple)
-                @test_throws MethodError f(wrap(cols => x -> sum(x.b) + sum(x.c)), gd)
-                if eltype(cols) === Bool
-                    cols2 = [[false, true, false], [false, false, true]]
-                    @test_throws MethodError f(wrap(cols2[1] => x -> sum(x.b), cols2[2] => x -> sum(x.c)), gd)
-                    @test_throws MethodError f(wrap(cols2[1] => x -> sum(x.b), cols2[2] => x -> first(x.c)), gd)
-                else
-                    cols2 = cols
-                    @test_throws MethodError f(wrap(cols[1] => sum, cols[2] => sum), gd)
-                    @test_throws MethodError f(wrap(cols[1] => sum, cols[2] => x -> first(x)), gd)
-                    @test_throws MethodError f(wrap(cols2[1] => vexp, cols2[2] => sum), gd)
-                end
-
-                @test_throws MethodError f(wrap(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c))), gd)
-                @test_throws MethodError f(wrap(cols => x -> [exp.(x.b) x.c]), gd)
-            end
         end
     end
 end

@@ -169,48 +169,59 @@ function groupby(df::AbstractDataFrame, cols;
 end
 
 const F_TYPE_RULES =
+    """
+    `fun` or `f` in `pair` can return a single value, a row or multiple rows.
+    The type of the returned value determines the shape of the resulting `DataFrame`.
+    There are four kind of return values allowed:
+    - A single value gives a `DataFrame` with a single additional column and one row per group.
+    - A named tuple of single values or a [`DataFrameRow`](@ref) gives a `DataFrame` with
+      one additional column for each field and one row per group (returning a named tuple
+      will be faster).
+    - A vector gives a `DataFrame` with a single additional column and as many rows
+      for each group as the length of the returned vector for that group.
+    - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with
+      the same additional columns and as many rows for each group as the rows
+      returned for that group (returning a named tuple is the fastest option).
+      Returning a table with zero columns is allowed, whatever the number of columns
+      returned for other groups.
+
+    It is not allowed to mix single values and vectors if a named tuple is returned.
+
+    `fun` or `f` in `pair` must always return the same kind of object (out of four
+    kinds defined above) for all groups, and with the same column names if return
+    value specifies them.
+
+    Optimized methods are used when standard summary functions (`sum`, `prod`,
+    `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
+    are specified using the `Pair` syntax (e.g. `:col => sum`).
+    When computing the `sum` or `mean` over floating point columns, results will be less
+    accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
+    `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
+
+    Column names are automatically generated when necessary using the rules defined in
+    [`select`](@ref) if a `Pair` syntax is used and `f` returns a single value or a vector
+    (e.g. for `:col => sum` the column name is `col_sum`); otherwise (if `f` is a function
+    or a return value is an `AbstractMatrix`) columns are named `x1`, `x2` and so on.
+    """
+
 """
-`f` can return a single value, a row or multiple rows.
-The type of the returned value determines the shape of the resulting `DataFrame`,
-which is determined using the following rules:
-- A single value gives a `DataFrame` with a single additional column and one row per group.
-- A named tuple of single values or a [`DataFrameRow`](@ref) gives a `DataFrame` with
-  one additional column for each field and one row per group.
-- A vector gives a `DataFrame` with a single additional column and as many rows
-  for each group as the length of the returned vector for that group.
-- A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with the same
-  additional columns and as many rows for each group as the rows returned for that group.
-  As a special case, returning an empty table with zero columns is allowed,
-  whatever the number of columns returned for other groups.
+    map(fun, gd::GroupedDataFrame)
+    map(pair, gd::GroupedDataFrame)
 
-`f` must always return the same kind of object (a single value or a table as defined
-in the above list) for all groups, and with the same column names (defined explicitly
-or auto-generated). If an empty vector, data frame, or named tuple is returned then
-the corresponding group is dropped from the result.
-In particular, named tuples cannot mix single values and vectors.
-Due to type instability, returning a single value or a named tuple is dramatically
-faster than returning a data frame.
+Apply `fun` or `pair to each group of rows and return a [`GroupedDataFrame`](@ref).
 
-Optimized methods are used when standard summary functions (`sum`, `prod`,
-`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
-are specified using the `Pair` syntax (e.g. `col => sum`).
-When computing the `sum` or `mean` over floating point columns, results will be less
-accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
-`col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
+`fun` can be a function, and it is passed a [`SubDataFrame`](@ref)
+view for each group and can return any return value defined below.
+Note that this form is slower than `pair` due to type instability.
 
-Column names are automatically generated when necessary using the names `x1`, `x2` and so on
-if `f` is a `Base.Callable` or an `AbstractMatrix` is returned by it
-and using the rules defined in [`select`](@ref) otherwise.
-"""
-
-"""
-    map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
-
-Apply `f` to each group of rows and return a [`GroupedDataFrame`](@ref).
+If `pair` is passed then allowed transformations follow the rules specified for
+[`select`](@ref) and have the form `source_cols => f` or `source_cols => f => target_col`.
+Function defined by `f` is passed `SubArray` views as positional arguments for
+each column specified to be selected and can return any return value defined below.
 
 $F_TYPE_RULES
 
-See also [`combine(f, gd)`](@ref) that returns a `DataFrame` rather than a `GroupedDataFrame`.
+See also [`combine`](@ref) that returns a `DataFrame` rather than a `GroupedDataFrame`.
 
 # Examples
 ```jldoctest
@@ -230,6 +241,20 @@ First Group: 1 row
 ⋮
 Last Group: 1 row
 │ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 4     │ 12    │
+
+julia> map(:c => sum, gd)
+GroupedDataFrame with 4 groups based on key: a
+First Group (1 row): a = 1
+│ Row │ a     │ c_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+⋮
+Last Group (1 row): a = 4
+│ Row │ a     │ c_sum │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 4     │ 12    │
@@ -278,36 +303,37 @@ function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
 end
 
 const F_ARGUMENT_RULES =
-"""
-If the last arguments consist of more than one `Pair`s, or vectors
-of such `Pair`s, then allowed transformations follow the rules specified for
-[`select`](@ref). Base.Callable defined by `f` is passed `SubArray` views as positional
-arguments for each column specified to selected and can return an abstract vector or
-a single value (defined precisely below) which will produce each a separate column.
+    """
+    If the last argument is `pairs` it must consist of more than one `Pair`s, or vectors
+    of such `Pair`s, then allowed transformations follow the rules specified for
+    [`select`](@ref) and have the form `source_cols => f` or `source_cols => f => target_col`.
+    Function defined by `f` is passed `SubArray` views as positional arguments for
+    each column specified to be selected and can return an abstract vector or
+    a single value (defined precisely below).
 
-If the first or last argument is a `Pair` `f` then all rules for pairs described above apply,
-except that in this case function defined by `f` can return any return value defined below.
+    If the first or last argument is a `pair` then it must be a `Pair` following the
+    rules for pairs described above, except that in this case function defined
+    by `f` can return any return value defined below.
 
-If the first or last argument is a function `f`, it is passed a [`SubDataFrame`](@ref)
-view for each group and can return any return value defined below.
-Note that this form is much slower than the pairs one due to type instability.
-"""
+    If the first or last argument is a function `fun`, it is passed a [`SubDataFrame`](@ref)
+    view for each group and can return any return value defined below.
+    Note that this form is slower than `pair` or `pairs` due to type instability.
+    """
 
 const KWARG_PROCESSING_RULES =
-"""
-In all cases, the resulting `DataFrame` contains all the grouping columns in addition
-to those generated by the application of `f` if `keepkeys=true`. In this case if the
-returned value contains columns with the same names as the grouping columns,
-they are required to be equal.
-"""
+    """
+    In all cases, the resulting `DataFrame` contains all the grouping columns in
+    addition to those generated if `keepkeys=true`. In this case if the returned
+    value contains columns with the same names as the grouping columns, they are
+    required to be equal.
+    """
 
 """
-    combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...;
-            keepkeys::Bool=true)
-    combine(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame;
-            keepkeys::Bool=true)
-    combine(gd::GroupedDataFrame, f::Union{Base.Callable, Pair};
-            keepkeys::Bool=true)
+    combine(gd::GroupedDataFrame, pairs...; keepkeys::Bool=true)
+    combine(fun, gd::GroupedDataFrame; keepkeys::Bool=true)
+    combine(pair, gd::GroupedDataFrame; keepkeys::Bool=true)
+    combine(gd::GroupedDataFrame, fun; keepkeys::Bool=true)
+    combine(gd::GroupedDataFrame, pair; keepkeys::Bool=true)
 
 Transform a [`GroupedDataFrame`](@ref) into a `DataFrame`.
 
@@ -366,19 +392,16 @@ julia> by(df, :a) do d # do syntax for the slower variant
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> combine(gd, :c => (x -> 2 .* x) => :y) # specifying a name for target column
-8×2 DataFrame
-│ Row │ a     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 2     │
-│ 2   │ 1     │ 10    │
-│ 3   │ 2     │ 4     │
-│ 4   │ 2     │ 12    │
-│ 5   │ 3     │ 6     │
-│ 6   │ 3     │ 14    │
-│ 7   │ 4     │ 8     │
-│ 8   │ 4     │ 16    │
+julia> combine(gd, :c => (x -> sum(log.(x))) => :sum_log_c) # specifying a name for target column
+4×2 DataFrame
+│ Row │ a     │ sum_log_c │
+│     │ Int64 │ Float64   │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ 1.60944   │
+│ 2   │ 2     │ 2.48491   │
+│ 3   │ 3     │ 3.04452   │
+│ 4   │ 4     │ 3.46574   │
+
 
 julia> combine(gd, [:b, :c] .=> sum) # passing a vector of pairs
 4×3 DataFrame
@@ -404,20 +427,22 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
 
+julia> using Statistics
+
 julia> combine(gd, :b => identity => :b, :c => identity => :c,
-               [:b, :c] => ByRow(*), keepkeys=false) # auto-splatting and keepkeys
+               [:b, :c] => +, keepkeys=false) # auto-splatting and keepkeys
 8×3 DataFrame
-│ Row │ b     │ c     │ b_c_* │
+│ Row │ b     │ c     │ b_c_+ │
 │     │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 1     │ 2     │
-│ 2   │ 2     │ 5     │ 10    │
-│ 3   │ 1     │ 2     │ 2     │
-│ 4   │ 1     │ 6     │ 6     │
-│ 5   │ 2     │ 3     │ 6     │
-│ 6   │ 2     │ 7     │ 14    │
-│ 7   │ 1     │ 4     │ 4     │
-│ 8   │ 1     │ 8     │ 8     │
+│ 1   │ 2     │ 1     │ 3     │
+│ 2   │ 2     │ 5     │ 7     │
+│ 3   │ 1     │ 2     │ 3     │
+│ 4   │ 1     │ 6     │ 7     │
+│ 5   │ 2     │ 3     │ 5     │
+│ 6   │ 2     │ 7     │ 9     │
+│ 7   │ 1     │ 4     │ 5     │
+│ 8   │ 1     │ 8     │ 9     │
 ```
 
 See [`by`](@ref) for more examples.
@@ -429,7 +454,7 @@ combine(gd::GroupedDataFrame, f::Base.Callable; keepkeys::Bool=true) =
 
 function combine(gd::GroupedDataFrame, f::Pair; keepkeys::Bool=true)
     # move handling of aggregate to specialized combine
-    if isagg(first(f) => last(f) isa Pair ? first(last(f)) : last(f))
+    if isagg(first(f) => (last(f) isa Pair ? first(last(f)) : last(f)))
         return combine(gd, [f], keepkeys=keepkeys)
     end
 
@@ -516,20 +541,28 @@ wrap_table(x::Any, ::Val) =
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
 function wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
-                             AbstractDataFrame, AbstractMatrix}, ::Val{T}) where T
-    T || throw(ArgumentError("mixing single and multiple column values is not allowed"))
+                             AbstractDataFrame, AbstractMatrix},
+                             ::Val{wasmulti}) where wasmulti
+    if !wasmulti
+        throw(ArgumentError("function must return only single-column values, " *
+                            "or only multiple-column values"))
+    end
     wrap(x)
 end
 
-function wrap_table(x::AbstractVector, ::Val{T}) where T
-    T && throw(ArgumentError("mixing single and multiple column values is not allowed"))
+function wrap_table(x::AbstractVector, ::Val{wasmulti}) where wasmulti
+    if wasmulti
+        throw(ArgumentError("function must return only single-column values, " *
+                            "or only multiple-column values"))
+    end
     wrap(x)
 end
 
-function wrap_row(x::Any, ::Val{T}) where T
+function wrap_row(x::Any, ::Val{wasmulti}) where wasmulti
     # NamedTuple is not possible in this branch
-    if (x isa DataFrameRow) ⊻ T
-        throw(ArgumentError("mixing single and multiple column values is not allowed"))
+    if (x isa DataFrameRow) ⊻ wasmulti
+        throw(ArgumentError("function must return only single-column values, " *
+                            "or only multiple-column values"))
     end
     wrap(x)
 end
@@ -541,11 +574,14 @@ wrap_row(::Union{AbstractVecOrMat, AbstractDataFrame,
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
 
-function wrap_row(x::NamedTuple, ::Val{T}) where T
+function wrap_row(x::NamedTuple, ::Val{wasmulti}) where wasmulti
     if any(v -> v isa AbstractVector, x)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     end
-    T || throw(ArgumentError("mixing single and multiple column values is not allowed"))
+    if !wasmulti
+        throw(ArgumentError("function must return only single-column values, " *
+                            "or only multiple-column values"))
+    end
     return x
 end
 
@@ -870,13 +906,11 @@ function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
 end
 
 function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
-    f = normalize_selection(index(parent(gd)), p)
-    if first(p) isa Int
-        incols = parent(gd)[!, first(f)]
-        fun = first(last(f))
+    source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p)
+    if source_cols isa Int
+        incols = source_cols isa Int ? parent(gd)[!, source_cols] :
     else
-        incols = ntuple(i -> parent(gd)[!, first(f)[i]], length(first(f)))
-        fun = first(last(f))
+        incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
     end
     # here we know that p is not isagg(f)
     firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
@@ -891,7 +925,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     else
         # fetch auto generated or passed target column name to nms overwritting
         # what _combine_with_first produced
-        nms = [last(last(f))]
+        nms = [out_col]
     end
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
@@ -1107,16 +1141,21 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-    by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...;
+    by(d::AbstractDataFrame, cols::Any, pairs...;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
+    by(fun, d::AbstractDataFrame, cols::Any;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(d::AbstractDataFrame, cols::Any, f::Union{Base.Callable, Pair};
+    by(pair, d::AbstractDataFrame, cols::Any;
+       sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
+    by(d::AbstractDataFrame, cols::Any, fun;
+       sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
+    by(d::AbstractDataFrame, cols::Any, pair;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
 
-Split-apply-combine in one step: apply `f` to each grouping in `df`
-based on grouping columns `cols`, and return a `DataFrame`.
-This is a shorthand for `combine(groupby(df, cols), f)`.
+Split-apply-combine in one step: apply `fun`, `pair` or `pairs` to each grouping
+in `df` based on grouping columns `cols`, and return a `DataFrame`.
+This is a shorthand for `combine` called on
+`groupby(df, cols, sort=sort, skipmissing=skipmissing)`.
 
 $F_ARGUMENT_RULES
 
@@ -1148,7 +1187,7 @@ julia> by(df, :a, :c => sum)
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> by(df, :a, d -> sum(d.c)) # Slower variant
+julia> by(sdf -> sum(sdf.c), df, :a) # Slower variant
 4×2 DataFrame
 │ Row │ a     │ x1    │
 │     │ Int64 │ Int64 │
@@ -1169,6 +1208,57 @@ julia> by(df, :a) do d # do syntax for the slower variant
 │ 2   │ 2     │ 8     │
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
+
+julia> by(df, :a, :c => (x -> sum(log.(x))) => :sum_log_c) # specifying a name for target column
+4×2 DataFrame
+│ Row │ a     │ sum_log_c │
+│     │ Int64 │ Float64   │
+├─────┼───────┼───────────┤
+│ 1   │ 1     │ 1.60944   │
+│ 2   │ 2     │ 2.48491   │
+│ 3   │ 3     │ 3.04452   │
+│ 4   │ 4     │ 3.46574   │
+
+julia> by(df, :a, [:b, :c] .=> sum) # passing a vector of pairs
+4×3 DataFrame
+│ Row │ a     │ b_sum │ c_sum │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 6     │
+│ 2   │ 2     │ 2     │ 8     │
+│ 3   │ 3     │ 4     │ 10    │
+│ 4   │ 4     │ 2     │ 12    │
+
+julia> by(df, :a) do sdf # dropping group when DataFrame() is returned
+          sdf.c[1] != 1 ? sdf : DataFrame()
+       end
+6×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 2     │
+│ 2   │ 2     │ 1     │ 6     │
+│ 3   │ 3     │ 2     │ 3     │
+│ 4   │ 3     │ 2     │ 7     │
+│ 5   │ 4     │ 1     │ 4     │
+│ 6   │ 4     │ 1     │ 8     │
+
+julia> using Statistics
+
+julia> by(df, :a, :b => identity => :b, :c => identity => :c,
+               [:b, :c] => +, keepkeys=false) # auto-splatting and keepkeys
+8×3 DataFrame
+│ Row │ b     │ c     │ b_c_+ │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 3     │
+│ 2   │ 2     │ 5     │ 7     │
+│ 3   │ 1     │ 2     │ 3     │
+│ 4   │ 1     │ 6     │ 7     │
+│ 5   │ 2     │ 3     │ 5     │
+│ 6   │ 2     │ 7     │ 9     │
+│ 7   │ 1     │ 4     │ 5     │
+│ 8   │ 1     │ 8     │ 9     │
 ```
 """
 by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
