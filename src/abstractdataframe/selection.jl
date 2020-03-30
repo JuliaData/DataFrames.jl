@@ -205,9 +205,9 @@ using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
 
-As a special rule passing `nrow` as an argument creates a column named `:nrow`
+As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
 containing a number of rows in a source data frame, and passing `nrow => new_column_name`
-stores a number of rows in a source data frame in `new_column_name` column.
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
@@ -351,7 +351,7 @@ the new column name `:a_b_etc_fun`.
 
 As a special rule passing `nrow` as an argument creates a column named `:nrow`
 containing a number of rows in a source data frame, and passing `nrow => new_column_name`
-stores a number of rows in a source data frame in `new_column_name` column.
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
