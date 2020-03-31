@@ -209,7 +209,7 @@ end
                 d = Array{Union{Float64, Missing}}(randn(12)),
                 e = Array{Union{String, Missing}}(map(string, 'a':'l')))
 
-    stack(d1, :a)
+    @test names(stack(d1, :a)) == [:b, :c, :d, :e, :variable, :value]
     d1s = stack(d1, [:a, :b])
     @test d1s == stack(d1, r"[ab]")
     @test d1s == stack(d1, Not(r"[cde]"))
@@ -223,23 +223,23 @@ end
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
-    @test names(d1s) == [:variable, :value, :c, :d, :e]
+    @test names(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
     d1m = stack(d1[:, [1,3,4]], Not(:a))
-    @test names(d1m) == [:variable, :value, :a]
+    @test names(d1m) == [:a, :variable, :value]
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
-    @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
+    @test names(d1s_named) == [:c, :d, :e, :letter, :someval]
     d1m_named = stack(d1[:, [1,3,4]], Not(:a), variable_name=:letter, value_name=:someval)
-    @test names(d1m_named) == [:letter, :someval, :a]
+    @test names(d1m_named) == [:a, :letter, :someval]
 
     # test empty measures or ids
     dx = stack(d1, [], [:a])
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:variable, :value, :a]
+    @test names(dx) == [:a, :variable, :value]
     dx = stack(d1, :a, [])
     @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
@@ -251,53 +251,51 @@ end
     dx = stack(d1, [], :a)
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:variable, :value, :a]
+    @test names(dx) == [:a, :variable, :value]
 
     @test stack(d1, :a, view=true) == stack(d1, [:a], view=true)
     @test all(isa.(eachcol(stack(d1, :a, view=true)),
-                   [DataFrames.RepeatedVector;
-                    DataFrames.StackedVector;
-                    fill(DataFrames.RepeatedVector, 4)]))
+                   [fill(DataFrames.RepeatedVector, 5);
+                    DataFrames.StackedVector]))
     @test all(isa.(eachcol(stack(d1, Not([:b, :c, :d, :e]), view=true)),
-                   [DataFrames.RepeatedVector;
-                    DataFrames.StackedVector;
-                    fill(DataFrames.RepeatedVector, 4)]))
+                   [fill(DataFrames.RepeatedVector, 5);
+                    DataFrames.StackedVector]))
 
     # Tests of RepeatedVector and StackedVector indexing
     d1s = stack(d1, [:a, :b], view=true)
     @test d1s == stack(d1, r"[ab]", view=true)
-    @test d1s[!, 1] isa DataFrames.RepeatedVector
-    @test ndims(d1s[!, 1]) == 1
-    @test ndims(typeof(d1s[!, 1])) == 1
-    @test d1s[!, 2] isa DataFrames.StackedVector
-    @test ndims(d1s[!, 2]) == 1
+    @test d1s[!, 4] isa DataFrames.RepeatedVector
+    @test ndims(d1s[!, 4]) == 1
+    @test ndims(typeof(d1s[!, 4])) == 1
+    @test d1s[!, 5] isa DataFrames.StackedVector
+    @test ndims(d1s[!, 5]) == 1
     @test ndims(typeof(d1s[!, 2])) == 1
-    @test d1s[!, 1][[1,24]] == ["a", "b"]
-    @test d1s[!, 2][[1,24]] == [1, 4]
-    @test_throws ArgumentError d1s[!, 1][true]
-    @test_throws ArgumentError d1s[!, 2][true]
-    @test_throws ArgumentError d1s[!, 1][1.0]
-    @test_throws ArgumentError d1s[!, 2][1.0]
+    @test d1s[!, 4][[1,24]] == ["a", "b"]
+    @test d1s[!, 5][[1,24]] == [1, 4]
+    @test_throws ArgumentError d1s[!, 4][true]
+    @test_throws ArgumentError d1s[!, 5][true]
+    @test_throws ArgumentError d1s[!, 4][1.0]
+    @test_throws ArgumentError d1s[!, 5][1.0]
 
     d1ss = stack(d1, [:a, :b], view=true)
-    @test d1ss[!, 1][[1,24]] == ["a", "b"]
-    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    @test d1ss[!, 4][[1,24]] == ["a", "b"]
+    @test d1ss[!, 4] isa DataFrames.RepeatedVector
     d1ss = stack(d1, [:a, :b], view=true, variable_eltype=String)
-    @test d1ss[!, 1][[1,24]] == ["a", "b"]
-    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    @test d1ss[!, 4][[1,24]] == ["a", "b"]
+    @test d1ss[!, 4] isa DataFrames.RepeatedVector
     d1ss = stack(d1, [:a, :b], view=true, variable_eltype=Symbol)
-    @test d1ss[!, 1][[1,24]] == [:a, :b]
-    @test d1ss[!, 1] isa DataFrames.RepeatedVector
+    @test d1ss[!, 4][[1,24]] == [:a, :b]
+    @test d1ss[!, 4] isa DataFrames.RepeatedVector
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
-    @test d1s[!, 1][trues(24)] == d1s[!, 1]
-    @test d1s[!, 2][trues(24)] == d1s[!, 2]
-    @test d1s[!, 1][:] == d1s[!, 1]
-    @test d1s[!, 2][:] == d1s[!, 2]
-    @test d1s[!, 1][1:24] == d1s[!, 1]
-    @test d1s[!, 2][1:24] == d1s[!, 2]
-    @test [d1s[!, 1][1:12]; d1s[!, 1][13:24]] == d1s[!, 1]
-    @test [d1s[!, 2][1:12]; d1s[!, 2][13:24]] == d1s[!, 2]
+    @test d1s[!, 4][trues(24)] == d1s[!, 4]
+    @test d1s[!, 5][trues(24)] == d1s[!, 5]
+    @test d1s[!, 4][:] == d1s[!, 4]
+    @test d1s[!, 5][:] == d1s[!, 5]
+    @test d1s[!, 4][1:24] == d1s[!, 4]
+    @test d1s[!, 5][1:24] == d1s[!, 5]
+    @test [d1s[!, 4][1:12]; d1s[!, 4][13:24]] == d1s[!, 4]
+    @test [d1s[!, 5][1:12]; d1s[!, 5][13:24]] == d1s[!, 5]
 
     d1s2 = stack(d1, [:c, :d], view=true)
     @test d1s2 == stack(d1, r"[cd]", view=true)
@@ -307,17 +305,17 @@ end
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
-    @test names(d1s) == [:variable, :value, :c, :d, :e]
+    @test names(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
     d1m = stack(d1[:, [1,3,4]], Not(:a), view=true)
-    @test names(d1m) == [:variable, :value, :a]
+    @test names(d1m) == [:a, :variable, :value]
 
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
+    @test names(d1s_named) == [:c, :d, :e, :letter, :someval]
     d1m_named = stack(d1, Not([:c, :d, :e]), variable_name=:letter, value_name=:someval, view=true)
     @test d1m_named == stack(d1, Not(r"[cde]"), variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
+    @test names(d1m_named) == [:c, :d, :e, :letter, :someval]
 
     d1s[!, :id] = Union{Int, Missing}[1:12; 1:12]
     d1s2[!, :id] =  Union{Int, Missing}[1:12; 1:12]
@@ -447,8 +445,8 @@ end
     d1s = stack(d1, [:d, :c], view=true)
     @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalString}
     @test levels(d1s.variable) == ["d", "c"]
-    @test d1s[:, 1] isa CategoricalVector{String}
-    @test levels(d1s[:, 1]) == ["d", "c"]
+    @test d1s[:, 4] isa CategoricalVector{String}
+    @test levels(d1s[:, 4]) == ["d", "c"]
 
     d1s = stack(d1, [:d, :c], variable_eltype=String)
     @test d1s.variable isa PooledVector{String}
@@ -456,8 +454,8 @@ end
     d1s = stack(d1, [:d, :c], view=true, variable_eltype=String)
     @test d1s.variable isa DataFrames.RepeatedVector{String}
     @test levels(d1s.variable) == ["c", "d"]
-    @test d1s[:, 1] isa Vector{String}
-    @test levels(d1s[:, 1]) == ["c", "d"]
+    @test d1s[:, 4] isa Vector{String}
+    @test levels(d1s[:, 4]) == ["c", "d"]
 
     d1s = stack(d1, [:d, :c], variable_eltype=Symbol)
     @test d1s.variable isa Vector{Symbol}
@@ -465,8 +463,8 @@ end
     d1s = stack(d1, [:d, :c], view=true, variable_eltype=Symbol)
     @test d1s.variable isa DataFrames.RepeatedVector{Symbol}
     @test levels(d1s.variable) == [:c, :d]
-    @test d1s[:, 1] isa Vector{Symbol}
-    @test levels(d1s[:, 1]) == [:c, :d]
+    @test d1s[:, 4] isa Vector{Symbol}
+    @test levels(d1s[:, 4]) == [:c, :d]
 
     d2 = categorical(d1, :)
     levels!(d2.a, [2, 1, 3])

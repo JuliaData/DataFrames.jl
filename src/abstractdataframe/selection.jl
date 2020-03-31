@@ -47,6 +47,13 @@ normalize_selection(idx::AbstractIndex, sel) =
         end
     end
 
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}) =
+    length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
+
+normalize_selection(idx::AbstractIndex, sel::typeof(nrow)) =
+    normalize_selection(idx, nrow => :nrow)
+
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
     c = idx[sel]
     return c => ColRename() => _names(idx)[c]
@@ -198,6 +205,10 @@ using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
 
+As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
+containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+stores the number of rows in source data frame in `new_column_name` column.
+
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
 and only the first occurrence is used. In particular a syntax to move column `:col`
@@ -337,6 +348,10 @@ Up to three column names are used for multiple input columns and they are joined
 using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
+
+As a special rule passing `nrow` as an argument creates a column named `:nrow`
+containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
