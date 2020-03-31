@@ -188,8 +188,7 @@ const F_TYPE_RULES =
     It is not allowed to mix single values and vectors if a named tuple is returned.
 
     `fun` or `f` in `pair` must always return the same kind of object (out of four
-    kinds defined above) for all groups, and with the same column names if return
-    value specifies them.
+    kinds defined above) for all groups, and with the same column names.
 
     Optimized methods are used when standard summary functions (`sum`, `prod`,
     `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
@@ -199,22 +198,22 @@ const F_TYPE_RULES =
     `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
     Column names are automatically generated when necessary using the rules defined in
-    [`select`](@ref) if a `Pair` syntax is used and `f` returns a single value or a vector
+    [`select`](@ref) if the `Pair` syntax is used and `f` returns a single value or a vector
     (e.g. for `:col => sum` the column name is `col_sum`); otherwise (if `f` is a function
     or a return value is an `AbstractMatrix`) columns are named `x1`, `x2` and so on.
     """
 
 """
-    map(fun, gd::GroupedDataFrame)
-    map(pair, gd::GroupedDataFrame)
+    map(fun::Union{Function, Type}, gd::GroupedDataFrame)
+    map(pair::Pair, gd::GroupedDataFrame)
 
-Apply `fun` or `pair to each group of rows and return a [`GroupedDataFrame`](@ref).
+Apply `fun` or `pair` to each group of rows and return a [`GroupedDataFrame`](@ref).
 
-`fun` can be a function, and it is passed a [`SubDataFrame`](@ref)
+If `fun` is specified it must be a function, and it is passed a [`SubDataFrame`](@ref)
 view for each group and can return any return value defined below.
 Note that this form is slower than `pair` due to type instability.
 
-If `pair` is passed then allowed transformations follow the rules specified for
+If `pair` is passed then it must follow the rules specified for transformations in
 [`select`](@ref) and have the form `source_cols => f` or `source_cols => f => target_col`.
 Function defined by `f` is passed `SubArray` views as positional arguments for
 each column specified to be selected and can return any return value defined below.
@@ -305,13 +304,13 @@ end
 const F_ARGUMENT_RULES =
     """
     If the last argument is `pairs` it must consist of more than one `Pair`s, or vectors
-    of such `Pair`s, then allowed transformations follow the rules specified for
+    of such `Pair`s. Allowed transformations follow the rules specified for
     [`select`](@ref) and have the form `source_cols => f` or `source_cols => f => target_col`.
-    Function defined by `f` is passed `SubArray` views as positional arguments for
+    Function `f` is passed `SubArray` views as positional arguments for
     each column specified to be selected and can return an abstract vector or
     a single value (defined precisely below).
 
-    If the first or last argument is a `pair` then it must be a `Pair` following the
+    If the first or last argument is `pair` then it must be a `Pair` following the
     rules for pairs described above, except that in this case function defined
     by `f` can return any return value defined below.
 
@@ -322,18 +321,18 @@ const F_ARGUMENT_RULES =
 
 const KWARG_PROCESSING_RULES =
     """
-    In all cases, the resulting `DataFrame` contains all the grouping columns in
-    addition to those generated if `keepkeys=true`. In this case if the returned
+    If `keepkeys=true`, the resulting `DataFrame` contains all the grouping columns
+    in addition to those generated. In this case if the returned
     value contains columns with the same names as the grouping columns, they are
     required to be equal.
     """
 
 """
     combine(gd::GroupedDataFrame, pairs...; keepkeys::Bool=true)
-    combine(fun, gd::GroupedDataFrame; keepkeys::Bool=true)
-    combine(pair, gd::GroupedDataFrame; keepkeys::Bool=true)
-    combine(gd::GroupedDataFrame, fun; keepkeys::Bool=true)
-    combine(gd::GroupedDataFrame, pair; keepkeys::Bool=true)
+    combine(fun::Union{Function, Type}, gd::GroupedDataFrame; keepkeys::Bool=true)
+    combine(pair::Pair, gd::GroupedDataFrame; keepkeys::Bool=true)
+    combine(gd::GroupedDataFrame, fun::Union{Function, Type}; keepkeys::Bool=true)
+    combine(gd::GroupedDataFrame, pair::Pair; keepkeys::Bool=true)
 
 Transform a [`GroupedDataFrame`](@ref) into a `DataFrame`.
 
@@ -392,7 +391,7 @@ julia> by(df, :a) do d # do syntax for the slower variant
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> combine(gd, :c => (x -> sum(log.(x))) => :sum_log_c) # specifying a name for target column
+julia> combine(gd, :c => (x -> sum(log, x)) => :sum_log_c) # specifying a name for target column
 4×2 DataFrame
 │ Row │ a     │ sum_log_c │
 │     │ Int64 │ Float64   │
@@ -426,8 +425,6 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 │ 4   │ 3     │ 2     │ 7     │
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
-
-julia> using Statistics
 
 julia> combine(gd, :b => identity => :b, :c => identity => :c,
                [:b, :c] => +, keepkeys=false) # auto-splatting and keepkeys
@@ -1143,13 +1140,13 @@ end
 """
     by(d::AbstractDataFrame, cols::Any, pairs...;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(fun, d::AbstractDataFrame, cols::Any;
+    by(fun::Union{Function, Type}, d::AbstractDataFrame, cols::Any;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(pair, d::AbstractDataFrame, cols::Any;
+    by(pair::Pair, d::AbstractDataFrame, cols::Any;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(d::AbstractDataFrame, cols::Any, fun;
+    by(d::AbstractDataFrame, cols::Any, fun::Union{Function, Type};
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
-    by(d::AbstractDataFrame, cols::Any, pair;
+    by(d::AbstractDataFrame, cols::Any, pair::Pair;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
 
 Split-apply-combine in one step: apply `fun`, `pair` or `pairs` to each grouping
@@ -1209,7 +1206,7 @@ julia> by(df, :a) do d # do syntax for the slower variant
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> by(df, :a, :c => (x -> sum(log.(x))) => :sum_log_c) # specifying a name for target column
+julia> by(df, :a, :c => (x -> sum(log, x)) => :sum_log_c) # specifying a name for target column
 4×2 DataFrame
 │ Row │ a     │ sum_log_c │
 │     │ Int64 │ Float64   │
