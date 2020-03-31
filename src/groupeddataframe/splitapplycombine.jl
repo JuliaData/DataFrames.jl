@@ -170,13 +170,15 @@ end
 
 const F_TYPE_RULES =
     """
-    `fun` or `f` in `pair` can return a single value, a row or multiple rows.
+    `fun` can return a single value, a row, a vector, or multiple rows.
     The type of the returned value determines the shape of the resulting `DataFrame`.
     There are four kind of return values allowed:
-    - A single value gives a `DataFrame` with a single additional column and one row per group.
-    - A named tuple of single values or a [`DataFrameRow`](@ref) gives a `DataFrame` with
-      one additional column for each field and one row per group (returning a named tuple
-      will be faster).
+    - A single value gives a `DataFrame` with a single additional column and one row
+      per group.
+    - A named tuple of single values or a [`DataFrameRow`](@ref) gives a `DataFrame`
+      with one additional column for each field and one row per group (returning a
+      named tuple will be faster). It is not allowed to mix single values and vectors
+      if a named tuple is returned.
     - A vector gives a `DataFrame` with a single additional column and as many rows
       for each group as the length of the returned vector for that group.
     - A data frame, a named tuple of vectors or a matrix gives a `DataFrame` with
@@ -185,22 +187,22 @@ const F_TYPE_RULES =
       Returning a table with zero columns is allowed, whatever the number of columns
       returned for other groups.
 
-    It is not allowed to mix single values and vectors if a named tuple is returned.
-
-    `fun` or `f` in `pair` must always return the same kind of object (out of four
+    `fun` must always return the same kind of object (out of four
     kinds defined above) for all groups, and with the same column names.
 
     Optimized methods are used when standard summary functions (`sum`, `prod`,
     `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
     are specified using the `Pair` syntax (e.g. `:col => sum`).
-    When computing the `sum` or `mean` over floating point columns, results will be less
-    accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
-    `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
+    When computing the `sum` or `mean` over floating point columns, results will be
+    less accurate than the standard [`sum`](@ref) function (which uses pairwise
+    summation). Use `col => x -> sum(x)` to avoid the optimized method and use the
+    slower, more accurate one.
 
-    Column names are automatically generated when necessary using the rules defined in
-    [`select`](@ref) if the `Pair` syntax is used and `f` returns a single value or a vector
-    (e.g. for `:col => sum` the column name is `col_sum`); otherwise (if `f` is a function
-    or a return value is an `AbstractMatrix`) columns are named `x1`, `x2` and so on.
+    Column names are automatically generated when necessary using the rules defined
+    in [`select`](@ref) if the `Pair` syntax is used and `fun` returns a single
+    value or a vector (e.g. for `:col => sum` the column name is `col_sum`); otherwise
+    (if `fun` is a function or a return value is an `AbstractMatrix`) columns are
+    named `x1`, `x2` and so on.
     """
 
 """
@@ -214,8 +216,8 @@ view for each group and can return any return value defined below.
 Note that this form is slower than `pair` due to type instability.
 
 If `pair` is passed then it must follow the rules specified for transformations in
-[`select`](@ref) and have the form `source_cols => f` or `source_cols => f => target_col`.
-Function defined by `f` is passed `SubArray` views as positional arguments for
+[`select`](@ref) and have the form `source_cols => fun` or `source_cols => fun => target_col`.
+Function defined by `fun` is passed `SubArray` views as positional arguments for
 each column specified to be selected and can return any return value defined below.
 
 $F_TYPE_RULES
@@ -303,16 +305,16 @@ end
 
 const F_ARGUMENT_RULES =
     """
-    If the last argument is `pairs` it must consist of more than one `Pair`s, or vectors
-    of such `Pair`s. Allowed transformations follow the rules specified for
-    [`select`](@ref) and have the form `source_cols => f` or `source_cols => f => target_col`.
-    Function `f` is passed `SubArray` views as positional arguments for
-    each column specified to be selected and can return an abstract vector or
-    a single value (defined precisely below).
+    If `pairs` arguments are passed they must consist of more than one `Pair`s,
+    or vectors of such `Pair`s. Allowed transformations follow the rules specified
+    for [`select`](@ref) and have the form `source_cols => fun` or
+    `source_cols => fun => target_col`. Function `fun` is passed `SubArray` views
+    as positional arguments for each column specified to be selected and can return
+    an abstract vector or a single value (defined precisely below).
 
     If the first or last argument is `pair` then it must be a `Pair` following the
     rules for pairs described above, except that in this case function defined
-    by `f` can return any return value defined below.
+    by `fun` can return any return value defined below.
 
     If the first or last argument is a function `fun`, it is passed a [`SubDataFrame`](@ref)
     view for each group and can return any return value defined below.
@@ -1239,8 +1241,6 @@ julia> by(df, :a) do sdf # dropping group when DataFrame() is returned
 │ 4   │ 3     │ 2     │ 7     │
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
-
-julia> using Statistics
 
 julia> by(df, :a, :b => identity => :b, :c => identity => :c,
                [:b, :c] => +, keepkeys=false) # auto-splatting and keepkeys
