@@ -587,20 +587,49 @@ end
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
-                 gd::GroupedDataFrame, incols::AbstractVector, i::Integer)
-    idx = idx[starts[i]:ends[i]]
-    f(view(incols, idx))
+                 gd::GroupedDataFrame, incols::Tuple{}, i::Integer)
+    f()
 end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::Tuple{AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NTuple{2, AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx), view(incols[2], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NTuple{3, AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NTuple{4, AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx),
+           view(incols[4], idx))
+end
+
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
     idx = idx[starts[i]:ends[i]]
-    f((view(c, idx) for c in incols)...)
+    f(ntuple(i -> view(incols[i], idx), length(incols))...)
 end
+
 do_call(f::Any, idx::AbstractVector{<:Integer},
         starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
-        gd::GroupedDataFrame, incols::Nothing, i::Integer) =
-    f(gd[i])
+        gd::GroupedDataFrame, incols::Nothing, i::Integer) = f(gd[i])
 
 _nrow(df::AbstractDataFrame) = nrow(df)
 _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
@@ -839,17 +868,6 @@ function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedData
     end
 end
 
-function do_f(f, x...)
-    @inline function fun(x...)
-        res = f(x...)
-        if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
-            throw(ArgumentError("a single value or vector result is required when passing " *
-                                "multiple functions (got $(typeof(res)))"))
-        end
-        res
-    end
-end
-
 isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
 
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
@@ -865,22 +883,27 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::Abstract
         @assert gd.idx !== nothing
     end
     res = Vector{Any}(undef, length(f))
+    parentdf = parent(gd)
     for (i, p) in enumerate(f)
+        source_cols, fun = p
         if isagg(p)
-            incol = gd.parent[!, first(p)]
+            incol = parentdf[!, source_cols]
             agg = check_aggregate(last(p))
             outcol = agg(incol, gd)
             res[i] = idx_agg, outcol
         else
-            fun = do_f(last(p))
-            if p isa Pair{<:ColumnIndex}
-                incols = gd.parent[!, first(p)]
+            if source_cols isa Int
+                incols = (parentdf[!, source_cols],)
             else
-                df = gd.parent[!, first(p)]
-                incols = Tuple(eachcol(df))
+                @assert source_cols isa AbstractVector{Int}
+                incols = ntuple(i -> parentdf[!, source_cols[i]], length(source_cols))
             end
             firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
             firstmulticol = firstres isa MULTI_COLS_TYPE
+            if firstmulticol
+                throw(ArgumentError("a single value or vector result is required when passing " *
+                                    "multiple functions (got $(typeof(res)))"))
+            end
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
                                                   Val(firstmulticol))
             res[i] = idx, outcols[1]
@@ -906,8 +929,9 @@ end
 
 function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p)
+    parentdf = parent(gd)
     if source_cols isa Int
-        incols = parent(gd)[!, source_cols]
+        incols = (parent(gd)[!, source_cols],)
     else
         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
     end

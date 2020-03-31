@@ -1771,4 +1771,27 @@ end
     @test combine(x -> (z=x.x1,), gdf, keepkeys=false) == DataFrame(z=1:6)
 end
 
+@testset "additional do_call tests" begin
+    Random.seed!(1234)
+    df = DataFrame(g = rand(1:10, 100), x1 = rand(1:1000, 100))
+    gdf = groupby(df, :g)
+
+    @test combine(gdf, [] => () -> 1, :x1 => length) == combine(gdf) do sdf
+        (;[:function => 1, :x1_length => nrow(sdf)]...)
+    end
+    @test combine(gdf, [] => () -> 1) == combine(gdf) do sdf
+        (;:function => 1)
+    end
+    for i in 1:5
+        @test combine(gdf, fill(:x1, i) => ((x...) -> sum(+(x...))) => :res, :x1 => length) ==
+              combine(gdf) do sdf
+                  (;[:res => i*sum(sdf.x1), :x1_length => nrow(sdf)]...)
+              end
+        @test combine(gdf, fill(:x1, i) => ((x...) -> sum(+(x...))) => :res) ==
+              combine(gdf) do sdf
+                  (;:res => i*sum(sdf.x1))
+              end
+    end
+end
+
 end # module
