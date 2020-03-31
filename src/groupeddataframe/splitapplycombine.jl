@@ -542,25 +542,25 @@ wrap_table(x::Any, ::Val) =
                         "(single row or variable number of rows) across groups"))
 function wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
                              AbstractDataFrame, AbstractMatrix},
-                             ::Val{wasmulti}) where wasmulti
-    if !wasmulti
+                             ::Val{firstmulticol}) where firstmulticol
+    if !firstmulticol
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
     wrap(x)
 end
 
-function wrap_table(x::AbstractVector, ::Val{wasmulti}) where wasmulti
-    if wasmulti
+function wrap_table(x::AbstractVector, ::Val{firstmulticol}) where firstmulticol
+    if firstmulticol
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
     wrap(x)
 end
 
-function wrap_row(x::Any, ::Val{wasmulti}) where wasmulti
+function wrap_row(x::Any, ::Val{firstmulticol}) where firstmulticol
     # NamedTuple is not possible in this branch
-    if (x isa DataFrameRow) ⊻ wasmulti
+    if (x isa DataFrameRow) ⊻ firstmulticol
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
@@ -574,11 +574,11 @@ wrap_row(::Union{AbstractVecOrMat, AbstractDataFrame,
     throw(ArgumentError("return value must not change its kind " *
                         "(single row or variable number of rows) across groups"))
 
-function wrap_row(x::NamedTuple, ::Val{wasmulti}) where wasmulti
+function wrap_row(x::NamedTuple, ::Val{firstmulticol}) where firstmulticol
     if any(v -> v isa AbstractVector, x)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     end
-    if !wasmulti
+    if !firstmulticol
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
@@ -881,9 +881,9 @@ function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::Abstract
                 incols = Tuple(eachcol(df))
             end
             firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-            wasmulti = firstres isa MULTI_COLS_TYPE
+            firstmulticol = firstres isa MULTI_COLS_TYPE
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
-                                                  Val(wasmulti))
+                                                  Val(firstmulticol))
             res[i] = idx, outcols[1]
         end
     end
@@ -898,9 +898,9 @@ end
 
 function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
     firstres = fun(gd[1])
-    wasmulti = firstres isa MULTI_COLS_TYPE
+    firstmulticol = firstres isa MULTI_COLS_TYPE
     idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, nothing,
-                                            Val(wasmulti))
+                                            Val(firstmulticol))
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
@@ -914,9 +914,9 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     end
     # here we know that p is not isagg(f)
     firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-    wasmulti = firstres isa MULTI_COLS_TYPE
+    firstmulticol = firstres isa MULTI_COLS_TYPE
     idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols,
-                                            Val(wasmulti))
+                                            Val(firstmulticol))
     # disallow passing target column name to genuine tables
     if firstres isa MULTI_COLS_TYPE
         if p isa Pair{<:Any, <:Pair{<:Any, Symbol}}
@@ -934,7 +934,7 @@ end
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple},
-                             wasmulti::Val)
+                             firstmulticol::Val)
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -961,11 +961,11 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                        NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
                                                              f, gd, incols, targetcolnames,
-                                                             wasmulti)
+                                                             firstmulticol)
     else
         outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, idx, 1, 1,
                                                            f, gd, incols, targetcolnames,
-                                                           wasmulti)
+                                                           firstmulticol)
     end
     idx, outcols, collect(Symbol, finalcolnames)
 end
@@ -1004,7 +1004,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    f::Any, gd::GroupedDataFrame,
                                    incols::Union{Nothing, AbstractVector, Tuple},
                                    colnames::NTuple{N, Symbol},
-                                   wasmulti::Val) where N
+                                   firstmulticol::Val) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -1015,7 +1015,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     idx[rowstart] = gdidx[starts[rowstart]]
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), wasmulti)
+        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -1033,7 +1033,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                 end
             end
             return _combine_rows_with_first!(row, newcols, idx, i, j,
-                                             f, gd, incols, colnames, wasmulti)
+                                             f, gd, incols, colnames, firstmulticol)
         end
         idx[i] = gdidx[starts[i]]
     end
@@ -1089,7 +1089,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      f::Any, gd::GroupedDataFrame,
                                      incols::Union{Nothing, AbstractVector, Tuple},
                                      colnames::NTuple{N, Symbol},
-                                     wasmulti::Val) where N
+                                     firstmulticol::Val) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -1104,7 +1104,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     end
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        rows = wrap_table(do_call(f, gdidx, starts, ends, gd, incols, i), wasmulti)
+        rows = wrap_table(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
         _ncol(rows) == 0 && continue
         if isempty(colnames)
             newcolnames = tuple(propertynames(rows)...)
@@ -1115,7 +1115,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
             end
             initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
             return _combine_tables_with_first!(rows, initialcols, idx, i, 1,
-                                               f, gd, incols, newcolnames, wasmulti)
+                                               f, gd, incols, newcolnames, firstmulticol)
         end
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
@@ -1133,7 +1133,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                 end
             end
             return _combine_tables_with_first!(rows, newcols, idx, i, j,
-                                               f, gd, incols, colnames, wasmulti)
+                                               f, gd, incols, colnames, firstmulticol)
         end
         append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
     end
