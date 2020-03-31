@@ -504,7 +504,8 @@ function combine(gd::GroupedDataFrame; f...)
         Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated, use " *
                      "`combine(gd, source_cols => fun => :target_col, ...)` instead", :combine)
         vf = values(f)
-        combine_helper(collect(Pair, vf), gd, collect(keys(vf)), keepkeys=true)
+        combine_helper(collect(Pair, vf), gd, index(parent(gd))[collect(keys(vf))],
+                       keepkeys=true)
     end
 end
 
