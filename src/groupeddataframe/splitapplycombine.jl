@@ -219,6 +219,9 @@ If `pair` is passed then it must follow the rules specified for transformations 
 [`select`](@ref) and have the form `source_cols => fun` or `source_cols => fun => target_col`.
 Function defined by `fun` is passed `SubArray` views as positional arguments for
 each column specified to be selected and can return any return value defined below.
+As a special case `nrow => target_col` argument can be passed
+which efficiently calculates number of rows in each group and store it in `:nrow`.
+
 
 $F_TYPE_RULES
 
@@ -259,6 +262,20 @@ Last Group (1 row): a = 4
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 4     │ 12    │
+
+julia> map(nrow, gd)
+GroupedDataFrame with 4 groups based on key: a
+First Group (1 row): a = 1
+│ Row │ a     │ nrow  │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 2     │
+⋮
+Last Group (1 row): a = 4
+│ Row │ a     │ nrow  │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 4     │ 2     │
 ```
 
 See [`by`](@ref) for more examples.
@@ -328,6 +345,8 @@ const F_ARGUMENT_RULES =
     `source_cols => fun => target_col`. Function `fun` is passed `SubArray` views
     as positional arguments for each column specified to be selected and can return
     an abstract vector or a single value (defined precisely below).
+    As a special case `nrow` or `nrow => target_col` argument can be passed
+    which efficiently calculates number of rows in each group and store it in `:nrow`.
 
     If the first or last argument is `pair` then it must be a `Pair` following the
     rules for pairs described above, except that in this case function defined
@@ -378,15 +397,15 @@ julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
 
 julia> gd = groupby(df, :a);
 
-julia> combine(gd, :c => sum)
-4×2 DataFrame
-│ Row │ a     │ c_sum │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 6     │
-│ 2   │ 2     │ 8     │
-│ 3   │ 3     │ 10    │
-│ 4   │ 4     │ 12    │
+julia> combine(gd, :c => sum, nrow)
+4×3 DataFrame
+│ Row │ a     │ c_sum │ nrow  │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 6     │ 2     │
+│ 2   │ 2     │ 8     │ 2     │
+│ 3   │ 3     │ 10    │ 2     │
+│ 4   │ 4     │ 12    │ 2     │
 
 julia> combine(sdf -> sum(sdf.c), gd) # Slower variant
 4×2 DataFrame
@@ -1226,15 +1245,15 @@ julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
 
-julia> by(df, :a, :c => sum)
-4×2 DataFrame
-│ Row │ a     │ c_sum │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 6     │
-│ 2   │ 2     │ 8     │
-│ 3   │ 3     │ 10    │
-│ 4   │ 4     │ 12    │
+julia> by(df, :a, :c => sum, nrow)
+4×3 DataFrame
+│ Row │ a     │ c_sum │ nrow  │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 6     │ 2     │
+│ 2   │ 2     │ 8     │ 2     │
+│ 3   │ 3     │ 10    │ 2     │
+│ 4   │ 4     │ 12    │ 2     │
 
 julia> by(sdf -> sum(sdf.c), df, :a) # Slower variant
 4×2 DataFrame
