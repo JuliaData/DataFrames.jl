@@ -702,7 +702,10 @@ end
     for df in [df_ref, view(df_ref, 1:2, 1:2),
                df_ref[1:2, []], view(df_ref, 1:2, []),
                df_ref[[], 1:2], view(df_ref, [], 1:2)]
-        @test select(df, nrow => :z, nrow) == DataFrame(z=nrow(df), nrow=nrow(df))
+        @test select(df, nrow => :z, nrow, [nrow => :z2]) ==
+              DataFrame(z=nrow(df), nrow=nrow(df), z2=nrow(df))
+        @test_throws ArgumentError select(df, nrow, nrow)
+        @test_throws ArgumentError select(df, [nrow])
     end
 end
 
