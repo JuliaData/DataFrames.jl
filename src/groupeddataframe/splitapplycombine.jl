@@ -156,8 +156,8 @@ function groupby(df::AbstractDataFrame, cols;
     if sort && !sorted
         # Find index of representative row for each group
         idx = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx, 1:nrow(gd.parent), gd)
-        group_invperm = invperm(sortperm(view(gd.parent[!, gd.cols], idx, :)))
+        fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
+        group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
         groups = gd.groups
         @inbounds for i in eachindex(groups)
             gix = groups[i]
@@ -265,19 +265,36 @@ See [`by`](@ref) for more examples.
 """
 function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
     if length(gd) > 0
-        idx, valscat = _combine(f, gd, nothing)
-        keys = _names(gd.parent)[gd.cols]
+        # here we know that parent(gd) has at least 1 column
+        if f isa Pair || f === nrow
+            if f isa Pair && first(f) isa Tuple
+                Base.depwarn("passing a Tuple $(first(f)) as column selector is deprecated" *
+                             ", use a vector $(collect(first(f))) instead", :combine)
+                source_cols, (fun, out_col) = normalize_selection(index(parent(gd)),
+                                                                  collect(first(f)) => last(f))
+            else
+                source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), f)
+            end
+            if isagg(source_cols => fun)
+                idx, valscat = _combine([source_cols => fun], gd, [out_col])
+            else
+                idx, valscat = _combine(source_cols => last(f), gd, nothing)
+            end
+        else
+            idx, valscat = _combine(f, gd, nothing)
+        end
+        keys = _names(parent(gd))[gd.cols]
         for key in keys
             if hasproperty(valscat, key) &&
-               !isequal(valscat[!, key], view(gd.parent[!, key], idx))
+               !isequal(valscat[!, key], view(parent(gd)[!, key], idx))
                throw(ArgumentError("column :$key in returned data frame " *
                                    "is not equal to grouping key :$key"))
             end
         end
-        parent = hcat!(gd.parent[idx, gd.cols],
-                       without(valscat, intersect(keys, _names(valscat))))
+        newparent = hcat!(parent(gd)[idx, gd.cols],
+                          without(valscat, intersect(keys, _names(valscat))))
         if length(idx) == 0
-            return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
+            return GroupedDataFrame(newparent, collect(1:length(gd.cols)), idx,
                                     Int[], Int[], Int[], 0, Dict{Any,Int}())
         end
         starts = Vector{Int}(undef, length(gd))
@@ -295,10 +312,10 @@ function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
         resize!(starts, j)
         resize!(ends, j)
         ends[end] = length(idx)
-        return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
+        return GroupedDataFrame(newparent, collect(1:length(gd.cols)), idx,
                                 collect(1:length(idx)), starts, ends, j, nothing)
     else
-        return GroupedDataFrame(gd.parent[1:0, gd.cols], collect(1:length(gd.cols)),
+        return GroupedDataFrame(parent(gd)[1:0, gd.cols], collect(1:length(gd.cols)),
                                 Int[], Int[], Int[], Int[], 0, Dict{Any,Int}())
     end
 end
@@ -450,31 +467,38 @@ combine(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame; keepkeys::Bool=true
     combine(gd, f, keepkeys=keepkeys)
 combine(gd::GroupedDataFrame, f::Base.Callable; keepkeys::Bool=true) =
     combine_helper(f, gd, keepkeys=keepkeys)
+combine(gd::GroupedDataFrame, f::typeof(nrow); keepkeys::Bool=true) =
+    combine(gd, [nrow => :nrow], keepkeys=keepkeys)
 
 function combine(gd::GroupedDataFrame, f::Pair; keepkeys::Bool=true)
     # move handling of aggregate to specialized combine
-    if isagg(first(f) => (last(f) isa Pair ? first(last(f)) : last(f)))
+    f_from, f_to = f
+
+    # verify if it is not better to use a fast path
+    if isagg(f_from => (f_to isa Pair ? first(f_to) : f_to)) || f_from === nrow
         return combine(gd, [f], keepkeys=keepkeys)
     end
 
-    if first(f) isa Tuple
-        Base.depwarn("passing a Tuple $(first(f)) as column selector is deprecated" *
-                     ", use a vector $(collect(first(f))) instead", :combine)
-            cs = collect(first(f))
+    if f_from isa Tuple
+        cs = collect(f_from)
+        Base.depwarn("passing a Tuple $f_from as column selector is deprecated" *
+                     ", use a vector $cs instead", :combine)
     else
-        cs = first(f)
+        cs = f_from
     end
-    return combine_helper(cs => last(f), gd, keepkeys=keepkeys)
+    return combine_helper(cs => f_to, gd, keepkeys=keepkeys)
 end
 
 function combine(gd::GroupedDataFrame,
-                 @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}}...);
+                 @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}, typeof(nrow)}...);
                  keepkeys::Bool=true)
     @assert !isempty(cs)
     cs_vec = Pair[]
     for p in cs
         if p isa Pair
             push!(cs_vec, p)
+        elseif p === nrow
+            push!(cs_vec, nrow => :nrow)
         else
             @assert p isa AbstractVector{<:Pair}
             append!(cs_vec, p)
@@ -500,14 +524,11 @@ function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
         throw(ArgumentError("combine(gd) is not allowed, use DataFrame(gd) " *
                             "to combine a GroupedDataFrame into a DataFrame"))
-    else
-        Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated, use " *
-                     "`combine(gd, source_cols => fun => :target_col, ...)` instead", :combine)
-        vf = values(f)
-        trans_vf = [index(parent(gd))[k] => v for (k, v) in collect(Pair, vf)]
-        combine_helper(trans_vf, gd, collect(keys(vf)),
-                       keepkeys=true)
     end
+    Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated" *
+                 ", use `combine(gd, source_cols => fun => :target_col, ...)` instead",
+                 :combine)
+    return combine(gd, [source_cols => fun => out_col for (out_col, (source_cols, fun)) in f])
 end
 
 function combine_helper(f, gd::GroupedDataFrame,
@@ -519,15 +540,15 @@ function combine_helper(f, gd::GroupedDataFrame,
         keys = groupvars(gd)
         for key in keys
             if hasproperty(valscat, key) &&
-               !isequal(valscat[!, key], view(gd.parent[!, key], idx))
+               !isequal(valscat[!, key], view(parent(gd)[!, key], idx))
                throw(ArgumentError("column :$key in returned data frame " *
                                    "is not equal to grouping key :$key"))
             end
         end
-        return hcat!(gd.parent[idx, gd.cols],
+        return hcat!(parent(gd)[idx, gd.cols],
                      without(valscat, intersect(keys, _names(valscat))))
     else
-        return keepkeys ? gd.parent[1:0, gd.cols] : DataFrame()
+        return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
     end
 end
 
@@ -875,6 +896,7 @@ isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa 
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
 function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::AbstractVector{Symbol})
+    # here f should be normalized and in a form of source_cols => fun
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
@@ -930,14 +952,16 @@ function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
 end
 
 function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
+    # here p should not be normalized as we allow tabular return value from fun
+    # map and combine should not dispatch here if p is isagg
     source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p)
     parentdf = parent(gd)
     if source_cols isa Int
         incols = (parent(gd)[!, source_cols],)
     else
+        @assert source_cols isa AbstractVector{Int}
         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
     end
-    # here we know that p is not isagg(f)
     firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
     firstmulticol = firstres isa MULTI_COLS_TYPE
     idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols,
@@ -1286,18 +1310,18 @@ julia> by(df, :a, :b => identity => :b, :c => identity => :c,
 """
 by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
-    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f,
             keepkeys=keepkeys)
 by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
-    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f,
             keepkeys=keepkeys)
 by(d::AbstractDataFrame, cols::Any, f::Pair;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
-    combine(f, groupby(d, cols, sort=sort, skipmissing=skipmissing),
+    combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f,
             keepkeys=keepkeys)
 
-by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...;
+by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}, typeof(nrow)}...;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)
@@ -1372,7 +1396,7 @@ end
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent)[gd.cols]))
+    headers = _makeheaders(fs, setdiff(_names(gd), _names(parent(gd))[gd.cols]))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
     res

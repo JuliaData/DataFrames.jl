@@ -686,8 +686,17 @@ end
           by([:b,:c] => (b,c) -> [1 2; 3 4], df, :a) ==
           by(df, :a, x -> [1 2; 3 4]) ==
           by(df, :a, [:b,:c] => (b,c) -> [1 2; 3 4])
+    @test by(nrow, df, :a) == by(df, :a, nrow) == by(df, :a, [nrow => :nrow]) ==
+          by(df, :a, 1 => length => :nrow)
+    @test by(nrow => :res, df, :a) == by(df, :a, nrow => :res) ==
+          by(df, :a, [nrow => :res]) == by(df, :a, 1 => length => :res)
+    @test by(df, :a, nrow => :res, nrow, [nrow => :res2]) ==
+          by(df, :a, 1 => length => :res, 1 => length => :nrow, 1 => length => :res2)
+
     @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
     @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
+    @test_throws ArgumentError by(df, :a, nrow, nrow)
+    @test_throws MethodError by(df, :a, [nrow])
 
     gd = groupby(df, :a)
 
@@ -743,8 +752,16 @@ end
           combine([:b,:c] => (b,c) -> [1 2; 3 4], gd) ==
           combine(gd, x -> [1 2; 3 4]) ==
           combine(gd, [:b,:c] => (b,c) -> [1 2; 3 4])
+    @test combine(nrow, gd) == combine(gd, nrow) == combine(gd, [nrow => :nrow]) ==
+          combine(gd, 1 => length => :nrow)
+    @test combine(nrow => :res, gd) == combine(gd, nrow => :res) ==
+          combine(gd, [nrow => :res]) == combine(gd, 1 => length => :res)
+    @test combine(gd, nrow => :res, nrow, [nrow => :res2]) ==
+          combine(gd, 1 => length => :res, 1 => length => :nrow, 1 => length => :res2)
     @test_throws ArgumentError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
     @test_throws ArgumentError combine(gd, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
+    @test_throws ArgumentError combine(gd, nrow, nrow)
+    @test_throws MethodError combine(gd, [nrow])
 
     for f in (map, combine)
         for col in (:c, 3)
@@ -759,11 +776,15 @@ end
                 f(d -> (xyz=sum(d.c),), gd)
             @test f(col => (x -> sum(x)) => :xyz, gd) ==
                 f(d -> (xyz=sum(d.c),), gd)
-            @test f(col => (x -> (sum(x),)) => :xyz, gd) ==
-                f(d -> (xyz=(sum(d.c),),), gd)
-            @test_throws ArgumentError f(col => (x -> (z=sum(x),),) => :xyz, gd)
-            @test_throws ArgumentError f(col => (x -> DataFrame(z=sum(x),),) => :xyz, gd)
-            @test_throws ArgumentError f(col => (x -> (z=x,),) => :xyz, gd)
+            @test f(col => (x -> sum(x)) => :xyz, gd) ==
+                f(d -> (xyz=sum(d.c),), gd)
+            @test f(nrow, gd) == f(d -> (nrow=length(d.c),), gd)
+            @test f(nrow => :res, gd) == f(d -> (res=length(d.c),), gd)
+            @test f(col => sum => :res, gd) == f(d -> (res=sum(d.c),), gd)
+            @test f(col => (x -> sum(x)) => :res, gd) == f(d -> (res=sum(d.c),), gd)
+            @test_throws ArgumentError f(col => (x -> (z=sum(x),)) => :xyz, gd)
+            @test_throws ArgumentError f(col => (x -> DataFrame(z=sum(x),)) => :xyz, gd)
+            @test_throws ArgumentError f(col => (x -> (z=x,)) => :xyz, gd)
             @test_throws ArgumentError f(col => x -> (z=1, xzz=[1]), gd)
         end
         for cols in ([:b, :c], 2:3, [2, 3], [false, true, true])
@@ -1335,8 +1356,9 @@ end
     @test gdf[:] == gdf
     @test gdf[1:1] == gdf
 
-    @test map(nrow, gdf) == groupby_checked(DataFrame(x1=3), [])
-    @test map(:x2 => identity => :x2_identity, gdf) == groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
+    @test map(nrow => :x1, gdf) == groupby_checked(DataFrame(x1=3), [])
+    @test map(:x2 => identity => :x2_identity, gdf) ==
+          groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
     @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
