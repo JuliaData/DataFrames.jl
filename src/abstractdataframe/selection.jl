@@ -40,6 +40,13 @@ normalize_selection(idx::AbstractIndex, sel) =
         end
     end
 
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}) =
+    length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
+
+normalize_selection(idx::AbstractIndex, sel::typeof(nrow)) =
+    normalize_selection(idx, nrow => :nrow)
+
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
     c = idx[sel]
     return c => identity => _names(idx)[c]
@@ -191,6 +198,10 @@ the new column name `:a_b_etc_fun`.
 
 Column renaming and transformation operations can be passed wrapped in vectors
 (this is useful when combined with broadcasting).
+
+As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
+containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
@@ -353,6 +364,10 @@ the new column name `:a_b_etc_fun`.
 
 Column renaming and transformation operations can be passed wrapped in vectors
 (this is useful when combined with broadcasting).
+
+As a special rule passing `nrow` as an argument creates a column named `:nrow`
+containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
