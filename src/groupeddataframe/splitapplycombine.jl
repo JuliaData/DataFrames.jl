@@ -629,16 +629,46 @@ function wrap_row(x::NamedTuple, ::Val{firstmulticol}) where firstmulticol
 end
 
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::Tuple{}, i::Integer)
+    f()
+end
 
-@generated function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::Tuple{AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NTuple{2, AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx), view(incols[2], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NTuple{3, AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NTuple{4, AbstractVector}, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx),
+           view(incols[4], idx))
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
-    ex = :(f())
-    incols === Tuple{} && return ex
-    for idx in 1:length(incols.parameters)
-        push!(ex.args, :(view(incols[$idx], idx)))
-    end
-    return :(idx = idx[starts[i]:ends[i]]; $ex)
+    idx = idx[starts[i]:ends[i]]
+    f(map(c -> view(c, idx), incols)...)
 end
 
 do_call(f::Any, idx::AbstractVector{<:Integer},
