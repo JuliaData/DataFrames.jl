@@ -293,6 +293,9 @@ function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
             else
                 source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), f)
             end
+            # verify if it is not better to use a fast path, which we achieve by
+            # calling _combine(::AbstractVector, ::GroupedDataFrame, ::AbstractVector)
+            # as _combine(::Pair, ::GroupedDataFrame, ::Nothing) does not support it
             if isagg(source_cols => fun)
                 idx, valscat = _combine([source_cols => fun], gd, [out_col])
             else
@@ -491,23 +494,24 @@ combine(gd::GroupedDataFrame, f::Base.Callable; keepkeys::Bool=true) =
 combine(gd::GroupedDataFrame, f::typeof(nrow); keepkeys::Bool=true) =
     combine(gd, [nrow => :nrow], keepkeys=keepkeys)
 
-function combine(gd::GroupedDataFrame, f::Pair; keepkeys::Bool=true)
+function combine(gd::GroupedDataFrame, p::Pair; keepkeys::Bool=true)
     # move handling of aggregate to specialized combine
-    f_from, f_to = f
+    p_from, p_to = p
 
-    # verify if it is not better to use a fast path
-    if isagg(f_from => (f_to isa Pair ? first(f_to) : f_to)) || f_from === nrow
-        return combine(gd, [f], keepkeys=keepkeys)
+    # verify if it is not better to use a fast path, which we achieve
+    # by moving to combine(::GroupedDataFrame, ::AbstractVector) method
+    if isagg(p_from => (p_to isa Pair ? first(p_to) : p_to)) || p_from === nrow
+        return combine(gd, [p], keepkeys=keepkeys)
     end
 
-    if f_from isa Tuple
-        cs = collect(f_from)
-        Base.depwarn("passing a Tuple $f_from as column selector is deprecated" *
+    if p_from isa Tuple
+        cs = collect(p_from)
+        Base.depwarn("passing a Tuple $p_from as column selector is deprecated" *
                      ", use a vector $cs instead", :combine)
     else
-        cs = f_from
+        cs = p_from
     end
-    return combine_helper(cs => f_to, gd, keepkeys=keepkeys)
+    return combine_helper(cs => p_to, gd, keepkeys=keepkeys)
 end
 
 function combine(gd::GroupedDataFrame,
@@ -916,8 +920,11 @@ isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa 
 
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
-function _combine(f::AbstractVector{<:Pair}, gd::GroupedDataFrame, nms::AbstractVector{Symbol})
+function _combine(f::AbstractVector{<:Pair},
+                  gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     # here f should be normalized and in a form of source_cols => fun
+    @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}}, f)
+    @assert all(x -> last(x) isa Base.Callable, f)
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))

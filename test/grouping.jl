@@ -776,8 +776,8 @@ end
                 f(d -> (xyz=sum(d.c),), gd)
             @test f(col => (x -> sum(x)) => :xyz, gd) ==
                 f(d -> (xyz=sum(d.c),), gd)
-            @test f(col => (x -> sum(x)) => :xyz, gd) ==
-                f(d -> (xyz=sum(d.c),), gd)
+            @test f(col => (x -> (sum(x),)) => :xyz, gd) ==
+                f(d -> (xyz=(sum(d.c),),), gd)
             @test f(nrow, gd) == f(d -> (nrow=length(d.c),), gd)
             @test f(nrow => :res, gd) == f(d -> (res=length(d.c),), gd)
             @test f(col => sum => :res, gd) == f(d -> (res=sum(d.c),), gd)
