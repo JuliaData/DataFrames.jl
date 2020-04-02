@@ -668,7 +668,7 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
     idx = idx[starts[i]:ends[i]]
-    f(ntuple(i -> view(incols[i], idx), length(incols))...)
+    f(map(c -> view(c, idx), incols)...)
 end
 
 do_call(f::Any, idx::AbstractVector{<:Integer},
