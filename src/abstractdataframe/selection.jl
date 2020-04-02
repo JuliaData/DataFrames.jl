@@ -136,7 +136,8 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
     if col_idx isa Int
         res = fun(df[!, col_idx])
     else
-        res = fun(ntuple(i -> cdf[col_idx[i]], length(col_idx))...)
+        # it should be fast enough here as we do not expect to do it millions of times
+        res = fun(map(c -> cdf[c], col_idx)...)
     end
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
         throw(ArgumentError("return value from function $fun " *

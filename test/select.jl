@@ -913,6 +913,8 @@ end
         @test select(df, :a, [] .=> sum, :b => :x, [:b, :a] .=> identity) ==
               DataFrame(a=1:3, x=4:6, b_identity=4:6, a_identity=1:3)
         @test select(df, names(df) .=> sum .=> [:A, :B]) == DataFrame(A=6, B=15)
+        @test Base.broadcastable(ByRow(+)) isa Base.RefValue{ByRow{typeof(+)}}
+        @test identity.(ByRow(+)) == ByRow(+)
     end
 end
 
