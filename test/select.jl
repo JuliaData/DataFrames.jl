@@ -825,35 +825,35 @@ end
     df2 = DataFrame([1 2 3])
     df3 = DataFrame(x1=Int[], x2=Int[], x3=Int[])
     for v in [9, Ref(9), view([9], 1)]
-        @test select(df, [] => (() -> 9) => :a, :, (:) => (+) => :d) ==
+        @test select(df, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
               DataFrame([9 1 2 3 6
                          9 4 5 6 15], [:a, :x1, :x2, :x3, :d])
-        @test select(df, (:) => (+) => :d, :, r"z" => (() -> 9)  => :a) ==
+        @test select(df, (:) => (+) => :d, :, r"z" => (() -> v)  => :a) ==
               DataFrame([6  1 2 3 9
                          15 4 5 6 9], [:d, :x1, :x2, :x3, :a])
-        @test select(df, [] => (() -> 9) => :a, :x1 => :b, (:) => (+) => :d) ==
+        @test select(df, [] => (() -> v) => :a, :x1 => :b, (:) => (+) => :d) ==
               DataFrame([9 1 6
                          9 4 15], [:a, :b, :d])
-        @test select(df, (:) => (+) => :d, :x1 => :b, [] => (() -> 9) => :a) ==
+        @test select(df, (:) => (+) => :d, :x1 => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9
                          15 4 9], [:d, :b, :a])
-        @test select(df, [] => (() -> 9) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
+        @test select(df, [] => (() -> v) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
               DataFrame([9 1 6
                          9 4 15], [:a, :b, :d])
-        @test select(df, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> 9) => :a) ==
+        @test select(df, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9
                          15 4 9], [:d, :b, :a])
-        @test select(df2, [] => (() -> 9) => :a, :, (:) => (+) => :d) ==
+        @test select(df2, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
               DataFrame([9 1 2 3 6], [:a, :x1, :x2, :x3, :d])
-        @test select(df2, (:) => (+) => :d, :, r"z" => (() -> 9)  => :a) ==
+        @test select(df2, (:) => (+) => :d, :, r"z" => (() -> v)  => :a) ==
               DataFrame([6  1 2 3 9], [:d, :x1, :x2, :x3, :a])
-        @test select(df2, [] => (() -> 9) => :a, :x1 => :b, (:) => (+) => :d) ==
+        @test select(df2, [] => (() -> v) => :a, :x1 => :b, (:) => (+) => :d) ==
               DataFrame([9 1 6], [:a, :b, :d])
-        @test select(df2, (:) => (+) => :d, :x1 => :b, [] => (() -> 9) => :a) ==
+        @test select(df2, (:) => (+) => :d, :x1 => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9], [:d, :b, :a])
-        @test select(df2, [] => (() -> 9) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
+        @test select(df2, [] => (() -> v) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
               DataFrame([9 1 6], [:a, :b, :d])
-        @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> 9) => :a) ==
+        @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9], [:d, :b, :a])
         @test_throws ArgumentError select(df3, [] => (() -> v) => :a, :x1 => x -> [])
         @test_throws ArgumentError select(df3, :x1 => x -> [], [] => (() -> v) => :a)
