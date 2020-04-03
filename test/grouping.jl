@@ -1722,8 +1722,14 @@ end
     @test by(df, :g, r"x" => cor) == DataFrame(g=[1,2], x1_x2_cor = [1.0, 1.0])
     @test by(df, :g, Not(:g) => ByRow(/)) == DataFrame(:g => [1,1,1,2,2,2], Symbol("x1_x2_/") => 1.0)
     @test by(df, :g, Between(:x2, :x1) => () -> 1) == DataFrame(:g => 1:2, Symbol("function") => 1)
-    # this does not work yet because we are waiting to rebase against transform PR
-    # @test by(df, :g, :x1 => :z) == DataFrame(g=[1,1,1,2,2,2], z=1:6)
+    @test by(df, :g, :x1 => :z) ==
+          by(df, :g, [:x1 => :z]) ==
+          by(:x1 => :z, df, :g) ==
+          combine(groupby(df, :g), :x1 => :z) ==
+          combine(groupby(df, :g), [:x1 => :z]) ==
+          combine(:x1 => :z, groupby(df, :g)) ==
+          DataFrame(g=[1,1,1,2,2,2], z=1:6)
+    @test map(:x1 => :z, groupby(df, :g)) == groupby(DataFrame(g=[1,1,1,2,2,2], z=1:6), :g)
 end
 
 @testset "hard tabular return value cases" begin

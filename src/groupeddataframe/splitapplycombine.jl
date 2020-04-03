@@ -469,10 +469,10 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
 
-julia> combine(gd, :b => identity => :b, :c => identity => :c,
-               [:b, :c] => +, keepkeys=false) # auto-splatting and keepkeys
+julia> combine(gd, :b => :b1, :c => :c1,
+               [:b, :c] => +, keepkeys=false) # auto-splatting, renaming and keepkeys
 8×3 DataFrame
-│ Row │ b     │ c     │ b_c_+ │
+│ Row │ b1    │ c1    │ b_c_+ │
 │     │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 2     │ 1     │ 3     │
@@ -633,6 +633,11 @@ function wrap_row(x::NamedTuple, ::Val{firstmulticol}) where firstmulticol
 end
 
 # idx, starts and ends are passed separately to avoid cost of field access in tight loop
+# Manual unrolling of Tuple is used as it turned out more efficient than @generated
+# for small number of columns passed.
+# For more than 4 columns `map` is slower than @generated
+# but this case is probably rare and if huge number of columns is passed @generated
+# has very high compilation cost
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple{}, i::Integer)
@@ -1320,10 +1325,10 @@ julia> by(df, :a) do sdf # dropping group when DataFrame() is returned
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
 
-julia> by(df, :a, :b => identity => :b, :c => identity => :c,
-               [:b, :c] => +, keepkeys=false) # auto-splatting and keepkeys
+julia> by(df, :a, :b => :b1, :c => :c1,
+               [:b, :c] => +, keepkeys=false) # auto-splatting, renaming and keepkeys
 8×3 DataFrame
-│ Row │ b     │ c     │ b_c_+ │
+│ Row │ b1    │ c1    │ b_c_+ │
 │     │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 2     │ 1     │ 3     │
