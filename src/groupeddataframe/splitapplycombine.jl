@@ -216,7 +216,8 @@ view for each group and can return any return value defined below.
 Note that this form is slower than `pair` due to type instability.
 
 If `pair` is passed then it must follow the rules specified for transformations in
-[`select`](@ref) and have the form `source_cols => fun` or `source_cols => fun => target_col`.
+[`select`](@ref) and have the form `source_cols => fun`, `source_cols => fun => target_col`,
+or `source_col => target_col`.
 Function defined by `fun` is passed `SubArray` views as positional arguments for
 each column specified to be selected and can return any return value defined below.
 As a special case `nrow` or `nrow => target_col` can be passed without specifying
@@ -345,13 +346,13 @@ const F_ARGUMENT_RULES =
     """
     If `pairs` arguments are passed they must consist of more than one `Pair`s,
     or vectors of such `Pair`s. Allowed transformations follow the rules specified
-    for [`select`](@ref) and have the form `source_cols => fun` or
-    `source_cols => fun => target_col`. Function `fun` is passed `SubArray` views
-    as positional arguments for each column specified to be selected and can return
-    an abstract vector or a single value (defined precisely below).
-    As a special case `nrow` or `nrow => target_col` can be passed without specifying
-    input columns to efficiently calculate number of rows in each group.
-    If `nrow` is passed the resulting column name is `:nrow`.
+    for [`select`](@ref) and have the form `source_cols => fun`,
+    `source_cols => fun => target_col`, or `source_col => target_col`.
+    Function `fun` is passed `SubArray` views as positional arguments for each column
+    specified to be selected and can return an abstract vector or a single value
+    (defined precisely below). As a special case `nrow` or `nrow => target_col` can
+    be passed without specifying input columns to efficiently calculate number of
+    rows in each group. If `nrow` is passed the resulting column name is `:nrow`.
 
     If the first or last argument is `pair` then it must be a `Pair` following the
     rules for pairs described above, except that in this case function defined
