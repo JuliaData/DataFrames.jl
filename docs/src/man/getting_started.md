@@ -526,7 +526,7 @@ Equivalently, the `in` function can be called with a single argument to create
 a function object that tests whether each value belongs to the subset
 (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
-#### Column selection using `select` and `select!`
+#### Column selection using `select` and `select!`, `transform` and `transform!`
 
 You can also use the [`select`](@ref) and [`select!`](@ref) functions to select,
 rename and transform columns in a data frame.
@@ -633,9 +633,33 @@ julia> df
 │ 1   │ 2     │ 3     │
 ```
 
-While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
-- the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
-- the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides interfaces similar to LINQ and [dplyr](https://dplyr.tidyverse.org)
+`transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
+they retain all columns that are present in the source data frame, for example:
+
+```jldoctest dataframe
+julia> df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
+2×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 3     │ 5     │
+│ 2   │ 2     │ 4     │ 6     │
+
+julia> transform(df, All() => +)
+2×4 DataFrame
+│ Row │ x1    │ x2    │ y     │ x1_x2_y_+ │
+│     │ Int64 │ Int64 │ Int64 │ Int64     │
+├─────┼───────┼───────┼───────┼───────────┤
+│ 1   │ 1     │ 3     │ 5     │ 9         │
+│ 2   │ 2     │ 4     │ 6     │ 12        │
+```
+
+While the DataFrames package provides basic data manipulation capabilities,
+users are encouraged to use querying frameworks for more convenient and powerful operations:
+- the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a
+[LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
+- the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl)
+package provides interfaces similar to LINQ and [dplyr](https://dplyr.tidyverse.org)
 
 See the [Data manipulation frameworks](@ref) section for more information.
 
