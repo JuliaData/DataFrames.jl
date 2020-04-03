@@ -36,6 +36,7 @@ unstack
 ```@docs
 allowmissing
 allowmissing!
+append!
 categorical
 categorical!
 completecases
@@ -47,8 +48,8 @@ disallowmissing
 disallowmissing!
 dropmissing
 dropmissing!
-eachrow
 eachcol
+eachrow
 filter
 filter!
 flatten
@@ -57,13 +58,14 @@ insertcols!
 length
 mapcols
 names
+ncol
 ndims
 nonunique
 nrow
-ncol
 order
-rename!
+push!
 rename
+rename!
 repeat
 select
 select!
@@ -71,8 +73,8 @@ show
 size
 sort
 sort!
+transform
+transform!
 unique!
 vcat
-append!
-push!
 ```

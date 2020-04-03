@@ -342,12 +342,10 @@ Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
     [parentcols(ind, i) for i in _names(ind) if occursin(idx, String(i))]
 
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{All, Between}) =
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx) =
     parentcols(ind, ind[idx])
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
-
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Not) = parentcols(ind, ind[idx])
 
 function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
