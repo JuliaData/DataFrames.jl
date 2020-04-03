@@ -126,7 +126,7 @@ end
 function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool,
-                           allow_resizing_newdf::Base.RefValue{Bool})
+                           allow_resizing_newdf::Ref{Bool})
     col_idx, (_, newname) = nc
     # it is allowed to request column tranformation only once
     @assert !hasproperty(newdf, newname)
@@ -134,7 +134,7 @@ function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
     if allow_resizing_newdf[] && nrow(newdf) == 1 && nrow(df) > 1
         newdfcols = _columns(newdf)
         for (i, col) in enumerate(newdfcols)
-            newdfcols[i] = fill(first(col), nrow(df))
+            newdfcols[i] = fill!(similar(col, nrow(df)), first(col))
         end
     end
     newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
@@ -148,7 +148,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool,
-                           allow_resizing_newdf::Base.RefValue{Bool})
+                           allow_resizing_newdf::Ref{Bool})
     col_idx, (fun, newname) = nc
     @assert !hasproperty(newdf, newname)
     cdf = eachcol(df)
@@ -180,7 +180,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
     else
         res_unwrap = res isa Union{AbstractArray{<:Any, 0}, Ref} ? res[] : res
         # disallow squashing a scalar to 0 rows
-        newdf[!, newname] = fill(res_unwrap, max(1, nrow(newdf)))
+        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap), max(1, nrow(newdf))), res_unwrap)
     end
     transformed_cols[newname] = nothing
 end
@@ -199,13 +199,13 @@ and transformed using the `old_column => fun => new_column_name` syntax.
 is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
 Otherwise `old_column` can be any column indexing syntax, in which case `fun`
 will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then: it will be spread
-into a vector matching the target number of rows in the data frame
-(as a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
- are unwrapped and treated in the same way),
+If `fun` returns a value of type other than `AbstractVector` then it will be broadcasted
+into a vector matching the target number of rows in the data frame,
 unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
 `AbstractMatrix`, in which case an error is thrown as currently these
 return types are not allowed.
+As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
+are unwrapped and then broadcasted.
 
 To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
 struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
