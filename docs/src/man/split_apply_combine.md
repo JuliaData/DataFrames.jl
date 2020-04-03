@@ -7,24 +7,24 @@ The DataFrames package supports the split-apply-combine strategy through the `by
    of values for column `col`, which can be a column name or index
 2. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector
-3. a `col => function => target_col` `cols => function => target_col` form additionally
+3. a `cols => function => target_col` form additionally
    specifying the name of the target column (this assumes that `function` returns a single value or a vector)
 4. a `col => target_col` pair, which renames the column `col` to `target_col`
-5. a `nrow` or `nrow => target_col` form which efficiently produces number of rows in a group
-   (without `target_col` a new column created gets `:nrow` name)
-6. several arguments of the forms given above or vectors of pairs for these forms
+5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
+   (without `target_col` the new column is called `:nrow`)
+6. several arguments of the forms given above, or vectors thereof
 7. a function which will be called with a `SubDataFrame` corresponding to each group;
-   this form should be avoided due to its poor performance unless a `SubDataFrame`
-   has a very large number of columns (in which case `SubDataFrame` avoids excessive
+   this form should be avoided due to its poor performance unless a very large
+   number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)
 
-Forms 1 to 5 and 7 can be also passed as a first argument to `by`.
+All forms except 6 can be also passed as the first argument to `by`.
 
-In all of these cases, the `function` can return either a single row or multiple rows.
-Normally it is assumed that a function returns a single value or a vector.
-Additionally multiple columns in a form of `AbstractDataFrame`, `AbstactMatrix`,
-`NamedTuple` or `DataFrameRow` can be returned by the `function` if `by` is passed
-exactly one `function` and `target_col` is not specified.
+In all of these cases, `function` can return either a single row or multiple rows.
+`function` can always generate a single column by returning a single value or a vector.
+Additionally, if `by` is passed exactly one `function` and `target_col` is not specified,
+`function` can return multiple columns in the form of an `AbstractDataFrame`,
+`AbstractMatrix`, `NamedTuple` or `DataFrameRow`.
 
 Here are the rules specifying the shape of the resulting `DataFrame`:
 - a single value produces a single row and column per group
@@ -101,7 +101,7 @@ julia> by(iris, :Species, nrow, :PetalLength => mean => :mean)
 
 julia> by(iris, :Species,
           [:PetalLength, :SepalLength] =>
-          (p, s) -> (a=mean(p)/mean(s), b=sum(p))) # multiple arguments are splatted
+          (p, s) -> (a=mean(p)/mean(s), b=sum(p))) # multiple columns are passed as arguments
 3×3 DataFrame
 │ Row │ Species         │ a        │ b       │
 │     │ String          │ Float64  │ Float64 │
@@ -175,9 +175,9 @@ Number of data points for Iris-virginica: 50
 The value of `key` in the previous example is a [`DataFrames.GroupKey`](@ref) object,
 which can be used in a similar fashion to a `NamedTuple`.
 
-Grouping a data frame using `groupby` function can be seen as adding a lookup key
-to it. Doing such lookups is efficient and can be also performed by passing
-a `Tuple` or `NamedTuple` directly:
+Grouping a data frame using the `groupby` function can be seen as adding a lookup key
+to it. Such lookups can be performed efficiently by indexing the resulting
+`GroupedDataFrame` with a a `Tuple` or `NamedTuple`:
 ```
 julia> df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000);
 

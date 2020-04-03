@@ -349,7 +349,7 @@ const F_ARGUMENT_RULES =
     for [`select`](@ref) and have the form `source_cols => fun`,
     `source_cols => fun => target_col`, or `source_col => target_col`.
     Function `fun` is passed `SubArray` views as positional arguments for each column
-    specified to be selected and can return an abstract vector or a single value
+    specified to be selected and can return a vector or a single value
     (defined precisely below). As a special case `nrow` or `nrow => target_col` can
     be passed without specifying input columns to efficiently calculate number of
     rows in each group. If `nrow` is passed the resulting column name is `:nrow`.
