@@ -1,19 +1,25 @@
 # The Split-Apply-Combine Strategy
 
-Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper "[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)", written by Hadley Wickham.
+Many data analysis tasks involve splitting a data set into groups, applying some
+functions to each of the groups and then combining the results. A standardized
+framework for handling this sort of computation is described in the paper
+"[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)",
+written by Hadley Wickham.
 
-The DataFrames package supports the split-apply-combine strategy through the `by` function, which is a shorthand for `groupby` followed by `map` and/or `combine`. `by` takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split the `DataFrame` on, and (3) a specification of one or more functions to apply to each subset of the `DataFrame`. This specification can be of the following forms:
-1. a `col => function` pair indicating that `function` should be called with the vector
-   of values for column `col`, which can be a column name or index
-2. a `cols => function` pair indicating that `function` should be called with
+The DataFrames package supports the split-apply-combine strategy through the `by`
+function, which is a shorthand for `groupby` followed by `map` and/or `combine`.
+`by` takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split
+the `DataFrame` on, and (3) a specification of one or more functions to apply to
+each subset of the `DataFrame`. This specification can be of the following forms:
+1. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector
-3. a `cols => function => target_col` form additionally
+2. a `cols => function => target_col` form additionally
    specifying the name of the target column (this assumes that `function` returns a single value or a vector)
-4. a `col => target_col` pair, which renames the column `col` to `target_col`
-5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
+3. a `col => target_col` pair, which renames the column `col` to `target_col`
+4. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
    (without `target_col` the new column is called `:nrow`)
-6. several arguments of the forms given above, or vectors thereof
-7. a function which will be called with a `SubDataFrame` corresponding to each group;
+5. several arguments of the forms given above, or vectors thereof
+6. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)
