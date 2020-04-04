@@ -356,7 +356,7 @@ julia> first(d, 6)
 │ 5   │ Iris-setosa │ SepalLength │ 5.0     │
 │ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
-julia> x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df.value)));
+julia> x = by(d, [:variable, :Species], :value => mean => :vsum);
 
 julia> first(x, 6)
 │ Row │ variable    │ Species         │ vsum    │
