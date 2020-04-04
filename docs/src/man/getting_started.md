@@ -419,7 +419,7 @@ julia> df[!, :A] == df[:, :A]
 true
 ```
 
-In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1, :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
+In the first case, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1, :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
 
 It is also possible to use a regular expression as a selector of columns matching it:
 ```jldoctest dataframe
