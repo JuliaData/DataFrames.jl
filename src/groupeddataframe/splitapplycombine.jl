@@ -516,21 +516,22 @@ function combine(gd::GroupedDataFrame, p::Pair; keepkeys::Bool=true)
 end
 
 function combine(gd::GroupedDataFrame,
-                 @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}, typeof(nrow)}...);
+                 @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}, typeof(nrow),
+                                         AbstractVector{Integer}, AbstractVector{Symbol},
+                                         ColumnIndex, Colon, Regex, Not, All, Between}...);
                  keepkeys::Bool=true)
     @assert !isempty(cs)
-    cs_vec = Pair[]
+    cs_vec = []
     for p in cs
-        if p isa Pair
-            push!(cs_vec, p)
-        elseif p === nrow
+        if p === nrow
             push!(cs_vec, nrow => :nrow)
-        else
-            @assert p isa AbstractVector{<:Pair}
+        elseif p isa AbstractVector{<:Pair}
             append!(cs_vec, p)
+        else
+            push!(cs_vec, p)
         end
     end
-    if any(x -> first(x) isa Tuple, cs_vec)
+    if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
         x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
         Base.depwarn("passing a Tuple $(first(x)) as column selector is deprecated" *
                      ", use a vector $(collect(first(x))) instead", :combine)
@@ -540,7 +541,55 @@ function combine(gd::GroupedDataFrame,
             end
         end
     end
-    cs_norm = Pair[normalize_selection(index(parent(gd)), c) for c in cs_vec]
+    cs_norm_pre = [normalize_selection(index(parent(gd)), c) for c in cs_vec]
+    seen_cols = Set{Symbol}()
+    process_vectors = false
+    for v in cs_norm_pre
+        if v isa Pair
+            out_col = last(last(v))
+            if out_col in seen_cols
+                throw(ArgumentError("Duplicate output column name $out_col requested"))
+            end
+            push!(seen_cols, out_col)
+        else
+            @assert v isa AbstractVector{Int}
+            process_vectors = true
+        end
+    end
+    processed_cols = Set{Symbol}()
+    if process_vectors
+        cs_norm = Pair[]
+        i = 0
+        while i < length(cs_norm_pre)
+            i += 1
+            if cs_norm_pre[i] isa Pair
+                push!(cs_norm, cs_norm_pre[i])
+                push!(processed_cols, last(last(cs_norm_pre[i])))
+            else
+                @assert cs_norm_pre[i] isa AbstractVector{Int}
+                for col_idx in cs_norm_pre[i]
+                    col_name = _names(gd)[col_idx]
+                    if !(col_name in processed_cols)
+                        push!(processed_cols, col_name)
+                        if col_name in seen_cols
+                            trans_idx = findfirst(cs_norm_pre) do p
+                                p isa Pair || return false
+                                last(last(p)) == col_name
+                            end
+                            @assert !isnothing(trans_idx)
+                            push!(cs_norm, cs_norm_pre[trans_idx])
+                            deleteat!(cs_norm_pre, trans_idx)
+                        else
+                            push!(cs_norm, col_idx => identity => col_name)
+                        end
+
+                    end
+                end
+            end
+        end
+    else
+        cs_norm = collect(Pair, cs_norm_pre)
+    end
     f = Pair[first(x) => first(last(x)) for x in cs_norm]
     nms = Symbol[last(last(x)) for x in cs_norm]
     return combine_helper(f, gd, nms, keepkeys=keepkeys)
@@ -584,6 +633,7 @@ wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
 wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
+wrap(x::Union{AbstractArray{<:Any, 0}, Ref}) = (x1=x[],)
 
 wrap_table(x::Any, ::Val) =
     throw(ArgumentError("return value must not change its kind " *
@@ -930,7 +980,8 @@ function _combine(f::AbstractVector{<:Pair},
                   gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     # here f should be normalized and in a form of source_cols => fun
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}}, f)
-    @assert all(x -> last(x) isa Base.Callable, f)
+    @assert all(x -> last(x) isa Union{Base.Callable, ByRow}, f)
+    idx_agg = nothing
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
@@ -962,14 +1013,50 @@ function _combine(f::AbstractVector{<:Pair},
                 throw(ArgumentError("a single value or vector result is required when passing " *
                                     "multiple functions (got $(typeof(res)))"))
             end
+            if !(firstres isa AbstractVector) && isnothing(idx_agg)
+                idx_agg = Vector{Int}(undef, length(gd))
+                fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+            end
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
-                                                  Val(firstmulticol))
+                                                  Val(firstmulticol),
+                                                  firstres isa AbstractVector ? nothing : idx_agg)
             res[i] = idx, outcols[1]
         end
     end
-    # TODO: avoid recomputing idx for each pair when !all(isagg, f)
-    idx = res[1][1]
+    idx_loc = findfirst(x -> x[1] !== idx_agg, res)
+    if isnothing(idx_loc)
+        @assert !isnothing(idx_agg)
+        idx = idx_agg
+    else
+        idx = res[idx_loc][1]
+        agg2idx_map = nothing
+        for i in 1:length(res)
+            if res[i][1] != idx
+                if res[i][1] === idx_agg
+                    # we perform pseudo broadcasting here
+                    # keep -1 as a sentinel for errors
+                    if isnothing(agg2idx_map)
+                        agg2idx_map = fill(-1, length(idx))
+                        aggj = 1
+                        for j in 1:length(idx)
+                            while idx_agg[aggj] != idx[j]
+                                aggj += 1
+                            end
+                            agg2idx_map[j] = aggj
+                        end
+                    end
+                    res[i] = idx, res[i][2][agg2idx_map]
+                else
+                    if idx != res[i][1]
+                        throw(ArgumentError("all functions must return values of the same length"))
+                    end
+                end
+            end
+        end
+    end
     outcols = map(x -> x[2], res)
+    # this check is redundant given we check idx above now
+    # but it is safer to double check and it is cheap
     if !all(x -> length(x) == length(outcols[1]), outcols)
         throw(ArgumentError("all functions must return values of the same length"))
     end
@@ -979,8 +1066,15 @@ end
 function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
     firstres = fun(gd[1])
     firstmulticol = firstres isa MULTI_COLS_TYPE
+    if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
+                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+        idx_agg = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+    else
+        idx_agg = nothing
+    end
     idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, nothing,
-                                            Val(firstmulticol))
+                                            Val(firstmulticol), idx_agg)
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
@@ -998,8 +1092,15 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     end
     firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
     firstmulticol = firstres isa MULTI_COLS_TYPE
+    if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
+                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+        idx_agg = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+    else
+        idx_agg = nothing
+    end
     idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols,
-                                            Val(firstmulticol))
+                                            Val(firstmulticol), idx_agg)
     # disallow passing target column name to genuine tables
     if firstres isa MULTI_COLS_TYPE
         if p isa Pair{<:Any, <:Pair{<:Any, Symbol}}
@@ -1017,7 +1118,7 @@ end
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple},
-                             firstmulticol::Val)
+                             firstmulticol::Val, idx_agg)
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -1034,7 +1135,11 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
-    idx = Vector{Int}(undef, n)
+    if isnothing(idx_agg)
+        idx = Vector{Int}(undef, n)
+    else
+        idx = idx_agg
+    end
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
@@ -1046,7 +1151,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                                                              f, gd, incols, targetcolnames,
                                                              firstmulticol)
     else
-        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, idx, 1, 1,
+        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, 1, 1,
                                                            f, gd, incols, targetcolnames,
                                                            firstmulticol)
     end
@@ -1083,7 +1188,7 @@ end
 
 function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
-                                   idx::Vector{Int}, rowstart::Integer, colstart::Integer,
+                                   rowstart::Integer, colstart::Integer,
                                    f::Any, gd::GroupedDataFrame,
                                    incols::Union{Nothing, AbstractVector, Tuple},
                                    colnames::NTuple{N, Symbol},
@@ -1095,7 +1200,6 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     # Handle first group
     j = fill_row!(first, outcols, rowstart, colstart, colnames)
     @assert j === nothing # eltype is guaranteed to match
-    idx[rowstart] = gdidx[starts[rowstart]]
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
         row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
@@ -1115,10 +1219,9 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                     end
                 end
             end
-            return _combine_rows_with_first!(row, newcols, idx, i, j,
+            return _combine_rows_with_first!(row, newcols, i, j,
                                              f, gd, incols, colnames, firstmulticol)
         end
-        idx[i] = gdidx[starts[i]]
     end
     return outcols, colnames
 end
@@ -1355,7 +1458,10 @@ by(d::AbstractDataFrame, cols::Any, f::Pair;
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f,
             keepkeys=keepkeys)
 
-by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}, typeof(nrow)}...;
+by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair},
+                                             typeof(nrow), AbstractVector{Integer},
+                                             AbstractVector{Symbol}, ColumnIndex,
+                                             Colon, Regex, Not, All, Between}...;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)

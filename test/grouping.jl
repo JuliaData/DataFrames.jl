@@ -1822,4 +1822,25 @@ end
     end
 end
 
+@testset "mixing of different return lengths and pseudo-broadcasting" begin
+    df = DataFrame(g=[1,1,1,2,2]);
+    f1(i) = i[1] == 1 ? ["a", "b"] : ["c"];
+    f2(i) = i[1] == 1 ? ["d"] : ["e", "f"];
+    @test_throws ArgumentError by(df, :g, :g => f1, :g => f2)
+
+    f1(i) = i[1] == 1 ? ["a"] : ["c"];
+    f2(i) = i[1] == 1 ? "d" : "e";
+    @test by(df, :g, :g => f1, :g => f2) ==
+          DataFrame(g=[1,2], g_f1=["a", "c"], g_f2 = ["d", "e"])
+
+    f1(i) = i[1] == 1 ? ["a","c"] : [];
+    f2(i) = i[1] == 1 ? "d" : "e";
+    @test by(df, :g, :g => f1, :g => f2) ==
+          DataFrame(g = [1,1], g_f1 = ["a", "c"], g_f2 = ["d", "d"])
+
+    # TODO: test unwrapping of `Ref` and 0-dimensional Array
+    # TODO: test pseudo-broadcasting
+    # TODO: test passing columns
+end
+
 end # module
