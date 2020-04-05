@@ -633,7 +633,6 @@ wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
 wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
-wrap(x::Union{AbstractArray{<:Any, 0}, Ref}) = (x1=x[],)
 
 wrap_table(x::Any, ::Val) =
     throw(ArgumentError("return value must not change its kind " *
@@ -645,7 +644,7 @@ function wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
-    wrap(x)
+    return wrap(x)
 end
 
 function wrap_table(x::AbstractVector, ::Val{firstmulticol}) where firstmulticol
@@ -653,7 +652,7 @@ function wrap_table(x::AbstractVector, ::Val{firstmulticol}) where firstmulticol
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
-    wrap(x)
+    return wrap(x)
 end
 
 function wrap_row(x::Any, ::Val{firstmulticol}) where firstmulticol
@@ -662,7 +661,12 @@ function wrap_row(x::Any, ::Val{firstmulticol}) where firstmulticol
         throw(ArgumentError("function must return only single-column values, " *
                             "or only multiple-column values"))
     end
-    wrap(x)
+    if x isa Union{AbstractArray{<:Any, 0}, Ref} && !firstmulticol
+        # extrude a value from Ref and 0-dimensional array only if in single column mode
+        return (x1 = x[],)
+    else
+        return wrap(x)
+    end
 end
 
 # note that also NamedTuple() is correctly captured by this definition
@@ -1020,6 +1024,7 @@ function _combine(f::AbstractVector{<:Pair},
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
                                                   Val(firstmulticol),
                                                   firstres isa AbstractVector ? nothing : idx_agg)
+            @assert length(outcols) == 1
             res[i] = idx, outcols[1]
         end
     end
@@ -1119,6 +1124,8 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                              f::Any, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple},
                              firstmulticol::Val, idx_agg)
+    extrude_case = false
+
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -1128,7 +1135,12 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     elseif first isa DataFrameRow
         n = length(gd)
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
-    else # NamedTuple giving a single row
+    elseif firstmulticol == Val(false) && first.x1 isa Union{AbstractArray{<:Any, 0}, Ref}
+        extrude_case = true
+        first = wrap_row(first.x1, firstmulticol)
+        n = length(gd)
+        eltys = (typeof(first.x1),)
+    else # other NamedTuple giving a single row
         n = length(gd)
         eltys = map(typeof, first)
         if any(x -> x <: AbstractVector, eltys)
@@ -1145,8 +1157,8 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
     targetcolnames = tuple(propertynames(first)...)
-    if first isa Union{AbstractDataFrame,
-                       NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
+    if !extrude_case && first isa Union{AbstractDataFrame,
+                                        NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
                                                              f, gd, incols, targetcolnames,
                                                              firstmulticol)

@@ -806,9 +806,12 @@ end
                         f(d -> (xyz=sum(d.b), xzz=sum(d.c)), gd)
                     @test f(gd, cols2[1] => sum => :xyz, cols2[1] => sum => :xzz) ==
                         f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
-                    @test f(gd, cols2[1] => sum => :xyz, cols2[2] => (x -> first(x)) => :xzz) ==
+                    @test f(gd, cols2[1] => sum => :xyz,
+                            cols2[2] => (x -> first(x)) => :xzz) ==
                         f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
-                    @test_throws ArgumentError f(gd, cols2[1] => vexp => :xyz, cols2[2] => sum => :xzz)
+                    @test f(gd, cols2[1] => vexp => :xyz,
+                            cols2[2] => sum => :xzz) ==
+                        f(d -> (xyz=vexp(d.b), xzz=fill(sum(d.c), length(vexp(d.b)))), gd)
                 end
             end
 
@@ -1837,6 +1840,9 @@ end
     f2(i) = i[1] == 1 ? "d" : "e";
     @test by(df, :g, :g => f1, :g => f2) ==
           DataFrame(g = [1,1], g_f1 = ["a", "c"], g_f2 = ["d", "d"])
+
+    @test by(df, :g, :g => Ref) == DataFrame(g=[1,2], g_Ref=[[1,1,1], [2,2]])
+    @test by(df, :g, :g => x -> view([x],1)) == DataFrame(g=[1,2], g_function=[[1,1,1], [2,2]])
 
     # TODO: test unwrapping of `Ref` and 0-dimensional Array
     # TODO: test pseudo-broadcasting
