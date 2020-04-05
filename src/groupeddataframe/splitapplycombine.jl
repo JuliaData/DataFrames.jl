@@ -350,9 +350,21 @@ const F_ARGUMENT_RULES =
     `source_cols => fun => target_col`, or `source_col => target_col`.
     Function `fun` is passed `SubArray` views as positional arguments for each column
     specified to be selected and can return a vector or a single value
-    (defined precisely below). As a special case `nrow` or `nrow => target_col` can
-    be passed without specifying input columns to efficiently calculate number of
-    rows in each group. If `nrow` is passed the resulting column name is `:nrow`.
+    (defined precisely below).
+
+    As a special case the following are also allowed:
+    * `nrow` or `nrow => target_col` can be passed without specifying input
+      columns to efficiently calculate number of rows in each group.
+      If `nrow` is passed the resulting column name is `:nrow`.
+    * passing any valid column selector; in such a case an `identity` transformation
+      is applied to a set of passed columns. All rules specified in `select` for
+      this case apply.
+
+    Also if `pairs` are passed then it is allowed to mix single values and vectors
+    as return values of different `fun`s. In this case single value will be
+    broadcasted to match the length of columns specified by returned vectors.
+    In this case as a convinience values stored in `Ref` and 0-dimensional
+    arrays are extracted from them.
 
     If the first or last argument is `pair` then it must be a `Pair` following the
     rules for pairs described above, except that in this case function defined
@@ -484,6 +496,30 @@ julia> combine(gd, :b => :b1, :c => :c1,
 │ 6   │ 2     │ 7     │ 9     │
 │ 7   │ 1     │ 4     │ 5     │
 │ 8   │ 1     │ 8     │ 9     │
+
+julia> combine(gd, :b, :c => sum) # passing columns and broadcasting
+8×3 DataFrame
+│ Row │ a     │ b     │ c_sum │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 6     │
+│ 2   │ 1     │ 2     │ 6     │
+│ 3   │ 2     │ 1     │ 8     │
+│ 4   │ 2     │ 1     │ 8     │
+│ 5   │ 3     │ 2     │ 10    │
+│ 6   │ 3     │ 2     │ 10    │
+│ 7   │ 4     │ 1     │ 12    │
+│ 8   │ 4     │ 1     │ 12    │
+
+julia> combine(gd, [:b,:c] .=> Ref)
+4×3 DataFrame
+│ Row │ a     │ b_Ref    │ c_Ref    │
+│     │ Int64 │ SubArra… │ SubArra… │
+├─────┼───────┼──────────┼──────────┤
+│ 1   │ 1     │ [2, 2]   │ [1, 5]   │
+│ 2   │ 2     │ [1, 1]   │ [2, 6]   │
+│ 3   │ 3     │ [2, 2]   │ [3, 7]   │
+│ 4   │ 4     │ [1, 1]   │ [4, 8]   │
 ```
 
 See [`by`](@ref) for more examples.
@@ -517,7 +553,7 @@ end
 
 function combine(gd::GroupedDataFrame,
                  @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}, typeof(nrow),
-                                         AbstractVector{Integer}, AbstractVector{Symbol},
+                                         AbstractVector{<:Integer}, AbstractVector{Symbol},
                                          ColumnIndex, Colon, Regex, Not, All, Between}...);
                  keepkeys::Bool=true)
     @assert !isempty(cs)
@@ -634,23 +670,26 @@ wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
 
+const ERROR_ROW_COUNT = "return value must not change its kind " *
+                        "(single row or variable number of rows) across groups"
+
+const ERROR_COL_COUNT = "function must return only single-column values, " *
+                        "or only multiple-column values"
+
 wrap_table(x::Any, ::Val) =
-    throw(ArgumentError("return value must not change its kind " *
-                        "(single row or variable number of rows) across groups"))
+    throw(ArgumentError(ERROR_ROW_COUNT))
 function wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
                              AbstractDataFrame, AbstractMatrix},
                              ::Val{firstmulticol}) where firstmulticol
     if !firstmulticol
-        throw(ArgumentError("function must return only single-column values, " *
-                            "or only multiple-column values"))
+        throw(ArgumentError(ERROR_COL_COUNT))
     end
     return wrap(x)
 end
 
 function wrap_table(x::AbstractVector, ::Val{firstmulticol}) where firstmulticol
     if firstmulticol
-        throw(ArgumentError("function must return only single-column values, " *
-                            "or only multiple-column values"))
+        throw(ArgumentError(ERROR_COL_COUNT))
     end
     return wrap(x)
 end
@@ -658,31 +697,31 @@ end
 function wrap_row(x::Any, ::Val{firstmulticol}) where firstmulticol
     # NamedTuple is not possible in this branch
     if (x isa DataFrameRow) ⊻ firstmulticol
-        throw(ArgumentError("function must return only single-column values, " *
-                            "or only multiple-column values"))
+        throw(ArgumentError(ERROR_COL_COUNT))
     end
-    if x isa Union{AbstractArray{<:Any, 0}, Ref} && !firstmulticol
-        # extrude a value from Ref and 0-dimensional array only if in single column mode
-        return (x1 = x[],)
-    else
-        return wrap(x)
+    return wrap(x)
+end
+
+function wrap_row(x::Union{AbstractArray{<:Any, 0}, Ref},
+                  ::Val{firstmulticol}) where firstmulticol
+    if firstmulticol
+        throw(ArgumentError(ERROR_COL_COUNT))
     end
+    return (x1 = x[],)
 end
 
 # note that also NamedTuple() is correctly captured by this definition
 # as it is more specific than the one below
 wrap_row(::Union{AbstractVecOrMat, AbstractDataFrame,
                  NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}, ::Val) =
-    throw(ArgumentError("return value must not change its kind " *
-                        "(single row or variable number of rows) across groups"))
+    throw(ArgumentError(ERROR_ROW_COUNT))
 
 function wrap_row(x::NamedTuple, ::Val{firstmulticol}) where firstmulticol
     if any(v -> v isa AbstractVector, x)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     end
     if !firstmulticol
-        throw(ArgumentError("function must return only single-column values, " *
-                            "or only multiple-column values"))
+        throw(ArgumentError(ERROR_COL_COUNT))
     end
     return x
 end
@@ -1255,8 +1294,7 @@ end
 function append_rows!(rows, outcols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::NTuple{N, Symbol}) where N
     if !isa(rows, Union{AbstractDataFrame, NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-        throw(ArgumentError("return value must not change its kind " *
-                            "(single row or variable number of rows) across groups"))
+        throw(ArgumentError(ERROR_ROW_COUNT))
     elseif _ncol(rows) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(_ncol(rows)))"))
@@ -1455,6 +1493,30 @@ julia> by(df, :a, :b => :b1, :c => :c1,
 │ 6   │ 2     │ 7     │ 9     │
 │ 7   │ 1     │ 4     │ 5     │
 │ 8   │ 1     │ 8     │ 9     │
+
+julia> by(df, :a, :b, :c => sum) # passing columns and broadcasting
+8×3 DataFrame
+│ Row │ a     │ b     │ c_sum │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 6     │
+│ 2   │ 1     │ 2     │ 6     │
+│ 3   │ 2     │ 1     │ 8     │
+│ 4   │ 2     │ 1     │ 8     │
+│ 5   │ 3     │ 2     │ 10    │
+│ 6   │ 3     │ 2     │ 10    │
+│ 7   │ 4     │ 1     │ 12    │
+│ 8   │ 4     │ 1     │ 12    │
+
+julia> by(df, :a, [:b,:c] .=> Ref)
+4×3 DataFrame
+│ Row │ a     │ b_Ref    │ c_Ref    │
+│     │ Int64 │ SubArra… │ SubArra… │
+├─────┼───────┼──────────┼──────────┤
+│ 1   │ 1     │ [2, 2]   │ [1, 5]   │
+│ 2   │ 2     │ [1, 1]   │ [2, 6]   │
+│ 3   │ 3     │ [2, 2]   │ [3, 7]   │
+│ 4   │ 4     │ [1, 1]   │ [4, 8]   │
 ```
 """
 by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
@@ -1471,7 +1533,7 @@ by(d::AbstractDataFrame, cols::Any, f::Pair;
             keepkeys=keepkeys)
 
 by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair},
-                                             typeof(nrow), AbstractVector{Integer},
+                                             typeof(nrow), AbstractVector{<:Integer},
                                              AbstractVector{Symbol}, ColumnIndex,
                                              Colon, Regex, Not, All, Between}...;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =

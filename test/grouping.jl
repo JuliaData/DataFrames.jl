@@ -1844,9 +1844,68 @@ end
     @test by(df, :g, :g => Ref) == DataFrame(g=[1,2], g_Ref=[[1,1,1], [2,2]])
     @test by(df, :g, :g => x -> view([x],1)) == DataFrame(g=[1,2], g_function=[[1,1,1], [2,2]])
 
-    # TODO: test unwrapping of `Ref` and 0-dimensional Array
-    # TODO: test pseudo-broadcasting
-    # TODO: test passing columns
+    Random.seed!(1234)
+    df = DataFrame(g=1:100)
+    for i in 1:10
+        @test by(df, :g, :g => x -> rand([x[1], Ref(x[1]), view(x, 1)])) ==
+              DataFrame(g=1:100, g_function=1:100)
+    end
+
+    df_ref = DataFrame(rand(10, 4))
+    df_ref.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
+
+    for i in 0:nrow(df_ref), dosort in [true, false], dokeepkeys in [true, false]
+        @test by(df, :g, :x1 => sum => :x1, :x2 => identity => :x2,
+                 :x3 => (x -> Ref(sum(x))) => :x3, nrow, :x4 => ByRow(sin) => :x4,
+                 sort=dosort, keepkeys=dokeepkeys) ==
+              by(df, :g, sort=dosort, keepkeys=dokeepkeys) do sdf
+                  DataFrame(x1 = sum(sdf.x1), x2 = sdf.x2, x3 = sum(sdf.x3),
+                            nrow = nrow(sdf), x4 = sin.(sdf.x4))
+              end
+    end
+end
+
+@testset "passing columns" begin
+    df = DataFrame(rand(10, 4))
+    df.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
+
+    for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
+                     [1, 2, 3, 4], [true, true, true, true, false]]
+        @test by(df, :g, selector, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3) ==
+              by(df, :g) do sdf
+                  DataFrame(x1 = sin.(sdf.x1), x2 = sdf.x2, x3 = sin.(sdf.x2), x4 = sdf.x4)
+              end
+    end
+
+    for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
+                     [1, 2, 3, 4], [true, true, true, true, false]]
+        @test by(df, :g, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, selector) ==
+              by(df, :g) do sdf
+                  DataFrame(x1 = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2, x4 = sdf.x4)
+              end
+    end
+
+    for selector in [Between(:x1, :x3), Not(:x4), [:x1, :x2, :x3], [1, 2, 3],
+                     [true, true, true, false, false]]
+        @test by(df, :g, :x2 => ByRow(sin) => :x3, selector, :x1 => ByRow(sin) => :x1) ==
+              by(df, :g) do sdf
+                  DataFrame(x3 = sin.(sdf.x2), x1 = sin.(sdf.x1), x2 = sdf.x2)
+              end
+    end
+
+    @test by(df, :g, 4, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, :x2) ==
+          by(df, :g) do sdf
+              DataFrame(x4 = sdf.x4, x1 = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2)
+          end
+
+    @test by(df, :g, 4 => :h, :x1 => ByRow(sin) => :z, :x2 => ByRow(sin) => :x3, :x2) ==
+          by(df, :g) do sdf
+              DataFrame(h = sdf.x4, z = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2)
+          end
+
+    @test_throws ArgumentError by(df, :g, 4 => :h, :x1 => ByRow(sin) => :h)
+    @test_throws ArgumentError by(df, :g, :x1 => :x1_sin, :x1 => ByRow(sin))
+    @test_throws ArgumentError by(df, :g, 1, :x1 => ByRow(sin) => :x1)
 end
 
 end # module
