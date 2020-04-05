@@ -835,7 +835,7 @@ end
     df = DataFrame([1 2 3
                     4 5 6])
     df2 = DataFrame([1 2 3])
-    df3 = DataFrame(x1=Int[], x2=Int[], x3=Int[])
+    df3 = DataFrame(x1=Char[], x2=Int[], x3=Int[])
     for v in [9, Ref(9), view([9], 1)]
         @test select(df, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
               DataFrame([9 1 2 3 6
@@ -867,11 +867,28 @@ end
               DataFrame([9 1 6], [:a, :b, :d])
         @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9], [:d, :b, :a])
-        @test_throws ArgumentError select(df3, [] => (() -> v) => :a, :x1 => x -> [])
-        @test_throws ArgumentError select(df3, :x1 => x -> [], [] => (() -> v) => :a)
+
+        res = select(df3, [] => (() -> v) => :a, :x1 => x -> [])
+        @test names(res) == [:a, :x1_function] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Int, Any]
+        res = select(df3, :x1 => x -> [], [] => (() -> v) => :a)
+        @test names(res) == [:x1_function, :a] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Any, Int]
+        res = select(df3, [] => (() -> v) => :a, :x1)
+        @test names(res) == [:a, :x1] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Int, Char]
+        res = select(df3, :x1, [] => (() -> v) => :a)
+        @test names(res) == [:x1, :a] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Char, Int]
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
     @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
+    @test transform(df, names(df) .=> (x -> 9) .=> names(df)) == DataFrame([9 9 9])
+    @test transform(df, names(df) .=> (x -> 9) .=> names(df), :x1 => :x4) ==
+          DataFrame([9 9 9 1; 9 9 9 4])
+    @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3)) == DataFrame([9 9 9])
+    @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3), :x1 => :x4) ==
+          DataFrame(ones(0, 4))
 end
 
 @testset "copycols special cases" begin

@@ -145,8 +145,8 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                             "of type $(typeof(res)) is currently not allowed."))
     end
     if res isa AbstractVector
-        # disallow shortening to 0 rows
-        if allow_resizing_newdf[] && nrow(newdf) == 1 && length(res) > 1
+        # allow shortening to 0 rows
+        if allow_resizing_newdf[] && nrow(newdf) == 1
             newdfcols = _columns(newdf)
             for (i, col) in enumerate(newdfcols)
                 newdfcols[i] = fill!(similar(col, length(res)), first(col))
@@ -162,8 +162,10 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
         end
     else
         res_unwrap = res isa Union{AbstractArray{<:Any, 0}, Ref} ? res[] : res
-        # disallow squashing a scalar to 0 rows
-        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap), max(1, nrow(newdf))), res_unwrap)
+        # allow squashing a scalar to 0 rows
+        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap),
+                                                        ncol(newdf) == 0 ? 1 : nrow(newdf)),
+                                  res_unwrap)
     end
     # mark that column transformation was applied
     # nothing is not possible otherwise as a value in this dict
@@ -534,8 +536,8 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                         select_transform!(nct, df, newdf, transformed_cols, copycols,
                                           allow_resizing_newdf)
                     else
-                        # disallow shortening to 0 rows
-                        if allow_resizing_newdf[] && nrow(newdf) == 1 && nrow(df) > 1
+                        # allow shortening to 0 rows
+                        if allow_resizing_newdf[] && nrow(newdf) == 1
                             newdfcols = _columns(newdf)
                             for (i, col) in enumerate(newdfcols)
                                 newdfcols[i] = fill!(similar(col, nrow(df)), first(col))
