@@ -41,7 +41,7 @@ export AbstractDataFrame,
        flatten,
        groupby,
        groupindices,
-       groupvars,
+       groupcols,
        innerjoin,
        insertcols!,
        leftjoin,
@@ -61,7 +61,8 @@ export AbstractDataFrame,
        transform,
        transform!,
        unique!,
-       unstack
+       unstack,
+       valuecols
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow

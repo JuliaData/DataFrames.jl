@@ -23,7 +23,8 @@ by
 combine
 groupby
 groupindices
-groupvars
+groupcols
+valuecols
 keys
 get
 map
