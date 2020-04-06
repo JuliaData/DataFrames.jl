@@ -697,6 +697,18 @@ end
     @test df.x3 == x1 ./ x2
 end
 
+@testset "nrow in select" begin
+    df_ref = DataFrame(ones(3,4))
+    for df in [df_ref, view(df_ref, 1:2, 1:2),
+               df_ref[1:2, []], view(df_ref, 1:2, []),
+               df_ref[[], 1:2], view(df_ref, [], 1:2)]
+        @test select(df, nrow => :z, nrow, [nrow => :z2]) ==
+              DataFrame(z=nrow(df), nrow=nrow(df), z2=nrow(df))
+        @test_throws ArgumentError select(df, nrow, nrow)
+        @test_throws ArgumentError select(df, [nrow])
+    end
+end
+
 @testset "select and select! reserved return values" begin
     df = DataFrame(x=1)
     df2 = copy(df)
@@ -839,6 +851,71 @@ end
     a = df.a
     select!(df, :a, :a => :b, :a => identity => :c)
     @test df.b === df.c === a
+end
+
+@testset "empty select" begin
+    df_ref = DataFrame(rand(10, 4))
+
+    for df in (df_ref, view(df_ref, 1:9, 1:3))
+        @test ncol(select(df)) == 0
+        @test ncol(select(df, copycols=false)) == 0
+    end
+    select!(df_ref)
+    @test ncol(df_ref) == 0
+end
+
+@testset "transform and transform!" begin
+    df = DataFrame(rand(10,4))
+
+    for dfx in (df, view(df, :, :))
+        df2 = transform(dfx, [:x1, :x2] => +, :x2 => :x3)
+        @test df2 == select(dfx, :, [:x1, :x2] => +, :x2 => :x3)
+        @test df2.x2 == df2.x3
+        @test df2.x2 !== df2.x3
+        @test dfx.x2 == df2.x3
+        @test dfx.x2 !== df2.x3
+        @test dfx.x2 !== df2.x2
+    end
+
+    df2 = transform(df, [:x1, :x2] => +, :x2 => :x3, copycols=false)
+    @test df2 == select(df, :, [:x1, :x2] => +, :x2 => :x3)
+    @test df.x2 === df2.x2 === df2.x3
+    @test_throws ArgumentError transform(view(df, :, :), [:x1, :x2] => +, :x2 => :x3, copycols=false)
+
+    x2 = df.x2
+    transform!(df, [:x1, :x2] => +, :x2 => :x3)
+    @test df == df2
+    @test x2 === df.x2 === df.x3
+
+    @test transform(df) == df
+    df2 = transform(df, copycols=false)
+    @test df2 == df
+    for (a, b) in zip(eachcol(df), eachcol(df2))
+        @test a === b
+    end
+    cols = collect(eachcol(df))
+    transform!(df)
+    @test df2 == df
+    for (a, b) in zip(eachcol(df), cols)
+        @test a === b
+    end
+end
+
+@testset "vectors of pairs" begin
+    df_ref = DataFrame(a=1:3, b=4:6)
+    for df in [df_ref, view(df_ref, :, :)]
+        @test select(df, [] .=> sum) == DataFrame()
+        @test select(df, names(df) .=> sum) == DataFrame(a_sum=6, b_sum=15)
+        @test transform(df, names(df) .=> ByRow(-)) ==
+              DataFrame(:a => 1:3, :b => 4:6,
+                        Symbol("a_-") => -1:-1:-3,
+                        Symbol("b_-") => -4:-1:-6)
+        @test select(df, :a, [] .=> sum, :b => :x, [:b, :a] .=> identity) ==
+              DataFrame(a=1:3, x=4:6, b_identity=4:6, a_identity=1:3)
+        @test select(df, names(df) .=> sum .=> [:A, :B]) == DataFrame(A=6, B=15)
+        @test Base.broadcastable(ByRow(+)) isa Base.RefValue{ByRow{typeof(+)}}
+        @test identity.(ByRow(+)) == ByRow(+)
+    end
 end
 
 end # module

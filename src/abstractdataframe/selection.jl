@@ -1,5 +1,4 @@
 # TODO:
-# * add transform and transfom! functions
 # * add NT (or better name) to column selector passing NamedTuple
 #   (also in other places: filter, combine)
 # * add select/select!/transform/transform! for GroupedDataFrame
@@ -8,18 +7,10 @@
 # will end up in one of four canonical forms
 # 1) Int
 # 2) AbstractVector{Int}
-# 3) Pair{Int, Pair{ColRename, Symbol}}
 # 4) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
 # 5) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
 # 6) Pair{Int, Pair{ByRow, Symbol}}
 # 7) Pair{AbstractVector{Int}, Pair{ByRow, Symbol}}
-
-"""
-    ColRename
-
-A singleton type indicating that column renaming operation was requested in `select`.
-"""
-struct ColRename end
 
 """
     ByRow
@@ -30,6 +21,8 @@ be applied to each element (row) of the selection.
 struct ByRow{T}
     fun::T
 end
+
+Base.broadcastable(x::ByRow) = Ref(x)
 
 (f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)
 
@@ -47,14 +40,21 @@ normalize_selection(idx::AbstractIndex, sel) =
         end
     end
 
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}) =
+    length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
+
+normalize_selection(idx::AbstractIndex, sel::typeof(nrow)) =
+    normalize_selection(idx, nrow => :nrow)
+
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
     c = idx[sel]
-    return c => ColRename() => _names(idx)[c]
+    return c => identity => _names(idx)[c]
 end
 
 function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol})
     c = idx[first(sel)]
-    return c => ColRename() => last(sel)
+    return c => identity => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex,
@@ -123,29 +123,21 @@ function normalize_selection(idx::AbstractIndex,
     return c => fun => newcol
 end
 
-function select_transform!(nc::Pair{Int, Pair{ColRename, Symbol}},
-                           df::AbstractDataFrame, newdf::DataFrame,
-                           transformed_cols::Dict{Symbol, Any}, copycols::Bool)
-    col_idx, (_, newname) = nc
-    # it is allowed to request column tranformation only once
-    @assert !hasproperty(newdf, newname)
-    newdf[!, newname] = copycols ? df[:, col_idx] : df[!, col_idx]
-    # mark that column transformation was applied
-    # nothing is not possible otherwise as a value in this dict
-    transformed_cols[newname] = nothing
-end
-
 function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool)
     col_idx, (fun, newname) = nc
+    # It is allowed to request a tranformation operation into a newname column
+    # only once. This is ensured by the logic related to transformed_cols dictionaly
+    # in _select, therefore in select_transform! such a duplicate should not happen
     @assert !hasproperty(newdf, newname)
     cdf = eachcol(df)
     if col_idx isa Int
         res = fun(df[!, col_idx])
     else
-        res = fun((cdf[i] for i in col_idx)...)
+        # it should be fast enough here as we do not expect to do it millions of times
+        res = fun(map(c -> cdf[c], col_idx)...)
     end
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
         throw(ArgumentError("return value from function $fun " *
@@ -162,16 +154,23 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
     else
         newdf[!, newname] = [res]
     end
+    # mark that column transformation was applied
+    # nothing is not possible otherwise as a value in this dict
     transformed_cols[newname] = nothing
 end
 
 """
-    select!(df::DataFrame, inds...)
+    select!(df::DataFrame, args...)
 
-Mutate `df` in place to retain only columns specified by `inds...` and return it.
+Mutate `df` in place to retain only columns specified by `args...` and return it.
 
-Arguments passed as `inds...` can be any index that is allowed for column indexing.
-In particular, regular expressions, `All`, `Between`, and `Not` selectors are supported.
+Arguments passed as `args...` can be:
+
+* Any index that is allowed for column indexing. In particular, symbols, integers,
+  vectors of symbols, vectors of integers, vectors of bools, regular expressions,
+  `All`, `Between`, and `Not` selectors are supported.
+* Column transformation operations using the `Pair` notation that is described below
+  and vectors of such pairs.
 
 Columns can be renamed using the `old_column => new_column_name` syntax,
 and transformed using the `old_column => fun => new_column_name` syntax.
@@ -197,6 +196,13 @@ Up to three column names are used for multiple input columns and they are joined
 using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
+
+Column renaming and transformation operations can be passed wrapped in vectors
+(this is useful when combined with broadcasting).
+
+As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
+containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
@@ -230,14 +236,7 @@ julia> select!(df, 2)
 │ 2   │ 5     │
 │ 3   │ 6     │
 
-julia> df = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
+julia> df = DataFrame(a=1:3, b=4:6);
 
 julia> select!(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
@@ -256,28 +255,39 @@ julia> select!(df, :, [:c, :b] => (c,b) -> c .+ b .- sum(b)/length(b))
 │ 1   │ 0.841471 │ 4     │ -0.158529    │
 │ 2   │ 0.909297 │ 5     │ 0.909297     │
 │ 3   │ 0.14112  │ 6     │ 1.14112      │
+
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> select!(df, names(df) .=> sum);
+
+julia> df
+1×2 DataFrame
+│ Row │ a_sum │ b_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 6     │ 15    │
 ```
 
 """
-function select!(df::DataFrame, inds::AbstractVector{Int})
-    if isempty(inds)
+function select!(df::DataFrame, args::AbstractVector{Int})
+    if isempty(args)
         empty!(_columns(df))
         empty!(index(df))
         return df
     end
-    indmin, indmax = extrema(inds)
+    indmin, indmax = extrema(args)
     if indmin < 1
         throw(ArgumentError("indices must be positive"))
     end
     if indmax > ncol(df)
         throw(ArgumentError("indices must not be greater than number of columns"))
     end
-    if !allunique(inds)
+    if !allunique(args)
         throw(ArgumentError("indices must not contain duplicates"))
     end
-    copy!(_columns(df), _columns(df)[inds])
+    copy!(_columns(df), _columns(df)[args])
     x = index(df)
-    copy!(_names(x), _names(df)[inds])
+    copy!(_names(x), _names(df)[args])
     empty!(x.lookup)
     for (i, n) in enumerate(x.names)
         x.lookup[n] = i
@@ -303,12 +313,27 @@ function select!(df::DataFrame, cs...)
 end
 
 """
-    select(df::AbstractDataFrame, inds...; copycols::Bool=true)
+    transform!(df::DataFrame, args...)
 
-Create a new data frame that contains columns from `df` specified by `inds` and return it.
+Mutate `df` in place to add columns specified by `args...` and return it.
+Equivalent to `select!(df, :, args...)`.
 
-Arguments passed as `inds...` can be any index that is allowed for column indexing.
-In particular, regular expressions, `All`, `Between`, and `Not` selectors are supported.
+See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
+"""
+transform!(df::DataFrame, args...) = select!(df, :, args...)
+
+"""
+    select(df::AbstractDataFrame, args...; copycols::Bool=true)
+
+Create a new data frame that contains columns from `df` specified by `args` and return it.
+
+Arguments passed as `args...` can be:
+
+* Any index that is allowed for column indexing. In particular, symbols, integers,
+  vectors of symbols, vectors of integers, vectors of bools, regular expressions,
+  `All`, `Between`, and `Not` selectors are supported.
+* Column transformation operations using the `Pair` notation that is described below
+  and vectors of such pairs.
 
 Also if `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
 are supported.
@@ -337,6 +362,13 @@ Up to three column names are used for multiple input columns and they are joined
 using `_`; if more than three columns are passed then the name consists of the
 first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
 the new column name `:a_b_etc_fun`.
+
+Column renaming and transformation operations can be passed wrapped in vectors
+(this is useful when combined with broadcasting).
+
+As a special rule passing `nrow` as an argument creates a column named `:nrow`
+containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+stores the number of rows in source data frame in `new_column_name` column.
 
 If a collection of column names is passed to `select!` then requesting duplicate column
 names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
@@ -422,11 +454,25 @@ julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 │ 1   │ 1     │ 4     │ 0.0          │
 │ 2   │ 2     │ 5     │ 2.0          │
 │ 3   │ 3     │ 6     │ 4.0          │
+
+julia> select(df, names(df) .=> sum)
+1×2 DataFrame
+│ Row │ a_sum │ b_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 6     │ 15    │
+
+julia> select(df, names(df) .=> sum .=> [:A, :B])
+1×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 6     │ 15    │
 ```
 
 """
-select(df::DataFrame, inds::AbstractVector{Int}; copycols::Bool=true) =
-    DataFrame(_columns(df)[inds], Index(_names(df)[inds]),
+select(df::DataFrame, args::AbstractVector{Int}; copycols::Bool=true) =
+    DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
 select(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
                                Colon, All, Not, Between, Regex}; copycols::Bool=true) =
@@ -434,8 +480,17 @@ select(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol}
 select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
     select(df, [c], copycols=copycols)
 
-select(df::DataFrame, cs...; copycols::Bool=true) =
-    _select(df, [normalize_selection(index(df), c) for c in cs], copycols)
+function select(df::DataFrame, cs...; copycols::Bool=true)
+    cs_vec = []
+    for v in cs
+        if v isa AbstractVector{<:Pair}
+            append!(cs_vec, v)
+        else
+            push!(cs_vec, v)
+        end
+    end
+    _select(df, [normalize_selection(index(df), c) for c in cs_vec], copycols)
+end
 
 function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
@@ -524,19 +579,27 @@ end
 
 select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool=true) =
     select(dfv, [ind], copycols=copycols)
-select(dfv::SubDataFrame, inds::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
+select(dfv::SubDataFrame, args::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
                                       Colon, All, Not, Between, Regex}; copycols::Bool=true) =
-    copycols ? dfv[:, inds] : view(dfv, :, inds)
+    copycols ? dfv[:, args] : view(dfv, :, args)
 
-function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
+function select(dfv::SubDataFrame, args...; copycols::Bool=true)
     if copycols
-        return _select(dfv, [normalize_selection(index(dfv), c) for c in inds], true)
+        cs_vec = []
+        for v in args
+            if v isa AbstractVector{<:Pair}
+                append!(cs_vec, v)
+            else
+                push!(cs_vec, v)
+            end
+        end
+        return _select(dfv, [normalize_selection(index(dfv), c) for c in cs_vec], true)
     else
         # we do not support transformations here
-        # newinds should not be large so making it Vector{Any} should be OK
+        # newinds contains only indexing; making it Vector{Any} avoids some compilation
         newinds = []
         seen_single_column = Set{Int}()
-        for ind in inds
+        for ind in args
             if ind isa ColumnIndex
                 ind_idx = index(dfv)[ind]
                 if ind_idx in seen_single_column
@@ -555,6 +618,18 @@ function select(dfv::SubDataFrame, inds...; copycols::Bool=true)
                 push!(newinds, newind)
             end
         end
-        return view(dfv, :, All(newinds...))
+        return view(dfv, :, isempty(newinds) ? [] : All(newinds...))
     end
 end
+
+"""
+    transform(df::AbstractDataFrame, args...; copycols::Bool=true)
+
+Create a new data frame that contains columns from `df` and adds columns
+specified by `args` and return it.
+Equivalent to `select(df, :, args..., copycols=copycols)`.
+
+See [`select`](@ref) for detailed rules regarding accepted values for `args`.
+"""
+transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
+    select(df, :, args..., copycols=copycols)

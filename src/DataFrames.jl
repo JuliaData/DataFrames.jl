@@ -58,6 +58,8 @@ export AbstractDataFrame,
        select,
        semijoin,
        stack,
+       transform,
+       transform!,
        unique!,
        unstack,
        valuevars
