@@ -63,10 +63,21 @@ abstract type AbstractDataFrame end
 
 """
     names(df::AbstractDataFrame)
+    names(df::AbstractDataFrame, cols)
 
     Return a `Vector{Symbol}` of names of columns contained in `df`.
+
+    If `cols` column selector argument is passed then restrict returned
+    column names to those matching the selector
+    (this is useful with regular expressions, `All`, `Not`, ad `Between`).
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
+
+function Base.names(df::AbstractDataFrame, cols)
+    sel = index(df)[cols]
+    return _names(index(df))[sel isa Int ? (sel:sel) : sel]
+end
+
 _names(df::AbstractDataFrame) = _names(index(df))
 
 Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
