@@ -344,23 +344,28 @@ end
 
 const F_ARGUMENT_RULES =
     """
-    If `pairs` arguments are passed they must consist of more than one `Pair`s,
-    or vectors of such `Pair`s. Allowed transformations follow the rules specified
+
+    Arguments passed as `args...` can be:
+
+    * Any index that is allowed for column indexing. In particular, symbols, integers,
+      vectors of symbols, vectors of integers, vectors of bools, regular expressions,
+      `All`, `Between`, and `Not` selectors are supported.
+    * Column transformation operations using the `Pair` notation that is described below
+      and vectors of such pairs.
+
+
+    Transformations allowed using `Pair`s follow the rules specified
     for [`select`](@ref) and have the form `source_cols => fun`,
     `source_cols => fun => target_col`, or `source_col => target_col`.
     Function `fun` is passed `SubArray` views as positional arguments for each column
     specified to be selected and can return a vector or a single value
     (defined precisely below).
 
-    As a special case the following are also allowed:
-    * `nrow` or `nrow => target_col` can be passed without specifying input
-      columns to efficiently calculate number of rows in each group.
-      If `nrow` is passed the resulting column name is `:nrow`.
-    * passing any valid column selector; in such a case an `identity` transformation
-      is applied to a set of passed columns. All rules specified in `select` for
-      this case apply.
+    As a special case `nrow` or `nrow => target_col` can be passed without specifying
+    input columns to efficiently calculate number of rows in each group.
+    If `nrow` is passed the resulting column name is `:nrow`.
 
-    If multiple `pairs` are passed then return values of different `fun`s are allowed
+    If multiple `args` are passed then return values of different `fun`s are allowed
     to mix single values and vectors. In this case single values will be
     broadcasted to match the length of columns specified by returned vectors.
     As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
@@ -372,7 +377,7 @@ const F_ARGUMENT_RULES =
 
     If the first or last argument is a function `fun`, it is passed a [`SubDataFrame`](@ref)
     view for each group and can return any return value defined below.
-    Note that this form is slower than `pair` or `pairs` due to type instability.
+    Note that this form is slower than `pair` or `args` due to type instability.
     """
 
 const KWARG_PROCESSING_RULES =
@@ -384,7 +389,7 @@ const KWARG_PROCESSING_RULES =
     """
 
 """
-    combine(gd::GroupedDataFrame, pairs...; keepkeys::Bool=true)
+    combine(gd::GroupedDataFrame, args...; keepkeys::Bool=true)
     combine(fun::Union{Function, Type}, gd::GroupedDataFrame; keepkeys::Bool=true)
     combine(pair::Pair, gd::GroupedDataFrame; keepkeys::Bool=true)
     combine(gd::GroupedDataFrame, fun::Union{Function, Type}; keepkeys::Bool=true)
@@ -595,13 +600,13 @@ function combine(gd::GroupedDataFrame,
     processed_cols = Set{Symbol}()
     if process_vectors
         cs_norm = Pair[]
-        v in cs_norm_pre
-            if cs_norm_pre[i] isa Pair
-                push!(cs_norm, cs_norm_pre[i])
-                push!(processed_cols, last(last(cs_norm_pre[i])))
+        for (i, v) in enumerate(cs_norm_pre)
+            if v isa Pair
+                push!(cs_norm, v)
+                push!(processed_cols, last(last(v)))
             else
-                @assert cs_norm_pre[i] isa AbstractVector{Int}
-                for col_idx in cs_norm_pre[i]
+                @assert v isa AbstractVector{Int}
+                for col_idx in v
                     col_name = _names(gd)[col_idx]
                     if !(col_name in processed_cols)
                         push!(processed_cols, col_name)
@@ -610,8 +615,10 @@ function combine(gd::GroupedDataFrame,
                                 p isa Pair || return false
                                 last(last(p)) == col_name
                             end
-                            @assert !isnothing(trans_idx)
+                            @assert !isnothing(trans_idx) && trans_idx > i
                             push!(cs_norm, cs_norm_pre[trans_idx])
+                            # it is safe to delete from cs_norm_pre
+                            # as we have not reached trans_idx index yet
                             deleteat!(cs_norm_pre, trans_idx)
                         else
                             push!(cs_norm, col_idx => identity => col_name)
@@ -1017,6 +1024,19 @@ isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa 
 
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
+function _agg2idx_map_helper(idx, idx_agg)
+    agg2idx_map = fill(-1, length(idx))
+    aggj = 1
+    @inbounds for (j, idxj) in enumerate(idx)
+        while idx_agg[aggj] != idxj
+            aggj += 1
+            @assert aggj <= length(idx_agg)
+        end
+        agg2idx_map[j] = aggj
+    end
+    return agg2idx_map
+end
+
 function _combine(f::AbstractVector{<:Pair},
                   gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     # here f should be normalized and in a form of source_cols => fun
@@ -1058,6 +1078,9 @@ function _combine(f::AbstractVector{<:Pair},
                 idx_agg = Vector{Int}(undef, length(gd))
                 fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
             end
+            # TODO: if firstres is a vector we recompute idx for every function
+            # this could be avoided - it could be computed only the first time
+            # and later we could just check if lengths of groups match this first idx
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
                                                   Val(firstmulticol),
                                                   firstres isa AbstractVector ? nothing : idx_agg)
@@ -1065,6 +1088,8 @@ function _combine(f::AbstractVector{<:Pair},
             res[i] = idx, outcols[1]
         end
     end
+    # idx_agg === nothing then we have only functions that
+    # returned multiple rows and idx_loc = 1
     idx_loc = findfirst(x -> x[1] !== idx_agg, res)
     if isnothing(idx_loc)
         @assert !isnothing(idx_agg)
@@ -1078,19 +1103,11 @@ function _combine(f::AbstractVector{<:Pair},
                     # we perform pseudo broadcasting here
                     # keep -1 as a sentinel for errors
                     if isnothing(agg2idx_map)
-                        agg2idx_map = fill(-1, length(idx))
-                        aggj = 1
-                        @inbounds for j in 1:length(idx)
-                            while idx_agg[aggj] != idx[j]
-                                aggj += 1
-                            end
-                            agg2idx_map[j] = aggj
-                        end
+                        agg2idx_map = _agg2idx_map_helper(idx, idx_agg)
                     end
                     res[i] = idx, res[i][2][agg2idx_map]
                 elseif idx != res[i][1]
                     throw(ArgumentError("all functions must return vectors of the same length"))
-                end
                 end
             end
         end
@@ -1368,7 +1385,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-    by(d::AbstractDataFrame, cols::Any, pairs...;
+    by(d::AbstractDataFrame, cols::Any, args...;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
     by(fun::Union{Function, Type}, d::AbstractDataFrame, cols::Any;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
@@ -1379,7 +1396,7 @@ end
     by(d::AbstractDataFrame, cols::Any, pair::Pair;
        sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true)
 
-Split-apply-combine in one step: apply `fun`, `pair` or `pairs` to each grouping
+Split-apply-combine in one step: apply `fun`, `pair` or `args` to each grouping
 in `df` based on grouping columns `cols`, and return a `DataFrame`.
 This is a shorthand for `combine` called on
 `groupby(df, cols, sort=sort, skipmissing=skipmissing)`.

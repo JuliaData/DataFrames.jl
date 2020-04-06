@@ -11,22 +11,22 @@ function, which is a shorthand for `groupby` followed by `map` and/or `combine`.
 `by` takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split
 the `DataFrame` on, and (3) a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
-1. a `cols => function` pair indicating that `function` should be called with
-   positional arguments holding columns `cols`, which can be a any valid column selector
-2. a `cols => function => target_col` form additionally
-   specifying the name of the target column (this assumes that `function` returns a single value or a vector)
-3. a `col => target_col` pair, which renames the column `col` to `target_col`
-4. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
-   (without `target_col` the new column is called `:nrow`)
-5. standard column selectors (integers, symbols, vectors of integers, vectors of symbols,
+1. standard column selectors (integers, symbols, vectors of integers, vectors of symbols,
    `All`, `:`, `Between`, `Not` and regular expressions)
-5. several arguments of the forms given above, or vectors thereof
-6. a function which will be called with a `SubDataFrame` corresponding to each group;
+2. a `cols => function` pair indicating that `function` should be called with
+   positional arguments holding columns `cols`, which can be a any valid column selector
+3. a `cols => function => target_col` form additionally
+   specifying the name of the target column (this assumes that `function` returns a single value or a vector)
+4. a `col => target_col` pair, which renames the column `col` to `target_col`
+5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
+   (without `target_col` the new column is called `:nrow`)
+6. several arguments of the forms given above, or vectors thereof
+7. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)
 
-All forms except 6 can be also passed as the first argument to `map`.
+All forms except 1 and 6 can be also passed as the first argument to `map`.
 
 In all of these cases, `function` can return either a single row or multiple rows.
 `function` can always generate a single column by returning a single value or a vector.
@@ -47,7 +47,7 @@ The kind of return value and the number and names of columns must be the same fo
 
 It is allowed to mix single values and vectors if multiple transformations
 are requested. In this case single value will be broadcasted to match the length
-of columns specified by returned vectors. 
+of columns specified by returned vectors.
 As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
 are unwrapped and then broadcasted.
 

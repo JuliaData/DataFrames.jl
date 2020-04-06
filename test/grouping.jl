@@ -1909,4 +1909,15 @@ end
     @test_throws ArgumentError by(df, :g, 1, :x1 => ByRow(sin) => :x1)
 end
 
+@testset "correct dropping of groups" begin
+    df = DataFrame(g = 10:-1:1)
+
+    for keep in [[3,2,1], [5,3,1], [9], Int[]]
+        @test by(df, :g, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
+              DataFrame(g=keep, keep=keep, g_function=keep)
+        @test by(df, :g, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[],
+                 sort=true) == sort(DataFrame(g=keep, keep=keep, g_function=keep))
+    end
+end
+
 end # module
