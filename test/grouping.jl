@@ -1855,6 +1855,7 @@ end
     df_ref.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
 
     for i in 0:nrow(df_ref), dosort in [true, false], dokeepkeys in [true, false]
+        df = df_ref[1:i, :]
         @test by(df, :g, :x1 => sum => :x1, :x2 => identity => :x2,
                  :x3 => (x -> Ref(sum(x))) => :x3, nrow, :x4 => ByRow(sin) => :x4,
                  sort=dosort, keepkeys=dokeepkeys) ==
