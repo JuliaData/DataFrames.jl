@@ -47,9 +47,9 @@ The kind of return value and the number and names of columns must be the same fo
 
 It is allowed to mix single values and vectors if multiple transformations
 are requested. In this case single value will be broadcasted to match the length
-of columns specified by returned vectors. In this case as a convinience values stored
-in `Ref` and 0-dimensional arrays are extracted from them.
-
+of columns specified by returned vectors. 
+As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
+are unwrapped and then broadcasted.
 
 If a single value or a vector is returned by the `function` and `target_col` is not
 provided, it is generated automatically, by concatenating source column name and

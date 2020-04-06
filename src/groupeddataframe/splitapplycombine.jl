@@ -360,11 +360,11 @@ const F_ARGUMENT_RULES =
       is applied to a set of passed columns. All rules specified in `select` for
       this case apply.
 
-    Also if `pairs` are passed then it is allowed to mix single values and vectors
-    as return values of different `fun`s. In this case single value will be
+    If multiple `pairs` are passed then return values of different `fun`s are allowed
+    to mix single values and vectors. In this case single values will be
     broadcasted to match the length of columns specified by returned vectors.
-    In this case as a convinience values stored in `Ref` and 0-dimensional
-    arrays are extracted from them.
+    As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
+    are unwrapped and then broadcasted.
 
     If the first or last argument is `pair` then it must be a `Pair` following the
     rules for pairs described above, except that in this case function defined
@@ -511,7 +511,7 @@ julia> combine(gd, :b, :c => sum) # passing columns and broadcasting
 │ 7   │ 4     │ 1     │ 12    │
 │ 8   │ 4     │ 1     │ 12    │
 
-julia> combine(gd, [:b,:c] .=> Ref)
+julia> combine(gd, [:b, :c] .=> Ref)
 4×3 DataFrame
 │ Row │ a     │ b_Ref    │ c_Ref    │
 │     │ Int64 │ SubArra… │ SubArra… │
@@ -595,9 +595,7 @@ function combine(gd::GroupedDataFrame,
     processed_cols = Set{Symbol}()
     if process_vectors
         cs_norm = Pair[]
-        i = 0
-        while i < length(cs_norm_pre)
-            i += 1
+        v in cs_norm_pre
             if cs_norm_pre[i] isa Pair
                 push!(cs_norm, cs_norm_pre[i])
                 push!(processed_cols, last(last(cs_norm_pre[i])))
@@ -1075,14 +1073,14 @@ function _combine(f::AbstractVector{<:Pair},
         idx = res[idx_loc][1]
         agg2idx_map = nothing
         for i in 1:length(res)
-            if res[i][1] != idx
+            if res[i][1] !== idx && res[i][1] != idx
                 if res[i][1] === idx_agg
                     # we perform pseudo broadcasting here
                     # keep -1 as a sentinel for errors
                     if isnothing(agg2idx_map)
                         agg2idx_map = fill(-1, length(idx))
                         aggj = 1
-                        for j in 1:length(idx)
+                        @inbounds for j in 1:length(idx)
                             while idx_agg[aggj] != idx[j]
                                 aggj += 1
                             end
@@ -1090,20 +1088,17 @@ function _combine(f::AbstractVector{<:Pair},
                         end
                     end
                     res[i] = idx, res[i][2][agg2idx_map]
-                else
-                    if idx != res[i][1]
-                        throw(ArgumentError("all functions must return values of the same length"))
-                    end
+                elseif idx != res[i][1]
+                    throw(ArgumentError("all functions must return vectors of the same length"))
+                end
                 end
             end
         end
     end
     outcols = map(x -> x[2], res)
-    # this check is redundant given we check idx above now
+    # this check is redundant given we check idx above
     # but it is safer to double check and it is cheap
-    if !all(x -> length(x) == length(outcols[1]), outcols)
-        throw(ArgumentError("all functions must return values of the same length"))
-    end
+    @assert all(x -> length(x) == length(outcols[1]), outcols)
     return idx, DataFrame(collect(AbstractVector, outcols), nms)
 end
 
@@ -1162,7 +1157,7 @@ end
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple},
-                             firstmulticol::Val, idx_agg)
+                             firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
     extrude_case = false
 
     if first isa AbstractDataFrame
@@ -1186,11 +1181,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
-    if isnothing(idx_agg)
-        idx = Vector{Int}(undef, n)
-    else
-        idx = idx_agg
-    end
+    idx = isnothing(idx_agg) ? Vector{Int}(undef, n) : idx_agg
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
@@ -1508,7 +1499,7 @@ julia> by(df, :a, :b, :c => sum) # passing columns and broadcasting
 │ 7   │ 4     │ 1     │ 12    │
 │ 8   │ 4     │ 1     │ 12    │
 
-julia> by(df, :a, [:b,:c] .=> Ref)
+julia> by(df, :a, [:b, :c] .=> Ref)
 4×3 DataFrame
 │ Row │ a     │ b_Ref    │ c_Ref    │
 │     │ Int64 │ SubArra… │ SubArra… │
