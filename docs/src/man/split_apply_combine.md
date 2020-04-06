@@ -133,28 +133,6 @@ julia> by(iris, :Species) do df
 │ 3   │ Iris-virginica  │ 5.552   │ 0.304588  │
 ```
 
-A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and (3) one or more functions that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column that was not used to split the DataFrame, creating new columns of the form `$name_$function` like with `by` (see above). We show several examples of the `aggregate` function applied to the `iris` dataset below:
-
-```jldoctest sac
-julia> aggregate(iris, :Species, length)
-3×6 DataFrame
-│ Row │ Species         │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │ id_length │
-│     │ String          │ Int64              │ Int64             │ Int64              │ Int64             │ Int64     │
-├─────┼─────────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┼───────────┤
-│ 1   │ Iris-setosa     │ 50                 │ 50                │ 50                 │ 50                │ 50        │
-│ 2   │ Iris-versicolor │ 50                 │ 50                │ 50                 │ 50                │ 50        │
-│ 3   │ Iris-virginica  │ 50                 │ 50                │ 50                 │ 50                │ 50        │
-
-julia> aggregate(iris, :Species, [sum, mean])
-3×11 DataFrame. Omitted printing of 3 columns
-│ Row │ Species         │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ id_sum │ SepalLength_mean │ SepalWidth_mean │
-│     │ String          │ Float64         │ Float64        │ Float64         │ Float64        │ Int64  │ Float64          │ Float64         │
-├─────┼─────────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼────────┼──────────────────┼─────────────────┤
-│ 1   │ Iris-setosa     │ 250.3           │ 170.9          │ 73.2            │ 12.2           │ 1275   │ 5.006            │ 3.418           │
-│ 2   │ Iris-versicolor │ 296.8           │ 138.5          │ 213.0           │ 66.3           │ 3775   │ 5.936            │ 2.77            │
-│ 3   │ Iris-virginica  │ 329.4           │ 148.7          │ 277.6           │ 101.3          │ 6275   │ 6.588            │ 2.974           │
-```
-
 If you only want to split the data set into subsets, use the [`groupby`](@ref) function:
 
 ```jldoctest sac

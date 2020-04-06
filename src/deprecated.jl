@@ -357,3 +357,31 @@ function by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool
 end
 
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
+
+@deprecate aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) begin
+    df = select(d, names(df) .=> [fs])
+    sort && sort!(df)
+    return df
+end
+
+@deprecate aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false) begin
+    df = hcat([select(d, names(df) .=> [f]) for f in fs]..., makeunique=true)
+    sort && sort!(df)
+    return df
+end
+
+@deprecate aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) begin
+    df = combine(gd, valuecols(gd) .=> [f])
+    sort && sort!(df, Not(groupcols(gd)))
+    return df
+end
+
+@deprecate aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false) begin
+    df = hcat([combine(gd, valuecols(gd) .=> [f]) for f in fs]..., makeunique=true)
+    sort && sort!(df, Not(groupcols(gd)))
+    return df
+end
+
+@deprecate aggregate(d::AbstractDataFrame, cols, fs::Any;
+          sort::Bool=false, skipmissing::Bool=false) aggregate(groupby(d, cols, sort=sort,
+                                                               skipmissing=skipmissing), fs)

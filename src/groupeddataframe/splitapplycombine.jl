@@ -1,5 +1,5 @@
 #
-# groupby(), map(), combine(), by(), aggregate() and related
+# groupby(), map(), combine(), by() and related
 #
 
 """
@@ -30,7 +30,6 @@ and combines the result into a data frame).
 See the following for additional split-apply-combine operations:
 
 * [`by`](@ref) : split-apply-combine using functions
-* [`aggregate`](@ref) : split-apply-combine; applies functions in the form of a cross product
 * [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
 * [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
 
@@ -1359,97 +1358,3 @@ by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}, typeo
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)
-
-"""
-    aggregate(df::AbstractDataFrame, fs)
-    aggregate(df::AbstractDataFrame, cols, fs; sort=false, skipmissing=false)
-    aggregate(gd::GroupedDataFrame, fs; sort=false)
-
-Split-apply-combine that applies a set of functions over columns of an
-`AbstractDataFrame` or [`GroupedDataFrame`](@ref).
-Return an aggregated data frame.
-
-# Arguments
-- `df` : an `AbstractDataFrame`
-- `gd` : a `GroupedDataFrame`
-- `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
-- `fs` : a function or vector of functions to be applied to vectors
-  within groups; expects each argument to be a column vector
-- `sort` : whether to sort rows according to the values of the grouping columns
-- `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
-
-Each `fs` should return a value or vector. All returns must be the
-same length.
-
-# Examples
-```jldoctest
-julia> using Statistics
-
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
-
-julia> aggregate(df, :a, sum)
-4×3 DataFrame
-│ Row │ a     │ b_sum │ c_sum │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 6     │
-│ 2   │ 2     │ 2     │ 8     │
-│ 3   │ 3     │ 4     │ 10    │
-│ 4   │ 4     │ 2     │ 12    │
-
-julia> aggregate(df, :a, [sum, x->mean(skipmissing(x))])
-4×5 DataFrame
-│ Row │ a     │ b_sum │ c_sum │ b_function │ c_function │
-│     │ Int64 │ Int64 │ Int64 │ Float64    │ Float64    │
-├─────┼───────┼───────┼───────┼────────────┼────────────┤
-│ 1   │ 1     │ 4     │ 6     │ 2.0        │ 3.0        │
-│ 2   │ 2     │ 2     │ 8     │ 1.0        │ 4.0        │
-│ 3   │ 3     │ 4     │ 10    │ 2.0        │ 5.0        │
-│ 4   │ 4     │ 2     │ 12    │ 1.0        │ 6.0        │
-
-julia> aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
-4×5 DataFrame
-│ Row │ a     │ b_sum │ c_sum │ b_function │ c_function │
-│     │ Int64 │ Int64 │ Int64 │ Float64    │ Float64    │
-├─────┼───────┼───────┼───────┼────────────┼────────────┤
-│ 1   │ 1     │ 4     │ 6     │ 2.0        │ 3.0        │
-│ 2   │ 2     │ 2     │ 8     │ 1.0        │ 4.0        │
-│ 3   │ 3     │ 4     │ 10    │ 2.0        │ 5.0        │
-│ 4   │ 4     │ 2     │ 12    │ 1.0        │ 6.0        │
-```
-"""
-aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) =
-    aggregate(d, [fs], sort=sort)
-function aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, _names(d))
-    return _aggregate(d, fs, headers, sort)
-end
-
-# Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) =
-    aggregate(gd, [f], sort=sort)
-
-function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, setdiff(_names(gd), _names(parent(gd))[gd.cols]))
-    res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
-    sort && sort!(res, headers)
-    return res
-end
-
-# Groups DataFrame by cols before applying aggregate
-aggregate(d::AbstractDataFrame, cols, fs::Any;
-          sort::Bool=false, skipmissing::Bool=false) =
-    aggregate(groupby(d, cols, sort=sort, skipmissing=skipmissing), fs)
-
-_makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
-    [Symbol(colname, '_', funname(f)) for f in fs for colname in cn]
-
-function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
-                    headers::AbstractVector{Symbol}, sort::Bool=false)
-    res = DataFrame!(AbstractVector[vcat(f(col)) for f in fs for col in eachcol(d)],
-                    headers, makeunique=true)
-    sort && sort!(res, headers)
-    return res
-end

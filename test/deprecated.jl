@@ -624,6 +624,63 @@ end
         combine(gd, b_function = :b => vexp, c_identity = :c => identity)
 end
 
+@testset "deprecated aggregate" begin
+    df = DataFrame(x1=Int64[1,2,2], x2=Int64[1,1,2], y=Int64[1,2,3])
+    @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
+    @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
+
+    Random.seed!(1)
+    N = 20
+    d1 = Vector{Union{Int64, Missing}}(rand(1:2, N))
+    d2 = CategoricalArray(["A", "B", missing])[rand(1:3, N)]
+    d3 = randn(N)
+    d4 = randn(N)
+    df7 = DataFrame([d1, d2, d3], [:d1, :d2, :d3])
+
+    @test aggregate(DataFrame(a=1), identity) == DataFrame(a_identity=1)
+
+    df8 = aggregate(df7[:, [1, 3]], sum)
+    @test df8[1, :d1_sum] == sum(df7[!, :d1])
+
+    df8 = aggregate(df7, :d2, [sum, length], sort=true)
+    @test df8[1:2, :d2] == ["A", "B"]
+    @test size(df8, 1) == 3
+    @test size(df8, 2) == 5
+    @test sum(df8[!, :d1_length]) == N
+    @test all(df8[!, :d1_length] .> 0)
+    @test df8[!, :d1_length] == [sum(isequal.(d2, "A")), sum(isequal.(d2, "B")), sum(ismissing.(d2))]
+    df8′ = aggregate(df7, 2, [sum, length], sort=true)
+    @test df8 ≅ df8′
+    adf = aggregate(groupby(df7, :d2, sort=true), [sum, length])
+    @test df8 ≅ adf
+    adf′ = aggregate(groupby(df7, 2, sort=true), [sum, length])
+    @test df8 ≅ adf′
+    adf = aggregate(groupby(df7, :d2), [sum, length], sort=true)
+    @test sort(df8, [:d1_sum, :d3_sum, :d1_length, :d3_length]) ≅ adf
+    adf′ = aggregate(groupby(df7, 2), [sum, length], sort=true)
+    @test adf ≅ adf′
+
+    df = DataFrame(a = [3, missing, 1], b = [100, 200, 300])
+    for dosort in (true, false), doskipmissing in (true, false)
+        @test aggregate(df, :a, sum, sort=dosort, skipmissing=doskipmissing) ≅
+              aggregate(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), sum)
+    end
+
+    # Check column names
+    anonf = x -> sum(x)
+    adf = aggregate(df7, :d2, [mean, anonf])
+    @test names(adf) == [:d2, :d1_mean, :d3_mean,
+                         :d1_function, :d3_function]
+    adf = aggregate(df7, :d2, [mean, mean, anonf, anonf])
+    @test names(adf) == [:d2, :d1_mean, :d3_mean, :d1_mean_1, :d3_mean_1,
+                         :d1_function, :d3_function, :d1_function_1, :d3_function_1]
+
+    df9 = aggregate(df7, :d2, [sum, length], sort=true)
+    @test df9 ≅ df8
+    df9′ = aggregate(df7, 2, [sum, length], sort=true)
+    @test df9′ ≅ df8
+end
+
 global_logger(old_logger)
 
 end # module
