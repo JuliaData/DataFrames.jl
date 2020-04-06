@@ -1,6 +1,6 @@
 module TestDeprecated
 
-using Test, DataFrames, Random, Logging
+using Test, DataFrames, Random, Logging, Statistics
 
 const ≅ = isequal
 

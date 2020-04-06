@@ -359,26 +359,27 @@ end
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
 
 @deprecate aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) begin
-    df = select(d, names(df) .=> [fs])
+    df = select(d, names(d) .=> [fs])
     sort && sort!(df)
     return df
 end
 
 @deprecate aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false) begin
-    df = hcat([select(d, names(df) .=> [f]) for f in fs]..., makeunique=true)
+    df = hcat([select(d, names(d) .=> [f]) for f in fs]..., makeunique=true)
     sort && sort!(df)
     return df
 end
 
 @deprecate aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) begin
     df = combine(gd, valuecols(gd) .=> [f])
-    sort && sort!(df, Not(groupcols(gd)))
+    sort && sort!(df, setdiff(names(df), groupcols(gd)))
     return df
 end
 
 @deprecate aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false) begin
-    df = hcat([combine(gd, valuecols(gd) .=> [f]) for f in fs]..., makeunique=true)
-    sort && sort!(df, Not(groupcols(gd)))
+    df = hcat([combine(gd, valuecols(gd) .=> [f], keepkeys=i==1) for (i, f) in enumerate(fs)]...,
+                       makeunique=true)
+    sort && sort!(df, setdiff(names(df), groupcols(gd)))
     return df
 end
 
