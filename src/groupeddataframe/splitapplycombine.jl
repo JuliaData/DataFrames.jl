@@ -1186,11 +1186,11 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     elseif first isa DataFrameRow
         n = length(gd)
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
-    elseif firstmulticol == Val(false) && first.x1 isa Union{AbstractArray{<:Any, 0}, Ref}
+    elseif firstmulticol == Val(false) && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude_case = true
-        first = wrap_row(first.x1, firstmulticol)
+        first = wrap_row(first[1], firstmulticol)
         n = length(gd)
-        eltys = (typeof(first.x1),)
+        eltys = (typeof(first[1]),)
     else # other NamedTuple giving a single row
         n = length(gd)
         eltys = map(typeof, first)
