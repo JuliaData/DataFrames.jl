@@ -1424,30 +1424,32 @@ aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) =
     aggregate(d, [fs], sort=sort)
 function aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false)
     headers = _makeheaders(fs, _names(d))
-    _aggregate(d, fs, headers, sort)
+    return _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
+aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) =
+    aggregate(gd, [f], sort=sort)
+
 function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
     headers = _makeheaders(fs, setdiff(_names(gd), _names(parent(gd))[gd.cols]))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
-    res
+    return res
 end
 
 # Groups DataFrame by cols before applying aggregate
-function aggregate(d::AbstractDataFrame, cols, fs::Any;
-                   sort::Bool=false, skipmissing::Bool=false)
+aggregate(d::AbstractDataFrame, cols, fs::Any;
+          sort::Bool=false, skipmissing::Bool=false) =
     aggregate(groupby(d, cols, sort=sort, skipmissing=skipmissing), fs)
-end
 
 _makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
     [Symbol(colname, '_', funname(f)) for f in fs for colname in cn]
 
 function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
                     headers::AbstractVector{Symbol}, sort::Bool=false)
-    res = DataFrame(AbstractVector[vcat(f(d[!, i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    res = DataFrame!(AbstractVector[vcat(f(col)) for f in fs for col in eachcol(d)],
+                    headers, makeunique=true)
     sort && sort!(res, headers)
-    res
+    return res
 end
