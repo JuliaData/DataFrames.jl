@@ -113,23 +113,23 @@ passed when creating `gd`, or if `gd` is a subset from a larger [`GroupedDataFra
 groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
 """
-    groupvars(gd::GroupedDataFrame)
+    groupcols(gd::GroupedDataFrame)
 
 Return a vector of column names in `parent(gd)` used for grouping.
 """
-groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
+groupcols(gd::GroupedDataFrame) = _names(gd)[gd.cols]
 
 """
-    valuevars(gd::GroupedDataFrame)
+    valuecols(gd::GroupedDataFrame)
 
 Return a vector of column names in `parent(gd)` not used for grouping.
 """
-valuevars(gd::GroupedDataFrame) = _names(gd)[Not(gd.cols)]
+valuecols(gd::GroupedDataFrame) = _names(gd)[Not(gd.cols)]
 
 
 # Get grouping variable index by its name
 function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
-    i = findfirst(==(name), groupvars(gd))
+    i = findfirst(==(name), groupcols(gd))
     i === nothing && strict && throw(ArgumentError("$name is not a grouping column"))
     return i
 end
@@ -226,10 +226,10 @@ end
 
 Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
-Base.keys(key::GroupKey) = Tuple(groupvars(parent(key)))
-Base.haskey(key::GroupKey, idx::Symbol) = idx in groupvars(parent(key))
+Base.keys(key::GroupKey) = Tuple(groupcols(parent(key)))
+Base.haskey(key::GroupKey, idx::Symbol) = idx in groupcols(parent(key))
 Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
-Base.names(key::GroupKey) = groupvars(parent(key))
+Base.names(key::GroupKey) = groupcols(parent(key))
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
@@ -255,7 +255,7 @@ function Base.getproperty(key::GroupKey, p::Symbol)
 end
 
 function Base.NamedTuple(key::GroupKey)
-    N = NamedTuple{Tuple(groupvars(parent(key)))}
+    N = NamedTuple{Tuple(groupcols(parent(key)))}
     N(_groupvalues(parent(key), getfield(key, :idx)))
 end
 Base.Tuple(key::GroupKey) = values(key)

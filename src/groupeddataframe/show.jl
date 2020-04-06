@@ -3,7 +3,7 @@ function Base.summary(io::IO, gd::GroupedDataFrame)
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N == 1 ? "group" : "groups"
     print(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: ")
-    join(io, groupvars(gd), ", ")
+    join(io, groupcols(gd), ", ")
 end
 
 function Base.show(io::IO, gd::GroupedDataFrame;

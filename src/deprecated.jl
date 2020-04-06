@@ -355,3 +355,5 @@ function by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool
                  " use `by(gd, cols, source_cols => fun => :target_col, ...)` instead", :by)
     return combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
 end
+
+@deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)

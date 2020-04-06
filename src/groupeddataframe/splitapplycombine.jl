@@ -563,7 +563,7 @@ function combine_helper(f, gd::GroupedDataFrame,
     if length(gd) > 0
         idx, valscat = _combine(f, gd, nms)
         keepkeys || return valscat
-        keys = groupvars(gd)
+        keys = groupcols(gd)
         for key in keys
             if hasproperty(valscat, key) &&
                !isequal(valscat[!, key], view(parent(gd)[!, key], idx))
