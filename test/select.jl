@@ -899,7 +899,7 @@ end
     @test df2 ≅ DataFrame(x1_first=1, x2_first=1, x3_first=missing,
                           x4_first=missing)
     @test df2.x1_first isa Vector{Int}
-    @test df2.x2_first isa CategoricalVector
+    @test df2.x2_first isa CategoricalVector{Int}
     @test df2.x3_first isa Vector{Missing}
     @test df2.x4_first isa Vector{Missing}
 
@@ -907,16 +907,16 @@ end
     @test df2 ≅ DataFrame(x1_last=2, x2_last=2, x3_last=2,
                           x4_last=2)
     @test df2.x1_last isa Vector{Int}
-    @test df2.x2_last isa CategoricalVector
+    @test df2.x2_last isa CategoricalVector{Int}
     @test df2.x3_last isa Vector{Int}
-    @test df2.x4_last isa CategoricalVector
+    @test df2.x4_last isa CategoricalVector{Int}
 
     for v in [:x1, :x1 => (x -> x) => :x1]
         df2 = select(df, names(df) .=> first, v)
         @test df2 ≅ DataFrame(x1_first=1, x2_first=1, x3_first=missing,
                               x4_first=missing, x1=[1,2])
         @test df2.x1_first isa Vector{Int}
-        @test df2.x2_first isa CategoricalVector
+        @test df2.x2_first isa CategoricalVector{Int}
         @test df2.x3_first isa Vector{Missing}
         @test df2.x4_first isa Vector{Missing}
 
@@ -925,16 +925,16 @@ end
         @test df2 ≅ DataFrame(x1_last=2, x2_last=2, x3_last=2,
                               x4_last=2, x1=[1,2])
         @test df2.x1_last isa Vector{Int}
-        @test df2.x2_last isa CategoricalVector
+        @test df2.x2_last isa CategoricalVector{Int}
         @test df2.x3_last isa Vector{Int}
-        @test df2.x4_last isa CategoricalVector
+        @test df2.x4_last isa CategoricalVector{Int}
 
 
         df2 = select(df, v, names(df) .=> first)
         @test df2 ≅ DataFrame(x1=[1,2], x1_first=1, x2_first=1, x3_first=missing,
                               x4_first=missing)
         @test df2.x1_first isa Vector{Int}
-        @test df2.x2_first isa CategoricalVector
+        @test df2.x2_first isa CategoricalVector{Int}
         @test df2.x3_first isa Vector{Missing}
         @test df2.x4_first isa Vector{Missing}
 
@@ -943,15 +943,15 @@ end
         @test df2 ≅ DataFrame(x1=[1,2], x1_last=2, x2_last=2, x3_last=2,
                               x4_last=2)
         @test df2.x1_last isa Vector{Int}
-        @test df2.x2_last isa CategoricalVector
+        @test df2.x2_last isa CategoricalVector{Int}
         @test df2.x3_last isa Vector{Int}
-        @test df2.x4_last isa CategoricalVector
+        @test df2.x4_last isa CategoricalVector{Int}
     end
 
     df2 = select(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
     @test size(df2) == (0, 5)
     @test df2.x1_first isa Vector{Int}
-    @test df2.x2_first isa CategoricalVector
+    @test df2.x2_first isa CategoricalVector{Int}
     @test df2.x3_first isa Vector{Missing}
     @test df2.x4_first isa Vector{Missing}
 
@@ -959,15 +959,15 @@ end
     df2 = select(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
     @test size(df2) == (0, 5)
     @test df2.x1_last isa Vector{Int}
-    @test df2.x2_last isa CategoricalVector
+    @test df2.x2_last isa CategoricalVector{Int}
     @test df2.x3_last isa Vector{Int}
-    @test df2.x4_last isa CategoricalVector
+    @test df2.x4_last isa CategoricalVector{Int}
 
 
     df2 = select(df, [] => (() -> Int[]) => :x1, names(df) .=> first)
     @test size(df2) == (0, 5)
     @test df2.x1_first isa Vector{Int}
-    @test df2.x2_first isa CategoricalVector
+    @test df2.x2_first isa CategoricalVector{Int}
     @test df2.x3_first isa Vector{Missing}
     @test df2.x4_first isa Vector{Missing}
 
@@ -975,9 +975,9 @@ end
     df2 = select(df, [] => (() -> Int[]) => :x1, names(df) .=> last)
     @test size(df2) == (0, 5)
     @test df2.x1_last isa Vector{Int}
-    @test df2.x2_last isa CategoricalVector
+    @test df2.x2_last isa CategoricalVector{Int}
     @test df2.x3_last isa Vector{Int}
-    @test df2.x4_last isa CategoricalVector
+    @test df2.x4_last isa CategoricalVector{Int}
 end
 
 @testset "copycols special cases" begin
