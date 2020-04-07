@@ -1074,6 +1074,8 @@ function _combine(f::AbstractVector{<:Pair},
                 throw(ArgumentError("a single value or vector result is required when passing " *
                                     "multiple functions (got $(typeof(res)))"))
             end
+            # if idx_agg was not computed yet it is nothing
+            # in this case if we are not passed a vector compute it.
             if !(firstres isa AbstractVector) && isnothing(idx_agg)
                 idx_agg = Vector{Int}(undef, length(gd))
                 fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
@@ -1081,6 +1083,10 @@ function _combine(f::AbstractVector{<:Pair},
             # TODO: if firstres is a vector we recompute idx for every function
             # this could be avoided - it could be computed only the first time
             # and later we could just check if lengths of groups match this first idx
+
+            # the last argument passed to _combine_with_first informs it about precomputed
+            # idx. Currently we do it only for single-row return values otherwise we pass
+            # nothing to signal that idx has to be computed in _combine_with_first
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
                                                   Val(firstmulticol),
                                                   firstres isa AbstractVector ? nothing : idx_agg)
@@ -1121,16 +1127,7 @@ end
 
 function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
     firstres = fun(gd[1])
-    firstmulticol = firstres isa MULTI_COLS_TYPE
-    if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
-                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-        idx_agg = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
-    else
-        idx_agg = nothing
-    end
-    idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, nothing,
-                                            Val(firstmulticol), idx_agg)
+    idx, outcols, nms = _combine_multicol(firstres, fun, gd, nothing)
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
@@ -1147,16 +1144,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
     end
     firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
-    firstmulticol = firstres isa MULTI_COLS_TYPE
-    if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
-                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-        idx_agg = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
-    else
-        idx_agg = nothing
-    end
-    idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols,
-                                            Val(firstmulticol), idx_agg)
+    idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
     # disallow passing target column name to genuine tables
     if firstres isa MULTI_COLS_TYPE
         if p isa Pair{<:Any, <:Pair{<:Any, Symbol}}
@@ -1171,11 +1159,25 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     return idx, valscat
 end
 
+function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
+                        incols::Union{Nothing, AbstractVector, Tuple})
+    firstmulticol = firstres isa MULTI_COLS_TYPE
+    if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
+                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+        idx_agg = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+    else
+        idx_agg = nothing
+    end
+    return _combine_with_first(wrap(firstres), fun, gd, nothing,
+                               Val(firstmulticol), idx_agg)
+end
+
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple},
                              firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
-    extrude_case = false
+    extrude = false
 
     if first isa AbstractDataFrame
         n = 0
@@ -1187,7 +1189,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         n = length(gd)
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
     elseif firstmulticol == Val(false) && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
-        extrude_case = true
+        extrude = true
         first = wrap_row(first[1], firstmulticol)
         n = length(gd)
         eltys = (typeof(first[1]),)
@@ -1204,8 +1206,8 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
     targetcolnames = tuple(propertynames(first)...)
-    if !extrude_case && first isa Union{AbstractDataFrame,
-                                        NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
+    if !extrude && first isa Union{AbstractDataFrame,
+                                   NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
                                                              f, gd, incols, targetcolnames,
                                                              firstmulticol)
