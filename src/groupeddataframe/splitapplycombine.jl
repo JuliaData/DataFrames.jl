@@ -1160,7 +1160,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
 end
 
 function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
-                        incols::Union{Nothing, AbstractVector, Tuple})
+                           incols::Union{Nothing, AbstractVector, Tuple})
     firstmulticol = firstres isa MULTI_COLS_TYPE
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
