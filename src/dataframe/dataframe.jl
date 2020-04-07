@@ -123,7 +123,7 @@ struct DataFrame <: AbstractDataFrame
         end
         len == -1 && (len = 1) # we got no vectors so make one row of scalars
 
-        # we write into columns as we know that it is guarantted
+        # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
         for (i, col) in enumerate(columns)
             # check for vectors first as they are most common
