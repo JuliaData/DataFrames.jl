@@ -1169,7 +1169,7 @@ function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
     else
         idx_agg = nothing
     end
-    return _combine_with_first(wrap(firstres), fun, gd, nothing,
+    return _combine_with_first(wrap(firstres), fun, gd, incols,
                                Val(firstmulticol), idx_agg)
 end
 
