@@ -69,7 +69,7 @@ abstract type AbstractDataFrame end
 
     If `cols` column selector argument is passed then restrict returned
     column names to those matching the selector
-    (this is useful with regular expressions, `All`, `Not`, ad `Between`).
+    (this is useful with regular expressions, `All`, `Not`, and `Between`).
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
