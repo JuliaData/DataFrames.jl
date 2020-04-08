@@ -315,25 +315,31 @@ end
     @test names(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
+
+    n = [:x1, :x2]
+    v = AbstractVector[1:3, [1,2,3]]
+    @test DataFrame(v, n).x1 isa Vector{Int}
+    @test v[1] isa AbstractRange
 end
 
 @testset "recyclers" begin
     @test DataFrame(a = 1:5, b = 1) == DataFrame(a = collect(1:5), b = fill(1, 5))
     @test DataFrame(a = 1, b = 1:5) == DataFrame(a = fill(1, 5), b = collect(1:5))
+    @test size(DataFrame(a=1, b=[])) == (0, 2)
+    @test size(DataFrame!(a=1, b=[])) == (0, 2)
 end
 
 @testset "constructor thrown exceptions" begin
-    @test_throws DimensionMismatch DataFrame(a=1, b=[])
-    @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]))
-    @test_throws DimensionMismatch DataFrame(A = rand(2,2))
-    @test_throws DimensionMismatch DataFrame(A = rand(2,1))
-    @test_throws ArgumentError DataFrame([1, 2, 3])
+    for f in [DataFrame, DataFrame!]
+        @test_throws DimensionMismatch f(Any[collect(1:10)], DataFrames.Index([:A, :B]))
+        @test_throws ArgumentError f(A = rand(2,2))
+        @test_throws ArgumentError f(A = rand(2,1))
+        @test_throws ArgumentError f([1, 2, 3])
+        @test_throws DimensionMismatch f(AbstractVector[1:3, [1,2]])
+        @test_throws ArgumentError f([1:3, 1], [:x1, :x2])
+        @test_throws ErrorException f([1:3, 1])
+    end
 
-    @test_throws DimensionMismatch DataFrame!(a=1, b=[])
-    @test_throws DimensionMismatch DataFrame!(Any[collect(1:10)], DataFrames.Index([:A, :B]))
-    @test_throws DimensionMismatch DataFrame!(A = rand(2,2))
-    @test_throws DimensionMismatch DataFrame!(A = rand(2,1))
-    @test_throws ArgumentError DataFrame!([1, 2, 3])
     @test_throws MethodError DataFrame!([1 2; 3 4], copycols=false)
 end
 
@@ -393,6 +399,14 @@ end
     @test DataFrame(a=Ref(1), b=fill(1)) == DataFrame(a=[1], b=[1])
     @test DataFrame(a=Ref(1), b=fill(1), c=1:3) ==
           DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+end
+
+@testset "broadcasting into 0 rows" begin
+    for df in [DataFrame(x1=1:0, x2=1), DataFrame(x1=1, x2=1:0)]
+        @test size(df) == (0, 2)
+        @test df.x1 isa Vector{Int}
+        @test df.x2 isa Vector{Int}
+    end
 end
 
 end # module

@@ -11,20 +11,22 @@ function, which is a shorthand for `groupby` followed by `map` and/or `combine`.
 `by` takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split
 the `DataFrame` on, and (3) a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
-1. a `cols => function` pair indicating that `function` should be called with
+1. standard column selectors (integers, symbols, vectors of integers, vectors of symbols,
+   `All`, `:`, `Between`, `Not` and regular expressions)
+2. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector
-2. a `cols => function => target_col` form additionally
+3. a `cols => function => target_col` form additionally
    specifying the name of the target column (this assumes that `function` returns a single value or a vector)
-3. a `col => target_col` pair, which renames the column `col` to `target_col`
-4. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
+4. a `col => target_col` pair, which renames the column `col` to `target_col`
+5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
    (without `target_col` the new column is called `:nrow`)
-5. several arguments of the forms given above, or vectors thereof
-6. a function which will be called with a `SubDataFrame` corresponding to each group;
+6. several arguments of the forms given above, or vectors thereof
+7. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)
 
-All forms except 6 can be also passed as the first argument to `by`.
+All forms except 1 and 6 can be also passed as the first argument to `map`.
 
 In all of these cases, `function` can return either a single row or multiple rows.
 `function` can always generate a single column by returning a single value or a vector.
@@ -42,6 +44,12 @@ Here are the rules specifying the shape of the resulting `DataFrame`:
   of groups is large
 
 The kind of return value and the number and names of columns must be the same for all groups.
+
+It is allowed to mix single values and vectors if multiple transformations
+are requested. In this case single value will be broadcasted to match the length
+of columns specified by returned vectors.
+As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
+are unwrapped and then broadcasted.
 
 If a single value or a vector is returned by the `function` and `target_col` is not
 provided, it is generated automatically, by concatenating source column name and
@@ -115,6 +123,25 @@ julia> by(iris, :Species,
 │ 1   │ Iris-setosa     │ 0.292449 │ 73.2    │
 │ 2   │ Iris-versicolor │ 0.717655 │ 213.0   │
 │ 3   │ Iris-virginica  │ 0.842744 │ 277.6   │
+
+julia> by(iris, :Species, 1:2, 1:2 .=> mean, nrow)
+150×6 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ SepalLength_mean │ SepalWidth_mean │ nrow  │
+│     │ String         │ Float64     │ Float64    │ Float64          │ Float64         │ Int64 │
+├─────┼────────────────┼─────────────┼────────────┼──────────────────┼─────────────────┼───────┤
+│ 1   │ Iris-setosa    │ 5.1         │ 3.5        │ 5.006            │ 3.418           │ 50    │
+│ 2   │ Iris-setosa    │ 4.9         │ 3.0        │ 5.006            │ 3.418           │ 50    │
+│ 3   │ Iris-setosa    │ 4.7         │ 3.2        │ 5.006            │ 3.418           │ 50    │
+│ 4   │ Iris-setosa    │ 4.6         │ 3.1        │ 5.006            │ 3.418           │ 50    │
+│ 5   │ Iris-setosa    │ 5.0         │ 3.6        │ 5.006            │ 3.418           │ 50    │
+⋮
+│ 145 │ Iris-virginica │ 6.7         │ 3.3        │ 6.588            │ 2.974           │ 50    │
+│ 146 │ Iris-virginica │ 6.7         │ 3.0        │ 6.588            │ 2.974           │ 50    │
+│ 147 │ Iris-virginica │ 6.3         │ 2.5        │ 6.588            │ 2.974           │ 50    │
+│ 148 │ Iris-virginica │ 6.5         │ 3.0        │ 6.588            │ 2.974           │ 50    │
+│ 149 │ Iris-virginica │ 6.2         │ 3.4        │ 6.588            │ 2.974           │ 50    │
+│ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 6.588            │ 2.974           │ 50    │
+
 ```
 
 The `by` function also supports the `do` block form. However, as noted above,
