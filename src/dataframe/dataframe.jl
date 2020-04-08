@@ -1114,7 +1114,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
     end
 
     if ncol(df1) == 0
-        for (n, v) in eachcol(df2, true)
+        for (n, v) in pairs(eachcol(df2))
             df1[!, n] = copy(v) # make sure df1 does not reuse df2
         end
         return df1
