@@ -126,7 +126,8 @@ end
 function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
-                           transformed_cols::Dict{Symbol, Any}, copycols::Bool)
+                           transformed_cols::Dict{Symbol, Any}, copycols::Bool,
+                           allow_resizing_newdf::Ref{Bool})
     col_idx, (fun, newname) = nc
     # It is allowed to request a tranformation operation into a newname column
     # only once. This is ensured by the logic related to transformed_cols dictionaly
@@ -144,6 +145,14 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
                             "of type $(typeof(res)) is currently not allowed."))
     end
     if res isa AbstractVector
+        # allow shortening to 0 rows
+        if allow_resizing_newdf[] && nrow(newdf) == 1
+            newdfcols = _columns(newdf)
+            for (i, col) in enumerate(newdfcols)
+                newdfcols[i] = fill!(similar(col, length(res)), first(col))
+            end
+        end
+        allow_resizing_newdf[] = false
         respar = parent(res)
         if copycols && !(fun isa ByRow) &&
             (res isa SubArray || any(i -> respar === parent(cdf[i]), col_idx))
@@ -152,65 +161,77 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
             newdf[!, newname] = res
         end
     else
-        newdf[!, newname] = [res]
+        res_unwrap = res isa Union{AbstractArray{<:Any, 0}, Ref} ? res[] : res
+        # allow squashing a scalar to 0 rows
+        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap),
+                                                        ncol(newdf) == 0 ? 1 : nrow(newdf)),
+                                  res_unwrap)
     end
     # mark that column transformation was applied
     # nothing is not possible otherwise as a value in this dict
     transformed_cols[newname] = nothing
 end
 
+SELECT_ARG_RULES =
+    """
+    Arguments passed as `args...` can be:
+
+    * Any index that is allowed for column indexing. In particular, symbols, integers,
+      vectors of symbols, vectors of integers, vectors of bools, regular expressions,
+      `All`, `Between`, and `Not` selectors are supported.
+    * Column transformation operations using the `Pair` notation that is described below
+      and vectors of such pairs.
+
+    Columns can be renamed using the `old_column => new_column_name` syntax,
+    and transformed using the `old_column => fun => new_column_name` syntax.
+    `new_column_name` must be a `Symbol`, and `fun` a function or a type. If `old_column`
+    is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
+    Otherwise `old_column` can be any column indexing syntax, in which case `fun`
+    will be passed the column vectors specified by `old_column` as separate arguments.
+    If `fun` returns a value of type other than `AbstractVector` then it will be broadcasted
+    into a vector matching the target number of rows in the data frame,
+    unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
+    `AbstractMatrix`, in which case an error is thrown as currently these
+    return types are not allowed.
+    As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
+    are unwrapped and then broadcasted.
+
+    To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
+    struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
+    to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
+    any column indexing syntax, in which case `fun` will be passed one argument for each of
+    the columns specified by `old_column`. If `ByRow` is used it is not allowed for
+    `old_column` to select an empty set of columns.
+
+    Column transformation can also be specified using the short `old_column => fun` form.
+    In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
+    Up to three column names are used for multiple input columns and they are joined
+    using `_`; if more than three columns are passed then the name consists of the
+    first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
+    the new column name `:a_b_etc_fun`.
+
+    Column renaming and transformation operations can be passed wrapped in vectors
+    (this is useful when combined with broadcasting).
+
+    As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
+    containing a number of rows in a source data frame, and passing `nrow => new_column_name`
+    stores the number of rows in source data frame in `new_column_name` column.
+
+    If a collection of column names is passed to `select!` or `select` then requesting
+    duplicate column names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")`
+    is allowed) and only the first occurrence is used. In particular a syntax to move
+    column `:col` to the first position in the data frame is `select!(df, :col, :)`.
+    On the contrary, output column names of renaming, transformation and single column
+    selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
+    `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
+    """
+
 """
     select!(df::DataFrame, args...)
 
 Mutate `df` in place to retain only columns specified by `args...` and return it.
 
-Arguments passed as `args...` can be:
-
-* Any index that is allowed for column indexing. In particular, symbols, integers,
-  vectors of symbols, vectors of integers, vectors of bools, regular expressions,
-  `All`, `Between`, and `Not` selectors are supported.
-* Column transformation operations using the `Pair` notation that is described below
-  and vectors of such pairs.
-
-Columns can be renamed using the `old_column => new_column_name` syntax,
-and transformed using the `old_column => fun => new_column_name` syntax.
-`new_column_name` must be a `Symbol`, and `fun` a function or a type. If `old_column`
-is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
-Otherwise `old_column` can be any column indexing syntax, in which case `fun`
-will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then it will be wrapped
-into a 1-element vector, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
-`DataFrameRow`, `AbstractMatrix`, in which case an error is thrown as currently these
-return types are not allowed.
-
-To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
-struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
-to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
-any column indexing syntax, in which case `fun` will be passed one argument for each of
-the columns specified by `old_column`. If `ByRow` is used it is not allowed for
-`old_column` to select an empty set of columns.
-
-Column transformation can also be specified using the short `old_column => fun` form.
-In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
-Up to three column names are used for multiple input columns and they are joined
-using `_`; if more than three columns are passed then the name consists of the
-first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
-the new column name `:a_b_etc_fun`.
-
-Column renaming and transformation operations can be passed wrapped in vectors
-(this is useful when combined with broadcasting).
-
-As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
-containing a number of rows in a source data frame, and passing `nrow => new_column_name`
-stores the number of rows in source data frame in `new_column_name` column.
-
-If a collection of column names is passed to `select!` then requesting duplicate column
-names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
-and only the first occurrence is used. In particular a syntax to move column `:col`
-to the first position in the data frame is `select!(df, :col, :)`.
-On the contrary, output column names of renaming, transformation and single column
-selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
-`select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
+$SELECT_ARG_RULES
 
 Note that including the same column several times in the data frame via renaming
 or transformations that return the same object without copying will create column aliases.
@@ -327,56 +348,10 @@ transform!(df::DataFrame, args...) = select!(df, :, args...)
 
 Create a new data frame that contains columns from `df` specified by `args` and return it.
 
-Arguments passed as `args...` can be:
-
-* Any index that is allowed for column indexing. In particular, symbols, integers,
-  vectors of symbols, vectors of integers, vectors of bools, regular expressions,
-  `All`, `Between`, and `Not` selectors are supported.
-* Column transformation operations using the `Pair` notation that is described below
-  and vectors of such pairs.
-
-Also if `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
+If `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
 are supported.
 
-Columns can be renamed using the `old_column => new_column_name` syntax,
-and transformed using the `old_column => fun => new_column_name` syntax.
-`new_column_name` must be a `Symbol`, and `fun` a function or a type. If `old_column`
-is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
-Otherwise `old_column` can be any column indexing syntax, in which case `fun`
-will be passed the column vectors specified by `old_column` as separate arguments.
-If `fun` returns a value of type other than `AbstractVector` then it will be wrapped
-into a 1-element vector, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
-`DataFrameRow`, `AbstractMatrix`, in which case an error is thrown as currently these
-return types are not allowed.
-
-To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
-struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
-to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
-any column indexing syntax, in which case `fun` will be passed one argument for each of
-the columns specified by `old_column`. If `ByRow` is used it is not allowed for
-`old_column` to select an empty set of columns.
-
-Column transformation can also be specified using the short `old_column => fun` form.
-In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
-Up to three column names are used for multiple input columns and they are joined
-using `_`; if more than three columns are passed then the name consists of the
-first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
-the new column name `:a_b_etc_fun`.
-
-Column renaming and transformation operations can be passed wrapped in vectors
-(this is useful when combined with broadcasting).
-
-As a special rule passing `nrow` as an argument creates a column named `:nrow`
-containing a number of rows in a source data frame, and passing `nrow => new_column_name`
-stores the number of rows in source data frame in `new_column_name` column.
-
-If a collection of column names is passed to `select!` then requesting duplicate column
-names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")` is allowed)
-and only the first occurrence is used. In particular a syntax to move column `:col`
-to the first position in the data frame is `select!(df, :col, :)`.
-On the contrary, output column names of renaming, transformation and single column
-selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
-`select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
+$SELECT_ARG_RULES
 
 If `df` is a `DataFrame` a new `DataFrame` is returned.
 If `copycols=false`, then the returned `DataFrame` shares column vectors with `df` where possible.
@@ -538,6 +513,9 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
             transformed_cols[newname] = nc
         end
     end
+    # we allow resizing newdf only if up to some point only scalars were put
+    # in it. The moment we put any vector into newdf its number of rows becomes fixed
+    allow_resizing_newdf = Ref(true)
     for nc in normalized_cs
         if nc isa AbstractVector{Int}
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
@@ -555,9 +533,18 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                         # nothing then newname should be preasent in newdf already
                         nct = transformed_cols[newname]
                         @assert nct !== nothing
-                        select_transform!(nct, df, newdf, transformed_cols, copycols)
+                        select_transform!(nct, df, newdf, transformed_cols, copycols,
+                                          allow_resizing_newdf)
                     else
+                        # allow shortening to 0 rows
+                        if allow_resizing_newdf[] && nrow(newdf) == 1
+                            newdfcols = _columns(newdf)
+                            for (i, col) in enumerate(newdfcols)
+                                newdfcols[i] = fill!(similar(col, nrow(df)), first(col))
+                            end
+                        end
                         newdf[!, newname] = copycols ? df[:, i] : df[!, i]
+                        allow_resizing_newdf[] = false
                     end
                 end
             end
@@ -570,7 +557,8 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                 # but then transformed_cols[newname] must be nothing
                 @assert transformed_cols[newname] === nothing
             else
-                select_transform!(nc, df, newdf, transformed_cols, copycols)
+                select_transform!(nc, df, newdf, transformed_cols, copycols,
+                                  allow_resizing_newdf)
             end
         end
     end
