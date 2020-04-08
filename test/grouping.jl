@@ -806,9 +806,12 @@ end
                         f(d -> (xyz=sum(d.b), xzz=sum(d.c)), gd)
                     @test f(gd, cols2[1] => sum => :xyz, cols2[1] => sum => :xzz) ==
                         f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
-                    @test f(gd, cols2[1] => sum => :xyz, cols2[2] => (x -> first(x)) => :xzz) ==
+                    @test f(gd, cols2[1] => sum => :xyz,
+                            cols2[2] => (x -> first(x)) => :xzz) ==
                         f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
-                    @test_throws ArgumentError f(gd, cols2[1] => vexp => :xyz, cols2[2] => sum => :xzz)
+                    @test f(gd, cols2[1] => vexp => :xyz,
+                            cols2[2] => sum => :xzz) ==
+                        f(d -> (xyz=vexp(d.b), xzz=fill(sum(d.c), length(vexp(d.b)))), gd)
                 end
             end
 
@@ -1833,6 +1836,101 @@ end
               combine(gdf) do sdf
                   (;:res => i*sum(sdf.x1))
               end
+    end
+end
+
+@testset "mixing of different return lengths and pseudo-broadcasting" begin
+    df = DataFrame(g=[1,1,1,2,2]);
+    f1(i) = i[1] == 1 ? ["a", "b"] : ["c"];
+    f2(i) = i[1] == 1 ? ["d"] : ["e", "f"];
+    @test_throws ArgumentError by(df, :g, :g => f1, :g => f2)
+
+    f1(i) = i[1] == 1 ? ["a"] : ["c"];
+    f2(i) = i[1] == 1 ? "d" : "e";
+    @test by(df, :g, :g => f1, :g => f2) ==
+          DataFrame(g=[1,2], g_f1=["a", "c"], g_f2 = ["d", "e"])
+
+    f1(i) = i[1] == 1 ? ["a","c"] : [];
+    f2(i) = i[1] == 1 ? "d" : "e";
+    @test by(df, :g, :g => f1, :g => f2) ==
+          DataFrame(g = [1,1], g_f1 = ["a", "c"], g_f2 = ["d", "d"])
+
+    @test by(df, :g, :g => Ref) == DataFrame(g=[1,2], g_Ref=[[1,1,1], [2,2]])
+    @test by(df, :g, :g => x -> view([x],1)) == DataFrame(g=[1,2], g_function=[[1,1,1], [2,2]])
+
+    Random.seed!(1234)
+    df = DataFrame(g=1:100)
+    for i in 1:10
+        @test by(df, :g, :g => x -> rand([x[1], Ref(x[1]), view(x, 1)])) ==
+              DataFrame(g=1:100, g_function=1:100)
+    end
+
+    df_ref = DataFrame(rand(10, 4))
+    df_ref.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
+
+    for i in 0:nrow(df_ref), dosort in [true, false], dokeepkeys in [true, false]
+        df = df_ref[1:i, :]
+        @test by(df, :g, :x1 => sum => :x1, :x2 => identity => :x2,
+                 :x3 => (x -> Ref(sum(x))) => :x3, nrow, :x4 => ByRow(sin) => :x4,
+                 sort=dosort, keepkeys=dokeepkeys) ==
+              by(df, :g, sort=dosort, keepkeys=dokeepkeys) do sdf
+                  DataFrame(x1 = sum(sdf.x1), x2 = sdf.x2, x3 = sum(sdf.x3),
+                            nrow = nrow(sdf), x4 = sin.(sdf.x4))
+              end
+    end
+end
+
+@testset "passing columns" begin
+    df = DataFrame(rand(10, 4))
+    df.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
+
+    for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
+                     [1, 2, 3, 4], [true, true, true, true, false]]
+        @test by(df, :g, selector, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3) ==
+              by(df, :g) do sdf
+                  DataFrame(x1 = sin.(sdf.x1), x2 = sdf.x2, x3 = sin.(sdf.x2), x4 = sdf.x4)
+              end
+    end
+
+    for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
+                     [1, 2, 3, 4], [true, true, true, true, false]]
+        @test by(df, :g, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, selector) ==
+              by(df, :g) do sdf
+                  DataFrame(x1 = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2, x4 = sdf.x4)
+              end
+    end
+
+    for selector in [Between(:x1, :x3), Not(:x4), [:x1, :x2, :x3], [1, 2, 3],
+                     [true, true, true, false, false]]
+        @test by(df, :g, :x2 => ByRow(sin) => :x3, selector, :x1 => ByRow(sin) => :x1) ==
+              by(df, :g) do sdf
+                  DataFrame(x3 = sin.(sdf.x2), x1 = sin.(sdf.x1), x2 = sdf.x2)
+              end
+    end
+
+    @test by(df, :g, 4, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, :x2) ==
+          by(df, :g) do sdf
+              DataFrame(x4 = sdf.x4, x1 = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2)
+          end
+
+    @test by(df, :g, 4 => :h, :x1 => ByRow(sin) => :z, :x2 => ByRow(sin) => :x3, :x2) ==
+          by(df, :g) do sdf
+              DataFrame(h = sdf.x4, z = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2)
+          end
+
+    @test_throws ArgumentError by(df, :g, 4 => :h, :x1 => ByRow(sin) => :h)
+    @test_throws ArgumentError by(df, :g, :x1 => :x1_sin, :x1 => ByRow(sin))
+    @test_throws ArgumentError by(df, :g, 1, :x1 => ByRow(sin) => :x1)
+end
+
+@testset "correct dropping of groups" begin
+    df = DataFrame(g = 10:-1:1)
+
+    for keep in [[3,2,1], [5,3,1], [9], Int[]]
+        @test by(df, :g, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
+              DataFrame(g=keep, keep=keep, g_function=keep)
+        @test by(df, :g, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[],
+                 sort=true) == sort(DataFrame(g=keep, keep=keep, g_function=keep))
     end
 end
 
