@@ -663,7 +663,7 @@ end
     df = DataFrame(a = [3, missing, 1], b = [100, 200, 300])
     for dosort in (true, false), doskipmissing in (true, false)
         @test aggregate(df, :a, sum, sort=dosort, skipmissing=doskipmissing) ≅
-              aggregate(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), sum)
+              aggregate(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), sum, sort=dosort)
     end
 
     # Check column names

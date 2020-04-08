@@ -247,3 +247,40 @@ Last Group (5 rows): g = 501
 │ 4   │ 501   │ 2504  │
 │ 5   │ 501   │ 2505  │
 ```
+
+In order to apply a function to each non-grouping column ofr a `GroupedDataFrame` you can write:
+```jldoctest sac
+julia> gd = groupby(iris, :Species);
+
+julia> combine(gd, valuecols(gd) .=> mean)
+3×5 DataFrame
+│ Row │ Species         │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
+│     │ String          │ Float64          │ Float64         │ Float64          │ Float64         │
+├─────┼─────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤
+│ 1   │ Iris-setosa     │ 5.006            │ 3.418           │ 1.464            │ 0.244           │
+│ 2   │ Iris-versicolor │ 5.936            │ 2.77            │ 4.26             │ 1.326           │
+│ 3   │ Iris-virginica  │ 6.588            │ 2.974           │ 5.552            │ 2.026           │
+
+julia> combine(gd, valuecols(gd) .=> (x -> (x .- mean(x)) ./ std(x)) .=> valuecols(gd))
+150×5 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-setosa    │ 0.266674    │ 0.215209   │ -0.368852   │ -0.410411  │
+│ 2   │ Iris-setosa    │ -0.300718   │ -1.09704   │ -0.368852   │ -0.410411  │
+│ 3   │ Iris-setosa    │ -0.868111   │ -0.572142  │ -0.945184   │ -0.410411  │
+│ 4   │ Iris-setosa    │ -1.15181    │ -0.834592  │ 0.207479    │ -0.410411  │
+│ 5   │ Iris-setosa    │ -0.0170218  │ 0.47766    │ -0.368852   │ -0.410411  │
+│ 6   │ Iris-setosa    │ 1.11776     │ 1.26501    │ 1.36014     │ 1.45509    │
+│ 7   │ Iris-setosa    │ -1.15181    │ -0.0472411 │ -0.368852   │ 0.522342   │
+⋮
+│ 143 │ Iris-virginica │ -1.23923    │ -0.849621  │ -0.818997   │ -0.458766  │
+│ 144 │ Iris-virginica │ 0.333396    │ 0.700782   │ 0.630555    │ 0.997633   │
+│ 145 │ Iris-virginica │ 0.176134    │ 1.01086    │ 0.268167    │ 1.72583    │
+│ 146 │ Iris-virginica │ 0.176134    │ 0.080621   │ -0.637803   │ 0.997633   │
+│ 147 │ Iris-virginica │ -0.452916   │ -1.46978   │ -1.00019    │ -0.458766  │
+│ 148 │ Iris-virginica │ -0.138391   │ 0.080621   │ -0.637803   │ -0.0946659 │
+│ 149 │ Iris-virginica │ -0.610178   │ 1.32094    │ -0.275415   │ 0.997633   │
+│ 150 │ Iris-virginica │ -1.08197    │ 0.080621   │ -0.818997   │ -0.822865  │
+```
+

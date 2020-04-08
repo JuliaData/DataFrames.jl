@@ -699,6 +699,33 @@ julia> mean(df.A)
 2.5
 ```
 
+We can also apply a `select` function to each column of a `DataFrame`. For example:
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrame
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
+
+julia> select(df, names(df) .=> sum)
+1×2 DataFrame
+│ Row │ A_sum │ B_sum   │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 10    │ 10.0    │
+
+julia> select(df, names(df) .=> sum, names(df) .=> prod)
+1×4 DataFrame
+│ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
+│     │ Int64 │ Float64 │ Int64  │ Float64 │
+├─────┼───────┼─────────┼────────┼─────────┤
+│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │
+```
+
 ### Handling of Columns Stored in a `DataFrame`
 
 Functions that transform a `DataFrame` to produce a

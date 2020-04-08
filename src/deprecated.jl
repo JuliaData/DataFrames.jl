@@ -358,6 +358,8 @@ end
 
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
 
+export aggregate
+
 function aggregate(d::AbstractDataFrame, f::Any; sort::Bool=false)
     df = select(d, names(d) .=> [f])
     if sort
@@ -390,9 +392,9 @@ function aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false)
     df = combine(gd, valuecols(gd) .=> [f])
     if sort
         Base.depwarn("`aggregate` is deprecated. Instead use" *
-                     "sort!(combine(gd, valuecols(gd) .=> f), valuecols(gd))`.",
+                     "sort!(combine(gd, valuecols(gd) .=> f), setdiff(names(df), groupcols(gd)))`.",
                      :aggregate)
-        sort && sort!(df, valuecols(gd))
+        sort!(df, setdiff(names(df), groupcols(gd)))
     else
         Base.depwarn("`aggregate` is deprecated. Instead use" *
                      "combine(gd, [valuecols(gd) .=> f for f in fs]...)`",
@@ -407,8 +409,8 @@ function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
     if sort
         Base.depwarn("`aggregate` is deprecated. Instead" *
                      " use `sort!(combine(gd, [names(gd) .=> f for f in fs]...), `" *
-                     "valuecols(gd)) if functions in `fs` have unique names.", :aggregate)
-        sort && sort!(df, valuecols(gd))
+                     "setdiff(names(df), groupcols(gd))) if functions in `fs` have unique names.", :aggregate)
+        sort!(df, setdiff(names(df), groupcols(gd)))
     else
         Base.depwarn("`aggregate` is deprecated. Instead" *
                      " use `combine(gd, [names(gd) .=> f for f in fs]...)`" *
@@ -424,9 +426,9 @@ function aggregate(d::AbstractDataFrame, cols, f::Any;
     if sort
         Base.depwarn("`aggregate` is deprecated. Instead" *
                      " use `gd=groupby(d, sort=true, skipmissing=$skipmissing); " *
-                     "sort!(combine(gd, valuecols(gd) .=> f), valuecols(gd))`.",
+                     "sort!(combine(gd, valuecols(gd) .=> f), setdiff(names(df), groupcols(gd)))`.",
                      :aggregate)
-        sort && sort!(df, valuecols(gd))
+        sort!(df, setdiff(names(df), groupcols(gd)))
     else
         Base.depwarn("`aggregate` is deprecated. Instead" *
                      " use `gd=groupby(d, skipmissing=$skipmissing); " *
@@ -444,9 +446,9 @@ function aggregate(d::AbstractDataFrame, cols, fs::AbstractVector;
     if sort
         Base.depwarn("`aggregate` is deprecated. Instead" *
                      " use `gd=groupby(d, sort=true, skipmissing=$skipmissing); " *
-                     "sort!(combine(gd, [names(gd) .=> f for f in fs]...), valuecols(gd))`" *
+                     "sort!(combine(gd, [names(gd) .=> f for f in fs]...), setdiff(names(df), groupcols(gd)))`" *
                      " if functions in `fs` have unique names.", :aggregate)
-        sort && sort!(df, valuecols(gd))
+        sort!(df, setdiff(names(df), groupcols(gd)))
     else
         Base.depwarn("`aggregate` is deprecated. Instead" *
                      " use `gd=groupby(d, skipmissing=$skipmissing); " *
