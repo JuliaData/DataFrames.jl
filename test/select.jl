@@ -2,6 +2,8 @@ module TestSelect
 
 using DataFrames, Test, Random
 
+const ≅ = isequal
+
 Random.seed!(1234)
 
 @testset "select! Not" begin
@@ -829,6 +831,153 @@ end
     @test select(sdf, :x1, [:x1], copycols=false) isa SubDataFrame
     @test_throws ArgumentError select(sdf, :x1 => :r1, copycols=false)
     @test_throws ArgumentError select(sdf, :x1 => identity => :r1, copycols=false)
+end
+
+@testset "pseudo-broadcasting" begin
+    df = DataFrame([1 2 3
+                    4 5 6])
+    df2 = DataFrame([1 2 3])
+    df3 = DataFrame(x1=Char[], x2=Int[], x3=Int[])
+    for v in [9, Ref(9), view([9], 1)]
+        @test select(df, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
+              DataFrame([9 1 2 3 6
+                         9 4 5 6 15], [:a, :x1, :x2, :x3, :d])
+        @test select(df, (:) => (+) => :d, :, r"z" => (() -> v)  => :a) ==
+              DataFrame([6  1 2 3 9
+                         15 4 5 6 9], [:d, :x1, :x2, :x3, :a])
+        @test select(df, [] => (() -> v) => :a, :x1 => :b, (:) => (+) => :d) ==
+              DataFrame([9 1 6
+                         9 4 15], [:a, :b, :d])
+        @test select(df, (:) => (+) => :d, :x1 => :b, [] => (() -> v) => :a) ==
+              DataFrame([6  1 9
+                         15 4 9], [:d, :b, :a])
+        @test select(df, [] => (() -> v) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
+              DataFrame([9 1 6
+                         9 4 15], [:a, :b, :d])
+        @test select(df, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
+              DataFrame([6  1 9
+                         15 4 9], [:d, :b, :a])
+        @test select(df2, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
+              DataFrame([9 1 2 3 6], [:a, :x1, :x2, :x3, :d])
+        @test select(df2, (:) => (+) => :d, :, r"z" => (() -> v)  => :a) ==
+              DataFrame([6  1 2 3 9], [:d, :x1, :x2, :x3, :a])
+        @test select(df2, [] => (() -> v) => :a, :x1 => :b, (:) => (+) => :d) ==
+              DataFrame([9 1 6], [:a, :b, :d])
+        @test select(df2, (:) => (+) => :d, :x1 => :b, [] => (() -> v) => :a) ==
+              DataFrame([6  1 9], [:d, :b, :a])
+        @test select(df2, [] => (() -> v) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
+              DataFrame([9 1 6], [:a, :b, :d])
+        @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
+              DataFrame([6  1 9], [:d, :b, :a])
+
+        res = select(df3, [] => (() -> v) => :a, :x1 => x -> [])
+        @test names(res) == [:a, :x1_function] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Int, Any]
+        res = select(df3, :x1 => x -> [], [] => (() -> v) => :a)
+        @test names(res) == [:x1_function, :a] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Any, Int]
+        res = select(df3, [] => (() -> v) => :a, :x1)
+        @test names(res) == [:a, :x1] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Int, Char]
+        res = select(df3, :x1, [] => (() -> v) => :a)
+        @test names(res) == [:x1, :a] && nrow(res) == 0
+        @test eltype.(eachcol(res)) == [Char, Int]
+    end
+    @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
+    @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
+    @test transform(df, names(df) .=> (x -> 9) .=> names(df)) == DataFrame([9 9 9])
+    @test transform(df, names(df) .=> (x -> 9) .=> names(df), :x1 => :x4) ==
+          DataFrame([9 9 9 1; 9 9 9 4])
+    @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3)) == DataFrame([9 9 9])
+    @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3), :x1 => :x4) ==
+          DataFrame(ones(0, 4))
+
+    df = DataFrame(x1=1:2, x2=categorical(1:2),
+                   x3=[missing,2], x4=categorical([missing, 2]))
+
+    df2 = select(df, names(df) .=> first)
+    @test df2 ≅ DataFrame(x1_first=1, x2_first=1, x3_first=missing,
+                          x4_first=missing)
+    @test df2.x1_first isa Vector{Int}
+    @test df2.x2_first isa CategoricalVector{Int}
+    @test df2.x3_first isa Vector{Missing}
+    @test df2.x4_first isa Vector{Missing}
+
+    df2 = select(df, names(df) .=> last)
+    @test df2 ≅ DataFrame(x1_last=2, x2_last=2, x3_last=2,
+                          x4_last=2)
+    @test df2.x1_last isa Vector{Int}
+    @test df2.x2_last isa CategoricalVector{Int}
+    @test df2.x3_last isa Vector{Int}
+    @test df2.x4_last isa CategoricalVector{Int}
+
+    for v in [:x1, :x1 => (x -> x) => :x1]
+        df2 = select(df, names(df) .=> first, v)
+        @test df2 ≅ DataFrame(x1_first=1, x2_first=1, x3_first=missing,
+                              x4_first=missing, x1=[1,2])
+        @test df2.x1_first isa Vector{Int}
+        @test df2.x2_first isa CategoricalVector{Int}
+        @test df2.x3_first isa Vector{Missing}
+        @test df2.x4_first isa Vector{Missing}
+
+
+        df2 = select(df, names(df) .=> last, v)
+        @test df2 ≅ DataFrame(x1_last=2, x2_last=2, x3_last=2,
+                              x4_last=2, x1=[1,2])
+        @test df2.x1_last isa Vector{Int}
+        @test df2.x2_last isa CategoricalVector{Int}
+        @test df2.x3_last isa Vector{Int}
+        @test df2.x4_last isa CategoricalVector{Int}
+
+
+        df2 = select(df, v, names(df) .=> first)
+        @test df2 ≅ DataFrame(x1=[1,2], x1_first=1, x2_first=1, x3_first=missing,
+                              x4_first=missing)
+        @test df2.x1_first isa Vector{Int}
+        @test df2.x2_first isa CategoricalVector{Int}
+        @test df2.x3_first isa Vector{Missing}
+        @test df2.x4_first isa Vector{Missing}
+
+
+        df2 = select(df, v, names(df) .=> last)
+        @test df2 ≅ DataFrame(x1=[1,2], x1_last=2, x2_last=2, x3_last=2,
+                              x4_last=2)
+        @test df2.x1_last isa Vector{Int}
+        @test df2.x2_last isa CategoricalVector{Int}
+        @test df2.x3_last isa Vector{Int}
+        @test df2.x4_last isa CategoricalVector{Int}
+    end
+
+    df2 = select(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
+    @test size(df2) == (0, 5)
+    @test df2.x1_first isa Vector{Int}
+    @test df2.x2_first isa CategoricalVector{Int}
+    @test df2.x3_first isa Vector{Missing}
+    @test df2.x4_first isa Vector{Missing}
+
+
+    df2 = select(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
+    @test size(df2) == (0, 5)
+    @test df2.x1_last isa Vector{Int}
+    @test df2.x2_last isa CategoricalVector{Int}
+    @test df2.x3_last isa Vector{Int}
+    @test df2.x4_last isa CategoricalVector{Int}
+
+
+    df2 = select(df, [] => (() -> Int[]) => :x1, names(df) .=> first)
+    @test size(df2) == (0, 5)
+    @test df2.x1_first isa Vector{Int}
+    @test df2.x2_first isa CategoricalVector{Int}
+    @test df2.x3_first isa Vector{Missing}
+    @test df2.x4_first isa Vector{Missing}
+
+
+    df2 = select(df, [] => (() -> Int[]) => :x1, names(df) .=> last)
+    @test size(df2) == (0, 5)
+    @test df2.x1_last isa Vector{Int}
+    @test df2.x2_last isa CategoricalVector{Int}
+    @test df2.x3_last isa Vector{Int}
+    @test df2.x4_last isa CategoricalVector{Int}
 end
 
 @testset "copycols special cases" begin
