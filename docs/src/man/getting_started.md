@@ -699,7 +699,7 @@ julia> mean(df.A)
 2.5
 ```
 
-We can also apply a `select` function to each column of a `DataFrame`. For example:
+We can also apply a function to each column of a `DataFrame` using `select`. For example:
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame

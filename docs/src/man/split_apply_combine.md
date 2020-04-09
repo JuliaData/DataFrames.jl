@@ -248,7 +248,7 @@ Last Group (5 rows): g = 501
 │ 5   │ 501   │ 2505  │
 ```
 
-In order to apply a function to each non-grouping column ofr a `GroupedDataFrame` you can write:
+In order to apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
 ```jldoctest sac
 julia> gd = groupby(iris, :Species);
 
@@ -283,4 +283,3 @@ julia> combine(gd, valuecols(gd) .=> (x -> (x .- mean(x)) ./ std(x)) .=> valueco
 │ 149 │ Iris-virginica │ -0.610178   │ 1.32094    │ -0.275415   │ 0.997633   │
 │ 150 │ Iris-virginica │ -1.08197    │ 0.080621   │ -0.818997   │ -0.822865  │
 ```
-

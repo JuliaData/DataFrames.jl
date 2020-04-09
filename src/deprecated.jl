@@ -392,12 +392,12 @@ function aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false)
     df = combine(gd, valuecols(gd) .=> [f])
     if sort
         Base.depwarn("`aggregate` is deprecated. Instead use" *
-                     "sort!(combine(gd, valuecols(gd) .=> f), setdiff(names(df), groupcols(gd)))`.",
+                     " `sort!(combine(gd, valuecols(gd) .=> f), setdiff(names(df), groupcols(gd)))`.",
                      :aggregate)
         sort!(df, setdiff(names(df), groupcols(gd)))
     else
         Base.depwarn("`aggregate` is deprecated. Instead use" *
-                     "combine(gd, [valuecols(gd) .=> f for f in fs]...)`",
+                     " `combine(gd, [valuecols(gd) .=> f for f in fs]...)`",
                      :aggregate)
     end
     return df
