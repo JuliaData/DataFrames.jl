@@ -381,8 +381,8 @@ function aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false)
                      "if functions in `fs` have unique names.", :aggregate)
         sort!(df)
     else
-        Base.depwarn("`aggregate` is deprecated. Instead" *
-                     " use `select(d, [names(d) .=> f for f in fs]...)` if functions " *
+        Base.depwarn("`aggregate` is deprecated. Instead use " *
+                     "`select(d, [names(d) .=> f for f in fs]...)` if functions " *
                      "in `fs` have unique names.", :aggregate)
     end
     return df
@@ -392,7 +392,8 @@ function aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false)
     df = combine(gd, valuecols(gd) .=> [f])
     if sort
         Base.depwarn("`aggregate` is deprecated. Instead use" *
-                     " `sort!(combine(gd, valuecols(gd) .=> f), setdiff(names(df), groupcols(gd)))`.",
+                     " `df = combine(gd, valuecols(gd) .=> f); " *
+                     "sort!(df, setdiff(names(df), groupcols(gd)))`.",
                      :aggregate)
         sort!(df, setdiff(names(df), groupcols(gd)))
     else
@@ -407,9 +408,10 @@ function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
     df = hcat([combine(gd, valuecols(gd) .=> [f], keepkeys=i==1) for (i, f) in enumerate(fs)]...,
                        makeunique=true)
     if sort
-        Base.depwarn("`aggregate` is deprecated. Instead" *
-                     " use `sort!(combine(gd, [names(gd) .=> f for f in fs]...), `" *
-                     "setdiff(names(df), groupcols(gd))) if functions in `fs` have unique names.", :aggregate)
+        Base.depwarn("`aggregate` is deprecated. Instead use " *
+                     "`df = combine(gd, [names(gd) .=> f for f in fs]...); "
+                     "sort!(df, setdiff(names(df), groupcols(gd)))`" *
+                     " if functions in `fs` have unique names.", :aggregate)
         sort!(df, setdiff(names(df), groupcols(gd)))
     else
         Base.depwarn("`aggregate` is deprecated. Instead" *
