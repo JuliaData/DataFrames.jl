@@ -96,6 +96,7 @@ struct DataFrame <: AbstractDataFrame
     columns::Vector{AbstractVector}
     colindex::Index
 
+    # the inner constructor should not be used directly
     function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
                        colindex::Index; copycols::Bool=true)
         if length(columns) == length(colindex) == 0
@@ -104,37 +105,44 @@ struct DataFrame <: AbstractDataFrame
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
         end
-        lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
-        minlen, maxlen = extrema(lengths)
-        if minlen != maxlen || minlen == maxlen == 1
-            # recycle scalars
-            for (i, col) in enumerate(columns)
-                if col isa Union{AbstractArray{<:Any, 0}, Ref}
-                    x = col[]
-                    columns[i] = fill!(Tables.allocatecolumn(typeof(x), maxlen), x)
-                    lengths[i] = maxlen
-                elseif !(col isa AbstractArray)
-                    columns[i] = fill!(Tables.allocatecolumn(typeof(col), maxlen), col)
-                    lengths[i] = maxlen
+
+        len = -1
+        firstvec = -1
+        for (i, col) in enumerate(columns)
+            if col isa AbstractVector
+                if len == -1
+                    len = length(col)
+                    firstvec = i
+                elseif len != length(col)
+                    n1 = _names(colindex)[firstvec]
+                    n2 = _names(colindex)[i]
+                    throw(DimensionMismatch("column :$n1 has length $len and column " *
+                                            ":$n2 has length $(length(col))"))
                 end
             end
-            uls = unique(lengths)
-            if length(uls) != 1
-                strnames = string.(names(colindex))
-                estrings = ["column length $u for column(s) " *
-                            join(strnames[lengths .== u], ", ", " and ") for (i, u) in enumerate(uls)]
-                throw(DimensionMismatch(join(estrings, " is incompatible with ", ", and is incompatible with ")))
+        end
+        len == -1 && (len = 1) # we got no vectors so make one row of scalars
+
+        # we write into columns as we know that it is guaranteed
+        # that it was freshly allocated in the outer constructor
+        for (i, col) in enumerate(columns)
+            # check for vectors first as they are most common
+            if col isa AbstractRange
+                columns[i] = collect(col)
+            elseif col isa AbstractVector
+                columns[i] = copycols ? copy(col) : col
+            elseif col isa Union{AbstractArray{<:Any, 0}, Ref}
+                x = col[]
+                columns[i] = fill!(Tables.allocatecolumn(typeof(x), len), x)
+            else
+                if col isa AbstractArray
+                    throw(ArgumentError("adding AbstractArray other than AbstractVector" *
+                                        " as a column of a data frame is not allowed"))
+                end
+                columns[i] = fill!(Tables.allocatecolumn(typeof(col), len), col)
             end
         end
-        for (i, c) in enumerate(columns)
-            if isa(c, AbstractRange)
-                columns[i] = collect(c)
-            elseif !isa(c, AbstractVector)
-                throw(DimensionMismatch("columns must be 1-dimensional"))
-            elseif copycols
-                columns[i] = copy(c)
-            end
-        end
+
         new(convert(Vector{AbstractVector}, columns), colindex)
     end
 end
@@ -187,18 +195,17 @@ function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
     if !all(col -> isa(col, AbstractVector), columns)
         throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
     end
-    return DataFrame(convert(Vector{AbstractVector}, columns),
+    return DataFrame(collect(AbstractVector, columns),
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
                      copycols=copycols)
 end
 
-function DataFrame(columns::AbstractVector{<:AbstractVector},
-                   cnames::AbstractVector{Symbol}=gennames(length(columns));
-                   makeunique::Bool=false, copycols::Bool=true)::DataFrame
-    return DataFrame(convert(Vector{AbstractVector}, columns),
-                     Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycols=copycols)
-end
+DataFrame(columns::AbstractVector{<:AbstractVector},
+          cnames::AbstractVector{Symbol}=gennames(length(columns));
+          makeunique::Bool=false, copycols::Bool=true)::DataFrame =
+    DataFrame(collect(AbstractVector, columns),
+              Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
+              copycols=copycols)
 
 DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
           makeunique::Bool=false, copycols::Bool=true) where {N} =
@@ -681,9 +688,9 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
                                             "a data frame must have the same length"))
                 end
             end
-        elseif v isa AbstractArray && ndims(v) > 0
-            throw(ArgumentError("adding AbstractArray other than AbstractVector as a column " *
-                                "of a data frame is not allowed"))
+        elseif v isa AbstractArray && ndims(v) > 1
+            throw(ArgumentError("adding AbstractArray other than AbstractVector as " *
+                                "a column of a data frame is not allowed"))
         end
     end
     if target_row_count == -1
@@ -1112,7 +1119,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
     end
 
     if ncol(df1) == 0
-        for (n, v) in eachcol(df2, true)
+        for (n, v) in pairs(eachcol(df2))
             df1[!, n] = copy(v) # make sure df1 does not reuse df2
         end
         return df1

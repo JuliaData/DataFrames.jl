@@ -35,27 +35,27 @@ julia> d = stack(iris, 1:4);
 
 julia> first(d, 6)
 6×3 DataFrame
-│ Row │ variable    │ value   │ Species     │
-│     │ Cat…        │ Float64 │ String      │
-├─────┼─────────────┼─────────┼─────────────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
 julia> last(d, 6)
 6×3 DataFrame
-│ Row │ variable   │ value   │ Species        │
-│     │ Cat…       │ Float64 │ String         │
-├─────┼────────────┼─────────┼────────────────┤
-│ 1   │ PetalWidth │ 2.5     │ Iris-virginica │
-│ 2   │ PetalWidth │ 2.3     │ Iris-virginica │
-│ 3   │ PetalWidth │ 1.9     │ Iris-virginica │
-│ 4   │ PetalWidth │ 2.0     │ Iris-virginica │
-│ 5   │ PetalWidth │ 2.3     │ Iris-virginica │
-│ 6   │ PetalWidth │ 1.8     │ Iris-virginica │
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ PetalWidth │ 1.8     │
 ```
 
 The second optional argument to `stack` indicates the columns to be stacked. These are normally referred to as the measured variables. Column names can also be given:
@@ -65,27 +65,27 @@ julia> d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth]);
 
 julia> first(d, 6)
 6×3 DataFrame
-│ Row │ variable    │ value   │ Species     │
-│     │ Cat…        │ Float64 │ String      │
-├─────┼─────────────┼─────────┼─────────────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
 julia> last(d, 6)
 6×3 DataFrame
-│ Row │ variable   │ value   │ Species        │
-│     │ Cat…       │ Float64 │ String         │
-├─────┼────────────┼─────────┼────────────────┤
-│ 1   │ PetalWidth │ 2.5     │ Iris-virginica │
-│ 2   │ PetalWidth │ 2.3     │ Iris-virginica │
-│ 3   │ PetalWidth │ 1.9     │ Iris-virginica │
-│ 4   │ PetalWidth │ 2.0     │ Iris-virginica │
-│ 5   │ PetalWidth │ 2.3     │ Iris-virginica │
-│ 6   │ PetalWidth │ 1.8     │ Iris-virginica │
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ PetalWidth │ 1.8     │
 ```
 
 Note that all columns can be of different types. Type promotion follows the rules of `vcat`.
@@ -99,27 +99,27 @@ julia> d = stack(iris, [:SepalLength, :SepalWidth], :Species);
 
 julia> first(d, 6)
 6×3 DataFrame
-│ Row │ variable    │ value   │ Species     │
-│     │ Cat…        │ Float64 │ String      │
-├─────┼─────────────┼─────────┼─────────────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
 julia> last(d, 6)
 6×3 DataFrame
-│ Row │ variable   │ value   │ Species        │
-│     │ Cat…       │ Float64 │ String         │
-├─────┼────────────┼─────────┼────────────────┤
-│ 1   │ SepalWidth │ 3.3     │ Iris-virginica │
-│ 2   │ SepalWidth │ 3.0     │ Iris-virginica │
-│ 3   │ SepalWidth │ 2.5     │ Iris-virginica │
-│ 4   │ SepalWidth │ 3.0     │ Iris-virginica │
-│ 5   │ SepalWidth │ 3.4     │ Iris-virginica │
-│ 6   │ SepalWidth │ 3.0     │ Iris-virginica │
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ SepalWidth │ 3.3     │
+│ 2   │ Iris-virginica │ SepalWidth │ 3.0     │
+│ 3   │ Iris-virginica │ SepalWidth │ 2.5     │
+│ 4   │ Iris-virginica │ SepalWidth │ 3.0     │
+│ 5   │ Iris-virginica │ SepalWidth │ 3.4     │
+│ 6   │ Iris-virginica │ SepalWidth │ 3.0     │
 ```
 
 If you prefer to specify the id columns then use `Not` with `stack` like this:
@@ -129,27 +129,27 @@ julia> d = stack(iris, Not(:Species));
 
 julia> first(d, 6)
 6×3 DataFrame
-│ Row │ variable    │ value   │ Species     │
-│     │ Cat…        │ Float64 │ String      │
-├─────┼─────────────┼─────────┼─────────────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
 julia> last(d, 6)
 6×3 DataFrame
-│ Row │ variable   │ value   │ Species        │
-│     │ Cat…       │ Float64 │ String         │
-├─────┼────────────┼─────────┼────────────────┤
-│ 1   │ PetalWidth │ 2.5     │ Iris-virginica │
-│ 2   │ PetalWidth │ 2.3     │ Iris-virginica │
-│ 3   │ PetalWidth │ 1.9     │ Iris-virginica │
-│ 4   │ PetalWidth │ 2.0     │ Iris-virginica │
-│ 5   │ PetalWidth │ 2.3     │ Iris-virginica │
-│ 6   │ PetalWidth │ 1.8     │ Iris-virginica │
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ PetalWidth │ 1.8     │
 ```
 
 `unstack` converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:
@@ -162,27 +162,27 @@ julia> longdf = stack(iris, Not([:Species, :id]));
 
 julia> first(longdf, 6)
 6×4 DataFrame
-│ Row │ variable    │ value   │ Species     │ id    │
-│     │ Cat…        │ Float64 │ String      │ Int64 │
-├─────┼─────────────┼─────────┼─────────────┼───────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │ 1     │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │ 2     │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │ 3     │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │ 4     │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │ 5     │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │ 6     │
+│ Row │ Species     │ id    │ variable    │ value   │
+│     │ String      │ Int64 │ Cat…        │ Float64 │
+├─────┼─────────────┼───────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ 1     │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ 2     │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ 3     │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ 4     │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ 5     │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ 6     │ SepalLength │ 5.4     │
 
 julia> last(longdf, 6)
 6×4 DataFrame
-│ Row │ variable   │ value   │ Species        │ id    │
-│     │ Cat…       │ Float64 │ String         │ Int64 │
-├─────┼────────────┼─────────┼────────────────┼───────┤
-│ 1   │ PetalWidth │ 2.5     │ Iris-virginica │ 145   │
-│ 2   │ PetalWidth │ 2.3     │ Iris-virginica │ 146   │
-│ 3   │ PetalWidth │ 1.9     │ Iris-virginica │ 147   │
-│ 4   │ PetalWidth │ 2.0     │ Iris-virginica │ 148   │
-│ 5   │ PetalWidth │ 2.3     │ Iris-virginica │ 149   │
-│ 6   │ PetalWidth │ 1.8     │ Iris-virginica │ 150   │
+│ Row │ Species        │ id    │ variable   │ value   │
+│     │ String         │ Int64 │ Cat…       │ Float64 │
+├─────┼────────────────┼───────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ 145   │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ 146   │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ 147   │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ 148   │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ 149   │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ 150   │ PetalWidth │ 1.8     │
 
 julia> widedf = unstack(longdf, :id, :variable, :value);
 
@@ -218,27 +218,27 @@ julia> longdf = stack(iris, Not([:Species, :id]));
 
 julia> first(longdf, 6)
 6×4 DataFrame
-│ Row │ variable    │ value   │ Species     │ id    │
-│     │ Cat…        │ Float64 │ String      │ Int64 │
-├─────┼─────────────┼─────────┼─────────────┼───────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │ 1     │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │ 2     │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │ 3     │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │ 4     │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │ 5     │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │ 6     │
+│ Row │ Species     │ id    │ variable    │ value   │
+│     │ String      │ Int64 │ Cat…        │ Float64 │
+├─────┼─────────────┼───────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ 1     │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ 2     │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ 3     │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ 4     │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ 5     │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ 6     │ SepalLength │ 5.4     │
 
 julia> last(longdf, 6)
 6×4 DataFrame
-│ Row │ variable   │ value   │ Species        │ id    │
-│     │ Cat…       │ Float64 │ String         │ Int64 │
-├─────┼────────────┼─────────┼────────────────┼───────┤
-│ 1   │ PetalWidth │ 2.5     │ Iris-virginica │ 145   │
-│ 2   │ PetalWidth │ 2.3     │ Iris-virginica │ 146   │
-│ 3   │ PetalWidth │ 1.9     │ Iris-virginica │ 147   │
-│ 4   │ PetalWidth │ 2.0     │ Iris-virginica │ 148   │
-│ 5   │ PetalWidth │ 2.3     │ Iris-virginica │ 149   │
-│ 6   │ PetalWidth │ 1.8     │ Iris-virginica │ 150   │
+│ Row │ Species        │ id    │ variable   │ value   │
+│     │ String         │ Int64 │ Cat…       │ Float64 │
+├─────┼────────────────┼───────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ 145   │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ 146   │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ 147   │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ 148   │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ 149   │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ 150   │ PetalWidth │ 1.8     │
 
 julia> widedf = unstack(longdf, :variable, :value);
 
@@ -303,27 +303,27 @@ julia> d = stack(iris, view=true);
 
 julia> first(d, 6)
 6×4 DataFrame
-│ Row │ variable    │ value │ Species     │ id    │
-│     │ Cat…        │ Any   │ String      │ Int64 │
-├─────┼─────────────┼───────┼─────────────┼───────┤
-│ 1   │ SepalLength │ 5.1   │ Iris-setosa │ 1     │
-│ 2   │ SepalLength │ 4.9   │ Iris-setosa │ 2     │
-│ 3   │ SepalLength │ 4.7   │ Iris-setosa │ 3     │
-│ 4   │ SepalLength │ 4.6   │ Iris-setosa │ 4     │
-│ 5   │ SepalLength │ 5.0   │ Iris-setosa │ 5     │
-│ 6   │ SepalLength │ 5.4   │ Iris-setosa │ 6     │
+│ Row │ Species     │ id    │ variable    │ value   │
+│     │ String      │ Int64 │ Cat…        │ Float64 │
+├─────┼─────────────┼───────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ 1     │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ 2     │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ 3     │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ 4     │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ 5     │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ 6     │ SepalLength │ 5.4     │
 
 julia> last(d, 6)
 6×4 DataFrame
-│ Row │ variable   │ value │ Species        │ id    │
-│     │ Cat…       │ Any   │ String         │ Int64 │
-├─────┼────────────┼───────┼────────────────┼───────┤
-│ 1   │ PetalWidth │ 2.5   │ Iris-virginica │ 145   │
-│ 2   │ PetalWidth │ 2.3   │ Iris-virginica │ 146   │
-│ 3   │ PetalWidth │ 1.9   │ Iris-virginica │ 147   │
-│ 4   │ PetalWidth │ 2.0   │ Iris-virginica │ 148   │
-│ 5   │ PetalWidth │ 2.3   │ Iris-virginica │ 149   │
-│ 6   │ PetalWidth │ 1.8   │ Iris-virginica │ 150   │
+│ Row │ Species        │ id    │ variable   │ value   │
+│     │ String         │ Int64 │ Cat…       │ Float64 │
+├─────┼────────────────┼───────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ 145   │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ 146   │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ 147   │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ 148   │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ 149   │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ 150   │ PetalWidth │ 1.8     │
 ```
 
 This saves memory. To create the view, several `AbstractVector`s are defined:
@@ -346,17 +346,17 @@ julia> d = stack(iris, Not(:Species));
 
 julia> first(d, 6)
 6×3 DataFrame
-│ Row │ variable    │ value   │ Species     │
-│     │ Cat…        │ Float64 │ String      │
-├─────┼─────────────┼─────────┼─────────────┤
-│ 1   │ SepalLength │ 5.1     │ Iris-setosa │
-│ 2   │ SepalLength │ 4.9     │ Iris-setosa │
-│ 3   │ SepalLength │ 4.7     │ Iris-setosa │
-│ 4   │ SepalLength │ 4.6     │ Iris-setosa │
-│ 5   │ SepalLength │ 5.0     │ Iris-setosa │
-│ 6   │ SepalLength │ 5.4     │ Iris-setosa │
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
-julia> x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df.value)));
+julia> x = by(d, [:variable, :Species], :value => mean => :vsum);
 
 julia> first(x, 6)
 │ Row │ variable    │ Species         │ vsum    │
