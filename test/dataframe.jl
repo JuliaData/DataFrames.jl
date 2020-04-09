@@ -718,8 +718,140 @@ end
     @test_throws ArgumentError append!(df, Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, OrderedDict(:B => 3:4, :A => [3.0, 4.0]), cols=:orderequal)
-    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:intersect)
+    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:xxx)
     @test df == DataFrame(A = 1:2, B = 1:2)
+end
+
+@testset "append! default options" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    df1 = DataFrame(x=1:3, y=1:3)
+    df2 = DataFrame(y=4:6, x=1:3)
+    append!(df1, df2)
+    @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+
+    df2 = DataFrame(y=4:6, x=1:3, z=1)
+    @test_throws ArgumentError append!(df1, df2)
+    @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+
+    df2 = DataFrame(y=4:6, x=[missing, missing, missing])
+    with_logger(sl) do
+        @test_throws MethodError append!(df1, df2)
+    end
+    @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+
+    df2 = DataFrame(x=[missing, missing, missing], y=4:6)
+    for cols in (:orderequal, :intersect)
+        with_logger(sl) do
+            @test_throws MethodError append!(df1, df2, cols=cols)
+        end
+        @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+    end
+
+    for cols in (:subset, :union)
+        df1 = DataFrame(x=1:3, y=1:3)
+        df2 = DataFrame(y=4:6)
+        append!(df1, df2, cols=cols)
+        @test df1 ≅ DataFrame(x=[1:3;missing; missing; missing], y=1:6)
+    end
+end
+
+@testset "append! advanced options" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    for cols in (:orderequal, :setequal, :intersect, :subset, :union)
+        for promote in (true, false)
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=4:6)
+            append!(df1, df2, cols=cols, promote=promote)
+            @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+            @test eltype(df1.x) == Int
+            @test eltype(df1.y) == Int
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(y=4:6, x=1:3)
+            if cols == :orderequal
+                @test_throws ArgumentError append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            else
+                append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+            end
+
+            df1 = DataFrame()
+            df1.x = 1:3
+            df1.y = df1.x
+            df2 = DataFrame(x=1:3, y=4:6)
+            with_logger(sl) do
+                @test_throws AssertionError append!(df1, df2, cols=cols, promote=promote)
+            end
+            @test df1 == DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(y=4:6, x=1:3)
+            with_logger(sl) do
+                @test_throws (cols==:orderequal ? ArgumentError :
+                              AssertionError) append!(df1, df2, cols=cols, promote=promote)
+            end
+            @test df1 == DataFrame(x=1:3, y=1:3)
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=4:6, z=11:13)
+            if cols in [:orderequal, :setequal]
+                @test_throws ArgumentError append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            elseif cols == :union
+                append!(df1, df2, cols=cols, promote=promote)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=1:6,
+                                      z=[missing; missing; missing; 11:13])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+                @test eltype(df1.z) == Union{Missing,Int}
+            else
+                append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+            end
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=[missing, missing, missing])
+            if promote
+                append!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing,Int}
+            else
+                with_logger(sl) do
+                    @test_throws MethodError append!(df1, df2, cols=cols, promote=promote)
+                end
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            end
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, z=11:13)
+            if !promote || cols in [:orderequal, :setequal, :intersect]
+                with_logger(sl) do
+                    @test_throws ArgumentError append!(df1, df2, cols=cols, promote=promote)
+                end
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            elseif cols == :union
+                append!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing],
+                                      z=[missing; missing; missing; 11:13])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing,Int}
+                @test eltype(df1.z) == Union{Missing,Int}
+            else
+                append!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing,Int}
+            end
+        end
+    end
 end
 
 @testset "test categorical!" begin
