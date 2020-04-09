@@ -397,7 +397,7 @@ function aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false)
                      :aggregate)
         sort!(df, setdiff(names(df), groupcols(gd)))
     else
-        Base.depwarn("`aggregate` is deprecated. Instead use" *
+        Base.depwarn("`aggregate(gd, fs, sort=$sort)` is deprecated. Instead use" *
                      " `combine(gd, [valuecols(gd) .=> f for f in fs]...)`",
                      :aggregate)
     end
