@@ -261,7 +261,7 @@ end
 
 #### Convert cols from tuple to Array, if necessary
 function ordering(df::AbstractDataFrame, cols::Tuple, args...)
-    Base.depwarn("Passing a tuple $cols of column selectors when sorting data ." *
+    Base.depwarn("Passing a tuple $cols of column selectors when sorting data " *
                  "frame is deprecated. Pass a vector $([cols...]) instead.", :ordering)
     return ordering(df, [cols...], args...)
 end
@@ -306,7 +306,7 @@ end
 
 Test whether data frame `df` sorted by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index,
-a vector of such indices, `All`, `Not`, `Between`, `:`, or `Regex`.
+a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
@@ -315,7 +315,7 @@ See other methods for a description of other keyword arguments.
 """
 function Base.issorted(df::AbstractDataFrame, cols=[];
                        lt=isless, by=identity, rev=false, order=Forward)
-    if cols isa Union{All, Not, Between, Colon, Regex}
+    if cols isa Union{Colon, All, Not, Between, Regex}
         cols = index(df)[cols]
     end
     if cols isa ColumnIndex
@@ -354,7 +354,7 @@ end
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a vector of such indices, 'All', `Not`, `Between`, `:`, or `Regex`.
+a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending

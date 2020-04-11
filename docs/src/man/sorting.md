@@ -127,8 +127,8 @@ julia> last(iris, 4)
 
 Keywords used above include `rev` (to sort in reverse),
 and `by` (to apply a function to values before comparing them).
-Each keyword can either be a single value, a vector,
-with values corresponding to individual columns or a selector: `All`, `Between`, `Not`, `:`, or `Regex`.
+Each keyword can either be a single value, a vector with values corresponding to
+individual columns, or a selector: `:`, `All`, `Between`, `Not`, or `Regex`.
 
 As an alternative to using a vector values you can use `order` to specify
 an ordering for a particular column within a set of columns.

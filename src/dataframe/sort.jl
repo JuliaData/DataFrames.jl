@@ -6,7 +6,7 @@
 
 Sort data frame `df` by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a vector of such indices, 'All', `Not`, `Between`, `:`, or `Regex`.
+a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -75,7 +75,7 @@ function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
         msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
         throw(ArgumentError(msg))
     end
-    if cols isa Union{All, Not, Between, Colon, Regex}
+    if cols isa Union{Colon, All, Not, Between, Regex}
         cols = index(df)[cols]
     end
     ord = ordering(df, cols, lt, by, rev, order)
