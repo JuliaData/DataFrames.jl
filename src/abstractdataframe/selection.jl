@@ -22,9 +22,20 @@ struct ByRow{T}
     fun::T
 end
 
+"""
+    AsTable
+
+A type used for selection operations to signal that the columns selected by a wrapped
+selector should be passed as a `NamedTuple` to the function.
+"""
+struct AsTable
+    colselector
+end
+
 Base.broadcastable(x::ByRow) = Ref(x)
 
 (f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)
+(f::ByRow)(table::NamedTuple) = f.fun.(Tables.namedtupleiterator(table))
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
@@ -59,7 +70,13 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
-    rawc = first(sel)
+    if first(sel) isa AsTable
+        rawc = first(sel).colselector
+        wanttable = true
+    else
+        rawc = first(sel)
+        wanttable = false
+    end
     if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa AbstractVector{Symbol}
@@ -79,7 +96,7 @@ function normalize_selection(idx::AbstractIndex,
         throw(ArgumentError("at least one column must be passed to a " *
                             "`ByRow` transformation function"))
     end
-    return c => last(sel)
+    return (wanttable ? AsTable(c) : c) => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex,
@@ -92,7 +109,13 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
-    rawc = first(sel)
+    if first(sel) isa AsTable
+        rawc = first(sel).colselector
+        wanttable = true
+    else
+        rawc = first(sel)
+        wanttable = false
+    end
     if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa AbstractVector{Symbol}
@@ -120,10 +143,10 @@ function normalize_selection(idx::AbstractIndex,
     else
         newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
     end
-    return c => fun => newcol
+    return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
+function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool,
@@ -136,8 +159,11 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
     cdf = eachcol(df)
     if col_idx isa Int
         res = fun(df[!, col_idx])
+    elseif col_idx isa AsTable
+        res = fun(Tables.columntable(select(df, col_idx.colselector, copycols=false)))
     else
         # it should be fast enough here as we do not expect to do it millions of times
+        @assert col_idx isa AbstractVector{Int}
         res = fun(map(c -> cdf[c], col_idx)...)
     end
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}

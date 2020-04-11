@@ -52,6 +52,9 @@ but they are columns of a `DataFrame` returned by `stack` with `view=true`.
 The `ByRow` type is a special type used for selection operations to signal that the wrapped function should be applied
 to each element (row) of the selection.
 
+The `AsTable` type is a special type used for selection operations to signal that the columns selected by a wrapped
+selector should be passed as a `NamedTuple` to the function.
+
 ## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
 
 When a `DataFrame` is constructed columns are copied by default. You can disable

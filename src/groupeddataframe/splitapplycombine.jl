@@ -779,6 +779,13 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
     f(map(c -> view(c, idx), incols)...)
 end
 
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(map(c -> view(c, idx), incols))
+end
+
 do_call(f::Any, idx::AbstractVector{<:Integer},
         starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
         gd::GroupedDataFrame, incols::Nothing, i::Integer) = f(gd[i])
@@ -1064,6 +1071,10 @@ function _combine(f::AbstractVector{<:Pair},
         else
             if source_cols isa Int
                 incols = (parentdf[!, source_cols],)
+            elseif source_cols isa AsTable
+                incols = Tables.columntable(select(parentdf,
+                                                   source_cols.colselector,
+                                                   copycols=false))
             else
                 @assert source_cols isa AbstractVector{Int}
                 incols = ntuple(i -> parentdf[!, source_cols[i]], length(source_cols))
@@ -1139,6 +1150,10 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     parentdf = parent(gd)
     if source_cols isa Int
         incols = (parent(gd)[!, source_cols],)
+    elseif source_cols isa AsTable
+        incols = Tables.columntable(select(parentdf,
+                                           source_cols.colselector,
+                                           copycols=false))
     else
         @assert source_cols isa AbstractVector{Int}
         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
@@ -1160,7 +1175,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
 end
 
 function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
-                           incols::Union{Nothing, AbstractVector, Tuple})
+                           incols::Union{Nothing, AbstractVector, Tuple, NamedTuple})
     firstmulticol = firstres isa MULTI_COLS_TYPE
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
@@ -1175,7 +1190,7 @@ end
 
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
-                             incols::Union{Nothing, AbstractVector, Tuple},
+                             incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                              firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
     extrude = false
 
@@ -1251,7 +1266,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    rowstart::Integer, colstart::Integer,
                                    f::Any, gd::GroupedDataFrame,
-                                   incols::Union{Nothing, AbstractVector, Tuple},
+                                   incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                    colnames::NTuple{N, Symbol},
                                    firstmulticol::Val) where N
     len = length(gd)
@@ -1333,7 +1348,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      outcols::NTuple{N, AbstractVector},
                                      idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                      f::Any, gd::GroupedDataFrame,
-                                     incols::Union{Nothing, AbstractVector, Tuple},
+                                     incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                      colnames::NTuple{N, Symbol},
                                      firstmulticol::Val) where N
     len = length(gd)
