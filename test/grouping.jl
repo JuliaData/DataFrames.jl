@@ -1934,4 +1934,37 @@ end
     end
 end
 
+@testset "AsTable tests" begin
+    df = DataFrame(g=[1,1,1,2,2], x=1:5, y=6:10)
+    gdf = groupby(df, :g)
+
+    # whole column 4 options of single pair passed
+    @test by(df, :g , AsTable([:x, :y]) => Ref) ==
+          by(AsTable([:x, :y]) => Ref, df, :g) ==
+          combine(gdf , AsTable([:x, :y]) => Ref) ==
+          combine(AsTable([:x, :y]) => Ref, gdf) ==
+          DataFrame(g=1:2, x_y_Ref=[(x=[1,2,3], y=[6,7,8]), (x=[4,5], y=[9,10])])
+    @test map(AsTable([:x, :y]) => Ref, gdf) ==
+          groupby(by(df, :g , AsTable([:x, :y]) => Ref), :g)
+
+    # RyRow 4 options of single pair passed
+    @test by(df, :g, AsTable([:x, :y]) => ByRow(identity)) ==
+          by(AsTable([:x, :y]) => ByRow(identity), df, :g) ==
+          combine(gdf, AsTable([:x, :y]) => ByRow(identity)) ==
+          combine(AsTable([:x, :y]) => ByRow(identity), gdf) ==
+          DataFrame(g=[1,1,1,2,2],
+                    x_y_identity=[(x=1,y=6), (x=2,y=7), (x=3,y=8), (x=4,y=9), (x=5,y=10)])
+    @test map(AsTable([:x, :y]) => ByRow(identity), gdf) ==
+          groupby(by(df, :g, AsTable([:x, :y]) => ByRow(identity)), :g)
+
+    # whole column and ByRow test for multiple pairs passed
+    @test by(df, :g, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
+          combine(gdf, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
+          [df DataFrame(x_function=-df.x, y_function=-df.y)]
+    @test by(df, :g, [:x, :y], [AsTable(v) => ByRow(x -> (n=-x[1],)) for v in [:x, :y]]) ==
+          combine(gdf, [:x, :y], [AsTable(v) => ByRow(x -> (n=-x[1],)) for v in [:x, :y]]) ==
+          [df DataFrame(x_function=[(n=-1,), (n=-2,) ,(n=-3,) ,(n=-4,) ,(n=-5,)],
+                        y_function=[(n=-6,), (n=-7,) ,(n=-8,) ,(n=-9,) ,(n=-10,)])]
+end
+
 end # module
