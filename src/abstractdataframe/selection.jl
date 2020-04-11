@@ -17,6 +17,31 @@
 
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
+
+Note that `ByRow` always wraps retun values of `fun` into a vector.
+For example observe the difference between the return value of these two example
+calls of the `by` function:
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> by(df, :a , AsTable(:) => ByRow(identity))
+3×2 DataFrame
+│ Row │ a     │ a_b_identity   │
+│     │ Int64 │ NamedTuple…    │
+├─────┼───────┼────────────────┤
+│ 1   │ 1     │ (a = 1, b = 4) │
+│ 2   │ 2     │ (a = 2, b = 5) │
+│ 3   │ 3     │ (a = 3, b = 6) │
+
+julia> by(df, :a , AsTable(:) => identity)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+```
 """
 struct ByRow{T}
     fun::T
@@ -181,7 +206,8 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         allow_resizing_newdf[] = false
         respar = parent(res)
         if copycols && !(fun isa ByRow) &&
-            (res isa SubArray || any(i -> respar === parent(cdf[i]), col_idx))
+            (res isa SubArray || any(i -> respar === parent(cdf[i]),
+                col_idx isa AsTable ? col_idx.colselector : col_idx))
             newdf[!, newname] = copy(res)
         else
             newdf[!, newname] = res
@@ -214,6 +240,8 @@ SELECT_ARG_RULES =
     is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
     Otherwise `old_column` can be any column indexing syntax, in which case `fun`
     will be passed the column vectors specified by `old_column` as separate arguments.
+    Additionally if `old_column` is an `AsTable` type wrapping a column selection argument,
+    then `fun` is passed a `NamedTuple` containing the selected columns.
     If `fun` returns a value of type other than `AbstractVector` then it will be broadcasted
     into a vector matching the target number of rows in the data frame,
     unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
@@ -227,7 +255,9 @@ SELECT_ARG_RULES =
     to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
     any column indexing syntax, in which case `fun` will be passed one argument for each of
     the columns specified by `old_column`. If `ByRow` is used it is not allowed for
-    `old_column` to select an empty set of columns.
+    `old_column` to select an empty set of columns. Note that if a function is wrapped
+    by `ByRow` then there are no restrictions on its return values and they are stored as
+    freshly allocated vector having number of elements equal to `nrow(df)`.
 
     Column transformation can also be specified using the short `old_column => fun` form.
     In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
@@ -313,6 +343,17 @@ julia> df
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> select!(df, AsTable(:) => ByRow(x -> map(x -> x^2, x)))
+3×1 DataFrame
+│ Row │ a_b_function    │
+│     │ NamedTuple…     │
+├─────┼─────────────────┤
+│ 1   │ (a = 1, b = 16) │
+│ 2   │ (a = 4, b = 25) │
+│ 3   │ (a = 9, b = 36) │
 ```
 
 """
@@ -469,6 +510,15 @@ julia> select(df, names(df) .=> sum .=> [:A, :B])
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+
+julia> select(df, AsTable(:) => ByRow(x -> map(x -> x^2, x)))
+3×1 DataFrame
+│ Row │ a_b_function    │
+│     │ NamedTuple…     │
+├─────┼─────────────────┤
+│ 1   │ (a = 1, b = 16) │
+│ 2   │ (a = 4, b = 25) │
+│ 3   │ (a = 9, b = 36) │
 ```
 
 """

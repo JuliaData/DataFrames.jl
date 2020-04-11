@@ -634,7 +634,7 @@ julia> df
 ```
 
 `transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
-they retain all columns that are present in the source data frame, for example:
+they retain all columns that are present in the source data frame. Here are some more advanced examples:
 
 ```jldoctest dataframe
 julia> df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
@@ -652,6 +652,14 @@ julia> transform(df, All() => +)
 ├─────┼───────┼───────┼───────┼───────────┤
 │ 1   │ 1     │ 3     │ 5     │ 9         │
 │ 2   │ 2     │ 4     │ 6     │ 12        │
+
+julia> transform(df, AsTable(:) => ByRow(identity))
+2×4 DataFrame
+│ Row │ x1    │ x2    │ y     │ x1_x2_y_identity        │
+│     │ Int64 │ Int64 │ Int64 │ NamedTuple…             │
+├─────┼───────┼───────┼───────┼─────────────────────────┤
+│ 1   │ 1     │ 3     │ 5     │ (x1 = 1, x2 = 3, y = 5) │
+│ 2   │ 2     │ 4     │ 6     │ (x1 = 2, x2 = 4, y = 6) │
 ```
 
 While the DataFrames package provides basic data manipulation capabilities,

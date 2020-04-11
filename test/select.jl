@@ -1067,4 +1067,30 @@ end
     end
 end
 
+@testset "AsTable tests" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    @test select(df, AsTable(:) => sum) ==
+          DataFrame(a_b_c_sum=map(sum, eachrow(df)))
+    @test transform(df, AsTable(:) => sum) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_sum=map(sum, eachrow(df)))
+    @test select(df, AsTable(:) => sum ∘ sum) ==
+          DataFrame(a_b_c_function=45)
+    @test transform(df, AsTable(:) => sum ∘ sum) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_function=45)
+
+    # note automatic unwrapping of function name
+    @test select(df, AsTable(:) => ByRow(identity)) ==
+          DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7),
+                                    (a = 2, b = 5, c = 8),
+                                    (a = 3, b = 6, c = 9)])
+    @test transform(df, AsTable(:) => ByRow(identity)) ==
+          hcat(df, DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7),
+                                             (a = 2, b = 5, c = 8),
+                                             (a = 3, b = 6, c = 9)]))
+    @test_throws ArgumentError transform(df, AsTable(Not(:)) => ByRow(identity))
+    @test select(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
+    @test transform(df, AsTable(Not(:)) => Ref) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, Ref=NamedTuple())
+end
+
 end # module
