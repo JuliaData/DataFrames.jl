@@ -415,6 +415,8 @@ end
     end
 
     @test filter(AsTable(:x) => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    filter!(AsTable(:x) => testfun, df)
+    @test df == DataFrame(x=[3, 2], y=["b", "a"])
 
     @test_throws ArgumentError filter([] => () -> true, df)
     @test_throws ArgumentError filter(AsTable(r"z") => () -> true, df)
