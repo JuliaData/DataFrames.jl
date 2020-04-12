@@ -405,4 +405,21 @@ end
     @test_throws TypeError filter!((:) => (r...) -> r[1] > 1, df)
 end
 
+@testset "filter and filter! with AsTable" begin
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+
+    function testfun(x)
+        @assert x isa NamedTuple
+        @assert propertynames(x) == (:x,)
+        return x.x > 1
+    end
+
+    @test filter(AsTable(:x) => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
+
+    @test_throws ArgumentError filter([] => () -> true, df)
+    @test_throws ArgumentError filter(AsTable(r"z") => () -> true, df)
+    @test_throws ArgumentError filter!([] => () -> true, df)
+    @test_throws ArgumentError filter!(AsTable(r"z") => () -> true, df)
+end
+
 end # module

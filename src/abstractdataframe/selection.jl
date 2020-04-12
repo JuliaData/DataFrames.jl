@@ -47,16 +47,6 @@ struct ByRow{T}
     fun::T
 end
 
-"""
-    AsTable
-
-A type used for selection operations to signal that the columns selected by a wrapped
-selector should be passed as a `NamedTuple` to the function.
-"""
-struct AsTable
-    colselector
-end
-
 Base.broadcastable(x::ByRow) = Ref(x)
 
 (f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)

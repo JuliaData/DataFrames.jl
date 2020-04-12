@@ -1,3 +1,13 @@
+"""
+    AsTable
+
+A type used for selection operations to signal that the columns selected by a wrapped
+selector should be passed as a `NamedTuple` to the function.
+"""
+struct AsTable
+    colselector
+end
+
 function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol}; makeunique::Bool=false)
     if length(names) != length(src)
         throw(DimensionMismatch("Length of src doesn't match length of names."))
