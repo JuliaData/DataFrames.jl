@@ -1155,7 +1155,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         wrongnames = setdiff(_names(df1), _names(df2))
         if !isempty(wrongnames)
             throw(ArgumentError("Column names :" *
-                                join(wrongnames, ", ", :" and :") *
+                                join(wrongnames, ", :", " and :") *
                                 " were found in only in destination data frame " *
                                 "and passed `cols==:intersect`"))
         end
@@ -1167,7 +1167,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
     try
         for (j, n) in enumerate(_names(df1))
             current_col += 1
-            if n in _names(df2)
+            if hasproperty(df2, n)
                 df1_c = df1[!, j]
                 df2_c = df2[!, n]
                 S = eltype(df2_c)
