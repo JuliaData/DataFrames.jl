@@ -387,11 +387,11 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             end
             S = typeof(val)
             T = eltype(col)
-            V = promote_type(S, T)
-            if S <: T || V <: T || !promote
+            if S <: T || !promote || promote_type(S, T) <: T
+                # if S <: T || promote_type(S, T) <: T this should never throw an exception
                 push!(col, val)
             else
-                newcol = Tables.allocatecolumn(V, targetrows)
+                newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
                 _columns(df)[i] = newcol
@@ -424,13 +424,13 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
     try
         if cols === :orderequal
             if _names(df) != _names(dfr)
-                msg = "when `cols=:orderequal` pushed row must have the same column " *
+                msg = "when `cols == :orderequal` pushed row must have the same column " *
                       "names and in the same order as the target data frame"
                 throw(ArgumentError(msg))
             end
         elseif cols === :setequal || cols === :equal
             if cols === :equal
-                Base.depwarn("`cols=:equal` is deprecated." *
+                Base.depwarn("`cols == :equal` is deprecated." *
                              "Use `:setequal` instead.", :push!)
             end
             msg = "Number of columns of `DataFrameRow` does not match that of " *
@@ -446,12 +446,11 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             end
             S = typeof(val)
             T = eltype(col)
-            V = promote_type(S, T)
-            if S <: T || V <: T || !promote
-                # if S <: T || V <: T this should never throw an exception
+            if S <: T || !promote || promote_type(S, T) <: T
+                # if S <: T || promote_type(S, T) <: T this should never throw an exception
                 push!(col, val)
             else
-                newcol = similar(col, V, targetrows)
+                newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
                 _columns(df)[columnindex(df, nm)] = newcol
