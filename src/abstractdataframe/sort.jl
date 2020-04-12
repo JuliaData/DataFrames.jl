@@ -260,7 +260,11 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt, by, rev, orde
 end
 
 #### Convert cols from tuple to Array, if necessary
-ordering(df::AbstractDataFrame, cols::Tuple, args...) = ordering(df, [cols...], args...)
+function ordering(df::AbstractDataFrame, cols::Tuple, args...)
+    Base.depwarn("Passing a tuple $cols of column selectors when sorting data " *
+                 "frame is deprecated. Pass a vector $([cols...]) instead.", :ordering)
+    return ordering(df, [cols...], args...)
+end
 
 
 ###########################
@@ -301,27 +305,25 @@ end
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
-`cols` can be either a `Symbol` or `Integer` column index, or
-a tuple or vector of such indices.
+`cols` can be either a `Symbol` or `Integer` column index,
+a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 See other methods for a description of other keyword arguments.
 """
-function Base.issorted(df::AbstractDataFrame, cols_new=[]; cols=[],
+function Base.issorted(df::AbstractDataFrame, cols=[];
                        lt=isless, by=identity, rev=false, order=Forward)
-    if cols != []
-        Base.depwarn("issorted(df, cols=cols) is deprecated, use issorted(df, cols) instead",
-                     :issorted)
-        cols_new = cols
+    if cols isa Union{Colon, All, Not, Between, Regex}
+        cols = index(df)[cols]
     end
-    if cols_new isa ColumnIndex
-        issorted(df[!, cols_new], lt=lt, by=by, rev=rev, order=order)
-    elseif length(cols_new) == 1
-        issorted(df[!, cols_new[1]], lt=lt, by=by, rev=rev, order=order)
+    if cols isa ColumnIndex
+        return issorted(df[!, cols], lt=lt, by=by, rev=rev, order=order)
+    elseif length(cols) == 1
+        return issorted(df[!, cols[1]], lt=lt, by=by, rev=rev, order=order)
     else
-        issorted(1:nrow(df), ordering(df, cols_new, lt, by, rev, order))
+        return issorted(1:nrow(df), ordering(df, cols, lt, by, rev, order))
     end
 end
 
@@ -329,21 +331,18 @@ end
 
 for s in [:(Base.sort), :(Base.sortperm)]
     @eval begin
-        function $s(df::AbstractDataFrame, cols_new=[]; cols=[],
+        function $s(df::AbstractDataFrame, cols=[];
                     alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
             if !(isa(by, Function) || eltype(by) <: Function)
                 msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
                 throw(ArgumentError(msg))
             end
-            if cols != []
-                fname = $s
-                Base.depwarn("$fname(df, cols=cols) is deprecated, use $fname(df, cols) instead",
-                             Symbol($s))
-                cols_new = cols
+            if cols isa Union{All, Not, Between, Colon, Regex}
+                cols = index(df)[cols]
             end
-            ord = ordering(df, cols_new, lt, by, rev, order)
-            _alg = Sort.defalg(df, ord; alg=alg, cols=cols_new)
-            $s(df, _alg, ord)
+            ord = ordering(df, cols, lt, by, rev, order)
+            _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
+            return $s(df, _alg, ord)
         end
     end
 end
@@ -355,7 +354,7 @@ end
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a tuple or vector of such indices.
+a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -387,7 +386,7 @@ julia> sort(df, :x)
 │ 3   │ 2     │ a      │
 │ 4   │ 3     │ b      │
 
-julia> sort(df, (:x, :y))
+julia> sort(df, [:x, :y])
 4×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
@@ -397,7 +396,7 @@ julia> sort(df, (:x, :y))
 │ 3   │ 2     │ a      │
 │ 4   │ 3     │ b      │
 
-julia> sort(df, (:x, :y), rev=true)
+julia> sort(df, [:x, :y], rev=true)
 4×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
@@ -407,7 +406,7 @@ julia> sort(df, (:x, :y), rev=true)
 │ 3   │ 1     │ c      │
 │ 4   │ 1     │ b      │
 
-julia> sort(df, (:x, order(:y, rev=true)))
+julia> sort(df, [:x, order(:y, rev=true)])
 4×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
