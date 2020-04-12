@@ -1060,7 +1060,7 @@ Add the rows of `df2` to the end of `df`. If the second argument `table` is
 not an `AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
 before being appended.
 
-The exact behavior of `append!` depends on the `cols` argument value in the following way:
+The exact behavior of `append!` depends on the `cols` argument:
 * If `cols=:setequal` (this is the default)
   then `df2` must contain exactly the same columns as `df` (but possibly in a different order).
 * If `cols=:orderequal` then `df2` must contain the same columns in the same order
@@ -1068,15 +1068,15 @@ The exact behavior of `append!` depends on the `cols` argument value in the foll
    to allow for support of ordered dicts; however, if `df2` is a `Dict` an error is thrown
    as it is an unordered collection).
 * If `cols=:intersect` then `df2` may contain more columns than `df`,
-  but all column names that are present in `df` must be present in `df2` and only they
-  are used to populate a new row in `df`.
-* If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
+  but all column names that are present in `df` must be present in `df2` and only these
+  are used.
+* If `cols=:subset` then `append!` behaves like for `:intersect` but if some column
   is missing in `df2` then a `missing` value is pushed to `df`.
-* If `cols=:union` then `push!` adds columns missing in `df` that are present in `row`,
+* If `cols=:union` then `append!` adds columns missing in `df` that are present in `row`,
   for columns present in `df` but missing in `row` a `missing` value is pushed.
 
-If `promote=true` and eltype of a column present in `df` does not allow the type
-of a pushed argument then a new column with a promoted eltype allowing it is freshly
+If `promote=true` and element type of a column present in `df` does not allow the type
+of a pushed argument then a new column with a promoted element type allowing it is freshly
 allocated and stored in `df`. If `promote=false` an error is thrown.
 
 The above rule has the following exceptions:
@@ -1115,7 +1115,8 @@ julia> df1
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
                       promote::Bool=(cols in [:union, :subset]))
     if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
-        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal"))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
     end
 
     if ncol(df1) == 0
@@ -1134,7 +1135,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
             throw(ArgumentError("Columns number " *
                                 join(mismatches, ", ", " and ") *
                                 " do not have the same names in both passed data frames" *
-                                "and `cols==:orderequal`"))
+                                "and `cols == :orderequal`"))
         else
             mismatchmsg = " Column names :" *
             throw(ArgumentError("Column names :" *
