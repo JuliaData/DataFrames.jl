@@ -1139,7 +1139,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         else
             mismatchmsg = " Column names :" *
             throw(ArgumentError("Column names :" *
-                                join(wrongnames, ", ", :" and :") *
+                                join(wrongnames, ", :", " and :") *
                                 " were found in only one of the passed data frames " *
                                 "and `cols==:orderequal`"))
         end
@@ -1147,9 +1147,9 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         wrongnames = symdiff(_names(df1), _names(df2))
         if !isempty(wrongnames)
             throw(ArgumentError("Column names :" *
-                                join(wrongnames, ", ", :" and :") *
+                                join(wrongnames, ", :", " and :") *
                                 " were found in only one of the passed data frames " *
-                                "and passed `cols==:setequal`"))
+                                "and `cols == :setequal`"))
         end
     elseif cols == :intersect
         wrongnames = setdiff(_names(df1), _names(df2))
