@@ -1,6 +1,6 @@
 module TestSelect
 
-using DataFrames, Test, Random
+using DataFrames, Test, Random, Statistics
 
 const ≅ = isequal
 
@@ -1091,6 +1091,14 @@ end
     @test select(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
     @test transform(df, AsTable(Not(:)) => Ref) ==
           DataFrame(a=1:3, b=4:6, c=7:9, Ref=NamedTuple())
+
+    df = DataFrame(x=[1,2,missing], y=[1,missing,missing])
+    @test transform(df, AsTable(:) .=>
+                        ByRow.([sum∘skipmissing,
+                                x -> count(!ismissing, x),
+                                mean∘skipmissing]) .=>
+                        [:sum, :n, :mean]) ≅
+          [df DataFrame(sum=[2,2,0], n=[2,1,0], mean=[1,2,NaN])]
 end
 
 end # module

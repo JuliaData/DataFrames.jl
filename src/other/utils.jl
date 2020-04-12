@@ -8,6 +8,8 @@ struct AsTable
     colselector
 end
 
+Base.broadcastable(x::AsTable) = Ref(x)
+
 function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol}; makeunique::Bool=false)
     if length(names) != length(src)
         throw(DimensionMismatch("Length of src doesn't match length of names."))

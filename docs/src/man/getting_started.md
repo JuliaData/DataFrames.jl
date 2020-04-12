@@ -660,6 +660,24 @@ julia> transform(df, AsTable(:) => ByRow(identity))
 ├─────┼───────┼───────┼───────┼─────────────────────────┤
 │ 1   │ 1     │ 3     │ 5     │ (x1 = 1, x2 = 3, y = 5) │
 │ 2   │ 2     │ 4     │ 6     │ (x1 = 2, x2 = 4, y = 6) │
+
+
+julia> using Statistics
+
+julia> df = DataFrame(x=[1,2,missing], y=[1,missing,missing]);
+
+julia> transform(df, AsTable(:) .=>
+                     ByRow.([sum∘skipmissing,
+                             x -> count(!ismissing, x),
+                             mean∘skipmissing]) .=>
+                     [:sum, :n, :mean])
+3×5 DataFrame
+│ Row │ x       │ y       │ sum   │ n     │ mean    │
+│     │ Int64?  │ Int64?  │ Int64 │ Int64 │ Float64 │
+├─────┼─────────┼─────────┼───────┼───────┼─────────┤
+│ 1   │ 1       │ 1       │ 2     │ 2     │ 1.0     │
+│ 2   │ 2       │ missing │ 2     │ 1     │ 2.0     │
+│ 3   │ missing │ missing │ 0     │ 0     │ NaN     │
 ```
 
 While the DataFrames package provides basic data manipulation capabilities,
