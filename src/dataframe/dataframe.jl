@@ -1176,7 +1176,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                 if S <: T || V <: T || !promote
                     append!(df1_c, df2_c)
                 else
-                    newcol = Tables.allocatecolumn(V, targetrows)
+                    newcol = similar(df1_c, V, targetrows)
                     copyto!(newcol, 1, df1_c, 1, nrows)
                     copyto!(newcol, nrows+1, df2_c, 1, targetrows - nrows)
                     _columns(df1)[j] = newcol
@@ -1186,11 +1186,9 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                 if Missing <: eltype(df1[!, j]) || !promote
                     append!(df1[!, j], df2[!, n])
                 else
-                    newcol = Tables.allocatecolumn(Union{Missing,eltype(df1[!, j])} , targetrows)
+                    newcol = similar(df1[!, j], Union{Missing, eltype(df1[!, j])}, targetrows)
                     copyto!(newcol, 1, df1[!, j], 1, nrows)
-                    for i in nrows+1:targetrows
-                        @inbounds newcol[i] = missing
-                    end
+                    newcol[nrows+1:targetrows] .= missing
                     _columns(df1)[j] = newcol
                 end
             end
@@ -1202,10 +1200,8 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         end
         if cols == :union
             for n in setdiff(_names(df2), _names(df1))
-                newcol = Tables.allocatecolumn(Union{Missing,eltype(df2[!, n])} , targetrows)
-                for i in 1:nrows
-                    @inbounds newcol[i] = missing
-                end
+                newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])}, targetrows)
+                @inbounds newcol[1:nrows] .= missing
                 copyto!(newcol, nrows+1, df2[!, n], 1, targetrows - nrows)
                 df1[!, n] = newcol
             end
@@ -1226,7 +1222,8 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:setequal,
-                    columns::Union{Nothing,Symbol}=nothing, promote::Bool=(cols in [:union, :subset]))
+                    columns::Union{Nothing,Symbol}=nothing,
+                    promote::Bool=(cols in [:union, :subset]))
     if columns !== nothing
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
@@ -1263,7 +1260,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             if S <: T || V <: T || !promote
                 push!(col, val)
             else
-                newcol = Tables.allocatecolumn(V, targetrows)
+                newcol = similar(col, V, targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
                 _columns(df)[i] = newcol
@@ -1329,7 +1326,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
                 # if S <: T || V <: T this should never throw an exception
                 push!(col, val)
             else
-                newcol = Tables.allocatecolumn(V, targetrows)
+                newcol = similar(col, V, targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
                 _columns(df)[columnindex(df, nm)] = newcol
@@ -1379,11 +1376,12 @@ depends on the `cols` argument value in the following way:
   are used to populate a new row in `df`.
 * If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
   is missing in `row` then a `missing` value is pushed to `df`.
-* If `cols=:union` then `push!` adds columns missing in `df` that are present in `row`,
-  for columns present in `df` but missing in `row` a `missing` value is pushed.
+* If `cols=:union` then columns missing in `df` that are present in `row` are added to `df`
+  (using `missing` for existing rows) and a `missing` value is pushed to columns
+  missing in `row` that are present in `df`.
 
-If `promote=true` and eltype of a column present in `df` does not allow the type
-of a pushed argument then a new column with a promoted eltype allowing it is freshly
+If `promote=true` and element type of a column present in `df` does not allow the type
+of a pushed argument then a new column with a promoted element type allowing it is freshly
 allocated and stored in `df`. If `promote=false` an error is thrown.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,

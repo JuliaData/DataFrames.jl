@@ -380,7 +380,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
     if cols == :union
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
-            if haskey(dfr, colname)
+            if hasproperty(dfr, colname)
                 val = dfr[colname]
             else
                 val = missing
@@ -451,7 +451,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 # if S <: T || V <: T this should never throw an exception
                 push!(col, val)
             else
-                newcol = Tables.allocatecolumn(V, targetrows)
+                newcol = similar(col, V, targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
                 _columns(df)[columnindex(df, nm)] = newcol
