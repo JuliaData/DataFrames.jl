@@ -948,14 +948,15 @@ function _filter_helper(df::AbstractDataFrame, f, cols...)
 end
 
 function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
-    dff = select(df, cols.colselector, copycols=false)
+    dff = select(df, cols.cols, copycols=false)
     if ncol(dff) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
     return _filter_helper_astable(df, Tables.namedtupleiterator(dff), f)
 end
 
-_filter_helper_astable(df::AbstractDataFrame, nti::NamedTuple, f) = df[(x -> f(x)::Bool).(nti), :]
+_filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
+    df[(x -> f(x)::Bool).(nti), :]
 
 """
     filter!(function, df::AbstractDataFrame)
@@ -1046,14 +1047,14 @@ function _filter!_helper(df::AbstractDataFrame, f, cols...)
 end
 
 function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
-    dff = select(df, cols.colselector, copycols=false)
+    dff = select(df, cols.cols, copycols=false)
     if ncol(dff) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
     return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
 end
 
-_filter!_helper_astable(df::AbstractDataFrame, nti::NamedTuple, f) =
+_filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
     deleterows!(df, findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)

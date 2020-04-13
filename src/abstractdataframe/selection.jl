@@ -86,7 +86,7 @@ end
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
     if first(sel) isa AsTable
-        rawc = first(sel).colselector
+        rawc = first(sel).cols
         wanttable = true
     else
         rawc = first(sel)
@@ -125,7 +125,7 @@ end
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
     if first(sel) isa AsTable
-        rawc = first(sel).colselector
+        rawc = first(sel).cols
         wanttable = true
     else
         rawc = first(sel)
@@ -175,7 +175,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
     if col_idx isa Int
         res = fun(df[!, col_idx])
     elseif col_idx isa AsTable
-        res = fun(Tables.columntable(select(df, col_idx.colselector, copycols=false)))
+        res = fun(Tables.columntable(select(df, col_idx.cols, copycols=false)))
     else
         # it should be fast enough here as we do not expect to do it millions of times
         @assert col_idx isa AbstractVector{Int}
@@ -195,7 +195,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         end
         allow_resizing_newdf[] = false
         respar = parent(res)
-        parent_cols = col_idx isa AsTable ? col_idx.colselector : col_idx
+        parent_cols = col_idx isa AsTable ? col_idx.cols : col_idx
         if copycols && !(fun isa ByRow) &&
             (res isa SubArray || any(i -> respar === parent(cdf[i]), parent_cols))
             newdf[!, newname] = copy(res)

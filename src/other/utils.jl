@@ -5,7 +5,7 @@ A type used for selection operations to signal that the columns selected by the 
 selector should be passed as a `NamedTuple` to the function.
 """
 struct AsTable
-    colselector
+    cols
 end
 
 Base.broadcastable(x::AsTable) = Ref(x)

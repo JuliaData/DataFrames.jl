@@ -1115,7 +1115,7 @@ function _combine(f::AbstractVector{<:Pair},
                 incols = (parentdf[!, source_cols],)
             elseif source_cols isa AsTable
                 incols = Tables.columntable(select(parentdf,
-                                                   source_cols.colselector,
+                                                   source_cols.cols,
                                                    copycols=false))
             else
                 @assert source_cols isa AbstractVector{Int}
@@ -1194,7 +1194,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
         incols = (parent(gd)[!, source_cols],)
     elseif source_cols isa AsTable
         incols = Tables.columntable(select(parentdf,
-                                           source_cols.colselector,
+                                           source_cols.cols,
                                            copycols=false))
     else
         @assert source_cols isa AbstractVector{Int}
