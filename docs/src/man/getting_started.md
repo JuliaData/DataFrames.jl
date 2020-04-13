@@ -661,10 +661,9 @@ julia> transform(df, AsTable(:) => ByRow(identity))
 │ 1   │ 1     │ 3     │ 5     │ (x1 = 1, x2 = 3, y = 5) │
 │ 2   │ 2     │ 4     │ 6     │ (x1 = 2, x2 = 4, y = 6) │
 
-
 julia> using Statistics
 
-julia> df = DataFrame(x=[1,2,missing], y=[1,missing,missing]);
+julia> df = DataFrame(x=[1, 2, missing], y=[1, missing, missing]);
 
 julia> transform(df, AsTable(:) .=>
                      ByRow.([sum∘skipmissing,

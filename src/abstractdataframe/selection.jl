@@ -18,7 +18,7 @@
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
 
-Note that `ByRow` always wraps retun values of `fun` into a vector.
+Note that `ByRow` always wraps return values of `fun` into a vector.
 For example observe the difference between the return value of these two example
 calls of the `by` function:
 ```jldoctest
@@ -230,8 +230,9 @@ SELECT_ARG_RULES =
     is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
     Otherwise `old_column` can be any column indexing syntax, in which case `fun`
     will be passed the column vectors specified by `old_column` as separate arguments.
-    Additionally if `old_column` is an `AsTable` type wrapping a column selection argument,
-    then `fun` is passed a `NamedTuple` containing the selected columns.
+    The only exception is when `old_column` is an `AsTable` type wrapping a selector,
+    in which case `fun` is passed a `NamedTuple` containing the selected columns.
+
     If `fun` returns a value of type other than `AbstractVector` then it will be broadcasted
     into a vector matching the target number of rows in the data frame,
     unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,

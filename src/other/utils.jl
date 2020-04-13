@@ -1,7 +1,7 @@
 """
-    AsTable
+    AsTable(cols)
 
-A type used for selection operations to signal that the columns selected by a wrapped
+A type used for selection operations to signal that the columns selected by the wrapped
 selector should be passed as a `NamedTuple` to the function.
 """
 struct AsTable

@@ -220,7 +220,7 @@ If `pair` is passed then it must follow the rules specified for transformations 
 or `source_col => target_col`.
 Function defined by `fun` is passed `SubArray` views as positional arguments for
 each column specified to be selected and can return any return value defined below,
-or a `NamedTuple` containing these `SubArray`s if `source_cols` is a `AsTable` selector.
+or a `NamedTuple` containing these `SubArray`s if `source_cols` is an `AsTable` selector.
 As a special case `nrow` or `nrow => target_col` can be passed without specifying
 input columns to efficiently calculate number of rows in each group.
 If `nrow` is passed the resulting column name is `:nrow`.
@@ -376,7 +376,7 @@ const F_ARGUMENT_RULES =
     `source_cols => fun => target_col`, or `source_col => target_col`.
     Function `fun` is passed `SubArray` views as positional arguments for each column
     specified to be selected, or a `NamedTuple` containing these `SubArray`s if
-    `source_cols` is a `AsTable` selector, and can return a vector or a single value
+    `source_cols` is an `AsTable` selector. It can return a vector or a single value
     (defined precisely below).
 
     As a special case `nrow` or `nrow => target_col` can be passed without specifying
