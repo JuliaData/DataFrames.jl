@@ -1092,13 +1092,23 @@ end
     @test transform(df, AsTable(Not(:)) => Ref) ==
           DataFrame(a=1:3, b=4:6, c=7:9, Ref=NamedTuple())
 
-    df = DataFrame(x=[1,2,missing], y=[1,missing,missing])
-    @test transform(df, AsTable(:) .=>
-                        ByRow.([sum∘skipmissing,
-                                x -> count(!ismissing, x),
-                                mean∘skipmissing]) .=>
-                        [:sum, :n, :mean]) ≅
-          [df DataFrame(sum=[2,2,0], n=[2,1,0], mean=[1,2,NaN])]
+    if VERSION >= v"1.4.0"
+        df = DataFrame(x=[1,2,missing], y=[1,missing,missing])
+        @test transform(df, AsTable(:) .=>
+                            ByRow.([sum∘skipmissing,
+                                    x -> count(!ismissing, x),
+                                    mean∘skipmissing]) .=>
+                            [:sum, :n, :mean]) ≅
+              [df DataFrame(sum=[2,2,0], n=[2,1,0], mean=[1,2,NaN])]
+    else
+        df = DataFrame(x=[1,2], y=[1,missing])
+        @test transform(df, AsTable(:) .=>
+                            ByRow.([sum∘skipmissing,
+                                    x -> count(!ismissing, x),
+                                    mean∘skipmissing]) .=>
+                            [:sum, :n, :mean]) ≅
+              [df DataFrame(sum=[2,2], n=[2,1], mean=[1,2])]
+    end
 end
 
 end # module
