@@ -877,7 +877,7 @@ If `cols` is not specified then the function is passed `DataFrameRow`s.
 If `cols` is specified then it should be a valid column selector
 (column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
 the function is passed elements of the selected columns as separate positional arguments,
-unless it is `AsTable` selector in which case `NamedTuple`s of these arguments are passed.
+unless it is an `AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -940,7 +940,7 @@ Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
     filter(index(df)[cols] => f, df)
 
-function _filter_helper(df, f, cols...)
+function _filter_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
@@ -955,7 +955,7 @@ function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
     return _filter_helper_astable(df, Tables.namedtupleiterator(dff), f)
 end
 
-_filter_helper_astable(df, nti, f) = df[(x -> f(x)::Bool).(nti), :]
+_filter_helper_astable(df::AbstractDataFrame, nti::NamedTuple, f) = df[(x -> f(x)::Bool).(nti), :]
 
 """
     filter!(function, df::AbstractDataFrame)
@@ -1038,7 +1038,7 @@ Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
 
-function _filter!_helper(df, f, cols...)
+function _filter!_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
@@ -1053,7 +1053,7 @@ function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
     return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
 end
 
-_filter!_helper_astable(df, nti, f) =
+_filter!_helper_astable(df::AbstractDataFrame, nti::NamedTuple, f) =
     deleterows!(df, findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)

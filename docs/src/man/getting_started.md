@@ -673,12 +673,12 @@ julia> Tables.rowtable(df)
  (x1 = 1, x2 = 3, y = 5)
  (x1 = 2, x2 = 4, y = 6)
 ```
-In the most complex example below we compute row-wise sum, number of elements, and mean,
+In the following, most complex, example below we compute row-wise sum, number of elements, and mean,
 while ignoring missing values.
 ```
 julia> using Statistics
 
-julia> df = DataFrame(x=[1,2,missing], y=[1,missing,missing]);
+julia> df = DataFrame(x=[1, 2, missing], y=[1, missing, missing]);
 
 julia> transform(df, AsTable(:) .=>
                      ByRow.([sum∘skipmissing,
