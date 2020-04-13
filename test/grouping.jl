@@ -1947,6 +1947,11 @@ end
     @test map(AsTable([:x, :y]) => Ref, gdf) ==
           groupby(by(df, :g , AsTable([:x, :y]) => Ref), :g)
 
+    @test by(df, :g, AsTable(1) => Ref) ==
+          combine(gdf, AsTable(1) => Ref) ==
+          DataFrame(g=1:2, g_Ref=[(g=[1,1,1],),(g=[2,2],)])
+
+
     # RyRow 4 options of single pair passed
     @test by(df, :g, AsTable([:x, :y]) => ByRow(identity)) ==
           by(AsTable([:x, :y]) => ByRow(identity), df, :g) ==

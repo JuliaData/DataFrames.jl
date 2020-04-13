@@ -195,9 +195,9 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         end
         allow_resizing_newdf[] = false
         respar = parent(res)
+        parent_cols = col_idx isa AsTable ? col_idx.colselector : col_idx
         if copycols && !(fun isa ByRow) &&
-            (res isa SubArray || any(i -> respar === parent(cdf[i]),
-                col_idx isa AsTable ? col_idx.colselector : col_idx))
+            (res isa SubArray || any(i -> respar === parent(cdf[i]), parent_cols))
             newdf[!, newname] = copy(res)
         else
             newdf[!, newname] = res
@@ -336,14 +336,16 @@ julia> df
 
 julia> df = DataFrame(a=1:3, b=4:6);
 
-julia> select!(df, AsTable(:) => ByRow(x -> map(x -> x^2, x)))
+julia> using Statistics
+
+julia> select!(df, AsTable(:) => ByRow(mean))
 3×1 DataFrame
-│ Row │ a_b_function    │
-│     │ NamedTuple…     │
-├─────┼─────────────────┤
-│ 1   │ (a = 1, b = 16) │
-│ 2   │ (a = 4, b = 25) │
-│ 3   │ (a = 9, b = 36) │
+│ Row │ a_b_mean │
+│     │ Float64  │
+├─────┼──────────┤
+│ 1   │ 2.5      │
+│ 2   │ 3.5      │
+│ 3   │ 4.5      │
 ```
 
 """
@@ -501,14 +503,14 @@ julia> select(df, names(df) .=> sum .=> [:A, :B])
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
 
-julia> select(df, AsTable(:) => ByRow(x -> map(x -> x^2, x)))
+julia> select(df, AsTable(:) => ByRow(mean))
 3×1 DataFrame
-│ Row │ a_b_function    │
-│     │ NamedTuple…     │
-├─────┼─────────────────┤
-│ 1   │ (a = 1, b = 16) │
-│ 2   │ (a = 4, b = 25) │
-│ 3   │ (a = 9, b = 36) │
+│ Row │ a_b_mean │
+│     │ Float64  │
+├─────┼──────────┤
+│ 1   │ 2.5      │
+│ 2   │ 3.5      │
+│ 3   │ 4.5      │
 ```
 
 """
