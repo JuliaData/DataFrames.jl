@@ -409,7 +409,7 @@ function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
                        makeunique=true)
     if sort
         Base.depwarn("`aggregate(gd, fs, sort=true)` is deprecated. Instead use " *
-                     "`df = combine(gd, [names(gd) .=> f for f in fs]...); "
+                     "`df = combine(gd, [names(gd) .=> f for f in fs]...); " *
                      "sort!(df, setdiff(names(df), groupcols(gd)))`" *
                      " if functions in `fs` have unique names.", :aggregate)
         sort!(df, setdiff(names(df), groupcols(gd)))
