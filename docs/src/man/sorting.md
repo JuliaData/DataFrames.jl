@@ -127,19 +127,19 @@ julia> last(iris, 4)
 
 Keywords used above include `rev` (to sort in reverse),
 and `by` (to apply a function to values before comparing them).
-Each keyword can either be a single value, or can be a tuple or a vector,
-with values corresponding to individual columns.
+Each keyword can either be a single value, a vector with values corresponding to
+individual columns, or a selector: `:`, `All`, `Not`, `Between`, or `Regex`.
 
-As an alternative to using a vector or tuple values you can use `order` to specify
+As an alternative to using a vector values you can use `order` to specify
 an ordering for a particular column within a set of columns.
 
 The following two examples show two ways to sort the `iris` dataset with the same result:
 `:Species` will be ordered in reverse order, and within groups, rows will be sorted by increasing `:PetalLength`:
 
 ```jldoctest sort
-julia> sort!(iris, (:Species, :PetalLength), rev=(true, false));
+julia> sort!(iris, [:Species, :PetalLength], rev=(true, false));
 
-julia> julia> sort!(iris, (:Species, :PetalLength), rev=(true, false));
+julia> julia> sort!(iris, [:Species, :PetalLength], rev=(true, false));
 
 julia> first(iris, 4)
 4×5 DataFrame
@@ -161,7 +161,7 @@ julia> last(iris, 4)
 │ 3   │ 5.1         │ 3.8        │ 1.9         │ 0.4        │ Iris-setosa │
 │ 4   │ 4.8         │ 3.4        │ 1.9         │ 0.2        │ Iris-setosa │
 
-julia> sort!(iris, (order(:Species, rev=true), :PetalLength));
+julia> sort!(iris, [order(:Species, rev=true), :PetalLength]);
 
 julia> first(iris, 4)
 4×5 DataFrame

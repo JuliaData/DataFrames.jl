@@ -134,7 +134,13 @@ Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
-Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(index(r), :)]
+Base.names(r::DataFrameRow) = names(index(r))
+
+function Base.names(r::DataFrameRow, cols)
+    sel = index(r)[cols]
+    return _names(index(r))[sel isa Int ? (sel:sel) : sel]
+end
+
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
 Base.haskey(r::DataFrameRow, key::Bool) =

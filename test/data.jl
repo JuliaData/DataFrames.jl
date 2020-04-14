@@ -424,4 +424,22 @@ end
     @test_throws ArgumentError filter!(AsTable(r"z") => () -> true, df)
 end
 
+@testset "names with cols" begin
+    df = DataFrame(a = 1, x1 = 2, x2 = 3, x3 = 4, x4 = 5)
+
+    for v in [df, groupby(df, :a)]
+        @test names(v, All()) == names(v, :) == names(v) == [:a, :x1, :x2, :x3, :x4]
+        @test names(v, Between(:x1, :x3)) == [:x1, :x2, :x3]
+        @test names(v, Not(:a)) == names(v, r"x") == [:x1, :x2, :x3, :x4]
+        @test names(v, :x1) == names(v, 2) == [:x1]
+    end
+
+    for v in [view(df, :, [4,3,2,1]), groupby(view(df, :, [4,3,2,1]), 1), view(df, 1, [4,3,2,1])]
+        @test names(v, All()) == names(v, :) == names(v) ==  [:x3, :x2, :x1, :a]
+        @test names(v, Between(:x2, :x1)) == [:x2, :x1]
+        @test names(v, Not(:a)) == names(v, r"x") == [:x3, :x2, :x1]
+        @test names(v, :x1) == names(v, 3) == [:x1]
+    end
+end
+
 end # module
