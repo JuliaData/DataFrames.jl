@@ -18,7 +18,9 @@
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
 
-Note that `ByRow` always wraps return values of `fun` into a vector.
+Note that `ByRow` always collects values returned by `fun` in a vector. Therefore,
+returning a `NamedTuple` produces a column of `NamedTuple` values, rather than
+multiple columns.
 For example observe the difference between the return value of these two example
 calls of the `by` function:
 ```jldoctest

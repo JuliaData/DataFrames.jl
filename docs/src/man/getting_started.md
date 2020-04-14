@@ -636,7 +636,8 @@ julia> df
 `transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
 they retain all columns that are present in the source data frame. Here are some more advanced examples.
 
-First we show how to generate a column that is a sum of all other columns in the data frame using `All()` selector:
+First we show how to generate a column that is a sum of all other columns in the data frame
+using the `All()` selector:
 
 ```jldoctest dataframe
 julia> df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
@@ -656,7 +657,7 @@ julia> transform(df, All() => +)
 │ 2   │ 2     │ 4     │ 6     │ 12        │
 ```
 Here we wrap rows of the data frame into a `NamedTuple` while remembering
-source column names.
+source column names:
 ```
 julia> transform(df, AsTable(:) => ByRow(identity))
 2×4 DataFrame
@@ -673,9 +674,7 @@ julia> Tables.rowtable(df)
  (x1 = 1, x2 = 3, y = 5)
  (x1 = 2, x2 = 4, y = 6)
 ```
-Now assume that a data frame `df` contains predictions from a model producing scores
-for three levels `a`, `b` and `c` of a nominar target variable.
-For each row we want to get the level with the highest score.
+With this approach, we can easily compute for each row the name of column with the highest score:
 ```
 julia> using Random
 
