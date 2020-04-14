@@ -6,19 +6,28 @@ const ≅ = isequal
 
 old_logger = global_logger(NullLogger())
 
-# old sort(df; cols=...) syntax
-df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
-@test sort(df; cols=[:a, :b]) == DataFrame(a=[1, 2, 3], b=[6, 4, 5])
-sort!(df; cols=[:a, :b])
-@test df == DataFrame(a=[1, 2, 3], b=[6, 4, 5])
+@testset "deprecated tuple in sort" begin
+    dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
+    dv2 = [9, 1, 8, missing, 3, 3, 7, missing]
+    dv3 = Vector{Union{Int, Missing}}(1:8)
+    cv1 = CategoricalArray(dv1, ordered=true)
 
-df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
-@test sort(df; cols=[:b, :a]) == DataFrame(a=[2, 3, 1], b=[4, 5, 6])
-sort!(df; cols=[:b, :a])
-@test df == DataFrame(a=[2, 3, 1], b=[4, 5, 6])
+    d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, cv1 = cv1)
+    @test sort(d, (:dv1, :cv1))[!, :dv3] == sortperm(dv1)
+    @test sort(d, (:dv1, :dv3))[!, :dv3] == sortperm(dv1)
 
-@test first.(collect(pairs(DataFrameRow(df, 1, :)))) == [:a, :b]
-@test last.(collect(pairs(DataFrameRow(df, 1, :)))) == [df[1, 1], df[1, 2]]
+    df = DataFrame(rank=rand(1:12, 1000),
+                   chrom=rand(1:24, 1000),
+                   pos=rand(1:100000, 1000))
+    ds = sort(df, (order(:rank, rev=true),:chrom,:pos))
+    @test issorted(ds, (order(:rank, rev=true),:chrom,:pos))
+
+    ds2 = sort(df, (:rank, :chrom, :pos), rev=(true, false, false))
+    @test issorted(ds2, (order(:rank, rev=true), :chrom, :pos))
+
+    sort!(df, (:rank, :chrom, :pos), rev=(true, false, false))
+    @test issorted(df, (order(:rank, rev=true), :chrom, :pos))
+end
 
 @testset "categorical constructor" begin
     df = DataFrame([Int, String], [:a, :b], [false, true], 3)

@@ -6,7 +6,7 @@
 
 Sort data frame `df` by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a tuple or vector of such indices.
+a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -38,7 +38,7 @@ julia> sort!(df, :x)
 │ 3   │ 2     │ a      │
 │ 4   │ 3     │ b      │
 
-julia> sort!(df, (:x, :y))
+julia> sort!(df, [:x, :y])
 4×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
@@ -48,7 +48,7 @@ julia> sort!(df, (:x, :y))
 │ 3   │ 2     │ a      │
 │ 4   │ 3     │ b      │
 
-julia> sort!(df, (:x, :y), rev=true)
+julia> sort!(df, [:x, :y], rev=true)
 4×2 DataFrame
 │ Row │ x     │ y      │
 │     │ Int64 │ String │
@@ -69,20 +69,18 @@ julia> sort!(df, (:x, order(:y, rev=true)))
 │ 4   │ 3     │ b      │
 ```
 """
-function Base.sort!(df::DataFrame, cols_new=[]; cols=[], alg=nothing,
+function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
     if !(isa(by, Function) || eltype(by) <: Function)
         msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
         throw(ArgumentError(msg))
     end
-    if cols != []
-        Base.depwarn("sort!(df, cols=cols) is deprecated, use sort!(df, cols) instead",
-                     :sort!)
-        cols_new = cols
+    if cols isa Union{Colon, All, Not, Between, Regex}
+        cols = index(df)[cols]
     end
-    ord = ordering(df, cols_new, lt, by, rev, order)
-    _alg = Sort.defalg(df, ord; alg=alg, cols=cols_new)
-    sort!(df, _alg, ord)
+    ord = ordering(df, cols, lt, by, rev, order)
+    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
+    return sort!(df, _alg, ord)
 end
 
 function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
@@ -99,5 +97,5 @@ function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering
         copyto!(pp,p)
         Base.permute!!(col, pp)
     end
-    df
+    return df
 end

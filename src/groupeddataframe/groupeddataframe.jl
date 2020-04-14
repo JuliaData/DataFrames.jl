@@ -76,6 +76,7 @@ function Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
 end
 
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
+Base.names(gd::GroupedDataFrame, cols) = names(gd.parent, cols)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
 function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
