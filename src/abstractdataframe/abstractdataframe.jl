@@ -67,9 +67,9 @@ abstract type AbstractDataFrame end
 
     Return a `Vector{Symbol}` of names of columns contained in `df`.
 
-    If `cols` column selector argument is passed then restrict returned
+    If a `cols` column selector is passed then restrict returned
     column names to those matching the selector
-    (this is useful with regular expressions, `All`, `Not`, and `Between`).
+    (this is useful in particular with regular expressions, `Not`, and `Between`).
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
