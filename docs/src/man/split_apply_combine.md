@@ -16,10 +16,11 @@ each subset of the `DataFrame`. This specification can be of the following forms
 2. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector
 3. a `cols => function => target_col` form additionally
-   specifying the name of the target column (this assumes that `function` returns a single value or a vector)
+   specifying the name of the target column (this assumes that `function` returns a single
+   value or a vector)
 4. a `col => target_col` pair, which renames the column `col` to `target_col`
-5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
-   (without `target_col` the new column is called `:nrow`)
+5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows
+   in a group (without `target_col` the new column is called `:nrow`)
 6. several arguments of the forms given above, or vectors thereof
 7. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
@@ -28,11 +29,9 @@ each subset of the `DataFrame`. This specification can be of the following forms
 
 All forms except 1 and 6 can be also passed as the first argument to `map`.
 
-Three are two special rules that apply to `cols => function` syntax:
-1. if `cols` is wrapped in `AsTable` object then a `NamedTuple` containing columns
-   selected by `cols` is passed to `function`
-2. if `function` is wrapped in a `ByRow` object, then it will be passed values from single
-   rows each group and always return a vector of values produced by `function` applied to them
+As a special rule that applies to `cols => function` syntax, if `cols` is wrapped
+in an `AsTable` object then a `NamedTuple` containing columns selected by `cols` is
+passed to `function`.
 
 In all of these cases, `function` can return either a single row or multiple rows.
 `function` can always generate a single column by returning a single value or a vector.

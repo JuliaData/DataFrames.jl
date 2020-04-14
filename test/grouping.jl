@@ -1952,24 +1952,27 @@ end
           DataFrame(g=1:2, g_Ref=[(g=[1,1,1],),(g=[2,2],)])
 
 
-    # RyRow 4 options of single pair passed
-    @test by(df, :g, AsTable([:x, :y]) => ByRow(identity)) ==
-          by(AsTable([:x, :y]) => ByRow(identity), df, :g) ==
-          combine(gdf, AsTable([:x, :y]) => ByRow(identity)) ==
-          combine(AsTable([:x, :y]) => ByRow(identity), gdf) ==
+    # ByRow 4 options of single pair passed
+    @test by(df, :g, AsTable([:x, :y]) => ByRow(x -> [x])) ==
+          by(AsTable([:x, :y]) => ByRow(x -> [x]), df, :g) ==
+          combine(gdf, AsTable([:x, :y]) => ByRow(x -> [x])) ==
+          combine(AsTable([:x, :y]) => ByRow(x -> [x]), gdf) ==
           DataFrame(g=[1,1,1,2,2],
-                    x_y_identity=[(x=1,y=6), (x=2,y=7), (x=3,y=8), (x=4,y=9), (x=5,y=10)])
-    @test map(AsTable([:x, :y]) => ByRow(identity), gdf) ==
-          groupby(by(df, :g, AsTable([:x, :y]) => ByRow(identity)), :g)
+                    x_y_function=[[(x=1,y=6)], [(x=2,y=7)], [(x=3,y=8)], [(x=4,y=9)], [(x=5,y=10)]])
+    @test map(AsTable([:x, :y]) => ByRow(x -> [x]), gdf) ==
+          groupby(by(df, :g, AsTable([:x, :y]) => ByRow(x -> [x])), :g)
 
     # whole column and ByRow test for multiple pairs passed
     @test by(df, :g, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
           combine(gdf, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
           [df DataFrame(x_function=-df.x, y_function=-df.y)]
-    @test by(df, :g, [:x, :y], [AsTable(v) => ByRow(x -> (n=-x[1],)) for v in [:x, :y]]) ==
-          combine(gdf, [:x, :y], [AsTable(v) => ByRow(x -> (n=-x[1],)) for v in [:x, :y]]) ==
-          [df DataFrame(x_function=[(n=-1,), (n=-2,) ,(n=-3,) ,(n=-4,) ,(n=-5,)],
-                        y_function=[(n=-6,), (n=-7,) ,(n=-8,) ,(n=-9,) ,(n=-10,)])]
+    @test by(df, :g, [:x, :y], [AsTable(v) => ByRow(x -> (-x[1],)) for v in [:x, :y]]) ==
+          combine(gdf, [:x, :y], [AsTable(v) => ByRow(x -> (-x[1],)) for v in [:x, :y]]) ==
+          [df DataFrame(x_function=[(-1,), (-2,) ,(-3,) ,(-4,) ,(-5,)],
+                        y_function=[(-6,), (-7,) ,(-8,) ,(-9,) ,(-10,)])]
+
+    @test_throws ArgumentError by(df, :g, AsTable([:x, :y]) => ByRow(identity))
+    @test_throws ArgumentError by(df, :g, AsTable([:x, :y]) => ByRow(x -> df[1, :]))
 end
 
 end # module

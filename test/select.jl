@@ -718,10 +718,15 @@ end
         @test_throws ArgumentError select(df, :x => x -> retval)
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
-        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
-        cdf = copy(df)
-        select!(cdf, :x => ByRow(x -> retval))
-        @test cdf == DataFrame(x_function = [retval])
+        if retval isa Union{NamedTuple, DataFrameRow}
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval))
+            @test_throws ArgumentError select!(df, :x => ByRow(x -> retval))
+        else
+            @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+            cdf = copy(df)
+            select!(cdf, :x => ByRow(x -> retval))
+            @test cdf == DataFrame(x_function = [retval])
+        end
     end
 
     for retval in [(1, 2), ones(2,2,2)]
@@ -1078,16 +1083,18 @@ end
     @test transform(df, AsTable(:) => sum ∘ sum) ==
           DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_function=45)
 
-    # note automatic unwrapping of function name
-    @test select(df, AsTable(:) => ByRow(identity)) ==
-          DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7),
-                                    (a = 2, b = 5, c = 8),
-                                    (a = 3, b = 6, c = 9)])
-    @test transform(df, AsTable(:) => ByRow(identity)) ==
-          hcat(df, DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7),
-                                             (a = 2, b = 5, c = 8),
-                                             (a = 3, b = 6, c = 9)]))
+    @test select(df, AsTable(:) => ByRow(x -> [x])) ==
+          DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
+                                    [(a = 2, b = 5, c = 8)],
+                                    [(a = 3, b = 6, c = 9)]])
+    @test transform(df, AsTable(:) => ByRow(x -> [x])) ==
+          hcat(df, DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
+                                             [(a = 2, b = 5, c = 8)],
+                                             [(a = 3, b = 6, c = 9)]]))
+    @test_throws ArgumentError select(df, AsTable(:) => ByRow(identity))
+    @test_throws ArgumentError select(df, AsTable(:) => ByRow(x -> df[1, :]))
     @test_throws ArgumentError transform(df, AsTable(Not(:)) => ByRow(identity))
+
     @test select(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
     @test transform(df, AsTable(Not(:)) => Ref) ==
           DataFrame(a=1:3, b=4:6, c=7:9, Ref=NamedTuple())
@@ -1109,6 +1116,15 @@ end
                             [:sum, :n, :mean]) ≅
               [df DataFrame(sum=[2,2], n=[2,1], mean=[1,2])]
     end
+end
+
+@testset "make sure select! is safe on error" begin
+    a = [1]
+    df = DataFrame()
+    df.a = a
+    @test_throws DomainError select!(df, :a => x -> sqrt(-1))
+    @test df.a === a
+    @test propertynames(df) == (:a,)
 end
 
 end # module

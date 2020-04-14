@@ -19,40 +19,23 @@ A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
 
 Note that `ByRow` always collects values returned by `fun` in a vector. Therefore,
-returning a `NamedTuple` produces a column of `NamedTuple` values, rather than
-multiple columns.
-For example observe the difference between the return value of these two example
-calls of the `by` function:
-```jldoctest
-julia> df = DataFrame(a=1:3, b=4:6);
-
-julia> by(df, :a , AsTable(:) => ByRow(identity))
-3×2 DataFrame
-│ Row │ a     │ a_b_identity   │
-│     │ Int64 │ NamedTuple…    │
-├─────┼───────┼────────────────┤
-│ 1   │ 1     │ (a = 1, b = 4) │
-│ 2   │ 2     │ (a = 2, b = 5) │
-│ 3   │ 3     │ (a = 3, b = 6) │
-
-julia> by(df, :a , AsTable(:) => identity)
-3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
-```
+to allow for future extensions `NamedTuple` or `DataFrameRow` from `fun` is
+currently disallowed.
 """
 struct ByRow{T}
     fun::T
 end
 
+_by_row_helper(x::Any) = x
+_by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
+    throw(ArgumentError("return value of type $(typeof(x)) " *
+                        "is currently not allowed in ByRow."))
+
+
 Base.broadcastable(x::ByRow) = Ref(x)
 
-(f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)
-(f::ByRow)(table::NamedTuple) = f.fun.(Tables.namedtupleiterator(table))
+(f::ByRow)(cols::AbstractVector...) = _by_row_helper.(f.fun.(cols...))
+(f::ByRow)(table::NamedTuple) = _by_row_helper.(f.fun.(Tables.namedtupleiterator(table)))
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
@@ -248,9 +231,8 @@ SELECT_ARG_RULES =
     to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
     any column indexing syntax, in which case `fun` will be passed one argument for each of
     the columns specified by `old_column`. If `ByRow` is used it is not allowed for
-    `old_column` to select an empty set of columns. Note that if a function is wrapped
-    by `ByRow` then there are no restrictions on its return values and they are stored as
-    freshly allocated vector having number of elements equal to `nrow(df)`.
+    `old_column` to select an empty set of columns nor for `fun` to return
+    a `NamedTuple` or a `DataFrameRow`.
 
     Column transformation can also be specified using the short `old_column => fun` form.
     In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
