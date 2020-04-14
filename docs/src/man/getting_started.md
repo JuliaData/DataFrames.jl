@@ -656,7 +656,7 @@ julia> transform(df, All() => +)
 │ 1   │ 1     │ 3     │ 5     │ 9         │
 │ 2   │ 2     │ 4     │ 6     │ 12        │
 ```
-With this approach, we can easily compute for each row the name of column with the highest score:
+Using the `ByRow` wrapper, we can easily compute for each row the name of column with the highest score:
 ```
 julia> using Random
 

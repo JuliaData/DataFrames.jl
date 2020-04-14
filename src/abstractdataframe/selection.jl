@@ -19,8 +19,8 @@ A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
 
 Note that `ByRow` always collects values returned by `fun` in a vector. Therefore,
-to allow for future extensions `NamedTuple` or `DataFrameRow` from `fun` is
-currently disallowed.
+to allow for future extensions, returning `NamedTuple` or `DataFrameRow`
+from `fun` is currently disallowed.
 """
 struct ByRow{T}
     fun::T
@@ -29,7 +29,7 @@ end
 _by_row_helper(x::Any) = x
 _by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
     throw(ArgumentError("return value of type $(typeof(x)) " *
-                        "is currently not allowed in ByRow."))
+                        "is currently not allowed with ByRow."))
 
 
 Base.broadcastable(x::ByRow) = Ref(x)
