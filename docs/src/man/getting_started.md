@@ -673,6 +673,46 @@ julia> Tables.rowtable(df)
  (x1 = 1, x2 = 3, y = 5)
  (x1 = 2, x2 = 4, y = 6)
 ```
+Now assume that a data frame `df` contains predictions from a model producing scores
+for three levels `a`, `b` and `c` of a nominar target variable.
+For each row we want to get the level with the highest score.
+```
+julia> using Random
+
+julia> Random.seed!(1);
+
+julia> df = DataFrame(rand(10, 3), [:a, :b, :c])
+10×3 DataFrame
+│ Row │ a          │ b         │ c         │
+│     │ Float64    │ Float64   │ Float64   │
+├─────┼────────────┼───────────┼───────────┤
+│ 1   │ 0.236033   │ 0.555751  │ 0.0769509 │
+│ 2   │ 0.346517   │ 0.437108  │ 0.640396  │
+│ 3   │ 0.312707   │ 0.424718  │ 0.873544  │
+│ 4   │ 0.00790928 │ 0.773223  │ 0.278582  │
+│ 5   │ 0.488613   │ 0.28119   │ 0.751313  │
+│ 6   │ 0.210968   │ 0.209472  │ 0.644883  │
+│ 7   │ 0.951916   │ 0.251379  │ 0.0778264 │
+│ 8   │ 0.999905   │ 0.0203749 │ 0.848185  │
+│ 9   │ 0.251662   │ 0.287702  │ 0.0856352 │
+│ 10  │ 0.986666   │ 0.859512  │ 0.553206  │
+
+julia> transform(df, AsTable(:) => ByRow(argmax) => :prediction)
+10×4 DataFrame
+│ Row │ a          │ b         │ c         │ prediction │
+│     │ Float64    │ Float64   │ Float64   │ Symbol     │
+├─────┼────────────┼───────────┼───────────┼────────────┤
+│ 1   │ 0.236033   │ 0.555751  │ 0.0769509 │ b          │
+│ 2   │ 0.346517   │ 0.437108  │ 0.640396  │ c          │
+│ 3   │ 0.312707   │ 0.424718  │ 0.873544  │ c          │
+│ 4   │ 0.00790928 │ 0.773223  │ 0.278582  │ b          │
+│ 5   │ 0.488613   │ 0.28119   │ 0.751313  │ c          │
+│ 6   │ 0.210968   │ 0.209472  │ 0.644883  │ c          │
+│ 7   │ 0.951916   │ 0.251379  │ 0.0778264 │ a          │
+│ 8   │ 0.999905   │ 0.0203749 │ 0.848185  │ a          │
+│ 9   │ 0.251662   │ 0.287702  │ 0.0856352 │ b          │
+│ 10  │ 0.986666   │ 0.859512  │ 0.553206  │ a          │
+```
 In the following, most complex, example below we compute row-wise sum, number of elements, and mean,
 while ignoring missing values.
 ```
