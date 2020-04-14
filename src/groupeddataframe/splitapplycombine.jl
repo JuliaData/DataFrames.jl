@@ -219,7 +219,8 @@ If `pair` is passed then it must follow the rules specified for transformations 
 [`select`](@ref) and have the form `source_cols => fun`, `source_cols => fun => target_col`,
 or `source_col => target_col`.
 Function defined by `fun` is passed `SubArray` views as positional arguments for
-each column specified to be selected and can return any return value defined below.
+each column specified to be selected and can return any return value defined below,
+or a `NamedTuple` containing these `SubArray`s if `source_cols` is an `AsTable` selector.
 As a special case `nrow` or `nrow => target_col` can be passed without specifying
 input columns to efficiently calculate number of rows in each group.
 If `nrow` is passed the resulting column name is `:nrow`.
@@ -278,6 +279,22 @@ Last Group (1 row): a = 4
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 4     │ 2     │
+
+julia> map(AsTable(valuecols(gd)) => sum, gd)
+GroupedDataFrame with 4 groups based on key: a
+First Group (2 rows): a = 1
+│ Row │ a     │ b_c_sum │
+│     │ Int64 │ Int64   │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 3       │
+│ 2   │ 1     │ 7       │
+⋮
+Last Group (2 rows): a = 4
+│ Row │ a     │ b_c_sum │
+│     │ Int64 │ Int64   │
+├─────┼───────┼─────────┤
+│ 1   │ 4     │ 5       │
+│ 2   │ 4     │ 9       │
 ```
 
 See [`by`](@ref) for more examples.
@@ -358,7 +375,8 @@ const F_ARGUMENT_RULES =
     for [`select`](@ref) and have the form `source_cols => fun`,
     `source_cols => fun => target_col`, or `source_col => target_col`.
     Function `fun` is passed `SubArray` views as positional arguments for each column
-    specified to be selected and can return a vector or a single value
+    specified to be selected, or a `NamedTuple` containing these `SubArray`s if
+    `source_cols` is an `AsTable` selector. It can return a vector or a single value
     (defined precisely below).
 
     As a special case `nrow` or `nrow => target_col` can be passed without specifying
@@ -525,6 +543,30 @@ julia> combine(gd, [:b, :c] .=> Ref)
 │ 2   │ 2     │ [1, 1]   │ [2, 6]   │
 │ 3   │ 3     │ [2, 2]   │ [3, 7]   │
 │ 4   │ 4     │ [1, 1]   │ [4, 8]   │
+
+julia> combine(gd, AsTable(:) => Ref)
+4×2 DataFrame
+│ Row │ a     │ a_b_c_Ref                            │
+│     │ Int64 │ NamedTuple…                          │
+├─────┼───────┼──────────────────────────────────────┤
+│ 1   │ 1     │ (a = [1, 1], b = [2, 2], c = [1, 5]) │
+│ 2   │ 2     │ (a = [2, 2], b = [1, 1], c = [2, 6]) │
+│ 3   │ 3     │ (a = [3, 3], b = [2, 2], c = [3, 7]) │
+│ 4   │ 4     │ (a = [4, 4], b = [1, 1], c = [4, 8]) │
+
+julia> combine(gd, :, AsTable(Not(:a)) => sum)
+8×4 DataFrame
+│ Row │ a     │ b     │ c     │ b_c_sum │
+│     │ Int64 │ Int64 │ Int64 │ Int64   │
+├─────┼───────┼───────┼───────┼─────────┤
+│ 1   │ 1     │ 2     │ 1     │ 3       │
+│ 2   │ 1     │ 2     │ 5     │ 7       │
+│ 3   │ 2     │ 1     │ 2     │ 3       │
+│ 4   │ 2     │ 1     │ 6     │ 7       │
+│ 5   │ 3     │ 2     │ 3     │ 5       │
+│ 6   │ 3     │ 2     │ 7     │ 9       │
+│ 7   │ 4     │ 1     │ 4     │ 5       │
+│ 8   │ 4     │ 1     │ 8     │ 9       │
 ```
 
 See [`by`](@ref) for more examples.
@@ -777,6 +819,13 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
     idx = idx[starts[i]:ends[i]]
     f(map(c -> view(c, idx), incols)...)
+end
+
+function do_call(f::Any, idx::AbstractVector{<:Integer},
+                 starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
+                 gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
+    idx = idx[starts[i]:ends[i]]
+    f(map(c -> view(c, idx), incols))
 end
 
 do_call(f::Any, idx::AbstractVector{<:Integer},
@@ -1040,7 +1089,7 @@ end
 function _combine(f::AbstractVector{<:Pair},
                   gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     # here f should be normalized and in a form of source_cols => fun
-    @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}}, f)
+    @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
     @assert all(x -> last(x) isa Union{Base.Callable, ByRow}, f)
     idx_agg = nothing
     if any(isagg, f)
@@ -1064,6 +1113,10 @@ function _combine(f::AbstractVector{<:Pair},
         else
             if source_cols isa Int
                 incols = (parentdf[!, source_cols],)
+            elseif source_cols isa AsTable
+                incols = Tables.columntable(select(parentdf,
+                                                   source_cols.cols,
+                                                   copycols=false))
             else
                 @assert source_cols isa AbstractVector{Int}
                 incols = ntuple(i -> parentdf[!, source_cols[i]], length(source_cols))
@@ -1139,6 +1192,10 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     parentdf = parent(gd)
     if source_cols isa Int
         incols = (parent(gd)[!, source_cols],)
+    elseif source_cols isa AsTable
+        incols = Tables.columntable(select(parentdf,
+                                           source_cols.cols,
+                                           copycols=false))
     else
         @assert source_cols isa AbstractVector{Int}
         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
@@ -1160,7 +1217,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
 end
 
 function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
-                           incols::Union{Nothing, AbstractVector, Tuple})
+                           incols::Union{Nothing, AbstractVector, Tuple, NamedTuple})
     firstmulticol = firstres isa MULTI_COLS_TYPE
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
@@ -1175,7 +1232,7 @@ end
 
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                              f::Any, gd::GroupedDataFrame,
-                             incols::Union{Nothing, AbstractVector, Tuple},
+                             incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                              firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
     extrude = false
 
@@ -1251,7 +1308,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    rowstart::Integer, colstart::Integer,
                                    f::Any, gd::GroupedDataFrame,
-                                   incols::Union{Nothing, AbstractVector, Tuple},
+                                   incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                    colnames::NTuple{N, Symbol},
                                    firstmulticol::Val) where N
     len = length(gd)
@@ -1333,7 +1390,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      outcols::NTuple{N, AbstractVector},
                                      idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                                      f::Any, gd::GroupedDataFrame,
-                                     incols::Union{Nothing, AbstractVector, Tuple},
+                                     incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                      colnames::NTuple{N, Symbol},
                                      firstmulticol::Val) where N
     len = length(gd)
@@ -1527,6 +1584,30 @@ julia> by(df, :a, [:b, :c] .=> Ref)
 │ 2   │ 2     │ [1, 1]   │ [2, 6]   │
 │ 3   │ 3     │ [2, 2]   │ [3, 7]   │
 │ 4   │ 4     │ [1, 1]   │ [4, 8]   │
+
+julia> by(df, :a, AsTable(:) => Ref)
+4×2 DataFrame
+│ Row │ a     │ a_b_c_Ref                            │
+│     │ Int64 │ NamedTuple…                          │
+├─────┼───────┼──────────────────────────────────────┤
+│ 1   │ 1     │ (a = [1, 1], b = [2, 2], c = [1, 5]) │
+│ 2   │ 2     │ (a = [2, 2], b = [1, 1], c = [2, 6]) │
+│ 3   │ 3     │ (a = [3, 3], b = [2, 2], c = [3, 7]) │
+│ 4   │ 4     │ (a = [4, 4], b = [1, 1], c = [4, 8]) │
+
+julia> by(df, :a, :, AsTable(Not(:a)) => sum)
+8×4 DataFrame
+│ Row │ a     │ b     │ c     │ b_c_sum │
+│     │ Int64 │ Int64 │ Int64 │ Int64   │
+├─────┼───────┼───────┼───────┼─────────┤
+│ 1   │ 1     │ 2     │ 1     │ 3       │
+│ 2   │ 1     │ 2     │ 5     │ 7       │
+│ 3   │ 2     │ 1     │ 2     │ 3       │
+│ 4   │ 2     │ 1     │ 6     │ 7       │
+│ 5   │ 3     │ 2     │ 3     │ 5       │
+│ 6   │ 3     │ 2     │ 7     │ 9       │
+│ 7   │ 4     │ 1     │ 4     │ 5       │
+│ 8   │ 4     │ 1     │ 8     │ 9       │
 ```
 """
 by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;

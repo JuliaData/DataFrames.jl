@@ -634,7 +634,10 @@ julia> df
 ```
 
 `transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
-they retain all columns that are present in the source data frame, for example:
+they retain all columns that are present in the source data frame. Here are some more advanced examples.
+
+First we show how to generate a column that is a sum of all other columns in the data frame
+using the `All()` selector:
 
 ```jldoctest dataframe
 julia> df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
@@ -653,8 +656,66 @@ julia> transform(df, All() => +)
 │ 1   │ 1     │ 3     │ 5     │ 9         │
 │ 2   │ 2     │ 4     │ 6     │ 12        │
 ```
+Using the `ByRow` wrapper, we can easily compute for each row the name of column with the highest score:
+```
+julia> using Random
 
-While the DataFrames package provides basic data manipulation capabilities,
+julia> Random.seed!(1);
+
+julia> df = DataFrame(rand(10, 3), [:a, :b, :c])
+10×3 DataFrame
+│ Row │ a          │ b         │ c         │
+│     │ Float64    │ Float64   │ Float64   │
+├─────┼────────────┼───────────┼───────────┤
+│ 1   │ 0.236033   │ 0.555751  │ 0.0769509 │
+│ 2   │ 0.346517   │ 0.437108  │ 0.640396  │
+│ 3   │ 0.312707   │ 0.424718  │ 0.873544  │
+│ 4   │ 0.00790928 │ 0.773223  │ 0.278582  │
+│ 5   │ 0.488613   │ 0.28119   │ 0.751313  │
+│ 6   │ 0.210968   │ 0.209472  │ 0.644883  │
+│ 7   │ 0.951916   │ 0.251379  │ 0.0778264 │
+│ 8   │ 0.999905   │ 0.0203749 │ 0.848185  │
+│ 9   │ 0.251662   │ 0.287702  │ 0.0856352 │
+│ 10  │ 0.986666   │ 0.859512  │ 0.553206  │
+
+julia> transform(df, AsTable(:) => ByRow(argmax) => :prediction)
+10×4 DataFrame
+│ Row │ a          │ b         │ c         │ prediction │
+│     │ Float64    │ Float64   │ Float64   │ Symbol     │
+├─────┼────────────┼───────────┼───────────┼────────────┤
+│ 1   │ 0.236033   │ 0.555751  │ 0.0769509 │ b          │
+│ 2   │ 0.346517   │ 0.437108  │ 0.640396  │ c          │
+│ 3   │ 0.312707   │ 0.424718  │ 0.873544  │ c          │
+│ 4   │ 0.00790928 │ 0.773223  │ 0.278582  │ b          │
+│ 5   │ 0.488613   │ 0.28119   │ 0.751313  │ c          │
+│ 6   │ 0.210968   │ 0.209472  │ 0.644883  │ c          │
+│ 7   │ 0.951916   │ 0.251379  │ 0.0778264 │ a          │
+│ 8   │ 0.999905   │ 0.0203749 │ 0.848185  │ a          │
+│ 9   │ 0.251662   │ 0.287702  │ 0.0856352 │ b          │
+│ 10  │ 0.986666   │ 0.859512  │ 0.553206  │ a          │
+```
+In the following, most complex, example below we compute row-wise sum, number of elements, and mean,
+while ignoring missing values.
+```
+julia> using Statistics
+
+julia> df = DataFrame(x=[1, 2, missing], y=[1, missing, missing]);
+
+julia> transform(df, AsTable(:) .=>
+                     ByRow.([sum∘skipmissing,
+                             x -> count(!ismissing, x),
+                             mean∘skipmissing]) .=>
+                     [:sum, :n, :mean])
+3×5 DataFrame
+│ Row │ x       │ y       │ sum   │ n     │ mean    │
+│     │ Int64?  │ Int64?  │ Int64 │ Int64 │ Float64 │
+├─────┼─────────┼─────────┼───────┼───────┼─────────┤
+│ 1   │ 1       │ 1       │ 2     │ 2     │ 1.0     │
+│ 2   │ 2       │ missing │ 2     │ 1     │ 2.0     │
+│ 3   │ missing │ missing │ 0     │ 0     │ NaN     │
+```
+
+While the DataFrames.jl package provides basic data manipulation capabilities,
 users are encouraged to use querying frameworks for more convenient and powerful operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a
 [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources

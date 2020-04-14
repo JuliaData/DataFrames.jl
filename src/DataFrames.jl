@@ -16,6 +16,7 @@ import DataAPI,
 
 export AbstractDataFrame,
        All,
+       AsTable,
        Between,
        ByRow,
        DataFrame,
