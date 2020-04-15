@@ -517,14 +517,6 @@ end
     @test delete!(df, 2) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-    @test delete!(df, 2:3) === df
-    @test df == DataFrame(a=[1], b=[3.0])
-
-    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-    @test delete!(df, [2, 3]) === df
-    @test df == DataFrame(a=[1], b=[3.0])
-
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test delete!(df, 1) === df
     @test df == DataFrame(a=[2], b=[4.0])
@@ -533,13 +525,15 @@ end
     @test delete!(df, 2) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-    @test delete!(df, 2:3) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+    for v in (2:3, [2, 3])
+        df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
+        @test delete!(df, v) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-    @test delete!(df, [2, 3]) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+        @test delete!(df, v) === df
+        @test df == DataFrame(a=[1], b=[3.0])
+    end
 
     df = DataFrame()
     @test_throws BoundsError delete!(df, 10)
@@ -557,45 +551,19 @@ end
     @test delete!(df, [false, true, false]) === df
     @test df == DataFrame(a=[1, 3], b=[3, 1])
 
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, 1) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
+    for v in (1, [1], 1:1, [true, false, false])
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test delete!(df, v) == DataFrame(x=[2, 3])
+        @test x == [1, 2, 3]
+    end
 
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, [1]) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, 1:1) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, [true, false, false]) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, 1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, [1]) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, 1:1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, [true, false, false]) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    for v in (1, [1], 1:1, [true, false, false], Not(2,3), Not([false, true, true]))
+        x = [1, 2, 3]
+        df = DataFrame(x=x, copycols=false)
+        @test delete!(df, v) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
+    end
 end
 
 @testset "describe" begin
