@@ -51,14 +51,47 @@ d1m = stack(d1, Not([:a, :b, :e]))
 d1s_name = stack(d1, Not([:a, :b, :e]), variable_name=:somemeasure)
 ```
 """
-function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
-               id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
+function stack(df::AbstractDataFrame,
+               measure_vars = findall(col -> eltype(col) <: Union{AbstractFloat, Missing},
+                                      eachcol(df)),
+               id_vars = Not(measure_vars);
+               variable_name::Symbol=:variable,
                value_name::Symbol=:value, view::Bool=false,
                variable_eltype::Type=CategoricalString)
+    # getindex from index returns either Int or AbstractVector{Int}
+    mv_tmp = index(df)[measure_vars]
+    ints_measure_vars = mv_tmp isa Int ? [mv_tmp] : mv_tmp
+    idv_tmp = index(df)[id_vars]
+    ints_id_vars = idv_tmp isa Int ? [idv_tmp] : idv_tmp
     if view
-        return _stackview(df, measure_vars, id_vars, variable_name=variable_name,
+        return _stackview(df, ints_measure_vars, ints_id_vars, variable_name=variable_name,
                           value_name=value_name, variable_eltype=variable_eltype)
     end
+    N = length(ints_measure_vars)
+    cnames = _names(df)[ints_id_vars]
+    push!(cnames, variable_name)
+    push!(cnames, value_name)
+    if variable_eltype <: CategoricalString
+        nms = String.(_names(df)[ints_measure_vars])
+        catnms = categorical(nms)
+        levels!(catnms, nms)
+    elseif variable_eltype === Symbol
+        catnms = _names(df)[ints_measure_vars]
+    elseif variable_eltype === String
+        catnms = PooledArray(String.(_names(df)[ints_measure_vars]))
+    else
+        throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
+                            "`String` or `Symbol` as a value."))
+    end
+    return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
+                                    repeat(catnms, inner=nrow(df)),                       # variable
+                                    vcat([df[!, c] for c in ints_measure_vars]...)],      # value
+                     cnames, copycols=false)
+end
+
+function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
+                    id_vars::AbstractVector{Int}; variable_name::Symbol,
+                    value_name::Symbol, variable_eltype::Type)
     N = length(measure_vars)
     cnames = _names(df)[id_vars]
     push!(cnames, variable_name)
@@ -67,58 +100,18 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
         nms = String.(_names(df)[measure_vars])
         catnms = categorical(nms)
         levels!(catnms, nms)
-    elseif variable_eltype === Symbol
+    elseif variable_eltype <: Symbol
         catnms = _names(df)[measure_vars]
-    elseif variable_eltype === String
-        catnms = PooledArray(String.(_names(df)[measure_vars]))
+    elseif variable_eltype <: String
+        catnms = String.(_names(df)[measure_vars])
     else
         throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
                             "`String` or `Symbol` as a value."))
     end
-    DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in id_vars]..., # id_var columns
-                             repeat(catnms, inner=nrow(df)),                  # variable
-                             vcat([df[!, c] for c in measure_vars]...)],      # value
-              cnames, copycols=false)
-end
-
-function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
-               variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, variable_eltype::Type=CategoricalString)
-    stack(df, [measure_var], [id_var], variable_name=variable_name,
-          value_name=value_name, view=view, variable_eltype=variable_eltype)
-end
-
-function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer}, id_var::Int;
-               variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, variable_eltype::Type=CategoricalString)
-    stack(df, measure_vars, [id_var], variable_name=variable_name,
-          value_name=value_name, view=view, variable_eltype=variable_eltype)
-end
-
-function stack(df::AbstractDataFrame, measure_var::Int, id_vars::AbstractVector{<:Integer};
-               variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, variable_eltype::Type=CategoricalString)
-    stack(df, [measure_var], id_vars; variable_name=variable_name,
-          value_name=value_name, view=view, variable_eltype=variable_eltype)
-end
-
-function stack(df::AbstractDataFrame, measure_vars, id_vars;
-               variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, variable_eltype::Type=CategoricalString)
-    stack(df, index(df)[measure_vars], index(df)[id_vars]; variable_name=variable_name,
-          value_name=value_name, view=view, variable_eltype=variable_eltype)
-end
-
-# no vars specified, by default select only numeric columns
-numeric_vars(df::AbstractDataFrame) =
-    [eltype(col) <: Union{AbstractFloat, Missing} for col in eachcol(df)]
-
-function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
-               variable_name::Symbol=:variable, value_name::Symbol=:value,
-               view::Bool=false, variable_eltype::Type=CategoricalString)
-    mv_inds = index(df)[measure_vars]
-    stack(df, mv_inds, setdiff(1:ncol(df), mv_inds); variable_name=variable_name,
-          value_name=value_name, view=view, variable_eltype=variable_eltype)
+    return DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
+                                    RepeatedVector(catnms, nrow(df), 1),                  # variable
+                                    StackedVector(Any[df[!, c] for c in measure_vars])],  # value
+                     cnames, copycols=false)
 end
 
 """
@@ -167,17 +160,18 @@ wide4 = unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
 ```
 Note that there are some differences between the widened results above.
 """
-function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int;
-                 renamecols::Function=identity)
+function unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::ColumnIndex,
+                 value::ColumnIndex; renamecols::Function=identity)
     refkeycol = categorical(df[!, rowkey])
     droplevels!(refkeycol)
     keycol = categorical(df[!, colkey])
     droplevels!(keycol)
     valuecol = df[!, value]
-    _unstack(df, rowkey, colkey, value, keycol, valuecol, refkeycol, renamecols)
+    return _unstack(df, index(df)[rowkey], index(df)[colkey],
+                    keycol, valuecol, refkeycol, renamecols)
 end
 
-function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int,
+function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
                   keycol, valuecol, refkeycol, renamecols::Function)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
@@ -225,48 +219,36 @@ function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int,
     copyto!(col, levs)
     hadmissing && (col[end] = missing)
     df2 = DataFrame(unstacked_val, Symbol.(renamecols.(levels(keycol))), copycols=false)
-    insertcols!(df2, 1, _names(df)[rowkey] => col)
+    return insertcols!(df2, 1, _names(df)[rowkey] => col)
 end
 
-unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::Int, value::Int;
-        renamecols::Function=identity) =
-    unstack(df, index(df)[rowkey], colkey, value, renamecols=renamecols)
-
-# Version of unstack with just the colkey and value columns provided
-unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
-        renamecols::Function=identity) =
-    unstack(df, index(df)[colkey], index(df)[value], renamecols=renamecols)
-
-# group on anything not a key or value
-unstack(df::AbstractDataFrame, colkey::Int, value::Int; renamecols::Function=identity) =
-    unstack(df, setdiff(_names(df), _names(df)[[colkey, value]]), colkey, value,
-            renamecols=renamecols)
-
-unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex, value::ColumnIndex;
-        renamecols::Function=identity) =
-    unstack(df, rowkeys, index(df)[colkey], index(df)[value], renamecols=renamecols)
-
-unstack(df::AbstractDataFrame, rowkeys, colkey::Int, value::Int;
-        renamecols::Function=identity) =
-    unstack(df, names(df)[index(df)[rowkeys]], colkey, value, renamecols=renamecols)
-
-unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Integer}, colkey::Int,
-        value::Int; renamecols::Function=identity) =
-    unstack(df, names(df)[rowkeys], colkey, value, renamecols=renamecols)
-
-function unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol}, colkey::Int,
-                 value::Int; renamecols::Function=identity)
-    length(rowkeys) == 0 && throw(ArgumentError("No key column found"))
-    length(rowkeys) == 1 && return unstack(df, rowkeys[1], colkey, value, renamecols=renamecols)
-    g = groupby(df, rowkeys, sort=true)
+function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
+                 value::ColumnIndex; renamecols::Function=identity)
+    rowkey_ints = index(df)[rowkeys]
+    @assert rowkey_ints isa AbstractVector{Int}
+    length(rowkey_ints) == 0 && throw(ArgumentError("No key column found"))
+    length(rowkey_ints) == 1 && return unstack(df, rowkey_ints[1], colkey, value,
+                                           renamecols=renamecols)
+    g = groupby(df, rowkey_ints, sort=true)
     keycol = categorical(df[!, colkey])
     droplevels!(keycol)
     valuecol = df[!, value]
-    _unstack(df, rowkeys, colkey, value, keycol, valuecol, g, renamecols)
+    return _unstack(df, rowkey_ints, index(df)[colkey], keycol, valuecol, g, renamecols)
 end
 
-function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
-                  colkey::Int, value::Int, keycol, valuecol, g, renamecols)
+function unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
+                 renamecols::Function=identity)
+    colkey_int = index(df)[colkey]
+    value_int = index(df)[value]
+    return unstack(df, Not(colkey_int, value_int), colkey_int, value_int,
+            renamecols=renamecols)
+end
+
+unstack(df::AbstractDataFrame; renamecols::Function=identity) =
+    unstack(df, :variable, :value, renamecols=renamecols)
+
+function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
+                  colkey::Int, keycol, valuecol, g, renamecols)
     idx, starts, ends = g.idx, g.starts, g.ends
     groupidxs = [idx[starts[i]:ends[i]] for i in 1:length(starts)]
     rowkey = zeros(Int, size(df, 1))
@@ -303,9 +285,6 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
     df2 = DataFrame(unstacked_val, Symbol.(renamecols.(levels(keycol))), copycols=false)
     hcat(df1, df2, copycols=false)
 end
-
-unstack(df::AbstractDataFrame; renamecols::Function=identity) =
-    unstack(df, :variable, :value, renamecols=renamecols)
 
 """
     StackedVector <: AbstractVector
@@ -396,7 +375,8 @@ end
 
 Base.parent(v::RepeatedVector) = v.parent
 DataAPI.levels(v::RepeatedVector) = levels(parent(v))
-CategoricalArrays.isordered(v::RepeatedVector{<:Union{CategoricalValue, CategoricalString, Missing}}) =
+CategoricalArrays.isordered(v::RepeatedVector{<:Union{CategoricalValue, CategoricalString,
+                                                      Missing}}) =
     isordered(parent(v))
 
 function Base.getindex(v::RepeatedVector, i::Int)
@@ -417,65 +397,4 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
     res = CategoricalArray(parent(v))
     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
     res
-end
-
-function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
-                    id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
-                    value_name::Symbol=:value, variable_eltype::Type=CategoricalString)
-    N = length(measure_vars)
-    cnames = _names(df)[id_vars]
-    push!(cnames, variable_name)
-    push!(cnames, value_name)
-    if variable_eltype <: CategoricalString
-        nms = String.(_names(df)[measure_vars])
-        catnms = categorical(nms)
-        levels!(catnms, nms)
-    elseif variable_eltype <: Symbol
-        catnms = _names(df)[measure_vars]
-    elseif variable_eltype <: String
-        catnms = String.(_names(df)[measure_vars])
-    else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
-                            "`String` or `Symbol` as a value."))
-    end
-    DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
-                             RepeatedVector(catnms, nrow(df), 1),                  # variable
-                             StackedVector(Any[df[!, c] for c in measure_vars])],  # value
-              cnames, copycols=false)
-end
-
-function _stackview(df::AbstractDataFrame, measure_var::Int, id_var::Int;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    variable_eltype::Type=CategoricalString)
-    _stackview(df, [measure_var], [id_var]; variable_name=variable_name,
-               value_name=value_name, variable_eltype=variable_eltype)
-end
-
-function _stackview(df::AbstractDataFrame, measure_vars, id_var::Int;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    variable_eltype::Type=CategoricalString)
-    _stackview(df, measure_vars, [id_var]; variable_name=variable_name,
-               value_name=value_name, variable_eltype=variable_eltype)
-end
-
-function _stackview(df::AbstractDataFrame, measure_var::Int, id_vars;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    variable_eltype::Type=CategoricalString)
-    _stackview(df, [measure_var], id_vars; variable_name=variable_name,
-               value_name=value_name, variable_eltype=variable_eltype)
-end
-
-function _stackview(df::AbstractDataFrame, measure_vars, id_vars;
-                    variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    variable_eltype::Type=CategoricalString)
-    _stackview(df, index(df)[measure_vars], index(df)[id_vars]; variable_name=variable_name,
-               value_name=value_name, variable_eltype=variable_eltype)
-end
-
-function _stackview(df::AbstractDataFrame, measure_vars = numeric_vars(df);
-                    variable_name::Symbol=:variable, value_name::Symbol=:value,
-                    variable_eltype::Type=CategoricalString)
-    m_inds = index(df)[measure_vars]
-    _stackview(df, m_inds, setdiff(1:ncol(df), m_inds); variable_name=variable_name,
-               value_name=value_name, variable_eltype=variable_eltype)
 end
