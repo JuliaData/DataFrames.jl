@@ -758,7 +758,7 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
 end
 
 """
-    deleterows!(df::DataFrame, inds)
+    delete!(df::DataFrame, inds)
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
@@ -776,7 +776,7 @@ julia> d = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> deleterows!(d, 2)
+julia> delete!(d, 2)
 2×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -786,7 +786,7 @@ julia> deleterows!(d, 2)
 ```
 
 """
-function deleterows!(df::DataFrame, inds)
+function Base.delete!(df::DataFrame, inds)
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
@@ -795,7 +795,7 @@ function deleterows!(df::DataFrame, inds)
     df
 end
 
-function deleterows!(df::DataFrame, inds::AbstractVector{Bool})
+function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
         throw(BoundsError(df, (inds, :)))
     end

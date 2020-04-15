@@ -161,7 +161,7 @@ Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bo
 
 Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 
-deleterows!(df::SubDataFrame, ind) =
+Base.delete!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))
 
 function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
