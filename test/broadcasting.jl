@@ -699,9 +699,9 @@ end
         @test levels(df.c1) == levels(v)
         @test levels(df.c1) !== levels(v)
         df[!, :c2] .= v[2]
-        @test df.c2 == get.([v[2], v[2], v[2]])
+        @test df.c2 == fill(v[2], 3)
         @test df.c2 isa CategoricalVector
-        @test levels(df.c2) != levels(v)
+        @test levels(df.c2) == levels(v)
         df[!, :c3] .= (x->x).(v)
         @test df.c3 ≅ v
         @test df.c3 !== v

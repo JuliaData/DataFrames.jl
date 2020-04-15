@@ -147,13 +147,13 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 
         # categorical values
         cat = CategoricalVector(["hey", "there", "sailor"])
-        cat2 = [c for c in cat] # Vector of CategoricalString
+        cat2 = [c for c in cat] # Vector of CategoricalValue
         nt = (a=cat, b=cat2)
         df = DataFrame(nt, copycols=false)
         @test df.a === cat
         @test df.b === cat2
         # test in the unknown schema case that a
-        # Vector of CategoricalString is built into CategoricalVector
+        # Vector of CategoricalValue is built into CategoricalVector
         ct = Tables.buildcolumns(nothing, Tables.rows(nt))
         @test ct.a !== cat
         @test ct.b !== cat2

@@ -39,30 +39,24 @@ function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
                        v::AbstractCategoricalVector,
                        firstcol::Bool)
-    index = CategoricalArrays.index(v.pool)
+    levs = levels(v)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
     if firstcol
-        hashes = Vector{UInt}(undef, length(levels(v.pool))+1)
+        hashes = Vector{UInt}(undef, length(levs)+1)
         hashes[1] = hash(missing)
-        hashes[2:end] .= hash.(index)
+        hashes[2:end] .= hash.(levs)
         @inbounds for (i, ref) in enumerate(v.refs)
             h[i] = hashes[ref+1]
         end
     else
-        @inbounds for (i, ref) in enumerate(v.refs)
-            if eltype(v) >: Missing && ref == 0
-                h[i] = hash(missing, h[i])
-            else
-                h[i] = hash(index[ref], h[i])
-            end
+        @inbounds for (i, x) in enumerate(v)
+            h[i] = hash(x, h[i])
         end
     end
     # Doing this step separately is faster, as it would disable SIMD above
     if eltype(v) >: Missing && length(n) > 0
-        @inbounds for (i, ref) in enumerate(v.refs)
-            n[i] |= (ref == 0)
-        end
+        n .|= ismissing.(v)
     end
     h
 end
@@ -179,27 +173,18 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
     end
 
     seen = fill(false, ngroups)
-    # Compute vector mapping missing to -1 if skipmissing=true,
-    # and sorting CategoricalArray levels (since it's cheap)
+    # Compute vector mapping missing to -1 if skipmissing=true
     refmaps = map(cols) do col
         nlevs = nlevels(col)
-        if col isa CategoricalVector
-            # When levels are in the same order as the index and there are no missing values,
-            # we could simply use refs, but the performance gain is negligible,
-            # so always sort groups in the order of levels
-            refmap = Vector{Int}(undef, nlevs + 1)
-            refmap[1] = skipmissing ? -1 : nlevs
-            refmap[2:end] .= CategoricalArrays.order(col.pool) .- 1
-        else # PooledVector
-            # First value in refmap is never used
-            # (corresponds to ref 0 which is only used by CategoricalArray)
-            refmap = collect(-1:nlevs-1)
-            if eltype(col) >: Missing && skipmissing
-                missingind = get(col.invpool, missing, 0)
-                if missingind > 0
-                    refmap[missingind+1] = -1
-                    refmap[missingind+2:end] .-= 1
-                end
+        refmap = collect(-1:(nlevs-1))
+        # First value in refmap is only used by CategoricalArray
+        # (corresponds to ref 0, i.e. missing values)
+        refmap[1] = skipmissing ? -1 : nlevs
+        if col isa PooledArray{>: Missing} && skipmissing
+            missingind = get(col.invpool, missing, 0)
+            if missingind > 0
+                refmap[missingind+1] = -1
+                refmap[missingind+2:end] .-= 1
             end
         end
         refmap
