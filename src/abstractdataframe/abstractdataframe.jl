@@ -872,7 +872,7 @@ julia> dropmissing!(df3, [:x, :y])
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
                       disallowmissing::Bool=true)
-    deleterows!(df, (!).(completecases(df, cols)))
+    delete!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
     df
 end
@@ -1054,7 +1054,7 @@ function _filter!_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    return deleterows!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
+    return delete!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
 end
 
 function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
@@ -1066,7 +1066,7 @@ function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
 end
 
 _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
-    deleterows!(df, findall((x -> !(f(x)::Bool)).(nti)))
+    delete!(df, findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
@@ -1139,11 +1139,11 @@ end
 
 nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
-Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame) = delete!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
-    deleterows!(df, findall(nonunique(df, cols)))
+    delete!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
-    deleterows!(df, findall(nonunique(df, cols)))
+    delete!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]

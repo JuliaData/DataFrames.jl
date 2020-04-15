@@ -53,9 +53,8 @@ import Base: show
 @deprecate showall(io::IO, df::GroupedDataFrame) show(io, df, allgroups=true)
 @deprecate showall(df::GroupedDataFrame) show(df, allgroups=true)
 
-import Base: delete!, insert!, merge!
+import Base: insert!, merge!
 
-@deprecate delete!(df::AbstractDataFrame, cols::Any) select!(df, Not(cols))
 @deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcols!(df, col_ind, name => item; makeunique=makeunique)
 @deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[!, col] = df2[!, col], names(df2)); df1)
 
@@ -357,3 +356,5 @@ function by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool
 end
 
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
+
+@deprecate deleterows!(df::DataFrame, inds) delete!(df, inds)
