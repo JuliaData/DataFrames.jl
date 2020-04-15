@@ -109,7 +109,7 @@ If the `ordered` keyword argument is set to `true`, the resulting `CategoricalAr
 ordered, which means that its levels can be tested for order (rather than throwing an error):
 ```jldoctest categorical
 julia> cv2 = categorical(["A", "B"], ordered=true)
-2-element CategoricalArray{String,1,UInt8}:
+2-element CategoricalArray{String,1,UInt32}:
  "A"
  "B"
 
