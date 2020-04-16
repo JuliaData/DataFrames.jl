@@ -40,8 +40,12 @@ end
     df = DataFrame(a = 1:2, b = 3:4)
     ref = DataFrame(a = repeat(1:2, 2),
                     b = repeat(3:4, 2))
+    a = df.a
+    b = df.b
     repeat!(df, 2)
     @test df == ref
+    @test a == 1:2
+    @test b == 3:4
 
     for v in (0, false)
         df = DataFrame(a = 1:2, b = 3:4)
@@ -60,8 +64,12 @@ end
     df = DataFrame(a = 1:2, b = 3:4)
     ref = DataFrame(a = repeat(1:2, inner = 2, outer = 3),
                     b = repeat(3:4, inner = 2, outer = 3))
+    a = df.a
+    b = df.b
     repeat!(df, inner = 2, outer = 3)
     @test df == ref
+    @test a == 1:2
+    @test b == 3:4
 
     for v in (0, false)
         df = DataFrame(a = 1:2, b = 3:4)
