@@ -1374,8 +1374,6 @@ end
     @test map(nrow => :x1, gdf) == groupby_checked(DataFrame(x1=3), [])
     @test map(:x2 => identity => :x2_identity, gdf) ==
           groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
-    @test aggregate(df, sum) == aggregate(df, [], sum) == aggregate(df, 1:0, sum)
-    @test aggregate(df, sum) == aggregate(df, [], sum, sort=true, skipmissing=true)
     @test DataFrame(gdf) == df
 
     @test sprint(show, groupby_checked(df, [])) == "GroupedDataFrame with 1 group based on key: \n" *

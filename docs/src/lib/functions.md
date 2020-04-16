@@ -18,7 +18,6 @@ outerjoin
 antijoin
 semijoin
 crossjoin
-aggregate
 by
 combine
 groupby

@@ -163,28 +163,6 @@ julia> by(iris, :Species) do df
 │ 3   │ Iris-virginica  │ 5.552   │ 0.304588  │
 ```
 
-A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and (3) one or more functions that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column that was not used to split the DataFrame, creating new columns of the form `$name_$function` like with `by` (see above). We show several examples of the `aggregate` function applied to the `iris` dataset below:
-
-```jldoctest sac
-julia> aggregate(iris, :Species, length)
-3×6 DataFrame
-│ Row │ Species         │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │ id_length │
-│     │ String          │ Int64              │ Int64             │ Int64              │ Int64             │ Int64     │
-├─────┼─────────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┼───────────┤
-│ 1   │ Iris-setosa     │ 50                 │ 50                │ 50                 │ 50                │ 50        │
-│ 2   │ Iris-versicolor │ 50                 │ 50                │ 50                 │ 50                │ 50        │
-│ 3   │ Iris-virginica  │ 50                 │ 50                │ 50                 │ 50                │ 50        │
-
-julia> aggregate(iris, :Species, [sum, mean])
-3×11 DataFrame. Omitted printing of 3 columns
-│ Row │ Species         │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ id_sum │ SepalLength_mean │ SepalWidth_mean │
-│     │ String          │ Float64         │ Float64        │ Float64         │ Float64        │ Int64  │ Float64          │ Float64         │
-├─────┼─────────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼────────┼──────────────────┼─────────────────┤
-│ 1   │ Iris-setosa     │ 250.3           │ 170.9          │ 73.2            │ 12.2           │ 1275   │ 5.006            │ 3.418           │
-│ 2   │ Iris-versicolor │ 296.8           │ 138.5          │ 213.0           │ 66.3           │ 3775   │ 5.936            │ 2.77            │
-│ 3   │ Iris-virginica  │ 329.4           │ 148.7          │ 277.6           │ 101.3          │ 6275   │ 6.588            │ 2.974           │
-```
-
 If you only want to split the data set into subsets, use the [`groupby`](@ref) function:
 
 ```jldoctest sac
@@ -271,4 +249,40 @@ Last Group (5 rows): g = 501
 │ 3   │ 501   │ 2503  │
 │ 4   │ 501   │ 2504  │
 │ 5   │ 501   │ 2505  │
+```
+
+In order to apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
+```jldoctest sac
+julia> gd = groupby(iris, :Species);
+
+julia> combine(gd, valuecols(gd) .=> mean)
+3×5 DataFrame
+│ Row │ Species         │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
+│     │ String          │ Float64          │ Float64         │ Float64          │ Float64         │
+├─────┼─────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤
+│ 1   │ Iris-setosa     │ 5.006            │ 3.418           │ 1.464            │ 0.244           │
+│ 2   │ Iris-versicolor │ 5.936            │ 2.77            │ 4.26             │ 1.326           │
+│ 3   │ Iris-virginica  │ 6.588            │ 2.974           │ 5.552            │ 2.026           │
+
+julia> combine(gd, valuecols(gd) .=> (x -> (x .- mean(x)) ./ std(x)) .=> valuecols(gd))
+150×5 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-setosa    │ 0.266674    │ 0.215209   │ -0.368852   │ -0.410411  │
+│ 2   │ Iris-setosa    │ -0.300718   │ -1.09704   │ -0.368852   │ -0.410411  │
+│ 3   │ Iris-setosa    │ -0.868111   │ -0.572142  │ -0.945184   │ -0.410411  │
+│ 4   │ Iris-setosa    │ -1.15181    │ -0.834592  │ 0.207479    │ -0.410411  │
+│ 5   │ Iris-setosa    │ -0.0170218  │ 0.47766    │ -0.368852   │ -0.410411  │
+│ 6   │ Iris-setosa    │ 1.11776     │ 1.26501    │ 1.36014     │ 1.45509    │
+│ 7   │ Iris-setosa    │ -1.15181    │ -0.0472411 │ -0.368852   │ 0.522342   │
+⋮
+│ 143 │ Iris-virginica │ -1.23923    │ -0.849621  │ -0.818997   │ -0.458766  │
+│ 144 │ Iris-virginica │ 0.333396    │ 0.700782   │ 0.630555    │ 0.997633   │
+│ 145 │ Iris-virginica │ 0.176134    │ 1.01086    │ 0.268167    │ 1.72583    │
+│ 146 │ Iris-virginica │ 0.176134    │ 0.080621   │ -0.637803   │ 0.997633   │
+│ 147 │ Iris-virginica │ -0.452916   │ -1.46978   │ -1.00019    │ -0.458766  │
+│ 148 │ Iris-virginica │ -0.138391   │ 0.080621   │ -0.637803   │ -0.0946659 │
+│ 149 │ Iris-virginica │ -0.610178   │ 1.32094    │ -0.275415   │ 0.997633   │
+│ 150 │ Iris-virginica │ -1.08197    │ 0.080621   │ -0.818997   │ -0.822865  │
 ```

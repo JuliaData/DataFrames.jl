@@ -760,10 +760,7 @@ julia> mean(df.A)
 2.5
 ```
 
-### Column-Wise Operations
-
-We can also apply a function to each column of a `DataFrame` with the `aggregate` function. For example:
-
+We can also apply a function to each column of a `DataFrame` using `select`. For example:
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
@@ -775,14 +772,14 @@ julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 │ 3   │ 3     │ 2.0     │
 │ 4   │ 4     │ 1.0     │
 
-julia> aggregate(df, sum)
+julia> select(df, names(df) .=> sum)
 1×2 DataFrame
 │ Row │ A_sum │ B_sum   │
 │     │ Int64 │ Float64 │
 ├─────┼───────┼─────────┤
 │ 1   │ 10    │ 10.0    │
 
-julia> aggregate(df, [sum, prod])
+julia> select(df, names(df) .=> sum, names(df) .=> prod)
 1×4 DataFrame
 │ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
 │     │ Int64 │ Float64 │ Int64  │ Float64 │
