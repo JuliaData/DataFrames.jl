@@ -14,7 +14,8 @@ DataFrameRow(parent::AbstractDataFrame, row::Integer, cols=:)
 ```
 
 A `DataFrameRow` supports the iteration interface and can therefore be passed to
-functions that expect a collection as an argument.
+functions that expect a collection as an argument. In such situations `eltype`
+of `DataFrameRow` is always `Any`.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
 You can also access the data in a `DataFrameRow` using the `getproperty` and
