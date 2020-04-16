@@ -172,7 +172,8 @@ function unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::ColumnIndex
 end
 
 function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
-                  keycol, valuecol, refkeycol, renamecols::Function)
+                  keycol::CategoricalVector, valuecol::AbstractVector,
+                  refkeycol::CategoricalVector, renamecols::Function)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
@@ -245,7 +246,9 @@ unstack(df::AbstractDataFrame; renamecols::Function=identity) =
     unstack(df, :variable, :value, renamecols=renamecols)
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
-                  colkey::Int, keycol, valuecol, g, renamecols)
+                  colkey::Int, keycol::CategoricalVector,
+                  valuecol::AbstractVector, g::GroupedDataFrame,
+                  renamecols::Function)
     idx, starts, ends = g.idx, g.starts, g.ends
     groupidxs = [idx[starts[i]:ends[i]] for i in 1:length(starts)]
     rowkey = zeros(Int, size(df, 1))

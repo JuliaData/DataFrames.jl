@@ -645,21 +645,6 @@ end
 ##
 ##############################################################################
 
-function _nonmissing!(res, col)
-    @inbounds for (i, el) in enumerate(col)
-        res[i] &= !ismissing(el)
-    end
-    return nothing
-end
-
-function _nonmissing!(res, col::CategoricalArray{>: Missing})
-    for (i, el) in enumerate(col.refs)
-        res[i] &= el > 0
-    end
-    return nothing
-end
-
-
 """
     completecases(df::AbstractDataFrame, cols::Colon=:)
     completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
