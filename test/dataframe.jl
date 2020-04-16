@@ -954,8 +954,7 @@ end
     @test names(df) == [:A, :B]
     @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == [:A_1, :B_1]
     @test names(df) == [:A, :B]
-    @test names(rename(x->Symbol(lowercase(string(x))), df)) == [:a, :b]
-    @test names(rename(x->lowercase(string(x)), df)) == [:a, :b]
+    @test names(rename(lowercase, df)) == [:a, :b]
     @test names(df) == [:A, :B]
 
     @test rename!(df, :A => :A_1) === df
@@ -966,8 +965,7 @@ end
     @test names(df) == [:A_3, :B_3]
     @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
     @test names(df) == [:A_4, :B_4]
-    @test rename!(x->Symbol(lowercase(string(x))), df) === df
-    @test rename!(x->lowercase(string(x)), df) === df
+    @test rename!(lowercase, df) === df
     @test names(df) == [:a_4, :b_4]
 
     df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
@@ -999,6 +997,9 @@ end
     @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
     @test df == cdf
+
+    df = DataFrame(A=1)
+    @test rename(x -> 1, df) == DataFrame(:var"1" => 1)
 end
 
 @testset "flexible rename arguments" begin

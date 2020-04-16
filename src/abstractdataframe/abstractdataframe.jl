@@ -97,7 +97,7 @@ Each name is changed at most once. Permutation of names is allowed.
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column takes the old name (a `Symbol`)
+- `f` : a function which for each column takes the old name as a `String`
   and returns the new name that gets converted to a `Symbol`
 - `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
   of the same length as the number of columns in `df`
@@ -147,9 +147,7 @@ julia> rename!(df, [:a, :b, :a], makeunique=true)
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia> rename!(df) do x
-           uppercase(string(x))
-       end
+julia> rename!(uppercase, df)
 1×3 DataFrame
 │ Row │ A     │ B     │ A_1   │
 │     │ Int64 │ Int64 │ Int64 │
@@ -217,7 +215,7 @@ Each name is changed at most once. Permutation of names is allowed.
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column takes the old name (a `Symbol`)
+- `f` : a function which for each column takes the old name as a `String`
   and returns the new name that gets converted to a `Symbol`
 - `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
   of the same length as the number of columns in `df`
@@ -271,9 +269,7 @@ julia> rename(df, Dict("i" => "A", "x" => "X"))
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia> rename(df) do x
-           uppercase(string(x))
-       end
+julia> rename(uppercase, df)
 1×3 DataFrame
 │ Row │ I     │ X     │ Y     │
 │     │ Int64 │ Int64 │ Int64 │
