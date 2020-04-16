@@ -228,7 +228,7 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     @assert rowkey_ints isa AbstractVector{Int}
     length(rowkey_ints) == 0 && throw(ArgumentError("No key column found"))
     length(rowkey_ints) == 1 && return unstack(df, rowkey_ints[1], colkey, value,
-                                           renamecols=renamecols)
+                                               renamecols=renamecols)
     g = groupby(df, rowkey_ints, sort=true)
     keycol = categorical(df[!, colkey])
     droplevels!(keycol)
