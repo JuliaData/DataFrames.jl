@@ -344,7 +344,7 @@ end
     res = combine(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",),
                   groupby_checked(df, :Key1))
     @test res.x isa Vector{String}
-    # ...even when CategoricalString comes second
+    # ...even when CategoricalValue comes second
     res = combine(d -> d.Key1 == ["B", "B"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
                   groupby_checked(df, :Key1))
     @test res.x isa Vector{String}

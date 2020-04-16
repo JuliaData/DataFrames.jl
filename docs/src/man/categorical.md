@@ -32,7 +32,7 @@ julia> cv = CategoricalArray(v)
 
 ```
 
-`CategoricalArrays` support missing values.
+`CategoricalArray`s support missing values.
 
 ```jldoctest categorical
 julia> cv = CategoricalArray(["Group A", missing, "Group A",
@@ -96,10 +96,10 @@ julia> cv = compress(cv)
 ```
 
 Instead of using the `CategoricalArray` constructor directly you can use `categorical`
-function. It additionally accepts one positional argument `compress` which when set to `true`
+function. It additionally accepts a keyword argument `compress` which when set to `true`
 is equivalent to calling `compress` on the new vector:
 ```jldoctest categorical
-julia> cv1 = categorical(["A", "B"], true)
+julia> cv1 = categorical(["A", "B"], compress=true)
 2-element CategoricalArray{String,1,UInt8}:
  "A"
  "B"
@@ -108,8 +108,8 @@ julia> cv1 = categorical(["A", "B"], true)
 If the `ordered` keyword argument is set to `true`, the resulting `CategoricalArray` will be
 ordered, which means that its levels can be tested for order (rather than throwing an error):
 ```jldoctest categorical
-julia> cv2 = categorical(["A", "B"], true, ordered=true)
-2-element CategoricalArray{String,1,UInt8}:
+julia> cv2 = categorical(["A", "B"], ordered=true)
+2-element CategoricalArray{String,1,UInt32}:
  "A"
  "B"
 
@@ -191,8 +191,8 @@ julia> categorical!(df, compress=true)
 
 julia> eltype.(eachcol(df))
 2-element Array{DataType,1}:
- CategoricalString{UInt8}
- CategoricalString{UInt8}
+ CategoricalValue{String,UInt8}
+ CategoricalValue{String,UInt8}
 
 ```
 

@@ -645,21 +645,6 @@ end
 ##
 ##############################################################################
 
-function _nonmissing!(res, col)
-    @inbounds for (i, el) in enumerate(col)
-        res[i] &= !ismissing(el)
-    end
-    return nothing
-end
-
-function _nonmissing!(res, col::CategoricalArray{>: Missing})
-    for (i, el) in enumerate(col.refs)
-        res[i] &= el > 0
-    end
-    return nothing
-end
-
-
 """
     completecases(df::AbstractDataFrame, cols::Colon=:)
     completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
@@ -719,16 +704,13 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
     end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
-        _nonmissing!(res, df[!, i])
+        res .&= .!ismissing.(df[!, i])
     end
     res
 end
 
-function completecases(df::AbstractDataFrame, col::ColumnIndex)
-    res = trues(size(df, 1))
-    _nonmissing!(res, df[!, col])
-    res
-end
+completecases(df::AbstractDataFrame, col::ColumnIndex) =
+    .!ismissing.(df[!, col])
 
 completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All}) =
     completecases(df[!, cols])
@@ -1719,7 +1701,7 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
         x = df[!, i]
         if i in idxcols
             # categorical always copies
-            push!(newcols, categorical(x, compress))
+            push!(newcols, categorical(x, compress=compress))
         else
             push!(newcols, copy(x))
         end
@@ -1735,7 +1717,7 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
         x = df[!, i]
         if eltype(x) <: cols
             # categorical always copies
-            push!(newcols, categorical(x, compress))
+            push!(newcols, categorical(x, compress=compress))
         else
             push!(newcols, copy(x))
         end
