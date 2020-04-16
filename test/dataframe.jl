@@ -718,8 +718,140 @@ end
     @test_throws ArgumentError append!(df, Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, OrderedDict(:B => 3:4, :A => [3.0, 4.0]), cols=:orderequal)
-    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:intersect)
+    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:xxx)
     @test df == DataFrame(A = 1:2, B = 1:2)
+end
+
+@testset "append! default options" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    df1 = DataFrame(x=1:3, y=1:3)
+    df2 = DataFrame(y=4:6, x=1:3)
+    append!(df1, df2)
+    @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+
+    df2 = DataFrame(y=4:6, x=1:3, z=1)
+    @test_throws ArgumentError append!(df1, df2)
+    @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+
+    df2 = DataFrame(y=4:6, x=[missing, missing, missing])
+    with_logger(sl) do
+        @test_throws MethodError append!(df1, df2)
+    end
+    @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+
+    df2 = DataFrame(x=[missing, missing, missing], y=4:6)
+    for cols in (:orderequal, :intersect)
+        with_logger(sl) do
+            @test_throws MethodError append!(df1, df2, cols=cols)
+        end
+        @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+    end
+
+    for cols in (:subset, :union)
+        df1 = DataFrame(x=1:3, y=1:3)
+        df2 = DataFrame(y=4:6)
+        append!(df1, df2, cols=cols)
+        @test df1 ≅ DataFrame(x=[1:3;missing; missing; missing], y=1:6)
+    end
+end
+
+@testset "append! advanced options" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    for cols in (:orderequal, :setequal, :intersect, :subset, :union)
+        for promote in (true, false)
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=4:6)
+            append!(df1, df2, cols=cols, promote=promote)
+            @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+            @test eltype(df1.x) == Int
+            @test eltype(df1.y) == Int
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(y=4:6, x=1:3)
+            if cols == :orderequal
+                @test_throws ArgumentError append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            else
+                append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+            end
+
+            df1 = DataFrame()
+            df1.x = 1:3
+            df1.y = df1.x
+            df2 = DataFrame(x=1:3, y=4:6)
+            with_logger(sl) do
+                @test_throws AssertionError append!(df1, df2, cols=cols, promote=promote)
+            end
+            @test df1 == DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(y=4:6, x=1:3)
+            with_logger(sl) do
+                @test_throws (cols == :orderequal ? ArgumentError :
+                              AssertionError) append!(df1, df2, cols=cols, promote=promote)
+            end
+            @test df1 == DataFrame(x=1:3, y=1:3)
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=4:6, z=11:13)
+            if cols in [:orderequal, :setequal]
+                @test_throws ArgumentError append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            elseif cols == :union
+                append!(df1, df2, cols=cols, promote=promote)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=1:6,
+                                      z=[missing; missing; missing; 11:13])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+                @test eltype(df1.z) == Union{Missing,Int}
+            else
+                append!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+            end
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=[missing, missing, missing])
+            if promote
+                append!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing,Int}
+            else
+                with_logger(sl) do
+                    @test_throws MethodError append!(df1, df2, cols=cols, promote=promote)
+                end
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            end
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, z=11:13)
+            if !promote || cols in [:orderequal, :setequal, :intersect]
+                with_logger(sl) do
+                    @test_throws ArgumentError append!(df1, df2, cols=cols, promote=promote)
+                end
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            elseif cols == :union
+                append!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing],
+                                      z=[missing; missing; missing; 11:13])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing,Int}
+                @test eltype(df1.z) == Union{Missing,Int}
+            else
+                append!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing,Int}
+            end
+        end
+    end
 end
 
 @testset "test categorical!" begin
@@ -1594,7 +1726,7 @@ end
               DataFrame(a=10, b=20, d=30)[1, :])
         df = DataFrame(a=1, b=2, c=3)
         old_logger = global_logger(NullLogger())
-        @test_throws MethodError push!(df, v, cols=:subset)
+        @test_throws MethodError push!(df, v, cols=:subset, promote=false)
         global_logger(old_logger)
         @test df == DataFrame(a=1, b=2, c=3)
     end
@@ -1602,10 +1734,10 @@ end
               DataFrame(a=10, b=20, d=30)[1, :])
         df = DataFrame(a=1, b=2, c=3)
         allowmissing!(df, :c)
-        push!(df, v, cols=:subset)
+        push!(df, v, cols=:subset, promote=false)
         @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
         old_logger = global_logger(NullLogger())
-        @test_throws MethodError push!(df, Dict(), cols=:subset)
+        @test_throws MethodError push!(df, Dict(), cols=:subset, promote=false)
         global_logger(old_logger)
         @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
         allowmissing!(df, [:a, :b])
@@ -1634,6 +1766,155 @@ end
         @test df == DataFrame(x=1, y=2)
     end
     global_logger(old_logger)
+end
+
+@testset "push!(df, row) with :union" begin
+    df = DataFrame()
+    push!(df, (a=1, b=2))
+    a = df.a
+    push!(df, (a=1, c=2), cols=:union)
+    @test df ≅ DataFrame(a=[1,1], b=[2, missing], c=[missing, 2])
+    @test df.a === a
+    @test eltype(df.a) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, (a=1, c=2), cols=:union)
+    @test df == DataFrame(a=[1], c=[2])
+    @test eltype(df.a) === Int
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, (c=2,), cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[2])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, (c=missing,), cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[missing])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Missing
+
+    push!(df, (c="a", d=1), cols=:union)
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    push!(df, (a="b",), cols=:union)
+    @test df ≅ DataFrame(a=[missing, missing, "b"],
+                         c=[missing, "a", missing],
+                         d=[missing, 1, missing])
+    @test eltype(df.a) === Any
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    a = [1]
+    df = DataFrame!(a=a)
+    push!(df, (a=1,), cols=:union)
+    @test df.a === a
+    push!(df, (a=1.0,), cols=:union)
+    @test df.a !== a
+    @test eltype(df.a) === Float64
+
+    x = [1]
+    df = DataFrame!(a=x, b=x)
+    @test_throws AssertionError push!(df, (a=1, b=2, c=3), cols=:union)
+    @test df == DataFrame!(a=x, b=x)
+    @test df.a === df.b === x
+
+    # note that this is correct although we have a problem with aliasing
+    # as we eventually reallocate column :b to a correct length
+    # and aliasing does not affect rows that already existed in df
+    push!(df, (a=1, b=2.0, c=3), cols=:union)
+    @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
+    @test df.a === x
+    @test eltype(df.b) === Float64
+
+    df = DataFrame()
+    push!(df, DataFrame(a=1, b=2)[1, :])
+    a = df.a
+    push!(df, DataFrame(a=1, c=2)[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[1,1], b=[2, missing], c=[missing, 2])
+    @test df.a === a
+    @test eltype(df.a) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, DataFrame(a=1, c=2)[1, :], cols=:union)
+    @test df == DataFrame(a=[1], c=[2])
+    @test eltype(df.a) === Int
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, DataFrame(c=2)[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[2])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Int
+
+    df = DataFrame(a=Int[])
+    push!(df, DataFrame(c=missing)[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[missing], c=[missing])
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Missing
+
+    push!(df, DataFrame(c="a", d=1)[1, :], cols=:union)
+    @test eltype(df.a) === Union{Int, Missing}
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    push!(df, DataFrame(a="b")[1, :], cols=:union)
+    @test df ≅ DataFrame(a=[missing, missing, "b"],
+                         c=[missing, "a", missing],
+                         d=[missing, 1, missing])
+    @test eltype(df.a) === Any
+    @test eltype(df.c) === Union{String, Missing}
+    @test eltype(df.d) === Union{Int, Missing}
+
+    a = [1]
+    df = DataFrame!(a=a)
+    push!(df, DataFrame(a=1)[1, :], cols=:union)
+    @test df.a === a
+    push!(df, DataFrame(a=1.0)[1, :], cols=:union)
+    @test df.a !== a
+    @test eltype(df.a) === Float64
+
+    x = [1]
+    df = DataFrame!(a=x, b=x)
+    @test_throws AssertionError push!(df, DataFrame(a=1, b=2, c=3)[1, :], cols=:union)
+    @test df == DataFrame!(a=x, b=x)
+    @test df.a === df.b === x
+
+    # note that this is correct although we have a problem with aliasing
+    # as we eventually reallocate column :b to a correct length
+    # and aliasing does not affect rows that already existed in df
+    push!(df, DataFrame(a=1, b=2.0, c=3)[1, :], cols=:union)
+    @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
+    @test df.a === x
+    @test eltype(df.b) === Float64
+end
+
+@testset "push!(df, row) with promote options" begin
+    df = DataFrame(a=1)
+    with_logger(SimpleLogger(IOBuffer())) do
+        @test_throws MethodError push!(df, ["a"])
+    end
+    @test push!(df, ["a"], promote=true) == DataFrame(a=[1, "a"])
+
+    for v in [(a="a",), DataFrame(a="a")[1, :]]
+        for cols in [:orderequal, :setequal, :intersect]
+            df = DataFrame(a=1)
+            with_logger(SimpleLogger(IOBuffer())) do
+                @test_throws MethodError push!(df, v, cols=cols)
+            end
+            @test push!(df, v, cols=cols, promote=true) == DataFrame(a=[1, "a"])
+        end
+        for cols in [:subset, :union]
+        df = DataFrame(a=1, b=1)
+            with_logger(SimpleLogger(IOBuffer())) do
+                @test_throws MethodError push!(df, v, cols=cols, promote=false)
+            end
+            @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1,missing])
+        end
+    end
 end
 
 end # module

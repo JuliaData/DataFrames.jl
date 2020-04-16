@@ -200,11 +200,11 @@ end
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-    df2 = DataFrame(eachcol(df, true))
+    df2 = DataFrame(pairs(eachcol(df)))
     @test df == df2
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-    df2 = DataFrame!(eachcol(df, true))
+    df2 = DataFrame!(pairs(eachcol(df)))
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 

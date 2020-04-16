@@ -1051,41 +1051,45 @@ function categorical!(df::DataFrame,
 end
 
 """
-    append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
-    append!(df::DataFrame, table; cols::Symbol=:setequal)
+    append!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+            promote::Bool=(cols in [:union, :subset]))
+    append!(df::DataFrame, table; cols::Symbol=:setequal,
+            promote::Bool=(cols in [:union, :subset]))
 
-Add the rows of `df2` to the end of `df1`. If the second argument `table` is
+Add the rows of `df2` to the end of `df`. If the second argument `table` is
 not an `AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
 before being appended.
 
-Column names of  `df1` and `df2` must be equal.
-If `cols` is `:setequal` (the default) then column names may have different orders
-and `append!` is performed by matching column names.
-If `cols` is `:orderequal` then the order of columns in `df1` and `df2` or `table`
-must be the same. In particular, if `table` is a `Dict` an error is thrown
-as it is an unordered collection.
+The exact behavior of `append!` depends on the `cols` argument:
+* If `cols == :setequal` (this is the default)
+  then `df2` must contain exactly the same columns as `df` (but possibly in a different order).
+* If `cols == :orderequal` then `df2` must contain the same columns in the same order
+  (for `AbstractDict` this option requires that `keys(row)` matches `names(df)`
+   to allow for support of ordered dicts; however, if `df2` is a `Dict` an error is thrown
+   as it is an unordered collection).
+* If `cols == :intersect` then `df2` may contain more columns than `df`,
+  but all column names that are present in `df` must be present in `df2` and only these
+  are used.
+* If `cols == :subset` then `append!` behaves like for `:intersect` but if some column
+  is missing in `df2` then a `missing` value is pushed to `df`.
+* If `cols == :union` then `append!` adds columns missing in `df` that are present in `row`,
+  for columns present in `df` but missing in `row` a `missing` value is pushed.
+
+If `promote=true` and element type of a column present in `df` does not allow the type
+of a pushed argument then a new column with a promoted element type allowing it is freshly
+allocated and stored in `df`. If `promote=false` an error is thrown.
 
 The above rule has the following exceptions:
-* If `df1` has no columns then copies of
-  columns from `df2` are added to it.
-* If `df2` has no columns then calling `append!` leaves `df1` unchanged.
-
-Values corresponding to new rows are appended in-place to the column vectors of `df1`.
-Column types are therefore preserved, and new values are converted if necessary.
-An error is thrown if conversion fails: this is the case in particular if a column
-in `df2` contains `missing` values but the corresponding column in `df1` does not
-accept them.
+* If `df` has no columns then copies of columns from `df2` are added to it.
+* If `df2` has no columns then calling `append!` leaves `df` unchanged.
 
 Please note that `append!` must not be used on a `DataFrame` that contains columns
 that are aliases (equal when compared with `===`).
 
-!!! note
-    Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
-    Since `vcat` does not operate in place, it is able to use promotion to find
-    an appropriate element type to hold values from both data frames.
-    It also accepts columns in different orders between `df1` and `df2`.
+# See also
 
-    Use [`push!`](@ref) to add individual rows to a data frame.
+Use [`push!`](@ref) to add individual rows to a data frame and [`vcat`](@ref)
+to vertically concatenate data frames.
 
 # Examples
 ```jldoctest
@@ -1108,9 +1112,11 @@ julia> df1
 │ 6   │ 6     │ 6     │
 ```
 """
-function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal)
-    if !(cols in (:orderequal, :setequal))
-        throw(ArgumentError("`cols` keyword argument must be any of :setequal, :orderequal"))
+function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+                      promote::Bool=(cols in [:union, :subset]))
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
     end
 
     if ncol(df1) == 0
@@ -1129,36 +1135,79 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
             throw(ArgumentError("Columns number " *
                                 join(mismatches, ", ", " and ") *
                                 " do not have the same names in both passed data frames" *
-                                "and `cols=:orderequal`"))
+                                "and `cols == :orderequal`"))
         else
             mismatchmsg = " Column names :" *
             throw(ArgumentError("Column names :" *
-                                join(wrongnames, ", ", :" and :") *
-                                "were found in only one of the passed data frames " *
-                                "and `cols=:orderequal`"))
+                                join(wrongnames, ", :", " and :") *
+                                " were found in only one of the passed data frames " *
+                                "and `cols == :orderequal`"))
         end
     elseif cols == :setequal
         wrongnames = symdiff(_names(df1), _names(df2))
         if !isempty(wrongnames)
             throw(ArgumentError("Column names :" *
-                                join(wrongnames, ", ", :" and :") *
-                                "were found in only one of the passed data frames " *
-                                "and passed `cols=:setequal`"))
+                                join(wrongnames, ", :", " and :") *
+                                " were found in only one of the passed data frames " *
+                                "and `cols == :setequal`"))
+        end
+    elseif cols == :intersect
+        wrongnames = setdiff(_names(df1), _names(df2))
+        if !isempty(wrongnames)
+            throw(ArgumentError("Column names :" *
+                                join(wrongnames, ", :", " and :") *
+                                " were found in only in destination data frame " *
+                                "and `cols == :intersect`"))
         end
     end
 
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
     current_col = 0
+    # in the code below we use a direct access to _columns because
+    # we resize the columns so temporarily the `DataFrame` is internally
+    # inconsistent and normal data frame indexing would error.
     try
         for (j, n) in enumerate(_names(df1))
             current_col += 1
-            append!(df1[!, j], df2[!, n])
+            if hasproperty(df2, n)
+                df2_c = df2[!, n]
+                S = eltype(df2_c)
+                df1_c = df1[!, j]
+                T = eltype(df1_c)
+                if S <: T || !promote || promote_type(S, T) <: T
+                    # if S <: T || promote_type(S, T) <: T this should never throw an exception
+                    append!(df1_c, df2_c)
+                else
+                    newcol = similar(df1_c, promote_type(S, T), targetrows)
+                    copyto!(newcol, 1, df1_c, 1, nrows)
+                    copyto!(newcol, nrows+1, df2_c, 1, targetrows - nrows)
+                    _columns(df1)[j] = newcol
+                end
+            else
+                # we can safely do it - if we got here this means that this is allowed
+                if Missing <: eltype(df1[!, j]) || !promote
+                    append!(df1[!, j], df2[!, n])
+                else
+                    newcol = similar(df1[!, j], Union{Missing, eltype(df1[!, j])}, targetrows)
+                    copyto!(newcol, 1, df1[!, j], 1, nrows)
+                    newcol[nrows+1:targetrows] .= missing
+                    _columns(df1)[j] = newcol
+                end
+            end
         end
         current_col = 0
         for col in _columns(df1)
             current_col += 1
             @assert length(col) == targetrows
+        end
+        if cols == :union
+            for n in setdiff(_names(df2), _names(df1))
+                newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])}, targetrows)
+                @inbounds newcol[1:nrows] .= missing
+                copyto!(newcol, nrows+1, df2[!, n], 1, targetrows - nrows)
+                df1[!, n] = newcol
+            end
         end
     catch err
         # Undo changes in case of error
@@ -1176,34 +1225,87 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::Symbol=:setequal,
-                    columns::Union{Nothing,Symbol}=nothing)
+                    columns::Union{Nothing,Symbol}=nothing,
+                    promote::Bool=(cols in [:union, :subset]))
     if columns !== nothing
         cols = columns
         Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead. ", :push!)
     end
-    possible_cols = (:orderequal, :setequal, :intersect, :subset)
+    possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
     end
+
     nrows, ncols = size(df)
     targetrows = nrows + 1
+
     if ncols == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
+
+    # in the code below we use a direct access to _columns because
+    # we resize the columns so temporarily the `DataFrame` is internally
+    # inconsistent and normal data frame indexing would error.
+    if cols == :union
+        if row isa AbstractDict && !all(x -> x isa Symbol, keys(row))
+            throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
+        end
+        for (i, colname) in enumerate(_names(df))
+            col = _columns(df)[i]
+            if haskey(row, colname)
+                val = row[colname]
+            else
+                val = missing
+            end
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                # if S <: T || promote_type(S, T) <: T this should never throw an exception
+                push!(col, val)
+            else
+                newcol = similar(col, promote_type(S, T), targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
+        end
+        for (colname, col) in zip(_names(df), _columns(df))
+            if length(col) != targetrows
+                for col2 in _columns(df)
+                    resize!(col2, nrows)
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
+        end
+        for colname in setdiff(keys(row), _names(df))
+            val = row[colname]
+            S = typeof(val)
+            if nrows == 0
+                newcol = [val]
+            else
+                newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
+                fill!(newcol, missing)
+                newcol[end] = val
+            end
+            df[!, colname] = newcol
+        end
+        return df
+    end
+
     if cols == :orderequal
         if row isa Dict
-            throw(ArgumentError("passing `Dict` as `row` when `cols=:orderequal` " *
+            throw(ArgumentError("passing `Dict` as `row` when `cols == :orderequal` " *
                                 "is not allowed as it is unordered"))
         elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
-            throw(ArgumentError("when `cols=:orderequal` all data frames must have " *
-                                "the same column names and in the same order"))
+            throw(ArgumentError("when `cols == :orderequal` pushed row must have the same column " *
+                                "names and in the same order as the target data frame"))
         end
     elseif cols == :setequal || cols === :equal
         if cols == :equal
-            Base.depwarn("`cols=:equal` is deprecated." *
+            Base.depwarn("`cols == :equal` is deprecated." *
                          "Use `:setequal` instead.", :push!)
         end
         # Only check for equal lengths if :setequal is selected,
@@ -1223,7 +1325,17 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             else
                 val = row[nm]
             end
-            push!(col, val)
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                # if S <: T || promote_type(S, T) <: T this should never throw an exception
+                push!(col, val)
+            else
+                newcol = similar(col, promote_type(S, T), targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[columnindex(df, nm)] = newcol
+            end
         end
         current_col = 0
         for col in _columns(df)
@@ -1237,13 +1349,13 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         @error "Error adding value to column :$(names(df)[current_col])."
         rethrow(err)
     end
-    df
+    return df
 end
 
 """
-    push!(df::DataFrame, row::Union{Tuple, AbstractArray})
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-          cols::Symbol=:setequal)
+          cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
@@ -1258,17 +1370,24 @@ the same number of elements as the number of columns in `df`.
 If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names. The exact behavior
 depends on the `cols` argument value in the following way:
-* If `cols=:setequal` (this is the default)
+* If `cols == :setequal` (this is the default)
   then `row` must contain exactly the same columns as `df` (but possibly in a different order).
-* If `cols=:orderequal` then `row` must contain the same columns in the same order
+* If `cols == :orderequal` then `row` must contain the same columns in the same order
   (for `AbstractDict` this option requires that `keys(row)` matches `names(df)`
    to allow for support of ordered dicts; however, if `row` is a `Dict` an error is thrown
    as it is an unordered collection).
-* If `cols=:intersect` then `row` may contain more columns than `df`,
+* If `cols == :intersect` then `row` may contain more columns than `df`,
   but all column names that are present in `df` must be present in `row` and only they
   are used to populate a new row in `df`.
-* If `cols=:subset` then `push!` behaves like for `:intersect` but if some column
+* If `cols == :subset` then `push!` behaves like for `:intersect` but if some column
   is missing in `row` then a `missing` value is pushed to `df`.
+* If `cols == :union` then columns missing in `df` that are present in `row` are added to `df`
+  (using `missing` for existing rows) and a `missing` value is pushed to columns
+  missing in `row` that are present in `df`.
+
+If `promote=true` and element type of a column present in `df` does not allow the type
+of a pushed argument then a new column with a promoted element type allowing it is freshly
+allocated and stored in `df`. If `promote=false` an error is thrown.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
@@ -1278,14 +1397,7 @@ that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(A=1:3, B=1:3)
-3×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
+julia> df = DataFrame(A=1:3, B=1:3);
 
 julia> push!(df, (true, false))
 4×2 DataFrame
@@ -1309,7 +1421,7 @@ julia> push!(df, df[1, :])
 │ 5   │ 1     │ 1     │
 
 julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
-4×2 DataFrame
+6×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
@@ -1320,21 +1432,35 @@ julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
 │ 5   │ 1     │ 1     │
 │ 6   │ 1     │ 0     │
 
-julia> push!(df, Dict(:A=>1.0, :B=>2.0))
-5×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 1     │
-│ 6   │ 1     │ 0     │
-│ 7   │ 1     │ 2     │
+julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
+7×3 DataFrame
+│ Row │ A       │ B       │ C        │
+│     │ Float64 │ Int64?  │ Float64? │
+├─────┼─────────┼─────────┼──────────┤
+│ 1   │ 1.0     │ 1       │ missing  │
+│ 2   │ 2.0     │ 2       │ missing  │
+│ 3   │ 3.0     │ 3       │ missing  │
+│ 4   │ 1.0     │ 0       │ missing  │
+│ 5   │ 1.0     │ 1       │ missing  │
+│ 6   │ 1.0     │ 0       │ missing  │
+│ 7   │ 1.0     │ missing │ 1.0      │
+
+julia> push!(df, NamedTuple(), cols=:subset)
+8×3 DataFrame
+│ Row │ A        │ B       │ C        │
+│     │ Float64? │ Int64?  │ Float64? │
+├─────┼──────────┼─────────┼──────────┤
+│ 1   │ 1.0      │ 1       │ missing  │
+│ 2   │ 2.0      │ 2       │ missing  │
+│ 3   │ 3.0      │ 3       │ missing  │
+│ 4   │ 1.0      │ 0       │ missing  │
+│ 5   │ 1.0      │ 1       │ missing  │
+│ 6   │ 1.0      │ 0       │ missing  │
+│ 7   │ 1.0      │ missing │ 1.0      │
+│ 8   │ missing  │ missing │ missing  │
 ```
 """
-function Base.push!(df::DataFrame, row::Any)
+function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
     if !(row isa Union{Tuple, AbstractArray})
         Base.depwarn("In the future `push!` will not allow passing collections of type" *
                      " $(typeof(row)) to be pushed into a DataFrame. " *
@@ -1349,9 +1475,19 @@ function Base.push!(df::DataFrame, row::Any)
     end
     current_col = 0
     try
-        for (col, t) in zip(_columns(df), row)
+        for (i, (col, val)) in enumerate(zip(_columns(df), row))
             current_col += 1
-            push!(col, t)
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                # if S <: T || promote_type(S, T) <: T this should never throw an exception
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
         end
         current_col = 0
         for col in _columns(df)
