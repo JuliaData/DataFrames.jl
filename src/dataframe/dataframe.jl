@@ -1246,6 +1246,9 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         return df
     end
 
+    # in the code below we use a direct access to _columns because
+    # we resize the columns so temporarily the `DataFrame` is internally
+    # inconsistent and normal data frame indexing would error.
     if cols == :union
         if row isa AbstractDict && !all(x -> x isa Symbol, keys(row))
             throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
