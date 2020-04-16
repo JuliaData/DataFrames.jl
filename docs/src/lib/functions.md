@@ -42,7 +42,7 @@ categorical!
 completecases
 copy
 DataFrame!
-deleterows!
+delete!
 describe
 disallowmissing
 disallowmissing!

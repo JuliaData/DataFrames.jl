@@ -16,10 +16,11 @@ each subset of the `DataFrame`. This specification can be of the following forms
 2. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector
 3. a `cols => function => target_col` form additionally
-   specifying the name of the target column (this assumes that `function` returns a single value or a vector)
+   specifying the name of the target column (this assumes that `function` returns a single
+   value or a vector)
 4. a `col => target_col` pair, which renames the column `col` to `target_col`
-5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows in a group
-   (without `target_col` the new column is called `:nrow`)
+5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows
+   in a group (without `target_col` the new column is called `:nrow`)
 6. several arguments of the forms given above, or vectors thereof
 7. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
@@ -27,6 +28,10 @@ each subset of the `DataFrame`. This specification can be of the following forms
    compilation)
 
 All forms except 1 and 6 can be also passed as the first argument to `map`.
+
+As a special rule that applies to `cols => function` syntax, if `cols` is wrapped
+in an `AsTable` object then a `NamedTuple` containing columns selected by `cols` is
+passed to `function`.
 
 In all of these cases, `function` can return either a single row or multiple rows.
 `function` can always generate a single column by returning a single value or a vector.
@@ -60,31 +65,27 @@ We show several examples of the `by` function applied to the `iris` dataset belo
 ```jldoctest sac
 julia> using DataFrames, CSV, Statistics
 
-julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv")));
-
-julia> first(iris, 6)
-6×6 DataFrame
-│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │ id    │
-│     │ Float64     │ Float64    │ Float64     │ Float64    │ String      │ Int64 │
-├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┼───────┤
-│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa │ 1     │
-│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │ 2     │
-│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │ 3     │
-│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa │ 4     │
-│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa │ 5     │
-│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │ 6     │
-
-julia> last(iris, 6)
-6×6 DataFrame
-│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │ id    │
-│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │ Int64 │
-├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┼───────┤
-│ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │ 145   │
-│ 2   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │ 146   │
-│ 3   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │ 147   │
-│ 4   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │ 148   │
-│ 5   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │ 149   │
-│ 6   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │ 150   │
+julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv")))
+150×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa    │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa    │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa    │
+│ 7   │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ Iris-setosa    │
+⋮
+│ 143 │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 144 │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ Iris-virginica │
+│ 145 │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │
+│ 146 │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │
+│ 147 │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 148 │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 149 │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 150 │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
 
 julia> by(iris, :Species, :PetalLength => mean)
 3×2 DataFrame
@@ -124,23 +125,25 @@ julia> by(iris, :Species,
 │ 2   │ Iris-versicolor │ 0.717655 │ 213.0   │
 │ 3   │ Iris-virginica  │ 0.842744 │ 277.6   │
 
-julia> by(iris, :Species, 1:2, 1:2 .=> mean, nrow)
-150×6 DataFrame
-│ Row │ Species        │ SepalLength │ SepalWidth │ SepalLength_mean │ SepalWidth_mean │ nrow  │
-│     │ String         │ Float64     │ Float64    │ Float64          │ Float64         │ Int64 │
-├─────┼────────────────┼─────────────┼────────────┼──────────────────┼─────────────────┼───────┤
-│ 1   │ Iris-setosa    │ 5.1         │ 3.5        │ 5.006            │ 3.418           │ 50    │
-│ 2   │ Iris-setosa    │ 4.9         │ 3.0        │ 5.006            │ 3.418           │ 50    │
-│ 3   │ Iris-setosa    │ 4.7         │ 3.2        │ 5.006            │ 3.418           │ 50    │
-│ 4   │ Iris-setosa    │ 4.6         │ 3.1        │ 5.006            │ 3.418           │ 50    │
-│ 5   │ Iris-setosa    │ 5.0         │ 3.6        │ 5.006            │ 3.418           │ 50    │
-⋮
-│ 145 │ Iris-virginica │ 6.7         │ 3.3        │ 6.588            │ 2.974           │ 50    │
-│ 146 │ Iris-virginica │ 6.7         │ 3.0        │ 6.588            │ 2.974           │ 50    │
-│ 147 │ Iris-virginica │ 6.3         │ 2.5        │ 6.588            │ 2.974           │ 50    │
-│ 148 │ Iris-virginica │ 6.5         │ 3.0        │ 6.588            │ 2.974           │ 50    │
-│ 149 │ Iris-virginica │ 6.2         │ 3.4        │ 6.588            │ 2.974           │ 50    │
-│ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 6.588            │ 2.974           │ 50    │
+julia> by(iris, :Species,
+          AsTable([:PetalLength, :SepalLength]) =>
+          x -> std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
+3×2 DataFrame
+│ Row │ Species         │ PetalLength_SepalLength_function │
+│     │ String          │ Float64                          │
+├─────┼─────────────────┼──────────────────────────────────┤
+│ 1   │ Iris-setosa     │ 0.492245                         │
+│ 2   │ Iris-versicolor │ 0.910378                         │
+│ 3   │ Iris-virginica  │ 0.867923                         │
+
+julia> by(iris, :Species, 1:2 => cor, nrow)
+3×3 DataFrame
+│ Row │ Species         │ SepalLength_SepalWidth_cor │ nrow  │
+│     │ String          │ Float64                    │ Int64 │
+├─────┼─────────────────┼────────────────────────────┼───────┤
+│ 1   │ Iris-setosa     │ 0.74678                    │ 50    │
+│ 2   │ Iris-versicolor │ 0.525911                   │ 50    │
+│ 3   │ Iris-virginica  │ 0.457228                   │ 50    │
 
 ```
 

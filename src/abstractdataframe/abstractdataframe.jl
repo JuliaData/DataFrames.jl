@@ -872,7 +872,7 @@ julia> dropmissing!(df3, [:x, :y])
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
                       disallowmissing::Bool=true)
-    deleterows!(df, (!).(completecases(df, cols)))
+    delete!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
     df
 end
@@ -887,7 +887,8 @@ returns `true`.
 If `cols` is not specified then the function is passed `DataFrameRow`s.
 If `cols` is specified then it should be a valid column selector
 (column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
-the function is passed elements of the selected columns as separate positional arguments.
+the function is passed elements of the selected columns as separate positional arguments,
+unless it is an `AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -929,6 +930,15 @@ julia> filter([:x, :y] => (x, y) -> x == 1 || y == "b", df)
 │ 1   │ 3     │ b      │
 │ 2   │ 1     │ c      │
 │ 3   │ 1     │ b      │
+
+julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
+3×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 1     │ b      │
 ```
 """
 Base.filter(f, df::AbstractDataFrame) = _filter_helper(df, f, eachrow(df))
@@ -941,7 +951,23 @@ Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
     filter(index(df)[cols] => f, df)
 
-_filter_helper(df, f, cols...) = df[((x...) -> f(x...)::Bool).(cols...), :]
+function _filter_helper(df::AbstractDataFrame, f, cols...)
+    if length(cols) == 0
+        throw(ArgumentError("At least one column must be passed to filter on"))
+    end
+    return df[((x...) -> f(x...)::Bool).(cols...), :]
+end
+
+function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
+    dff = select(df, cols.cols, copycols=false)
+    if ncol(dff) == 0
+        throw(ArgumentError("At least one column must be passed to filter on"))
+    end
+    return _filter_helper_astable(df, Tables.namedtupleiterator(dff), f)
+end
+
+_filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
+    df[(x -> f(x)::Bool).(nti), :]
 
 """
     filter!(function, df::AbstractDataFrame)
@@ -951,7 +977,8 @@ Remove rows from data frame `df` for which `function` returns `false`.
 If `cols` is not specified then the function is passed `DataFrameRow`s.
 If `cols` is specified then it should be a valid column selector
 (column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
-the function is passed elements of the selected columns as separate positional arguments.
+the function is passed elements of the selected columns as separate positional arguments,
+unless it is `AsTable` selector in which case `NamedTuple`s of these arguments are passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -1000,6 +1027,17 @@ julia> df
 │ 1   │ 3     │ b      │
 │ 2   │ 1     │ c      │
 │ 3   │ 1     │ b      │
+
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
+
+julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
+3×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 1     │ b      │
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) = _filter!_helper(df, f, eachrow(df))
@@ -1012,8 +1050,23 @@ Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
 
-_filter!_helper(df, f, cols...) =
-    deleterows!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
+function _filter!_helper(df::AbstractDataFrame, f, cols...)
+    if length(cols) == 0
+        throw(ArgumentError("At least one column must be passed to filter on"))
+    end
+    return delete!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
+end
+
+function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
+    dff = select(df, cols.cols, copycols=false)
+    if ncol(dff) == 0
+        throw(ArgumentError("At least one column must be passed to filter on"))
+    end
+    return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
+end
+
+_filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
+    delete!(df, findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
@@ -1086,11 +1139,11 @@ end
 
 nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
-Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame) = delete!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
-    deleterows!(df, findall(nonunique(df, cols)))
+    delete!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
-    deleterows!(df, findall(nonunique(df, cols)))
+    delete!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]

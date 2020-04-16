@@ -17,14 +17,25 @@
 
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
+
+Note that `ByRow` always collects values returned by `fun` in a vector. Therefore,
+to allow for future extensions, returning `NamedTuple` or `DataFrameRow`
+from `fun` is currently disallowed.
 """
 struct ByRow{T}
     fun::T
 end
 
+_by_row_helper(x::Any) = x
+_by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
+    throw(ArgumentError("return value of type $(typeof(x)) " *
+                        "is currently not allowed with ByRow."))
+
+
 Base.broadcastable(x::ByRow) = Ref(x)
 
-(f::ByRow)(cols::AbstractVector...) = f.fun.(cols...)
+(f::ByRow)(cols::AbstractVector...) = _by_row_helper.(f.fun.(cols...))
+(f::ByRow)(table::NamedTuple) = _by_row_helper.(f.fun.(Tables.namedtupleiterator(table)))
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
@@ -59,7 +70,13 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
-    rawc = first(sel)
+    if first(sel) isa AsTable
+        rawc = first(sel).cols
+        wanttable = true
+    else
+        rawc = first(sel)
+        wanttable = false
+    end
     if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa AbstractVector{Symbol}
@@ -79,7 +96,7 @@ function normalize_selection(idx::AbstractIndex,
         throw(ArgumentError("at least one column must be passed to a " *
                             "`ByRow` transformation function"))
     end
-    return c => last(sel)
+    return (wanttable ? AsTable(c) : c) => last(sel)
 end
 
 function normalize_selection(idx::AbstractIndex,
@@ -92,7 +109,13 @@ end
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
-    rawc = first(sel)
+    if first(sel) isa AsTable
+        rawc = first(sel).cols
+        wanttable = true
+    else
+        rawc = first(sel)
+        wanttable = false
+    end
     if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa AbstractVector{Symbol}
@@ -120,10 +143,10 @@ function normalize_selection(idx::AbstractIndex,
     else
         newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
     end
-    return c => fun => newcol
+    return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
+function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                                     <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool,
@@ -136,8 +159,11 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
     cdf = eachcol(df)
     if col_idx isa Int
         res = fun(df[!, col_idx])
+    elseif col_idx isa AsTable
+        res = fun(Tables.columntable(select(df, col_idx.cols, copycols=false)))
     else
         # it should be fast enough here as we do not expect to do it millions of times
+        @assert col_idx isa AbstractVector{Int}
         res = fun(map(c -> cdf[c], col_idx)...)
     end
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
@@ -154,8 +180,9 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}},
         end
         allow_resizing_newdf[] = false
         respar = parent(res)
+        parent_cols = col_idx isa AsTable ? col_idx.cols : col_idx
         if copycols && !(fun isa ByRow) &&
-            (res isa SubArray || any(i -> respar === parent(cdf[i]), col_idx))
+            (res isa SubArray || any(i -> respar === parent(cdf[i]), parent_cols))
             newdf[!, newname] = copy(res)
         else
             newdf[!, newname] = res
@@ -188,6 +215,9 @@ SELECT_ARG_RULES =
     is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
     Otherwise `old_column` can be any column indexing syntax, in which case `fun`
     will be passed the column vectors specified by `old_column` as separate arguments.
+    The only exception is when `old_column` is an `AsTable` type wrapping a selector,
+    in which case `fun` is passed a `NamedTuple` containing the selected columns.
+
     If `fun` returns a value of type other than `AbstractVector` then it will be broadcasted
     into a vector matching the target number of rows in the data frame,
     unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
@@ -201,7 +231,8 @@ SELECT_ARG_RULES =
     to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
     any column indexing syntax, in which case `fun` will be passed one argument for each of
     the columns specified by `old_column`. If `ByRow` is used it is not allowed for
-    `old_column` to select an empty set of columns.
+    `old_column` to select an empty set of columns nor for `fun` to return
+    a `NamedTuple` or a `DataFrameRow`.
 
     Column transformation can also be specified using the short `old_column => fun` form.
     In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
@@ -287,6 +318,19 @@ julia> df
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> using Statistics
+
+julia> select!(df, AsTable(:) => ByRow(mean))
+3×1 DataFrame
+│ Row │ a_b_mean │
+│     │ Float64  │
+├─────┼──────────┤
+│ 1   │ 2.5      │
+│ 2   │ 3.5      │
+│ 3   │ 4.5      │
 ```
 
 """
@@ -443,6 +487,15 @@ julia> select(df, names(df) .=> sum .=> [:A, :B])
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+
+julia> select(df, AsTable(:) => ByRow(mean))
+3×1 DataFrame
+│ Row │ a_b_mean │
+│     │ Float64  │
+├─────┼──────────┤
+│ 1   │ 2.5      │
+│ 2   │ 3.5      │
+│ 3   │ 4.5      │
 ```
 
 """
