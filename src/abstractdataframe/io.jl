@@ -179,9 +179,8 @@ end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
     N = length(gd)
-    keynames = names(gd.parent)[gd.cols]
-    parent_names = names(gd.parent)
-    keys = html_escape(join(string.(keynames), ", "))
+    parent_names = _names(gd)
+    keys = html_escape(join(string.(groupcols(gd)), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
     write(io, "<p><b>$(typeof(gd).name) with $N $groupstr based on $keystr: $keys</b></p>")
@@ -311,9 +310,8 @@ Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns; eltypes::Bool=
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
-    keynames = names(gd.parent)[gd.cols]
-    parent_names = names(gd.parent)
-    keys = join(latex_escape.(string.(keynames)), ", ")
+    parent_names = _names(gd)
+    keys = join(latex_escape.(string.(groupcols(gd))), ", ")
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
     write(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys\n\n")

@@ -7,16 +7,14 @@ Tables.rowtable(df::AbstractDataFrame) = Tables.rowtable(Tables.columntable(df))
 Tables.namedtupleiterator(df::AbstractDataFrame) =
     Tables.namedtupleiterator(Tables.columntable(df))
 
-Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltype.(eachcol(df)))
+Tables.schema(df::AbstractDataFrame) = Tables.Schema(propertynames(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 Tables.getcolumn(df::AbstractDataFrame, i::Int) = df[!, i]
 Tables.getcolumn(df::AbstractDataFrame, nm::Symbol) = df[!, nm]
-Tables.columnnames(df::AbstractDataFrame) = names(df)
 
 Tables.getcolumn(dfr::DataFrameRow, i::Int) = dfr[i]
 Tables.getcolumn(dfr::DataFrameRow, nm::Symbol) = dfr[nm]
-Tables.columnnames(dfr::DataFrameRow) = names(dfr)
 
 getvector(x::AbstractVector) = x
 getvector(x) = [x[i] for i = 1:length(x)]
@@ -78,8 +76,6 @@ Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, i::Int) =
     Tables.getcolumn(parent(itr), i)
 Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, nm::Symbol) =
     Tables.getcolumn(parent(itr), nm)
-Tables.columnnames(itr::Union{DataFrameRows,DataFrameColumns}) =
-    Tables.columnnames(parent(itr))
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) =
     Tables.datavaluerows(Tables.columntable(df))

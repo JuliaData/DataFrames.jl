@@ -8,15 +8,23 @@ particularly a Vector or CategoricalVector.
 
 # Constructors
 ```julia
-DataFrame(columns::Vector, names::Vector{Symbol};
+DataFrame(columns::AbstractVector, names::AbstractVector{Symbol};
+          makeunique::Bool=false, copycols::Bool=true)
+DataFrame(columns::AbstractVector, names::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
           makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
+DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,<:AbstractString};
+          makeunique::Bool=false, copycols::Bool=true)
+DataFrame(columns::Matrix, names::AbstractVector{Symbol}; makeunique::Bool=false)
+DataFrame(columns::Matrix, names::AbstractVector{<:AbstractString}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame() # an empty DataFrame
-DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=0;
+DataFrame(column_eltypes::AbstractVector, names::AbstractVector{Symbol}, nrows::Integer=0;
+          makeunique::Bool=false)
+DataFrame(column_eltypes::AbstractVector, names::AbstractVector{<:AbstractString}, nrows::Integer=0;
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
@@ -48,7 +56,8 @@ DataFrame(::GroupedDataFrame)
   if it is not possible to construct a `DataFrame` without materializing new columns.
 
 All columns in `columns` must be `AbstractVector`s and have the same length.
-An exception are `DataFrame(kwargs...)` and `DataFrame(pairs::Pair{Symbol,<:Any}...)`
+An exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair{Symbol,<:Any}...)`,
+and `DataFrame(pairs::Pair{<:AbstractString,<:Any}...)`
 form constructors which additionally allow a column to be of any other type that is not
 an `AbstractArray`, in which case the passed value is automatically repeated to fill
 a new vector of the appropriate length. As a particular rule values stored in
@@ -153,7 +162,16 @@ function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false,
                    copycols::Bool=true)::DataFrame
     colnames = [Symbol(k) for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
-    DataFrame(columns, Index(colnames, makeunique=makeunique), copycols=copycols)
+    return DataFrame(columns, Index(colnames, makeunique=makeunique),
+                     copycols=copycols)
+end
+
+function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
+                   copycols::Bool=true)::DataFrame
+    colnames = [Symbol(k) for (k,v) in pairs]
+    columns = Any[v for (k,v) in pairs]
+    return DataFrame(columns, Index(colnames, makeunique=makeunique),
+                     copycols=copycols)
 end
 
 function DataFrame(d::AbstractDict; copycols::Bool=true)
@@ -200,6 +218,10 @@ function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
                      copycols=copycols)
 end
 
+DataFrame(columns::AbstractVector, cnames::AbstractVector{<:AbstractString};
+                   makeunique::Bool=false, copycols::Bool=true) =
+    DataFrame(columns, Symbol.(cnames), makeunique=makeunique, copycols=copycols)
+
 DataFrame(columns::AbstractVector{<:AbstractVector},
           cnames::AbstractVector{Symbol}=gennames(length(columns));
           makeunique::Bool=false, copycols::Bool=true)::DataFrame =
@@ -207,10 +229,19 @@ DataFrame(columns::AbstractVector{<:AbstractVector},
               Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
               copycols=copycols)
 
+DataFrame(columns::AbstractVector{<:AbstractVector},
+          cnames::AbstractVector{<:AbstractString};
+          makeunique::Bool=false, copycols::Bool=true) =
+    DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
+
 DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
           makeunique::Bool=false, copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames),
               makeunique=makeunique, copycols=copycols)
+
+DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString};
+          makeunique::Bool=false, copycols::Bool=true) where {N} =
+    DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
 
 DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
@@ -221,15 +252,23 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)
 
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
+          makeunique::Bool=false) =
+    DataFrame(columns, Symbol.(cnames); makeunique=makeunique)
+
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
     columns = AbstractVector[elty >: Missing ?
                              fill!(Tables.allocatecolumn(elty, nrows), missing) :
                              Tables.allocatecolumn(elty, nrows)
                              for elty in column_eltypes]
-    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycols=false)
+    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames),
+                     makeunique=makeunique), copycols=false)
 end
+
+DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:AbstractString},
+          nrows::Integer=0; makeunique::Bool=false) =
+    DataFrame(column_eltypes, Symbol.(cnames), nrows; makeunique=makeunique)
 
 """
     DataFrame!(args...; kwargs...)
@@ -263,14 +302,16 @@ function DataFrame!(args...; kwargs...)
 end
 
 DataFrame!(columns::AbstractMatrix,
-           cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+           cnames::Union{AbstractVector{Symbol},
+                         AbstractVector{<:AbstractString}} = gennames(size(columns, 2));
            makeunique::Bool=false) =
     throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
                         "`$(typeof(columns))` without allocating new columns: " *
                         "use `DataFrame(...)` instead"))
 
 
-DataFrame!(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
+DataFrame!(column_eltypes::AbstractVector{<:Type},
+           cnames::Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}},
            nrows::Integer=0; makeunique::Bool=false)::DataFrame =
     throw(ArgumentError("It is not possible to construct an uninitialized `DataFrame`" *
                         "without allocating new columns: use `DataFrame(...)` instead"))
@@ -294,6 +335,13 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
+corrupt_msg(df, i) =
+    "Data frame is corrupt: length of column" *
+    " :$(_names(df)[i]) ($(length(df[!, i])))" *
+    " does not match length of column 1 ($(length(df[!, 1]))). " *
+    "The column vector has likely been resized unintentionally " *
+    "(either directly or because it is shared with another data frame)."
+
 function _check_consistency(df::DataFrame)
     cols, idx = _columns(df), index(df)
     ncols = length(cols)
@@ -301,10 +349,7 @@ function _check_consistency(df::DataFrame)
     ncols == 0 && return nothing
     nrows = length(cols[1])
     for i in 2:length(cols)
-        @assert length(cols[i]) == nrows "Data frame is corrupt: length of column :$(names(df)[i]) ($(length(df[!, i])))" *
-                                         " does not match length of column 1 ($(length(df[!, 1]))). " *
-                                         "The column vector has likely been resized unintentionally " *
-                                         "(either directly or because it is shared with another data frame)."
+        @assert length(cols[i]) == nrows corrupt_msg(df, i)
     end
     nothing
 end
@@ -333,7 +378,7 @@ _check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
     @inbounds cols[col_ind][row_ind]
 end
 
-@inline function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::Symbol)
+@inline function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::Union{Symbol, AbstractString})
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
         throw(BoundsError(df, (row_ind, col_ind)))
@@ -368,7 +413,7 @@ end
     @inbounds cols[col_ind]
 end
 
-function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Symbol)
+function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Symbol, AbstractString})
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
@@ -401,11 +446,13 @@ end
     df[axes(df, 1)[row_inds], col_inds]
 
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+Base.getindex(df::DataFrame, row_ind::Colon,
+              col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     select(df, col_inds, copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+Base.getindex(df::DataFrame, row_ind::typeof(!),
+              col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
     select(df, col_inds, copycols=false)
 
 ##############################################################################
@@ -426,10 +473,7 @@ function nextcolname(df::DataFrame)
 end
 
 # Will automatically add a new column if needed
-function insert_single_column!(df::DataFrame,
-                               v::AbstractVector,
-                               col_ind::ColumnIndex)
-
+function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
     if ncol(df) != 0 && nrow(df) != length(v)
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
@@ -438,8 +482,8 @@ function insert_single_column!(df::DataFrame,
         j = index(df)[col_ind]
         _columns(df)[j] = dv
     else
-        if col_ind isa Symbol
-            push!(index(df), col_ind)
+        if col_ind isa Union{Symbol, AbstractString}
+            push!(index(df), Symbol(col_ind))
             push!(_columns(df), dv)
         else
             if ncol(df) + 1 == Int(col_ind)
@@ -484,7 +528,8 @@ function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::
 end
 
 # df.col = AbstractVector
-Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) = (df[!, col_ind] = v)
+Base.setproperty!(df::DataFrame, col_ind::Union{Symbol, AbstractString},
+                  v::AbstractVector) = (df[!, col_ind] = v)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
@@ -596,7 +641,7 @@ end
 ##############################################################################
 
 """
-    insertcols!(df::DataFrame, [ind::Int], (name=>col)::Pair{Symbol}...;
+    insertcols!(df::DataFrame, [ind::Int], (name=>col)::Pair...;
                 makeunique::Bool=false, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated `DataFrame`.
@@ -737,9 +782,19 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
     return df
 end
 
+insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{<:AbstractString,<:Any}...;
+                     makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(df, col_ind, (Symbol(n) => v for (n,v) in name_cols)...,
+                makeunique=makeunique, copycols=copycols)
+
 insertcols!(df::DataFrame, name_cols::Pair{Symbol,<:Any}...;
             makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, ncol(df)+1, name_cols..., makeunique=makeunique, copycols=copycols)
+
+insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString,<:Any}...;
+            makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(df, (Symbol(n) => v for (n,v) in name_cols)...,
+                makeunique=makeunique, copycols=copycols)
 
 """
     copy(df::DataFrame; copycols::Bool=true)
@@ -753,7 +808,7 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
     if copycols
         df[:, :]
     else
-        DataFrame(eachcol(df), names(df), copycols=false)
+        DataFrame(eachcol(df), _names(df), copycols=false)
     end
 end
 
@@ -821,11 +876,10 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
 end
 
 # definition required to avoid hcat! ambiguity
-function hcat!(df1::DataFrame, df2::DataFrame;
-               makeunique::Bool=false, copycols::Bool=true)
+hcat!(df1::DataFrame, df2::DataFrame;
+      makeunique::Bool=false, copycols::Bool=true) =
     invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2,
            makeunique=makeunique, copycols=copycols)::DataFrame
-end
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
     hcat!(df, DataFrame(AbstractVector[x], copycols=copycols),
@@ -863,9 +917,7 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 ##
 ##############################################################################
 """
-    allowmissing!(df::DataFrame, cols::Colon=:)
-    allowmissing!(df::DataFrame, cols::Union{Integer, Symbol})
-    allowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
+    allowmissing!(df::DataFrame, cols=:)
 
 Convert columns `cols` of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
@@ -876,14 +928,14 @@ function allowmissing! end
 
 function allowmissing!(df::DataFrame, col::ColumnIndex)
     df[!, col] = allowmissing(df[!, col])
-    df
+    return df
 end
 
 function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         allowmissing!(df, col)
     end
-    df
+    return df
 end
 
 function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
@@ -891,7 +943,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     for (col, cond) in enumerate(cols)
         cond && allowmissing!(df, col)
     end
-    df
+    return df
 end
 
 allowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}) =
@@ -901,10 +953,7 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
     allowmissing!(df, axes(df, 2))
 
 """
-    disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true)
-    disallowmissing!(df::DataFrame, cols::Union{Integer, Symbol}; error::Bool=true)
-    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
-                     error::Bool=true)
+    disallowmissing!(df::DataFrame, cols=:; error::Bool=true)
 
 Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
@@ -920,7 +969,7 @@ function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
     if !(!error && Missing <: eltype(x) && any(ismissing, x))
         df[!, col] = disallowmissing(x)
     end
-    df
+    return df
 end
 
 function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
@@ -928,7 +977,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
     for col in cols
         disallowmissing!(df, col, error=error)
     end
-    df
+    return df
 end
 
 function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool}; error::Bool=true)
@@ -936,7 +985,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool}; error::Bool
     for (col, cond) in enumerate(cols)
         cond && disallowmissing!(df, col, error=error)
     end
-    df
+    return df
 end
 
 disallowmissing!(df::DataFrame, cols::Union{Regex, Not, Between, All}; error::Bool=true) =
@@ -954,22 +1003,16 @@ disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
 """
     categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
                  compress::Bool=false)
-    categorical!(df::DataFrame, cname::Union{Integer, Symbol};
-                 compress::Bool=false)
-    categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
-                 compress::Bool=false)
-    categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All};
-                 compress::Bool=false)
+    categorical!(df::DataFrame, cnames; compress::Bool=false)
 
-Change columns selected by `cname` or `cnames` in data frame `df`
-to `CategoricalVector`.
+Change columns selected by `cnames` in data frame `df` to `CategoricalVector`.
 
 If `categorical!` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
 (by default `Union{AbstractString, Missing}`) will be converted to categorical.
 
-If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
-will be compressed.
+If the `compress` keyword argument is set to `true` then the created
+`CategoricalVector`s will be compressed.
 
 All created `CategoricalVector`s are unordered.
 
@@ -1025,7 +1068,7 @@ function categorical! end
 function categorical!(df::DataFrame, cname::ColumnIndex;
                       compress::Bool=false)
     df[!, cname] = categorical(df[!, cname], compress)
-    df
+    return df
 end
 
 function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
@@ -1033,21 +1076,20 @@ function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
     for cname in cnames
         df[!, cname] = categorical(df[!, cname], compress)
     end
-    df
+    return df
 end
 
 categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All, Colon}; compress::Bool=false) =
     categorical!(df, index(df)[cnames], compress=compress)
 
-function categorical!(df::DataFrame,
-                      cols::Type=Union{AbstractString, Missing};
+function categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
                       compress::Bool=false)
     for i in 1:size(df, 2)
         if eltype(df[!, i]) <: cols
             df[!, i] = categorical(df[!, i], compress)
         end
     end
-    df
+    return df
 end
 
 """
@@ -1064,7 +1106,7 @@ The exact behavior of `append!` depends on the `cols` argument:
 * If `cols == :setequal` (this is the default)
   then `df2` must contain exactly the same columns as `df` (but possibly in a different order).
 * If `cols == :orderequal` then `df2` must contain the same columns in the same order
-  (for `AbstractDict` this option requires that `keys(row)` matches `names(df)`
+  (for `AbstractDict` this option requires that `keys(row)` matches `propertynames(df)`
    to allow for support of ordered dicts; however, if `df2` is a `Dict` an error is thrown
    as it is an unordered collection).
 * If `cols == :intersect` then `df2` may contain more columns than `df`,
@@ -1214,7 +1256,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         for col in _columns(df1)
             resize!(col, nrows)
         end
-        @error "Error adding value to column $(names(df1)[current_col])."
+        @error "Error adding value to column :$(_names(df1)[current_col])."
         rethrow(err)
     end
     return df1
@@ -1244,6 +1286,10 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
+    end
+
+    if row isa AbstractDict && all(x -> x isa AbstractString, keys(row))
+        row = (;(keys(row) .=> values(row))...)
     end
 
     # in the code below we use a direct access to _columns because
@@ -1346,7 +1392,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         for col in _columns(df)
             resize!(col, nrows)
         end
-        @error "Error adding value to column :$(names(df)[current_col])."
+        @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)
     end
     return df
@@ -1373,7 +1419,7 @@ depends on the `cols` argument value in the following way:
 * If `cols == :setequal` (this is the default)
   then `row` must contain exactly the same columns as `df` (but possibly in a different order).
 * If `cols == :orderequal` then `row` must contain the same columns in the same order
-  (for `AbstractDict` this option requires that `keys(row)` matches `names(df)`
+  (for `AbstractDict` this option requires that `keys(row)` matches `propertynames(df)`
    to allow for support of ordered dicts; however, if `row` is a `Dict` an error is thrown
    as it is an unordered collection).
 * If `cols == :intersect` then `row` may contain more columns than `df`,
@@ -1499,7 +1545,7 @@ function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
         for col in _columns(df)
             resize!(col, nrows)
         end
-        @error "Error adding value to column :$(names(df)[current_col])."
+        @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)
     end
     df

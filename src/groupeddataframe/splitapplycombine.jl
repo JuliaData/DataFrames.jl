@@ -330,7 +330,7 @@ function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
             end
         end
         newparent = hcat!(parent(gd)[idx, gd.cols],
-                          without(valscat, intersect(keys, _names(valscat))))
+                          select(valscat, intersect(keys, _names(valscat)), copycols=false))
         if length(idx) == 0
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), idx,
                                     Int[], Int[], Int[], 0, Dict{Any,Int}())
@@ -600,6 +600,7 @@ end
 function combine(gd::GroupedDataFrame,
                  @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}, typeof(nrow),
                                          AbstractVector{<:Integer}, AbstractVector{Symbol},
+                                         AbstractVector{<:AbstractString},
                                          ColumnIndex, Colon, Regex, Not, All, Between}...);
                  keepkeys::Bool=true)
     @assert !isempty(cs)
@@ -703,7 +704,7 @@ function combine_helper(f, gd::GroupedDataFrame,
             end
         end
         return hcat!(parent(gd)[idx, gd.cols],
-                     without(valscat, intersect(keys, _names(valscat))))
+                     select(valscat, intersect(keys, _names(valscat)), copycols=false))
     else
         return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
     end
@@ -1624,7 +1625,9 @@ by(d::AbstractDataFrame, cols::Any, f::Pair;
 
 by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair},
                                              typeof(nrow), AbstractVector{<:Integer},
-                                             AbstractVector{Symbol}, ColumnIndex,
+                                             AbstractVector{Symbol},
+                                             AbstractVector{<:AbstractString},
+                                             ColumnIndex,
                                              Colon, Regex, Not, All, Between}...;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),

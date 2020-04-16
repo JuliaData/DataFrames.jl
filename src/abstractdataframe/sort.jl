@@ -286,15 +286,15 @@ function Sort.defalg(df::AbstractDataFrame, ::Type{T}, o::Ordering) where T<:Rea
         Sort.defalg(df)
     end
 end
-Sort.defalg(df::AbstractDataFrame,        ::Type,            o::Ordering) = Sort.defalg(df)
-Sort.defalg(df::AbstractDataFrame, col    ::ColumnIndex,     o::Ordering) = Sort.defalg(df, eltype(df[!, col]), o)
-Sort.defalg(df::AbstractDataFrame, col_ord::UserColOrdering, o::Ordering) = Sort.defalg(df, col_ord.col, o)
-Sort.defalg(df::AbstractDataFrame, cols,                     o::Ordering) = Sort.defalg(df)
 
-function Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[])
-    alg != nothing && return alg
-    Sort.defalg(df, cols, o)
-end
+Sort.defalg(df::AbstractDataFrame, ::Type, o::Ordering) = Sort.defalg(df)
+Sort.defalg(df::AbstractDataFrame, col::ColumnIndex, o::Ordering) =
+    Sort.defalg(df, eltype(df[!, col]), o)
+Sort.defalg(df::AbstractDataFrame, col_ord::UserColOrdering, o::Ordering) =
+    Sort.defalg(df, col_ord.col, o)
+Sort.defalg(df::AbstractDataFrame, cols, o::Ordering) = Sort.defalg(df)
+Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
+    alg != nothing ? alg : Sort.defalg(df, cols, o)
 
 ########################
 ## Actual sort functions
@@ -353,7 +353,7 @@ end
          rev::Bool=false, order::Ordering=Forward)
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
-`cols` can be either a `Symbol` or `Integer` column index, or
+`cols` can be either a `Symbol`, string, or `Integer` column index, or
 a vector of such indices, `:`, `All`, `Not`, `Between`, or `Regex`.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is

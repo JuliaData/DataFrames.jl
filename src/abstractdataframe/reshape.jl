@@ -1,6 +1,6 @@
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
-          variable_name::Symbol=:variable, value_name::Symbol=:value,
+          variable_name=:variable, value_name=:value,
           view::Bool=false, variable_eltype::Type=CategoricalString)
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
@@ -55,30 +55,32 @@ function stack(df::AbstractDataFrame,
                measure_vars = findall(col -> eltype(col) <: Union{AbstractFloat, Missing},
                                       eachcol(df)),
                id_vars = Not(measure_vars);
-               variable_name::Symbol=:variable,
-               value_name::Symbol=:value, view::Bool=false,
+               variable_name::Union{Symbol, AbstractString}=:variable,
+               value_name::Union{Symbol, AbstractString}=:value, view::Bool=false,
                variable_eltype::Type=CategoricalString)
+    variable_name_s = Symbol(variable_name)
+    value_name_s = Symbol(value_name)
     # getindex from index returns either Int or AbstractVector{Int}
     mv_tmp = index(df)[measure_vars]
     ints_measure_vars = mv_tmp isa Int ? [mv_tmp] : mv_tmp
     idv_tmp = index(df)[id_vars]
     ints_id_vars = idv_tmp isa Int ? [idv_tmp] : idv_tmp
     if view
-        return _stackview(df, ints_measure_vars, ints_id_vars, variable_name=variable_name,
-                          value_name=value_name, variable_eltype=variable_eltype)
+        return _stackview(df, ints_measure_vars, ints_id_vars, variable_name=variable_name_s,
+                          value_name=value_name_s, variable_eltype=variable_eltype)
     end
     N = length(ints_measure_vars)
     cnames = _names(df)[ints_id_vars]
-    push!(cnames, variable_name)
-    push!(cnames, value_name)
+    push!(cnames, variable_name_s)
+    push!(cnames, value_name_s)
     if variable_eltype <: CategoricalString
-        nms = String.(_names(df)[ints_measure_vars])
+        nms = names(df, ints_measure_vars)
         catnms = categorical(nms)
         levels!(catnms, nms)
     elseif variable_eltype === Symbol
         catnms = _names(df)[ints_measure_vars]
     elseif variable_eltype === String
-        catnms = PooledArray(String.(_names(df)[ints_measure_vars]))
+        catnms = PooledArray(names(df, ints_measure_vars))
     else
         throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
                             "`String` or `Symbol` as a value."))
@@ -97,13 +99,13 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
     push!(cnames, variable_name)
     push!(cnames, value_name)
     if variable_eltype <: CategoricalString
-        nms = String.(_names(df)[measure_vars])
+        nms = names(df, measure_vars)
         catnms = categorical(nms)
         levels!(catnms, nms)
     elseif variable_eltype <: Symbol
         catnms = _names(df)[measure_vars]
     elseif variable_eltype <: String
-        catnms = String.(_names(df)[measure_vars])
+        catnms = names(df, measure_vars)
     else
         throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalString`, " *
                             "`String` or `Symbol` as a value."))
@@ -115,14 +117,8 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
 end
 
 """
-    unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
-            colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
-            renamecols::Function=identity)
-    unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Integer, Symbol}},
-            colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
-            renamecols::Function=identity)
-    unstack(df::AbstractDataFrame, colkey::Union{Integer, Symbol},
-            value::Union{Integer, Symbol}; renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, rowkeys, colkey, value; renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, colkey, value; renamecols::Function=identity)
     unstack(df::AbstractDataFrame; renamecols::Function=identity)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
@@ -186,7 +182,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
         kref = keycol.refs[k]
         if kref <= 0 # we have found missing in colkey
             if !warned_missing
-                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue # skip processing it
@@ -267,7 +263,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         kref = keycol.refs[k]
         if kref <= 0
             if !warned_missing
-                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue

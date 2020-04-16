@@ -81,15 +81,17 @@ Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
 Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows, i::Int)
     df = parent(itr)
-    DataFrameRow(df, index(df), i)
+    return DataFrameRow(df, index(df), i)
 end
 
 Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
     sdf = parent(itr)
-    DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
+    return DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
 end
 
-Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameRows, col_ind::Union{Symbol, AbstractString}) =
+    getproperty(parent(itr), col_ind)
+
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
@@ -158,16 +160,18 @@ end
 
 Base.getindex(itr::DataFrameColumns, j::Symbol) = parent(itr)[!, j]
 
-Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameColumns, col_ind::Union{Symbol, AbstractString}) =
+    getproperty(parent(itr), col_ind)
+
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))
 
 """
     keys(dfc::DataFrameColumns)
 
-Get a vector of column names of `dfc`.
+Get a tuple of column names of `dfc`.
 """
-Base.keys(itr::DataFrameColumns) = names(parent(itr))
+Base.keys(itr::DataFrameColumns) = propertynames(itr)
 
 """
     pairs(dfc::DataFrameColumns)

@@ -116,14 +116,14 @@ groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 """
     groupcols(gd::GroupedDataFrame)
 
-Return a vector of column names in `parent(gd)` used for grouping.
+Return a vector of `Symbol` column names in `parent(gd)` used for grouping.
 """
 groupcols(gd::GroupedDataFrame) = _names(gd)[gd.cols]
 
 """
     valuecols(gd::GroupedDataFrame)
 
-Return a vector of column names in `parent(gd)` not used for grouping.
+Return a vector of `Symbol` column names in `parent(gd)` not used for grouping.
 """
 valuecols(gd::GroupedDataFrame) = _names(gd)[Not(gd.cols)]
 
@@ -229,8 +229,9 @@ Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
 Base.keys(key::GroupKey) = Tuple(groupcols(parent(key)))
 Base.haskey(key::GroupKey, idx::Symbol) = idx in groupcols(parent(key))
+Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
 Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
-Base.names(key::GroupKey) = groupcols(parent(key))
+Base.names(key::GroupKey) = string.(groupcols(parent(key)))
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
@@ -247,6 +248,8 @@ function Base.getindex(key::GroupKey, n::Symbol)
     end
 end
 
+Base.getindex(key::GroupKey, n::AbstractString) = key[Symbol(n)]
+
 function Base.getproperty(key::GroupKey, p::Symbol)
     try
         return key[p]
@@ -254,6 +257,8 @@ function Base.getproperty(key::GroupKey, p::Symbol)
         throw(ArgumentError("$(typeof(key)) has no property $p"))
     end
 end
+
+Base.getproperty(key::GroupKey, p::AbstractString) = getproperty(key, Symbol(p))
 
 function Base.NamedTuple(key::GroupKey)
     N = NamedTuple{Tuple(groupcols(parent(key)))}

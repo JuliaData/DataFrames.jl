@@ -12,8 +12,10 @@ struct DataFrameStyle <: Base.Broadcast.BroadcastStyle end
 Base.Broadcast.BroadcastStyle(::Type{<:AbstractDataFrame}) =
     DataFrameStyle()
 
-Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle) = DataFrameStyle()
-Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) = DataFrameStyle()
+Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle) =
+    DataFrameStyle()
+Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) =
+    DataFrameStyle()
 Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::DataFrameStyle) = DataFrameStyle()
 
 function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
@@ -38,7 +40,7 @@ function getcolbc(bcf::Base.Broadcast.Broadcasted{Style}, colind) where {Style}
     newargs = map(bcf.args) do x
         Base.Broadcast.extrude(x isa AbstractDataFrame ? x[!, colind] : x)
     end
-    Base.Broadcast.Broadcasted{Style}(bcf.f, newargs, bcf.axes)
+    return Base.Broadcast.Broadcasted{Style}(bcf.f, newargs, bcf.axes)
 end
 
 function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
@@ -98,20 +100,20 @@ Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
 function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
     haskey(index(df), cols) && return view(df, :, cols)
-    if !(cols isa Symbol)
+    if !(cols isa Union{Symbol, AbstractString})
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
-    LazyNewColDataFrame(df, cols)
+    return LazyNewColDataFrame(df, Symbol(cols))
 end
 
 function Base.dotview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
         return ColReplaceDataFrame(df, index(df)[cols])
     end
-    if !(cols isa Symbol) && cols > ncol(df)
+    if !(cols isa Union{Symbol, AbstractString}) && cols > ncol(df)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
-    LazyNewColDataFrame(df, cols)
+    return LazyNewColDataFrame(df, Symbol(cols))
 end
 
 Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =
@@ -132,8 +134,8 @@ end
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
     if axes(dfcol, 1) != axes(bc)[1]
         # this should never happen unless data frame is corrupted (has unequal column lengths)
-        throw(DimensionMismatch("Dimension mismatch in broadcasting. " *
-                                "The updated data frame is invalid and should not be used"))
+        throw(DimensionMismatch("Dimension mismatch in broadcasting. The updated" *
+                                " data frame is invalid and should not be used"))
     end
     @inbounds for row in eachindex(dfcol)
         dfcol[row] = bc[CartesianIndex(row, col)]
@@ -144,7 +146,7 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     for col in eachcol(dest)
         src = Base.Broadcast.unalias(col, src)
     end
-    src
+    return src
 end
 
 function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
@@ -167,7 +169,7 @@ function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
             wascopied = true
         end
     end
-    src
+    return src
 end
 
 function _broadcast_unalias_helper(dest::AbstractDataFrame, scol::AbstractVector,
@@ -206,7 +208,7 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src::Abstract
         scol = src[!, col2]
         src, wascopied = _broadcast_unalias_helper(dest, scol, src, col2, wascopied)
     end
-    src
+    return src
 end
 
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
@@ -229,18 +231,19 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     for i in axes(df, 2)
         _copyto_helper!(df[!, i], getcolbc(bcf′, i), i)
     end
-    df
+    return df
 end
 
-function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}})
+function Base.copyto!(df::AbstractDataFrame,
+                      bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}})
     # special case of fast approach when bc is providing an untransformed scalar
     if bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         for col in axes(df, 2)
             fill!(df[!, col], bc.args[1][])
         end
-        df
+        return df
     else
-        copyto!(df, convert(Base.Broadcast.Broadcasted{Nothing}, bc))
+        return copyto!(df, convert(Base.Broadcast.Broadcasted{Nothing}, bc))
     end
 end
 
@@ -250,7 +253,8 @@ create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) where {T} =
 function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
-    if length(colnames) > 1 || (length(colnames) == 1 && view(_names(crdf.df), crdf.cols) != colnames[1])
+    if length(colnames) > 1 || (length(colnames) == 1 && view(_names(crdf.df),
+                                                              crdf.cols) != colnames[1])
         push!(colnames, view(_names(crdf.df), crdf.cols))
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         if isempty(wrongnames)
@@ -284,7 +288,7 @@ function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
         end
         crdf.df[!, col_idx] = newcol
     end
-    crdf.df
+    return crdf.df
 end
 
 Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
@@ -295,5 +299,5 @@ function Base.copyto!(dfr::DataFrameRow, bc::Base.Broadcast.Broadcasted)
     for I in eachindex(bc′)
         dfr[I] = bc′[I]
     end
-    dfr
+    return dfr
 end

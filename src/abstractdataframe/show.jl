@@ -14,7 +14,7 @@ let
     function ourstrwidth(io::IO, x::Any)
         truncate(buffer, 0)
         ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
-        textwidth(String(take!(buffer)))
+        return textwidth(String(take!(buffer)))
     end
 end
 

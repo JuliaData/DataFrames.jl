@@ -14,7 +14,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true)
     N = length(gd)
-    parent_names = names(gd.parent)
+    parent_names = _names(gd.parent)
 
     summary && Base.summary(io, gd)
 

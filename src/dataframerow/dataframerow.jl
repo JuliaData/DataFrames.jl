@@ -111,6 +111,9 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
         end
 
         if v isa AbstractDict
+            if all(x -> x isa AbstractString, keys(v))
+                row = (;(keys(row) .=> values(row))...)
+            end
             for n in view(_names(df), idxs)
                 if !haskey(v, n)
                     throw(ArgumentError("Column :$n not found in source dictionary"))
@@ -138,7 +141,8 @@ Base.names(r::DataFrameRow) = names(index(r))
 
 function Base.names(r::DataFrameRow, cols)
     sel = index(r)[cols]
-    return _names(index(r))[sel isa Int ? (sel:sel) : sel]
+    nms = _names(index(r))
+    return [string(nms[i]) or i in sel]
 end
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
@@ -146,6 +150,7 @@ _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
+
 function Base.haskey(r::DataFrameRow, key::Symbol)
     hasproperty(parent(r), key) || return false
     index(r) isa Index && return true
@@ -154,11 +159,15 @@ function Base.haskey(r::DataFrameRow, key::Symbol)
     remap = index(r).remap
     length(remap) == 0 && lazyremap!(index(r))
     checkbounds(Bool, remap, pos) || return false
-    remap[pos] > 0
+    return remap[pos] > 0
 end
 
-Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
-Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
+Base.haskey(r::DataFrameRow, key::AbstractString) = haskey(r, Symbol(key))
+
+Base.getproperty(r::DataFrameRow, idx::Union{Symbol, AbstractString}) = r[idx]
+Base.setproperty!(r::DataFrameRow, idx::Union{Symbol, AbstractString}, x::Any) =
+    r[idx] = x
+
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(r::DataFrameRow, private::Bool=false) = Tuple(_names(r))
 
@@ -470,7 +479,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             resize!(col, nrows)
         end
         if current_col > 0
-            @error "Error adding value to column :$(names(df)[current_col])."
+            @error "Error adding value to column :$(_names(df)[current_col])."
         end
         rethrow(err)
     end

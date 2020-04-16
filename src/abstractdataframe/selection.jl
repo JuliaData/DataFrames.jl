@@ -1,6 +1,4 @@
 # TODO:
-# * add NT (or better name) to column selector passing NamedTuple
-#   (also in other places: filter, combine)
 # * add select/select!/transform/transform! for GroupedDataFrame
 
 # normalize_selection function makes sure that whatever input format of idx is it
@@ -54,7 +52,8 @@ normalize_selection(idx::AbstractIndex, sel) =
 
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}) =
     length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
-
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString}) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)))
 normalize_selection(idx::AbstractIndex, sel::typeof(nrow)) =
     normalize_selection(idx, nrow => :nrow)
 
@@ -68,6 +67,9 @@ function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol
     return c => identity => last(sel)
 end
 
+normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractString}) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)))
+
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
     if first(sel) isa AsTable
@@ -79,7 +81,7 @@ function normalize_selection(idx::AbstractIndex,
     end
     if rawc isa AbstractVector{Int}
         c = rawc
-    elseif rawc isa AbstractVector{Symbol}
+    elseif rawc isa Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}}
         c = [idx[n] for n in rawc]
     else
         c = try
@@ -98,6 +100,10 @@ function normalize_selection(idx::AbstractIndex,
     end
     return (wanttable ? AsTable(c) : c) => last(sel)
 end
+
+normalize_selection(idx::AbstractIndex,
+                    sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, <:AbstractString}}) =
+    normalize_selection(idx, first(sel) => last(first(sel)) => Symbol(last(last(sel))))
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:ColumnIndex,<:Union{Base.Callable, ByRow}})
@@ -118,7 +124,7 @@ function normalize_selection(idx::AbstractIndex,
     end
     if rawc isa AbstractVector{Int}
         c = rawc
-    elseif rawc isa AbstractVector{Symbol}
+    elseif rawc isa Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}}
         c = [idx[n] for n in rawc]
     else
         c = try
@@ -203,18 +209,18 @@ SELECT_ARG_RULES =
     """
     Arguments passed as `args...` can be:
 
-    * Any index that is allowed for column indexing. In particular, symbols, integers,
-      vectors of symbols, vectors of integers, vectors of bools, regular expressions,
-      `All`, `Between`, and `Not` selectors are supported.
+    * Any index that is allowed for column indexing. In particular, symbols, strings,
+      integers, vectors of symbols, vectors of strings, vectors of integers, vectors of bools,
+      regular expressions, `All`, `Between`, and `Not` selectors are supported.
     * Column transformation operations using the `Pair` notation that is described below
       and vectors of such pairs.
 
     Columns can be renamed using the `old_column => new_column_name` syntax,
     and transformed using the `old_column => fun => new_column_name` syntax.
-    `new_column_name` must be a `Symbol`, and `fun` a function or a type. If `old_column`
-    is a `Symbol` or an integer then `fun` is applied to the corresponding column vector.
-    Otherwise `old_column` can be any column indexing syntax, in which case `fun`
-    will be passed the column vectors specified by `old_column` as separate arguments.
+    `new_column_name` must be a `Symbol` or a string, and `fun` a function or a type.
+    If `old_column` is a `Symbol` or an integer then `fun` is applied to the corresponding
+    column vector. Otherwise `old_column` can be any column indexing syntax, in which case
+    `fun` will be passed the column vectors specified by `old_column` as separate arguments.
     The only exception is when `old_column` is an `AsTable` type wrapping a selector,
     in which case `fun` is passed a `NamedTuple` containing the selected columns.
 
@@ -227,10 +233,10 @@ SELECT_ARG_RULES =
     are unwrapped and then broadcasted.
 
     To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
-    struct. In this case if `old_column` is a `Symbol` or an integer then `fun` is applied
-    to each element (row) of `old_column` using broadcasting. Otherwise `old_column` can be
-    any column indexing syntax, in which case `fun` will be passed one argument for each of
-    the columns specified by `old_column`. If `ByRow` is used it is not allowed for
+    struct. In this case if `old_column` is a `Symbol`, string, or an integer then `fun` is
+    applied to each element (row) of `old_column` using broadcasting. Otherwise `old_column`
+    can be any column indexing syntax, in which case `fun` will be passed one argument for
+    each of the columns specified by `old_column`. If `ByRow` is used it is not allowed for
     `old_column` to select an empty set of columns nor for `fun` to return
     a `NamedTuple` or a `DataFrameRow`.
 
@@ -244,9 +250,10 @@ SELECT_ARG_RULES =
     Column renaming and transformation operations can be passed wrapped in vectors
     (this is useful when combined with broadcasting).
 
-    As a special rule passing `nrow` without specifying `old_column` creates a column named `:nrow`
-    containing a number of rows in a source data frame, and passing `nrow => new_column_name`
-    stores the number of rows in source data frame in `new_column_name` column.
+    As a special rule passing `nrow` without specifying `old_column` creates a column
+    named `:nrow` containing a number of rows in a source data frame, and passing
+    `nrow => new_column_name` stores the number of rows in source data frame in
+    `new_column_name` column.
 
     If a collection of column names is passed to `select!` or `select` then requesting
     duplicate column names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")`
@@ -362,6 +369,7 @@ end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])
 select!(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
+                                AbstractVector{<:AbstractString},
                                 Colon, All, Not, Between, Regex}) =
     select!(df, index(df)[c])
 
@@ -503,6 +511,7 @@ select(df::DataFrame, args::AbstractVector{Int}; copycols::Bool=true) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
 select(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
+                               AbstractVector{<:AbstractString},
                                Colon, All, Not, Between, Regex}; copycols::Bool=true) =
     select(df, index(df)[c], copycols=copycols)
 select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
@@ -621,6 +630,7 @@ end
 select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool=true) =
     select(dfv, [ind], copycols=copycols)
 select(dfv::SubDataFrame, args::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
+                                      AbstractVector{<:AbstractString},
                                       Colon, All, Not, Between, Regex}; copycols::Bool=true) =
     copycols ? dfv[:, args] : view(dfv, :, args)
 
@@ -645,8 +655,8 @@ function select(dfv::SubDataFrame, args...; copycols::Bool=true)
                 ind_idx = index(dfv)[ind]
                 if ind_idx in seen_single_column
                     throw(ArgumentError("selecting the same column multiple times using" *
-                                        " Symbol or integer is not allowed ($ind was " *
-                                        "passed more than once"))
+                                        " Symbol, string or integer is not allowed ($ind" *
+                                        " was passed more than once"))
                 else
                     push!(seen_single_column, ind_idx)
                 end

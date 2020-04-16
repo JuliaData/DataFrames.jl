@@ -93,7 +93,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
 
     # compose right half of the result taking all right columns excluding on
-    dfr_noon = without(joiner.dfr, joiner.right_on)
+    dfr_noon = select(joiner.dfr, joiner.right_on, copycols=false)
 
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
@@ -112,7 +112,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
-    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)),
+    res = DataFrame(cols, vcat(_names(joiner.dfl), _names(dfr_noon)),
                     makeunique=makeunique, copycols=false)
 
     if length(rightonly_ixs.join) > 0
@@ -346,9 +346,9 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 """
-    innerjoin(df1, df2; on = Symbol[], makeunique = false,
+    innerjoin(df1, df2; on, makeunique = false,
               validate = (false, false))
-    innerjoin(df1, df2, dfs...; on = Symbol[], makeunique = false,
+    innerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false))
 
 Perform an inner join of two or more data frame objects and return a `DataFrame` containing
@@ -439,19 +439,36 @@ julia> innerjoin(name, job2, on = [:ID => :identifier])
 │ 2   │ 2     │ Jane Doe │ Doctor │
 ```
 """
-innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=nothing,
-          validate=validate)
-innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   on::Union{<:OnType, AbstractVector, AbstractString,
+                            Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+                   makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
+                 indicator=nothing, validate=validate)
+end
+
+function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+                   on::Union{<:OnType, AbstractVector, AbstractString,
+                            Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+                   makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
+                     dfs..., on=on, makeunique=makeunique, validate=validate)
+end
 
 """
-    leftjoin(df1, df2; on = Symbol[], makeunique = false,
+    leftjoin(df1, df2; on, makeunique = false,
              indicator = nothing, validate = (false, false))
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
@@ -545,15 +562,22 @@ julia> leftjoin(name, job2, on = [:ID => :identifier])
 │ 3   │ 3     │ Joe Blogs │ missing │
 ```
 """
-leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
-          validate=validate)
+function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                  on::Union{<:OnType, AbstractVector, AbstractString,
+                            Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+                  makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+                  validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
+                 validate=validate)
+end
 
 """
-    rightjoin(df1, df2; on = Symbol[], makeunique = false,
+    rightjoin(df1, df2; on, makeunique = false,
               indicator = nothing, validate = (false, false))
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
@@ -647,17 +671,24 @@ julia> rightjoin(name, job2, on = [:ID => :identifier])
 │ 3   │ 4     │ missing  │ Farmer │
 ```
 """
-rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
-          validate=validate)
+function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   on::Union{<:OnType, AbstractVector, AbstractString,
+                            Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+                   makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
+                 validate=validate)
+end
 
 """
-    outerjoin(df1, df2; on = Symbol[], kind = :inner, makeunique = false,
+    outerjoin(df1, df2; on, kind = :inner, makeunique = false,
               indicator = nothing, validate = (false, false))
-    outerjoin(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
+    outerjoin(df1, df2, dfs...; on, kind = :inner, makeunique = false,
               validate = (false, false))
 
 Perform an outer join of two or more data frame objects and return a `DataFrame` containing
@@ -762,20 +793,36 @@ julia> outerjoin(name, job2, on = [:ID => :identifier])
 │ 4   │ 4     │ missing   │ Farmer  │
 ```
 """
-outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
-          validate=validate)
-outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   on::Union{<:OnType, AbstractVector, AbstractString,
+                            Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+                   makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
+                 validate=validate)
+end
+
+function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+                   on::Union{<:OnType, AbstractVector, AbstractString,
+                            Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+                   makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
+                     dfs..., on=on, makeunique=makeunique, validate=validate)
+end
 
 """
-    semijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
+    semijoin(df1, df2; on, makeunique = false, validate = (false, false))
 
 Perform a semi join of two data frame objects and return a `DataFrame` containing the result.
 A semi join returns the subset of rows of `df1` that match with the keys in `df2`.
@@ -863,14 +910,22 @@ julia> semijoin(name, job2, on = [:ID => :identifier])
 │ 2   │ 2     │ Jane Doe │
 ```
 """
-semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:semi, makeunique=makeunique, indicator=nothing,
-          validate=validate)
+function semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+         on::Union{<:OnType, AbstractVector, AbstractString,
+                   Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+         makeunique::Bool=false,
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return _join(df1, df2, on=on, kind=:semi, makeunique=makeunique,
+                 indicator=nothing, validate=validate)
+end
 
 """
-    antijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
+    antijoin(df1, df2; on, makeunique = false, validate = (false, false))
 
 Perform an anti join of two data frame objects and return a `DataFrame` containing the result.
 An anti join returns the subset of rows of `df1` that do not match with the keys in `df2`.
@@ -951,11 +1006,19 @@ julia> antijoin(name, job2, on = [:ID => :identifier])
 │ 1   │ 3     │ Joe Blogs │
 ```
 """
-antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:anti, makeunique=makeunique, indicator=nothing,
-          validate=validate)
+function antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+         on::Union{<:OnType, AbstractVector, AbstractString,
+                   Pair{<:AbstractString, <:AbstractString}} = Symbol[],
+         makeunique::Bool=false,
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
+    if on isa AbstractString
+        on = Symbol(on)
+    elseif on isa Pair{<:AbstractString, <:AbstractString}
+        on = Symbol(first(on)) => Symbol(last(on))
+    end
+    return _join(df1, df2, on=on, kind=:anti, makeunique=makeunique,
+                 indicator=nothing, validate=validate)
+end
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)

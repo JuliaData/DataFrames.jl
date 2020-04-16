@@ -168,7 +168,7 @@ function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
     if copycols
         sdf[:, :]
     else
-        DataFrame(eachcol(sdf), names(sdf), copycols=false)
+        DataFrame(eachcol(sdf), _names(sdf), copycols=false)
     end
 end
 
