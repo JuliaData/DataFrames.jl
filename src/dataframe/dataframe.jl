@@ -1164,6 +1164,9 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
     nrows, ncols = size(df1)
     targetrows = nrows + nrow(df2)
     current_col = 0
+    # in the code below we use a direct access to _columns because
+    # we resize the columns so temporarily the `DataFrame` is internally
+    # inconsistent and normal data frame indexing would error.
     try
         for (j, n) in enumerate(_names(df1))
             current_col += 1

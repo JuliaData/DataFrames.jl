@@ -792,7 +792,7 @@ end
             @test df1 == DataFrame(x=1:3, y=1:3)
             df2 = DataFrame(y=4:6, x=1:3)
             with_logger(sl) do
-                @test_throws (cols==:orderequal ? ArgumentError :
+                @test_throws (cols == :orderequal ? ArgumentError :
                               AssertionError) append!(df1, df2, cols=cols, promote=promote)
             end
             @test df1 == DataFrame(x=1:3, y=1:3)
