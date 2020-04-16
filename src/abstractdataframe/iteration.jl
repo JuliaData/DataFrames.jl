@@ -178,62 +178,6 @@ where `name` is the column name of the column `col`.
 """
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
 
-"""
-    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
-
-Return a `DataFrame` where each column of `df` is transformed using function `f`.
-`f` must return `AbstractVector` objects all with the same length or scalars.
-
-Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
-`DataFrame`. If `f` returns its argument then it gets copied before being stored.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(x=1:4, y=11:14)
-4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
-
-julia> mapcols(x -> x.^2, df)
-4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 121   │
-│ 2   │ 4     │ 144   │
-│ 3   │ 9     │ 169   │
-│ 4   │ 16    │ 196   │
-```
-"""
-function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
-    # note: `f` must return a consistent length
-    vs = AbstractVector[]
-    seenscalar = false
-    seenvector = false
-    for v in eachcol(df)
-        fv = f(v)
-        if fv isa AbstractVector
-            if seenscalar
-                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
-            end
-            seenvector = true
-            push!(vs, fv === v ? copy(fv) : fv)
-        else
-            if seenvector
-                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
-            end
-            seenscalar = true
-            push!(vs, [fv])
-        end
-    end
-    DataFrame(vs, _names(df), copycols=false)
-end
-
 Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
 Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))
 
@@ -302,3 +246,125 @@ Base.show(dfcs::DataFrameColumns;
           eltypes::Bool = true) =
     show(stdout, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
          rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+
+"""
+    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+
+Return a `DataFrame` where each column of `df` is transformed using function `f`.
+`f` must return `AbstractVector` objects all with the same length or scalars
+(all values other than `AbstractVector` are considered to be a scalar).
+
+Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
+`DataFrame`. If `f` returns its argument then it gets copied before being stored.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> mapcols(x -> x.^2, df)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 121   │
+│ 2   │ 4     │ 144   │
+│ 3   │ 9     │ 169   │
+│ 4   │ 16    │ 196   │
+```
+"""
+function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+    # note: `f` must return a consistent length
+    vs = AbstractVector[]
+    seenscalar = false
+    seenvector = false
+    for v in eachcol(df)
+        fv = f(v)
+        if fv isa AbstractVector
+            if seenscalar
+                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
+            end
+            seenvector = true
+            push!(vs, fv === v ? copy(fv) : fv)
+        else
+            if seenvector
+                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
+            end
+            seenscalar = true
+            push!(vs, [fv])
+        end
+    end
+    return DataFrame(vs, _names(df), copycols=false)
+end
+
+"""
+    mapcols!(f::Union{Function,Type}, df::DataFrame)
+
+Update a `DataFrame` in-place where each column of `df` is transformed using function `f`.
+`f` must return `AbstractVector` objects all with the same length or scalars
+(all values other than `AbstractVector` are considered to be a scalar).
+
+Note that `mapcols!` reuses the columns from `df` if they are returned by `f`.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> mapcols!(x -> x.^2, df);
+
+julia> df
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 121   │
+│ 2   │ 4     │ 144   │
+│ 3   │ 9     │ 169   │
+│ 4   │ 16    │ 196   │
+```
+"""
+function mapcols!(f::Union{Function,Type}, df::DataFrame)
+    # note: `f` must return a consistent length
+    vs = AbstractVector[]
+    seenscalar = false
+    seenvector = false
+    for v in eachcol(df)
+        fv = f(v)
+        if fv isa AbstractVector
+            if seenscalar
+                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
+            end
+            seenvector = true
+            push!(vs, fv)
+        else
+            if seenvector
+                throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
+            end
+            seenscalar = true
+            push!(vs, [fv])
+        end
+    end
+
+    len_min, len_max = extrema(length(v) for v in vs)
+    if len_min != len_max
+        throw(DimensionMismatch("lengths of returned vectors must be identical"))
+    end
+    _columns(df) .= vs
+
+    return df
+end

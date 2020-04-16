@@ -51,12 +51,36 @@ end
     @test mapcols(sum, df_mapcols) == DataFrame(a=55, b=155)
     @test mapcols(x -> 1, df_mapcols) == DataFrame(a=1, b=1)
     @test_throws ArgumentError mapcols(x -> x[1] == 1 ? 0 : [0], df_mapcols)
+    @test_throws DimensionMismatch mapcols(x -> x[1] == 1 ? [1] : [1,2], df_mapcols)
     @test_throws ArgumentError mapcols(x -> x[1] == 1 ? x : 0, df_mapcols)
     @test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
     df_mapcols2 = mapcols(x -> x, df_mapcols)
     @test df_mapcols2 == df_mapcols
     @test df_mapcols2.a !== df_mapcols.a
     @test df_mapcols2.b !== df_mapcols.b
+end
+
+@testset "mapcols!" begin
+    df_mapcols = DataFrame(a=1:10, b=11:20)
+    mapcols!(sum, df_mapcols)
+    @test df_mapcols == DataFrame(a=55, b=155)
+
+    df_mapcols = DataFrame(a=1:10, b=11:20)
+    mapcols!(x -> 1, df_mapcols)
+    @test df_mapcols == DataFrame(a=1, b=1)
+
+    df_mapcols = DataFrame(a=1:10, b=11:20)
+    @test_throws ArgumentError mapcols!(x -> x[1] == 1 ? 0 : [0], df_mapcols)
+    @test_throws DimensionMismatch mapcols!(x -> x[1] == 1 ? [1] : [1,2], df_mapcols)
+    @test_throws ArgumentError mapcols!(x -> x[1] == 1 ? x : 0, df_mapcols)
+    @test_throws ArgumentError mapcols!(x -> x[1] != 1 ? x : 0, df_mapcols)
+    @test df_mapcols == DataFrame(a=1:10, b=11:20)
+
+    a = df_mapcols.a
+    b = df_mapcols.b
+    mapcols!(x -> x, df_mapcols)
+    @test a === df_mapcols.a
+    @test b === df_mapcols.b
 end
 
 @testset "SubDataFrame" begin
