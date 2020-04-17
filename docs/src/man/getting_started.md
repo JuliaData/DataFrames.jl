@@ -45,13 +45,22 @@ julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position.
+Columns can be directly (i.e. without copying) accessed via `df.col` or `df[!, :col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (written as `:col`, `:var"col"` or `Symbol("col")`).
+For user convinience also strings (`"col"`) are accepted.
+Columns can also be accessed using an integer index specifying their position.
 
 Since `df[!, :col]` does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original `df`. To get a copy of the column use `df[:, :col]`: changing the vector returned by this syntax does not change `df`.
 
 
 ```jldoctest dataframe
 julia> df.A
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia> df."A"
 4-element Array{Int64,1}:
  1
  2
@@ -65,6 +74,15 @@ julia> df.A === df[:, :A]
 false
 
 julia> df.A == df[:, :A]
+true
+
+julia> df.A === df[!, "A"]
+true
+
+julia> df.A === df[:, "A"]
+false
+
+julia> df.A == df[:, "A"]
 true
 
 julia> df.A === df[!, 1]
@@ -89,14 +107,28 @@ julia> df[:, firstcolumn] == df.A
 true
 ```
 
-Column names can be obtained using the `names` function:
+Column names as strings can be obtained using the `names` function:
 
 ```jldoctest dataframe
 julia> names(df)
-2-element Array{Symbol,1}:
- :A
- :B
+2-element Array{String,1}:
+ "A"
+ "B"
+ ```
+
+If you want to get column names as `Symbol`s then use the `propertynames` function:
 ```
+julia> propertynames(df)
+(:A, :B)
+```
+
+!!! note
+
+    DataFrames.jl allows to use `Symbol`s (like `:A`) and strings (like `"A"`)
+    for all column indexing operations for convenience.
+    However, it is important to remember that using `Symbol`s is faster and
+    is a recommended way to perform it.
+
 
 ### Constructing Column by Column
 

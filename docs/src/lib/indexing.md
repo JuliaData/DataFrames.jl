@@ -17,9 +17,11 @@ and broadcasting are intended to work with `DataFrame`, `SubDataFrame` and `Data
 The rules for a valid type of index into a column are the following:
 * a value, later denoted as `col`:
     * a `Symbol`;
+    * an `AbstractString`;
     * an `Integer` that is not `Bool`;
 * a vector, later denoted as `cols`:
     * a vector of `Symbol` (does not have to be a subtype of `AbstractVector{Symbol}`);
+    * a vector of `AbstractString` (does not have to be a subtype of `AbstractVector{<:AbstractString}`);
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of `AbstractVector{<:Integer}`);
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
     * a regular expression, which gets expanded to a vector of matching column names;
@@ -122,13 +124,14 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
 * `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
 * `df[row, cols] = v` -> set row `row` of columns `cols` in-place; the same as `dfr = df[row, cols]; dfr[:] = v`;
 * `df[rows, col] = v` -> set rows `rows` of column `col` in-place; `v` must be an `AbstractVector`;
-                         if `rows` is `:` and `col` is a `Symbol` that is not present in `df` then a new column
-                         in `df` is created and holds a `copy` of `v`; equivalent to `df.col = copy(v)` if `col` is a valid identifier;
+                         if `rows` is `:` and `col` is a `Symbol` or `AbstractString`
+                         that is not present in `df` then a new column in `df` is created and holds a `copy` of `v`; equivalent to `df.col = copy(v)` if `col` is a valid identifier;
 * `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place; `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                       (in this case column names must match);
 * `df[!, col] = v` -> replaces `col` with `v` without copying
                       (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
-                      also if `col` is a `Symbol` that is not present in `df` then a new column in `df` is created and holds `v`;
+                      also if `col` is a `Symbol` or `AbstractString` that is not present in `df` then
+                      a new column in `df` is created and holds `v`;
                       equivalent to `df.col = v` if `col` is a valid identifier;
                       this is allowed if `ncol(df) == 0 || length(v) == nrow(df)`;
 * `df[!, cols] = v` -> replaces existing columns `cols` in data frame `df` with copying;
@@ -183,10 +186,10 @@ Additional rules:
 * in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
 * in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-  if `rows` is `:` and `col` is `Symbol` and it is missing from `df` then a new column is allocated and added;
+  if `rows` is `:` and `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated and added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector;
-  if `col` is `Symbol` and it is missing from `df` then a new column is allocated added;
+  if `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
 * `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
@@ -197,8 +200,8 @@ Additional rules:
 
 Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as `sdf` can be only modified in-place.
 
-If column indexing using `Symbol` names in `cols` is performed, the order of columns in the operation is specified
-by the order of names.
+If column indexing using `Symbol` or `AbstractString` names in `cols` is performed, the order
+of columns in the operation is specified by the order of names.
 
 
 ## Indexing `GroupedDataFrame`s
