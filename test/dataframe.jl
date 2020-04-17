@@ -999,7 +999,7 @@ end
     @test df == cdf
 
     df = DataFrame(A=1)
-    @test rename(x -> 1, df) == DataFrame(:var"1" => 1)
+    @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
 end
 
 @testset "flexible rename arguments" begin
