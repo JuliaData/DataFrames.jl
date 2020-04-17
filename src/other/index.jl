@@ -3,6 +3,11 @@
 # through cleanly.
 abstract type AbstractIndex end
 
+# this is type piracy, but without it Between will error so I think it is acceptable
+DataAPI.Between(x::AbstractString, y::AbstractString) = Between(Symbol(x), Symbol(y))
+DataAPI.Between(x::Union{Int, Symbol}, y::AbstractString) = Between(x, Symbol(y))
+DataAPI.Between(x::AbstractString, y::Union{Int, Symbol}) = Between(Symbol(x), y)
+
 function Base.summary(idx::AbstractIndex)
     l = length(idx)
     return "data frame with $l column$(l == 1 ? "" : "s")"
@@ -240,8 +245,12 @@ end
     idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
     all(x -> x isa AbstractString, idxs) && return getindex(x, Symbol.(idxs))
 
-    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); Only Integer, Symbol"*
-                        ", or string values allowed when indexing by vector"))
+    if idxs[1] isa AbstractString
+        throw(ArgumentError("mixing strings with other selectors is not allowed"))
+    else
+        throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); Only Integer, Symbol"*
+                            ", or string values allowed when indexing by vector"))
+    end
 end
 
 @inline Base.getindex(x::AbstractIndex, rx::Regex) =
@@ -417,7 +426,6 @@ Base.haskey(x::SubIndex, key::AbstractString) = haskey(x, Symbol(key))
 Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
 Base.haskey(x::SubIndex, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
-Base.keys(x::SubIndex) = copy(_names(x))
 
 Base.getindex(x::SubIndex, idx::Symbol) = x.remap[x.parent[idx]]
 Base.getindex(x::SubIndex, idx::AbstractString) = x[Symbol(idx)]

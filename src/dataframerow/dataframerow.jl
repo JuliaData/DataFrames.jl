@@ -165,7 +165,6 @@ end
 
 Base.haskey(r::DataFrameRow, key::AbstractString) = haskey(r, Symbol(key))
 
-
 # separate methods are needed due to dispatch ambiguity
 Base.getproperty(r::DataFrameRow, idx::Symbol) = r[idx]
 Base.getproperty(r::DataFrameRow, idx::AbstractString) = r[idx]

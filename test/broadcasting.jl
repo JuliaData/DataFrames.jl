@@ -205,8 +205,16 @@ end
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df[:, 2:end] == refdf[:, 2:end]
 
+    df = copy(refdf)
+    df[!, "x1"] .+= [0, 1, 2] .+ 1
+    @test df."x1" == [2.5, 4.5, 6.5]
+    @test df[:, Not("x1")] == refdf[:, 2:end]
+
     dfv = @view df[1:2, 2:end]
     @test_throws ArgumentError dfv[!, 1] .+= [0, 1] .+ 1
+
+    dfv = @view df[1:2, 2:end]
+    @test_throws ArgumentError dfv[!, "x1"] .+= [0, 1] .+ 1
 
     df = copy(refdf)
     df.x1 .+= [0, 1, 2] .+ 1
@@ -216,6 +224,19 @@ end
     dfv = @view df[1:2, 2:end]
     dfv.x2 .+= [0, 1] .+ 1
     @test dfv.x2 == [5.5, 7.5]
+    @test dfv[:, 2:end] == refdf[1:2, 3:end]
+    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
+                         4.5  7.5  8.5  11.5  14.5
+                         6.5  6.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
+    df."x1" .+= [0, 1, 2] .+ 1
+    @test df."x1" == [2.5, 4.5, 6.5]
+    @test df[:, 2:end] == refdf[:, 2:end]
+
+    dfv = @view df[1:2, 2:end]
+    dfv."x2" .+= [0, 1] .+ 1
+    @test dfv."x2" == [5.5, 7.5]
     @test dfv[:, 2:end] == refdf[1:2, 3:end]
     @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
                          4.5  7.5  8.5  11.5  14.5
@@ -236,6 +257,19 @@ end
     dfv = @view df[1:2, 2:end]
     dfv[:, 1] .+= [0, 1] .+ 1
     @test dfv.x2 == [5.5, 7.5]
+    @test dfv[:, 2:end] == refdf[1:2, 3:end]
+    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
+                         4.5  7.5  8.5  11.5  14.5
+                         6.5  6.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
+    df[:, "x1"] .+= [0, 1, 2] .+ 1
+    @test df."x1" == [2.5, 4.5, 6.5]
+    @test df[:, 2:end] == refdf[:, 2:end]
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, "x2"] .+= [0, 1] .+ 1
+    @test dfv."x2" == [5.5, 7.5]
     @test dfv[:, 2:end] == refdf[1:2, 3:end]
     @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
                          4.5  7.5  8.5  11.5  14.5
@@ -271,6 +305,21 @@ end
                          4.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
+    df[!, "x1"] .+= 1
+    @test df."x1" == [2.5, 3.5, 4.5]
+    @test df[:, 2:end] == refdf[:, 2:end]
+
+    dfv = @view df[1:2, 2:end]
+    @test_throws ArgumentError dfv[!, "x2"] .+= 1
+
+    dfr = df[1, 3:end]
+    dfr[["x4", "x5"]] .= 10
+    @test Vector(dfr) == [7.5, 10.0, 10.0]
+    @test Matrix(df) == [2.5  4.5  7.5  10.0  10.0
+                         3.5  5.5  8.5  11.5  14.5
+                         4.5  6.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
     df[:, :x1] .+= 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df[:, 2:end] == refdf[:, 2:end]
@@ -278,6 +327,19 @@ end
     dfv = @view df[1:2, 2:end]
     dfv[:, :x2] .+= 1
     @test dfv.x2 == [5.5, 6.5]
+    @test dfv[:, 2:end] == refdf[1:2, 3:end]
+    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
+                         3.5  6.5  8.5  11.5  14.5
+                         4.5  6.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
+    df[:, "x1"] .+= 1
+    @test df."x1" == [2.5, 3.5, 4.5]
+    @test df[:, 2:end] == refdf[:, 2:end]
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, "x2"] .+= 1
+    @test dfv."x2" == [5.5, 6.5]
     @test dfv[:, 2:end] == refdf[1:2, 3:end]
     @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
                          3.5  6.5  8.5  11.5  14.5
@@ -299,6 +361,21 @@ end
                          6.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
+    df[!, "x1"] .+= [1, 2, 3]
+    @test df."x1" == [2.5, 4.5, 6.5]
+    @test df[:, 2:end] == refdf[:, 2:end]
+
+    dfv = @view df[1:2, 2:end]
+    @test_throws ArgumentError dfv[!, :x2] .+= [1, 2]
+
+    dfr = df[1, 3:end]
+    dfr[["x4", "x5"]] .= [10, 11]
+    @test Vector(dfr) == [7.5, 10.0, 11.0]
+    @test Matrix(df) == [2.5  4.5  7.5  10.0  11.0
+                         4.5  5.5  8.5  11.5  14.5
+                         6.5  6.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
     df[:, :x1] .+= [1, 2, 3]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df[:, 2:end] == refdf[:, 2:end]
@@ -306,6 +383,19 @@ end
     dfv = @view df[1:2, 2:end]
     dfv[:, :x2] .+= [1, 2]
     @test dfv.x2 == [5.5, 7.5]
+    @test dfv[:, 2:end] == refdf[1:2, 3:end]
+    @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
+                         4.5  7.5  8.5  11.5  14.5
+                         6.5  6.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
+    df[:, "x1"] .+= [1, 2, 3]
+    @test df."x1" == [2.5, 4.5, 6.5]
+    @test df[:, 2:end] == refdf[:, 2:end]
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, "x2"] .+= [1, 2]
+    @test dfv."x2" == [5.5, 7.5]
     @test dfv[:, 2:end] == refdf[1:2, 3:end]
     @test Matrix(df) == [2.5  5.5  7.5  10.5  13.5
                          4.5  7.5  8.5  11.5  14.5
@@ -324,6 +414,11 @@ end
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), :, 1)
+    @test_throws DimensionMismatch df[!, "x1"] .= rand(3, 1)
+    @test_throws ArgumentError dfv[!, "x2"] .= rand(2, 1)
+    @test_throws DimensionMismatch dfr[["x4", "x5"]] .= rand(3, 1)
+    @test_throws DimensionMismatch df[:, "x1"] .= rand(3, 1)
+    @test_throws DimensionMismatch dfv[:, "x2"] .= rand(2, 1)
 end
 
 @testset "normal data frame and data frame view in broadcasted assignment - two columns" begin
@@ -416,6 +511,21 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
+    df[:, ["x1","x2"]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
+    @test df.x1 == [2.5, 3.5, 4.5]
+    @test df.x2 == [5.5, 6.5, 7.5]
+    @test df[:, 3:end] == refdf[:, 3:end]
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
+    @test dfv.x3 == [8.5, 9.5]
+    @test dfv.x4 == [11.5, 12.5]
+    @test dfv[:, 3:end] == refdf[1:2, 5:end]
+    @test Matrix(df) == [2.5  5.5  8.5  11.5  13.5
+                         3.5  6.5  9.5  12.5  14.5
+                         4.5  7.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
     df[:, [:x1,:x2]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
@@ -423,6 +533,21 @@ end
 
     dfv = @view df[1:2, 3:end]
     dfv[:, [:x3,:x4]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
+    @test dfv.x3 == [8.5, 9.5]
+    @test dfv.x4 == [11.5, 12.5]
+    @test dfv[:, 3:end] == refdf[1:2, 5:end]
+    @test Matrix(df) == [2.5  5.5  8.5  11.5  13.5
+                         3.5  6.5  9.5  12.5  14.5
+                         4.5  7.5  9.5  12.5  15.5]
+
+    df = copy(refdf)
+    df[:, ["x1","x2"]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
+    @test df.x1 == [2.5, 3.5, 4.5]
+    @test df.x2 == [5.5, 6.5, 7.5]
+    @test df[:, 3:end] == refdf[:, 3:end]
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -449,6 +574,24 @@ end
                          6.5  12.5   9.5  12.5  15.5]
 
     df = copy(refdf)
+    df[:, ["x1","x2"]] .= Matrix(df[:, ["x1","x2"]]) .+ [1 4
+                                                         2 5
+                                                         3 6]
+    @test df.x1 == [2.5, 4.5, 6.5]
+    @test df.x2 == [8.5, 10.5, 12.5]
+    @test df[:, 3:end] == refdf[:, 3:end]
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, ["x3","x4"]]) .+ [1 3
+                                                           2 4]
+    @test dfv.x3 == [8.5, 10.5]
+    @test dfv.x4 == [13.5, 15.5]
+    @test dfv[:, 3:end] == refdf[1:2, 5:end]
+    @test Matrix(df) == [2.5   8.5   8.5  13.5  13.5
+                         4.5  10.5  10.5  15.5  14.5
+                         6.5  12.5   9.5  12.5  15.5]
+
+    df = copy(refdf)
     df[:, [:x1,:x2]] .= Matrix(df[:, [:x1,:x2]]) .+ [1 4
                                                      2 5
                                                      3 6]
@@ -467,11 +610,33 @@ end
                          6.5  12.5   9.5  12.5  15.5]
 
     df = copy(refdf)
+    df[:, ["x1","x2"]] .= Matrix(df[:, ["x1","x2"]]) .+ [1 4
+                                                         2 5
+                                                         3 6]
+    @test df.x1 == [2.5, 4.5, 6.5]
+    @test df.x2 == [8.5, 10.5, 12.5]
+    @test df[:, 3:end] == refdf[:, 3:end]
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, ["x3","x4"]]) .+ [1 3
+                                                           2 4]
+    @test dfv.x3 == [8.5, 10.5]
+    @test dfv.x4 == [13.5, 15.5]
+    @test dfv[:, 3:end] == refdf[1:2, 5:end]
+    @test Matrix(df) == [2.5   8.5   8.5  13.5  13.5
+                         4.5  10.5  10.5  15.5  14.5
+                         6.5  12.5   9.5  12.5  15.5]
+
+    df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     @test_throws DimensionMismatch df[:, [:x1,:x2]] .= rand(3, 10)
     @test_throws DimensionMismatch dfv[:, [:x3,:x4]] .= rand(2, 10)
     @test_throws DimensionMismatch df[:, [:x1,:x2]] .= rand(3, 10)
     @test_throws DimensionMismatch dfv[:, [:x3,:x4]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, ["x1","x2"]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, ["x3","x4"]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, ["x1","x2"]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, ["x3","x4"]] .= rand(2, 10)
 
     df = copy(refdf)
     df[:, [1,2]] .= [1 2
@@ -604,6 +769,42 @@ end
     df[!, :b] .= sin.(1)
     df[!, :c] .= sin(1) .+ 1
     @test df == DataFrame(b=Float64[], c=Float64[])
+
+    df = copy(refdf)
+    df[!, "a"] .= 1
+    @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0
+                         2.5  5.5  8.5  11.5  14.5  1.0
+                         3.5  6.5  9.5  12.5  15.5  1.0]
+    @test names(df)[end] == "a"
+    @test df[:, 1:end-1] == refdf
+    df[!, "b"] .= [1, 2, 3]
+    @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0 1.0
+                         2.5  5.5  8.5  11.5  14.5  1.0 2.0
+                         3.5  6.5  9.5  12.5  15.5  1.0 3.0]
+    @test names(df)[end] == "b"
+    @test df[:, 1:end-2] == refdf
+    cdf = copy(df)
+    @test_throws DimensionMismatch df[!, "c"] .= ones(3, 1)
+    @test df == cdf
+    @test_throws DimensionMismatch df[!, "x"] .= ones(4)
+    @test df == cdf
+    @test_throws ArgumentError df[!, 10] .= ones(3)
+    @test df == cdf
+
+    dfv = @view df[1:2, 2:end]
+    @test_throws ArgumentError dfv[!, 10] .= ones(3)
+    @test_throws ArgumentError dfv[!, "z"] .= ones(3)
+    @test df == cdf
+    dfr = df[1, 3:end]
+    @test_throws BoundsError dfr[10] .= ones(3)
+    @test_throws ArgumentError dfr["z"] .= ones(3)
+    @test df == cdf
+
+    df = DataFrame()
+    @test_throws DimensionMismatch df[!, "a"] .= sin.(1:3)
+    df[!, "b"] .= sin.(1)
+    df[!, "c"] .= sin(1) .+ 1
+    @test df == DataFrame(b=Float64[], c=Float64[])
 end
 
 @testset "empty data frame corner case" begin
@@ -615,6 +816,11 @@ end
     @test_throws DimensionMismatch df[!, :a] .= [1 2]
     @test_throws DimensionMismatch df[!, :a] .= [1, 2]
     @test_throws DimensionMismatch df[!, :a] .= sin.(1) .+ [1, 2]
+    @test_throws ArgumentError df[!, ["a", "b"]] .= [1]
+    @test_throws ArgumentError df[!, ["a", "b"]] .= 1
+    @test_throws DimensionMismatch df[!, "a"] .= [1 2]
+    @test_throws DimensionMismatch df[!, "a"] .= [1, 2]
+    @test_throws DimensionMismatch df[!, "a"] .= sin.(1) .+ [1, 2]
 
     for rhs in [1, [1], Int[], "abc", ["abc"]]
         df = DataFrame()
@@ -656,6 +862,46 @@ end
         @. df[!, :a] = length(rhs) + 1
         @test size(df) == (0, 2)
         @test eltype(df[!, 2]) == Int
+
+        df = DataFrame()
+        df[!, "a"] .= rhs
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame()
+        df[!, "a"] .= length.(rhs)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        df[!, "a"] .= length.(rhs) .+ 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @. df[!, "a"] = length(rhs) + 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, "a"] .= rhs
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+
+        df = DataFrame(x=Int[])
+        df[!, "a"] .= length.(rhs)
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        df[!, "a"] .= length.(rhs) .+ 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
+
+        df = DataFrame(x=Int[])
+        @. df[!, "a"] = length(rhs) + 1
+        @test size(df) == (0, 2)
+        @test eltype(df[!, 2]) == Int
     end
 
     df = DataFrame()
@@ -684,6 +930,23 @@ end
     df[!, :b] .= c[1]
     @test nrow(df) == 0
     @test df.b isa CategoricalVector{String}
+
+    df = DataFrame(a=[])
+    df[!, "b"] .= sin.(1)
+    @test eltype(df."b") == Float64
+    df[!, "b"] .= [1]
+    @test eltype(df."b") == Int
+    df[!, "b"] .= 'a'
+    @test eltype(df."b") == Char
+    @test names(df) == ["a", "b"]
+
+    c = categorical(["a", "b", "c"])
+    df = DataFrame()
+    @test_throws DimensionMismatch df[!, "a"] .= c
+
+    df[!, "b"] .= c[1]
+    @test nrow(df) == 0
+    @test df."b" isa CategoricalVector{String}
 end
 
 @testset "test categorical values" begin
@@ -1024,6 +1287,12 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
+    @test_throws MethodError df[1, "x1"] .= 1
+    @test_throws MethodError df[1, "x1"] .= "d"
+    @test_throws DimensionMismatch df[1, "x1"] .= [1, 2]
+
+    df = copy(refdf)
+    v1 = df[!, 1]
     v2 = df[!, 2]
     df[1, 1:2] .= 'd'
     @test v1 == [100.0, 2.5, 3.5]
@@ -1135,12 +1404,26 @@ end
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
+    df[!, "newcol"] .= 100.0
+    @test df.newcol == [100.0, 100.0, 100.0]
+    @test df[:, 1:end-1] == refdf
+
+    df = copy(refdf)
     df[!, :newcol] .= 'd'
     @test df.newcol == ['d', 'd', 'd']
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
+    df[!, "newcol"] .= 'd'
+    @test df.newcol == ['d', 'd', 'd']
+    @test df[:, 1:end-1] == refdf
+
+    df = copy(refdf)
     @test_throws DimensionMismatch df[!, :newcol] .= [1 2 3]
+    @test df == refdf
+
+    df = copy(refdf)
+    @test_throws DimensionMismatch df[!, "newcol"] .= [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
@@ -1319,6 +1602,18 @@ end
     dfr.a .= 10
     @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
     @test_throws MethodError dfr.a .= ["a", "b"]
+
+    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    dfr = df[1, :]
+    dfr."a" .= 10
+    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test_throws MethodError dfr."a" .= ["a", "b"]
+
+    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    dfr = df[1, 1:1]
+    dfr."a" .= 10
+    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test_throws MethodError dfr."a" .= ["a", "b"]
 end
 
 @testset "make sure that : is in place and ! allocates" begin
@@ -1331,24 +1626,37 @@ end
     @test a == [2, 3, 4]
     @test df.a == [3, 4, 5]
     @test df.a !== a
+
+    df = DataFrame(a = [1, 2, 3])
+    a = df.a
+    df[:, "a"] .+= 1
+    @test a == [2, 3, 4]
+    @test df.a === a
+    df[!, "a"] .+= 1
+    @test a == [2, 3, 4]
+    @test df.a == [3, 4, 5]
+    @test df.a !== a
 end
 
 @testset "add new correct rules for df[row, col] .= v broadcasting" begin
-    df = DataFrame(a=1)
-    @test_throws MethodError df[1,1] .= 10
-    @test_throws MethodError df[1,:a] .= 10
-    @test_throws MethodError df[CartesianIndex(1,1)] .= 10
-    df = DataFrame(a=[[1,2,3]])
-    df[1,1] .= 10
-    @test df == DataFrame(a=[[10,10,10]])
-    df[1,:a] .= 100
-    @test df == DataFrame(a=[[100,100,100]])
-    df[CartesianIndex(1,1)] .= 1000
-    @test df == DataFrame(a=[[1000,1000,1000]])
+    for v in [:a, "a"]
+        df = DataFrame(a=1)
+        @test_throws MethodError df[1,1] .= 10
+        @test_throws MethodError df[1, v] .= 10
+        @test_throws MethodError df[CartesianIndex(1,1)] .= 10
+        df = DataFrame(a=[[1,2,3]])
+        df[1,1] .= 10
+        @test df == DataFrame(a=[[10,10,10]])
+        df[1, v] .= 100
+        @test df == DataFrame(a=[[100,100,100]])
+        df[CartesianIndex(1,1)] .= 1000
+        @test df == DataFrame(a=[[1000,1000,1000]])
+    end
 end
 
 @testset "broadcasting into df[!, cols]" begin
-    for selector in [1:2, Between(:x1, :x2), Not(r"x3"), [:x1, :x2]]
+    for selector in [1:2, Between(:x1, :x2), Not(r"x3"), [:x1, :x2],
+                     ["x1", "x2"], Between("x1", "x2")]
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= "a"
         @test df == DataFrame(fill("a", 3, 2))
@@ -1509,6 +1817,21 @@ end
     df = DataFrame(ones(3, 4))
     z = fill("abc", 1, 1, 1)
     @test_throws DimensionMismatch df[:, :z] .= z
+
+    df = DataFrame(ones(3, 4))
+    z = ["a", "b", "c"]
+    df[:, "z"] .= z
+    @test df.z == z
+    @test df.z !== z
+
+    df = DataFrame(ones(3, 4))
+    z = "abc"
+    df[:, "z"] .= z
+    @test df.z == fill("abc", 3)
+
+    df = DataFrame(ones(3, 4))
+    z = fill("abc", 1, 1, 1)
+    @test_throws DimensionMismatch df[:, "z"] .= z
 end
 
 end # module
