@@ -690,12 +690,12 @@ end
     @test df9′ ≅ df8
 end
 
-global_logger(old_logger)
-
 @testset "deprecated deleterows!" begin
     @test deleterows!(DataFrame(x=[1, 2]), 1) ==
         deleterows!(DataFrame(x=[1, 2]), [1]) ==
         deleterows!(DataFrame(x=[1, 2]), [true, false]) == DataFrame(x=[2])
 end
+
+global_logger(old_logger)
 
 end # module
