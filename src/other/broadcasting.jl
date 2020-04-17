@@ -103,7 +103,7 @@ function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
     if !(cols isa Union{Symbol, AbstractString})
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
-    return LazyNewColDataFrame(df, Symbol(cols))
+    return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
 end
 
 function Base.dotview(df::DataFrame, ::typeof(!), cols)
@@ -113,7 +113,7 @@ function Base.dotview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa Union{Symbol, AbstractString}) && cols > ncol(df)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
-    return LazyNewColDataFrame(df, Symbol(cols))
+    return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
 end
 
 Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =

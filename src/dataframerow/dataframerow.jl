@@ -140,9 +140,10 @@ index(r::DataFrameRow) = getfield(r, :colindex)
 Base.names(r::DataFrameRow) = names(index(r))
 
 function Base.names(r::DataFrameRow, cols)
-    sel = index(r)[cols]
     nms = _names(index(r))
-    return [string(nms[i]) or i in sel]
+    idx = index(r)[cols]
+    idxs = idx isa Int ? (idx:idx) : idx
+    return [string(nms[i]) for i in idxs]
 end
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
@@ -164,9 +165,14 @@ end
 
 Base.haskey(r::DataFrameRow, key::AbstractString) = haskey(r, Symbol(key))
 
-Base.getproperty(r::DataFrameRow, idx::Union{Symbol, AbstractString}) = r[idx]
-Base.setproperty!(r::DataFrameRow, idx::Union{Symbol, AbstractString}, x::Any) =
-    r[idx] = x
+
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(r::DataFrameRow, idx::Symbol) = r[idx]
+Base.getproperty(r::DataFrameRow, idx::AbstractString) = r[idx]
+Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = (r[idx] = x)
+Base.setproperty!(r::DataFrameRow, idx::AbstractString, x::Any) = (r[idx] = x)
+Compat.hasproperty(r::DataFrameRow, s::Symbol) = haskey(index(r), s)
+Compat.hasproperty(r::DataFrameRow, s::AbstractString) = haskey(index(r), s)
 
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(r::DataFrameRow, private::Bool=false) = Tuple(_names(r))

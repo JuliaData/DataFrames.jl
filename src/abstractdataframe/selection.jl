@@ -103,7 +103,7 @@ end
 
 normalize_selection(idx::AbstractIndex,
                     sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, <:AbstractString}}) =
-    normalize_selection(idx, first(sel) => last(first(sel)) => Symbol(last(last(sel))))
+    normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))))
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:ColumnIndex,<:Union{Base.Callable, ByRow}})

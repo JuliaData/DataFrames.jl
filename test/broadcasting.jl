@@ -574,13 +574,13 @@ end
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0
                          2.5  5.5  8.5  11.5  14.5  1.0
                          3.5  6.5  9.5  12.5  15.5  1.0]
-    @test names(df)[end] == :a
+    @test names(df)[end] == "a"
     @test df[:, 1:end-1] == refdf
     df[!, :b] .= [1, 2, 3]
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0 1.0
                          2.5  5.5  8.5  11.5  14.5  1.0 2.0
                          3.5  6.5  9.5  12.5  15.5  1.0 3.0]
-    @test names(df)[end] == :b
+    @test names(df)[end] == "b"
     @test df[:, 1:end-2] == refdf
     cdf = copy(df)
     @test_throws DimensionMismatch df[!, :c] .= ones(3, 1)
@@ -675,7 +675,7 @@ end
     @test eltype(df.b) == Int
     df[!, :b] .= 'a'
     @test eltype(df.b) == Char
-    @test names(df) == [:a, :b]
+    @test names(df) == ["a", "b"]
 
     c = categorical(["a", "b", "c"])
     df = DataFrame()

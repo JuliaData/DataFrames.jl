@@ -81,14 +81,17 @@ Base.names(df::AbstractDataFrame) = names(index(df))
 
 function Base.names(df::AbstractDataFrame, cols)
     nms = _names(index(df))
-    return [nms[i] for i in index(df)[cols]]
+    idx = index(df)[cols]
+    idxs = idx isa Int ? (idx:idx) : idx
+    return [string(nms[i]) for i in idxs]
 end
 
 # _names returns Vector{Symbol}
 _names(df::AbstractDataFrame) = _names(index(df))
 
-Compat.hasproperty(df::AbstractDataFrame, s::Union{Symbol, AbstractString}) =
-    haskey(index(df), s)
+# separate methods are needed due to dispatch ambiguity
+Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
+Compat.hasproperty(df::AbstractDataFrame, s::AbstractString) = haskey(index(df), s)
 
 """
     rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
@@ -338,8 +341,9 @@ Return the number of dimensions of a data frame, which is always `2`.
 Base.ndims(::AbstractDataFrame) = 2
 Base.ndims(::Type{<:AbstractDataFrame}) = 2
 
-Base.getproperty(df::AbstractDataFrame, col_ind::Union{Symbol, AbstractString}) =
-    df[!, col_ind]
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = df[!, col_ind]
+Base.getproperty(df::AbstractDataFrame, col_ind::AbstractString) = df[!, col_ind]
 
 # Private fields are never exposed since they can conflict with column names
 """
@@ -552,7 +556,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
     end
 
-    custom_funs = Pair[Symbol(col) => fun for (col, fun) in stats if s isa Pair]
+    custom_funs = Pair[Symbol(s[1]) => s[2] for s in stats if s isa Pair]
 
     ordered_names = [s isa Symbol ? s : Symbol(first(s)) for s in stats]
 
@@ -940,6 +944,10 @@ julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 Base.filter(f, df::AbstractDataFrame) = _filter_helper(df, f, eachrow(df))
 Base.filter((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter_helper(df, f, df[!, col])
+Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
+    filter([index(df)[col] for col in cols] => f, df)
+Base.filter((cols, f)::Pair{<:AbstractVector{AbstractString}}, df::AbstractDataFrame) =
+    filter([index(df)[col] for col in cols] => f, df)
 
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
     filter(index(df)[cols] => f, df)
@@ -1041,7 +1049,10 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 Base.filter!(f, df::AbstractDataFrame) = _filter!_helper(df, f, eachrow(df))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
-
+Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
+    filter!([index(df)[col] for col in cols] => f, df)
+Base.filter!((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDataFrame) =
+    filter!([index(df)[col] for col in cols] => f, df)
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
 
@@ -1142,6 +1153,8 @@ end
 nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
 Base.unique!(df::AbstractDataFrame) = delete!(df, findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
+    deleterows!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
     delete!(df, findall(nonunique(df, cols)))
 
@@ -1398,7 +1411,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         throw(ArgumentError("Invalid `cols` value :$cols. " *
                             "Only `:orderequal`, `:setequal`, `:intersect`, " *
                             "`:union`, or a vector of column names is allowed."))
-    elseif cols isa AbstractVector(Symbol)
+    elseif cols isa AbstractVector{Symbol}
         header = cols
     else
         @assert cols isa AbstractVector(<:AbstractString)

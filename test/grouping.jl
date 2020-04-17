@@ -118,9 +118,9 @@ end
     for cols in ([:a, :b], [:b, :a], [:a, :c], [:c, :a],
                  [1, 2], [2, 1], [1, 3], [3, 1],
                  [true, true, false, false], [true, false, true, false])
-        colssym = names(df[!, cols])
+        colssym = Symbol.(names(df[!, cols]))
         hcatdf = hcat(df[!, cols], df[!, Not(cols)])
-        nms = names(hcatdf)
+        nms = Symbol.(names(hcatdf))
         res = unique(df[:, cols])
         res.xmax = [maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
                     for (a, b) in zip(res[!, colssym[1]], res[!, colssym[2]])]
@@ -173,7 +173,7 @@ end
 
         # groupby() without groups sorting
         gd = groupby_checked(df, cols)
-        @test names(parent(gd))[gd.cols] == colssym
+        @test names(parent(gd))[gd.cols] == string.(colssym)
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         df_ref = DataFrame(gd)
@@ -190,7 +190,7 @@ end
 
         # groupby() with groups sorting
         gd = groupby_checked(df, cols, sort=true)
-        @test names(parent(gd))[gd.cols] == colssym
+        @test names(parent(gd))[gd.cols] == string.(colssym)
         for i in 1:length(gd)
             @test all(gd[i][!, colssym[1]] .== sres[i, colssym[1]])
             @test all(gd[i][!, colssym[2]] .== sres[i, colssym[2]])
@@ -218,7 +218,7 @@ end
                 v[2] == gd[2][:, nms] &&
                 v[3] == gd[3][:, nms] &&
                 v[4] == gd[4][:, nms]
-            @test names(parent(v))[v.cols] == colssym
+            @test names(parent(v))[v.cols] == string.(colssym)
             v = map(f1, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
             v = map(f2, gd)
@@ -1457,7 +1457,7 @@ end
         # Basic methods
         @test parent(key) === gd
         @test length(key) == length(cols)
-        @test names(key) == cols
+        @test Symbol.(names(key)) == cols
         @test keys(key) == colstup
         @test propertynames(key) == colstup
         @test propertynames(key, true) == colstup
@@ -1725,7 +1725,7 @@ end
                 @test_throws ArgumentError by(sdf -> sdf.x1[1] ? fr : (x2=[true],), df, :a)
             else
                 res = by(sdf -> sdf.x1[1] ? fr : (x2=[true],), df, :a)
-                @test names(res) == [:a, :x2]
+                @test names(res) == ["a", "x2"]
             end
             @test_throws ArgumentError by(sdf -> sdf.x1[1] ? true : er, df, :a)
         end
@@ -1751,12 +1751,12 @@ end
     Random.seed!(1)
     df = DataFrame(b = repeat([2, 1], outer=[4]), x = randn(8))
     res = by(sdf -> sdf.x[1:2], df, :b)
-    @test names(res) == [:b, :x1]
+    @test names(res) == ["b", "x1"]
     res2 = by(:x => x -> x[1:2], df, :b)
-    @test names(res2) == [:b, :x_function]
+    @test names(res2) == ["b", "x_function"]
     @test Matrix(res) == Matrix(res2)
     res2 = by(:x => (x -> x[1:2]) => :z, df, :b)
-    @test names(res2) == [:b, :z]
+    @test names(res2) == ["b", "z"]
     @test Matrix(res) == Matrix(res2)
 
     @test_throws ArgumentError by(df, :b) do sdf

@@ -407,7 +407,7 @@ end
         @test_throws ArgumentError df[4] = [1, 2, 3]
         df[3] = [1,2,3]
         df[4] = [1,2,3]
-        @test names(df) == [:x3, :x3_1, :x3_2, :x4]
+        @test Symbol.(names(df)) == [:x3, :x3_1, :x3_2, :x4]
         df = DataFrame()
         @test_throws MethodError df[true] = 1
         @test_throws MethodError df[true] = [1,2,3]
@@ -499,24 +499,24 @@ end
     @test d1m == melt(d1, r"[cde]")
     @test d1s == d1m
     d1m = melt(d1[:, [1,3,4]], :a)
-    @test names(d1m) == [:a, :variable, :value]
+    @test Symbol.(names(d1m)) == [:a, :variable, :value]
     d1m_named = melt(d1[:, [1,3,4]], :a, variable_name=:letter, value_name=:someval)
-    @test names(d1m_named) == [:a, :letter, :someval]
+    @test Symbol.(names(d1m_named)) == [:a, :letter, :someval]
     dx = melt(d1, [], [:a])
     @test dx == melt(d1, r"xxx", r"a")
     @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
+    @test Symbol.(names(dx)) == [:variable, :value]
     dx = melt(d1, :a, [])
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:a, :variable, :value]
+    @test Symbol.(names(dx)) == [:a, :variable, :value]
     d1m = melt(d1, [:c, :d, :e], view=true)
     @test d1m == melt(d1, r"[cde]", view=true)
     d1m = melt(d1[:, [1,3,4]], :a, view=true)
-    @test names(d1m) == [:a, :variable, :value]
+    @test Symbol.(names(d1m)) == [:a, :variable, :value]
     d1m_named = melt(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval, view=true)
     @test d1m_named == melt(d1, r"[cde]", variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1m_named) == [:c, :d, :e, :letter, :someval]
+    @test Symbol.(names(d1m_named)) == [:c, :d, :e, :letter, :someval]
     df1 = melt(DataFrame(rand(10,10)))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
@@ -678,11 +678,11 @@ end
     # Check column names
     anonf = x -> sum(x)
     adf = aggregate(df7, :d2, [mean, anonf])
-    @test names(adf) == [:d2, :d1_mean, :d3_mean,
-                         :d1_function, :d3_function]
+    @test propertynames(adf) == (:d2, :d1_mean, :d3_mean,
+                                 :d1_function, :d3_function)
     adf = aggregate(df7, :d2, [mean, mean, anonf, anonf])
-    @test names(adf) == [:d2, :d1_mean, :d3_mean, :d1_mean_1, :d3_mean_1,
-                         :d1_function, :d3_function, :d1_function_1, :d3_function_1]
+    @test propertynames(adf) == (:d2, :d1_mean, :d3_mean, :d1_mean_1, :d3_mean_1,
+                                 :d1_function, :d3_function, :d1_function_1, :d3_function_1)
 
     df9 = aggregate(df7, :d2, [sum, length], sort=true)
     @test df9 ≅ df8

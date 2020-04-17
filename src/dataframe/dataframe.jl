@@ -528,7 +528,10 @@ function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::
 end
 
 # df.col = AbstractVector
-Base.setproperty!(df::DataFrame, col_ind::Union{Symbol, AbstractString},
+# separate methods are needed due to dispatch ambiguity
+Base.setproperty!(df::DataFrame, col_ind::Symbol,
+                  v::AbstractVector) = (df[!, col_ind] = v)
+Base.setproperty!(df::DataFrame, col_ind::AbstractString,
                   v::AbstractVector) = (df[!, col_ind] = v)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item

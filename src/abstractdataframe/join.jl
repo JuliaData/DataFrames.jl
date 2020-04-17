@@ -93,7 +93,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
 
     # compose right half of the result taking all right columns excluding on
-    dfr_noon = select(joiner.dfr, joiner.right_on, copycols=false)
+    dfr_noon = select(joiner.dfr, Not(joiner.right_on), copycols=false)
 
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil

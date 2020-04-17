@@ -330,7 +330,7 @@ function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
             end
         end
         newparent = hcat!(parent(gd)[idx, gd.cols],
-                          select(valscat, intersect(keys, _names(valscat)), copycols=false))
+                          select(valscat, Not(intersect(keys, _names(valscat))), copycols=false))
         if length(idx) == 0
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), idx,
                                     Int[], Int[], Int[], 0, Dict{Any,Int}())
@@ -704,7 +704,7 @@ function combine_helper(f, gd::GroupedDataFrame,
             end
         end
         return hcat!(parent(gd)[idx, gd.cols],
-                     select(valscat, intersect(keys, _names(valscat)), copycols=false))
+                     select(valscat, Not(intersect(keys, _names(valscat))), copycols=false))
     else
         return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
     end

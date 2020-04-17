@@ -6,6 +6,8 @@ Tables.rows(df::AbstractDataFrame) = eachrow(df)
 Tables.rowtable(df::AbstractDataFrame) = Tables.rowtable(Tables.columntable(df))
 Tables.namedtupleiterator(df::AbstractDataFrame) =
     Tables.namedtupleiterator(Tables.columntable(df))
+Tables.columnindex(df::AbstractDataFrame, idx::AbstractString) =
+    columnindex(df, Symbol(idx))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(propertynames(df), eltype.(eachcol(df)))
 Tables.materializer(df::AbstractDataFrame) = DataFrame

@@ -124,28 +124,28 @@ end
 
     df = DataFrame(x=x, y=y)
     @test size(df) == (3, 2)
-    @test names(df) == [:x, :y]
+    @test Symbol.(names(df)) == [:x, :y]
     @test df.x == x
     @test df.y == y
     @test df.x !== x
     @test df.y !== y
     df = DataFrame(x=x, y=y, copycols=true)
     @test size(df) == (3, 2)
-    @test names(df) == [:x, :y]
+    @test Symbol.(names(df)) == [:x, :y]
     @test df.x == x
     @test df.y == y
     @test df.x !== x
     @test df.y !== y
     df = DataFrame(x=x, y=y, copycols=false)
     @test size(df) == (3, 2)
-    @test names(df) == [:x, :y]
+    @test Symbol.(names(df)) == [:x, :y]
     @test df.x === x
     @test df.y === y
     @test_throws ArgumentError DataFrame(x=x, y=y, copycols=1)
 
     df = DataFrame!(x=x, y=y)
     @test size(df) == (3, 2)
-    @test names(df) == [:x, :y]
+    @test Symbol.(names(df)) == [:x, :y]
     @test df.x === x
     @test df.y === y
     @test_throws ArgumentError DataFrame!(x=x, y=y, copycols=true)
@@ -198,19 +198,19 @@ end
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
 
     df = DataFrame(:type => [], :begin => [])
-    @test names(df) == [:type, :begin]
+    @test Symbol.(names(df)) == [:type, :begin]
 
     a=[1,2,3]
     df = DataFrame(:a=>a, :b=>1, :c=>1:3)
-    @test names(df) == [:a, :b, :c]
+    @test Symbol.(names(df)) == [:a, :b, :c]
     @test df.a == a
     @test df.a !== a
     df = DataFrame(:a=>a, :b=>1, :c=>1:3, copycols=false)
-    @test names(df) == [:a, :b, :c]
+    @test Symbol.(names(df)) == [:a, :b, :c]
     @test df.a === a
 
     df = DataFrame!(:a=>a, :b=>1, :c=>1:3)
-    @test names(df) == [:a, :b, :c]
+    @test Symbol.(names(df)) == [:a, :b, :c]
     @test df.a === a
 end
 
@@ -222,15 +222,15 @@ end
 
     a=[1,2,3]
     df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3))
-    @test names(df) == [:a, :b, :c]
+    @test Symbol.(names(df)) == [:a, :b, :c]
     @test df.a == a
     @test df.a !== a
     df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3), copycols=false)
-    @test names(df) == [:a, :b, :c]
+    @test Symbol.(names(df)) == [:a, :b, :c]
     @test df.a === a
 
     df = DataFrame!(Dict(:a=>a, :b=>1, :c=>1:3))
-    @test names(df) == [:a, :b, :c]
+    @test Symbol.(names(df)) == [:a, :b, :c]
     @test df.a === a
 end
 
@@ -239,80 +239,80 @@ end
     y = [1,2,3]
 
     df = DataFrame([x, y])
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], copycols=true)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], copycols=false)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame([x, y], [:x1, :x2])
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], [:x1, :x2], copycols=true)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], [:x1, :x2], copycols=false)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame((x, y))
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), copycols=true)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), copycols=false)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame!((x, y))
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame((x, y), (:x1, :x2))
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), (:x1, :x2), copycols=true)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), (:x1, :x2), copycols=false)
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame!((x, y), (:x1, :x2))
-    @test names(df) == [:x1, :x2]
+    @test Symbol.(names(df)) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
@@ -392,7 +392,7 @@ end
     @test typeof(df[!, 1]) == Vector{Union{Int, Missing}}
     @test typeof(df[!, 2]) == Vector{Union{Float64, Missing}}
     @test typeof(df[!, 3]) == Vector{Union{String, Missing}}
-    @test names(df) == [:A, :B, :C]
+    @test Symbol.(names(df)) == [:A, :B, :C]
 end
 
 @testset "expansion of Ref and 0-dimensional arrays" begin

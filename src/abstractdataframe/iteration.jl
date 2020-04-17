@@ -89,8 +89,13 @@ Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows{<:SubDataFram
     return DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
 end
 
-Base.getproperty(itr::DataFrameRows, col_ind::Union{Symbol, AbstractString}) =
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(itr::DataFrameRows, col_ind::Symbol) =
     getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameRows, col_ind::AbstractString) =
+    getproperty(parent(itr), col_ind)
+Compat.hasproperty(itr::DataFrameRows, s::Symbol) = haskey(index(parent(itr)), s)
+Compat.hasproperty(itr::DataFrameRows, s::AbstractString) = haskey(index(parent(itr)), s)
 
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
@@ -160,8 +165,13 @@ end
 
 Base.getindex(itr::DataFrameColumns, j::Symbol) = parent(itr)[!, j]
 
-Base.getproperty(itr::DataFrameColumns, col_ind::Union{Symbol, AbstractString}) =
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) =
     getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameColumns, col_ind::AbstractString) =
+    getproperty(parent(itr), col_ind)
+Compat.hasproperty(itr::DataFrameColumns, s::Symbol) = haskey(index(parent(itr)), s)
+Compat.hasproperty(itr::DataFrameColumns, s::AbstractString) = haskey(index(parent(itr)), s)
 
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))

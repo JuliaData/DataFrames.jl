@@ -187,7 +187,7 @@ end
     y = collect(1.0:10.0)
     df = view(DataFrame(:x=>x, :y=>y, copycols=false), 2:6, :)
 
-    @test Base.propertynames(df) == Tuple(names(df))
+    @test propertynames(df) == Tuple(Symbol.(names(df)))
 
     @test df.x == 2:6
     @test df.y == 2:6

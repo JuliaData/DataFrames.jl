@@ -16,9 +16,9 @@ const ≅ = isequal
     #test_group("description functions")
     @test size(df6, 1) == 4
     @test size(df6, 2) == 3
-    @test names(df6) == [:A, :B, :C]
-    @test names(df2) == [:x1, :x2]
-    @test names(df7) == [:x, :y]
+    @test Symbol.(names(df6)) == [:A, :B, :C]
+    @test Symbol.(names(df2)) == [:x1, :x2]
+    @test Symbol.(names(df7)) == [:x, :y]
 
     #test_group("ref")
     @test df6[2, 3] == "two"
@@ -41,7 +41,7 @@ const ≅ = isequal
     df6[!, :D] = [true, false, true, false]
     @test df6[1,4]
     select!(df6, Not(:D))
-    @test names(df6) == [:A, :B, :C]
+    @test Symbol.(names(df6)) == [:A, :B, :C]
     @test size(df6, 2) == 3
 
     #test_context("SubDataFrames")
@@ -385,17 +385,17 @@ end
     df = DataFrame(a = 1, x1 = 2, x2 = 3, x3 = 4, x4 = 5)
 
     for v in [df, groupby(df, :a)]
-        @test names(v, All()) == names(v, :) == names(v) == [:a, :x1, :x2, :x3, :x4]
-        @test names(v, Between(:x1, :x3)) == [:x1, :x2, :x3]
-        @test names(v, Not(:a)) == names(v, r"x") == [:x1, :x2, :x3, :x4]
-        @test names(v, :x1) == names(v, 2) == [:x1]
+        @test names(v, All()) == names(v, :) == names(v) == ["a", "x1", "x2", "x3", "x4"]
+        @test names(v, Between(:x1, :x3)) == ["x1", "x2", "x3"]
+        @test names(v, Not(:a)) == names(v, r"x") == ["x1", "x2", "x3", "x4"]
+        @test names(v, :x1) == names(v, 2) == ["x1"]
     end
 
     for v in [view(df, :, [4,3,2,1]), groupby(view(df, :, [4,3,2,1]), 1), view(df, 1, [4,3,2,1])]
-        @test names(v, All()) == names(v, :) == names(v) ==  [:x3, :x2, :x1, :a]
-        @test names(v, Between(:x2, :x1)) == [:x2, :x1]
-        @test names(v, Not(:a)) == names(v, r"x") == [:x3, :x2, :x1]
-        @test names(v, :x1) == names(v, 3) == [:x1]
+        @test names(v, All()) == names(v, :) == names(v) ==  ["x3", "x2", "x1", "a"]
+        @test names(v, Between(:x2, :x1)) == ["x2", "x1"]
+        @test names(v, Not(:a)) == names(v, r"x") == ["x3", "x2", "x1"]
+        @test names(v, :x1) == names(v, 3) == ["x1"]
     end
 end
 

@@ -19,7 +19,7 @@ const ≅ = isequal
     dfh = hcat(df3, df4, makeunique=true)
     @test ref_df ≅ df3 # make sure that df3 is not mutated by hcat
     @test size(dfh, 2) == 3
-    @test names(dfh) ≅ [:x1, :x1_1, :x2]
+    @test names(dfh) ≅ ["x1", "x1_1", "x2"]
     @test dfh[!, :x1] ≅ df3[!, :x1]
     @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
 
@@ -28,7 +28,7 @@ const ≅ = isequal
     @test hcat(dfa, dfb) ≅ [dfa dfb]
 
     dfh3 = hcat(df3, df4, df5, makeunique=true)
-    @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
+    @test names(dfh3) == ["x1", "x1_1", "x2", "x1_2", "x2_1"]
     @test dfh3 ≅ hcat(dfh, df5, makeunique=true)
     @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
 
@@ -101,12 +101,12 @@ end
     df2 = hcat(CategoricalVector{Union{Int,Missing}}(1:10), df, makeunique=true)
     @test isempty(df)
     @test df2[!, 1] == collect(1:10)
-    @test names(df2) == [:x1]
+    @test names(df2) == ["x1"]
     ref_df = copy(df2)
     df3 = hcat(11:20, df2, makeunique=true)
     @test df2 == ref_df
     @test df3[!, 1] == collect(11:20)
-    @test names(df3) == [:x1, :x1_1]
+    @test names(df3) == ["x1", "x1_1"]
 
     @test_throws ArgumentError hcat("a", df, makeunique=true)
     @test_throws ArgumentError hcat(df, "a", makeunique=true)
@@ -129,75 +129,75 @@ end
     @test df3.a === df1.a
 
     df3 = hcat(df1, df2)
-    @test names(df3) == [:a, :b]
+    @test Symbol.(names(df3)) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, df2, copycols=true)
-    @test names(df3) == [:a, :b]
+    @test Symbol.(names(df3)) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, df2, copycols=false)
-    @test names(df3) == [:a, :b]
+    @test Symbol.(names(df3)) == [:a, :b]
     @test df3.a === df1.a
     @test df3.b === df2.b
 
     df3 = hcat(df1, dfv)
-    @test names(df3) == [:a, :b]
+    @test Symbol.(names(df3)) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, dfv, copycols=true)
-    @test names(df3) == [:a, :b]
+    @test Symbol.(names(df3)) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, dfv, copycols=false)
-    @test names(df3) == [:a, :b]
+    @test Symbol.(names(df3)) == [:a, :b]
     @test df3.a === df1.a
     @test df3.b === dfv.b
 
     df3 = hcat(df1, x)
-    @test names(df3) == [:a, :x1]
+    @test Symbol.(names(df3)) == [:a, :x1]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(df1, x, copycols=true)
-    @test names(df3) == [:a, :x1]
+    @test Symbol.(names(df3)) == [:a, :x1]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(df1, x, copycols=false)
-    @test names(df3) == [:a, :x1]
+    @test Symbol.(names(df3)) == [:a, :x1]
     @test df3.a === df1.a
     @test df3.x1 === x
 
     df3 = hcat(x, df1)
-    @test names(df3) == [:x1, :a]
+    @test Symbol.(names(df3)) == [:x1, :a]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(x, df1, copycols=true)
-    @test names(df3) == [:x1, :a]
+    @test Symbol.(names(df3)) == [:x1, :a]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(x, df1, copycols=false)
-    @test names(df3) == [:x1, :a]
+    @test Symbol.(names(df3)) == [:x1, :a]
     @test df3.a === df1.a
     @test df3.x1 === x
 
     df3 = hcat(dfv, x, df1)
-    @test names(df3) == [:b, :x1, :a]
+    @test Symbol.(names(df3)) == [:b, :x1, :a]
     @test df3.a == df1.a
     @test df3.b == dfv.b
     @test df3.x1 == x
@@ -205,7 +205,7 @@ end
     @test df3.b !== dfv.b
     @test df3.x1 !== x
     df3 = hcat(dfv, x, df1, copycols=true)
-    @test names(df3) == [:b, :x1, :a]
+    @test Symbol.(names(df3)) == [:b, :x1, :a]
     @test df3.a == df1.a
     @test df3.b == dfv.b
     @test df3.x1 == x
@@ -213,7 +213,7 @@ end
     @test df3.b !== dfv.b
     @test df3.x1 !== x
     df3 = hcat(dfv, x, df1, copycols=false)
-    @test names(df3) == [:b, :x1, :a]
+    @test Symbol.(names(df3)) == [:b, :x1, :a]
     @test df3.a === df1.a
     @test df3.b === dfv.b
     @test df3.x1 === x

@@ -167,21 +167,21 @@ end
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, :variable, :value)
+    @test_logs (:warn, "Missing value in variable :variable at row 3. Skipping.") unstack(df, :variable, :value)
     udf = with_logger(NullLogger()) do
         unstack(df, :variable, :value)
     end
-    @test names(udf) == [:id, :a, :b, :missing]
+    @test propertynames(udf) == (:id, :a, :b, :missing)
     @test udf[!, :missing] ≅ [missing, 9.0, missing]
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
+    @test_logs (:warn, "Missing value in variable :variable at row 3. Skipping.") unstack(df, 3, 4)
     udf = with_logger(NullLogger()) do
         unstack(df, 3, 4)
     end
-    @test names(udf) == [:id, :id2, :a, :b, :missing]
+    @test propertynames(udf) == (:id, :id2, :a, :b, :missing)
     @test udf[!, :missing] ≅ [missing, 9.0, missing]
 end
 
@@ -209,7 +209,7 @@ end
                 d = Array{Union{Float64, Missing}}(randn(12)),
                 e = Array{Union{String, Missing}}(map(string, 'a':'l')))
 
-    @test names(stack(d1, :a)) == [:b, :c, :d, :e, :variable, :value]
+    @test propertynames(stack(d1, :a)) == (:b, :c, :d, :e, :variable, :value)
     d1s = stack(d1, [:a, :b])
     @test d1s == stack(d1, r"[ab]")
     @test d1s == stack(d1, Not(r"[cde]"))
@@ -223,35 +223,35 @@ end
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
-    @test names(d1s) == [:c, :d, :e, :variable, :value]
+    @test propertynames(d1s) == (:c, :d, :e, :variable, :value)
     @test d1s == d1m
     d1m = stack(d1[:, [1,3,4]], Not(:a))
-    @test names(d1m) == [:a, :variable, :value]
+    @test propertynames(d1m) == (:a, :variable, :value)
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
-    @test names(d1s_named) == [:c, :d, :e, :letter, :someval]
+    @test propertynames(d1s_named) == (:c, :d, :e, :letter, :someval)
     d1m_named = stack(d1[:, [1,3,4]], Not(:a), variable_name=:letter, value_name=:someval)
-    @test names(d1m_named) == [:a, :letter, :someval]
+    @test propertynames(d1m_named) == (:a, :letter, :someval)
 
     # test empty measures or ids
     dx = stack(d1, [], [:a])
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:a, :variable, :value]
+    @test propertynames(dx) == (:a, :variable, :value)
     dx = stack(d1, :a, [])
     @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
+    @test propertynames(dx) == (:variable, :value)
     dx = stack(d1, [:a], [])
     @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
+    @test propertynames(dx) == (:variable, :value)
     dx = stack(d1, [], :a)
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:a, :variable, :value]
+    @test propertynames(dx) == (:a, :variable, :value)
 
     @test stack(d1, :a, view=true) == stack(d1, [:a], view=true)
     @test all(isa.(eachcol(stack(d1, :a, view=true)),
@@ -305,17 +305,17 @@ end
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
-    @test names(d1s) == [:c, :d, :e, :variable, :value]
+    @test propertynames(d1s) == (:c, :d, :e, :variable, :value)
     @test d1s == d1m
     d1m = stack(d1[:, [1,3,4]], Not(:a), view=true)
-    @test names(d1m) == [:a, :variable, :value]
+    @test propertynames(d1m) == (:a, :variable, :value)
 
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1s_named) == [:c, :d, :e, :letter, :someval]
+    @test propertynames(d1s_named) == (:c, :d, :e, :letter, :someval)
     d1m_named = stack(d1, Not([:c, :d, :e]), variable_name=:letter, value_name=:someval, view=true)
     @test d1m_named == stack(d1, Not(r"[cde]"), variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1m_named) == [:c, :d, :e, :letter, :someval]
+    @test propertynames(d1m_named) == (:c, :d, :e, :letter, :someval)
 
     d1s[!, :id] = Union{Int, Missing}[1:12; 1:12]
     d1s2[!, :id] =  Union{Int, Missing}[1:12; 1:12]
