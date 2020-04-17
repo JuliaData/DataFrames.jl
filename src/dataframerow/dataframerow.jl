@@ -287,26 +287,13 @@ Base.merge(a::DataFrameRow, b::DataFrameRow) = merge(NamedTuple(a), NamedTuple(b
 Base.merge(a::DataFrameRow, b::Base.Iterators.Pairs) = merge(NamedTuple(a), b)
 Base.merge(a::DataFrameRow, itr) = merge(NamedTuple(a), itr)
 
-# hash column element
-Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) =
-    hash(v[i], h)
-Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray, i,
-                                             h::UInt = zero(UInt))
-    ref = v.refs[i]
-    if eltype(v) >: Missing && ref == 0
-        hash(missing, h)
-    else
-        hash(CategoricalArrays.index(v.pool)[ref], h)
-    end
-end
-
 # hash of DataFrame rows based on its values
 # so that duplicate rows would have the same hash
 # table columns are passed as a tuple of vectors to ensure type specialization
 rowhash(cols::Tuple{AbstractVector}, r::Int, h::UInt = zero(UInt))::UInt =
-    hash_colel(cols[1], r, h)
+    hash(cols[1][r], h)
 function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UInt))::UInt
-    h = hash_colel(cols[1], r, h)
+    h = hash(cols[1][r], h)
     rowhash(Base.tail(cols), r, h)
 end
 

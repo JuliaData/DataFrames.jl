@@ -443,7 +443,7 @@ end
     @test d1s.variable isa CategoricalVector{String}
     @test levels(d1s.variable) == ["d", "c"]
     d1s = stack(d1, [:d, :c], view=true)
-    @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalString}
+    @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalValue{String}}
     @test levels(d1s.variable) == ["d", "c"]
     @test d1s[:, 4] isa CategoricalVector{String}
     @test levels(d1s[:, 4]) == ["d", "c"]
@@ -491,13 +491,13 @@ end
 @testset "test stack eltype" begin
     df = DataFrame(rand(4,5))
     sdf = stack(df)
-    @test eltype(sdf.variable) <: CategoricalString
-    @test eltype(typeof(sdf.variable)) <: CategoricalString
+    @test eltype(sdf.variable) <: CategoricalValue{String}
+    @test eltype(typeof(sdf.variable)) <: CategoricalValue{String}
     @test eltype(sdf.value) <: Float64
     @test eltype(typeof(sdf.value)) <: Float64
     sdf2 = first(sdf, 3)
-    @test eltype(sdf2.variable) <: CategoricalString
-    @test eltype(typeof(sdf2.variable)) <: CategoricalString
+    @test eltype(sdf2.variable) <: CategoricalValue{String}
+    @test eltype(typeof(sdf2.variable)) <: CategoricalValue{String}
     @test eltype(sdf2.value) <: Float64
     @test eltype(typeof(sdf2.value)) <: Float64
 end

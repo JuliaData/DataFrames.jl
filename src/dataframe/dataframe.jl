@@ -1036,9 +1036,9 @@ julia> categorical!(df)
 
 julia> eltype.(eachcol(df))
 3-element Array{DataType,1}:
- CategoricalString{UInt32}
+ CategoricalValue{String,UInt32}
  Int64
- CategoricalString{UInt32}
+ CategoricalValue{String,UInt32}
 
 julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
 2×3 DataFrame
@@ -1067,14 +1067,14 @@ function categorical! end
 
 function categorical!(df::DataFrame, cname::ColumnIndex;
                       compress::Bool=false)
-    df[!, cname] = categorical(df[!, cname], compress)
+    df[!, cname] = categorical(df[!, cname], compress=compress)
     return df
 end
 
 function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
                       compress::Bool=false)
     for cname in cnames
-        df[!, cname] = categorical(df[!, cname], compress)
+        df[!, cname] = categorical(df[!, cname], compress=compress)
     end
     return df
 end
@@ -1086,7 +1086,7 @@ function categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
                       compress::Bool=false)
     for i in 1:size(df, 2)
         if eltype(df[!, i]) <: cols
-            df[!, i] = categorical(df[!, i], compress)
+            df[!, i] = categorical(df[!, i], compress=compress)
         end
     end
     return df

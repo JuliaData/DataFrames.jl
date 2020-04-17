@@ -889,43 +889,43 @@ end
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df)))),
-                  [CategoricalArrays.CategoricalString{UInt32},
+                  [CategoricalArrays.CategoricalValue{String,UInt32},
                    Char, Bool, Int,
-                   CategoricalArrays.CategoricalString{UInt32}]))
+                   CategoricalArrays.CategoricalValue{String,UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), :))),
-                  [CategoricalArrays.CategoricalString{UInt32},
+                  [CategoricalArrays.CategoricalValue{String,UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
-                   CategoricalArrays.CategoricalString{UInt32}]))
+                   CategoricalArrays.CategoricalValue{String,UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), compress=true))),
-                  [CategoricalArrays.CategoricalString{UInt8},
+                  [CategoricalArrays.CategoricalValue{String,UInt8},
                    Char, Bool, Int,
-                   CategoricalArrays.CategoricalString{UInt8}]))
+                   CategoricalArrays.CategoricalValue{String,UInt8}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), names(df)))),
-                  [CategoricalArrays.CategoricalString{UInt32},
+                  [CategoricalArrays.CategoricalValue{String,UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
-                   CategoricalArrays.CategoricalString{UInt32}]))
+                   CategoricalArrays.CategoricalValue{String,UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), names(df), compress=true))),
-                  [CategoricalArrays.CategoricalString{UInt8},
+                  [CategoricalArrays.CategoricalValue{String,UInt8},
                    CategoricalArrays.CategoricalValue{Char,UInt8},
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
-                   CategoricalArrays.CategoricalString{UInt8}]))
+                   CategoricalArrays.CategoricalValue{String,UInt8}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Not(1:0)))),
-                  [CategoricalArrays.CategoricalString{UInt32},
+                  [CategoricalArrays.CategoricalValue{String,UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
-                   CategoricalArrays.CategoricalString{UInt32}]))
+                   CategoricalArrays.CategoricalValue{String,UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Not(1:0), compress=true))),
-                  [CategoricalArrays.CategoricalString{UInt8},
+                  [CategoricalArrays.CategoricalValue{String,UInt8},
                    CategoricalArrays.CategoricalValue{Char,UInt8},
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
-                   CategoricalArrays.CategoricalString{UInt8}]))
+                   CategoricalArrays.CategoricalValue{String,UInt8}]))
 
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Integer))),
                   [String, Char,
@@ -1135,7 +1135,7 @@ end
     @test allowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: Union{CategoricalValue{Int}, Missing}
-    @test eltype(df[!, 2]) <: Union{CategoricalString, Missing}
+    @test eltype(df[!, 2]) <: Union{CategoricalValue{String}, Missing}
     df[1,2] = missing
     @test_throws MissingException disallowmissing!(df)
     tmpcol =df[!, 2]
@@ -1145,7 +1145,7 @@ end
     @test disallowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: CategoricalValue{Int}
-    @test eltype(df[!, 2]) <: CategoricalString
+    @test eltype(df[!, 2]) <: CategoricalValue{String}
 
     for em in [true, false]
         df = DataFrame(b=[1,2], c=[1,2], d=[1,2])

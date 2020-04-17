@@ -41,6 +41,7 @@ function ourshow(io::IO, x::Any)
 end
 
 ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
+ourshow(io::IO, x::CategoricalValue{<:AbstractString}) = escape_string(io, get(x), "")
 ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
 ourshow(io::IO, x::Nothing) = nothing
 
@@ -76,7 +77,7 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
 
     maxwidth -= 1 # we will add "…" at the end
 
-    if T <: CategoricalString || T <: CategoricalValue
+    if T <: CategoricalValue
         sT = string(T.name)
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix
