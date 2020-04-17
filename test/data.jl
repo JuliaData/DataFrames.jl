@@ -127,7 +127,8 @@ end
     @test_throws ArgumentError completecases(DataFrame())
     @test_throws MethodError completecases(DataFrame(x=1), true)
 
-    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true], :,
+    for cols in (:x2, "x2", [:x2], ["x2"], [:x1, :x2], ["x1", "x2"], 2, [2], 1:2,
+                 [true, true], [false, true], :,
                  r"x2", r"x", Not(1), Not([1]), Not(Int[]), Not([]), Not(Symbol[]),
                  Not(1:0), Not([true, false]), Not(:x1), Not([:x1]))
         @test df2[completecases(df2, cols), :] == df2[[1, 2, 4], :]
@@ -278,7 +279,9 @@ end
     @test findall(nonunique(df, :)) == collect(7:12)
     @test findall(nonunique(df, Colon())) == collect(7:12)
     @test findall(nonunique(df, :a)) == collect(3:12)
+    @test findall(nonunique(df, "a")) == collect(3:12)
     @test findall(nonunique(df, [:a, :c])) == collect(7:12)
+    @test findall(nonunique(df, ["a", "c"])) == collect(7:12)
     @test findall(nonunique(df, r"[ac]")) == collect(7:12)
     @test findall(nonunique(df, Not(2))) == collect(7:12)
     @test findall(nonunique(df, Not([2]))) == collect(7:12)
@@ -295,6 +298,7 @@ end
     @test unique(df, 3) == df1[1:3,:]
     @test unique(df, [1, 3]) == df1
     @test unique(df, [:a, :c]) == df1
+    @test unique(df, ["a", "c"]) == df1
     @test unique(df, r"[ac]") == df1
     @test unique(df, Not(2)) == df1
     @test unique(df, Not([2])) == df1
@@ -302,8 +306,12 @@ end
     @test unique(df, Not([:b])) == df1
     @test unique(df, Not([false, true, false])) == df1
     @test unique(df, :a) == df1[1:2,:]
+    @test unique(df, "a") == df1[1:2,:]
     @test_throws ArgumentError unique(DataFrame())
     @test_throws ArgumentError nonunique(DataFrame())
+
+    @test unique(copy(df1), "a") == unique(copy(df1), :a) == unique(copy(df1), 1) ==
+          df1[1:2, :]
 
     unique!(df, [1, 3])
     @test df == df1
@@ -324,12 +332,20 @@ end
     @test filter!(:x => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
 
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter("x" => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!("x" => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test filter(1 => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
     @test filter!(1 => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
 
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test filter([:x] => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
     @test filter!([:x] => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter(["x"] => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
+    @test filter!(["x"] => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
 
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test filter((:) => (r...) -> r[1] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
@@ -343,21 +359,27 @@ end
     @test filter([2, 2] => !=, df) == DataFrame(x=Int[], y=String[])
     @test filter!([2, 2] => !=, df) === df == DataFrame(x=Int[], y=String[])
 
-    for sel in [r"x", [1,2], [:x1, :x2], :, Not(r"y")]
+    for sel in [r"x", [1,2], [:x1, :x2], ["x1", "x2"], :, Not(r"y")]
         df = DataFrame(x1 = [3, 1, 2, 1], x2 = ["b", "c", "aa", "bbb"])
-        @test filter(sel => (a, b) -> a == length(b), df) == DataFrame(x1=[1, 2], x2=["c", "aa"])
-        @test filter!(sel => (a, b) -> a == length(b), df) === df == DataFrame(x1=[1, 2], x2=["c", "aa"])
+        @test filter(sel => (a, b) -> a == length(b), df) ==
+              DataFrame(x1=[1, 2], x2=["c", "aa"])
+        @test filter!(sel => (a, b) -> a == length(b), df) === df ==
+              DataFrame(x1=[1, 2], x2=["c", "aa"])
     end
 
     df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
     @test_throws TypeError filter(r -> r[:x] > 1, df)
     @test_throws TypeError filter!(r -> r[:x] > 1, df)
     @test_throws TypeError filter(:x => x -> x > 1, df)
+    @test_throws TypeError filter("x" => x -> x > 1, df)
     @test_throws TypeError filter!(:x => x -> x > 1, df)
+    @test_throws TypeError filter!("x" => x -> x > 1, df)
     @test_throws TypeError filter(1 => x -> x > 1, df)
     @test_throws TypeError filter!(1 => x -> x > 1, df)
     @test_throws TypeError filter([:x] => x -> x > 1, df)
+    @test_throws TypeError filter(["x"] => x -> x > 1, df)
     @test_throws TypeError filter!([:x] => x -> x > 1, df)
+    @test_throws TypeError filter!(["x"] => x -> x > 1, df)
     @test_throws TypeError filter((:) => (r...) -> r[1] > 1, df)
     @test_throws TypeError filter!((:) => (r...) -> r[1] > 1, df)
 end
@@ -373,6 +395,10 @@ end
 
     @test filter(AsTable(:x) => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
     filter!(AsTable(:x) => testfun, df)
+    @test df == DataFrame(x=[3, 2], y=["b", "a"])
+
+    @test filter(AsTable("x") => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    filter!(AsTable("x") => testfun, df)
     @test df == DataFrame(x=[3, 2], y=["b", "a"])
 
     @test_throws ArgumentError filter([] => () -> true, df)

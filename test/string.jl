@@ -206,4 +206,43 @@ end
     @test_throws ArgumentError dfr[1:2] = Dict("a" => 100, :c => 500)
 end
 
+@testset "names, propertynames and hasproperty" begin
+    df = DataFrame(a=1, x1=2, x2=3, x3=4)
+    sdf = view(df, 1:1, 1:3)
+    dfr = view(df, 1:1, 1:3)
+    er = eachrow(df)
+    ec = eachcol(df)
+    gdf = groupby(df, :a)
+
+    for v in [df, er, ec]
+        @test names(v) == ["a", "x1", "x2", "x3"]
+        @test propertynames(v) == (:a, :x1, :x2, :x3)
+        @test hasproperty(v, :a)
+        @test !hasproperty(v, :x)
+        @test hasproperty(v, "a")
+        @test !hasproperty(v, "x")
+        @test names(v, 1) == names(v, :a) == names(v, "a") == ["a"]
+        @test names(v, Not(:a)) == names(v, Not("a")) == names(v, Not(1)) ==
+              names(v, r"x") == ["x1", "x2", "x3"]
+    end
+
+    @test names(gdf) == ["a", "x1", "x2", "x3"]
+    @test names(gdf, 1) == names(gdf, :a) == names(gdf, "a") == ["a"]
+    @test names(gdf, Not(:a)) == names(gdf, Not("a")) == names(gdf, Not(1)) ==
+          names(gdf, r"x") == ["x1", "x2", "x3"]
+
+
+    for v in [sdf, dfr]
+        @test names(v) == ["a", "x1", "x2"]
+        @test propertynames(v) == (:a, :x1, :x2)
+        @test names(v, 1) == names(v, :a) == names(v, "a") == ["a"]
+        @test names(v, Not(:a)) == names(v, Not("a")) == names(v, Not(1)) ==
+              names(v, r"x") == ["x1", "x2"]
+        @test hasproperty(v, :a)
+        @test !hasproperty(v, :x)
+        @test hasproperty(v, "a")
+        @test !hasproperty(v, "x")
+    end
+end
+
 end # module

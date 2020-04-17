@@ -10,7 +10,7 @@ using Test, DataFrames
     @test df[!, :a] == [1, 2, 3]
     @test df[!, :a] === eachcol(df)[1]
     @test df.a == [1, 2, 3]
-    @test df.a === eachcol(df)[1]
+    @test df.a === eachcol(df)[1] === df."a"
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
         dfx = df[!, selector]
@@ -85,7 +85,7 @@ end
 @testset "getindex df[!, col]" begin
     x = [1, 2, 3]
     df = DataFrame(x=x, copycols=false)
-    @test df.x === x
+    @test df.x === df."x" === x
     @test df[!, :x] === x
     @test df[!, 1] === x
     @test df[:, [:x]].x !== x
@@ -234,6 +234,7 @@ end
     @test sdf[!, :a] isa SubArray
     @test sdf.a == [1, 2, 3]
     @test sdf.a isa SubArray
+    @test sdf.a === sdf."a"
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
         dfx = @view sdf[!, selector]
@@ -761,7 +762,7 @@ end
     @test select(sdf, 1:2, copycols=false) == @view sdf[!, 1:2]
 
     dfr = df[2, :]
-    @test dfr[2] == dfr.x2 == 6.5
+    @test dfr[2] == dfr.x2 == dfr."x2" == 6.5
     @test_throws BoundsError dfr[0]
     @test_throws BoundsError dfr[5]
     @test_throws ArgumentError dfr[:z]

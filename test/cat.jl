@@ -400,27 +400,65 @@ end
         DataFrame(A = [1, 2, 3, 7, 8, 9],
                   B = [4, 5, 6, missing, missing, missing],
                   C = [missing, missing, missing, missing, missing, missing])
-    @test vcat(df1, df2; cols = [:A, :B, :C]) ≅ reduce(vcat, [df1, df2]; cols = [:A, :B, :C])
-    @test vcat(df1, df2; cols = [:A, :B, :C]) ≅ reduce(vcat, (df1, df2); cols = [:A, :B, :C])
+    @test vcat(df1, df2; cols = [:A, :B, :C]) ≅
+          reduce(vcat, [df1, df2]; cols = [:A, :B, :C])
+    @test vcat(df1, df2; cols = [:A, :B, :C]) ≅
+          reduce(vcat, (df1, df2); cols = [:A, :B, :C])
 
     @test vcat(df1, df2, df3; cols = [:A, :B, :C]) ≅
         DataFrame(A = [1, 2, 3, 7, 8, 9, 10, 11, 12],
                   B = [4, 5, 6, missing, missing, missing, missing, missing, missing],
                   C = [missing, missing, missing, missing, missing, missing, 13, 14, 15])
-    @test vcat(df1, df2, df3; cols = [:A, :B, :C]) ≅ reduce(vcat, [df1, df2, df3]; cols = [:A, :B, :C])
-    @test vcat(df1, df2, df3; cols = [:A, :B, :C]) ≅ reduce(vcat, (df1, df2, df3); cols = [:A, :B, :C])
+    @test vcat(df1, df2, df3; cols = [:A, :B, :C]) ≅
+          reduce(vcat, [df1, df2, df3]; cols = [:A, :B, :C])
+    @test vcat(df1, df2, df3; cols = [:A, :B, :C]) ≅
+          reduce(vcat, (df1, df2, df3); cols = [:A, :B, :C])
 
     df1 = DataFrame(A=Int[], B=Float64[])
     df2 = DataFrame(B=1.0, A=1)
     @test vcat(df1, df2, df1, cols=[:A, :C, :B]) ≅ DataFrame(A=1, C=missing, B=1.0)
-    @test vcat(df1, df2, df1, cols=[:A, :C, :B]) ≅ reduce(vcat, [df1, df2, df1], cols=[:A, :C, :B])
-    @test vcat(df1, df2, df1, cols=[:A, :C, :B]) ≅ reduce(vcat, (df1, df2, df1), cols=[:A, :C, :B])
+    @test vcat(df1, df2, df1, cols=[:A, :C, :B]) ≅
+          reduce(vcat, [df1, df2, df1], cols=[:A, :C, :B])
+    @test vcat(df1, df2, df1, cols=[:A, :C, :B]) ≅
+          reduce(vcat, (df1, df2, df1), cols=[:A, :C, :B])
     @test vcat(df1, df2, df2, cols=[:C]) ≅ DataFrame(C=[missing, missing])
     @test vcat(df1, df2, df2, cols=[:C]) ≅ reduce(vcat, [df1, df2, df2], cols=[:C])
     @test vcat(df1, df2, df2, cols=[:C]) ≅ reduce(vcat, (df1, df2, df2), cols=[:C])
     @test_throws ArgumentError vcat(df1, df2, df2, cols=[:C, :C])
     @test_throws ArgumentError reduce(vcat, [df1, df2, df2], cols=[:C, :C])
     @test_throws ArgumentError reduce(vcat, (df1, df2, df2), cols=[:C, :C])
+
+    @test vcat(df1, df2; cols = ["A", "B", "C"]) ≅
+        DataFrame(A = [1, 2, 3, 7, 8, 9],
+                  B = [4, 5, 6, missing, missing, missing],
+                  C = [missing, missing, missing, missing, missing, missing])
+    @test vcat(df1, df2; cols = ["A", "B", "C"]) ≅
+          reduce(vcat, [df1, df2]; cols = ["A", "B", "C"])
+    @test vcat(df1, df2; cols = ["A", "B", "C"]) ≅
+          reduce(vcat, (df1, df2); cols = ["A", "B", "C"])
+
+    @test vcat(df1, df2, df3; cols = ["A", "B", "C"]) ≅
+        DataFrame(A = [1, 2, 3, 7, 8, 9, 10, 11, 12],
+                  B = [4, 5, 6, missing, missing, missing, missing, missing, missing],
+                  C = [missing, missing, missing, missing, missing, missing, 13, 14, 15])
+    @test vcat(df1, df2, df3; cols = ["A", "B", "C"]) ≅
+          reduce(vcat, [df1, df2, df3]; cols = ["A", "B", "C"])
+    @test vcat(df1, df2, df3; cols = ["A", "B", "C"]) ≅
+          reduce(vcat, (df1, df2, df3); cols = ["A", "B", "C"])
+
+    df1 = DataFrame(A=Int[], B=Float64[])
+    df2 = DataFrame(B=1.0, A=1)
+    @test vcat(df1, df2, df1, cols=["A", "C", "B"]) ≅ DataFrame(A=1, C=missing, B=1.0)
+    @test vcat(df1, df2, df1, cols=["A", "C", "B"]) ≅
+          reduce(vcat, [df1, df2, df1], cols=["A", "C", "B"])
+    @test vcat(df1, df2, df1, cols=["A", "C", "B"]) ≅
+          reduce(vcat, (df1, df2, df1), cols=["A", "C", "B"])
+    @test vcat(df1, df2, df2, cols=["C"]) ≅ DataFrame(C=[missing, missing])
+    @test vcat(df1, df2, df2, cols=["C"]) ≅ reduce(vcat, [df1, df2, df2], cols=["C"])
+    @test vcat(df1, df2, df2, cols=["C"]) ≅ reduce(vcat, (df1, df2, df2), cols=["C"])
+    @test_throws ArgumentError vcat(df1, df2, df2, cols=[:C, :C])
+    @test_throws ArgumentError reduce(vcat, [df1, df2, df2], cols=["C", "C"])
+    @test_throws ArgumentError reduce(vcat, (df1, df2, df2), cols=["C", "C"])
 end
 
 @testset "vcat thrown exceptions" begin
@@ -436,7 +474,8 @@ end
     err1 = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
     err2 = @test_throws ArgumentError reduce(vcat, [df1, df2, df2, df2, df2, df2])
     @test_throws ArgumentError reduce(vcat, (df1, df2, df2, df2, df2, df2))
-    @test err1.value.msg == err2.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
+    @test err1.value.msg == err2.value.msg ==
+          "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
     # argument missing >1 columns
     df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
     err = @test_throws ArgumentError vcat(df1, df2)
@@ -454,32 +493,51 @@ end
     df1 = DataFrame(A = 1, B = 1, C = 1, D = 1)
     df2 = DataFrame(A = 1, C = 1, D = 1, E = 1, F = 1)
     err = @test_throws ArgumentError vcat(df1, df2)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, and column(s) B are missing from argument(s) 2"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, and" *
+                           " column(s) B are missing from argument(s) 2"
     err = @test_throws ArgumentError vcat(df1, df1, df2, df2)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, and column(s) B are missing from argument(s) 3 and 4"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2," *
+                           " and column(s) B are missing from argument(s) 3 and 4"
     df3 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1)
     err = @test_throws ArgumentError vcat(df1, df2, df3)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, " *
+                           "column(s) B are missing from argument(s) 2, and " *
+                           "column(s) F are missing from argument(s) 3"
     err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2," *
+                           " column(s) B are missing from argument(s) 3 and 4, " *
+                           "and column(s) F are missing from argument(s) 5 and 6"
     err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3," *
+                           " column(s) B are missing from argument(s) 4, 5 and 6, and" *
+                           " column(s) F are missing from argument(s) 7, 8 and 9"
     # df4 is a superset of names found in all other DataFrames and won't be shown in error
     df4 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1, F = 1)
     err = @test_throws ArgumentError vcat(df1, df2, df3, df4)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, " *
+                           "column(s) B are missing from argument(s) 2, and " *
+                           "column(s) F are missing from argument(s) 3"
     err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3, df4, df4)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
-    err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df4, df4, df4)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
-    err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2," *
+                           " column(s) B are missing from argument(s) 3 and 4, and" *
+                           " column(s) F are missing from argument(s) 5 and 6"
+    err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2,
+                                          df3, df3, df3, df4, df4, df4)
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 " *
+                           "and 3, column(s) B are missing from argument(s) 4, 5 " *
+                           "and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
+    err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2,
+                                          df3, df4, df1, df2, df3, df4)
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9" *
+                           ", column(s) B are missing from argument(s) 2, 6 and 10, " *
+                           "and column(s) F are missing from argument(s) 3, 7 and 11"
 end
 
 @testset "vcat with view" begin
     x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
     y = DataFrame(A = 4:5)
-    @test vcat(x, y) == DataFrame(A = [2, 4, 5]) == reduce(vcat, [x, y]) == reduce(vcat, (x, y))
+    @test vcat(x, y) == DataFrame(A = [2, 4, 5]) ==
+          reduce(vcat, [x, y]) == reduce(vcat, (x, y))
 end
 
 end # module

@@ -946,7 +946,7 @@ Base.filter((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter_helper(df, f, df[!, col])
 Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
     filter([index(df)[col] for col in cols] => f, df)
-Base.filter((cols, f)::Pair{<:AbstractVector{AbstractString}}, df::AbstractDataFrame) =
+Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDataFrame) =
     filter([index(df)[col] for col in cols] => f, df)
 
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
@@ -1154,7 +1154,7 @@ nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=fal
 
 Base.unique!(df::AbstractDataFrame) = delete!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
-    deleterows!(df, findall(nonunique(df, cols)))
+    delete!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
     delete!(df, findall(nonunique(df, cols)))
 

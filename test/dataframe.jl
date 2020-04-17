@@ -638,7 +638,10 @@ end
     # Test that it works on a custom function
     describe_output.test_std = describe_output.std
     # Test that describe works with a Pair and a symbol
-    @test describe_output[:, [:variable, :mean, :test_std]] ≅ describe(df, :mean, :test_std => std)
+    @test describe_output[:, [:variable, :mean, :test_std]] ≅
+          describe(df, :mean, :test_std => std)
+    @test describe_output[:, [:variable, :mean, :test_std]] ≅
+          describe(df, :mean, "test_std" => std)
 
     # Test that describe works with a dataframe with no observations
     df = DataFrame(a = Int[], b = String[], c = [])
@@ -647,6 +650,7 @@ end
 
     @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
+    @test describe(df, cols=Not("number")) ≅ describe(select(df, Not(1)))
 
     @test_throws ArgumentError describe(df, :mean, :all)
 end
@@ -1157,6 +1161,14 @@ end
         @test eltype(df.b) == Union{Int, Missing}
         @test eltype(df.c) == Int
         @test eltype(df.d) == Int
+        @test allowmissing!(df, [:d]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Union{Int, Missing}
+        @test disallowmissing!(df, [:c, :d], error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
         @test allowmissing!(df, [false, false, true]) === df
         @test eltype(df.b) == Union{Int, Missing}
         @test eltype(df.c) == Int
@@ -1165,6 +1177,26 @@ end
         @test eltype(df.b) == Int
         @test eltype(df.c) == Int
         @test eltype(df.d) == Union{Int, Missing}
+    end
+
+    for em in [true, false]
+        df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+        @test allowmissing!(df, ["b", "c"]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Union{Int, Missing}
+        @test eltype(df.d) == Int
+        @test disallowmissing!(df, "c", error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
+        @test allowmissing!(df, ["d"]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Union{Int, Missing}
+        @test disallowmissing!(df, ["c", "d"], error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
     end
 
     df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
@@ -1203,7 +1235,7 @@ end
             @test eltype.(eachcol(y)) == [Int, Int, Int]
         end
 
-        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x", 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
@@ -1213,7 +1245,7 @@ end
             @test eltype.(eachcol(y)) == [Int, Union{Missing, Int}, Int]
         end
 
-        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+        for colsel in [:z, "z", 3, [:z], ["z"], [3], [false, false, true], r"z", Not(1:2)]
             y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
@@ -1274,7 +1306,7 @@ end
             @test eltype.(eachcol(y)) == fill(Union{Missing, Int}, 3)
         end
 
-        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x", 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = allowmissing(x, colsel)
             @test y isa DataFrame
             @test x == y
@@ -1284,7 +1316,7 @@ end
             @test eltype.(eachcol(y)) == [Union{Missing, Int}, Int, Int]
         end
 
-        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+        for colsel in [:z, "z", 3, [:z], ["z"], [3], [false, false, true], r"z", Not(1:2)]
             y = allowmissing(x, colsel)
             @test y isa DataFrame
             @test x == y
@@ -1343,7 +1375,7 @@ end
             @test y.z isa CategoricalVector{Int}
         end
 
-        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x" 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = categorical(x, colsel)
             @test y isa DataFrame
             @test x ≅ y
@@ -1355,7 +1387,7 @@ end
             @test y.z isa Vector{Int}
         end
 
-        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+        for colsel in [:z, "z", 3, [:z], ["z"], [3], [false, false, true], r"z", Not(1:2)]
             y = categorical(x, colsel)
             @test y isa DataFrame
             @test x ≅ y
