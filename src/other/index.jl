@@ -98,12 +98,14 @@ end
 
 rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(string(n)))) for n in x.names])
 
+# we do not define keys on purpose;
+# use names to get keys as strings with copying
+# or _names to get keys as Symbols without copying
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::AbstractString) = haskey(x.lookup, Symbol(key))
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
 Base.haskey(x::Index, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
-Base.keys(x::Index) = copy(_names(x))
 
 # TODO: If this should stay 'unsafe', perhaps make unexported
 function Base.push!(x::Index, nm::Symbol)

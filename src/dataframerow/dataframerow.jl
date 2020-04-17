@@ -112,7 +112,7 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
 
         if v isa AbstractDict
             if all(x -> x isa AbstractString, keys(v))
-                row = (;(keys(row) .=> values(row))...)
+                v = (;(Symbol.(keys(v)) .=> values(v))...)
             end
             for n in view(_names(df), idxs)
                 if !haskey(v, n)
@@ -265,7 +265,7 @@ Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
 Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
-Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(dfr))}(values(dfr))
+Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{keys(dfr)}(values(dfr))
 
 """
     copy(dfr::DataFrameRow)
@@ -407,7 +407,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 throw(AssertionError("Error adding value to column :$colname"))
             end
         end
-        for colname in setdiff(keys(dfr), _names(df))
+        for colname in setdiff(_names(dfr), _names(df))
             val = dfr[colname]
             S = typeof(val)
             if nrows == 0

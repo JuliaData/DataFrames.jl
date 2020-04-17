@@ -155,13 +155,21 @@ end
     @test length(si6) == 3
     @test length(si7) == 3
 
-    @test Symbol.(names(si1)) == keys(si1) == [:A, :B, :C, :D, :E]
-    @test Symbol.(names(si2)) == keys(si2) == [:C, :D, :E]
-    @test Symbol.(names(si3)) == keys(si3) == [:C, :D, :E]
-    @test Symbol.(names(si4)) == keys(si4) == [:C, :D, :E]
-    @test Symbol.(names(si5)) == keys(si5) == [:C, :D, :E]
-    @test Symbol.(names(si6)) == keys(si5) == [:C, :D, :E]
-    @test Symbol.(names(si7)) == keys(si5) == [:C, :D, :E]
+    @test DataFrames._names(si1) == [:A, :B, :C, :D, :E]
+    @test DataFrames._names(si2) == [:C, :D, :E]
+    @test DataFrames._names(si3) == [:C, :D, :E]
+    @test DataFrames._names(si4) == [:C, :D, :E]
+    @test DataFrames._names(si5) == [:C, :D, :E]
+    @test DataFrames._names(si6) == [:C, :D, :E]
+    @test DataFrames._names(si7) == [:C, :D, :E]
+
+    @test names(si1) == ["A", "B", "C", "D", "E"]
+    @test names(si2) == ["C", "D", "E"]
+    @test names(si3) == ["C", "D", "E"]
+    @test names(si4) == ["C", "D", "E"]
+    @test names(si5) == ["C", "D", "E"]
+    @test names(si6) == ["C", "D", "E"]
+    @test names(si7) == ["C", "D", "E"]
 
     @test_throws ArgumentError haskey(si3, true)
     @test haskey(si3, 1)

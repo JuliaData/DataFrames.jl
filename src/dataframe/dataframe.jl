@@ -1289,7 +1289,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     end
 
     if row isa AbstractDict && all(x -> x isa AbstractString, keys(row))
-        row = (;(keys(row) .=> values(row))...)
+        row = (;(Symbol.(keys(row)) .=> values(row))...)
     end
 
     # in the code below we use a direct access to _columns because
