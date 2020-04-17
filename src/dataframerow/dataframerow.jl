@@ -271,7 +271,13 @@ Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
 Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
-Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(dfr))}(values(dfr))
+function Base.NamedTuple(dfr::DataFrameRow)
+    k = keys(dfr)
+    v = values(dfr)
+    n = names(dfr)
+    s = eltype.(parent(dfr)[!, ni] for ni in n)
+    NamedTuple{Tuple(k), Tuple{s...}}(Tuple(v))
+end
 
 """
     copy(dfr::DataFrameRow)
