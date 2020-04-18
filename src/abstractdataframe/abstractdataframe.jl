@@ -1414,7 +1414,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     elseif cols isa AbstractVector{Symbol}
         header = cols
     else
-        @assert cols isa AbstractVector(<:AbstractString)
+        @assert cols isa AbstractVector{<:AbstractString}
         header = Symbol.(cols)
     end
 

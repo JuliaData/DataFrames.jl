@@ -193,6 +193,33 @@ end
     @test insertcols!(df, 1, :c3 => x, copycols=false) === df
     @test df.c3 === x
 
+    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+    @test_throws ArgumentError insertcols!(df, 5, "newcol" => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, 0, "newcol" => ["a", "b"])
+    @test_throws DimensionMismatch insertcols!(df, 1, "newcol" => ["a"])
+    @test insertcols!(df, 1, "newcol" => ["a", "b"]) == df
+    @test names(df) == ["newcol", "a", "b"]
+    @test df.a == [1, 2]
+    @test df.b == [3.0, 4.0]
+    @test df.newcol == ["a", "b"]
+
+    @test_throws ArgumentError insertcols!(df, 1, "newcol" => ["a1", "b1"])
+    @test insertcols!(df, 1, "newcol" => ["a1", "b1"], makeunique=true) == df
+    @test propertynames(df) == (:newcol_1, :newcol, :a, :b)
+    @test df.a == [1, 2]
+    @test df.b == [3.0, 4.0]
+    @test df.newcol == ["a", "b"]
+    @test df.newcol_1 == ["a1", "b1"]
+
+    @test insertcols!(df, 1, "c1" => 1:2) === df
+    @test df.c1 isa Vector{Int}
+    x = [1, 2]
+    @test insertcols!(df, 1, "c2" => x, copycols=true) === df
+    @test df.c2 == x
+    @test df.c2 !== x
+    @test insertcols!(df, 1, "c3" => x, copycols=false) === df
+    @test df.c3 === x
+
     df = DataFrame(a=[1,2], a_1=[3,4])
     @test_throws ArgumentError insertcols!(df, 1, :a => [11,12])
     @test df == DataFrame(a=[1,2], a_1=[3,4])
@@ -247,6 +274,10 @@ end
 
     df = DataFrame(p='a':'b',q='r':'s')
     @test insertcols!(df, 2, :a=>v1, :b=>v2, :c=>v3) ==
+          DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
+
+    df = DataFrame(p='a':'b',q='r':'s')
+    @test insertcols!(df, 2, "a"=>v1, "b"=>v2, "c"=>v3) ==
           DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
 
     df = DataFrame(p='a':'b',q='r':'s')
@@ -650,7 +681,7 @@ end
 
     @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
-    @test describe(df, cols=Not("number")) ≅ describe(select(df, Not(1)))
+    @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
 
     @test_throws ArgumentError describe(df, :mean, :all)
 end
@@ -1375,7 +1406,7 @@ end
             @test y.z isa CategoricalVector{Int}
         end
 
-        for colsel in [:x, "x" 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x", 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = categorical(x, colsel)
             @test y isa DataFrame
             @test x ≅ y

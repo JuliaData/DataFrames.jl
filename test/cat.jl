@@ -428,6 +428,10 @@ end
     @test_throws ArgumentError reduce(vcat, [df1, df2, df2], cols=[:C, :C])
     @test_throws ArgumentError reduce(vcat, (df1, df2, df2), cols=[:C, :C])
 
+    df1 = DataFrame(A = 1:3, B = 4:6)
+    df2 = DataFrame(A = 7:9)
+    df3 = DataFrame(A = 10:12, C = 13:15)
+
     @test vcat(df1, df2; cols = ["A", "B", "C"]) ≅
         DataFrame(A = [1, 2, 3, 7, 8, 9],
                   B = [4, 5, 6, missing, missing, missing],

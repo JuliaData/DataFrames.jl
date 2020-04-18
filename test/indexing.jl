@@ -8,9 +8,9 @@ using Test, DataFrames
     @test df[!, 1] == [1, 2, 3]
     @test df[!, 1] === eachcol(df)[1]
     @test df[!, :a] == [1, 2, 3]
-    @test df[!, :a] === eachcol(df)[1]
+    @test df[!, :a] === df[!, "a"] === eachcol(df)[1]
     @test df.a == [1, 2, 3]
-    @test df.a === eachcol(df)[1] === df."a"
+    @test df.a === df."a" === eachcol(df)[1]
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
         dfx = df[!, selector]
@@ -86,7 +86,7 @@ end
     x = [1, 2, 3]
     df = DataFrame(x=x, copycols=false)
     @test df.x === df."x" === x
-    @test df[!, :x] === x
+    @test df[!, :x] === df[!, "x"] === x
     @test df[!, 1] === x
     @test df[:, [:x]].x !== x
     @test df[:, :].x !== x
@@ -107,6 +107,8 @@ end
     @test view(df, !, 1) isa SubArray
     @test view(df, !, :a) == [1, 2, 3]
     @test view(df, !, :a) isa SubArray
+    @test view(df, !, "a") == [1, 2, 3]
+    @test view(df, !, "a") isa SubArray
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
         dfx = @view df[!, selector]
@@ -232,6 +234,8 @@ end
     @test sdf[!, 1] isa SubArray
     @test sdf[!, :a] == [1, 2, 3]
     @test sdf[!, :a] isa SubArray
+    @test sdf[!, "a"] == [1, 2, 3]
+    @test sdf[!, "a"] isa SubArray
     @test sdf.a == [1, 2, 3]
     @test sdf.a isa SubArray
     @test sdf.a === sdf."a"
@@ -323,6 +327,10 @@ end
 
     @test sdf[:, 1] == [1, 2, 3]
     @test sdf[:, 1] isa Vector
+    @test sdf[:, :a] == [1, 2, 3]
+    @test sdf[:, :a] isa Vector
+    @test sdf[:, "a"] == [1, 2, 3]
+    @test sdf[:, "a"] isa Vector
     @test sdf[:, 1] !== df[!, 1]
     @test sdf[:, 1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[:, 1:2] isa DataFrame
@@ -362,6 +370,8 @@ end
     @test view(sdf, !, 1) isa SubArray
     @test view(sdf, !, :a) == [1, 2, 3]
     @test view(sdf, !, :a) isa SubArray
+    @test view(sdf, !, "a") == [1, 2, 3]
+    @test view(sdf, !, "a") isa SubArray
 
     for selector in [1:2, r"[ab]", Not(Not(r"[ab]")), Not(r"ab"), Not(3), Not(1:0), Not(1:2), :]
         dfx = @view sdf[!, selector]
@@ -389,6 +399,10 @@ end
 
     @test view(sdf, 1, 1) isa SubArray
     @test view(sdf, 1, 1)[] == 1
+    @test view(sdf, 1, :a) isa SubArray
+    @test view(sdf, 1, :a)[] == 1
+    @test view(sdf, 1, "a") isa SubArray
+    @test view(sdf, 1, "a")[] == 1
     @test view(sdf, 1, 1:2) isa DataFrameRow
     @test copy(view(sdf, 1, 1:2)) == (a=1, b=4)
     @test view(sdf, 1, r"[ab]") isa DataFrameRow
@@ -425,6 +439,10 @@ end
 
     @test view(sdf, Not(Not(1:2)), 1) == [1, 2]
     @test view(sdf, Not(Not(1:2)), 1) isa SubArray
+    @test view(sdf, Not(Not(1:2)), :a) == [1, 2]
+    @test view(sdf, Not(Not(1:2)), :a) isa SubArray
+    @test view(sdf, Not(Not(1:2)), "a") == [1, 2]
+    @test view(sdf, Not(Not(1:2)), "a") isa SubArray
     @test view(sdf, Not(Not(1:2)), 1:2) isa SubDataFrame
     @test view(sdf, Not(Not(1:2)), 1:2) == DataFrame(a=1:2, b=4:5)
     @test view(sdf, Not(Not(1:2)), r"[ab]") isa SubDataFrame
@@ -443,6 +461,10 @@ end
 
     @test view(sdf, :, 1) == [1, 2, 3]
     @test view(sdf, :, 1) isa SubArray
+    @test view(sdf, :, :a) == [1, 2, 3]
+    @test view(sdf, :, :a) isa SubArray
+    @test view(sdf, :, "a") == [1, 2, 3]
+    @test view(sdf, :, "a") isa SubArray
     @test view(sdf, :, 1:2) isa SubDataFrame
     @test view(sdf, :, 1:2) == DataFrame(a=1:3, b=4:6)
     @test view(sdf, :, r"[ab]") isa SubDataFrame
@@ -485,8 +507,14 @@ end
     dfr = df[1, :]
 
     @test dfr[1] == 1
+    @test dfr[:a] == 1
+    @test dfr["a"] == 1
     @test dfr[1:2] isa DataFrameRow
     @test copy(dfr[1:2]) == (a=1, b=4)
+    @test dfr[[:a, :b]] isa DataFrameRow
+    @test copy(dfr[[:a, :b]]) == (a=1, b=4)
+    @test dfr[["a", "b"]] isa DataFrameRow
+    @test copy(dfr[["a", "b"]]) == (a=1, b=4)
     @test dfr[r"[ab]"] isa DataFrameRow
     @test copy(dfr[r"[ab]"]) == (a=1, b=4)
     @test dfr[Not(Not(r"[ab]"))] isa DataFrameRow
@@ -508,18 +536,26 @@ end
 
     @test view(dfr, 1)[] == 1
     @test view(dfr, 1) isa SubArray
+    @test view(dfr, :a)[] == 1
+    @test view(dfr, :a) isa SubArray
+    @test view(dfr, "a")[] == 1
+    @test view(dfr, "a") isa SubArray
     @test view(dfr, 1:2) isa DataFrameRow
-    @test copy(dfr[1:2]) == (a=1, b=4)
+    @test copy(view(dfr, 1:2)) == (a=1, b=4)
+    @test view(dfr, [:a, :b]) isa DataFrameRow
+    @test copy(view(dfr, [:a, :b])) == (a=1, b=4)
+    @test view(dfr, ["a", "b"]) isa DataFrameRow
+    @test copy(view(dfr, ["a", "b"])) == (a=1, b=4)
     @test view(dfr, r"[ab]") isa DataFrameRow
-    @test copy(dfr[r"[ab]"]) == (a=1, b=4)
+    @test copy(view(dfr,r"[ab]")) == (a=1, b=4)
     @test view(dfr, Not(Not(r"[ab]"))) isa DataFrameRow
-    @test copy(dfr[Not(Not(r"[ab]"))]) == (a=1, b=4)
+    @test copy(view(dfr,Not(Not(r"[ab]")))) == (a=1, b=4)
     @test dfr[:] isa DataFrameRow
-    @test copy(dfr[:]) == (a=1, b=4, c=7)
+    @test copy(view(dfr,:)) == (a=1, b=4, c=7)
     @test dfr[r""] isa DataFrameRow
-    @test copy(dfr[r""]) == (a=1, b=4, c=7)
+    @test copy(view(dfr,r"")) == (a=1, b=4, c=7)
     @test dfr[Not(Not(:))] isa DataFrameRow
-    @test copy(dfr[Not(Not(:))]) == (a=1, b=4, c=7)
+    @test copy(view(dfr,Not(Not(:)))) == (a=1, b=4, c=7)
     @test parent(dfr[:]) === df
     @test parent(dfr[r""]) === df
     @test parent(dfr[Not([])]) === df
@@ -547,6 +583,8 @@ end
     @test parent(dfr) === df2
     df2[!, :y] .= 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
+    df2[!, "y"] .= 1000
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
 
     df2 = copy(df)
     dfr = df2[2, 1:4]
@@ -555,14 +593,22 @@ end
     @test parent(dfr) === df2
     df2[!, :y] .= 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
+    df2[!, "y"] .= 1000
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
 
     @test df[2:3, :x2] == df[!, :x2][2:3] == [6.5, 7.5]
+    @test df[2:3, "x2"] == df[!, "x2"][2:3] == [6.5, 7.5]
     @test_throws ArgumentError df[2:3, :x]
     @test_throws BoundsError df[0:3, :x2]
     @test_throws BoundsError df[1:5, :x2]
+    @test_throws ArgumentError df[2:3, "x"]
+    @test_throws BoundsError df[0:3, "x2"]
+    @test_throws BoundsError df[1:5, "x2"]
 
     @test df[:, :x2] == df[!, :x2]
     @test df[:, :x2] !== df[!, :x2]
+    @test df[:, "x2"] == df[!, "x2"]
+    @test df[:, "x2"] !== df[!, "x2"]
 
     @test df[1:2, 1:2] == df[Not(3:4), Not(3:4)] == select(df, r"[12]")[1:2, :]
     @test df[1:2, 1:2] isa DataFrame
@@ -576,6 +622,8 @@ end
 
     @test df[!, :x2] === df.x2 === DataFrames._columns(df)[2]
     @test_throws ArgumentError df[!, :x]
+    @test df[!, "x2"] === df.x2 === DataFrames._columns(df)[2]
+    @test_throws ArgumentError df[!, "x"]
 
     v = @view df[2,2]
     @test v isa SubArray
@@ -602,6 +650,8 @@ end
     @test parent(dfr) === df2
     df2[!, :y] .= 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
+    df2[!, "y"] .= 1000
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
 
     df2 = copy(df)
     dfr = @view df2[2, 1:4]
@@ -609,6 +659,8 @@ end
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
     df2[!, :y] .= 100
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
+    df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
 
     v = @view df[2:3, :x2]
@@ -619,8 +671,19 @@ end
     @test_throws BoundsError @view df[0:3, :x2]
     @test_throws BoundsError @view df[1:5, :x2]
 
+    v = @view df[2:3, "x2"]
+    @test v == [6.5, 7.5]
+    @test v isa SubArray
+    @test parent(v) === df.x2
+    @test_throws ArgumentError @view df[2:3, "x"]
+    @test_throws BoundsError @view df[0:3, "x2"]
+    @test_throws BoundsError @view df[1:5, "x2"]
+
     @test @view(df[:, :x2]) == df[!, :x2]
     @test parent(@view(df[:, :x2])) === df[!, :x2]
+
+    @test @view(df[:, "x2"]) == df[!, "x2"]
+    @test parent(@view(df[:, "x2"])) === df[!, "x2"]
 
     sdf = @view df[1:2, 1:2]
     @test sdf == df[1:2, 1:2]
@@ -639,6 +702,11 @@ end
     @test @view(df[!, :x2]) isa SubArray
     @test parent(@view(df[!, :x2])) === df.x2
     @test_throws ArgumentError @view df[!, :x]
+
+    @test @view(df[!, "x2"]) === @view(df[:, "x2"])
+    @test @view(df[!, "x2"]) isa SubArray
+    @test parent(@view(df[!, "x2"])) === df.x2
+    @test_throws ArgumentError @view df[!, "x"]
 
     sdf = @view df[Not(1:0), Not(r"zzz")]
 
@@ -661,6 +729,8 @@ end
     @test parent(dfr) === df2
     df2[!, :y] .= 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
+    df2[!, "y"] .= 1000
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
 
     df2 = copy(df)
     dfr = view(df2, 1:4, :)[2, 1:4]
@@ -668,6 +738,8 @@ end
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
     df2[!, :y] .= 100
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
+    df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
 
     @test sdf[2:3, :x2] == sdf[!, :x2][2:3] == [6.5, 7.5]
@@ -680,10 +752,21 @@ end
     @test sdf[:, :x2] !== sdf[!, :x2]
     @test sdf[:, :x2] isa Vector
 
+    @test sdf[2:3, "x2"] == sdf[!, "x2"][2:3] == [6.5, 7.5]
+    @test sdf[2:3, "x2"] isa Vector
+    @test_throws ArgumentError sdf[2:3, "x"]
+    @test_throws BoundsError sdf[0:3, "x2"]
+    @test_throws BoundsError sdf[1:5, "x2"]
+
+    @test sdf[:, "x2"] == sdf[!, "x2"]
+    @test sdf[:, "x2"] !== sdf[!, "x2"]
+    @test sdf[:, "x2"] isa Vector
+
     @test sdf[1:2, 1:2] == sdf[Not(3:4), Not(3:4)] == select(sdf, r"[12]")[1:2, :]
     @test sdf[1:2, 1:2] isa DataFrame
     @test sdf[:, 1:2] == sdf[Not(1:0), Not(3:4)] == select(sdf, r"[12]")
     @test sdf[:, 1:2][!, :x1] !== sdf.x1
+    @test sdf[:, 1:2][!, "x1"] !== sdf.x1
     @test sdf[:, 1:2] isa DataFrame
     @test sdf[:, :] == sdf
     @test sdf[:, :] isa DataFrame
@@ -696,6 +779,13 @@ end
     @test sdf[!, :x2] isa SubArray
 
     @test_throws ArgumentError sdf[!, :x]
+
+    @test sdf[!, "x2"] === sdf."x2"
+    @test sdf."x2" == DataFrames._columns(df)[2]
+    @test sdf."x2" isa SubArray
+    @test sdf[!, "x2"] isa SubArray
+
+    @test_throws ArgumentError sdf[!, "x"]
 
     v = @view sdf[2,2]
     @test v isa SubArray
@@ -722,6 +812,8 @@ end
     @test parent(dfr) === df2
     df2[!, :y] .= 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
+    df2[!, "y"] .= 1000
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
 
     df2 = copy(df)
     dfr = @view view(df2, 1:4, :)[2, 1:4]
@@ -729,6 +821,8 @@ end
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
     df2[!, :y] .= 100
+    @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
+    df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
 
     v = @view sdf[2:3, :x2]
@@ -741,6 +835,9 @@ end
 
     @test @view(sdf[:, :x2]) == sdf[!, :x2]
     @test parent(@view(sdf[:, :x2])) === df[!, :x2]
+
+    @test @view(sdf[:, "x2"]) == sdf[!, "x2"]
+    @test parent(@view(sdf[:, "x2"])) === df[!, "x2"]
 
     sdf2 = @view sdf[1:2, 1:2]
     @test sdf2 == sdf[1:2, 1:2]
@@ -761,12 +858,19 @@ end
     @test_throws ArgumentError @view sdf[!, :x]
     @test select(sdf, 1:2, copycols=false) == @view sdf[!, 1:2]
 
+    @test @view(sdf[!, "x2"]) == df."x2"
+    @test sdf[!, "x2"] isa SubArray
+    @test parent(sdf[!, "x2"]) === df."x2"
+    @test_throws ArgumentError @view sdf[!, "x"]
+
     dfr = df[2, :]
     @test dfr[2] == dfr.x2 == dfr."x2" == 6.5
     @test_throws BoundsError dfr[0]
     @test_throws BoundsError dfr[5]
     @test_throws ArgumentError dfr[:z]
     @test_throws ArgumentError dfr.z
+    @test_throws ArgumentError dfr["z"]
+    @test_throws ArgumentError dfr."z"
 
     @test Vector(dfr[2:3]) == [6.5, 10.5]
     @test dfr[2:3] isa DataFrameRow
@@ -779,6 +883,7 @@ end
     @test_throws BoundsError @view dfr[0]
     @test_throws BoundsError @view dfr[5]
     @test_throws ArgumentError @view dfr[:z]
+    @test_throws ArgumentError @view dfr["z"]
 
     @test Vector(@view(dfr[2:3])) == [6.5, 10.5]
     @test @view(dfr[2:3]) isa DataFrameRow
@@ -805,9 +910,12 @@ end
     df[BigInt(1), :a] = 'a'
     @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
     @test_throws ArgumentError df[BigInt(1), :z] = 'z'
-    @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
+    df[BigInt(1), "a"] = 'b'
+    @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+    @test_throws ArgumentError df[BigInt(1), "z"] = 'z'
+    @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
     @test_throws MethodError df[1, 1] = "a"
-    @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
+    @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
 
     # `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`
     df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -828,7 +936,7 @@ end
     # the same as `dfr = df[row, cols]; dfr[:] = v`
 
     df = DataFrame(a=[[1,2]],b=[[1,2]])
-    dfr = df[1, :];
+    dfr = df[1, :]
     @test_throws MethodError dfr[:] = [10, 11]
     @test df == DataFrame(a=[[1,2]],b=[[1,2]])
     @test_throws MethodError df[1, :] = [10, 11]
@@ -840,6 +948,14 @@ end
     df = DataFrame(a=1,b=2)
     dfr = df[1, :]
     dfr[:] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+
+    df = DataFrame(a=1,b=2)
+    df[1, ["a", "b"]] = [10, 11]
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    dfr = df[1, ["a", "b"]]
+    dfr[["a", "b"]] = [10, 11]
     @test df == DataFrame(a=10,b=11)
 
     df = DataFrame(a=1,b=2)
@@ -861,6 +977,16 @@ end
     @test df == DataFrame(a=1,b=2)
     df = DataFrame(a=1,b=2)
     @test_throws DimensionMismatch df[1, :] = Dict(:a=>10, :b=>11, :c=>12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = DataFrame(a=1,b=2)
+    df[1, ["a", "b"]] = Dict("a"=>10, "b"=>11)
+    @test df == DataFrame(a=10,b=11)
+    df = DataFrame(a=1,b=2)
+    @test_throws ArgumentError df[1, ["a", "b"]] = Dict("a"=>10, "c"=>11)
+    @test df == DataFrame(a=1,b=2)
+    df = DataFrame(a=1,b=2)
+    @test_throws DimensionMismatch df[1, ["a", "b"]] = Dict("a"=>10, "b"=>11, "c"=>12)
     @test df == DataFrame(a=1,b=2)
 
     df = DataFrame(a=1,b=2)
@@ -903,7 +1029,14 @@ end
     # @test_throws ArgumentError df[1:3, 1] = [1]
     # @test_throws ArgumentError df[1:3, 1] = 1
     @test_throws ArgumentError df[1:3, :z] = ["a", "b", "c"]
+    @test_throws ArgumentError df[1:3, "z"] = ["a", "b", "c"]
     @test_throws BoundsError df[1:3, 4] = ["a", "b", "c"]
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    x = df.a
+    df[1:3, "a"] = 10:12
+    @test df == DataFrame(a=10:12, b=4:6, c=7:9)
+    @test df.a === x
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     x = df.a
@@ -915,6 +1048,17 @@ end
     df[:, :y] = y
     @test df.y == y
     @test df.y !== y
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    x = df.a
+    df[:, "a"] = 10:12
+    @test df == DataFrame(a=10:12, b=4:6, c=7:9)
+    @test df."a" === x
+
+    y = ["a", "b", "c"]
+    df[:, "y"] = y
+    @test df."y" == y
+    @test df."y" !== y
 
     @test_throws MethodError df[:, 1] = ["a", "b", "c"]
     # TODO: enable these tests after deprecation period
@@ -970,6 +1114,18 @@ end
     # TODO: add the following tests after deprecation
     # 1. if `df[:, col] = v` an error is thrown if such operation is attempted).
     # 2. it is not allowed to add a column with column index `ncol(df)+1`
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    df[!, "a"] = ["a", "b", "c"]
+    @test df == DataFrame(a=["a", "b", "c"], b=4:6, c=7:9)
+    @test_throws ArgumentError df[!, "a"] = ["a", "b"]
+    @test_throws ArgumentError df[!, "a"] = ["a"]
+    df[!, "a"] = 'a':'c'
+    @test df == DataFrame(a='a':'c', b=4:6, c=7:9)
+    df."a" = ["aaa", "bbb", 1]
+    @test df == DataFrame(a=["aaa", "bbb", 1], b=4:6, c=7:9)
+    df."z" = 11:13
+    @test df == DataFrame(a=["aaa", "bbb", 1], b=4:6, c=7:9, z=11:13)
 end
 
 @testset "setindex! on SubDataFrame" begin
@@ -987,6 +1143,19 @@ end
         @test_throws ArgumentError sdf[1, true] = 100
         @test_throws ArgumentError sdf[true, 1] = 100
         @test_throws MethodError sdf[1, 1] = "a"
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+    end
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:2), view(df, 1:2, :), view(df, 1:2, 1:2)]
+        df.a = [1,2,3] # make sure we have a fresh first column in each iteration
+        x = df.a
+        sdf[1, names(sdf)[1]] = 10
+        @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
+        @test x === df.a
+        @test_throws BoundsError sdf[0, names(sdf)[1]] = 100
+        @test_throws ArgumentError sdf[true, names(sdf)[1]] = 100
+        @test_throws MethodError sdf[1, names(sdf)[1]] = "a"
         @test df == DataFrame(a=[10, 2, 3], b=4:6, c=7:9)
     end
 
@@ -1050,6 +1219,16 @@ end
     @test df == DataFrame(a=1,b=2)
 
     df = view(DataFrame(a=1,b=2), :, :)
+    df[1, :] = Dict("a"=>101, "b"=>111)
+    @test df == DataFrame(a=101,b=111)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws ArgumentError df[1, :] = Dict("a"=>10, "c"=>11)
+    @test df == DataFrame(a=1,b=2)
+    df = view(DataFrame(a=1,b=2), :, :)
+    @test_throws DimensionMismatch df[1, :] = Dict("a"=>10, "b"=>11, "c"=>12)
+    @test df == DataFrame(a=1,b=2)
+
+    df = view(DataFrame(a=1,b=2), :, :)
     df[1, :] = (a=10, b=11)
     @test df == DataFrame(a=10,b=11)
     df = view(DataFrame(a=1,b=2), :, :)
@@ -1093,7 +1272,20 @@ end
     end
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
-    for sdf in [view(df, :, :), view(df, :, 1:3), view(df, 1:3, :), view(df, 1:3, 1:3)]
+    for sdf in [view(df, :, :), view(df, :, 1:3), view(df, 1:3, :),
+                view(df, 1:3, 1:3), view(df, 1:3, ["a", "b", "c"])]
+        df."a" = [1,2,3]
+        x = df."a"
+        sdf[1:3, names(sdf)[1]] = 10:12
+        @test sdf == DataFrame(a=10:12, b=4:6, c=7:9)
+        @test df.a === x
+        @test_throws MethodError sdf[1:3, names(sdf)[1]] = ["a", "b", "c"]
+        @test_throws ArgumentError sdf[1:3, "z"] = ["a", "b", "c"]
+    end
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:3), view(df, 1:3, :),
+                view(df, 1:3, 1:3), view(df, 1:3, ["a", "b", "c"])]
         df.a = [1,2,3]
         x = df.a
         sdf[:, 1] = 10:12
@@ -1106,10 +1298,22 @@ end
         # @test_throws ArgumentError sdf[:, 1] = 1
     end
 
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    for sdf in [view(df, :, :), view(df, :, 1:3), view(df, 1:3, :),
+                view(df, 1:3, 1:3), view(df, 1:3, ["a", "b", "c"])]
+        df.a = [1,2,3]
+        x = df.a
+        sdf[:, names(sdf)[1]] = 10:12
+        @test df == DataFrame(a=10:12, b=4:6, c=7:9)
+        @test_throws MethodError sdf[:, names(sdf)[1]] = ["a", "b", "c"]
+        @test_throws ArgumentError sdf[:, "z"] = ["a", "b", "c"]
+    end
+
     # `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
     #                          `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 
-    for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :), (1:3, 1:3)]
+    for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :),
+                               (1:3, 1:3), (1:3, ["a", "b", "c"])]
         df = DataFrame(a=1:3, b=4:6, c=7:9)
         sdf = view(df, row_sel, col_sel)
         df2 = DataFrame(a=11:13, b=14:16, c=17:19)
@@ -1136,10 +1340,11 @@ end
     end
 
     # Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
-    for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :), (1:3, 1:3)]
+    for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :), (1:3, 1:3), (1:3, ["a", "b", "c"])]
         df = DataFrame(a=1:3, b=4:6, c=7:9)
         sdf = view(df, row_sel, col_sel)
         @test_throws ArgumentError sdf[!, 1] = [1,2,3]
+        @test_throws ArgumentError sdf[!, "a"] = [1,2,3]
         @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
         # TODO: add this test after deprecation period
         # @test_throw ArgumentError sdf[!, 1] = [1,2,3]
@@ -1165,14 +1370,23 @@ end
         @test df == DataFrame(a=[100, 2, 3], b=4:6, c=7:9)
         dfr[:a] = 'a'
         @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
+        dfr["a"] = 'b'
+        @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
         @test_throws ArgumentError dfr[:z] = 'z'
-        @test df == DataFrame(a=[97, 2, 3], b=4:6, c=7:9)
-        dfr.a = 'b'
+        @test_throws ArgumentError dfr["z"] = 'z'
         @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+        dfr.a = 'c'
+        @test df == DataFrame(a=[99, 2, 3], b=4:6, c=7:9)
         @test_throws ArgumentError dfr.z = 'z'
-        @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+        @test df == DataFrame(a=[99, 2, 3], b=4:6, c=7:9)
         @test_throws MethodError dfr.a = "a"
-        @test df == DataFrame(a=[98, 2, 3], b=4:6, c=7:9)
+        @test df == DataFrame(a=[99, 2, 3], b=4:6, c=7:9)
+        dfr."a" = 'd'
+        @test df == DataFrame(a=[100, 2, 3], b=4:6, c=7:9)
+        @test_throws ArgumentError dfr.z = 'z'
+        @test df == DataFrame(a=[100, 2, 3], b=4:6, c=7:9)
+        @test_throws MethodError dfr.a = "a"
+        @test df == DataFrame(a=[100, 2, 3], b=4:6, c=7:9)
     end
 
     # * `dfr[cols] = v` -> set values of entries in columns `cols` in `dfr` by elements of `v` in place;
@@ -1412,7 +1626,75 @@ end
             @test_throws BoundsError view(df, r, [1,4])
             @test_throws ArgumentError view(df, r, [1,2,1])
             @test_throws ArgumentError view(df, r, [:x1,:x2,:x1])
+            @test_throws ArgumentError view(df, r, ["x1","x2","x1"])
         end
+    end
+end
+
+# just to check that dispatch works correctly
+@testset "string indexing" begin
+    df_ref = DataFrame(a=1:3, b=4:6, c=7:9)
+    for df in (df_ref[1:2, [2,1]], df_ref[1:2, ["b","a"]],
+               view(df_ref, 1:2, [2,1]), view(df_ref, 1:2, ["b","a"]))
+        @test df[1, "a"] == df[1, 2]
+        @test df[1:2, "a"] == df[1:2, 2]
+        @test df[1, ["a", "b"]] == df[1, [2,1]]
+        @test df[1:2, ["a", "b"]] == df[1:2, [2,1]]
+        @test df[:, ["a", "b"]] == df[:, [2,1]]
+        @test df[!, ["a", "b"]] == df[!, [2,1]]
+
+        @test view(df, 1, "a") == view(df, 1, 2)
+        @test view(df, 1:2, "a") == view(df, 1:2, 2)
+        @test view(df, 1, ["a", "b"]) == view(df, 1, [2,1])
+        @test view(df, 1:2, ["a", "b"]) == view(df, 1:2, [2,1])
+        @test view(df, :, ["a", "b"]) == view(df, :, [2,1])
+        @test view(df, !, ["a", "b"]) == view(df, !, [2,1])
+
+        df[1, "a"] = 100
+        @test df[1, "a"] == 100
+        df[1:2, "a"] = [20, 30]
+        @test df[1:2, "a"] == [20, 30]
+        df[:, "a"] = [30, 40]
+        @test df[:, "a"] == [30, 40]
+        if df isa DataFrame
+            df[!, "a"] = [1, 2]
+            @test df[!, "a"] == [1, 2]
+        else
+            @test_throws ArgumentError df[!, "a"] = [1, 2]
+        end
+
+        df[1, ["a", "b"]] = (a=1000, b=2000)
+        @test copy(df[1, ["a", "b"]]) == (a=1000, b=2000)
+        df[1:1, ["a"]] = ones(1,1)
+        @test df[1, "a"] == 1
+        df[1, ["a", "b"]] .= 50
+        @test copy(df[1, ["a", "b"]]) == (a=50, b=50)
+        df[1:1, ["a"]] .= 1
+        @test df[1, "a"] == 1
+    end
+
+    df_ref."g1" = 11:13
+    @test df_ref."g1" == 11:13
+    df_ref[!, "g2"] = 11:13
+    @test df_ref."g2" == 11:13
+    df_ref[:, "g3"] = 11:13
+    @test df_ref."g3" == 11:13
+
+    for dfr in (df_ref[1, [2,1]], df_ref[1, ["b","a"]],
+               view(df_ref, 1, [2,1]), view(df_ref, 1, ["b","a"]))
+        @test dfr["a"] == dfr[2]
+        @test dfr[["a", "b"]] == dfr[[2,1]]
+        @test view(dfr, "a") == view(dfr, 2)
+        @test view(dfr, ["a", "b"]) == view(dfr, [2,1])
+
+        dfr["a"] = 100
+        @test dfr."a" == 100
+        dfr[["a", "b"]] = (a=1000, b=2000)
+        @test copy(dfr) == (b=2000, a=1000)
+
+        @test_throws MethodError dfr["a"] .= 100
+        dfr[["a", "b"]] .= 50
+        @test copy(dfr) == (b=50, a=50)
     end
 end
 

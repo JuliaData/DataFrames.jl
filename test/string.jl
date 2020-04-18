@@ -157,7 +157,7 @@ end
     @test gdf == groupby(df, "g")
     @test groupby(df, [:g, :a]) == groupby(df, ["g", "a"])
 
-    @test names(gdf) == [:g, :a]
+    @test names(gdf) == ["g", "a"]
 
     k = keys(gdf)
     @test names(k[1]) == ["g"]
@@ -243,6 +243,23 @@ end
         @test hasproperty(v, "a")
         @test !hasproperty(v, "x")
     end
+end
+
+@testset "append! and push!" begin
+    df = DataFrame(a=1, b=2)
+    append!(df, Dict("a" => 2, "b" => 3))
+    @test df == DataFrame(a=1:2, b=2:3)
+
+    df = DataFrame()
+    append!(df, Dict("a" => 2, "b" => 3))
+    @test df == DataFrame(a=2, b=3)
+
+    df = DataFrame(a=1, b=2)
+    push!(df, Dict("a" => 2, "b" => 3))
+    @test df == DataFrame(a=1:2, b=2:3)
+    @test_throws ArgumentError push!(df, Dict("a" => 2, "b" => 3), cols=:orderequal)
+    push!(df, Dict("b" => 4, "c" => 0), cols=:union)
+    @test isequal(df, DataFrame(a=[1:2; missing], b=2:4, c=[missing, missing, 0]))
 end
 
 end # module

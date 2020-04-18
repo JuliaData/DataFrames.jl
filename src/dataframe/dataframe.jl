@@ -174,6 +174,15 @@ function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=fals
                      copycols=copycols)
 end
 
+# these two are needed as a workaround Tables.jl dispatch
+DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
+          copycols::Bool=true) =
+    DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+
+DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false,
+          copycols::Bool=true) where {N} =
+    DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+
 function DataFrame(d::AbstractDict; copycols::Bool=true)
     if isa(d, Dict)
         colnames = sort!(collect(keys(d)))
@@ -1291,6 +1300,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
         return df
     end
 
+    old_row_type = typeof(row)
     if row isa AbstractDict && all(x -> x isa AbstractString, keys(row))
         row = (;(Symbol.(keys(row)) .=> values(row))...)
     end
@@ -1345,7 +1355,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; cols::S
     end
 
     if cols == :orderequal
-        if row isa Dict
+        if old_row_type <: Dict
             throw(ArgumentError("passing `Dict` as `row` when `cols == :orderequal` " *
                                 "is not allowed as it is unordered"))
         elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
