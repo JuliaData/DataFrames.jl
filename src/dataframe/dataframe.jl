@@ -800,7 +800,8 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
         throw(BoundsError(df, (inds, :)))
     end
-    foreach(col -> deleteat!(col, inds), _columns(df))
+    drop = findall(inds)
+    foreach(col -> deleteat!(col, drop), _columns(df))
     return df
 end
 
