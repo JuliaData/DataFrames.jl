@@ -82,6 +82,10 @@ end
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                summary::Bool=true, eltypes::Bool=true, rowid::Union{Int,Nothing}=nothing)
     _check_consistency(df)
+
+    # we will pass around this buffer to avoid its reallocation in ourstrwidth
+    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
@@ -94,7 +98,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -248,6 +252,10 @@ end
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                eltypes::Bool=true, rowid=nothing)
     _check_consistency(df)
+
+    # we will pass around this buffer to avoid its reallocation in ourstrwidth
+    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
@@ -260,7 +268,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 

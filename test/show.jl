@@ -269,12 +269,12 @@ end
     df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])
     @test sprint(show, df_nothing) == """
     3×2 DataFrame
-    │ Row │ A       │ B      │
-    │     │ Float64 │ Union… │
-    ├─────┼─────────┼────────┤
-    │ 1   │ 1.0     │ g      │
-    │ 2   │ 2.0     │ g      │
-    │ 3   │ 3.0     │        │"""
+    │ Row │ A       │ B       │
+    │     │ Float64 │ Union…  │
+    ├─────┼─────────┼─────────┤
+    │ 1   │ 1.0     │ g       │
+    │ 2   │ 2.0     │ g       │
+    │ 3   │ 3.0     │ nothing │"""
 end
 
 @testset "Test correct width computation" begin
