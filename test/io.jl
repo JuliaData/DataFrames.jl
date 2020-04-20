@@ -399,7 +399,7 @@ end
 end
 
 @testset "improved printing of special types" begin
-    df = DataFrame(A=1:9, B = Vector{Any}(undef, 9))
+    df = DataFrame(A=Int64.(1:9), B = Vector{Any}(undef, 9))
     df.B[1:8] = [df, # DataFrame
                  df[1,:], # DataFrameRow
                  view(df,1:1, :), # SubDataFrame
