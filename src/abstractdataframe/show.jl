@@ -2,20 +2,15 @@ Base.summary(df::AbstractDataFrame) =
     @sprintf("%d×%d %s", size(df)..., typeof(df).name)
 Base.summary(io::IO, df::AbstractDataFrame) = print(io, summary(df))
 
-let
-    local buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
-    global ourstrwidth
+"""
+    DataFrames.ourstrwidth(io::IO, x::Any, buffer)
 
-    """
-        DataFrames.ourstrwidth(io::IO, x::Any)
-
-    Determine the number of characters that would be used to print a value.
-    """
-    function ourstrwidth(io::IO, x::Any)
-        truncate(buffer, 0)
-        ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
-        textwidth(String(take!(buffer)))
-    end
+Determine the number of characters that would be used to print a value.
+"""
+function ourstrwidth(io::IO, x::Any, buffer::Base.GenericIOBuffer{Array{UInt8,1}})
+    truncate(buffer, 0)
+    ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
+    textwidth(String(take!(buffer)))
 end
 
 """
@@ -25,25 +20,40 @@ Render a value to an `IO` object compactly and omitting type information, by
 calling 3-argument `show`, or 2-argument `show` if the former contains line breaks.
 Unlike `show`, render strings without surrounding quote marks.
 """
-function ourshow(io::IO, x::Any)
-    io = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
+function ourshow(io::IO, x::Any; styled::Bool=false)
+    io_ctx = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
 
     # This mirrors the behavior of Base.print_matrix_row
     # First try 3-arg show
-    sx = sprint(show, "text/plain", x, context=io)
+    sx = sprint(show, "text/plain", x, context=io_ctx)
 
     # If the output contains line breaks, try 2-arg show instead.
     if occursin('\n', sx)
-        sx = sprint(show, x, context=io)
+        sx = sprint(show, x, context=io_ctx)
     end
 
-    print(io, sx)
+    #
+    if x isa AbstractString
+        @assert sx[1] == sx[end] == '"'
+        sx = escape_string(chop(sx, head=1, tail=1), "")
+    end
+
+    if styled
+        printstyled(io_ctx, sx, color=:light_black)
+    else
+        print(io_ctx, sx)
+    end
 end
+
+const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
+                                 DataFrameColumns, GroupedDataFrame}
 
 ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
 ourshow(io::IO, x::CategoricalValue{<:AbstractString}) = escape_string(io, get(x), "")
 ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
-ourshow(io::IO, x::Nothing) = nothing
+ourshow(io::IO, x::Nothing; styled::Bool=false) = ourshow(io, "nothing", styled=styled)
+ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
+    ourshow(io, summary(x), styled=styled)
 
 # AbstractChar: https://github.com/JuliaLang/julia/pull/34730 (1.5.0-DEV.261)
 # Irrational: https://github.com/JuliaLang/julia/pull/34741 (1.5.0-DEV.266)
@@ -112,8 +122,9 @@ end
                             rowindices1::AbstractVector{Int},
                             rowindices2::AbstractVector{Int},
                             rowlabel::Symbol,
-                            rowid=nothing,
-                            show_eltype::Bool=true)
+                            rowid,
+                            show_eltype::Bool,
+                            buffer)
 
 Calculate, for each column of an AbstractDataFrame, the maximum
 string width used to render the name of that column, its type, and the
@@ -140,19 +151,8 @@ implicit row ID column contained in every `AbstractDataFrame`.
   numeric ID's of each row. Typically, this will be set to "Row".
 - `rowid`: Used to handle showing `DataFrameRow`.
 - `show_eltype`: Whether to print the column type
-   under the column name in the heading. Defaults to `true`.
-
-# Examples
-```jldoctest
-julia> using DataFrames
-
-julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
-
-julia> DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
-3-element Array{Int64,1}:
- 1
- 1
- 3
+   under the column name in the heading.
+- `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
 ```
 """
 function getmaxwidths(df::AbstractDataFrame,
@@ -160,27 +160,28 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
-                      rowid=nothing,
-                      show_eltype::Bool=true)
+                      rowid,
+                      show_eltype::Bool,
+                      buffer)
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
-    undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
+    undefstrwidth = ourstrwidth(io, Base.undef_ref_str, buffer)
 
     j = 1
     for (name, col) in pairs(eachcol(df))
         # (1) Consider length of column name
-        maxwidth = ourstrwidth(io, name)
+        maxwidth = ourstrwidth(io, name, buffer)
 
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
             if isassigned(col, i)
-                maxwidth = max(maxwidth, ourstrwidth(io, col[i]))
+                maxwidth = max(maxwidth, ourstrwidth(io, col[i], buffer))
             else
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
         if show_eltype
-            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col))))
+            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col)), buffer))
         else
             maxwidths[j] = maxwidth
         end
@@ -190,9 +191,9 @@ function getmaxwidths(df::AbstractDataFrame,
     if rowid isa Nothing
         rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
         rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
-        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(io, rowlabel))
+        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(io, rowlabel, buffer))
     else
-        maxwidths[j] = max(ndigits(rowid), ourstrwidth(io, rowlabel))
+        maxwidths[j] = max(ndigits(rowid), ourstrwidth(io, rowlabel, buffer))
     end
 
     return maxwidths
@@ -211,21 +212,6 @@ pretty print the `AbstractDataFrame`.
 # Arguments
 - `maxwidths::Vector{Int}`: The maximum width needed to render each
   column of an `AbstractDataFrame`.
-
-# Examples
-```jldoctest
-julia> using DataFrames
-
-julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
-
-julia> maxwidths = DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
-3-element Array{Int64,1}:
- 1
- 1
- 3
-
-julia> DataFrames.getprintedwidth(maxwidths)
-15
 ```
 """
 function getprintedwidth(maxwidths::Vector{Int})
@@ -260,23 +246,6 @@ contains columns 4-5.
 - `splitcols::Bool`: Whether to split printing in chunks of columns
   fitting the screen width rather than printing all columns in the same block.
 - `availablewidth::Int`: The available width in the REPL.
-
-# Examples
-```jldoctest
-julia> using DataFrames
-
-julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
-
-julia> maxwidths = DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
-3-element Array{Int64,1}:
- 1
- 1
- 3
-
-julia> DataFrames.getchunkbounds(maxwidths, true, displaysize()[2])
-2-element Array{Int64,1}:
- 0
- 2
 ```
 """
 function getchunkbounds(maxwidths::Vector{Int},
@@ -328,6 +297,7 @@ required for printing have been precomputed.
 - `leftcol::Int`: The index of the first column in a chunk to be rendered.
 - `rightcol::Int`: The index of the last column in a chunk to be rendered.
 - `rowid`: Used to handle showing `DataFrameRow`.
+- `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
 
 # Examples
 ```jldoctest
@@ -346,7 +316,8 @@ function showrowindices(io::IO,
                         maxwidths::Vector{Int},
                         leftcol::Int,
                         rightcol::Int,
-                        rowid)
+                        rowid,
+                        buffer)
     rowmaxwidth = maxwidths[end]
 
     for i in rowindices
@@ -366,17 +337,15 @@ function showrowindices(io::IO,
             strlen = 0
             if isassigned(df[!, j], i)
                 s = df[i, j]
-                strlen = ourstrwidth(io, s)
-                if ismissing(s)
-                    printstyled(io, s, color=:light_black)
-                elseif s === nothing
-                    strlen = 0
+                strlen = ourstrwidth(io, s, buffer)
+                if ismissing(s) || isnothing(s) || s isa SHOW_TABULAR_TYPES
+                    ourshow(io, s, styled=true)
                 else
                     ourshow(io, s)
                 end
             else
-                strlen = ourstrwidth(io, Base.undef_ref_str)
-                ourshow(io, Base.undef_ref_str)
+                strlen = ourstrwidth(io, "#undef", buffer)
+                ourshow(io, "#undef", styled=true)
             end
             padding = maxwidths[j] - strlen
             for _ in 1:padding
@@ -402,12 +371,13 @@ end
              rowindices1::AbstractVector{Int},
              rowindices2::AbstractVector{Int},
              maxwidths::Vector{Int},
-             splitcols::Bool = false,
-             allcols::Bool = false,
-             rowlabel::Symbol = :Row,
-             displaysummary::Bool = true,
-             eltypes::Bool = true,
-             rowid=nothing)
+             splitcols::Bool,
+             allcols::Bool,
+             rowlabel::Symbol,
+             displaysummary::Bool,
+             eltypes::Bool,
+             rowid,
+             buffer)
 
 Render a subset of rows (possibly in chunks) of an `AbstractDataFrame` to an
 I/O stream.
@@ -437,6 +407,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `eltypes::Bool = true`: Whether to print the column type
    under the column name in the heading. Defaults to `true`.
 - `rowid = nothing`: Used to handle showing `DataFrameRow`
+- `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
 
 # Examples
 julia> using DataFrames
@@ -459,12 +430,14 @@ function showrows(io::IO,
                   rowindices1::AbstractVector{Int},
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
-                  splitcols::Bool = false,
-                  allcols::Bool = false,
-                  rowlabel::Symbol = :Row,
-                  displaysummary::Bool = true,
-                  eltypes::Bool = true,
-                  rowid=nothing)
+                  splitcols::Bool,
+                  allcols::Bool,
+                  rowlabel::Symbol,
+                  displaysummary::Bool,
+                  eltypes::Bool,
+                  rowid,
+                  buffer)
+
     ncols = size(df, 2)
 
     if isempty(rowindices1)
@@ -490,7 +463,7 @@ function showrows(io::IO,
 
         # Print column names
         @printf io "│ %s" rowlabel
-        padding = rowmaxwidth - ourstrwidth(io, rowlabel)
+        padding = rowmaxwidth - ourstrwidth(io, rowlabel, buffer)
         for itr in 1:padding
             write(io, ' ')
         end
@@ -498,7 +471,7 @@ function showrows(io::IO,
         for j in leftcol:rightcol
             s = _names(df)[j]
             ourshow(io, s)
-            padding = maxwidths[j] - ourstrwidth(io, s)
+            padding = maxwidths[j] - ourstrwidth(io, s, buffer)
             for itr in 1:padding
                 write(io, ' ')
             end
@@ -520,7 +493,7 @@ function showrows(io::IO,
             for j in leftcol:rightcol
                 s = compacttype(eltype(df[!, j]), maxwidths[j], false)
                 printstyled(io, s, color=:light_black)
-                padding = maxwidths[j] - ourstrwidth(io, s)
+                padding = maxwidths[j] - ourstrwidth(io, s, buffer)
                 for itr in 1:padding
                     write(io, ' ')
                 end
@@ -557,7 +530,7 @@ function showrows(io::IO,
                        maxwidths,
                        leftcol,
                        rightcol,
-                       rowid)
+                       rowid, buffer)
 
         if !isempty(rowindices2)
             print(io, "\n⋮\n")
@@ -567,7 +540,7 @@ function showrows(io::IO,
                            maxwidths,
                            leftcol,
                            rightcol,
-                           rowid)
+                           rowid, buffer)
         end
 
         # Print newlines to separate chunks
@@ -589,6 +562,10 @@ function _show(io::IO,
                eltypes::Bool = true,
                rowid=nothing)
     _check_consistency(df)
+
+    # we will pass around this buffer to avoid its reallocation in ourstrwidth
+    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+
     nrows = size(df, 1)
     if rowid !== nothing
         if size(df, 2) == 0
@@ -608,7 +585,7 @@ function _show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid, eltypes)
+    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid, eltypes, buffer)
     width = getprintedwidth(maxwidths)
     showrows(io,
              df,
@@ -620,7 +597,7 @@ function _show(io::IO,
              rowlabel,
              summary,
              eltypes,
-             rowid)
+             rowid, buffer)
     return
 end
 
