@@ -420,7 +420,7 @@ end
         │ Row │ a       │ b     │
         │     │ Nothing │ $(Int) │
         ├─────┼─────────┼───────┤
-        │ 1   │         │ 1     │"""
+        │ 1   │ nothing │ 1     │"""
 
 
     df = DataFrame(a=1:3, b=["a", "b", "c"], c=Int64[1,0,1])
