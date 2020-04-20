@@ -3,11 +3,6 @@
 # through cleanly.
 abstract type AbstractIndex end
 
-# this is type piracy, but without it Between will error so I think it is acceptable
-DataAPI.Between(x::AbstractString, y::AbstractString) = Between(Symbol(x), Symbol(y))
-DataAPI.Between(x::Union{Int, Symbol}, y::AbstractString) = Between(x, Symbol(y))
-DataAPI.Between(x::AbstractString, y::Union{Int, Symbol}) = Between(Symbol(x), y)
-
 function Base.summary(idx::AbstractIndex)
     l = length(idx)
     return "data frame with $l column$(l == 1 ? "" : "s")"
