@@ -1797,7 +1797,7 @@ julia> df3 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
 
 julia> flatten(df3, [:b, :c])
 ERROR: ArgumentError: Lengths of iterables stored in columns :b and :c
-are not the the same in row 2
+are not the same in row 2
 ```
 """
 function flatten(df::AbstractDataFrame,
@@ -1814,7 +1814,7 @@ function flatten(df::AbstractDataFrame,
             r = findfirst(x -> x != 0, length.(v) .- lengths)
             colnames = names(df)
             throw(ArgumentError("Lengths of iterables stored in columns :$(colnames[col1])" *
-                                " and :$(colnames[col]) are not the the same in row $r"))
+                                " and :$(colnames[col]) are not the same in row $r"))
         end
     end
 

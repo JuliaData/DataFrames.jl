@@ -191,7 +191,7 @@ which can be used in a similar fashion to a `NamedTuple`.
 
 Grouping a data frame using the `groupby` function can be seen as adding a lookup key
 to it. Such lookups can be performed efficiently by indexing the resulting
-`GroupedDataFrame` with a a `Tuple` or `NamedTuple`:
+`GroupedDataFrame` with a `Tuple` or `NamedTuple`:
 ```
 julia> df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000);
 
