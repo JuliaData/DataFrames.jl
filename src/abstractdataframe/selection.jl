@@ -218,7 +218,7 @@ SELECT_ARG_RULES =
     Columns can be renamed using the `old_column => new_column_name` syntax,
     and transformed using the `old_column => fun => new_column_name` syntax.
     `new_column_name` must be a `Symbol` or a string, and `fun` a function or a type.
-    If `old_column` is a `Symbol` or an integer then `fun` is applied to the corresponding
+    If `old_column` is a `Symbol`, a string, or an integer then `fun` is applied to the corresponding
     column vector. Otherwise `old_column` can be any column indexing syntax, in which case
     `fun` will be passed the column vectors specified by `old_column` as separate arguments.
     The only exception is when `old_column` is an `AsTable` type wrapping a selector,
@@ -233,7 +233,7 @@ SELECT_ARG_RULES =
     are unwrapped and then broadcasted.
 
     To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
-    struct. In this case if `old_column` is a `Symbol`, string, or an integer then `fun` is
+    struct. In this case if `old_column` is a `Symbol`, a string, or an integer then `fun` is
     applied to each element (row) of `old_column` using broadcasting. Otherwise `old_column`
     can be any column indexing syntax, in which case `fun` will be passed one argument for
     each of the columns specified by `old_column`. If `ByRow` is used it is not allowed for

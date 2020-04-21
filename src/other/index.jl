@@ -243,8 +243,8 @@ end
     if idxs[1] isa AbstractString
         throw(ArgumentError("mixing strings with other selectors is not allowed"))
     else
-        throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); Only Integer, Symbol"*
-                            ", or string values allowed when indexing by vector"))
+        throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); only Integer, Symbol, "*
+                            "or string values allowed when indexing by vector"))
     end
 end
 

@@ -103,7 +103,7 @@ function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
     if !(cols isa Union{Symbol, AbstractString})
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
-    return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
+    return LazyNewColDataFrame(df, Symbol(cols))
 end
 
 function Base.dotview(df::DataFrame, ::typeof(!), cols)
@@ -253,8 +253,8 @@ create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) where {T} =
 function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
     colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
-    if length(colnames) > 1 || (length(colnames) == 1 && view(_names(crdf.df),
-                                                              crdf.cols) != colnames[1])
+    if length(colnames) > 1 ||
+        (length(colnames) == 1 && view(_names(crdf.df), crdf.cols) != colnames[1])
         push!(colnames, view(_names(crdf.df), crdf.cols))
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         if isempty(wrongnames)

@@ -349,7 +349,7 @@ Base.getproperty(df::AbstractDataFrame, col_ind::AbstractString) = df[!, col_ind
 """
     propertynames(df::AbstractDataFrame)
 
-    Return a `Tuple{Vararg{Symbol}}` of names of columns contained in `df`.
+Return a `Tuple{Vararg{Symbol}}` of names of columns contained in `df`.
 """
 Base.propertynames(df::AbstractDataFrame, private::Bool=false) = Tuple(_names(df))
 

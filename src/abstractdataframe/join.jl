@@ -24,10 +24,7 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
         left_on = Symbol[]
         right_on = Symbol[]
         for v in on_cols
-            if v isa Symbol
-                push!(left_on, v)
-                push!(right_on, v)
-            elseif v isa AbstractString
+            if v isa Union{Symbol, AbstractString}
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
             elseif v isa Pair{Symbol,Symbol} || v isa NTuple{2,Symbol}

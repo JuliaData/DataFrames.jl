@@ -56,8 +56,7 @@ DataFrame(::GroupedDataFrame)
   if it is not possible to construct a `DataFrame` without materializing new columns.
 
 All columns in `columns` must be `AbstractVector`s and have the same length.
-An exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair{Symbol,<:Any}...)`,
-and `DataFrame(pairs::Pair{<:AbstractString,<:Any}...)`
+An exception are `DataFrame(kwargs...)` and `DataFrame(pairs::Pair...)`
 form constructors which additionally allow a column to be of any other type that is not
 an `AbstractArray`, in which case the passed value is automatically repeated to fill
 a new vector of the appropriate length. As a particular rule values stored in
@@ -228,7 +227,7 @@ function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
 end
 
 DataFrame(columns::AbstractVector, cnames::AbstractVector{<:AbstractString};
-                   makeunique::Bool=false, copycols::Bool=true) =
+          makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(columns, Symbol.(cnames), makeunique=makeunique, copycols=copycols)
 
 DataFrame(columns::AbstractVector{<:AbstractVector},
@@ -344,10 +343,10 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-corrupt_msg(df, i) =
-    "Data frame is corrupt: length of column" *
-    " :$(_names(df)[i]) ($(length(df[!, i])))" *
-    " does not match length of column 1 ($(length(df[!, 1]))). " *
+corrupt_msg(df::DataFrame, i::Integer) =
+    "Data frame is corrupt: length of column " *
+    ":$(_names(df)[i]) ($(length(df[!, i]))) " *
+    "does not match length of column 1 ($(length(df[!, 1]))). " *
     "The column vector has likely been resized unintentionally " *
     "(either directly or because it is shared with another data frame)."
 
@@ -387,7 +386,8 @@ _check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
     @inbounds cols[col_ind][row_ind]
 end
 
-@inline function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::Union{Symbol, AbstractString})
+@inline function Base.getindex(df::DataFrame, row_ind::Integer,
+                               col_ind::Union{Symbol, AbstractString})
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
         throw(BoundsError(df, (row_ind, col_ind)))
@@ -538,10 +538,10 @@ end
 
 # df.col = AbstractVector
 # separate methods are needed due to dispatch ambiguity
-Base.setproperty!(df::DataFrame, col_ind::Symbol,
-                  v::AbstractVector) = (df[!, col_ind] = v)
-Base.setproperty!(df::DataFrame, col_ind::AbstractString,
-                  v::AbstractVector) = (df[!, col_ind] = v)
+Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
+    (df[!, col_ind] = v)
+Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
+    (df[!, col_ind] = v)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
