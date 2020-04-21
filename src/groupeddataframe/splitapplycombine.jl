@@ -427,7 +427,7 @@ is undefined.
 See also:
 - [`by(f, df, cols)`](@ref) is a shorthand for `combine(f, groupby(df, cols))`.
 - [`map`](@ref): `combine(f, groupby(df, cols))` is a more efficient equivalent
-of `combine(map(f, groupby(df, cols)))`.
+  of `combine(map(f, groupby(df, cols)))`.
 
 # Examples
 ```jldoctest
