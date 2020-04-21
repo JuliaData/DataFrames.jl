@@ -6,7 +6,8 @@ for working with tabular data.
 
 # Common methods
 
-An `AbstractDataFrame` is a two-dimensional table with `Symbol`s for column names.
+An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
+for column names.
 
 The following are normally implemented for AbstractDataFrames:
 
@@ -65,17 +66,13 @@ abstract type AbstractDataFrame end
     names(df::AbstractDataFrame)
     names(df::AbstractDataFrame, cols)
 
-    Return a `Vector{String}` of names of columns contained in `df`.
-
-    NOTE: Internally column names are stored as `Symbol`s. `names` returns them
-    as `String`s for convenience of further processing. If you want to get a tuple
-    of `Symbol`s representing column names use `propertynames`.
+    Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
     If a `cols` column selector is passed then restrict returned
     column names to those matching the selector
     (this is useful in particular with regular expressions, `Not`, and `Between`).
 
-    See also [propertynames](@ref)
+    See also [propertynames](@ref) which returns `Vector{Symbol}`.
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
@@ -86,7 +83,7 @@ function Base.names(df::AbstractDataFrame, cols)
     return [string(nms[i]) for i in idxs]
 end
 
-# _names returns Vector{Symbol}
+# _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))
 
 # separate methods are needed due to dispatch ambiguity
@@ -349,9 +346,9 @@ Base.getproperty(df::AbstractDataFrame, col_ind::AbstractString) = df[!, col_ind
 """
     propertynames(df::AbstractDataFrame)
 
-Return a `Tuple{Vararg{Symbol}}` of names of columns contained in `df`.
+Return a freshly allocated `Vector{Symbol}` of names of columns contained in `df`.
 """
-Base.propertynames(df::AbstractDataFrame, private::Bool=false) = Tuple(_names(df))
+Base.propertynames(df::AbstractDataFrame, private::Bool=false) = copy(_names(df))
 
 ##############################################################################
 ##

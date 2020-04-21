@@ -27,18 +27,17 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
             if v isa Union{Symbol, AbstractString}
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
-            elseif v isa Pair{Symbol,Symbol} || v isa NTuple{2,Symbol}
-                push!(left_on, first(v))
-                push!(right_on, last(v))
+            elseif v isa Union{Pair{Symbol,Symbol},
+                               Pair{<:AbstractString, <:AbstractString},
+                               NTuple{2,Symbol}}
+                push!(left_on, Symbol(first(v)))
+                push!(right_on, Symbol(last(v)))
                 if v isa NTuple{2,Symbol}
                     Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector containing such tuples " *
                                  "as a value of `on` keyword argument is deprecated: use " *
                                  "`Pair{Symbol,Symbol}` instead.", :join)
 
                 end
-            elseif v isa Pair{<:AbstractString, <:AbstractString}
-                push!(left_on, Symbol(first(v)))
-                push!(right_on, Symbol(last(v)))
             else
                 throw(ArgumentError("All elements of `on` argument to `join` must be " *
                                     "Symbol or Pair{Symbol,Symbol}."))

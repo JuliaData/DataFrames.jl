@@ -203,7 +203,6 @@ Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as
 If column indexing using `Symbol` or `AbstractString` names in `cols` is performed, the order
 of columns in the operation is specified by the order of names.
 
-
 ## Indexing `GroupedDataFrame`s
 
 A [`GroupedDataFrame`](@ref) can behave as either an `AbstractVector` or `AbstractDict` depending on the type
@@ -233,3 +232,18 @@ The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
 * `gd[n::Not]` -> Any of the above types wrapped in `Not`. The result
    will be a new `GroupedDataFrame` containing all groups in `gd` *not* selected
    by the wrapped index.
+
+# Common API for types defined in DataFrames.jl
+
+This table presents return value types of calling `names`, `propertynames` and `keys`
+on types exposed to the user by DataFrames.jl:
+
+| Type                | `names`          | `propertynames`  | `keys`           |
+|---------------------|------------------|------------------|------------------|
+| `AbstractDataFrame` | `Vector{String}` | `Vector{Symbol}` | undefined        |
+| `DataFrameRow`      | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` |
+| `DataFrameRows`     | `Vector{String}` | `Vector{Symbol}` | vector of `Int`  |
+| `DataFrameColumns`  | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` |
+| `GroupedDataFrame`  | `Vector{String}` | tuple of fields  | `GroupKeys`      |
+| `GroupKeys`         | undefined        | tuple of fields  | vector of `Int`  |
+| `GroupKey`          | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` |

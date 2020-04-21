@@ -22,7 +22,7 @@ using Test, DataFrames
 
     @test keys(er) == 1:2
     @test propertynames(er) == propertynames(ec) == propertynames(df) ==
-          keys(ec) == (:a, :b)
+          keys(ec) == [:a, :b]
     @test_throws MethodError keys(df)
 end
 
@@ -145,7 +145,7 @@ end
     @test columnindex(df, :c) == columnindex(df, "c")
 
     @test Tables.schema(df) == Tables.schema(Tables.columntable(df))
-    @test (:a, :b) == Tables.columnnames(df) == Tables.columnnames(df[1,:]) ==
+    @test [:a, :b] == Tables.columnnames(df) == Tables.columnnames(df[1,:]) ==
           Tables.columnnames(eachrow(df)) == Tables.columnnames(eachcol(df))
 end
 
@@ -161,6 +161,7 @@ end
 
     k = keys(gdf)
     @test names(k[1]) == ["g"]
+    @test propertynames(k[1]) == keys(k[1]) == [:g]
     @test haskey(k[1], :g) == haskey(k[1], "g") == true
     @test haskey(k[1], :a) == haskey(k[1], "a") == false
     @test  k[1].g == k[1]."g" == k[1][:g] == k[1]["g"]
@@ -191,7 +192,7 @@ end
     @test names(dfr) == ["c", "a"]
     @test names(dfr, "a") == names(dfr, :a) == names(dfr, 2) == names(dfr, Not("c")) ==
           names(dfr, All("a")) == names(dfr, Between("a", "a")) == ["a"]
-    @test keys(dfr) == propertynames(dfr) ==(:c, :a)
+    @test keys(dfr) == propertynames(dfr) == [:c, :a]
     @test haskey(dfr, :a) == haskey(dfr, "a") == true
     @test haskey(dfr, :z) == haskey(dfr, "z") == false
     @test hasproperty(dfr, :a) == hasproperty(dfr, "a") == true
@@ -216,7 +217,7 @@ end
 
     for v in [df, er, ec]
         @test names(v) == ["a", "x1", "x2", "x3"]
-        @test propertynames(v) == (:a, :x1, :x2, :x3)
+        @test propertynames(v) == [:a, :x1, :x2, :x3]
         @test hasproperty(v, :a)
         @test !hasproperty(v, :x)
         @test hasproperty(v, "a")
@@ -234,7 +235,7 @@ end
 
     for v in [sdf, dfr]
         @test names(v) == ["a", "x1", "x2"]
-        @test propertynames(v) == (:a, :x1, :x2)
+        @test propertynames(v) == [:a, :x1, :x2]
         @test names(v, 1) == names(v, :a) == names(v, "a") == ["a"]
         @test names(v, Not(:a)) == names(v, Not("a")) == names(v, Not(1)) ==
               names(v, r"x") == ["x1", "x2"]

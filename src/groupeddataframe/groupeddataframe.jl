@@ -227,17 +227,15 @@ end
 
 Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
-Base.keys(key::GroupKey) = Tuple(groupcols(parent(key)))
+Base.names(key::GroupKey) = string.(groupcols(parent(key)))
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(key::GroupKey, private::Bool=false) = groupcols(parent(key))
+Base.keys(key::GroupKey) = propertynames(key)
 Base.haskey(key::GroupKey, idx::Symbol) = idx in groupcols(parent(key))
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
 Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
-Base.names(key::GroupKey) = string.(groupcols(parent(key)))
-# Private fields are never exposed since they can conflict with column names
-Base.propertynames(key::GroupKey, private::Bool=false) = keys(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
-
 Base.iterate(key::GroupKey, i::Integer=1) = i <= length(key) ? (key[i], i + 1) : nothing
-
 Base.getindex(key::GroupKey, i::Integer) = _groupvalues(parent(key), getfield(key, :idx), i)
 
 function Base.getindex(key::GroupKey, n::Symbol)

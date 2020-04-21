@@ -179,7 +179,7 @@ Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(p
 """
     keys(dfc::DataFrameColumns)
 
-Get a tuple of column names of `dfc`.
+Get a vector of column names of `dfc` as `Symbol`s.
 """
 Base.keys(itr::DataFrameColumns) = propertynames(itr)
 

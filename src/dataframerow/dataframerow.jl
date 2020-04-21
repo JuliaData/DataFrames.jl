@@ -174,7 +174,7 @@ Compat.hasproperty(r::DataFrameRow, s::Symbol) = haskey(index(r), s)
 Compat.hasproperty(r::DataFrameRow, s::AbstractString) = haskey(index(r), s)
 
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(r::DataFrameRow, private::Bool=false) = Tuple(_names(r))
+Base.propertynames(r::DataFrameRow, private::Bool=false) = copy(_names(r))
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
@@ -259,7 +259,7 @@ Base.convert(::Type{Array{T}}, dfr::DataFrameRow) where {T} = Vector{T}(dfr)
 Base.Array(dfr::DataFrameRow) = Vector(dfr)
 Base.Array{T}(dfr::DataFrameRow) where {T} = Vector{T}(dfr)
 
-Base.keys(r::DataFrameRow) = Tuple(_names(r))
+Base.keys(r::DataFrameRow) = propertynames(r)
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
@@ -270,7 +270,7 @@ Base.get(f::Base.Callable, dfr::DataFrameRow, key::ColumnIndex) =
 Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
-Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{keys(dfr)}(values(dfr))
+Base.NamedTuple(dfr::DataFrameRow) = NamedTuple{Tuple(keys(dfr))}(values(dfr))
 
 """
     copy(dfr::DataFrameRow)

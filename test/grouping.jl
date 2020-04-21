@@ -1430,7 +1430,6 @@ end
 @testset "GroupKey and GroupKeys" begin
     df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
     cols = [:a, :b]
-    colstup = Tuple(cols)
     gd = groupby_checked(df, cols)
     gdkeys = keys(gd)
 
@@ -1458,9 +1457,9 @@ end
         @test parent(key) === gd
         @test length(key) == length(cols)
         @test Symbol.(names(key)) == cols
-        @test keys(key) == colstup
-        @test propertynames(key) == colstup
-        @test propertynames(key, true) == colstup
+        @test keys(key) == cols
+        @test propertynames(key) == cols
+        @test propertynames(key, true) == cols
         @test values(key) ≅ values(nt)
 
         # (Named)Tuple conversion

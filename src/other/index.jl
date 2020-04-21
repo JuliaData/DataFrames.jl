@@ -233,19 +233,24 @@ end
     isempty(idxs) && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
-            throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
+            throw(ArgumentError("Only `Integer` values allowed when indexing by vector of numbers"))
         end
         return getindex(x, convert(Vector{Int}, idxs))
+    elseif idxs[1] isa Symbol
+        if all(x -> x isa Symbol, idxs)
+            return getindex(x, convert(Vector{Symbol}, idxs))
+        else
+            throw(ArgumentError("mixing `Symbol`s with other selectors is not allowed"))
+        end
+    elseif idxs[1] isa AbstractString
+        if all(x -> x isa AbstractString, idxs)
+            return getindex(x, Symbol.(idxs))
+        else
+            throw(ArgumentError("mixing strings with other selectors is not allowed"))
+        end
     end
-    idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
-    all(x -> x isa AbstractString, idxs) && return getindex(x, Symbol.(idxs))
-
-    if idxs[1] isa AbstractString
-        throw(ArgumentError("mixing strings with other selectors is not allowed"))
-    else
-        throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); only Integer, Symbol, "*
-                            "or string values allowed when indexing by vector"))
-    end
+    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); only Integer, Symbol, "*
+                        "or string values allowed when indexing by vector"))
 end
 
 @inline Base.getindex(x::AbstractIndex, rx::Regex) =

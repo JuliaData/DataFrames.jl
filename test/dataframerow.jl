@@ -206,7 +206,7 @@ end
     df = deepcopy(ref_df)
 
     r = DataFrameRow(df, 1, :)
-    @test Base.propertynames(r) == Tuple(Symbol.(names(df)))
+    @test propertynames(r) == keys(r) == Symbol.(names(df))
     @test r.a === 1
     @test r.b === 2.0
     @test copy(r[[:a,:b]]) === (a=1, b=2.0)
@@ -247,7 +247,7 @@ end
     @test size(r) == (4,)
     @test size(r, 1) == 4
     @test_throws BoundsError size(r, 2)
-    @test keys(r) == (:x8, :x5, :x1, :x3)
+    @test keys(r) == [:x8, :x5, :x1, :x3]
     r[:] .= 0.0
     r[1:2] .= 2.0
     @test values(r) == (2.0, 2.0, 0.0, 0.0)

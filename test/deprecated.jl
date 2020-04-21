@@ -678,11 +678,11 @@ end
     # Check column names
     anonf = x -> sum(x)
     adf = aggregate(df7, :d2, [mean, anonf])
-    @test propertynames(adf) == (:d2, :d1_mean, :d3_mean,
-                                 :d1_function, :d3_function)
+    @test propertynames(adf) == [:d2, :d1_mean, :d3_mean,
+                                 :d1_function, :d3_function]
     adf = aggregate(df7, :d2, [mean, mean, anonf, anonf])
-    @test propertynames(adf) == (:d2, :d1_mean, :d3_mean, :d1_mean_1, :d3_mean_1,
-                                 :d1_function, :d3_function, :d1_function_1, :d3_function_1)
+    @test propertynames(adf) == [:d2, :d1_mean, :d3_mean, :d1_mean_1, :d3_mean_1,
+                                 :d1_function, :d3_function, :d1_function_1, :d3_function_1]
 
     df9 = aggregate(df7, :d2, [sum, length], sort=true)
     @test df9 ≅ df8

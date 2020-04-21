@@ -664,7 +664,7 @@ end
 
     df2 = select(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
                  [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
-    @test propertynames(df2) == (:x2, :x1, :x3, :x4, :r1, :r2)
+    @test propertynames(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
     @test df.x2 == df2.x2
     @test df.x2 !== df2.x2
     @test df.x1 == df2.x4
@@ -679,7 +679,7 @@ end
 
     df2 = select(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
                  [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4, copycols=false)
-    @test propertynames(df2) == (:x2, :x1, :x3, :x4, :r1, :r2)
+    @test propertynames(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
     @test df.x2 === df2.x2
     @test df.x1 === df2.x4
     @test df2.r1 == df.x1 .^ 2
@@ -690,7 +690,7 @@ end
     x1, x2, x3, x4 = df.x1, df.x2, df.x3, df.x4
     select!(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
             [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
-    @test propertynames(df2) == (:x2, :x1, :x3, :x4, :r1, :r2)
+    @test propertynames(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
     @test x2 === df.x2
     @test x1 === df.x4
     @test df.r1 == x1 .^ 2
@@ -1124,7 +1124,7 @@ end
     df.a = a
     @test_throws DomainError select!(df, :a => x -> sqrt(-1))
     @test df.a === a
-    @test propertynames(df) == (:a,)
+    @test propertynames(df) == [:a,]
 end
 
 end # module
