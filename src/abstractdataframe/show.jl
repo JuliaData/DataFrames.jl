@@ -7,7 +7,7 @@ Base.summary(io::IO, df::AbstractDataFrame) = print(io, summary(df))
 
 Determine the number of characters that would be used to print a value.
 """
-function ourstrwidth(io::IO, x::Any, buffer::Base.GenericIOBuffer{Array{UInt8,1}})
+function ourstrwidth(io::IO, x::Any, buffer::IOBuffer)
     truncate(buffer, 0)
     ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
     textwidth(String(take!(buffer)))
@@ -122,9 +122,9 @@ end
                             rowindices1::AbstractVector{Int},
                             rowindices2::AbstractVector{Int},
                             rowlabel::Symbol,
-                            rowid,
+                            rowid::Union{Integer, Nothing},
                             show_eltype::Bool,
-                            buffer)
+                            buffer::IOBuffer)
 
 Calculate, for each column of an AbstractDataFrame, the maximum
 string width used to render the name of that column, its type, and the
@@ -160,9 +160,9 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
-                      rowid,
+                      rowid::Union{Integer, Nothing},
                       show_eltype::Bool,
-                      buffer)
+                      buffer::IOBuffer)
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(io, "#undef", buffer)
@@ -316,8 +316,8 @@ function showrowindices(io::IO,
                         maxwidths::Vector{Int},
                         leftcol::Int,
                         rightcol::Int,
-                        rowid,
-                        buffer)
+                        rowid::Union{Integer, Nothing},
+                        buffer::IOBuffer)
     rowmaxwidth = maxwidths[end]
 
     for i in rowindices
@@ -376,8 +376,8 @@ end
              rowlabel::Symbol,
              displaysummary::Bool,
              eltypes::Bool,
-             rowid,
-             buffer)
+             rowid::Union{Integer, Nothing},
+             buffer::IOBuffer)
 
 Render a subset of rows (possibly in chunks) of an `AbstractDataFrame` to an
 I/O stream.
@@ -406,8 +406,8 @@ NOTE: The value of `maxwidths[end]` must be the string width of
   contents of the renderable rows? Defaults to `true`.
 - `eltypes::Bool = true`: Whether to print the column type
    under the column name in the heading. Defaults to `true`.
-- `rowid = nothing`: Used to handle showing `DataFrameRow`
-- `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
+- `rowid::Union{Integer, Nothing} = nothing`: Used to handle showing `DataFrameRow`
+- `buffer::IOBuffer`: buffer passed around to avoid reallocations in `ourstrwidth`
 
 # Examples
 julia> using DataFrames
@@ -435,8 +435,8 @@ function showrows(io::IO,
                   rowlabel::Symbol,
                   displaysummary::Bool,
                   eltypes::Bool,
-                  rowid,
-                  buffer)
+                  rowid::Union{Integer, Nothing},
+                  buffer::IOBuffer)
 
     ncols = size(df, 2)
 
