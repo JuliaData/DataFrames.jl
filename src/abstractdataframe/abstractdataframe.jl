@@ -68,8 +68,8 @@ abstract type AbstractDataFrame end
 
     Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
-    If a `cols` column selector is passed then restrict returned
-    column names to those matching the selector
+    If a `cols` column selector ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+    is passed then restrict returned column names to those matching the selector
     (this is useful in particular with regular expressions, `Not`, and `Between`).
 
     See also [propertynames](@ref) which returns `Vector{Symbol}`.
@@ -450,8 +450,8 @@ where each row represents a variable and each column a summary statistic.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
-- `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe; all standard column selection methods are allowed.
+- `cols` : a keyword argument ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) allowing
+  to select only a subset of columns from `df` to describe.
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
@@ -661,12 +661,11 @@ end
 ##############################################################################
 
 """
-    completecases(df::AbstractDataFrame, cols::Colon=:)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
-    completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol, AbstractString})
+    completecases(df::AbstractDataFrame, cols=:)
 
 Return a Boolean vector with `true` entries indicating rows without missing values
-(complete cases) in data frame `df`. If `cols` is provided, only missing values in
+(complete cases) in data frame `df`.
+If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR), only missing values in
 the corresponding columns are considered.
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
@@ -731,14 +730,11 @@ completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Bet
     completecases(df[!, cols])
 
 """
-    dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
-                disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol, AbstractString};
-                disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
-If `cols` is provided, only missing values in the corresponding columns are considered.
+If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR),
+only missing values in the corresponding columns are considered.
 
 If `disallowmissing` is `true` (the default) then columns specified in `cols` will
 be converted so as not to allow for missing values using [`disallowmissing!`](@ref).
@@ -804,14 +800,11 @@ function dropmissing(df::AbstractDataFrame,
 end
 
 """
-    dropmissing!(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
-                 disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol, AbstractString};
-                 disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
-If `cols` is provided, only missing values in the corresponding columns are considered.
+If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR),
+only missing values in the corresponding columns are considered.
 
 If `disallowmissing` is `true` (the default) then the `cols` columns will
 get converted using [`disallowmissing!`](@ref).
@@ -882,8 +875,9 @@ Return a copy of data frame `df` containing only rows for which `function`
 returns `true`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is specified then it should be a valid column selector
-(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
+If `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+is specified then it should be a valid column selector
+(column duplicates are allowed if a vector of $COLUMN_INDICATOR is passed),
 the function is passed elements of the selected columns as separate positional arguments,
 unless it is an `AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
 
@@ -974,12 +968,14 @@ _filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f)
 
 """
     filter!(function, df::AbstractDataFrame)
+    filter!(cols => function, df::AbstractDataFrame)
 
 Remove rows from data frame `df` for which `function` returns `false`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is specified then it should be a valid column selector
-(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
+If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+then it should be a valid column selector
+(column duplicates are allowed if a vector of $COLUMN_INDICATOR is passed),
 the function is passed elements of the selected columns as separate positional arguments,
 unless it is `AsTable` selector in which case `NamedTuple`s of these arguments are passed.
 
@@ -1121,8 +1117,8 @@ equal values (according to `isequal`).
 See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Arguments
-- `df` : the AbstractDataFrame
-- `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
+- `df` : `AbstractDataFrame`
+- `cols` : a column indicator ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
   specifying the column(s) to compare
 
 # Examples
@@ -1167,7 +1163,8 @@ Base.unique(df::AbstractDataFrame, cols) =
     unique!(df::AbstractDataFrame, cols)
 
 Delete duplicate rows of data frame `df`, keeping only the first occurrence of unique rows.
-When `cols` is specified, the return DataFrame contains complete rows,
+When `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) is specified,
+the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
 When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
@@ -1559,11 +1556,10 @@ julia> ncol(df)
 (nrow, ncol)
 
 """
-    disallowmissing(df::AbstractDataFrame,
-                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
-                    error::Bool=true)
+    disallowmissing(df::AbstractDataFrame, cols=:; error::Bool=true)
 
-Return a copy of data frame `df` with columns `cols` converted
+Return a copy of data frame `df` with columns
+`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
@@ -1630,10 +1626,10 @@ function Missings.disallowmissing(df::AbstractDataFrame,
 end
 
 """
-    allowmissing(df::AbstractDataFrame,
-                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+    allowmissing(df::AbstractDataFrame, cols=:)
 
-Return a copy of data frame `df` with columns `cols` converted
+Return a copy of data frame `df` with columns
+`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
@@ -1676,13 +1672,12 @@ function Missings.allowmissing(df::AbstractDataFrame,
 end
 
 """
-    categorical(df::AbstractDataFrame, cols::Type=Union{AbstractString, Missing};
-                compress::Bool=false)
-    categorical(df::AbstractDataFrame,
-                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
+    categorical(df::AbstractDataFrame, cols=Union{AbstractString, Missing};
                 compress::Bool=false)
 
-Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+Return a copy of data frame `df` with columns
+`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR, or `Type`) converted to `CategoricalVector`.
+
 If `categorical` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
 (by default `Union{AbstractString, Missing}`) will be converted to categorical.
@@ -1755,10 +1750,10 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame,
-            cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
+    flatten(df::AbstractDataFrame, cols)
 
-When columns `cols` of data frame `df` have iterable elements that define `length` (for
+When columns `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+of data frame `df` have iterable elements that define `length` (for
 example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
 `cols` is flattened, meaning the column corresponding to `col` becomes a longer vector
 where the original entries are concatenated. Elements of row `i` of `df` in columns other

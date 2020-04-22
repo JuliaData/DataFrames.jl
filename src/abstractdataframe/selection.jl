@@ -209,9 +209,7 @@ SELECT_ARG_RULES =
     """
     Arguments passed as `args...` can be:
 
-    * Any index that is allowed for column indexing. In particular, symbols, strings,
-      integers, vectors of symbols, vectors of strings, vectors of integers, vectors of bools,
-      regular expressions, `All`, `Between`, and `Not` selectors are supported.
+    * Any index that is allowed for column indexing ($COLUMN_INDICATOR, $COLUMNS_INDICATOR).
     * Column transformation operations using the `Pair` notation that is described below
       and vectors of such pairs.
 

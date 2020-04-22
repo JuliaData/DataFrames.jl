@@ -18,18 +18,20 @@ that return views into the original data frame.
 
 # Arguments
 - `df` : the AbstractDataFrame to be stacked
-- `measure_vars` : the columns to be stacked (the measurement
+- `measure_vars` : the columns ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+  to be stacked (the measurement
   variables), a normal column indexing type, like a `Symbol`,
   `Vector{Symbol}`, Int, etc.; If neither `measure_vars`
   or `id_vars` are given, `measure_vars` defaults to all
   floating point columns.
-- `id_vars` : the identifier columns that are repeated during
+- `id_vars` : the identifier columns ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+  that are repeated during
   stacking, a normal column indexing type; defaults to all
   variables that are not `measure_vars`
-- `variable_name` : the name of the new stacked column that shall hold the names
-  of each of `measure_vars`
-- `value_name` : the name of the new stacked column containing the values from
-  each of `measure_vars`
+- `variable_name` : the name (`Symbol` or string) of the new stacked column that
+  shall hold the names of each of `measure_vars`
+- `value_name` : the name (`Symbol` or string) of the new stacked column containing
+  the values from each of `measure_vars`
 - `view` : whether the stacked data frame should be a view rather than contain
    freshly allocated vectors.
 - `variable_eltype` : determines the element type of column `variable_name`. By default
@@ -130,11 +132,12 @@ be retained and a warning will be printed.
 
 # Arguments
 - `df` : the AbstractDataFrame to be unstacked
-- `rowkeys` : the column(s) with a unique key for each row, if not given,
+- `rowkeys` : the columns ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+  with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`
-- `colkey` : the column holding the column names in wide format,
+- `colkey` : the column ($COLUMN_INDICATOR) holding the column names in wide format,
   defaults to `:variable`
-- `value` : the value column, defaults to `:value`
+- `value` : the value column ($COLUMN_INDICATOR), defaults to `:value`
 - `renamecols` : a function called on each unique value in `colkey` which must
                  return the name of the column to be created (typically as a string
                  or a `Symbol`). Duplicate names are not allowed.

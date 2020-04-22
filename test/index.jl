@@ -31,8 +31,8 @@ using DataFrames: Index, SubIndex, fuzzymatch
     @test_throws ArgumentError i[[1, missing]]
     @test_throws ArgumentError i[[true, missing]]
     @test_throws ArgumentError i[Any[true, missing]]
-    @test_throws MethodError i[[:A, missing]]
-    @test_throws MethodError i[Any[:A, missing]]
+    @test_throws ArgumentError i[[:A, missing]]
+    @test_throws ArgumentError i[Any[:A, missing]]
     @test_throws ArgumentError i[1.0:1.0]
     @test_throws ArgumentError i[[1.0]]
     @test_throws ArgumentError i[Any[1.0]]
@@ -267,7 +267,7 @@ end
     @test names(SubIndex(i, r"")) == names(i)
     @test DataFrames._names(SubIndex(i, r"x1.")) == [:x12, :x131]
     @test isempty(DataFrames._names(SubIndex(i, r"xx")))
-    @test DataFrames._names(SubIndex(i, r"")) == Symbol.(names(i))
+    @test DataFrames._names(SubIndex(i, r"")) == DataFrames._names(i)
     @test DataFrames.parentcols(SubIndex(i, r"x1.")) == [2, 3]
     @test isempty(DataFrames.parentcols(SubIndex(i, r"xx")))
     @test DataFrames.parentcols(SubIndex(i, r"")) == 1:5
@@ -284,7 +284,7 @@ end
     @test names(SubIndex(i2, r"")) == names(i)
     @test DataFrames._names(SubIndex(i2, r"x1.")) == [:x12, :x131]
     @test isempty(DataFrames._names(SubIndex(i2, r"xx")))
-    @test DataFrames._names(SubIndex(i2, r"")) == Symbol.(names(i2))
+    @test DataFrames._names(SubIndex(i2, r"")) == DataFrames._names(i2)
     @test DataFrames.parentcols(SubIndex(i2, r"x1.")) == [2, 3]
     @test isempty(DataFrames.parentcols(SubIndex(i2, r"xx")))
     @test DataFrames.parentcols(SubIndex(i2, r"")) == 1:5
@@ -301,7 +301,7 @@ end
     @test names(SubIndex(i3, r"")) == names(i3)
     @test DataFrames._names(SubIndex(i3, r"x1.$")) == [:x12]
     @test isempty(DataFrames._names(SubIndex(i3, r"xx")))
-    @test DataFrames._names(SubIndex(i3, r"")) == Symbol.(names(i3))
+    @test DataFrames._names(SubIndex(i3, r"")) == DataFrames._names(i3)
     @test DataFrames.parentcols(SubIndex(i3, r"x1.$")) == [1]
     @test isempty(DataFrames.parentcols(SubIndex(i3, r"xx")))
     @test DataFrames.parentcols(SubIndex(i3, r"")) == 1:2
@@ -326,7 +326,7 @@ end
     @test names(SubIndex(i, Not(Not(r"")))) == names(i)
     @test DataFrames._names(SubIndex(i, Not(Not(r"x1.")))) == [:x12, :x131]
     @test isempty(DataFrames._names(SubIndex(i, Not(Not(r"xx")))))
-    @test DataFrames._names(SubIndex(i, Not(Not(r"")))) == Symbol.(names(i))
+    @test DataFrames._names(SubIndex(i, Not(Not(r"")))) == DataFrames._names(i)
     @test DataFrames.parentcols(SubIndex(i, Not(Not(r"x1.")))) == [2, 3]
     @test isempty(DataFrames.parentcols(SubIndex(i, Not(Not(r"xx")))))
     @test DataFrames.parentcols(SubIndex(i, Not(Not(r"")))) == 1:5
@@ -340,7 +340,7 @@ end
     @test names(SubIndex(i2, Not(Not(r"")))) == names(i)
     @test DataFrames._names(SubIndex(i2, Not(Not(r"x1.")))) == [:x12, :x131]
     @test isempty(DataFrames._names(SubIndex(i2, Not(Not(r"xx")))))
-    @test DataFrames._names(SubIndex(i2, Not(Not(r"")))) == Symbol.(names(i2))
+    @test DataFrames._names(SubIndex(i2, Not(Not(r"")))) == DataFrames._names(i2)
     @test DataFrames.parentcols(SubIndex(i2, Not(Not(r"x1.")))) == [2, 3]
     @test isempty(DataFrames.parentcols(SubIndex(i2, Not(Not(r"xx")))))
     @test DataFrames.parentcols(SubIndex(i2, Not(Not(r"")))) == 1:5
@@ -354,7 +354,7 @@ end
     @test names(SubIndex(i3, Not(Not(r"")))) == names(i3)
     @test DataFrames._names(SubIndex(i3, Not(Not(r"x1.$")))) == [:x12]
     @test isempty(DataFrames._names(SubIndex(i3, Not(Not(r"xx")))))
-    @test DataFrames._names(SubIndex(i3, Not(Not(r"")))) == Symbol.(names(i3))
+    @test DataFrames._names(SubIndex(i3, Not(Not(r"")))) == DataFrames._names(i3)
     @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"x1.$")))) == [1]
     @test isempty(DataFrames.parentcols(SubIndex(i3, Not(Not(r"xx")))))
     @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"")))) == 1:2

@@ -49,6 +49,10 @@ const ≅ = isequal
     @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))))
     @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                           CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
+    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                           CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
+    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))), ("x1", "x2"))
     @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))), ("x1", "x2"))
@@ -56,6 +60,14 @@ const ≅ = isequal
                           x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
     @test df == DataFrame!(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
                            x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
+    @test df == DataFrame([:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]])
+    @test df == DataFrame([:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]])
+    @test df == DataFrame!((:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                            :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
+    @test df == DataFrame!((:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                            :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
     @test df == DataFrame(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
                            "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]])
     @test df == DataFrame(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
@@ -177,28 +189,28 @@ end
 
     df = DataFrame(x=x, y=y)
     @test size(df) == (3, 2)
-    @test Symbol.(names(df)) == [:x, :y]
+    @test propertynames(df) == [:x, :y]
     @test df.x == x
     @test df.y == y
     @test df.x !== x
     @test df.y !== y
     df = DataFrame(x=x, y=y, copycols=true)
     @test size(df) == (3, 2)
-    @test Symbol.(names(df)) == [:x, :y]
+    @test propertynames(df) == [:x, :y]
     @test df.x == x
     @test df.y == y
     @test df.x !== x
     @test df.y !== y
     df = DataFrame(x=x, y=y, copycols=false)
     @test size(df) == (3, 2)
-    @test Symbol.(names(df)) == [:x, :y]
+    @test propertynames(df) == [:x, :y]
     @test df.x === x
     @test df.y === y
     @test_throws ArgumentError DataFrame(x=x, y=y, copycols=1)
 
     df = DataFrame!(x=x, y=y)
     @test size(df) == (3, 2)
-    @test Symbol.(names(df)) == [:x, :y]
+    @test propertynames(df) == [:x, :y]
     @test df.x === x
     @test df.y === y
     @test_throws ArgumentError DataFrame!(x=x, y=y, copycols=true)
@@ -251,19 +263,19 @@ end
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
 
     df = DataFrame(:type => [], :begin => [])
-    @test Symbol.(names(df)) == [:type, :begin]
+    @test propertynames(df) == [:type, :begin]
 
     a=[1,2,3]
     df = DataFrame(:a=>a, :b=>1, :c=>1:3)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df.a == a
     @test df.a !== a
     df = DataFrame(:a=>a, :b=>1, :c=>1:3, copycols=false)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df.a === a
 
     df = DataFrame!(:a=>a, :b=>1, :c=>1:3)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df.a === a
 
     df = DataFrame("x1" => zeros(3), "x2" => ones(3))
@@ -273,19 +285,19 @@ end
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
 
     df = DataFrame("type" => [], "begin" => [])
-    @test Symbol.(names(df)) == [:type, :begin]
+    @test propertynames(df) == [:type, :begin]
 
     a=[1,2,3]
     df = DataFrame("a"=>a, "b"=>1, "c"=>1:3)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df."a" == a
     @test df."a" !== a
     df = DataFrame("a"=>a, "b"=>1, "c"=>1:3, copycols=false)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df."a" === a
 
     df = DataFrame!("a"=>a, "b"=>1, "c"=>1:3)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df."a" === a
 end
 
@@ -297,15 +309,15 @@ end
 
     a=[1,2,3]
     df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3))
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df.a == a
     @test df.a !== a
     df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3), copycols=false)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df.a === a
 
     df = DataFrame!(Dict(:a=>a, :b=>1, :c=>1:3))
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df.a === a
 
     df = DataFrame(Dict("A" => 1:3, "B" => 4:6))
@@ -315,15 +327,15 @@ end
 
     a=[1,2,3]
     df = DataFrame(Dict("a"=>a, "b"=>1, "c"=>1:3))
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df."a" == a
     @test df."a" !== a
     df = DataFrame(Dict("a"=>a, "b"=>1, "c"=>1:3), copycols=false)
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df."a" === a
 
     df = DataFrame!(Dict("a"=>a, "b"=>1, "c"=>1:3))
-    @test Symbol.(names(df)) == [:a, :b, :c]
+    @test propertynames(df) == [:a, :b, :c]
     @test df."a" === a
 end
 
@@ -332,36 +344,36 @@ end
     y = [1,2,3]
 
     df = DataFrame([x, y])
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], copycols=true)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], copycols=false)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame([x, y], [:x1, :x2])
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], [:x1, :x2], copycols=true)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame([x, y], [:x1, :x2], copycols=false)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
@@ -383,41 +395,41 @@ end
     @test df."x2" === y
 
     df = DataFrame((x, y))
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), copycols=true)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), copycols=false)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame!((x, y))
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
     df = DataFrame((x, y), (:x1, :x2))
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), (:x1, :x2), copycols=true)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
     df = DataFrame((x, y), (:x1, :x2), copycols=false)
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
@@ -439,7 +451,7 @@ end
     @test df."x2" === y
 
     df = DataFrame!((x, y), (:x1, :x2))
-    @test Symbol.(names(df)) == [:x1, :x2]
+    @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
 
@@ -541,7 +553,7 @@ end
     @test typeof(df[!, 1]) == Vector{Union{Int, Missing}}
     @test typeof(df[!, 2]) == Vector{Union{Float64, Missing}}
     @test typeof(df[!, 3]) == Vector{Union{String, Missing}}
-    @test Symbol.(names(df)) == [:A, :B, :C]
+    @test propertynames(df) == [:A, :B, :C]
 
     df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
                    ["A", "B", "C"])

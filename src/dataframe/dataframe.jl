@@ -931,7 +931,8 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 """
     allowmissing!(df::DataFrame, cols=:)
 
-Convert columns `cols` of data frame `df` from element type `T` to
+Convert columns `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
@@ -967,7 +968,8 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
 """
     disallowmissing!(df::DataFrame, cols=:; error::Bool=true)
 
-Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
+Convert columns `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
 If `cols` is omitted all columns in the data frame are converted.
@@ -1013,11 +1015,11 @@ disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
 ##############################################################################
 
 """
-    categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
-                 compress::Bool=false)
-    categorical!(df::DataFrame, cnames; compress::Bool=false)
+    categorical!(df::DataFrame, cols=Union{AbstractString, Missing}; compress::Bool=false)
 
-Change columns selected by `cnames` in data frame `df` to `CategoricalVector`.
+Change columns selected by
+`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR, or `Type`)
+in data frame `df` to `CategoricalVector`.
 
 If `categorical!` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
@@ -1077,22 +1079,23 @@ julia> eltype.(eachcol(df))
 """
 function categorical! end
 
-function categorical!(df::DataFrame, cname::ColumnIndex;
+function categorical!(df::DataFrame, cols::ColumnIndex;
                       compress::Bool=false)
-    df[!, cname] = categorical(df[!, cname], compress=compress)
+    df[!, cols] = categorical(df[!, cols], compress=compress)
     return df
 end
 
-function categorical!(df::DataFrame, cnames::AbstractVector{<:ColumnIndex};
+function categorical!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
                       compress::Bool=false)
-    for cname in cnames
+    for cname in cols
         df[!, cname] = categorical(df[!, cname], compress=compress)
     end
     return df
 end
 
-categorical!(df::DataFrame, cnames::Union{Regex, Not, Between, All, Colon}; compress::Bool=false) =
-    categorical!(df, index(df)[cnames], compress=compress)
+categorical!(df::DataFrame, cols::Union{Regex, Not, Between, All, Colon};
+             compress::Bool=false) =
+    categorical!(df, index(df)[cols], compress=compress)
 
 function categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
                       compress::Bool=false)

@@ -253,48 +253,48 @@ end
 
     d = copy(df, copycols=false)
     select!(d, [:a, :e, :c])
-    @test Symbol.(names(d)) == [:a, :e, :c]
+    @test propertynames(d) == [:a, :e, :c]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
 
     d = copy(df, copycols=false)
     select!(d, r"[aec]")
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
 
     d = copy(df, copycols=false)
     select!(d, [true, false, true, false, true])
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.c === df.c
     @test d.e === df.e
 
     d = copy(df, copycols=false)
     select!(d, [:d, :e, :a, :c, :b])
-    @test Symbol.(names(d)) == [:d, :e, :a, :c, :b]
+    @test propertynames(d) == [:d, :e, :a, :c, :b]
     for i in [:d, :e, :a, :c, :b]
         @test d[!, i] === df[!, i]
     end
 
     d = copy(df, copycols=false)
     select!(d, [2, 5, 3])
-    @test Symbol.(names(d)) == [:b, :e, :c]
+    @test propertynames(d) == [:b, :e, :c]
     @test d.b === df.b
     @test d.e === df.e
     @test d.c === df.c
 
     d = copy(df, copycols=false)
     select!(d, 2:3)
-    @test Symbol.(names(d)) == [:b, :c]
+    @test propertynames(d) == [:b, :c]
     @test d.b === df.b
     @test d.c === df.c
 
     d = copy(df, copycols=false)
     select!(d, 2)
-    @test Symbol.(names(d)) == [:b]
+    @test propertynames(d) == [:b]
     @test d.b === df.b
 end
 
@@ -312,7 +312,7 @@ end
     @test select(df, Not(r""), copycols=false) == DataFrame()
 
     d = select(df, [:a, :e, :c])
-    @test Symbol.(names(d)) == [:a, :e, :c]
+    @test propertynames(d) == [:a, :e, :c]
     @test d.a !== df.a
     @test d.e !== df.e
     @test d.c !== df.c
@@ -321,7 +321,7 @@ end
     @test d.c == df.c
 
     d = select(df, r"[aec]")
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a !== df.a
     @test d.e !== df.e
     @test d.c !== df.c
@@ -330,7 +330,7 @@ end
     @test d.c == df.c
 
     d = select(df, [true, false, true, false, true])
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a !== df.a
     @test d.c !== df.c
     @test d.e !== df.e
@@ -339,7 +339,7 @@ end
     @test d.e == df.e
 
     d = select(df, [2, 5, 3])
-    @test Symbol.(names(d)) == [:b, :e, :c]
+    @test propertynames(d) == [:b, :e, :c]
     @test d.b !== df.b
     @test d.e !== df.e
     @test d.c !== df.c
@@ -348,48 +348,48 @@ end
     @test d.c == df.c
 
     d = select(df, 2:3)
-    @test Symbol.(names(d)) == [:b, :c]
+    @test propertynames(d) == [:b, :c]
     @test d.b !== df.b
     @test d.c !== df.c
     @test d.b == df.b
     @test d.c == df.c
 
     d = select(df, 2)
-    @test Symbol.(names(d)) == [:b]
+    @test propertynames(d) == [:b]
     @test d.b !== df.b
     @test d.b == df.b
 
     d = select(df, [:a, :e, :c], copycols=false)
-    @test Symbol.(names(d)) == [:a, :e, :c]
+    @test propertynames(d) == [:a, :e, :c]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
 
     d = select(df, r"[aec]", copycols=false)
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
 
     d = select(df, [true, false, true, false, true], copycols=false)
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.c === df.c
     @test d.e === df.e
 
     d = select(df, [2, 5, 3], copycols=false)
-    @test Symbol.(names(d)) == [:b, :e, :c]
+    @test propertynames(d) == [:b, :e, :c]
     @test d.b === df.b
     @test d.e === df.e
     @test d.c === df.c
 
     d = select(df, 2:3, copycols=false)
-    @test Symbol.(names(d)) == [:b, :c]
+    @test propertynames(d) == [:b, :c]
     @test d.b === df.b
     @test d.c === df.c
 
     d = select(df, 2, copycols=false)
-    @test Symbol.(names(d)) == [:b]
+    @test propertynames(d) == [:b]
     @test d.b === df.b
 end
 
@@ -408,7 +408,7 @@ end
 
     d = select(df, [:a, :e, :c])
     @test d isa DataFrame
-    @test Symbol.(names(d)) == [:a, :e, :c]
+    @test propertynames(d) == [:a, :e, :c]
     @test d.a !== df.a
     @test d.e !== df.e
     @test d.c !== df.c
@@ -418,7 +418,7 @@ end
 
     d = select(df, r"[aec]")
     @test d isa DataFrame
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a !== df.a
     @test d.e !== df.e
     @test d.c !== df.c
@@ -428,7 +428,7 @@ end
 
     d = select(df, [true, false, true, false, true])
     @test d isa DataFrame
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a !== df.a
     @test d.c !== df.c
     @test d.e !== df.e
@@ -438,7 +438,7 @@ end
 
     d = select(df, [2, 5, 3])
     @test d isa DataFrame
-    @test Symbol.(names(d)) == [:b, :e, :c]
+    @test propertynames(d) == [:b, :e, :c]
     @test d.b !== df.b
     @test d.e !== df.e
     @test d.c !== df.c
@@ -448,7 +448,7 @@ end
 
     d = select(df, 2:3)
     @test d isa DataFrame
-    @test Symbol.(names(d)) == [:b, :c]
+    @test propertynames(d) == [:b, :c]
     @test d.b !== df.b
     @test d.c !== df.c
     @test d.b == df.b
@@ -456,47 +456,47 @@ end
 
     d = select(df, 2)
     @test d isa DataFrame
-    @test Symbol.(names(d)) == [:b]
+    @test propertynames(d) == [:b]
     @test d.b !== df.b
     @test d.b == df.b
 
     d = select(df, [:a, :e, :c], copycols=false)
     @test d isa SubDataFrame
-    @test Symbol.(names(d)) == [:a, :e, :c]
+    @test propertynames(d) == [:a, :e, :c]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
 
     d = select(df, r"[aec]", copycols=false)
     @test d isa SubDataFrame
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
 
     d = select(df, [true, false, true, false, true], copycols=false)
     @test d isa SubDataFrame
-    @test Symbol.(names(d)) == [:a, :c, :e]
+    @test propertynames(d) == [:a, :c, :e]
     @test d.a === df.a
     @test d.c === df.c
     @test d.e === df.e
 
     d = select(df, [2, 5, 3], copycols=false)
     @test d isa SubDataFrame
-    @test Symbol.(names(d)) == [:b, :e, :c]
+    @test propertynames(d) == [:b, :e, :c]
     @test d.b === df.b
     @test d.e === df.e
     @test d.c === df.c
 
     d = select(df, 2:3, copycols=false)
     @test d isa SubDataFrame
-    @test Symbol.(names(d)) == [:b, :c]
+    @test propertynames(d) == [:b, :c]
     @test d.b === df.b
     @test d.c === df.c
 
     d = select(df, 2, copycols=false)
     @test d isa SubDataFrame
-    @test Symbol.(names(d)) == [:b]
+    @test propertynames(d) == [:b]
     @test d.b === df.b
 end
 
@@ -876,16 +876,16 @@ end
               DataFrame([6  1 9], [:d, :b, :a])
 
         res = select(df3, [] => (() -> v) => :a, :x1 => x -> [])
-        @test Symbol.(names(res)) == [:a, :x1_function] && nrow(res) == 0
+        @test propertynames(res) == [:a, :x1_function] && nrow(res) == 0
         @test eltype.(eachcol(res)) == [Int, Any]
         res = select(df3, :x1 => x -> [], [] => (() -> v) => :a)
-        @test Symbol.(names(res)) == [:x1_function, :a] && nrow(res) == 0
+        @test propertynames(res) == [:x1_function, :a] && nrow(res) == 0
         @test eltype.(eachcol(res)) == [Any, Int]
         res = select(df3, [] => (() -> v) => :a, :x1)
-        @test Symbol.(names(res)) == [:a, :x1] && nrow(res) == 0
+        @test propertynames(res) == [:a, :x1] && nrow(res) == 0
         @test eltype.(eachcol(res)) == [Int, Char]
         res = select(df3, :x1, [] => (() -> v) => :a)
-        @test Symbol.(names(res)) == [:x1, :a] && nrow(res) == 0
+        @test propertynames(res) == [:x1, :a] && nrow(res) == 0
         @test eltype.(eachcol(res)) == [Char, Int]
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)

@@ -118,9 +118,9 @@ end
     for cols in ([:a, :b], [:b, :a], [:a, :c], [:c, :a],
                  [1, 2], [2, 1], [1, 3], [3, 1],
                  [true, true, false, false], [true, false, true, false])
-        colssym = Symbol.(names(df[!, cols]))
+        colssym = propertynames(df[!, cols])
         hcatdf = hcat(df[!, cols], df[!, Not(cols)])
-        nms = Symbol.(names(hcatdf))
+        nms = propertynames(hcatdf)
         res = unique(df[:, cols])
         res.xmax = [maximum(df[(df[!, colssym[1]] .== a) .& (df[!, colssym[2]] .== b), :x])
                     for (a, b) in zip(res[!, colssym[1]], res[!, colssym[2]])]
@@ -1456,7 +1456,7 @@ end
         # Basic methods
         @test parent(key) === gd
         @test length(key) == length(cols)
-        @test Symbol.(names(key)) == cols
+        @test propertynames(key) == cols
         @test keys(key) == cols
         @test propertynames(key) == cols
         @test propertynames(key, true) == cols

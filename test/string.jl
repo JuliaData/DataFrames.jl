@@ -133,7 +133,7 @@ end
     @test transform!(df, :a) == transform!(df2, "a")
 
     df = DataFrame(a = 1:2, b=3:4)
-    @test_throws MethodError select(df, [:a, "b"])
+    @test_throws ArgumentError select(df, [:a, "b"])
     @test_throws ArgumentError select(df, ["a", :b])
     @test_throws ArgumentError select(df, ["a", "b", "a"])
 end

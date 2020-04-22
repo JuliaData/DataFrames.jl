@@ -27,12 +27,13 @@ const ≇ = !isequal
         i = lcm(cyclelength)
         while true
             rename!(df, p)
-            @test sort(Symbol.(names(df))) == n
+            @test sort(propertynames(df)) == n
+            @test sort(names(df)) == string.(n)
             @test sort(collect(keys(index(df).lookup))) == n
             @test sort(collect(values(index(df).lookup))) == 1:26
-            @test all(index(df).lookup[x] == i for (i,x) in enumerate(Symbol.(names(df))))
+            @test all(index(df).lookup[x] == i for (i,x) in enumerate(propertynames(df)))
             i -= 1
-            Symbol.(names(df)) == n && break
+            propertynames(df) == n && break
         end
         @test i == 0
     end
@@ -53,22 +54,22 @@ end
         df = DataFrame([[] for i in 1:8], oldnames)
         if allunique(newnames)
             @test names(rename(df, Pair.(oldnames[1:4], newnames[1:4])...)) == string.(newnames)
-            @test Symbol.(names(df)) == oldnames
+            @test propertynames(df) == oldnames
             rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
-            @test Symbol.(names(df)) == newnames
+            @test propertynames(df) == newnames
         else
             @test_throws ArgumentError rename(df, Pair.(oldnames[1:4], newnames[1:4])...)
-            @test Symbol.(names(df)) == oldnames
+            @test propertynames(df) == oldnames
             @test_throws ArgumentError rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
-            @test Symbol.(names(df)) == oldnames
+            @test propertynames(df) == oldnames
         end
 
         newnames = [oldnames[1:2]; reverse(oldnames[3:6]); oldnames[7:end]]
         df = DataFrame([[] for i in 1:8], oldnames)
         @test names(rename(df, Pair.(oldnames[3:6], newnames[3:6])...)) == string.(newnames)
-        @test Symbol.(names(df)) == oldnames
+        @test propertynames(df) == oldnames
         rename!(df, Pair.(oldnames[3:6], newnames[3:6])...)
-        @test Symbol.(names(df)) == newnames
+        @test propertynames(df) == newnames
     end
 end
 

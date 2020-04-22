@@ -16,9 +16,9 @@ const ≅ = isequal
     #test_group("description functions")
     @test size(df6, 1) == 4
     @test size(df6, 2) == 3
-    @test Symbol.(names(df6)) == [:A, :B, :C]
-    @test Symbol.(names(df2)) == [:x1, :x2]
-    @test Symbol.(names(df7)) == [:x, :y]
+    @test propertynames(df6) == [:A, :B, :C]
+    @test propertynames(df2) == [:x1, :x2]
+    @test propertynames(df7) == [:x, :y]
 
     #test_group("ref")
     @test df6[2, 3] == "two"
@@ -41,7 +41,7 @@ const ≅ = isequal
     df6[!, :D] = [true, false, true, false]
     @test df6[1,4]
     select!(df6, Not(:D))
-    @test Symbol.(names(df6)) == [:A, :B, :C]
+    @test propertynames(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
 
     #test_context("SubDataFrames")
@@ -396,6 +396,8 @@ end
     @test filter(AsTable(:x) => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
     filter!(AsTable(:x) => testfun, df)
     @test df == DataFrame(x=[3, 2], y=["b", "a"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 
     @test filter(AsTable("x") => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
     filter!(AsTable("x") => testfun, df)

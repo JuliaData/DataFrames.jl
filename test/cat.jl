@@ -129,75 +129,75 @@ end
     @test df3.a === df1.a
 
     df3 = hcat(df1, df2)
-    @test Symbol.(names(df3)) == [:a, :b]
+    @test propertynames(df3) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, df2, copycols=true)
-    @test Symbol.(names(df3)) == [:a, :b]
+    @test propertynames(df3) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, df2, copycols=false)
-    @test Symbol.(names(df3)) == [:a, :b]
+    @test propertynames(df3) == [:a, :b]
     @test df3.a === df1.a
     @test df3.b === df2.b
 
     df3 = hcat(df1, dfv)
-    @test Symbol.(names(df3)) == [:a, :b]
+    @test propertynames(df3) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, dfv, copycols=true)
-    @test Symbol.(names(df3)) == [:a, :b]
+    @test propertynames(df3) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
     df3 = hcat(df1, dfv, copycols=false)
-    @test Symbol.(names(df3)) == [:a, :b]
+    @test propertynames(df3) == [:a, :b]
     @test df3.a === df1.a
     @test df3.b === dfv.b
 
     df3 = hcat(df1, x)
-    @test Symbol.(names(df3)) == [:a, :x1]
+    @test propertynames(df3) == [:a, :x1]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(df1, x, copycols=true)
-    @test Symbol.(names(df3)) == [:a, :x1]
+    @test propertynames(df3) == [:a, :x1]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(df1, x, copycols=false)
-    @test Symbol.(names(df3)) == [:a, :x1]
+    @test propertynames(df3) == [:a, :x1]
     @test df3.a === df1.a
     @test df3.x1 === x
 
     df3 = hcat(x, df1)
-    @test Symbol.(names(df3)) == [:x1, :a]
+    @test propertynames(df3) == [:x1, :a]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(x, df1, copycols=true)
-    @test Symbol.(names(df3)) == [:x1, :a]
+    @test propertynames(df3) == [:x1, :a]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
     df3 = hcat(x, df1, copycols=false)
-    @test Symbol.(names(df3)) == [:x1, :a]
+    @test propertynames(df3) == [:x1, :a]
     @test df3.a === df1.a
     @test df3.x1 === x
 
     df3 = hcat(dfv, x, df1)
-    @test Symbol.(names(df3)) == [:b, :x1, :a]
+    @test propertynames(df3) == [:b, :x1, :a]
     @test df3.a == df1.a
     @test df3.b == dfv.b
     @test df3.x1 == x
@@ -205,7 +205,7 @@ end
     @test df3.b !== dfv.b
     @test df3.x1 !== x
     df3 = hcat(dfv, x, df1, copycols=true)
-    @test Symbol.(names(df3)) == [:b, :x1, :a]
+    @test propertynames(df3) == [:b, :x1, :a]
     @test df3.a == df1.a
     @test df3.b == dfv.b
     @test df3.x1 == x
@@ -213,7 +213,7 @@ end
     @test df3.b !== dfv.b
     @test df3.x1 !== x
     df3 = hcat(dfv, x, df1, copycols=false)
-    @test Symbol.(names(df3)) == [:b, :x1, :a]
+    @test propertynames(df3) == [:b, :x1, :a]
     @test df3.a === df1.a
     @test df3.b === dfv.b
     @test df3.x1 === x
