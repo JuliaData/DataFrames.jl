@@ -72,7 +72,7 @@ abstract type AbstractDataFrame end
     is passed then restrict returned column names to those matching the selector
     (this is useful in particular with regular expressions, `Not`, and `Between`).
 
-    See also [propertynames](@ref) which returns `Vector{Symbol}`.
+    See also [propertynames](@ref) which returns a `Vector{Symbol}`.
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
