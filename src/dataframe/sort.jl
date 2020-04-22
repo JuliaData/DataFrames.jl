@@ -76,6 +76,7 @@ function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
               "Perhaps you wanted 'cols'."
         throw(ArgumentError(msg))
     end
+    # exclude AbstractVector as in that case cols can contain ordered(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end

@@ -322,6 +322,7 @@ See other methods for a description of other keyword arguments.
 """
 function Base.issorted(df::AbstractDataFrame, cols=[];
                        lt=isless, by=identity, rev=false, order=Forward)
+    # exclude AbstractVector as in that case cols can contain ordered(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
@@ -345,6 +346,7 @@ for s in [:(Base.sort), :(Base.sortperm)]
                       " Perhaps you wanted 'cols'."
                 throw(ArgumentError(msg))
             end
+            # exclude AbstractVector as in that case cols can contain ordered(...) clauses
             if cols isa MultiColumnIndex && !(cols isa AbstractVector)
                 cols = index(df)[cols]
             end
