@@ -92,13 +92,13 @@ Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, ::typeof(!), colind::
 @inline Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
     throw(ArgumentError("invalid column index $colind of type `Bool`"))
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds,
-                                   colinds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+                                   colinds::MultiColumnIndex) =
     SubDataFrame(adf, rowinds, colinds)
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds::typeof(!),
-                                   colinds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+                                   colinds::MultiColumnIndex) =
     SubDataFrame(adf, :, colinds)
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds::Not,
-                                   colinds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+                                   colinds::MultiColumnIndex) =
     SubDataFrame(adf, axes(adf, 1)[rowinds], colinds)
 
 ##############################################################################
@@ -126,13 +126,13 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!), colind::C
     view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{AbstractVector, Not},
-                                       colinds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+                                       colinds::MultiColumnIndex) =
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon,
-                                       colinds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+                                       colinds::MultiColumnIndex) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof(!),
-                                       col_inds::Union{AbstractVector, Regex, Not, Between, All, Colon}) =
+                                       col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=false)
 
 

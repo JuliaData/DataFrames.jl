@@ -73,7 +73,8 @@ _getcol(x) = x
 ###
 # Get an Ordering for a single column
 ###
-function ordering(col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering)
+function ordering(col_ord::UserColOrdering, lt::Function, by::Function,
+                  rev::Bool, order::Ordering)
     for (k,v) in pairs(col_ord.kwargs)
         if     k == :lt;    lt    = v
         elseif k == :by;    by    = v
@@ -147,11 +148,13 @@ ordering(df::AbstractDataFrame, lt::Function, by::Function, rev::Bool, order::Or
 ######
 function ordering(df::AbstractDataFrame,
                   lt::AbstractVector{S}, by::AbstractVector{T},
-                  rev::AbstractVector{Bool}, order::AbstractVector) where {S<:Function, T<:Function}
+                  rev::AbstractVector{Bool},
+                  order::AbstractVector) where {S<:Function, T<:Function}
     if !(length(lt) == length(by) == length(rev) == length(order) == size(df,2))
         throw(ArgumentError("Orderings must be specified for all DataFrame columns"))
     end
-    DFPerm([Order.ord(_lt, _by, _rev, _order) for (_lt, _by, _rev, _order) in zip(lt, by, rev, order)], df)
+    DFPerm([Order.ord(_lt, _by, _rev, _order) for
+            (_lt, _by, _rev, _order) in zip(lt, by, rev, order)], df)
 end
 
 ################
@@ -159,13 +162,15 @@ end
 ################
 ## Case 2a: The column is given directly
 ######
-ordering(df::AbstractDataFrame, col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
+ordering(df::AbstractDataFrame, col::ColumnIndex, lt::Function, by::Function,
+         rev::Bool, order::Ordering) =
     Perm(Order.ord(lt, by, rev, order), df[!, col])
 
 ######
 ## Case 2b: The column is given as a UserColOrdering
 ######
-ordering(df::AbstractDataFrame, col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering) =
+ordering(df::AbstractDataFrame, col_ord::UserColOrdering, lt::Function, by::Function,
+         rev::Bool, order::Ordering) =
     Perm(ordering(col_ord, lt, by, rev, order), df[!, col_ord.col])
 
 ################
@@ -173,7 +178,8 @@ ordering(df::AbstractDataFrame, col_ord::UserColOrdering, lt::Function, by::Func
 ################
 ## Case 3a: None of lt, by, rev, or order is an Array
 ######
-function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function, by::Function, rev::Bool, order::Ordering)
+function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function,
+                  by::Function, rev::Bool, order::Ordering)
 
     if length(cols) == 0
         return ordering(df, lt, by, rev, order)
@@ -204,9 +210,9 @@ end
 ######
 # Case 3b: cols, lt, by, rev, and order are all arrays
 ######
-function ordering(df::AbstractDataFrame, cols::AbstractVector,
-                  lt::AbstractVector{S}, by::AbstractVector{T},
-                  rev::AbstractVector{Bool}, order::AbstractVector) where {S<:Function, T<:Function}
+function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::AbstractVector{S},
+                  by::AbstractVector{T}, rev::AbstractVector{Bool},
+                  order::AbstractVector) where {S<:Function, T<:Function}
 
     if !(length(lt) == length(by) == length(rev) == length(order))
         throw(ArgumentError("All ordering arguments must be 1 or the same length."))
@@ -274,7 +280,8 @@ end
 # TimSort is fast for data with structure, but only if the DataFrame is large enough
 # TODO: 8192 is informed but somewhat arbitrary
 
-Sort.defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : SortingAlgorithms.TimSort
+Sort.defalg(df::AbstractDataFrame) =
+    size(df, 1) < 8192 ? Sort.MergeSort : SortingAlgorithms.TimSort
 
 # For DataFrames, we can choose the algorithm based on the column type and requested ordering
 function Sort.defalg(df::AbstractDataFrame, ::Type{T}, o::Ordering) where T<:Real
@@ -315,7 +322,7 @@ See other methods for a description of other keyword arguments.
 """
 function Base.issorted(df::AbstractDataFrame, cols=[];
                        lt=isless, by=identity, rev=false, order=Forward)
-    if cols isa Union{Colon, All, Not, Between, Regex}
+    if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
     if cols isa ColumnIndex
@@ -334,10 +341,11 @@ for s in [:(Base.sort), :(Base.sortperm)]
         function $s(df::AbstractDataFrame, cols=[];
                     alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
             if !(isa(by, Function) || eltype(by) <: Function)
-                msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
+                msg = "'by' must be a Function or a vector of Functions. " *
+                      " Perhaps you wanted 'cols'."
                 throw(ArgumentError(msg))
             end
-            if cols isa Union{All, Not, Between, Colon, Regex}
+            if cols isa MultiColumnIndex && !(cols isa AbstractVector)
                 cols = index(df)[cols]
             end
             ord = ordering(df, cols, lt, by, rev, order)
@@ -480,6 +488,9 @@ julia> sortperm(df, (:x, :y), rev=true)
 """
 sortperm(::AbstractDataFrame, ::Any)
 
-Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) = sort!([1:size(df, 1);], a, o)
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))
+Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
+    df[sortperm(df, a, o),:]
+Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) =
+    sort!([1:size(df, 1);], a, o)
+Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
+    sortperm(df, a, DFPerm(o,df))

@@ -10,11 +10,12 @@ end
 Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
 
 const ColumnIndex = Union{Signed, Unsigned, Symbol, AbstractString}
+const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Colon}
+const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
 
 const COLUMN_INDICATOR = "`Symbol`, string or integer"
 const COLUMNS_INDICATOR = "`:`, `All`, `Between`, `Not`, a regular expression," *
                           " or a vector of `Symbol`s, strings or integers"
-
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position

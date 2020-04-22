@@ -18,24 +18,23 @@ that return views into the original data frame.
 
 # Arguments
 - `df` : the AbstractDataFrame to be stacked
-- `measure_vars` : the columns to be stacked (the measurement
-  variables), a normal column indexing type, like a `Symbol`,
-  `Vector{Symbol}`, Int, etc.; If neither `measure_vars`
-  or `id_vars` are given, `measure_vars` defaults to all
-  floating point columns.
-- `id_vars` : the identifier columns that are repeated during
-  stacking, a normal column indexing type; defaults to all
-  variables that are not `measure_vars`
+- `measure_vars` : the columns to be stacked (the measurement variables),
+  as a column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  If neither `measure_vars` or `id_vars` are given, `measure_vars`
+  defaults to all floating point columns.
+- `id_vars` : the identifier columns that are repeated during stacking,
+  as a column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  Defaults to all variables that are not `measure_vars`
 - `variable_name` : the name (`Symbol` or string) of the new stacked column that
   shall hold the names of each of `measure_vars`
 - `value_name` : the name (`Symbol` or string) of the new stacked column containing
   the values from each of `measure_vars`
 - `view` : whether the stacked data frame should be a view rather than contain
-   freshly allocated vectors.
-- `variable_eltype` : determines the element type of column `variable_name`. By default
-   a categorical vector of strings is created.
-   If `variable_eltype=Symbol` it is a vector of `Symbol`,
-   and if `variable_eltype=String` a vector of `String` is produced.
+  freshly allocated vectors.
+- `variable_eltype` : determines the element type of column `variable_name`.
+  By default a categorical vector of strings is created.
+  If `variable_eltype=Symbol` it is a vector of `Symbol`,
+  and if `variable_eltype=String` a vector of `String` is produced.
 
 
 # Examples
@@ -67,8 +66,10 @@ function stack(df::AbstractDataFrame,
     idv_tmp = index(df)[id_vars]
     ints_id_vars = idv_tmp isa Int ? [idv_tmp] : idv_tmp
     if view
-        return _stackview(df, ints_measure_vars, ints_id_vars, variable_name=variable_name_s,
-                          value_name=value_name_s, variable_eltype=variable_eltype)
+        return _stackview(df, ints_measure_vars, ints_id_vars,
+                          variable_name=variable_name_s,
+                          value_name=value_name_s,
+                          variable_eltype=variable_eltype)
     end
     N = length(ints_measure_vars)
     cnames = _names(df)[ints_id_vars]
@@ -83,8 +84,8 @@ function stack(df::AbstractDataFrame,
     elseif variable_eltype === String
         catnms = PooledArray(names(df, ints_measure_vars))
     else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalValue{String}`, " *
-                            "`String` or `Symbol` as a value."))
+        throw(ArgumentError("`variable_eltype` keyword argument accepts only " *
+                            "`CategoricalValue{String}`, `String` or `Symbol` as a value."))
     end
     return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
                                     repeat(catnms, inner=nrow(df)),                       # variable
@@ -108,8 +109,8 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
     elseif variable_eltype <: String
         catnms = names(df, measure_vars)
     else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalValue{String}`, " *
-                            "`String` or `Symbol` as a value."))
+        throw(ArgumentError("`variable_eltype` keyword argument accepts only " *
+                            "`CategoricalValue{String}`, `String` or `Symbol` as a value."))
     end
     return DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
                                     RepeatedVector(catnms, nrow(df), 1),                  # variable
@@ -124,10 +125,11 @@ end
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
-If `colkey` contains `missing` values then they will be skipped and a warning will be printed.
+If `colkey` contains `missing` values then they will be skipped and a warning
+will be printed.
 
-If combination of `rowkeys` and `colkey` contains duplicate entries then last `value` will
-be retained and a warning will be printed.
+If combination of `rowkeys` and `colkey` contains duplicate entries then last
+`value` will be retained and a warning will be printed.
 
 # Arguments
 - `df` : the AbstractDataFrame to be unstacked
@@ -332,7 +334,8 @@ Base.eltype(v::Type{StackedVector{T}}) where {T} = T
 Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
     similar(v.components[1], T, dims...)
 
-CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
+CategoricalArrays.CategoricalArray(v::StackedVector) =
+    CategoricalArray(v[:]) # could be more efficient
 
 
 """

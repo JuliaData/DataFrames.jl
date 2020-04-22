@@ -696,7 +696,7 @@ end
     @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
     @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
     @test_throws ArgumentError by(df, :a, nrow, nrow)
-    @test_throws MethodError by(df, :a, [nrow])
+    @test_throws ArgumentError by(df, :a, [nrow])
 
     gd = groupby(df, :a)
 
@@ -761,7 +761,7 @@ end
     @test_throws ArgumentError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
     @test_throws ArgumentError combine(gd, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
     @test_throws ArgumentError combine(gd, nrow, nrow)
-    @test_throws MethodError combine(gd, [nrow])
+    @test_throws ArgumentError combine(gd, [nrow])
 
     for f in (map, combine)
         for col in (:c, 3)

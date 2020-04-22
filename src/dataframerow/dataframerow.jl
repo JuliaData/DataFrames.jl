@@ -85,17 +85,17 @@ Base.summary(dfr::DataFrameRow) = # -> String
 Base.summary(io::IO, dfr::DataFrameRow) = print(io, summary(dfr))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
-                                   colinds::Union{Colon, AbstractVector, Regex, Not, Between, All}) =
+                                   colinds::MultiColumnIndex) =
     DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::Union{AbstractVector, Regex, Not, Between, All}) =
+                                       colinds::MultiColumnIndex) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not, Between, All}) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::MultiColumnIndex) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
@@ -121,8 +121,8 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
             end
         elseif !all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v)))
             mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
-            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
-                                " positions $(join(mismatched, ", ", " and "))"))
+            throw(ArgumentError("Selected column names do not match the names in assigned " *
+                                "value in positions $(join(mismatched, ", ", " and "))"))
         end
 
         for (col, val) in pairs(v)
@@ -178,7 +178,7 @@ Base.propertynames(r::DataFrameRow, private::Bool=false) = copy(_names(r))
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not, Between, All}) =
+Base.view(r::DataFrameRow, cols::MultiColumnIndex) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
@@ -186,8 +186,8 @@ Base.view(r::DataFrameRow, ::Colon) = r
     size(dfr::DataFrameRow, [dim])
 
 Return a 1-tuple containing the number of elements of `dfr`.
-If an optional dimension `dim` is specified, it must be `1`, and the number of elements
-is returned directly as a number.
+If an optional dimension `dim` is specified, it must be `1`, and the number of
+elements is returned directly as a number.
 
 See also: [`length`](@ref)
 
@@ -348,12 +348,14 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
     if columns !== nothing
         cols = columns
-        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead.", :push!)
+        Base.depwarn("`columns` keyword argument is deprecated. " *
+                     "Use `cols` instead.", :push!)
     end
 
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
-        throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
+        throw(ArgumentError("`cols` keyword argument must be any of :" *
+                            join(possible_cols, ", :")))
     end
 
     nrows, ncols = size(df)
@@ -431,8 +433,8 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
     try
         if cols === :orderequal
             if _names(df) != _names(dfr)
-                msg = "when `cols == :orderequal` pushed row must have the same column " *
-                      "names and in the same order as the target data frame"
+                msg = "when `cols == :orderequal` pushed row must have the same " *
+                      "column names and in the same order as the target data frame"
                 throw(ArgumentError(msg))
             end
         elseif cols === :setequal || cols === :equal

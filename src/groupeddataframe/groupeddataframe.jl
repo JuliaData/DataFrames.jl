@@ -109,7 +109,8 @@ Return a vector of group indices for each row of `parent(gd)`.
 
 Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
 any group are attributed `missing` (this can happen if `skipmissing=true` was
-passed when creating `gd`, or if `gd` is a subset from a larger [`GroupedDataFrame`](@ref)).
+passed when creating `gd`, or if `gd` is a subset from
+a larger [`GroupedDataFrame`](@ref)).
 """
 groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
@@ -136,7 +137,8 @@ function _groupvar_idx(gd::GroupedDataFrame, name::Symbol, strict::Bool)
 end
 
 # Get values of grouping columns for single group
-_groupvalues(gd::GroupedDataFrame, i::Integer) = gd.parent[gd.idx[gd.starts[i]], gd.cols]
+_groupvalues(gd::GroupedDataFrame, i::Integer) =
+    gd.parent[gd.idx[gd.starts[i]], gd.cols]
 
 # Get values of single grouping column for single group
 _groupvalues(gd::GroupedDataFrame, i::Integer, col::Integer) =
@@ -235,8 +237,10 @@ Base.haskey(key::GroupKey, idx::Symbol) = idx in groupcols(parent(key))
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
 Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
-Base.iterate(key::GroupKey, i::Integer=1) = i <= length(key) ? (key[i], i + 1) : nothing
-Base.getindex(key::GroupKey, i::Integer) = _groupvalues(parent(key), getfield(key, :idx), i)
+Base.iterate(key::GroupKey, i::Integer=1) =
+    i <= length(key) ? (key[i], i + 1) : nothing
+Base.getindex(key::GroupKey, i::Integer) =
+    _groupvalues(parent(key), getfield(key, :idx), i)
 
 function Base.getindex(key::GroupKey, n::Symbol)
     try
@@ -295,7 +299,8 @@ end
 # The full version (to_indices) is required rather than to_index even though
 # GroupedDataFrame behaves as a 1D array due to the behavior of Colon and Not.
 # Note that this behavior would be the default if it was <:AbstractArray
-Base.getindex(gd::GroupedDataFrame, idx...) = getindex(gd, Base.to_indices(gd, idx)...)
+Base.getindex(gd::GroupedDataFrame, idx...) =
+    getindex(gd, Base.to_indices(gd, idx)...)
 
 # The allowed key types for dictionary-like indexing
 const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
@@ -482,7 +487,8 @@ function Base.haskey(gd::GroupedDataFrame, key::GroupKey)
             throw(BoundsError(gd, getfield(key, :idx)))
         end
     else
-        throw(ArgumentError("The parent of key does not match the passed GroupedDataFrame"))
+        msg = "The parent of key does not match the passed GroupedDataFrame"
+        throw(ArgumentError(msg))
     end
 end
 
@@ -502,7 +508,8 @@ function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return haskey(gd, Tuple(key))
 end
 
-Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) = 1 <= key <= length(gd)
+Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
+    1 <= key <= length(gd)
 
 """
     get(gd::GroupedDataFrame, key, default)

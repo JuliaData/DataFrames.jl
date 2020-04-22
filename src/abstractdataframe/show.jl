@@ -427,8 +427,8 @@ NOTE: The value of `maxwidths[end]` must be the string width of
   required to render each column.
 - `allcols::Bool = false`: Whether to print all columns, rather than
   a subset that fits the device width.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the screen width
-  rather than printing all columns in the same block.
+- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
+  screen width rather than printing all columns in the same block.
 - `rowlabel::Symbol`: What label should be printed when rendering the
   numeric ID's of each row? Defaults to `:Row`.
 - `displaysummary::Bool`: Should a brief string summary of the
@@ -653,8 +653,9 @@ while `splitcols` defaults to `true`.
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` does not have the `IOContext` property
   `limit` set.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the screen width
-  rather than printing all columns in the same block. Only applies if `allcols` is `true`.
+- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
+  screen width rather than printing all columns in the same block. Only applies
+  if `allcols` is `true`.
   By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.

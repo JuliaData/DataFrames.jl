@@ -33,7 +33,8 @@ _by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
 Base.broadcastable(x::ByRow) = Ref(x)
 
 (f::ByRow)(cols::AbstractVector...) = _by_row_helper.(f.fun.(cols...))
-(f::ByRow)(table::NamedTuple) = _by_row_helper.(f.fun.(Tables.namedtupleiterator(table)))
+(f::ByRow)(table::NamedTuple) =
+    _by_row_helper.(f.fun.(Tables.namedtupleiterator(table)))
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
@@ -48,7 +49,6 @@ normalize_selection(idx::AbstractIndex, sel) =
             rethrow(e)
         end
     end
-
 
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}) =
     length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
@@ -102,7 +102,8 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 normalize_selection(idx::AbstractIndex,
-                    sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, <:AbstractString}}) =
+                    sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow},
+                                           <:AbstractString}}) =
     normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))))
 
 function normalize_selection(idx::AbstractIndex,
@@ -209,56 +210,60 @@ SELECT_ARG_RULES =
     """
     Arguments passed as `args...` can be:
 
-    * Any index that is allowed for column indexing ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
-    * Column transformation operations using the `Pair` notation that is described below
-      and vectors of such pairs.
+    * Any index that is allowed for column indexing
+      ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+    * Column transformation operations using the `Pair` notation that is
+      described below and vectors of such pairs.
 
-    Columns can be renamed using the `old_column => new_column_name` syntax,
-    and transformed using the `old_column => fun => new_column_name` syntax.
-    `new_column_name` must be a `Symbol` or a string, and `fun` a function or a type.
-    If `old_column` is a `Symbol`, a string, or an integer then `fun` is applied to the corresponding
-    column vector. Otherwise `old_column` can be any column indexing syntax, in which case
-    `fun` will be passed the column vectors specified by `old_column` as separate arguments.
-    The only exception is when `old_column` is an `AsTable` type wrapping a selector,
-    in which case `fun` is passed a `NamedTuple` containing the selected columns.
+    Columns can be renamed using the `old_column => new_column_name` syntax, and
+    transformed using the `old_column => fun => new_column_name` syntax.
+    `new_column_name` must be a `Symbol` or a string, and `fun` a function or a
+    type. If `old_column` is a `Symbol`, a string, or an integer then `fun` is
+    applied to the corresponding column vector. Otherwise `old_column` can be
+    any column indexing syntax, in which case `fun` will be passed the column
+    vectors specified by `old_column` as separate arguments. The only exception
+    is when `old_column` is an `AsTable` type wrapping a selector, in which case
+    `fun` is passed a `NamedTuple` containing the selected columns.
 
-    If `fun` returns a value of type other than `AbstractVector` then it will be broadcasted
-    into a vector matching the target number of rows in the data frame,
-    unless its type is one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
-    `AbstractMatrix`, in which case an error is thrown as currently these
-    return types are not allowed.
-    As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
-    are unwrapped and then broadcasted.
+    If `fun` returns a value of type other than `AbstractVector` then it will be
+    broadcasted into a vector matching the target number of rows in the data
+    frame, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
+    `DataFrameRow`, `AbstractMatrix`, in which case an error is thrown as
+    currently these return types are not allowed. As a particular rule, values
+    wrapped in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and
+    then broadcasted.
 
-    To apply `fun` to each row instead of whole columns, it can be wrapped in a `ByRow`
-    struct. In this case if `old_column` is a `Symbol`, a string, or an integer then `fun` is
-    applied to each element (row) of `old_column` using broadcasting. Otherwise `old_column`
-    can be any column indexing syntax, in which case `fun` will be passed one argument for
-    each of the columns specified by `old_column`. If `ByRow` is used it is not allowed for
-    `old_column` to select an empty set of columns nor for `fun` to return
-    a `NamedTuple` or a `DataFrameRow`.
+    To apply `fun` to each row instead of whole columns, it can be wrapped in a
+    `ByRow` struct. In this case if `old_column` is a `Symbol`, a string, or an
+    integer then `fun` is applied to each element (row) of `old_column` using
+    broadcasting. Otherwise `old_column` can be any column indexing syntax, in
+    which case `fun` will be passed one argument for each of the columns
+    specified by `old_column`. If `ByRow` is used it is not allowed for
+    `old_column` to select an empty set of columns nor for `fun` to return a
+    `NamedTuple` or a `DataFrameRow`.
 
-    Column transformation can also be specified using the short `old_column => fun` form.
-    In this case, `new_column_name` is automatically generated as `\$(old_column)_\$(fun)`.
-    Up to three column names are used for multiple input columns and they are joined
-    using `_`; if more than three columns are passed then the name consists of the
-    first two names and `etc` suffix then, e.g. `[:a,:b,:c,:d] => fun` produces
-    the new column name `:a_b_etc_fun`.
+    Column transformation can also be specified using the short `old_column =>
+    fun` form. In this case, `new_column_name` is automatically generated as
+    `\$(old_column)_\$(fun)`. Up to three column names are used for multiple
+    input columns and they are joined using `_`; if more than three columns are
+    passed then the name consists of the first two names and `etc` suffix then,
+    e.g. `[:a,:b,:c,:d] => fun` produces the new column name `:a_b_etc_fun`.
 
-    Column renaming and transformation operations can be passed wrapped in vectors
-    (this is useful when combined with broadcasting).
+    Column renaming and transformation operations can be passed wrapped in
+    vectors (this is useful when combined with broadcasting).
 
-    As a special rule passing `nrow` without specifying `old_column` creates a column
-    named `:nrow` containing a number of rows in a source data frame, and passing
-    `nrow => new_column_name` stores the number of rows in source data frame in
-    `new_column_name` column.
+    As a special rule passing `nrow` without specifying `old_column` creates a
+    column named `:nrow` containing a number of rows in a source data frame, and
+    passing `nrow => new_column_name` stores the number of rows in source data
+    frame in `new_column_name` column.
 
-    If a collection of column names is passed to `select!` or `select` then requesting
-    duplicate column names in target data frame are accepted (e.g. `select!(df, [:a], :, r"a")`
-    is allowed) and only the first occurrence is used. In particular a syntax to move
-    column `:col` to the first position in the data frame is `select!(df, :col, :)`.
-    On the contrary, output column names of renaming, transformation and single column
-    selection operations must be unique, so e.g. `select!(df, :a, :a => :a)` or
+    If a collection of column names is passed to `select!` or `select` then
+    requesting duplicate column names in target data frame are accepted (e.g.
+    `select!(df, [:a], :, r"a")` is allowed) and only the first occurrence is
+    used. In particular a syntax to move column `:col` to the first position in
+    the data frame is `select!(df, :col, :)`. On the contrary, output column
+    names of renaming, transformation and single column selection operations
+    must be unique, so e.g. `select!(df, :a, :a => :a)` or
     `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
     """
 
@@ -270,8 +275,9 @@ Mutate `df` in place to retain only columns specified by `args...` and return it
 $SELECT_ARG_RULES
 
 Note that including the same column several times in the data frame via renaming
-or transformations that return the same object without copying will create column aliases.
-An example of such a situation is `select!(df, :a, :a => :b, :a => identity => :c)`.
+or transformations that return the same object without copying will create
+column aliases. An example of such a situation is
+`select!(df, :a, :a => :b, :a => identity => :c)`.
 
 # Examples
 ```jldoctest
@@ -366,10 +372,14 @@ function select!(df::DataFrame, args::AbstractVector{Int})
 end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])
-select!(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
-                                AbstractVector{<:AbstractString},
-                                Colon, All, Not, Between, Regex}) =
-    select!(df, index(df)[c])
+
+function select!(df::DataFrame, c::MultiColumnIndex)
+    if c isa AbstractVector{<:Pair}
+        return select!(df, c...)
+    else
+        return select!(df, index(df)[c])
+    end
+end
 
 function select!(df::DataFrame, cs...)
     newdf = select(df, cs..., copycols=false)
@@ -396,7 +406,8 @@ transform!(df::DataFrame, args...) = select!(df, :, args...)
 """
     select(df::AbstractDataFrame, args...; copycols::Bool=true)
 
-Create a new data frame that contains columns from `df` specified by `args` and return it.
+Create a new data frame that contains columns from `df` specified by `args` and
+return it.
 
 If `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
 are supported.
@@ -404,24 +415,26 @@ are supported.
 $SELECT_ARG_RULES
 
 If `df` is a `DataFrame` a new `DataFrame` is returned.
-If `copycols=false`, then the returned `DataFrame` shares column vectors with `df` where possible.
-If `copycols=true` (the default), then the returned `DataFrame` will not share columns with `df`.
-The only exception for this rule is the `old_column => fun => new_column` transformation
-when `fun` returns a vector that is not allocated by `fun` but is neither a `SubArray` nor one
-of the input vectors.
-In such a case a new `DataFrame` might contain aliases. Such a situation can only happen
-with transformations which returns vectors other than their inputs, e.g. with
-`select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)`  when `c` is a vector object
-or with `select(df, :a => (x -> df.c) => :c2)`.
+If `copycols=false`, then the returned `DataFrame` shares column vectors with `df`
+where possible.
+If `copycols=true` (the default), then the returned `DataFrame` will not share
+columns with `df`.
+The only exception for this rule is the `old_column => fun => new_column`
+transformation when `fun` returns a vector that is not allocated by `fun` but is
+neither a `SubArray` nor one of the input vectors.
+In such a case a new `DataFrame` might contain aliases. Such a situation can
+only happen with transformations which returns vectors other than their inputs,
+e.g. with `select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)`  when `c`
+is a vector object or with `select(df, :a => (x -> df.c) => :c2)`.
 
-If `df` is a `SubDataFrame` and `copycols=true` then a `DataFrame` is returned and
-the same copying rules apply as for a `DataFrame` input:
+If `df` is a `SubDataFrame` and `copycols=true` then a `DataFrame` is returned
+and the same copying rules apply as for a `DataFrame` input:
 this means in particular that selected columns will be copied.
 If `copycols=false`, a `SubDataFrame` is returned without copying columns.
 
-Note that including the same column several times in the data frame via renaming or
-transformations that return the same object when `copycols=false` will create column
-aliases. An example of such a situation is
+Note that including the same column several times in the data frame via renaming
+or transformations that return the same object when `copycols=false` will create
+column aliases. An example of such a situation is
 `select(df, :a, :a => :b, :a => identity => :c, copycols=false)`.
 
 # Examples
@@ -508,10 +521,15 @@ julia> select(df, AsTable(:) => ByRow(mean))
 select(df::DataFrame, args::AbstractVector{Int}; copycols::Bool=true) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
-select(df::DataFrame, c::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
-                               AbstractVector{<:AbstractString},
-                               Colon, All, Not, Between, Regex}; copycols::Bool=true) =
-    select(df, index(df)[c], copycols=copycols)
+
+function select(df::DataFrame, c::MultiColumnIndex; copycols::Bool=true)
+    if c isa AbstractVector{<:Pair}
+        return select(df, c..., copycols=copycols)
+    else
+        return select(df, index(df)[c], copycols=copycols)
+    end
+end
+
 select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
     select(df, [c], copycols=copycols)
 
@@ -627,10 +645,14 @@ end
 
 select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool=true) =
     select(dfv, [ind], copycols=copycols)
-select(dfv::SubDataFrame, args::Union{AbstractVector{<:Integer}, AbstractVector{Symbol},
-                                      AbstractVector{<:AbstractString},
-                                      Colon, All, Not, Between, Regex}; copycols::Bool=true) =
-    copycols ? dfv[:, args] : view(dfv, :, args)
+
+function select(dfv::SubDataFrame, args::MultiColumnIndex; copycols::Bool=true)
+    if args isa AbstractVector{<:Pair}
+        return select(dfv, args..., copycols=copycols)
+    else
+        return copycols ? dfv[:, args] : view(dfv, :, args)
+    end
+end
 
 function select(dfv::SubDataFrame, args...; copycols::Bool=true)
     if copycols
@@ -652,9 +674,9 @@ function select(dfv::SubDataFrame, args...; copycols::Bool=true)
             if ind isa ColumnIndex
                 ind_idx = index(dfv)[ind]
                 if ind_idx in seen_single_column
-                    throw(ArgumentError("selecting the same column multiple times using" *
-                                        " Symbol, string or integer is not allowed ($ind" *
-                                        " was passed more than once"))
+                    throw(ArgumentError("selecting the same column multiple times " *
+                                        "using Symbol, string or integer is not allowed " *
+                                        "($ind was passed more than once"))
                 else
                     push!(seen_single_column, ind_idx)
                 end

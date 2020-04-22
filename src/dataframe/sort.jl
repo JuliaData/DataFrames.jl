@@ -72,10 +72,11 @@ julia> sort!(df, (:x, order(:y, rev=true)))
 function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
     if !(isa(by, Function) || eltype(by) <: Function)
-        msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
+        msg = "'by' must be a Function or a vector of Functions. " *
+              "Perhaps you wanted 'cols'."
         throw(ArgumentError(msg))
     end
-    if cols isa Union{Colon, All, Not, Between, Regex}
+    if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
     ord = ordering(df, cols, lt, by, rev, order)

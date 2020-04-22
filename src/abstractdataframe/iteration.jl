@@ -170,11 +170,14 @@ Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) =
     getproperty(parent(itr), col_ind)
 Base.getproperty(itr::DataFrameColumns, col_ind::AbstractString) =
     getproperty(parent(itr), col_ind)
-Compat.hasproperty(itr::DataFrameColumns, s::Symbol) = haskey(index(parent(itr)), s)
-Compat.hasproperty(itr::DataFrameColumns, s::AbstractString) = haskey(index(parent(itr)), s)
+Compat.hasproperty(itr::DataFrameColumns, s::Symbol) =
+    haskey(index(parent(itr)), s)
+Compat.hasproperty(itr::DataFrameColumns, s::AbstractString) =
+    haskey(index(parent(itr)), s)
 
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))
+Base.propertynames(itr::DataFrameColumns, private::Bool=false) =
+    propertynames(parent(itr))
 
 """
     keys(dfc::DataFrameColumns)
