@@ -66,13 +66,14 @@ abstract type AbstractDataFrame end
     names(df::AbstractDataFrame)
     names(df::AbstractDataFrame, cols)
 
-    Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
+Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
-    If a `cols` column selector ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-    is passed then restrict returned column names to those matching the selector
-    (this is useful in particular with regular expressions, `Not`, and `Between`).
+If a `cols` is passed then restrict returned column names to those matching the
+selector (this is useful in particular with regular expressions, `Not`, and `Between`).
 
-    See also [propertynames](@ref) which returns a `Vector{Symbol}`.
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+
+See also [propertynames](@ref) which returns a `Vector{Symbol}`.
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
@@ -450,8 +451,10 @@ where each row represents a variable and each column a summary statistic.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
-- `cols` : a keyword argument ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) allowing
-  to select only a subset of columns from `df` to describe.
+- `cols` : a keyword argument allowing to select only a subset of columns from `df`
+  to describe.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
@@ -664,9 +667,10 @@ end
     completecases(df::AbstractDataFrame, cols=:)
 
 Return a Boolean vector with `true` entries indicating rows without missing values
-(complete cases) in data frame `df`.
-If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR), only missing values in
+(complete cases) in data frame `df`. If `cols` is provided, only missing values in
 the corresponding columns are considered.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
@@ -733,8 +737,9 @@ completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Bet
     dropmissing(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
-If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR),
-only missing values in the corresponding columns are considered.
+If `cols` is provided, only missing values in the corresponding columns are considered.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `disallowmissing` is `true` (the default) then columns specified in `cols` will
 be converted so as not to allow for missing values using [`disallowmissing!`](@ref).
@@ -803,8 +808,9 @@ end
     dropmissing!(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
-If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR),
-only missing values in the corresponding columns are considered.
+If `cols` is provided, only missing values in the corresponding columns are considered.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `disallowmissing` is `true` (the default) then the `cols` columns will
 get converted using [`disallowmissing!`](@ref).
@@ -875,11 +881,12 @@ Return a copy of data frame `df` containing only rows for which `function`
 returns `true`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-is specified then it should be a valid column selector
-(column duplicates are allowed if a vector of $COLUMN_INDICATOR is passed),
+If `cols` is specified then it should be a valid column selector
+(column duplicates are allowed if a vector of `Symbol`s, strings, or integers is passed),
 the function is passed elements of the selected columns as separate positional arguments,
 unless it is an `AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -973,11 +980,12 @@ _filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f)
 Remove rows from data frame `df` for which `function` returns `false`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is provided ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-then it should be a valid column selector
-(column duplicates are allowed if a vector of $COLUMN_INDICATOR is passed),
+If `cols` is provided then it should be a valid column selector
+(column duplicates are allowed if a vector of `Symbol`s, strings, or integers is passed),
 the function is passed elements of the selected columns as separate positional arguments,
 unless it is `AsTable` selector in which case `NamedTuple`s of these arguments are passed.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -1118,8 +1126,9 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Arguments
 - `df` : `AbstractDataFrame`
-- `cols` : a column indicator ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-  specifying the column(s) to compare
+- `cols` : a selector specifying the column(s) to compare
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Examples
 ```julia
@@ -1163,9 +1172,10 @@ Base.unique(df::AbstractDataFrame, cols) =
     unique!(df::AbstractDataFrame, cols)
 
 Delete duplicate rows of data frame `df`, keeping only the first occurrence of unique rows.
-When `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) is specified,
-the return DataFrame contains complete rows,
+When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
 
@@ -1558,9 +1568,10 @@ julia> ncol(df)
 """
     disallowmissing(df::AbstractDataFrame, cols=:; error::Bool=true)
 
-Return a copy of data frame `df` with columns
-`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) converted
+Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `cols` is omitted all columns in the data frame are converted.
 
@@ -1628,9 +1639,10 @@ end
 """
     allowmissing(df::AbstractDataFrame, cols=:)
 
-Return a copy of data frame `df` with columns
-`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR) converted
+Return a copy of data frame `df` with columns `cols` converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `cols` is omitted all columns in the data frame are converted.
 
@@ -1675,8 +1687,9 @@ end
     categorical(df::AbstractDataFrame, cols=Union{AbstractString, Missing};
                 compress::Bool=false)
 
-Return a copy of data frame `df` with columns
-`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR, or `Type`) converted to `CategoricalVector`.
+Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR) or `Type`.
 
 If `categorical` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
@@ -1752,8 +1765,7 @@ end
 """
     flatten(df::AbstractDataFrame, cols)
 
-When columns `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-of data frame `df` have iterable elements that define `length` (for
+When columns `cols` of data frame `df` have iterable elements that define `length` (for
 example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
 `cols` is flattened, meaning the column corresponding to `col` becomes a longer vector
 where the original entries are concatenated. Elements of row `i` of `df` in columns other
@@ -1761,6 +1773,8 @@ than `cols` will be repeated according to the length of `df[i, col]`. These leng
 therefore be the same for each `col` in `cols`, or else an error is raised. Note that these
 elements are not copied, and thus if they are mutable changing them in the returned
 `DataFrame` will affect `df`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Examples
 

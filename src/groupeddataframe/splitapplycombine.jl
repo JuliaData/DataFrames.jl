@@ -9,9 +9,11 @@ Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split 
 
 # Arguments
 - `df` : an `AbstractDataFrame` to split
-- `cols` : data frame columns to group by ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
+- `cols` : data frame columns to group by
 - `sort` : whether to sort rows according to the values of the grouping columns `cols`
 - `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Details
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view

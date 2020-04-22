@@ -4,7 +4,9 @@
           alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
           rev::Bool=false, order::Ordering=Forward)
 
-Sort data frame `df` by column(s) `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR).
+Sort data frame `df` by column(s) `cols`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending

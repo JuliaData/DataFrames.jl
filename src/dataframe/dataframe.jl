@@ -931,9 +931,10 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
 """
     allowmissing!(df::DataFrame, cols=:)
 
-Convert columns `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-of data frame `df` from element type `T` to
+Convert columns `cols` of data frame `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `cols` is omitted all columns in the data frame are converted.
 """
@@ -968,9 +969,10 @@ allowmissing!(df::DataFrame, cols::Colon=:) =
 """
     disallowmissing!(df::DataFrame, cols=:; error::Bool=true)
 
-Convert columns `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR)
-of data frame `df` from element type `Union{T, Missing}` to
+Convert columns `cols` of data frame `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `cols` is omitted all columns in the data frame are converted.
 
@@ -1017,9 +1019,9 @@ disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
 """
     categorical!(df::DataFrame, cols=Union{AbstractString, Missing}; compress::Bool=false)
 
-Change columns selected by
-`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR, or `Type`)
-in data frame `df` to `CategoricalVector`.
+Change columns selected by `cols` in data frame `df` to `CategoricalVector`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR) or `Type`.
 
 If `categorical!` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type

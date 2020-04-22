@@ -304,8 +304,9 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
     issorted(df::AbstractDataFrame, cols;
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
-Test whether data frame `df` sorted by column(s)
-`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR).
+Test whether data frame `df` sorted by column(s) `cols`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
@@ -351,8 +352,9 @@ end
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward)
 
-Return a copy of data frame `df` sorted by column(s)
-`cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR).
+Return a copy of data frame `df` sorted by column(s) `cols`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -423,7 +425,9 @@ sort(::AbstractDataFrame, ::Any)
              rev::Bool=false, order::Ordering=Forward)
 
 Return a permutation vector of row indices of data frame `df` that puts them in
-sorted order according to column(s) `cols` ($COLUMN_INDICATOR, $COLUMNS_INDICATOR).
+sorted order according to column(s) `cols`.
+
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
