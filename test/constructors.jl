@@ -70,9 +70,9 @@ const ≅ = isequal
                             :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
     @test df == DataFrame(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
                            "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]])
-    @test df == DataFrame(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
+    @test df == DataFrame!(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
                            "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]])
-    @test df == DataFrame!(("x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
+    @test df == DataFrame(("x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
                             "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]))
     @test df == DataFrame!(("x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
                             "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]))
