@@ -11,8 +11,8 @@ os:
   - windows
 
 arch:
-  - x64
-  - x86
+  - amd64
+  - i386
 
 notifications:
   email: false
@@ -24,7 +24,7 @@ after_success:
 jobs:
   exclude:
     - os: osx
-      arch: x86
+      arch: i386
   allow_failures:
     - julia: nightly
   include:
