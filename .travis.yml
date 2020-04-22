@@ -14,13 +14,6 @@ arch:
   - x64
   - x86
 
-matrix:
-  exclude:
-    - os: osx
-      arch: x86
-  allow_failures:
-    - julia: nightly
-
 notifications:
   email: false
 
@@ -29,6 +22,11 @@ after_success:
               Coveralls.submit(Coveralls.process_folder())'
 
 jobs:
+  exclude:
+    - os: osx
+      arch: x86
+  allow_failures:
+    - julia: nightly
   include:
     - stage: "Documentation"
       julia: 1.0
