@@ -32,7 +32,7 @@ function ourshow(io::IO, x::Any; styled::Bool=false)
         sx = sprint(show, x, context=io_ctx)
     end
 
-    #
+    # strings should have " stripped here
     if x isa AbstractString
         @assert sx[1] == sx[end] == '"'
         sx = escape_string(chop(sx, head=1, tail=1), "")
@@ -279,7 +279,8 @@ end
                    maxwidths::Vector{Int},
                    leftcol::Int,
                    rightcol::Int,
-                   rowid::Union{Int,Nothing})
+                   rowid::Union{Int,Nothing},
+                   buffer::IOBuffer)
 
 Render a subset of rows and columns of an `AbstractDataFrame` to an
 I/O stream. For chunked printing, this function is used to print a
