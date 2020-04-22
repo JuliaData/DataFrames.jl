@@ -16,66 +16,34 @@ const ≅ = isequal
     @test index(df) == Index()
     @test size(DataFrame!()) == (0,0)
 
-    df = DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                   CategoricalVector{Union{Float64, Missing}}(ones(3))],
-                   Index([:x1, :x2]))
+    vecvec = [CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+              CategoricalVector{Union{Float64, Missing}}(ones(3))]
+
+    df = DataFrame(collect(Any, vecvec), Index([:x1, :x2]))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
 
-    df2 = DataFrame!(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                     CategoricalVector{Union{Float64, Missing}}(ones(3))],
-                     Index([:x1, :x2]))
+    df2 = DataFrame!(collect(Any, vecvec), Index([:x1, :x2]))
     @test size(df2, 1) == 3
     @test size(df2, 2) == 2
+    @test df2.x1 === vecvec[1]
+    @test df2.x2 === vecvec[2]
 
-    @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))])
-    @test df == DataFrame!([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                            CategoricalVector{Union{Float64, Missing}}(ones(3))])
-    @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
-    @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))], ["x1", "x2"])
-    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                              CategoricalVector{Union{Float64, Missing}}(ones(3))])
-    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                              CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
-    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                              CategoricalVector{Union{Float64, Missing}}(ones(3))], ["x1", "x2"])
-    @test df == DataFrame(AbstractVector[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                                         CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
-    @test df == DataFrame(AbstractVector[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                                         CategoricalVector{Union{Float64, Missing}}(ones(3))], ["x1", "x2"])
-    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))))
-    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
-    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
-    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))), ("x1", "x2"))
-    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))), ("x1", "x2"))
-    @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
-                          x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
-    @test df == DataFrame!(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
-                           x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
-    @test df == DataFrame([:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]])
-    @test df == DataFrame([:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]])
-    @test df == DataFrame!((:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                            :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
-    @test df == DataFrame!((:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                            :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
-    @test df == DataFrame(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                           "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]])
-    @test df == DataFrame!(["x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                           "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]])
-    @test df == DataFrame(("x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                            "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]))
-    @test df == DataFrame!(("x1"=>Union{Int, Missing}[0.0, 0.0, 0.0],
-                            "x2"=>Union{Int, Missing}[1.0, 1.0, 1.0]))
+    for fun in (DataFrame, DataFrame!)
+        @test df == fun(vecvec)
+        @test df == fun(collect(Any, vecvec))
+        @test df == fun(collect(AbstractVector, vecvec))
+        @test df == fun(Tuple(vecvec))
+        @test df == fun(x1 = vecvec[1], x2 = vecvec[2])
+
+        for cols in ([:x1, :x2], ["x1", "x2"])
+            @test df == fun(vecvec, cols)
+            @test df == fun(collect(Any, vecvec), cols)
+            @test df == fun(collect(AbstractVector, vecvec), cols)
+            @test df == fun(Tuple(vecvec), Tuple(cols))
+            @test df == fun([col=>vect for (col, vect) in zip(cols, vecvec)])
+        end
+    end
 
     @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
           DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
