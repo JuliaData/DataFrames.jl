@@ -68,9 +68,8 @@ abstract type AbstractDataFrame end
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
-If a `cols` is passed then restrict returned column names to those matching the
+If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Not`, and `Between`).
-
 `cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 See also [propertynames](@ref) which returns a `Vector{Symbol}`.
@@ -452,9 +451,7 @@ where each row represents a variable and each column a summary statistic.
     - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe.
-
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  to describe. Can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
@@ -980,12 +977,12 @@ _filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f)
 Remove rows from data frame `df` for which `function` returns `false`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is provided then it should be a valid column selector
-(column duplicates are allowed if a vector of `Symbol`s, strings, or integers is passed),
-the function is passed elements of the selected columns as separate positional arguments,
-unless it is `AsTable` selector in which case `NamedTuple`s of these arguments are passed.
-
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+If `cols` is specified then the function is passed elements of the corresponding
+columns as separate positional arguments, unless `cols` is an `AsTable` selector,
+in which case a `NamedTuple` of these arguments is passed.
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR),
+and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
+is passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -1126,9 +1123,7 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Arguments
 - `df` : `AbstractDataFrame`
-- `cols` : a selector specifying the column(s) to compare
-
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+- `cols` : a selector specifying the column(s) to compare. Can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Examples
 ```julia
@@ -1689,7 +1684,8 @@ end
 
 Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR) or `Type`.
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR)
+or a `Type`.
 
 If `categorical` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type

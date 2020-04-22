@@ -37,7 +37,6 @@ that return views into the original data frame.
    If `variable_eltype=Symbol` it is a vector of `Symbol`,
    and if `variable_eltype=String` a vector of `String` is produced.
 
-`measure_vars` and `id_vars can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Examples
 ```julia
@@ -133,7 +132,8 @@ be retained and a warning will be printed.
 # Arguments
 - `df` : the AbstractDataFrame to be unstacked
 - `rowkeys` : the columns with a unique key for each row, if not given,
-  find a key by grouping on anything not a `colkey` or `value`
+  find a key by grouping on anything not a `colkey` or `value`.
+  Can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 - `colkey` : the column ($COLUMN_INDICATOR) holding the column names in wide format,
   defaults to `:variable`
 - `value` : the value column ($COLUMN_INDICATOR), defaults to `:value`
@@ -141,7 +141,6 @@ be retained and a warning will be printed.
                  return the name of the column to be created (typically as a string
                  or a `Symbol`). Duplicate names are not allowed.
 
-`rrowkeys` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
 
 # Examples
 ```julia

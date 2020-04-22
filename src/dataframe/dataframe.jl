@@ -1021,7 +1021,7 @@ disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
 
 Change columns selected by `cols` in data frame `df` to `CategoricalVector`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR) or `Type`.
+`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR) or a `Type`.
 
 If `categorical!` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
