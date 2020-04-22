@@ -212,6 +212,7 @@ end
     @test !haskey(DataFrames.index(df2), 2)
     @test !haskey(DataFrames.index(df2), 0)
     @test_throws ArgumentError haskey(DataFrames.index(df2), true)
+    @test names(DataFrames.index(df2)) == ["y"]
     @test DataFrames._names(DataFrames.index(df2)) == [:y]
 
     x = DataFrame(ones(5,4))
