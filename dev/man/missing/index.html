@@ -39,13 +39,13 @@ julia&gt; collect(skipmissing(x))
 julia&gt; dropmissing(df)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
+│     │ Int64 │ Int64? │ String? │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │</code></pre><p>One can specify the column(s) in which to search for rows containing <code>missing</code> values to be removed.</p><pre><code class="language-julia-repl">julia&gt; dropmissing(df, :x)
 3×3 DataFrame
 │ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
+│     │ Int64 │ Int64? │ String? │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 2     │ 4      │ missing │
 │ 2   │ 4     │ 2      │ d       │

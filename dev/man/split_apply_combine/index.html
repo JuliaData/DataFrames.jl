@@ -1,93 +1,95 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Split-apply-combine · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../"><img class="logo" src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="../getting_started/">Getting Started</a></li><li><a class="toctext" href="../joins/">Joins</a></li><li class="current"><a class="toctext" href>Split-apply-combine</a><ul class="internal"></ul></li><li><a class="toctext" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="toctext" href="../sorting/">Sorting</a></li><li><a class="toctext" href="../categorical/">Categorical Data</a></li><li><a class="toctext" href="../missing/">Missing Data</a></li><li><a class="toctext" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../../lib/types/">Types</a></li><li><a class="toctext" href="../../lib/functions/">Functions</a></li><li><a class="toctext" href="../../lib/indexing/">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href>Split-apply-combine</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/split_apply_combine.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Split-apply-combine</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="The-Split-Apply-Combine-Strategy-1" href="#The-Split-Apply-Combine-Strategy-1">The Split-Apply-Combine Strategy</a></h1><p>Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper &quot;<a href="http://www.jstatsoft.org/v40/i01">The Split-Apply-Combine Strategy for Data Analysis</a>&quot;, written by Hadley Wickham.</p><p>The DataFrames package supports the split-apply-combine strategy through the <code>by</code> function, which is a shorthand for <code>groupby</code> followed by <code>map</code> and/or <code>combine</code>. <code>by</code> takes in three arguments: (1) a <code>DataFrame</code>, (2) one or more columns to split the <code>DataFrame</code> on, and (3) a specification of one or more functions to apply to each subset of the <code>DataFrame</code>. This specification can be of the following forms:</p><ol><li>a <code>col =&gt; function</code> pair indicating that <code>function</code> should be called with the vector of values for column <code>col</code>, which can be a column name or index</li><li>a <code>cols =&gt; function</code> pair indicating that <code>function</code> should be called with a named tuple holding columns <code>cols</code>, which can be a tuple or vector of names or indices</li><li>several such pairs, either as positional arguments or as keyword arguments (mixing is not allowed), producing each a single separate column; keyword argument names are used as column names</li><li>equivalently, a (named) tuple or vector of such pairs</li><li>a function which will be called with a <code>SubDataFrame</code> corresponding to each group; this form should be avoided due to its poor performance</li></ol><p>In all of these cases, the function can return either a single row or multiple rows, with a single or multiple columns:</p><ul><li>a single value produces a single row and column per group</li><li>a named tuple or <code>DataFrameRow</code> produces a single row and one column per field</li><li>a vector produces a single column with one row per entry</li><li>a named tuple of vectors produces one column per field with one row per entry in the vectors</li><li>a <code>DataFrame</code> or a matrix produces as many rows and columns as it contains; note that returning a <code>DataFrame</code> should be avoided due to its poor performance when the number of groups is large</li></ul><p>The kind of return value and the number and names of columns must be the same for all groups.</p><p>As a special case, if multiple pairs or a tuple of vectors or pairs is passed (forms 3 and 4 above), each function is required to return a single value or vector, which will produce each a separate column.</p><p>The name for the resulting column can be chosen either by passing a named tuple of pairs, or by returning a named tuple or a data frame. If no name is provided, it is generated automatically. For functions taking a single column (first form), the input column name is concatenated with the function name: for standard functions like <code>mean</code> this will produce columns with names like <code>SepalLength_mean</code>; for anonymous functions like <code>x -&gt; 2 * sqrt(x)</code>, the produced columns will be <code>SepalLength_function</code>. For functions taking multiple columns (second form), names are <code>x1</code>, <code>x2</code>, etc.</p><p>We show several examples of the <code>by</code> function applied to the <code>iris</code> dataset below:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames, CSV, Statistics
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Split-apply-combine · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../"><img class="logo" src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="../getting_started/">Getting Started</a></li><li><a class="toctext" href="../joins/">Joins</a></li><li class="current"><a class="toctext" href>Split-apply-combine</a><ul class="internal"></ul></li><li><a class="toctext" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="toctext" href="../sorting/">Sorting</a></li><li><a class="toctext" href="../categorical/">Categorical Data</a></li><li><a class="toctext" href="../missing/">Missing Data</a></li><li><a class="toctext" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../../lib/types/">Types</a></li><li><a class="toctext" href="../../lib/functions/">Functions</a></li><li><a class="toctext" href="../../lib/indexing/">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href>Split-apply-combine</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/split_apply_combine.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Split-apply-combine</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="The-Split-Apply-Combine-Strategy-1" href="#The-Split-Apply-Combine-Strategy-1">The Split-Apply-Combine Strategy</a></h1><p>Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper &quot;<a href="http://www.jstatsoft.org/v40/i01">The Split-Apply-Combine Strategy for Data Analysis</a>&quot;, written by Hadley Wickham.</p><p>The DataFrames package supports the split-apply-combine strategy through the <code>by</code> function, which is a shorthand for <code>groupby</code> followed by <code>map</code> and/or <code>combine</code>. <code>by</code> takes in three arguments: (1) a <code>DataFrame</code>, (2) one or more columns to split the <code>DataFrame</code> on, and (3) a specification of one or more functions to apply to each subset of the <code>DataFrame</code>. This specification can be of the following forms:</p><ol><li>standard column selectors (integers, symbols, vectors of integers, vectors of symbols, <code>All</code>, <code>:</code>, <code>Between</code>, <code>Not</code> and regular expressions)</li><li>a <code>cols =&gt; function</code> pair indicating that <code>function</code> should be called with positional arguments holding columns <code>cols</code>, which can be a any valid column selector</li><li>a <code>cols =&gt; function =&gt; target_col</code> form additionally specifying the name of the target column (this assumes that <code>function</code> returns a single value or a vector)</li><li>a <code>col =&gt; target_col</code> pair, which renames the column <code>col</code> to <code>target_col</code></li><li>a <code>nrow</code> or <code>nrow =&gt; target_col</code> form which efficiently computes the number of rows in a group (without <code>target_col</code> the new column is called <code>:nrow</code>)</li><li>several arguments of the forms given above, or vectors thereof</li><li>a function which will be called with a <code>SubDataFrame</code> corresponding to each group; this form should be avoided due to its poor performance unless a very large number of columns are processed (in which case <code>SubDataFrame</code> avoids excessive compilation)</li></ol><p>All forms except 1 and 6 can be also passed as the first argument to <code>map</code>.</p><p>As a special rule that applies to <code>cols =&gt; function</code> syntax, if <code>cols</code> is wrapped in an <code>AsTable</code> object then a <code>NamedTuple</code> containing columns selected by <code>cols</code> is passed to <code>function</code>.</p><p>In all of these cases, <code>function</code> can return either a single row or multiple rows. <code>function</code> can always generate a single column by returning a single value or a vector. Additionally, if <code>by</code> is passed exactly one <code>function</code> and <code>target_col</code> is not specified, <code>function</code> can return multiple columns in the form of an <code>AbstractDataFrame</code>, <code>AbstractMatrix</code>, <code>NamedTuple</code> or <code>DataFrameRow</code>.</p><p>Here are the rules specifying the shape of the resulting <code>DataFrame</code>:</p><ul><li>a single value produces a single row and column per group</li><li>a named tuple or <code>DataFrameRow</code> produces a single row and one column per field</li><li>a vector produces a single column with one row per entry</li><li>a named tuple of vectors produces one column per field with one row per entry in the vectors</li><li>a <code>DataFrame</code> or a matrix produces as many rows and columns as it contains; note that this option should be avoided due to its poor performance when the number of groups is large</li></ul><p>The kind of return value and the number and names of columns must be the same for all groups.</p><p>It is allowed to mix single values and vectors if multiple transformations are requested. In this case single value will be broadcasted to match the length of columns specified by returned vectors. As a particular rule, values wrapped in a <code>Ref</code> or a <code>0</code>-dimensional <code>AbstractArray</code> are unwrapped and then broadcasted.</p><p>If a single value or a vector is returned by the <code>function</code> and <code>target_col</code> is not provided, it is generated automatically, by concatenating source column name and <code>function</code> name where possible (see examples below).</p><p>We show several examples of the <code>by</code> function applied to the <code>iris</code> dataset below:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames, CSV, Statistics
 
-julia&gt; iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), &quot;../docs/src/assets/iris.csv&quot;)));
-
-julia&gt; first(iris, 6)
-6×5 DataFrame
-│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
-├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────────┤
-│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa        │
-│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa        │
-│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ setosa        │
-│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa        │
-│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa        │
-│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa        │
-
-julia&gt; last(iris, 6)
-6×5 DataFrame
-│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
-│     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
-├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────────┤
-│ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica     │
-│ 2   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ virginica     │
-│ 3   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ virginica     │
-│ 4   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ virginica     │
-│ 5   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ virginica     │
-│ 6   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ virginica     │
+julia&gt; iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), &quot;../docs/src/assets/iris.csv&quot;)))
+150×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa    │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa    │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa    │
+│ 7   │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ Iris-setosa    │
+⋮
+│ 143 │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 144 │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ Iris-virginica │
+│ 145 │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │
+│ 146 │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │
+│ 147 │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 148 │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 149 │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 150 │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
 
 julia&gt; by(iris, :Species, :PetalLength =&gt; mean)
 3×2 DataFrame
-│ Row │ Species    │ PetalLength_mean │
-│     │ String⍰    │ Float64          │
-├─────┼────────────┼──────────────────┤
-│ 1   │ setosa     │ 1.462            │
-│ 2   │ versicolor │ 4.26             │
-│ 3   │ virginica  │ 5.552            │
+│ Row │ Species         │ PetalLength_mean │
+│     │ String          │ Float64          │
+├─────┼─────────────────┼──────────────────┤
+│ 1   │ Iris-setosa     │ 1.464            │
+│ 2   │ Iris-versicolor │ 4.26             │
+│ 3   │ Iris-virginica  │ 5.552            │
 
-julia&gt; by(iris, :Species, N = :Species =&gt; length) # Chosen column is arbitrary
+julia&gt; by(iris, :Species, nrow)
 3×2 DataFrame
-│ Row │ Species       │ N     │
-│     │ Categorical…⍰ │ Int64 │
-├─────┼───────────────┼───────┤
-│ 1   │ setosa        │ 50    │
-│ 2   │ versicolor    │ 50    │
-│ 3   │ virginica     │ 50    │
+│ Row │ Species         │ nrow  │
+│     │ String          │ Int64 │
+├─────┼─────────────────┼───────┤
+│ 1   │ Iris-setosa     │ 50    │
+│ 2   │ Iris-versicolor │ 50    │
+│ 3   │ Iris-virginica  │ 50    │
 
-julia&gt; by(iris, :Species, N = :Species =&gt; length, mean = :PetalLength =&gt; mean) # Column for length is arbitrary
+julia&gt; by(iris, :Species, nrow, :PetalLength =&gt; mean =&gt; :mean)
 3×3 DataFrame
-│ Row │ Species    │ N     │ mean    │
-│     │ String⍰    │ Int64 │ Float64 │
-├─────┼────────────┼───────┼─────────┤
-│ 1   │ setosa     │ 50    │ 1.462   │
-│ 2   │ versicolor │ 50    │ 4.26    │
-│ 3   │ virginica  │ 50    │ 5.552   │
+│ Row │ Species         │ nrow  │ mean    │
+│     │ String          │ Int64 │ Float64 │
+├─────┼─────────────────┼───────┼─────────┤
+│ 1   │ Iris-setosa     │ 50    │ 1.464   │
+│ 2   │ Iris-versicolor │ 50    │ 4.26    │
+│ 3   │ Iris-virginica  │ 50    │ 5.552   │
 
-julia&gt; by(iris, :Species, [:PetalLength, :SepalLength] =&gt;
-              x -&gt; (a=mean(x.PetalLength)/mean(x.SepalLength), b=sum(x.PetalLength)))
+julia&gt; by(iris, :Species,
+          [:PetalLength, :SepalLength] =&gt;
+          (p, s) -&gt; (a=mean(p)/mean(s), b=sum(p))) # multiple columns are passed as arguments
 3×3 DataFrame
-│ Row │ Species    │ a        │ b       │
-│     │ String⍰    │ Float64  │ Float64 │
-├─────┼────────────┼──────────┼─────────┤
-│ 1   │ setosa     │ 0.29205  │ 73.1    │
-│ 2   │ versicolor │ 0.717655 │ 213.0   │
-│ 3   │ virginica  │ 0.842744 │ 277.6   │</code></pre><p>The <code>by</code> function also supports the <code>do</code> block form. However, as noted above, this form is slow and should therefore be avoided when performance matters.</p><pre><code class="language-julia-repl">julia&gt; by(iris, :Species) do df
-          (m = mean(df.PetalLength), s² = var(df.PetalLength))
+│ Row │ Species         │ a        │ b       │
+│     │ String          │ Float64  │ Float64 │
+├─────┼─────────────────┼──────────┼─────────┤
+│ 1   │ Iris-setosa     │ 0.292449 │ 73.2    │
+│ 2   │ Iris-versicolor │ 0.717655 │ 213.0   │
+│ 3   │ Iris-virginica  │ 0.842744 │ 277.6   │
+
+julia&gt; by(iris, :Species,
+          AsTable([:PetalLength, :SepalLength]) =&gt;
+          x -&gt; std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
+3×2 DataFrame
+│ Row │ Species         │ PetalLength_SepalLength_function │
+│     │ String          │ Float64                          │
+├─────┼─────────────────┼──────────────────────────────────┤
+│ 1   │ Iris-setosa     │ 0.492245                         │
+│ 2   │ Iris-versicolor │ 0.910378                         │
+│ 3   │ Iris-virginica  │ 0.867923                         │
+
+julia&gt; by(iris, :Species, 1:2 =&gt; cor, nrow)
+3×3 DataFrame
+│ Row │ Species         │ SepalLength_SepalWidth_cor │ nrow  │
+│     │ String          │ Float64                    │ Int64 │
+├─────┼─────────────────┼────────────────────────────┼───────┤
+│ 1   │ Iris-setosa     │ 0.74678                    │ 50    │
+│ 2   │ Iris-versicolor │ 0.525911                   │ 50    │
+│ 3   │ Iris-virginica  │ 0.457228                   │ 50    │
+</code></pre><p>The <code>by</code> function also supports the <code>do</code> block form. However, as noted above, this form is slow and should therefore be avoided when performance matters.</p><pre><code class="language-julia-repl">julia&gt; by(iris, :Species) do df
+           (m = mean(df.PetalLength), s² = var(df.PetalLength))
        end
 3×3 DataFrame
-│ Row │ Species       │ m       │ s²        │
-│     │ Categorical…⍰ │ Float64 │ Float64   │
-├─────┼───────────────┼─────────┼───────────┤
-│ 1   │ setosa        │ 1.462   │ 0.0301592 │
-│ 2   │ versicolor    │ 4.26    │ 0.220816  │
-│ 3   │ virginica     │ 5.552   │ 0.304588  │</code></pre><p>A second approach to the Split-Apply-Combine strategy is implemented in the <code>aggregate</code> function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and (3) one or more functions that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column that was not used to split the DataFrame, creating new columns of the form <code>$name_$function</code> like with <code>by</code> (see above). We show several examples of the <code>aggregate</code> function applied to the <code>iris</code> dataset below:</p><pre><code class="language-julia-repl">julia&gt; aggregate(iris, :Species, length)
-3×5 DataFrame
-│ Row │ Species       │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │
-│     │ Categorical…⍰ │ Int64              │ Int64             │ Int64              │ Int64             │
-├─────┼───────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┤
-│ 1   │ setosa        │ 50                 │ 50                │ 50                 │ 50                │
-│ 2   │ versicolor    │ 50                 │ 50                │ 50                 │ 50                │
-│ 3   │ virginica     │ 50                 │ 50                │ 50                 │ 50                │
-
-julia&gt; aggregate(iris, :Species, [sum, mean])
-3×9 DataFrame. Omitted printing of 2 columns
-│ Row │ Species       │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ SepalLength_mean │ SepalWidth_mean │
-│     │ Categorical…⍰ │ Float64         │ Float64        │ Float64         │ Float64        │ Float64          │ Float64         │
-├─────┼───────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼──────────────────┼─────────────────┤
-│ 1   │ setosa        │ 250.3           │ 171.4          │ 73.1            │ 12.3           │ 5.006            │ 3.428           │
-│ 2   │ versicolor    │ 296.8           │ 138.5          │ 213.0           │ 66.3           │ 5.936            │ 2.77            │
-│ 3   │ virginica     │ 329.4           │ 148.7          │ 277.6           │ 101.3          │ 6.588            │ 2.974           │</code></pre><p>If you only want to split the data set into subsets, use the <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a> function:</p><pre><code class="language-julia-repl">julia&gt; for subdf in groupby(iris, :Species)
+│ Row │ Species         │ m       │ s²        │
+│     │ String          │ Float64 │ Float64   │
+├─────┼─────────────────┼─────────┼───────────┤
+│ 1   │ Iris-setosa     │ 1.464   │ 0.0301061 │
+│ 2   │ Iris-versicolor │ 4.26    │ 0.220816  │
+│ 3   │ Iris-virginica  │ 5.552   │ 0.304588  │</code></pre><p>If you only want to split the data set into subsets, use the <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a> function:</p><pre><code class="language-julia-repl">julia&gt; for subdf in groupby(iris, :Species)
            println(size(subdf, 1))
        end
 50
@@ -95,6 +97,92 @@ julia&gt; aggregate(iris, :Species, [sum, mean])
 50</code></pre><p>To also get the values of the grouping columns along with each group, use the <code>pairs</code> function:</p><pre><code class="language-julia-repl">julia&gt; for (key, subdf) in pairs(groupby(iris, :Species))
            println(&quot;Number of data points for $(key.Species): $(nrow(subdf))&quot;)
        end
-Number of data points for setosa: 50
-Number of data points for versicolor: 50
-Number of data points for virginica: 50</code></pre><p>The value of <code>key</code> in the previous example is a <a href="../../lib/types/#DataFrames.GroupKey"><code>DataFrames.GroupKey</code></a> object, which can be used in a similar fashion to a <code>NamedTuple</code>.</p><footer><hr/><a class="previous" href="../joins/"><span class="direction">Previous</span><span class="title">Joins</span></a><a class="next" href="../reshaping_and_pivoting/"><span class="direction">Next</span><span class="title">Reshaping</span></a></footer></article></body></html>
+Number of data points for Iris-setosa: 50
+Number of data points for Iris-versicolor: 50
+Number of data points for Iris-virginica: 50</code></pre><p>The value of <code>key</code> in the previous example is a <a href="../../lib/types/#DataFrames.GroupKey"><code>DataFrames.GroupKey</code></a> object, which can be used in a similar fashion to a <code>NamedTuple</code>.</p><p>Grouping a data frame using the <code>groupby</code> function can be seen as adding a lookup key to it. Such lookups can be performed efficiently by indexing the resulting <code>GroupedDataFrame</code> with a <code>Tuple</code> or <code>NamedTuple</code>:</p><pre><code class="language-none">julia&gt; df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000);
+
+julia&gt; gdf = groupby(df, :g)
+GroupedDataFrame with 1000 groups based on key: g
+First Group (5 rows): g = 1
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 1     │ 2     │
+│ 3   │ 1     │ 3     │
+│ 4   │ 1     │ 4     │
+│ 5   │ 1     │ 5     │
+⋮
+Last Group (5 rows): g = 1000
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1000  │ 4996  │
+│ 2   │ 1000  │ 4997  │
+│ 3   │ 1000  │ 4998  │
+│ 4   │ 1000  │ 4999  │
+│ 5   │ 1000  │ 5000  │
+
+julia&gt; gdf[(g=500,)]
+5×2 SubDataFrame
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 500   │ 2496  │
+│ 2   │ 500   │ 2497  │
+│ 3   │ 500   │ 2498  │
+│ 4   │ 500   │ 2499  │
+│ 5   │ 500   │ 2500  │
+
+julia&gt; gdf[[(500,), (501,)]]
+GroupedDataFrame with 2 groups based on key: g
+First Group (5 rows): g = 500
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 500   │ 2496  │
+│ 2   │ 500   │ 2497  │
+│ 3   │ 500   │ 2498  │
+│ 4   │ 500   │ 2499  │
+│ 5   │ 500   │ 2500  │
+⋮
+Last Group (5 rows): g = 501
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 501   │ 2501  │
+│ 2   │ 501   │ 2502  │
+│ 3   │ 501   │ 2503  │
+│ 4   │ 501   │ 2504  │
+│ 5   │ 501   │ 2505  │</code></pre><p>In order to apply a function to each non-grouping column of a <code>GroupedDataFrame</code> you can write:</p><pre><code class="language-julia-repl">julia&gt; gd = groupby(iris, :Species);
+
+julia&gt; combine(gd, valuecols(gd) .=&gt; mean)
+3×5 DataFrame
+│ Row │ Species         │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
+│     │ String          │ Float64          │ Float64         │ Float64          │ Float64         │
+├─────┼─────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤
+│ 1   │ Iris-setosa     │ 5.006            │ 3.418           │ 1.464            │ 0.244           │
+│ 2   │ Iris-versicolor │ 5.936            │ 2.77            │ 4.26             │ 1.326           │
+│ 3   │ Iris-virginica  │ 6.588            │ 2.974           │ 5.552            │ 2.026           │
+
+julia&gt; combine(gd, valuecols(gd) .=&gt; (x -&gt; (x .- mean(x)) ./ std(x)) .=&gt; valuecols(gd))
+150×5 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-setosa    │ 0.266674    │ 0.215209   │ -0.368852   │ -0.410411  │
+│ 2   │ Iris-setosa    │ -0.300718   │ -1.09704   │ -0.368852   │ -0.410411  │
+│ 3   │ Iris-setosa    │ -0.868111   │ -0.572142  │ -0.945184   │ -0.410411  │
+│ 4   │ Iris-setosa    │ -1.15181    │ -0.834592  │ 0.207479    │ -0.410411  │
+│ 5   │ Iris-setosa    │ -0.0170218  │ 0.47766    │ -0.368852   │ -0.410411  │
+│ 6   │ Iris-setosa    │ 1.11776     │ 1.26501    │ 1.36014     │ 1.45509    │
+│ 7   │ Iris-setosa    │ -1.15181    │ -0.0472411 │ -0.368852   │ 0.522342   │
+⋮
+│ 143 │ Iris-virginica │ -1.23923    │ -0.849621  │ -0.818997   │ -0.458766  │
+│ 144 │ Iris-virginica │ 0.333396    │ 0.700782   │ 0.630555    │ 0.997633   │
+│ 145 │ Iris-virginica │ 0.176134    │ 1.01086    │ 0.268167    │ 1.72583    │
+│ 146 │ Iris-virginica │ 0.176134    │ 0.080621   │ -0.637803   │ 0.997633   │
+│ 147 │ Iris-virginica │ -0.452916   │ -1.46978   │ -1.00019    │ -0.458766  │
+│ 148 │ Iris-virginica │ -0.138391   │ 0.080621   │ -0.637803   │ -0.0946659 │
+│ 149 │ Iris-virginica │ -0.610178   │ 1.32094    │ -0.275415   │ 0.997633   │
+│ 150 │ Iris-virginica │ -1.08197    │ 0.080621   │ -0.818997   │ -0.822865  │</code></pre><footer><hr/><a class="previous" href="../joins/"><span class="direction">Previous</span><span class="title">Joins</span></a><a class="next" href="../reshaping_and_pivoting/"><span class="direction">Next</span><span class="title">Reshaping</span></a></footer></article></body></html>

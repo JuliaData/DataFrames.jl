@@ -41,7 +41,7 @@ julia&gt; innerjoin(people, jobs, on = :ID)
 julia&gt; leftjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job     │
-│     │ Int64 │ String   │ String⍰ │
+│     │ Int64 │ String   │ String? │
 ├─────┼───────┼──────────┼─────────┤
 │ 1   │ 20    │ John Doe │ Lawyer  │
 │ 2   │ 40    │ Jane Doe │ missing │
@@ -49,7 +49,7 @@ julia&gt; leftjoin(people, jobs, on = :ID)
 julia&gt; rightjoin(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
-│     │ Int64 │ String⍰  │ String    │
+│     │ Int64 │ String?  │ String    │
 ├─────┼───────┼──────────┼───────────┤
 │ 1   │ 20    │ John Doe │ Lawyer    │
 │ 2   │ 60    │ missing  │ Astronaut │
@@ -57,7 +57,7 @@ julia&gt; rightjoin(people, jobs, on = :ID)
 julia&gt; outerjoin(people, jobs, on = :ID)
 3×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
-│     │ Int64 │ String⍰  │ String⍰   │
+│     │ Int64 │ String?  │ String?   │
 ├─────┼───────┼──────────┼───────────┤
 │ 1   │ 20    │ John Doe │ Lawyer    │
 │ 2   │ 40    │ Jane Doe │ missing   │
@@ -167,9 +167,9 @@ julia&gt; b = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Doctor&q
 
 julia&gt; outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
 3×4 DataFrame
-│ Row │ ID    │ Name    │ Job     │ source       │
-│     │ Int64 │ String⍰ │ String⍰ │ Categorical… │
-├─────┼───────┼─────────┼─────────┼──────────────┤
-│ 1   │ 20    │ John    │ Lawyer  │ both         │
-│ 2   │ 40    │ Jane    │ missing │ left_only    │
-│ 3   │ 60    │ missing │ Doctor  │ right_only   │</code></pre><p>Note that this time we also used the <code>validate</code> keyword argument and it did not produce errors as the keys defined in both source data frames were unique.</p><footer><hr/><a class="previous" href="../getting_started/"><span class="direction">Previous</span><span class="title">Getting Started</span></a><a class="next" href="../split_apply_combine/"><span class="direction">Next</span><span class="title">Split-apply-combine</span></a></footer></article></body></html>
+│ Row │ ID    │ Name    │ Job     │ source     │
+│     │ Int64 │ String? │ String? │ Cat…       │
+├─────┼───────┼─────────┼─────────┼────────────┤
+│ 1   │ 20    │ John    │ Lawyer  │ both       │
+│ 2   │ 40    │ Jane    │ missing │ left_only  │
+│ 3   │ 60    │ missing │ Doctor  │ right_only │</code></pre><p>Note that this time we also used the <code>validate</code> keyword argument and it did not produce errors as the keys defined in both source data frames were unique.</p><footer><hr/><a class="previous" href="../getting_started/"><span class="direction">Previous</span><span class="title">Getting Started</span></a><a class="next" href="../split_apply_combine/"><span class="direction">Next</span><span class="title">Split-apply-combine</span></a></footer></article></body></html>

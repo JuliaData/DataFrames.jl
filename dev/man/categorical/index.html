@@ -17,7 +17,7 @@ julia&gt; cv = CategoricalArray(v)
  &quot;Group B&quot;
  &quot;Group B&quot;
  &quot;Group B&quot;
-</code></pre><p><code>CategoricalArrays</code> support missing values.</p><pre><code class="language-julia-repl">julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
+</code></pre><p><code>CategoricalArray</code>s support missing values.</p><pre><code class="language-julia-repl">julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
                               &quot;Group B&quot;, &quot;Group B&quot;, missing])
 6-element CategoricalArray{Union{Missing, String},1,UInt32}:
  &quot;Group A&quot;
@@ -52,11 +52,11 @@ julia&gt; sort(cv)
  &quot;Group B&quot;
  &quot;Group B&quot;
  missing
-</code></pre><p>Instead of using the <code>CategoricalArray</code> constructor directly you can use <code>categorical</code> function. It additionally accepts one positional argument <code>compress</code> which when set to <code>true</code> is equivalent to calling <code>compress</code> on the new vector:</p><pre><code class="language-julia-repl">julia&gt; cv1 = categorical([&quot;A&quot;, &quot;B&quot;], true)
+</code></pre><p>Instead of using the <code>CategoricalArray</code> constructor directly you can use <code>categorical</code> function. It additionally accepts a keyword argument <code>compress</code> which when set to <code>true</code> is equivalent to calling <code>compress</code> on the new vector:</p><pre><code class="language-julia-repl">julia&gt; cv1 = categorical([&quot;A&quot;, &quot;B&quot;], compress=true)
 2-element CategoricalArray{String,1,UInt8}:
  &quot;A&quot;
- &quot;B&quot;</code></pre><p>If the <code>ordered</code> keyword argument is set to <code>true</code>, the resulting <code>CategoricalArray</code> will be ordered, which means that its levels can be tested for order (rather than throwing an error):</p><pre><code class="language-julia-repl">julia&gt; cv2 = categorical([&quot;A&quot;, &quot;B&quot;], true, ordered=true)
-2-element CategoricalArray{String,1,UInt8}:
+ &quot;B&quot;</code></pre><p>If the <code>ordered</code> keyword argument is set to <code>true</code>, the resulting <code>CategoricalArray</code> will be ordered, which means that its levels can be tested for order (rather than throwing an error):</p><pre><code class="language-julia-repl">julia&gt; cv2 = categorical([&quot;A&quot;, &quot;B&quot;], ordered=true)
+2-element CategoricalArray{String,1,UInt32}:
  &quot;A&quot;
  &quot;B&quot;
 
@@ -93,28 +93,28 @@ julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot
 
 julia&gt; categorical!(df, :A) # change the column `:A` to be categorical
 6×2 DataFrame
-│ Row │ A            │ B      │
-│     │ Categorical… │ String │
-├─────┼──────────────┼────────┤
-│ 1   │ A            │ X      │
-│ 2   │ B            │ X      │
-│ 3   │ C            │ X      │
-│ 4   │ D            │ Y      │
-│ 5   │ D            │ Y      │
-│ 6   │ A            │ Y      │</code></pre><p>If columns are not specified, all columns with an <code>AbstractString</code> element type are converted to be categorical. In the example below we also enable compression:</p><pre><code class="language-julia-repl">julia&gt; categorical!(df, compress=true)
+│ Row │ A    │ B      │
+│     │ Cat… │ String │
+├─────┼──────┼────────┤
+│ 1   │ A    │ X      │
+│ 2   │ B    │ X      │
+│ 3   │ C    │ X      │
+│ 4   │ D    │ Y      │
+│ 5   │ D    │ Y      │
+│ 6   │ A    │ Y      │</code></pre><p>If columns are not specified, all columns with an <code>AbstractString</code> element type are converted to be categorical. In the example below we also enable compression:</p><pre><code class="language-julia-repl">julia&gt; categorical!(df, compress=true)
 6×2 DataFrame
-│ Row │ A            │ B            │
-│     │ Categorical… │ Categorical… │
-├─────┼──────────────┼──────────────┤
-│ 1   │ A            │ X            │
-│ 2   │ B            │ X            │
-│ 3   │ C            │ X            │
-│ 4   │ D            │ Y            │
-│ 5   │ D            │ Y            │
-│ 6   │ A            │ Y            │
+│ Row │ A    │ B    │
+│     │ Cat… │ Cat… │
+├─────┼──────┼──────┤
+│ 1   │ A    │ X    │
+│ 2   │ B    │ X    │
+│ 3   │ C    │ X    │
+│ 4   │ D    │ Y    │
+│ 5   │ D    │ Y    │
+│ 6   │ A    │ Y    │
 
 julia&gt; eltype.(eachcol(df))
 2-element Array{DataType,1}:
- CategoricalString{UInt8}
- CategoricalString{UInt8}
+ CategoricalValue{String,UInt8}
+ CategoricalValue{String,UInt8}
 </code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalVector</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalVector</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p><footer><hr/><a class="previous" href="../sorting/"><span class="direction">Previous</span><span class="title">Sorting</span></a><a class="next" href="../missing/"><span class="direction">Next</span><span class="title">Missing Data</span></a></footer></article></body></html>
