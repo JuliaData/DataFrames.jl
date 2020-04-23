@@ -79,7 +79,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
 
     if loil > 0
         # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig)
-        # indices of the left table rowspreserving the original rows order
+        # indices of the left table rows, preserving the original rows order
         all_orig_left_ixs = similar(left_ixs.orig, lil + loil)
         @inbounds all_orig_left_ixs[left_ixs.join] = left_ixs.orig
         @inbounds all_orig_left_ixs[leftonly_ixs.join] = leftonly_ixs.orig
@@ -125,8 +125,8 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
-            copyto!(res[!, on_col], offset, view(joiner.dfr_on[!, on_col_ix],
-                                                 rightonly_ixs.orig))
+            copyto!(res[!, on_col], offset,
+                    view(joiner.dfr_on[!, on_col_ix], rightonly_ixs.orig))
         end
     end
     if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)
