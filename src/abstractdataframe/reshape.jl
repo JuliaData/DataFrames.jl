@@ -19,11 +19,11 @@ that return views into the original data frame.
 # Arguments
 - `df` : the AbstractDataFrame to be stacked
 - `measure_vars` : the columns to be stacked (the measurement variables),
-  as a column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  as a column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
   If neither `measure_vars` or `id_vars` are given, `measure_vars`
   defaults to all floating point columns.
 - `id_vars` : the identifier columns that are repeated during stacking,
-  as a column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  as a column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
   Defaults to all variables that are not `measure_vars`
 - `variable_name` : the name (`Symbol` or string) of the new stacked column that
   shall hold the names of each of `measure_vars`
@@ -135,10 +135,10 @@ If combination of `rowkeys` and `colkey` contains duplicate entries then last
 - `df` : the AbstractDataFrame to be unstacked
 - `rowkeys` : the columns with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`.
-  Can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
-- `colkey` : the column ($COLUMN_INDICATOR) holding the column names in wide format,
+  Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
   defaults to `:variable`
-- `value` : the value column ($COLUMN_INDICATOR), defaults to `:value`
+- `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
 - `renamecols` : a function called on each unique value in `colkey` which must
                  return the name of the column to be created (typically as a string
                  or a `Symbol`). Duplicate names are not allowed.

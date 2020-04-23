@@ -70,7 +70,7 @@ Return a freshly allocated `Vector{String}` of names of columns contained in `df
 
 If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Not`, and `Between`).
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 See also [propertynames](@ref) which returns a `Vector{Symbol}`.
 """
@@ -455,7 +455,7 @@ where each row represents a variable and each column a summary statistic.
     - A `name => function` pair where `name` is a `Symbol`. This will create
       a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe. Can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first
@@ -674,7 +674,7 @@ Return a Boolean vector with `true` entries indicating rows without missing valu
 (complete cases) in data frame `df`.
 
 If `cols` is provided, only missing values in the corresponding columns areconsidered.
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
@@ -744,7 +744,7 @@ completecases(df::AbstractDataFrame, cols::MultiColumnIndex) =
 Return a copy of data frame `df` excluding rows with missing values.
 
 If `cols` is provided, only missing values in the corresponding columns are considered.
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `disallowmissing` is `true` (the default) then columns specified in `cols` will
 be converted so as not to allow for missing values using [`disallowmissing!`](@ref).
@@ -815,7 +815,7 @@ end
 Remove rows with missing values from data frame `df` and return it.
 
 If `cols` is provided, only missing values in the corresponding columns are considered.
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `disallowmissing` is `true` (the default) then the `cols` columns will
 get converted using [`disallowmissing!`](@ref).
@@ -890,7 +890,7 @@ If `cols` is not specified then the function is passed `DataFrameRow`s.
 If `cols` is specified then the function is passed elements of the corresponding
 columns as separate positional arguments, unless `cols` is an `AsTable` selector,
 in which case a `NamedTuple` of these arguments is passed.
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR),
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
 and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
 is passed.
 
@@ -989,7 +989,7 @@ If `cols` is not specified then the function is passed `DataFrameRow`s.
 If `cols` is specified then the function is passed elements of the corresponding
 columns as separate positional arguments, unless `cols` is an `AsTable` selector,
 in which case a `NamedTuple` of these arguments is passed.
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR),
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
 and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
 is passed.
 
@@ -1133,7 +1133,7 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 # Arguments
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) to compare. Can be any column
-  selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 # Examples
 ```julia
@@ -1180,7 +1180,7 @@ Base.unique(df::AbstractDataFrame, cols) =
 Delete duplicate rows of data frame `df`, keeping only the first occurrence of unique rows.
 When `cols` is specified, the returned `DataFrame` contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
 
@@ -1584,7 +1584,7 @@ julia> ncol(df)
 Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `cols` is omitted all columns in the data frame are converted.
 
@@ -1654,7 +1654,7 @@ end
 Return a copy of data frame `df` with columns `cols` converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `cols` is omitted all columns in the data frame are converted.
 
@@ -1700,7 +1700,7 @@ end
 
 Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR)
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
 or a `Type`.
 
 If `categorical` is called with the `cols` argument being a `Type`, then
@@ -1786,7 +1786,7 @@ same for each `col` in `cols`, or else an error is raised. Note that these
 elements are not copied, and thus if they are mutable changing them in the
 returned `DataFrame` will affect `df`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 # Examples
 

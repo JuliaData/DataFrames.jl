@@ -6,7 +6,7 @@
 
 Sort data frame `df` by column(s) `cols`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -76,7 +76,7 @@ function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
               "Perhaps you wanted 'cols'."
         throw(ArgumentError(msg))
     end
-    # exclude AbstractVector as in that case cols can contain ordered(...) clauses
+    # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end

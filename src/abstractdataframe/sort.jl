@@ -313,7 +313,7 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
 
 Test whether data frame `df` sorted by column(s) `cols`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
@@ -322,7 +322,7 @@ See other methods for a description of other keyword arguments.
 """
 function Base.issorted(df::AbstractDataFrame, cols=[];
                        lt=isless, by=identity, rev=false, order=Forward)
-    # exclude AbstractVector as in that case cols can contain ordered(...) clauses
+    # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
@@ -346,7 +346,7 @@ for s in [:(Base.sort), :(Base.sortperm)]
                       " Perhaps you wanted 'cols'."
                 throw(ArgumentError(msg))
             end
-            # exclude AbstractVector as in that case cols can contain ordered(...) clauses
+            # exclude AbstractVector as in that case cols can contain order(...) clauses
             if cols isa MultiColumnIndex && !(cols isa AbstractVector)
                 cols = index(df)[cols]
             end
@@ -364,7 +364,7 @@ end
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -437,7 +437,7 @@ sort(::AbstractDataFrame, ::Any)
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
 
-`cols` can be any column selector ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending

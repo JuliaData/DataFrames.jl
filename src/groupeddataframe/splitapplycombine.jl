@@ -11,7 +11,7 @@ into row groups.
 # Arguments
 - `df` : an `AbstractDataFrame` to split
 - `cols` : data frame columns to group by. Can be any column selector
-  ($COLUMN_INDICATOR; $COLUMNS_INDICATOR).
+  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort rows according to the values of the grouping columns
   `cols`
 - `skipmissing` : whether to skip rows with `missing` values in one of the
@@ -369,7 +369,7 @@ const F_ARGUMENT_RULES =
 
     Arguments passed as `args...` can be:
 
-    * Any index that is allowed for column indexing ($COLUMN_INDICATOR, $COLUMNS_INDICATOR).
+    * Any index that is allowed for column indexing ($COLUMNINDEX_STR, $MULTICOLUMNINDEX_STR).
     * Column transformation operations using the `Pair` notation that is described below
       and vectors of such pairs.
 
