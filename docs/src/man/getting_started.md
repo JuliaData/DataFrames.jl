@@ -118,7 +118,9 @@ julia> names(df)
 To get column names as `Symbol`s use the `propertynames` function:
 ```
 julia> propertynames(df)
-(:A, :B)
+2-element Array{Symbol,1}:
+ :A
+ :B
 ```
 
 !!! note
