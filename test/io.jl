@@ -423,7 +423,7 @@ end
     │ 5   │ 5     │ 2-element DataFrameColumns                     │
     │ 6   │ 6     │ GroupedDataFrame with 9 groups based on key: A │
     │ 7   │ 7     │ missing                                        │
-    │ 8   │ 8     │ nothing                                        │
+    │ 8   │ 8     │                                                │
     │ 9   │ 9     │ #undef                                         │"""
 
 
@@ -442,7 +442,7 @@ end
     │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m                     │
     │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups based on key: A\e[39m │
     │ 7   │ 7     │ \e[90mmissing\e[39m                                        │
-    │ 8   │ 8     │ \e[90mnothing\e[39m                                        │
+    │ 8   │ 8     │                                                │
     │ 9   │ 9     │ \e[90m#undef\e[39m                                         │"""
 
 
@@ -459,7 +459,7 @@ end
                  "<tr><th>5</th><td>5</td><td><em>2-element DataFrameColumns</em></td></tr>" *
                  "<tr><th>6</th><td>6</td><td><em>GroupedDataFrame with 9 groups based on key: A</em></td></tr>" *
                  "<tr><th>7</th><td>7</td><td><em>missing</em></td></tr>" *
-                 "<tr><th>8</th><td>8</td><td><em>nothing</em></td></tr>" *
+                 "<tr><th>8</th><td>8</td><td></td></tr>" *
                  "<tr><th>9</th><td>9</td><td><em>#undef</em></td></tr></tbody></table>"
 
     io = IOBuffer()
@@ -478,7 +478,7 @@ end
     \t5 & 5 & \\emph{2-element DataFrameColumns} \\\\
     \t6 & 6 & \\emph{GroupedDataFrame with 9 groups based on key: A} \\\\
     \t7 & 7 & \\emph{missing} \\\\
-    \t8 & 8 & \\emph{nothing} \\\\
+    \t8 & 8 &  \\\\
     \t9 & 9 & \\emph{\\#undef} \\\\
     \\end{tabular}
     """

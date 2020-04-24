@@ -51,7 +51,7 @@ const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
 ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
 ourshow(io::IO, x::CategoricalValue{<:AbstractString}) = escape_string(io, get(x), "")
 ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
-ourshow(io::IO, x::Nothing; styled::Bool=false) = ourshow(io, "nothing", styled=styled)
+ourshow(io::IO, x::Nothing; styled::Bool=false) = ourshow(io, "", styled=styled)
 ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
     ourshow(io, summary(x), styled=styled)
 
@@ -339,7 +339,7 @@ function showrowindices(io::IO,
             if isassigned(df[!, j], i)
                 s = df[i, j]
                 strlen = ourstrwidth(io, s, buffer)
-                if ismissing(s) || isnothing(s) || s isa SHOW_TABULAR_TYPES
+                if ismissing(s) || s isa SHOW_TABULAR_TYPES
                     ourshow(io, s, styled=true)
                 else
                     ourshow(io, s)

@@ -142,8 +142,6 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                 cell_val = df[row, column_name]
                 if ismissing(cell_val)
                     write(io, "<td><em>missing</em></td>")
-                elseif isnothing(cell_val)
-                    write(io, "<td><em>nothing</em></td>")
                 elseif cell_val isa SHOW_TABULAR_TYPES
                     write(io, "<td><em>")
                     cell = sprint(ourshow, cell_val)
@@ -303,8 +301,6 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                 cell = df[row,col]
                 if ismissing(cell)
                     print(io, "\\emph{missing}")
-                elseif isnothing(cell)
-                    print(io, "\\emph{nothing}")
                 elseif cell isa SHOW_TABULAR_TYPES
                     print(io, "\\emph{")
                     print(io, latex_escape(sprint(ourshow, cell, context=io)))
