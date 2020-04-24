@@ -55,8 +55,8 @@ function stack(df::AbstractDataFrame,
                measure_vars = findall(col -> eltype(col) <: Union{AbstractFloat, Missing},
                                       eachcol(df)),
                id_vars = Not(measure_vars);
-               variable_name::Union{Symbol, AbstractString}=:variable,
-               value_name::Union{Symbol, AbstractString}=:value, view::Bool=false,
+               variable_name::SymbolOrString=:variable,
+               value_name::SymbolOrString=:value, view::Bool=false,
                variable_eltype::Type=CategoricalValue{String})
     variable_name_s = Symbol(variable_name)
     value_name_s = Symbol(value_name)

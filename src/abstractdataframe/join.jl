@@ -6,8 +6,8 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
-const OnType = Union{Symbol, NTuple{2,Symbol}, Pair{Symbol,Symbol},
-                     AbstractString, Pair{<:AbstractString, <:AbstractString}}
+const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
+                     Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
 struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
@@ -24,7 +24,7 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
         left_on = Symbol[]
         right_on = Symbol[]
         for v in on_cols
-            if v isa Union{Symbol, AbstractString}
+            if v isa SymbolOrString
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
             elseif v isa Union{Pair{Symbol,Symbol},

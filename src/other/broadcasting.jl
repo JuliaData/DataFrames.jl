@@ -100,7 +100,7 @@ Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
 function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
     haskey(index(df), cols) && return view(df, :, cols)
-    if !(cols isa Union{Symbol, AbstractString})
+    if !(cols isa SymbolOrString)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
     return LazyNewColDataFrame(df, Symbol(cols))
@@ -110,7 +110,7 @@ function Base.dotview(df::DataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
         return ColReplaceDataFrame(df, index(df)[cols])
     end
-    if !(cols isa Union{Symbol, AbstractString}) && cols > ncol(df)
+    if !(cols isa SymbolOrString) && cols > ncol(df)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
     return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)

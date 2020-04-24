@@ -9,7 +9,8 @@ function Base.summary(idx::AbstractIndex)
 end
 Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
 
-const ColumnIndex = Union{Signed, Unsigned, Symbol, AbstractString}
+const SymbolOrString = Union{Symbol, AbstractString}
+const ColumnIndex = Union{Signed, Unsigned, SymbolOrString}
 const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Colon}
 const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
 

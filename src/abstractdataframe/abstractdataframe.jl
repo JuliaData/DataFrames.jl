@@ -438,22 +438,22 @@ Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), 
 
 """
     describe(df::AbstractDataFrame; cols=:)
-    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...; cols=:)
+    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair}...; cols=:)
 
 Return descriptive statistics for a data frame as a new `DataFrame`
 where each row represents a variable and each column a summary statistic.
 
 # Arguments
 - `df` : the `AbstractDataFrame`
-- `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report.
+- `stats::Union{Symbol, Pair}...` : the summary statistics to report.
   Arguments can be:
     - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
       `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nunique`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
-    - A `name => function` pair where `name` is a `Symbol`. This will create
-      a column of summary statistics with the provided name.
+    - A `name => function` pair where `name` is a `Symbol` or string. This will
+      create a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
   to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
@@ -533,7 +533,7 @@ julia> describe(df, :min, :sum => sum, cols=:x)
 ```
 """
 DataAPI.describe(df::AbstractDataFrame,
-                 stats::Union{Symbol, Pair{<:Union{Symbol, AbstractString}}}...;
+                 stats::Union{Symbol, Pair{<:SymbolOrString}}...;
                  cols=:) =
     _describe(select(df, cols, copycols=false), collect(stats))
 

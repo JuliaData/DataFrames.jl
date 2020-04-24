@@ -392,7 +392,7 @@ _check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
 end
 
 @inline function Base.getindex(df::DataFrame, row_ind::Integer,
-                               col_ind::Union{Symbol, AbstractString})
+                               col_ind::SymbolOrString)
     selected_column = index(df)[col_ind]
     @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
         throw(BoundsError(df, (row_ind, col_ind)))
@@ -427,7 +427,7 @@ end
     @inbounds cols[col_ind]
 end
 
-function Base.getindex(df::DataFrame, ::typeof(!), col_ind::Union{Symbol, AbstractString})
+function Base.getindex(df::DataFrame, ::typeof(!), col_ind::SymbolOrString)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
@@ -496,7 +496,7 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
         j = index(df)[col_ind]
         _columns(df)[j] = dv
     else
-        if col_ind isa Union{Symbol, AbstractString}
+        if col_ind isa SymbolOrString
             push!(index(df), Symbol(col_ind))
             push!(_columns(df), dv)
         else
