@@ -12,25 +12,22 @@ gd = groupby(copy(df), :id)
 gen(df, [:b, :c] => +)
 gen(df, [:b] => mean)
 
-genby(df, :id, :b => mean)
+gen(groupby(df, :id), :id, :b => mean)
+gen(groupby(df, :id), :id, :b => mean; keepgroup = true)
+
 
 keep(df, [:b, :c] => +)
 keep(df, [:b] => mean)
 
-keepby(df, :id, :b => mean)
+keep(groupby(df, :id), :id, :b => mean)
+keep(groupby(df, :id), :id, :b => mean; keepgroup = true)
+
 
 collapse(df, [:b, :c] => +)
 collapse(df, [:b] => mean)
 
-collapseby(df, :id, :b => mean)
+collapse(groupby(df, :id), :id, :b => mean)
+collapse(groupby(df, :id), :id, :b => mean; keepgroup = true)
 
-agggen(gd, [:b, :c] => +)
-agggen(gd, :b => mean)
-
-aggkeep(gd, [:b, :c] => +)
-aggkeep(gd, :b => mean)
-
-aggcollapse(gd, [:b, :c] => +)
-aggcollapse(gd, :b => mean)
 
 

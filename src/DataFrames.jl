@@ -63,14 +63,8 @@ export AbstractDataFrame,
        unstack,
        valuecols,
        gen, 
-       genby,
        keep,
-       keepby,
-       collapse,
-       collapseby,
-       agggen, 
-       aggkeep, 
-       aggcollapse
+       collapse
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow

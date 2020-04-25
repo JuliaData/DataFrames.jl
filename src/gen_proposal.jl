@@ -2,45 +2,48 @@ function gen(df::AbstractDataFrame, args...; kwargs...)
 	transform(df, args...; kwargs...)
 end
 
-function genby(df::AbstractDataFrame, id, args...; kwargs...)
-	by(df, id, :, args...; kwargs...)
+function gen(gd::GroupedDataFrame, args...; keepgroup = false, kwargs...)
+	
+	out = combine(gd, :, args...; kwargs...)
+	if keepgroup == true
+		return groupby(out, groupcols(gd))
+	else
+		return out
+	end
 end
 
 function keep(df::AbstractDataFrame, args...; kwargs...)
-		t = gensym()
+	t = gensym()
 	df[!, t] = df[!, 1]
 	ndf = select(df, t, args...; kwargs...)
 	return select(ndf, Not(t))
 end
 
-function keepby(df::AbstractDataFrame, id, args...; kwargs...)
+function keep(gd::GroupedDataFrame, id, args...; keepgroup = false, kwargs...)
 	t = gensym()
+	df = parent(gd)
 	df[!, t] = df[!, 1]
-	ndf = by(df, id, t, args...; kwargs...)
-	select(ndf, Not(t))
+	ndf = combine(gd, t, args...; kwargs...)
+	out = select(ndf, Not(t))
+	if keepgroup == true
+		return groupby(out, groupcols(gd))
+	else
+		return out
+	end	
 end
 
 function collapse(df::AbstractDataFrame, args...; kwargs...)
 	select(df, args...; kwargs...)
 end
 
-function collapseby(df::AbstractDataFrame, id, args...; kwargs...)
-	by(df, id, args...; kwargs...)
+function collapse(gd::GroupedDataFrame, id, args...; keepgroup = false, kwargs...)
+	out = combine(gd, args...; kwargs...)
+	if keepgroup == true
+		return groupby(out, groupcols(gd))
+	else
+		return out
+	end	
 end
 
-function agggen(gd::GroupedDataFrame, args...; kwargs...)
-	combine(gd, :, args...; kwargs...)
-end
 
-function aggkeep(gd::GroupedDataFrame, args...; kwargs...)
-	df = parent(gd)
-	t = gensym()
-	df[!, t] = df[!, 1]
-	ndf = combine(gd, t, args...; kwargs...)
-	select(ndf, Not(t))
-end
-
-function aggcollapse(gd::GroupedDataFrame, args...; kwargs...)
-	combine(gd, args...; kwargs...)
-end
 
