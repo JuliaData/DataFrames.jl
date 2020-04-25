@@ -21,6 +21,7 @@ keep(df, [:b] => mean)
 
 keep(groupby(df, :id), :id, :b => mean)
 keep(groupby(df, :id), :id, :b => mean; keepgroup = true)
+keep(groupby(df, :id), :id, :b => mean; keepgroup = false, keepkeys = false)
 
 
 collapse(df, [:b, :c] => +)
@@ -28,6 +29,7 @@ collapse(df, [:b] => mean)
 
 collapse(groupby(df, :id), :id, :b => mean)
 collapse(groupby(df, :id), :id, :b => mean; keepgroup = true)
+collapse(groupby(df, :id), :id, :b => mean; keepgroup = false, keepkeys = false)
 
 
 

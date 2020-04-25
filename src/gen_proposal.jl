@@ -3,7 +3,6 @@ function gen(df::AbstractDataFrame, args...; kwargs...)
 end
 
 function gen(gd::GroupedDataFrame, args...; keepgroup = false, kwargs...)
-	
 	out = combine(gd, :, args...; kwargs...)
 	if keepgroup == true
 		return groupby(out, groupcols(gd))
@@ -19,14 +18,17 @@ function keep(df::AbstractDataFrame, args...; kwargs...)
 	return select(ndf, Not(t))
 end
 
-function keep(gd::GroupedDataFrame, id, args...; keepgroup = false, kwargs...)
+function keep(gd::GroupedDataFrame, id, args...; keepgroup = false, keepkeys = true, kwargs...)
 	t = gensym()
 	df = parent(gd)
 	df[!, t] = df[!, 1]
 	ndf = combine(gd, t, args...; kwargs...)
 	out = select(ndf, Not(t))
+	groupkeys = groupcols(gd)
 	if keepgroup == true
-		return groupby(out, groupcols(gd))
+		return groupby(out, groupkeys)
+	elseif keepkeys == false
+			select!(out, Not(groupkeys))
 	else
 		return out
 	end	
@@ -36,10 +38,13 @@ function collapse(df::AbstractDataFrame, args...; kwargs...)
 	select(df, args...; kwargs...)
 end
 
-function collapse(gd::GroupedDataFrame, id, args...; keepgroup = false, kwargs...)
-	out = combine(gd, args...; kwargs...)
+function collapse(gd::GroupedDataFrame, id, args...; keepgroup = false, keepkeys = true, kwargs...)
+	out = combine(gd, args...; kwargs...)	
+	groupkeys = groupcols(gd)
 	if keepgroup == true
-		return groupby(out, groupcols(gd))
+		return groupby(out, groupkeys)
+	elseif keepkeys == false
+		select!(out, Not(groupkeys))
 	else
 		return out
 	end	
