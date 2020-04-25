@@ -61,7 +61,16 @@ export AbstractDataFrame,
        transform!,
        unique!,
        unstack,
-       valuecols
+       valuecols,
+       gen, 
+       genby,
+       keep,
+       keepby,
+       collapse,
+       collapseby,
+       agggen, 
+       aggkeep, 
+       aggcollapse
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow
@@ -104,5 +113,7 @@ include("dataframe/sort.jl")
 include("deprecated.jl")
 
 include("other/tables.jl")
+
+include("gen_proposal.jl")
 
 end # module DataFrames
