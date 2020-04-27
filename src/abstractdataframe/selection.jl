@@ -20,7 +20,7 @@ Note that `ByRow` always collects values returned by `fun` in a vector. Therefor
 to allow for future extensions, returning `NamedTuple` or `DataFrameRow`
 from `fun` is currently disallowed.
 """
-struct ByRow{T}
+struct ByRow{T} <: Function
     fun::T
 end
 
@@ -71,7 +71,7 @@ normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractStrin
     normalize_selection(idx, first(sel) => Symbol(last(sel)))
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow}, Symbol}})
+                             sel::Pair{<:Any,<:Pair{<:Base.Callable, Symbol}})
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -107,7 +107,7 @@ normalize_selection(idx::AbstractIndex,
     normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))))
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:ColumnIndex,<:Union{Base.Callable, ByRow}})
+                             sel::Pair{<:ColumnIndex,<:Base.Callable})
     c = idx[first(sel)]
     fun = last(sel)
     newcol = Symbol(_names(idx)[c], "_", funname(fun))
@@ -115,7 +115,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any, <:Union{Base.Callable,ByRow}})
+                             sel::Pair{<:Any, <:Base.Callable})
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -154,7 +154,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
-                                    <:Pair{<:Union{Base.Callable, ByRow}, Symbol}},
+                                    <:Pair{<:Base.Callable, Symbol}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Dict{Symbol, Any}, copycols::Bool,
                            allow_resizing_newdf::Ref{Bool})
