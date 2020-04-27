@@ -17,10 +17,10 @@ using Test, DataFrames, CategoricalArrays, Dates
         \t\\hline
         \t& $(Int) & String & String & Float64? & Cat…? & String\\\\
         \t\\hline
-        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\#undef \\\\
-        \t2 & 2 & M\\&F & B & 2.0 &  & \\#undef \\\\
-        \t3 & 3 & A\\textasciitilde{}B & C &  & c & \\#undef \\\\
-        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\#undef \\\\
+        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} \\\\
+        \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} \\\\
+        \t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} \\\\
         \\end{tabular}
         """
     @test repr(MIME("text/latex"), df) == str
@@ -53,7 +53,7 @@ end
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<p>2 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>Amir</td><td><em>missing</em></td></tr></tbody></table>"
 
     df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
     io = IOBuffer()
@@ -63,8 +63,8 @@ end
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
                  "<p>2 rows × 2 columns</p>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, "text/html", eachrow(df))
@@ -73,8 +73,8 @@ end
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, "text/html", eachcol(df))
@@ -83,8 +83,8 @@ end
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, "text/html", df[1, :])
@@ -92,7 +92,7 @@ end
     @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
                  "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th></th>" *
                  "<th>String</th><th>Float64?</th></tr></thead><tbody><tr><th>1</th>" *
-                 "<td>#undef</td><td>1.5</td></tr></tbody></table>"
+                 "<td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df, summary=false)
@@ -100,8 +100,8 @@ end
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), eachrow(df), summary=false)
@@ -109,8 +109,8 @@ end
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), eachcol(df), summary=false)
@@ -118,15 +118,15 @@ end
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df[1, :], summary=false)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
                  "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64?</th></tr></thead>" *
-                 "<tbody><tr><th>1</th><td>#undef</td><td>1.5</td></tr></tbody></table>"
+                 "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2)), rowid=10)
@@ -396,6 +396,125 @@ end
         \\end{tabular}
         """
     end
+end
+
+@testset "improved printing of special types" begin
+    df = DataFrame(A=Int64.(1:9), B = Vector{Any}(undef, 9))
+    df.B[1:8] = [df, # DataFrame
+                 df[1,:], # DataFrameRow
+                 view(df,1:1, :), # SubDataFrame
+                 eachrow(df), # DataFrameColumns
+                 eachcol(df), # DataFrameRows
+                 groupby(df, :A),missing,nothing] # GroupedDataFrame
+
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+
+    @test str == """
+    9×2 DataFrame
+    │ Row │ A     │ B                                              │
+    │     │ Int64 │ Any                                            │
+    ├─────┼───────┼────────────────────────────────────────────────┤
+    │ 1   │ 1     │ 9×2 DataFrame                                  │
+    │ 2   │ 2     │ 2-element DataFrameRow                         │
+    │ 3   │ 3     │ 1×2 SubDataFrame                               │
+    │ 4   │ 4     │ 9-element DataFrameRows                        │
+    │ 5   │ 5     │ 2-element DataFrameColumns                     │
+    │ 6   │ 6     │ GroupedDataFrame with 9 groups based on key: A │
+    │ 7   │ 7     │ missing                                        │
+    │ 8   │ 8     │                                                │
+    │ 9   │ 9     │ #undef                                         │"""
+
+
+    io = IOBuffer()
+    show(IOContext(io, :color => true), df)
+    str = String(take!(io))
+    @test str == """
+    9×2 DataFrame
+    │ Row │ A     │ B                                              │
+    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                                            │
+    ├─────┼───────┼────────────────────────────────────────────────┤
+    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                                  │
+    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m                         │
+    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                               │
+    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m                        │
+    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m                     │
+    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups based on key: A\e[39m │
+    │ 7   │ 7     │ \e[90mmissing\e[39m                                        │
+    │ 8   │ 8     │                                                │
+    │ 9   │ 9     │ \e[90m#undef\e[39m                                         │"""
+
+
+    io = IOBuffer()
+    show(io, MIME("text/html"), df)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr>" *
+                 "<tr><th></th><th>Int64</th><th>Any</th></tr></thead>" *
+                 "<tbody><p>9 rows × 2 columns</p>" *
+                 "<tr><th>1</th><td>1</td><td><em>9×2 DataFrame</em></td></tr>" *
+                 "<tr><th>2</th><td>2</td><td><em>2-element DataFrameRow</em></td></tr>" *
+                 "<tr><th>3</th><td>3</td><td><em>1×2 SubDataFrame</em></td></tr>" *
+                 "<tr><th>4</th><td>4</td><td><em>9-element DataFrameRows</em></td></tr>" *
+                 "<tr><th>5</th><td>5</td><td><em>2-element DataFrameColumns</em></td></tr>" *
+                 "<tr><th>6</th><td>6</td><td><em>GroupedDataFrame with 9 groups based on key: A</em></td></tr>" *
+                 "<tr><th>7</th><td>7</td><td><em>missing</em></td></tr>" *
+                 "<tr><th>8</th><td>8</td><td></td></tr>" *
+                 "<tr><th>9</th><td>9</td><td><em>#undef</em></td></tr></tbody></table>"
+
+    io = IOBuffer()
+    show(io, MIME("text/latex"), df)
+    str = String(take!(io))
+    @test str == """
+    \\begin{tabular}{r|cc}
+    \t& A & B\\\\
+    \t\\hline
+    \t& Int64 & Any\\\\
+    \t\\hline
+    \t1 & 1 & \\emph{9×2 DataFrame} \\\\
+    \t2 & 2 & \\emph{2-element DataFrameRow} \\\\
+    \t3 & 3 & \\emph{1×2 SubDataFrame} \\\\
+    \t4 & 4 & \\emph{9-element DataFrameRows} \\\\
+    \t5 & 5 & \\emph{2-element DataFrameColumns} \\\\
+    \t6 & 6 & \\emph{GroupedDataFrame with 9 groups based on key: A} \\\\
+    \t7 & 7 & \\emph{missing} \\\\
+    \t8 & 8 &  \\\\
+    \t9 & 9 & \\emph{\\#undef} \\\\
+    \\end{tabular}
+    """
+
+    @test_throws UndefRefError show(io, MIME("text/csv"), df)
+    @test_throws UndefRefError show(io, MIME("text/tab-separated-values"), df)
+
+    io = IOBuffer()
+    show(io, MIME("text/csv"), df[1:end-1, :])
+    str = String(take!(io))
+    @test str == """
+    "A","B"
+    1,"9×2 DataFrame"
+    2,"2-element DataFrameRow"
+    3,"1×2 SubDataFrame"
+    4,"9-element DataFrameRows"
+    5,"2-element DataFrameColumns"
+    6,"GroupedDataFrame with 9 groups based on key: A"
+    7,missing
+    8,nothing
+    """
+
+    io = IOBuffer()
+    show(io, MIME("text/tab-separated-values"), df[1:end-1, :])
+    str = String(take!(io))
+    @test str == """
+    "A"\t"B"
+    1\t"9×2 DataFrame"
+    2\t"2-element DataFrameRow"
+    3\t"1×2 SubDataFrame"
+    4\t"9-element DataFrameRows"
+    5\t"2-element DataFrameColumns"
+    6\t"GroupedDataFrame with 9 groups based on key: A"
+    7\tmissing
+    8\tnothing
+    """
 end
 
 end # module

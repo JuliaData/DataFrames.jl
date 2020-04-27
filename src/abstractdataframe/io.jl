@@ -6,7 +6,8 @@ Render a data frame to an I/O stream in MIME type `mime`.
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`,
-  `"text/csv"`, `"text/tab-separated-values"`
+  `"text/csv"`, `"text/tab-separated-values"` (the last two MIME types do not support
+   showing `#undef` values)
 - `df::AbstractDataFrame`: The data frame to print.
 
 Additionally selected MIME types support passing the following keyword arguments:
@@ -81,6 +82,10 @@ end
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                summary::Bool=true, eltypes::Bool=true, rowid::Union{Int,Nothing}=nothing)
     _check_consistency(df)
+
+    # we will pass around this buffer to avoid its reallocation in ourstrwidth
+    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
@@ -93,7 +98,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -134,11 +139,21 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         end
         for column_name in cnames
             if isassigned(df[!, column_name], row)
-                cell = sprint(ourshow, df[row, column_name])
+                cell_val = df[row, column_name]
+                if ismissing(cell_val)
+                    write(io, "<td><em>missing</em></td>")
+                elseif cell_val isa SHOW_TABULAR_TYPES
+                    write(io, "<td><em>")
+                    cell = sprint(ourshow, cell_val)
+                    write(io, html_escape(cell))
+                    write(io, "</em></td>")
+                else
+                    cell = sprint(ourshow, cell_val)
+                    write(io, "<td>$(html_escape(cell))</td>")
+                end
             else
-                cell = sprint(ourshow, Base.undef_ref_str)
+                write(io, "<td><em>#undef</em></td>")
             end
-            write(io, "<td>$(html_escape(cell))</td>")
         end
         write(io, "</tr>")
     end
@@ -236,6 +251,10 @@ end
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                eltypes::Bool=true, rowid=nothing)
     _check_consistency(df)
+
+    # we will pass around this buffer to avoid its reallocation in ourstrwidth
+    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+
     if rowid !== nothing
         if size(df, 2) == 0
             rowid = nothing
@@ -248,7 +267,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -278,12 +297,22 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
         write(io, @sprintf("%d", rowid === nothing ? row : rowid))
         for col in 1:mxcol
             write(io, " & ")
-            cell = isassigned(df[!, col], row) ? df[row,col] : Base.undef_ref_str
-            if !ismissing(cell)
-                if showable(MIME("text/latex"), cell)
-                    show(io, MIME("text/latex"), cell)
-                else
+            if !isassigned(df[!, col], row)
+                print(io, "\\emph{\\#undef}")
+            else
+                cell = df[row,col]
+                if ismissing(cell)
+                    print(io, "\\emph{missing}")
+                elseif cell isa SHOW_TABULAR_TYPES
+                    print(io, "\\emph{")
                     print(io, latex_escape(sprint(ourshow, cell, context=io)))
+                    print(io, "}")
+                else
+                    if showable(MIME("text/latex"), cell)
+                        show(io, MIME("text/latex"), cell)
+                    else
+                        print(io, latex_escape(sprint(ourshow, cell, context=io)))
+                    end
                 end
             end
         end
@@ -362,7 +391,8 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    missingstring::AbstractString = "missing")
+                    missingstring::AbstractString = "missing",
+                    nothingstring::AbstractString = "nothing")
     _check_consistency(df)
     n, p = size(df)
     etypes = eltype.(eachcol(df))
@@ -382,7 +412,11 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !ismissing(df[i, j])
+            if ismissing(df[i, j])
+                print(io, missingstring)
+            elseif isnothing(df[i, j])
+                print(io, nothingstring)
+            else
                 if ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], quotestr)
@@ -390,8 +424,6 @@ function printtable(io::IO,
                 else
                     print(io, df[i, j])
                 end
-            else
-                print(io, missingstring)
             end
             if j < p
                 print(io, separator)
