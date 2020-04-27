@@ -102,8 +102,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 normalize_selection(idx::AbstractIndex,
-                    sel::Pair{<:Any,<:Pair{<:Union{Base.Callable, ByRow},
-                                           <:AbstractString}}) =
+                    sel::Pair{<:Any,<:Pair{<:Base.Callable,<:AbstractString}}) =
     normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))))
 
 function normalize_selection(idx::AbstractIndex,
@@ -123,7 +122,7 @@ function normalize_selection(idx::AbstractIndex,
         rawc = first(sel)
         wanttable = false
     end
-    if rawc isa AbstractVector{Int}
+    if rawc isa AbstractVector{Int} 
         c = rawc
     elseif rawc isa Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}}
         c = [idx[n] for n in rawc]
