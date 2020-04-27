@@ -1,6 +1,6 @@
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
-          variable_name::Symbol=:variable, value_name::Symbol=:value,
+          variable_name=:variable, value_name=:value,
           view::Bool=false, variable_eltype::Type=CategoricalValue{String})
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
@@ -18,24 +18,24 @@ that return views into the original data frame.
 
 # Arguments
 - `df` : the AbstractDataFrame to be stacked
-- `measure_vars` : the columns to be stacked (the measurement
-  variables), a normal column indexing type, like a `Symbol`,
-  `Vector{Symbol}`, Int, etc.; If neither `measure_vars`
-  or `id_vars` are given, `measure_vars` defaults to all
-  floating point columns.
-- `id_vars` : the identifier columns that are repeated during
-  stacking, a normal column indexing type; defaults to all
-  variables that are not `measure_vars`
-- `variable_name` : the name of the new stacked column that shall hold the names
-  of each of `measure_vars`
-- `value_name` : the name of the new stacked column containing the values from
-  each of `measure_vars`
+- `measure_vars` : the columns to be stacked (the measurement variables),
+  as a column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+  If neither `measure_vars` or `id_vars` are given, `measure_vars`
+  defaults to all floating point columns.
+- `id_vars` : the identifier columns that are repeated during stacking,
+  as a column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+  Defaults to all variables that are not `measure_vars`
+- `variable_name` : the name (`Symbol` or string) of the new stacked column that
+  shall hold the names of each of `measure_vars`
+- `value_name` : the name (`Symbol` or string) of the new stacked column containing
+  the values from each of `measure_vars`
 - `view` : whether the stacked data frame should be a view rather than contain
-   freshly allocated vectors.
-- `variable_eltype` : determines the element type of column `variable_name`. By default
-   a categorical vector of strings is created.
-   If `variable_eltype=Symbol` it is a vector of `Symbol`,
-   and if `variable_eltype=String` a vector of `String` is produced.
+  freshly allocated vectors.
+- `variable_eltype` : determines the element type of column `variable_name`.
+  By default a categorical vector of strings is created.
+  If `variable_eltype=Symbol` it is a vector of `Symbol`,
+  and if `variable_eltype=String` a vector of `String` is produced.
+
 
 # Examples
 ```julia
@@ -55,33 +55,37 @@ function stack(df::AbstractDataFrame,
                measure_vars = findall(col -> eltype(col) <: Union{AbstractFloat, Missing},
                                       eachcol(df)),
                id_vars = Not(measure_vars);
-               variable_name::Symbol=:variable,
-               value_name::Symbol=:value, view::Bool=false,
+               variable_name::SymbolOrString=:variable,
+               value_name::SymbolOrString=:value, view::Bool=false,
                variable_eltype::Type=CategoricalValue{String})
+    variable_name_s = Symbol(variable_name)
+    value_name_s = Symbol(value_name)
     # getindex from index returns either Int or AbstractVector{Int}
     mv_tmp = index(df)[measure_vars]
     ints_measure_vars = mv_tmp isa Int ? [mv_tmp] : mv_tmp
     idv_tmp = index(df)[id_vars]
     ints_id_vars = idv_tmp isa Int ? [idv_tmp] : idv_tmp
     if view
-        return _stackview(df, ints_measure_vars, ints_id_vars, variable_name=variable_name,
-                          value_name=value_name, variable_eltype=variable_eltype)
+        return _stackview(df, ints_measure_vars, ints_id_vars,
+                          variable_name=variable_name_s,
+                          value_name=value_name_s,
+                          variable_eltype=variable_eltype)
     end
     N = length(ints_measure_vars)
     cnames = _names(df)[ints_id_vars]
-    push!(cnames, variable_name)
-    push!(cnames, value_name)
+    push!(cnames, variable_name_s)
+    push!(cnames, value_name_s)
     if variable_eltype <: CategoricalValue{String}
-        nms = String.(_names(df)[ints_measure_vars])
+        nms = names(df, ints_measure_vars)
         catnms = categorical(nms)
         levels!(catnms, nms)
     elseif variable_eltype === Symbol
         catnms = _names(df)[ints_measure_vars]
     elseif variable_eltype === String
-        catnms = PooledArray(String.(_names(df)[ints_measure_vars]))
+        catnms = PooledArray(names(df, ints_measure_vars))
     else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalValue{String}`, " *
-                            "`String` or `Symbol` as a value."))
+        throw(ArgumentError("`variable_eltype` keyword argument accepts only " *
+                            "`CategoricalValue{String}`, `String` or `Symbol` as a value."))
     end
     return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
                                     repeat(catnms, inner=nrow(df)),                       # variable
@@ -97,16 +101,16 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
     push!(cnames, variable_name)
     push!(cnames, value_name)
     if variable_eltype <: CategoricalValue{String}
-        nms = String.(_names(df)[measure_vars])
+        nms = names(df, measure_vars)
         catnms = categorical(nms)
         levels!(catnms, nms)
     elseif variable_eltype <: Symbol
         catnms = _names(df)[measure_vars]
     elseif variable_eltype <: String
-        catnms = String.(_names(df)[measure_vars])
+        catnms = names(df, measure_vars)
     else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only `CategoricalValue{String}`, " *
-                            "`String` or `Symbol` as a value."))
+        throw(ArgumentError("`variable_eltype` keyword argument accepts only " *
+                            "`CategoricalValue{String}`, `String` or `Symbol` as a value."))
     end
     return DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
                                     RepeatedVector(catnms, nrow(df), 1),                  # variable
@@ -115,33 +119,30 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
 end
 
 """
-    unstack(df::AbstractDataFrame, rowkeys::Union{Integer, Symbol},
-            colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
-            renamecols::Function=identity)
-    unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Integer, Symbol}},
-            colkey::Union{Integer, Symbol}, value::Union{Integer, Symbol};
-            renamecols::Function=identity)
-    unstack(df::AbstractDataFrame, colkey::Union{Integer, Symbol},
-            value::Union{Integer, Symbol}; renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, rowkeys, colkey, value; renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, colkey, value; renamecols::Function=identity)
     unstack(df::AbstractDataFrame; renamecols::Function=identity)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
-If `colkey` contains `missing` values then they will be skipped and a warning will be printed.
+If `colkey` contains `missing` values then they will be skipped and a warning
+will be printed.
 
-If combination of `rowkeys` and `colkey` contains duplicate entries then last `value` will
-be retained and a warning will be printed.
+If combination of `rowkeys` and `colkey` contains duplicate entries then last
+`value` will be retained and a warning will be printed.
 
 # Arguments
 - `df` : the AbstractDataFrame to be unstacked
-- `rowkeys` : the column(s) with a unique key for each row, if not given,
-  find a key by grouping on anything not a `colkey` or `value`
-- `colkey` : the column holding the column names in wide format,
+- `rowkeys` : the columns with a unique key for each row, if not given,
+  find a key by grouping on anything not a `colkey` or `value`.
+  Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
   defaults to `:variable`
-- `value` : the value column, defaults to `:value`
+- `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
 - `renamecols` : a function called on each unique value in `colkey` which must
                  return the name of the column to be created (typically as a string
                  or a `Symbol`). Duplicate names are not allowed.
+
 
 # Examples
 ```julia
@@ -185,7 +186,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
         kref = keycol.refs[k]
         if kref <= 0 # we have found missing in colkey
             if !warned_missing
-                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue # skip processing it
@@ -266,7 +267,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         kref = keycol.refs[k]
         if kref <= 0
             if !warned_missing
-                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue
@@ -333,7 +334,8 @@ Base.eltype(v::Type{StackedVector{T}}) where {T} = T
 Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
     similar(v.components[1], T, dims...)
 
-CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
+CategoricalArrays.CategoricalArray(v::StackedVector) =
+    CategoricalArray(v[:]) # could be more efficient
 
 
 """

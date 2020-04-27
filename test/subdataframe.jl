@@ -187,7 +187,7 @@ end
     y = collect(1.0:10.0)
     df = view(DataFrame(:x=>x, :y=>y, copycols=false), 2:6, :)
 
-    @test Base.propertynames(df) == Tuple(names(df))
+    @test propertynames(df) == Symbol.(names(df))
 
     @test df.x == 2:6
     @test df.y == 2:6
@@ -212,7 +212,8 @@ end
     @test !haskey(DataFrames.index(df2), 2)
     @test !haskey(DataFrames.index(df2), 0)
     @test_throws ArgumentError haskey(DataFrames.index(df2), true)
-    @test keys(DataFrames.index(df2)) == [:y]
+    @test names(DataFrames.index(df2)) == ["y"]
+    @test DataFrames._names(DataFrames.index(df2)) == [:y]
 
     x = DataFrame(ones(5,4))
     df = view(x, 2:3, 2:3)

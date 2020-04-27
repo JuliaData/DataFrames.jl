@@ -6,9 +6,8 @@ for working with tabular data.
 
 # Common methods
 
-An AbstractDataFrame is a two-dimensional table with Symbols for
-column names. An AbstractDataFrame is also similar to an Associative
-type in that it allows indexing by a key (the columns).
+An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
+for column names.
 
 The following are normally implemented for AbstractDataFrames:
 
@@ -46,11 +45,13 @@ The following are normally implemented for AbstractDataFrames:
 row and column selectors. The allowed indices are a superset of indices
 that can be used for standard arrays. You can also access a single column
 of an `AbstractDataFrame` using `getproperty` and `setproperty!` functions.
+Columns can be selected using integers, `Symbol`s, or strings.
 In broadcasting `AbstractDataFrame` behavior is similar to a `Matrix`.
 
 A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`,
 broadcasting and broadcasting assignment for data frames is given in
-the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/) of the manual.
+the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
+of the manual.
 
 """
 abstract type AbstractDataFrame end
@@ -65,26 +66,35 @@ abstract type AbstractDataFrame end
     names(df::AbstractDataFrame)
     names(df::AbstractDataFrame, cols)
 
-    Return a `Vector{Symbol}` of names of columns contained in `df`.
+Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
-    If a `cols` column selector is passed then restrict returned
-    column names to those matching the selector
-    (this is useful in particular with regular expressions, `Not`, and `Between`).
+If `cols` is passed then restrict returned column names to those matching the
+selector (this is useful in particular with regular expressions, `Not`, and `Between`).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+
+See also [propertynames](@ref) which returns a `Vector{Symbol}`.
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
 function Base.names(df::AbstractDataFrame, cols)
-    sel = index(df)[cols]
-    return _names(index(df))[sel isa Int ? (sel:sel) : sel]
+    nms = _names(index(df))
+    idx = index(df)[cols]
+    idxs = idx isa Int ? (idx:idx) : idx
+    return [string(nms[i]) for i in idxs]
 end
 
+# _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))
 
+# separate methods are needed due to dispatch ambiguity
 Compat.hasproperty(df::AbstractDataFrame, s::Symbol) = haskey(index(df), s)
+Compat.hasproperty(df::AbstractDataFrame, s::AbstractString) = haskey(index(df), s)
 
 """
-    rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
-    rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString}; makeunique::Bool=false)
+    rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
+            makeunique::Bool=false)
+    rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
+            makeunique::Bool=false)
     rename!(df::AbstractDataFrame, (from => to)::Pair...)
     rename!(df::AbstractDataFrame, d::AbstractDict)
     rename!(df::AbstractDataFrame, d::AbstractVector{<:Pair})
@@ -97,7 +107,7 @@ Each name is changed at most once. Permutation of names is allowed.
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column takes the old name (a `Symbol`)
+- `f` : a function which for each column takes the old name as a `String`
   and returns the new name that gets converted to a `Symbol`
 - `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
   of the same length as the number of columns in `df`
@@ -105,8 +115,8 @@ Each name is changed at most once. Permutation of names is allowed.
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 
-If pairs are passed to `rename!` (as positional arguments or in a dictionary or a vector)
-then:
+If pairs are passed to `rename!` (as positional arguments or in a dictionary or
+a vector) then:
 * `from` value can be a `Symbol`, an `AbstractString` or an `Integer`;
 * `to` value can be a `Symbol` or an `AbstractString`.
 
@@ -138,7 +148,8 @@ julia> rename!(df, [:a, :b, :c])
 │ 1   │ 1     │ 2     │ 3     │
 
 julia> rename!(df, [:a, :b, :a])
-ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make them unique using a suffix automatically.
+ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make
+them unique using a suffix automatically.
 
 julia> rename!(df, [:a, :b, :a], makeunique=true)
 1×3 DataFrame
@@ -147,9 +158,7 @@ julia> rename!(df, [:a, :b, :a], makeunique=true)
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia> rename!(df) do x
-           uppercase(string(x))
-       end
+julia> rename!(uppercase, df)
 1×3 DataFrame
 │ Row │ A     │ B     │ A_1   │
 │     │ Int64 │ Int64 │ Int64 │
@@ -203,8 +212,10 @@ function rename!(f::Function, df::AbstractDataFrame)
 end
 
 """
-    rename(df::AbstractDataFrame, vals::AbstractVector{Symbol}; makeunique::Bool=false)
-    rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString}; makeunique::Bool=false)
+    rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
+           makeunique::Bool=false)
+    rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
+           makeunique::Bool=false)
     rename(df::AbstractDataFrame, (from => to)::Pair...)
     rename(df::AbstractDataFrame, d::AbstractDict)
     rename(df::AbstractDataFrame, d::AbstractVector{<:Pair})
@@ -217,7 +228,7 @@ Each name is changed at most once. Permutation of names is allowed.
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column takes the old name (a `Symbol`)
+- `f` : a function which for each column takes the old name as a `String`
   and returns the new name that gets converted to a `Symbol`
 - `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
   of the same length as the number of columns in `df`
@@ -225,8 +236,8 @@ Each name is changed at most once. Permutation of names is allowed.
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 
-If pairs are passed to `rename` (as positional arguments or in a dictionary or a vector)
-then:
+If pairs are passed to `rename` (as positional arguments or in a dictionary or
+a vector) then:
 * `from` value can be a `Symbol`, an `AbstractString` or an `Integer`;
 * `to` value can be a `Symbol` or an `AbstractString`.
 
@@ -271,9 +282,7 @@ julia> rename(df, Dict("i" => "A", "x" => "X"))
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia> rename(df) do x
-           uppercase(string(x))
-       end
+julia> rename(uppercase, df)
 1×3 DataFrame
 │ Row │ I     │ X     │ Y     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -333,9 +342,17 @@ Return the number of dimensions of a data frame, which is always `2`.
 Base.ndims(::AbstractDataFrame) = 2
 Base.ndims(::Type{<:AbstractDataFrame}) = 2
 
+# separate methods are needed due to dispatch ambiguity
 Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = df[!, col_ind]
+Base.getproperty(df::AbstractDataFrame, col_ind::AbstractString) = df[!, col_ind]
+
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(df::AbstractDataFrame, private::Bool=false) = Tuple(_names(df))
+"""
+    propertynames(df::AbstractDataFrame)
+
+Return a freshly allocated `Vector{Symbol}` of names of columns contained in `df`.
+"""
+Base.propertynames(df::AbstractDataFrame, private::Bool=false) = copy(_names(df))
 
 ##############################################################################
 ##
@@ -421,44 +438,46 @@ Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), 
 
 """
     describe(df::AbstractDataFrame; cols=:)
-    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...; cols=:)
+    describe(df::AbstractDataFrame, stats::Union{Symbol, Pair}...; cols=:)
 
 Return descriptive statistics for a data frame as a new `DataFrame`
 where each row represents a variable and each column a summary statistic.
 
 # Arguments
 - `df` : the `AbstractDataFrame`
-- `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report.
+- `stats::Union{Symbol, Pair}...` : the summary statistics to report.
   Arguments can be:
-    -  A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
+    - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
-      `:nmissing`. The default statistics used
-      are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
+      `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
+      `:max`, `:nunique`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
-    - A `name => function` pair where `name` is a `Symbol`. This will create
-      a column of summary statistics with the provided name.
+    - A `name => function` pair where `name` is a `Symbol` or string. This will
+      create a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe; all standard column selection methods are allowed.
+  to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 # Details
-For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
-third quantile, and maximum. If a column does not derive from `Real`, `describe` will
-attempt to calculate all statistics, using `nothing` as a fall-back in the case of an error.
+For `Real` columns, compute the mean, standard deviation, minimum, first
+quantile, median, third quantile, and maximum. If a column does not derive from
+`Real`, `describe` will attempt to calculate all statistics, using `nothing` as
+a fall-back in the case of an error.
 
 When `stats` contains `:nunique`, `describe` will report the
 number of unique values in a column. If a column's base type derives from `Real`,
 `:nunique` will return `nothing`s.
 
-Missing values are filtered in the calculation of all statistics, however the column
-`:nmissing` will report the number of missing values of that variable.
-If the column does not allow missing values, `nothing` is returned.
-Consequently, `nmissing = 0` indicates that the column allows
-missing values, but does not currently contain any.
+Missing values are filtered in the calculation of all statistics, however the
+column `:nmissing` will report the number of missing values of that variable. If
+the column does not allow missing values, `nothing` is returned. Consequently,
+`nmissing = 0` indicates that the column allows missing values, but does not
+currently contain any.
 
-If custom functions are provided, they are called repeatedly with the vector corresponding
-to each column as the only argument. For columns allowing for missing values,
-the vector is wrapped in a call to [`skipmissing`](@ref): custom functions must therefore
-support such objects (and not only vectors), and cannot access missing values.
+If custom functions are provided, they are called repeatedly with the vector
+corresponding to each column as the only argument. For columns allowing for
+missing values, the vector is wrapped in a call to [`skipmissing`](@ref): custom
+functions must therefore support such objects (and not only vectors), and cannot
+access missing values.
 
 # Examples
 ```julia
@@ -513,7 +532,9 @@ julia> describe(df, :min, :sum => sum, cols=:x)
 │ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...; cols=:) =
+DataAPI.describe(df::AbstractDataFrame,
+                 stats::Union{Symbol, Pair{<:SymbolOrString}}...;
+                 cols=:) =
     _describe(select(df, cols, copycols=false), collect(stats))
 
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
@@ -538,22 +559,23 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
     end
 
-    custom_funs = Pair[s for s in stats if s isa Pair]
+    custom_funs = Pair[Symbol(s[1]) => s[2] for s in stats if s isa Pair]
 
-    ordered_names = [s isa Symbol ? s : s[1] for s in stats]
+    ordered_names = [s isa Symbol ? s : Symbol(first(s)) for s in stats]
 
     if !allunique(ordered_names)
-        duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
+        df_ord_names = DataFrame(ordered_names = ordered_names)
+        duplicate_names = unique(ordered_names[nonunique(df_ord_names)])
         throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: " *
                             ":$(join(duplicate_names, ", "))"))
     end
 
     # Put the summary stats into the return data frame
     data = DataFrame()
-    data.variable = names(df)
+    data.variable = copy(_names(df))
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = map(eachcol(df)) do col
+    col_stats_dicts = map(eachcol(df)) do col
         if eltype(col) >: Missing
             t = collect(skipmissing(col))
             d = get_stats(t, predefined_funs)
@@ -585,7 +607,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     for stat in ordered_names
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
-        data[!, stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
+        data[!, stat] = [d[stat] for d in col_stats_dicts]
     end
 
     return data
@@ -646,13 +668,13 @@ end
 ##############################################################################
 
 """
-    completecases(df::AbstractDataFrame, cols::Colon=:)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All})
-    completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+    completecases(df::AbstractDataFrame, cols=:)
 
 Return a Boolean vector with `true` entries indicating rows without missing values
-(complete cases) in data frame `df`. If `cols` is provided, only missing values in
-the corresponding columns are considered.
+(complete cases) in data frame `df`.
+
+If `cols` is provided, only missing values in the corresponding columns areconsidered.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
@@ -700,7 +722,8 @@ julia> completecases(df, [:x, :y])
 """
 function completecases(df::AbstractDataFrame, col::Colon=:)
     if ncol(df) == 0
-        throw(ArgumentError("Unable to compute complete cases of a data frame with no columns"))
+        throw(ArgumentError("Unable to compute complete cases of a " *
+                            "data frame with no columns"))
     end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
@@ -712,18 +735,16 @@ end
 completecases(df::AbstractDataFrame, col::ColumnIndex) =
     .!ismissing.(df[!, col])
 
-completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All}) =
+completecases(df::AbstractDataFrame, cols::MultiColumnIndex) =
     completecases(df[!, cols])
 
 """
-    dropmissing(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
-                disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol};
-                disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
+
 If `cols` is provided, only missing values in the corresponding columns are considered.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `disallowmissing` is `true` (the default) then columns specified in `cols` will
 be converted so as not to allow for missing values using [`disallowmissing!`](@ref).
@@ -781,7 +802,7 @@ julia> dropmissing(df, [:x, :y])
 ```
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
+                     cols::Union{ColumnIndex, MultiColumnIndex}=:;
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -789,14 +810,12 @@ function dropmissing(df::AbstractDataFrame,
 end
 
 """
-    dropmissing!(df::AbstractDataFrame, cols::Colon=:; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex, Not, Between, All};
-                 disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol};
-                 disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
+
 If `cols` is provided, only missing values in the corresponding columns are considered.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `disallowmissing` is `true` (the default) then the `cols` columns will
 get converted using [`disallowmissing!`](@ref).
@@ -852,7 +871,7 @@ julia> dropmissing!(df3, [:x, :y])
 ```
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
+                      cols::Union{ColumnIndex, MultiColumnIndex}=:;
                       disallowmissing::Bool=true)
     delete!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -867,10 +886,13 @@ Return a copy of data frame `df` containing only rows for which `function`
 returns `true`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is specified then it should be a valid column selector
-(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
-the function is passed elements of the selected columns as separate positional arguments,
-unless it is an `AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
+
+If `cols` is specified then the function is passed elements of the corresponding
+columns as separate positional arguments, unless `cols` is an `AsTable` selector,
+in which case a `NamedTuple` of these arguments is passed.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
+and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
+is passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -926,12 +948,18 @@ julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 Base.filter(f, df::AbstractDataFrame) = _filter_helper(df, f, eachrow(df))
 Base.filter((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter_helper(df, f, df[!, col])
-Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
-    (cdf = _columns(df); _filter_helper(df, f, (cdf[i] for i in cols)...))
 Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
     filter([index(df)[col] for col in cols] => f, df)
+Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDataFrame) =
+    filter([index(df)[col] for col in cols] => f, df)
+
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
     filter(index(df)[cols] => f, df)
+
+function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame)
+    cdf = _columns(df)
+    return _filter_helper(df, f, (cdf[i] for i in cols)...)
+end
 
 function _filter_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
@@ -953,14 +981,17 @@ _filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f)
 
 """
     filter!(function, df::AbstractDataFrame)
+    filter!(cols => function, df::AbstractDataFrame)
 
 Remove rows from data frame `df` for which `function` returns `false`.
 
 If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is specified then it should be a valid column selector
-(column duplicates are allowed if a vector of `Int` or `Symbol` is passed),
-the function is passed elements of the selected columns as separate positional arguments,
-unless it is `AsTable` selector in which case `NamedTuple`s of these arguments are passed.
+If `cols` is specified then the function is passed elements of the corresponding
+columns as separate positional arguments, unless `cols` is an `AsTable` selector,
+in which case a `NamedTuple` of these arguments is passed.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
+and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
+is passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -1025,12 +1056,17 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 Base.filter!(f, df::AbstractDataFrame) = _filter!_helper(df, f, eachrow(df))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
-Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
-    (cdf = _columns(df); _filter!_helper(df, f, (cdf[i] for i in cols)...))
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
+    filter!([index(df)[col] for col in cols] => f, df)
+Base.filter!((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDataFrame) =
     filter!([index(df)[col] for col in cols] => f, df)
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
+
+function Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame)
+    cdf = _columns(df)
+    return _filter!_helper(df, f, (cdf[i] for i in cols)...)
+end
 
 function _filter!_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
@@ -1052,8 +1088,9 @@ _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
-    convert(Matrix{T}, df)
+    return convert(Matrix{T}, df)
 end
+
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(undef, n, p)
@@ -1064,8 +1101,8 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
         catch err
             if err isa MethodError && err.f == convert &&
                !(T >: Missing) && any(ismissing, col)
-                throw(ArgumentError("cannot convert a DataFrame containing missing values to Matrix{$T} " *
-                                    "(found for column $name)"))
+                throw(ArgumentError("cannot convert a DataFrame containing missing " *
+                                    "values to Matrix{$T} (found for column $name)"))
             else
                 rethrow(err)
             end
@@ -1074,6 +1111,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     end
     return res
 end
+
 Base.Matrix(df::AbstractDataFrame) = Base.convert(Matrix, df)
 Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
 
@@ -1093,9 +1131,9 @@ equal values (according to `isequal`).
 See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Arguments
-- `df` : the AbstractDataFrame
-- `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.)
-  specifying the column(s) to compare
+- `df` : `AbstractDataFrame`
+- `cols` : a selector specifying the column(s) to compare. Can be any column
+  selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 # Examples
 ```julia
@@ -1107,7 +1145,8 @@ nonunique(df, 1)
 """
 function nonunique(df::AbstractDataFrame)
     if ncol(df) == 0
-        throw(ArgumentError("finding duplicate rows in data frame with no columns is not allowed"))
+        throw(ArgumentError("finding duplicate rows in data frame with no" *
+                            " columns is not allowed"))
     end
     gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
@@ -1139,8 +1178,9 @@ Base.unique(df::AbstractDataFrame, cols) =
     unique!(df::AbstractDataFrame, cols)
 
 Delete duplicate rows of data frame `df`, keeping only the first occurrence of unique rows.
-When `cols` is specified, the return DataFrame contains complete rows,
+When `cols` is specified, the returned `DataFrame` contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
 
@@ -1161,13 +1201,6 @@ unique!(df)  # modifies df
 ```
 """
 (unique, unique!)
-
-function without(df::AbstractDataFrame, icols::Vector{<:Integer})
-    newcols = setdiff(1:ncol(df), icols)
-    view(df, :, newcols)
-end
-without(df::AbstractDataFrame, i::Int) = without(df, [i])
-without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 """
     hcat(df::AbstractDataFrame...;
@@ -1247,24 +1280,29 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
           makeunique=makeunique, copycols=copycols)
 
 """
-    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
+    vcat(dfs::AbstractDataFrame...;
+         cols::Union{Symbol, AbstractVector{Symbol},
+                     AbstractVector{<:AbstractString}}=:setequal)
 
 Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:setequal`: require all data frames to have the same column names disregarding order.
-  If they appear in different orders, the order of the first provided data frame is used.
-* `:orderequal`: require all data frames to have the same column names and in the same order.
+* `:setequal`: require all data frames to have the same column names disregarding
+  order. If they appear in different orders, the order of the first provided data
+  frame is used.
+* `:orderequal`: require all data frames to have the same column names and in the
+  same order.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
 * `:union`: columns present in *at least one* of the provided data frames are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
-* A vector of `Symbol`s: only listed columns are kept.
+* A vector of `Symbol`s or strings: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-The order of columns is determined by the order they appear in the included data frames,
-searching through the header of the first data frame, then the second, etc.
+The order of columns is determined by the order they appear in the included data
+frames, searching through the header of the first data frame, then the second,
+etc.
 
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
@@ -1330,16 +1368,20 @@ julia> vcat(d4, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
+          cols::Union{Symbol, AbstractVector{Symbol},
+                      AbstractVector{<:AbstractString}}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
 Base.reduce(::typeof(vcat),
-            dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
-            cols::Union{Symbol, AbstractVector{Symbol}}=:setequal) =
+            dfs::Union{AbstractVector{<:AbstractDataFrame},
+                       Tuple{Vararg{AbstractDataFrame}}};
+            cols::Union{Symbol, AbstractVector{Symbol},
+                        AbstractVector{<:AbstractString}}=:setequal) =
     _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
-               cols::Union{Symbol, AbstractVector{Symbol}}=:setequal)
+               cols::Union{Symbol, AbstractVector{Symbol},
+                           AbstractVector{<:AbstractString}}=:setequal)
 
     isempty(dfs) && return DataFrame()
     # Array of all headers
@@ -1354,8 +1396,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     if cols === :orderequal
         header = unionunique
         if length(uniqueheaders) > 1
-            throw(ArgumentError("when `cols=:orderequal` all data frames need to have the same column names " *
-                                "and be in the same order"))
+            throw(ArgumentError("when `cols=:orderequal` all data frames need to " *
+                                "have the same column names and be in the same order"))
         end
     elseif cols === :setequal || cols === :equal
         if cols === :equal
@@ -1386,8 +1428,11 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         throw(ArgumentError("Invalid `cols` value :$cols. " *
                             "Only `:orderequal`, `:setequal`, `:intersect`, " *
                             "`:union`, or a vector of column names is allowed."))
-    else
+    elseif cols isa AbstractVector{Symbol}
         header = cols
+    else
+        @assert cols isa AbstractVector{<:AbstractString}
+        header = Symbol.(cols)
     end
 
     length(header) == 0 && return DataFrame()
@@ -1534,16 +1579,17 @@ julia> ncol(df)
 (nrow, ncol)
 
 """
-    disallowmissing(df::AbstractDataFrame,
-                    cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
-                    error::Bool=true)
+    disallowmissing(df::AbstractDataFrame, cols=:; error::Bool=true)
 
 Return a copy of data frame `df` with columns `cols` converted
 from element type `Union{T, Missing}` to `T` to drop support for missing values.
 
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+
 If `cols` is omitted all columns in the data frame are converted.
 
-If `error=false` then columns containing a `missing` value will be skipped instead of throwing an error.
+If `error=false` then columns containing a `missing` value will be skipped instead
+of throwing an error.
 
 **Examples**
 
@@ -1582,7 +1628,7 @@ julia> disallowmissing(df, error=false)
 │ 2   │ missing │ 2     │
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
-                                  cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:;
+                                  cols::Union{ColumnIndex, MultiColumnIndex}=:;
                                   error::Bool=true)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
@@ -1599,15 +1645,16 @@ function Missings.disallowmissing(df::AbstractDataFrame,
             push!(newcols, copy(x))
         end
     end
-    DataFrame(newcols, _names(df), copycols=false)
+    return DataFrame(newcols, _names(df), copycols=false)
 end
 
 """
-    allowmissing(df::AbstractDataFrame,
-                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+    allowmissing(df::AbstractDataFrame, cols=:)
 
 Return a copy of data frame `df` with columns `cols` converted
 to element type `Union{T, Missing}` from `T` to allow support for missing values.
+
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `cols` is omitted all columns in the data frame are converted.
 
@@ -1632,7 +1679,7 @@ julia> allowmissing(df)
 ```
 """
 function Missings.allowmissing(df::AbstractDataFrame,
-                               cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon}=:)
+                               cols::Union{ColumnIndex, MultiColumnIndex}=:)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
     for i in axes(df, 2)
@@ -1644,23 +1691,24 @@ function Missings.allowmissing(df::AbstractDataFrame,
             push!(newcols, copy(x))
         end
     end
-    DataFrame(newcols, _names(df), copycols=false)
+    return DataFrame(newcols, _names(df), copycols=false)
 end
 
 """
-    categorical(df::AbstractDataFrame, cols::Type=Union{AbstractString, Missing};
-                compress::Bool=false)
-    categorical(df::AbstractDataFrame,
-                cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
+    categorical(df::AbstractDataFrame, cols=Union{AbstractString, Missing};
                 compress::Bool=false)
 
 Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
+or a `Type`.
+
 If `categorical` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
 (by default `Union{AbstractString, Missing}`) will be converted to categorical.
 
-If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
-will be compressed.
+If the `compress` keyword argument is set to `true` then the created
+`CategoricalVector`s will be compressed.
 
 All created `CategoricalVector`s are unordered.
 
@@ -1693,7 +1741,7 @@ julia> categorical(df, :)
 ```
 """
 function CategoricalArrays.categorical(df::AbstractDataFrame,
-                                       cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon};
+                                       cols::Union{ColumnIndex, MultiColumnIndex};
                                        compress::Bool=false)
     idxcols = Set(index(df)[cols])
     newcols = AbstractVector[]
@@ -1726,17 +1774,19 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame,
-            cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
+    flatten(df::AbstractDataFrame, cols)
 
-When columns `cols` of data frame `df` have iterable elements that define `length` (for
-example a `Vector` of `Vector`s), return a `DataFrame` where each element of each `col` in
-`cols` is flattened, meaning the column corresponding to `col` becomes a longer vector
-where the original entries are concatenated. Elements of row `i` of `df` in columns other
-than `cols` will be repeated according to the length of `df[i, col]`. These lengths must
-therefore be the same for each `col` in `cols`, or else an error is raised. Note that these
-elements are not copied, and thus if they are mutable changing them in the returned
-`DataFrame` will affect `df`.
+When columns `cols` of data frame `df` have iterable elements that define
+`length` (for example a `Vector` of `Vector`s), return a `DataFrame` where each
+element of each `col` in `cols` is flattened, meaning the column corresponding
+to `col` becomes a longer vector where the original entries are concatenated.
+Elements of row `i` of `df` in columns other than `cols` will be repeated
+according to the length of `df[i, col]`. These lengths must therefore be the
+same for each `col` in `cols`, or else an error is raised. Note that these
+elements are not copied, and thus if they are mutable changing them in the
+returned `DataFrame` will affect `df`.
+
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 # Examples
 
@@ -1801,7 +1851,7 @@ are not the same in row 2
 ```
 """
 function flatten(df::AbstractDataFrame,
-                 cols::Union{ColumnIndex, AbstractVector, Regex, Not, Between, All, Colon})
+                 cols::Union{ColumnIndex, MultiColumnIndex})
     _check_consistency(df)
 
     idxcols = index(df)[cols]
@@ -1812,7 +1862,7 @@ function flatten(df::AbstractDataFrame,
         v = df[!, col]
         if any(x -> length(x[1]) != x[2], zip(v, lengths))
             r = findfirst(x -> x != 0, length.(v) .- lengths)
-            colnames = names(df)
+            colnames = _names(df)
             throw(ArgumentError("Lengths of iterables stored in columns :$(colnames[col1])" *
                                 " and :$(colnames[col]) are not the same in row $r"))
         end
@@ -1829,13 +1879,14 @@ function flatten(df::AbstractDataFrame,
             reduce(vcat, col_to_flatten) :
             collect(Iterators.flatten(col_to_flatten))
 
-        insertcols!(new_df, col, names(df)[col] => flattened_col)
+        insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 
     return new_df
 end
 
-function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector, lengths::AbstractVector{Int})
+function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector,
+                         lengths::AbstractVector{Int})
     counter = 1
     @inbounds for i in eachindex(shortold)
         l = lengths[i]

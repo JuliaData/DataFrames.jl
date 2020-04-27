@@ -92,7 +92,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 
         and_back = DataFrame(bare_rows)
         @test and_back isa DataFrame
-        @test names(and_back) == [:a, :b]
+        @test names(and_back) == ["a", "b"]
         @test and_back.a == df.a
         @test and_back.b == df.b
     end
@@ -104,7 +104,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 
         and_back = DataFrame(cols)
         @test and_back isa DataFrame
-        @test names(and_back) == [:a, :b]
+        @test names(and_back) == ["a", "b"]
         @test and_back.a == df.a == Tables.getcolumn(df, :a) == Tables.getcolumn(df, 1)
         @test and_back.b == df.b
     end
@@ -209,12 +209,12 @@ end
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
-    @test names(df2) == [:x1, :x2, :x3, :x4]
+    @test propertynames(df2) == [:x1, :x2, :x3, :x4]
     @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
-    @test names(df2) == [:x1, :x2, :x3, :x4]
+    @test propertynames(df2) == [:x1, :x2, :x3, :x4]
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))

@@ -6,7 +6,8 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
-const OnType = Union{Symbol, NTuple{2,Symbol}, Pair{Symbol,Symbol}}
+const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
+                     Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
 struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
@@ -23,16 +24,18 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
         left_on = Symbol[]
         right_on = Symbol[]
         for v in on_cols
-            if v isa Symbol
-                push!(left_on, v)
-                push!(right_on, v)
-            elseif v isa Pair{Symbol,Symbol} || v isa NTuple{2,Symbol}
-                push!(left_on, first(v))
-                push!(right_on, last(v))
+            if v isa SymbolOrString
+                push!(left_on, Symbol(v))
+                push!(right_on, Symbol(v))
+            elseif v isa Union{Pair{Symbol,Symbol},
+                               Pair{<:AbstractString, <:AbstractString},
+                               NTuple{2,Symbol}}
+                push!(left_on, Symbol(first(v)))
+                push!(right_on, Symbol(last(v)))
                 if v isa NTuple{2,Symbol}
-                    Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector containing such tuples " *
-                                 "as a value of `on` keyword argument is deprecated: use " *
-                                 "`Pair{Symbol,Symbol}` instead.", :join)
+                    Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
+                                 "such tuples as a value of `on` keyword argument is " *
+                                 "deprecated: use `Pair{Symbol,Symbol}` instead.", :join)
 
                 end
             else
@@ -75,14 +78,15 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     roil = length(rightonly_ixs)
 
     if loil > 0
-        # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig) indices of the left table rows
-        # preserving the original rows order
+        # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig)
+        # indices of the left table rows, preserving the original rows order
         all_orig_left_ixs = similar(left_ixs.orig, lil + loil)
         @inbounds all_orig_left_ixs[left_ixs.join] = left_ixs.orig
         @inbounds all_orig_left_ixs[leftonly_ixs.join] = leftonly_ixs.orig
     else
         # the result contains only the left rows that are matched to right rows (left_ixs)
-        all_orig_left_ixs = left_ixs.orig # no need to copy left_ixs.orig as it's not used elsewhere
+        # no need to copy left_ixs.orig as it's not used elsewhere
+        all_orig_left_ixs = left_ixs.orig
     end
     # permutation to swap rightonly and leftonly rows
     right_perm = vcat(1:ril, ril+roil+1:ril+roil+loil, ril+1:ril+roil)
@@ -93,7 +97,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
 
     # compose right half of the result taking all right columns excluding on
-    dfr_noon = without(joiner.dfr, joiner.right_on)
+    dfr_noon = select(joiner.dfr, Not(joiner.right_on), copycols=false)
 
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
@@ -112,7 +116,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
-    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)),
+    res = DataFrame(cols, vcat(_names(joiner.dfl), _names(dfr_noon)),
                     makeunique=makeunique, copycols=false)
 
     if length(rightonly_ixs.join) > 0
@@ -121,7 +125,8 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
-            copyto!(res[!, on_col], offset, view(joiner.dfr_on[!, on_col_ix], rightonly_ixs.orig))
+            copyto!(res[!, on_col], offset,
+                    view(joiner.dfr_on[!, on_col_ix], rightonly_ixs.orig))
         end
     end
     if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)
@@ -166,7 +171,8 @@ function update_row_maps!(left_table::AbstractDataFrame,
         ixs
     end
     @inline update!(ixs::Nothing, orig_ixs::AbstractArray) = nothing
-    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] .= false)
+    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) =
+        (mask[orig_ixs] .= false)
 
     # iterate over left rows and compose the left<->right index map
     right_dict_cols = ntuple(i -> right_dict.df[!, i], ncol(right_dict.df))
@@ -211,18 +217,21 @@ function update_row_maps!(left_table::AbstractDataFrame,
     leftonly_ixs = init_map(left_table, map_leftonly)
     right_ixs = init_map(right_table, map_right)
     rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
-    update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs, right_ixs, rightonly_mask)
+    update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs,
+                     right_ixs, rightonly_mask)
     if map_rightonly
         rightonly_orig_ixs = findall(rightonly_mask)
+        leftonly_ixs_len = leftonly_ixs === nothing ? 0 : length(leftonly_ixs)
         rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
-                                    collect(length(right_ixs.orig) +
-                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)) .+
+                                    collect(length(right_ixs.orig) .+
+                                            leftonly_ixs_len .+
                                             (1:length(rightonly_orig_ixs))))
     else
         rightonly_ixs = nothing
     end
 
-    return to_bimap(left_ixs), to_bimap(leftonly_ixs), to_bimap(right_ixs), to_bimap(rightonly_ixs)
+    return to_bimap(left_ixs), to_bimap(leftonly_ixs),
+           to_bimap(right_ixs), to_bimap(rightonly_ixs)
 end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -276,24 +285,28 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if kind == :inner
-        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                                     group_rows(joiner.dfr_on),
-                                                                     true, false, true, false)...,
+        joined = compose_joined_table(joiner, kind,
+                                      update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                       group_rows(joiner.dfr_on),
+                                                       true, false, true, false)...,
                                       makeunique=makeunique)
     elseif kind == :left
-        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                            group_rows(joiner.dfr_on),
-                                                            true, true, true, false)...,
+        joined = compose_joined_table(joiner, kind,
+                                      update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                       group_rows(joiner.dfr_on),
+                                                       true, true, true, false)...,
                                       makeunique=makeunique)
     elseif kind == :right
-        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfr_on, joiner.dfl_on,
-                                                            group_rows(joiner.dfl_on),
-                                                            true, true, true, false)[[3, 4, 1, 2]]...,
+        joined = compose_joined_table(joiner, kind,
+                                      update_row_maps!(joiner.dfr_on, joiner.dfl_on,
+                                                       group_rows(joiner.dfl_on),
+                                                       true, true, true, false)[[3, 4, 1, 2]]...,
                                       makeunique=makeunique)
     elseif kind == :outer
-        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                            group_rows(joiner.dfr_on),
-                                                            true, true, true, true)...,
+        joined = compose_joined_table(joiner, kind,
+                                      update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                       group_rows(joiner.dfr_on),
+                                                       true, true, true, true)...,
                                       makeunique=makeunique)
     elseif kind == :semi
         # hash the right rows
@@ -346,13 +359,14 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 """
-    innerjoin(df1, df2; on = Symbol[], makeunique = false,
+    innerjoin(df1, df2; on, makeunique = false,
               validate = (false, false))
-    innerjoin(df1, df2, dfs...; on = Symbol[], makeunique = false,
+    innerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false))
 
-Perform an inner join of two or more data frame objects and return a `DataFrame` containing
-the result. An inner join includes rows with keys that match in all passed data frames.
+Perform an inner join of two or more data frame objects and return a `DataFrame`
+containing the result. An inner join includes rows with keys that match in all
+passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -375,12 +389,13 @@ the result. An inner join includes rows with keys that match in all passed data 
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
 
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left data frame takes precedence over the ordering of the right data frame.
+When merging `on` categorical columns that differ in the ordering of their
+levels, the ordering of the left data frame takes precedence over the ordering
+of the right data frame.
 
-If more than two data frames are passed, the join is performed
+If more than two data frames are passed, the join is performed recursively with
+left associativity. In this case the `validate` keyword argument is applied
 recursively with left associativity.
-In this case the `validate` keyword argument is applied recursively with left associativity.
 
 See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -440,18 +455,21 @@ julia> innerjoin(name, job2, on = [:ID => :identifier])
 ```
 """
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=nothing,
-          validate=validate)
+    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
+          indicator=nothing, validate=validate)
+
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
               dfs..., on=on, makeunique=makeunique, validate=validate)
 
 """
-    leftjoin(df1, df2; on = Symbol[], makeunique = false,
+    leftjoin(df1, df2; on, makeunique = false,
              indicator = nothing, validate = (false, false))
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
@@ -482,8 +500,9 @@ the result. A left join includes all rows from `df1`.
 
 All columns of the returned data table will support missing values.
 
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left data frame takes precedence over the ordering of the right data frame.
+When merging `on` categorical columns that differ in the ordering of their
+levels, the ordering of the left data frame takes precedence over the ordering
+of the right data frame.
 
 See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -553,7 +572,7 @@ leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           validate=validate)
 
 """
-    rightjoin(df1, df2; on = Symbol[], makeunique = false,
+    rightjoin(df1, df2; on, makeunique = false,
               indicator = nothing, validate = (false, false))
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
@@ -584,8 +603,9 @@ the result. A right join includes all rows from `df2`.
 
 All columns of the returned data table will support missing values.
 
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left data frame takes precedence over the ordering of the right data frame.
+When merging `on` categorical columns that differ in the ordering of their
+levels, the ordering of the left data frame takes precedence over the ordering
+of the right data frame.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -652,16 +672,17 @@ rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
-          validate=validate)
+                 validate=validate)
 
 """
-    outerjoin(df1, df2; on = Symbol[], kind = :inner, makeunique = false,
+    outerjoin(df1, df2; on, kind = :inner, makeunique = false,
               indicator = nothing, validate = (false, false))
-    outerjoin(df1, df2, dfs...; on = Symbol[], kind = :inner, makeunique = false,
+    outerjoin(df1, df2, dfs...; on, kind = :inner, makeunique = false,
               validate = (false, false))
 
-Perform an outer join of two or more data frame objects and return a `DataFrame` containing
-the result. An outer join includes rows with keys that appear in any of the passed data frames.
+Perform an outer join of two or more data frame objects and return a `DataFrame`
+containing the result. An outer join includes rows with keys that appear in any
+of the passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -691,8 +712,9 @@ the result. An outer join includes rows with keys that appear in any of the pass
 
 All columns of the returned data table will support missing values.
 
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left data frame takes precedence over the ordering of the right data frame.
+When merging `on` categorical columns that differ in the ordering of their
+levels, the ordering of the left data frame takes precedence over the ordering
+of the right data frame.
 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
@@ -768,6 +790,7 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
           validate=validate)
+
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
@@ -775,10 +798,11 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
               dfs..., on=on, makeunique=makeunique, validate=validate)
 
 """
-    semijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
+    semijoin(df1, df2; on, makeunique = false, validate = (false, false))
 
-Perform a semi join of two data frame objects and return a `DataFrame` containing the result.
-A semi join returns the subset of rows of `df1` that match with the keys in `df2`.
+Perform a semi join of two data frame objects and return a `DataFrame`
+containing the result. A semi join returns the subset of rows of `df1` that
+match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -803,8 +827,9 @@ A semi join returns the subset of rows of `df1` that match with the keys in `df2
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
 
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left data frame takes precedence over the ordering of the right data frame.
+When merging `on` categorical columns that differ in the ordering of their
+levels, the ordering of the left data frame takes precedence over the ordering
+of the right data frame.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -866,14 +891,15 @@ julia> semijoin(name, job2, on = [:ID => :identifier])
 semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:semi, makeunique=makeunique, indicator=nothing,
-          validate=validate)
+    _join(df1, df2, on=on, kind=:semi, makeunique=makeunique,
+          indicator=nothing, validate=validate)
 
 """
-    antijoin(df1, df2; on = Symbol[], makeunique = false, validate = (false, false))
+    antijoin(df1, df2; on, makeunique = false, validate = (false, false))
 
-Perform an anti join of two data frame objects and return a `DataFrame` containing the result.
-An anti join returns the subset of rows of `df1` that do not match with the keys in `df2`.
+Perform an anti join of two data frame objects and return a `DataFrame`
+containing the result. An anti join returns the subset of rows of `df1` that do
+not match with the keys in `df2`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -894,8 +920,9 @@ An anti join returns the subset of rows of `df1` that do not match with the keys
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
 
-When merging `on` categorical columns that differ in the ordering of their levels, the
-ordering of the left data frame takes precedence over the ordering of the right data frame.
+When merging `on` categorical columns that differ in the ordering of their
+levels, the ordering of the left data frame takes precedence over the ordering
+of the right data frame.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
@@ -954,14 +981,15 @@ julia> antijoin(name, job2, on = [:ID => :identifier])
 antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:anti, makeunique=makeunique, indicator=nothing,
-          validate=validate)
+    _join(df1, df2, on=on, kind=:anti, makeunique=makeunique,
+          indicator=nothing, validate=validate)
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)
 
-Perform a cross join of two or more data frame objects and return a `DataFrame` containing
-the result. A cross join returns the cartesian product of rows from all passed data frames.
+Perform a cross join of two or more data frame objects and return a `DataFrame`
+containing the result. A cross join returns the cartesian product of rows from
+all passed data frames.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -1017,7 +1045,7 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
     colindex = merge(index(df1), index(df2), makeunique=makeunique)
     cols = Any[[repeat(c, inner=r2) for c in eachcol(df1)];
                [repeat(c, outer=r1) for c in eachcol(df2)]]
-    DataFrame(cols, colindex, copycols=false)
+    return DataFrame(cols, colindex, copycols=false)
 end
 
 crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;

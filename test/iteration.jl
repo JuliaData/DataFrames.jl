@@ -108,7 +108,7 @@ end
 
     cols = eachcol(df)
 
-    @test keys(cols) == names(df)
+    @test keys(cols) == propertynames(df)
     for (a, b, c) in zip(keys(cols), cols, pairs(cols))
         @test (a => b) == c
     end

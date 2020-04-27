@@ -5,11 +5,18 @@ abstract type AbstractIndex end
 
 function Base.summary(idx::AbstractIndex)
     l = length(idx)
-    "data frame with $l column$(l == 1 ? "" : "s")"
+    return "data frame with $l column$(l == 1 ? "" : "s")"
 end
 Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
 
-const ColumnIndex = Union{Signed, Unsigned, Symbol}
+const SymbolOrString = Union{Symbol, AbstractString}
+const ColumnIndex = Union{Signed, Unsigned, SymbolOrString}
+const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Colon}
+const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+
+const COLUMNINDEX_STR = "`Symbol`, string or integer"
+const MULTICOLUMNINDEX_STR = "`:`, `All`, `Between`, `Not`, a regular expression," *
+                          " or a vector of `Symbol`s, strings or integers"
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
@@ -19,12 +26,16 @@ end
 function Index(names::AbstractVector{Symbol}; makeunique::Bool=false)
     u = make_unique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
-    Index(lookup, u)
+    return Index(lookup, u)
 end
+
 Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
-Base.names(x::Index) = copy(x.names)
+Base.names(x::Index) = string.(x.names)
+
+# _names returns Vector{Symbol}
 _names(x::Index) = x.names
+
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
@@ -92,13 +103,16 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     return x
 end
 
-rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(n))) for n in x.names])
+rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(string(n)))) for n in x.names])
 
+# we do not define keys on purpose;
+# use names to get keys as strings with copying
+# or _names to get keys as Symbols without copying
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
+Base.haskey(x::Index, key::AbstractString) = haskey(x.lookup, Symbol(key))
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
 Base.haskey(x::Index, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
-Base.keys(x::Index) = names(x)
 
 # TODO: If this should stay 'unsafe', perhaps make unexported
 function Base.push!(x::Index, nm::Symbol)
@@ -139,10 +153,12 @@ function Base.delete!(x::Index, nm::Symbol)
     return delete!(x, idx)
 end
 
+Base.delete!(x::Index, nm::AbstractString) = delete!(x, Symbol(nm))
+
 function Base.empty!(x::Index)
     empty!(x.lookup)
     empty!(x.names)
-    x
+    return x
 end
 
 function Base.insert!(x::Index, idx::Integer, nm::Symbol)
@@ -154,16 +170,19 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     end
     x.lookup[nm] = idx
     insert!(x.names, idx, nm)
-    x
+    return x
 end
 
-@inline Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
+Base.insert!(x::Index, idx::Integer, nm::AbstractString) = insert!(x, idx, Symbol(nm))
+
+@inline Base.getindex(x::AbstractIndex, idx::Bool) =
+    throw(ArgumentError("invalid index: $idx of type Bool"))
 
 @inline function Base.getindex(x::AbstractIndex, idx::Integer)
     if !(1 <= idx <= length(x))
         throw(BoundsError(x, idx))
     end
-    Int(idx)
+    return Int(idx)
 end
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Int})
@@ -176,7 +195,7 @@ end
         throw(BoundsError(x, idx))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
-    idx
+    return idx
 end
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractRange{Int})
@@ -189,7 +208,7 @@ end
         throw(BoundsError(x, idx))
     end
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
-    idx
+    return idx
 end
 
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) =
@@ -203,16 +222,17 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
-        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
+        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not" *
+                            " allowed for column indexing"))
     end
-    getindex(x, Vector{Int}(idx))
+    return getindex(x, Vector{Int}(idx))
 end
 
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
-    findall(idx)
+    return findall(idx)
 end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
@@ -220,18 +240,28 @@ end
     isempty(idxs) && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
-            throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
+            throw(ArgumentError("Only `Integer` values allowed when indexing by vector of numbers"))
         end
         return getindex(x, convert(Vector{Int}, idxs))
+    elseif idxs[1] isa Symbol
+        if all(x -> x isa Symbol, idxs)
+            return getindex(x, convert(Vector{Symbol}, idxs))
+        else
+            throw(ArgumentError("mixing `Symbol`s with other selectors is not allowed"))
+        end
+    elseif idxs[1] isa AbstractString
+        if all(x -> x isa AbstractString, idxs)
+            return getindex(x, Symbol.(idxs))
+        else
+            throw(ArgumentError("mixing strings with other selectors is not allowed"))
+        end
     end
-    idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
-    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
-                        "Only Integer or Symbol values allowed when indexing by vector"))
+    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); only Integer, Symbol, "*
+                        "or string values allowed when indexing by vector"))
 end
 
-@inline function Base.getindex(x::AbstractIndex, rx::Regex)
+@inline Base.getindex(x::AbstractIndex, rx::Regex) =
     getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
-end
 
 # Fuzzy matching rules:
 # 1. ignore case
@@ -245,7 +275,7 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         sort!(dist)
         c = [count(x -> x[1] <= i, dist) for i in 0:2]
         maxd = max(0, searchsortedlast(c, 8) - 1)
-        [s for (d, s) in dist if d <= maxd]
+        return [s for (d, s) in dist if d <= maxd]
 end
 
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
@@ -259,19 +289,22 @@ end
         throw(ArgumentError("column name :$idx not found in the data frame; " *
                             "existing most similar names are: $candidatesstr"))
     end
-    i
+    return i
 end
 
 @inline Base.getindex(x::Index, idx::Symbol) = lookupname(x.lookup, idx)
-@inline function Base.getindex(x::Index, idx::AbstractVector{Symbol})
+@inline Base.getindex(x::Index, idx::AbstractString) = x[Symbol(idx)]
+
+@inline function Base.getindex(x::Index, idx::Union{AbstractVector{Symbol},
+                                              AbstractVector{<:AbstractString}})
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
-    [lookupname(x.lookup, i) for i in idx]
+    return [x[i] for i in idx]
 end
 
 # Helpers
 
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
-    u = names(add_ind)
+    u = copy(_names(add_ind))
 
     seen = Set(_names(ind))
     dups = Int[]
@@ -336,7 +369,13 @@ Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     return parentcol
 end
 
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractString) =
+    parentcols(ind, Symbol(idx))
+
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) =
+    [parentcols(ind, i) for i in idx]
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{<:AbstractString}) =
     [parentcols(ind, i) for i in idx]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
@@ -354,7 +393,7 @@ function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
         throw(BoundsError(parent, cols))
     end
     remap = (1:l) .- f .+ 1
-    SubIndex(parent, cols, remap)
+    return SubIndex(parent, cols, remap)
 end
 
 function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
@@ -369,7 +408,7 @@ function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
         end
         remap[col] = i
     end
-    SubIndex(parent, cols, remap)
+    return SubIndex(parent, cols, remap)
 end
 
 @inline SubIndex(parent::AbstractIndex, cols::ColumnIndex) =
@@ -379,7 +418,7 @@ Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
     SubIndex(parent, parent[cols])
 
 Base.length(x::SubIndex) = length(x.cols)
-Base.names(x::SubIndex) = copy(_names(x))
+Base.names(x::SubIndex) = string.(_names(x))
 _names(x::SubIndex) = view(_names(x.parent), x.cols)
 
 function Base.haskey(x::SubIndex, key::Symbol)
@@ -387,20 +426,19 @@ function Base.haskey(x::SubIndex, key::Symbol)
     pos = x.parent[key]
     remap = x.remap
     checkbounds(Bool, remap, pos) || return false
-    remap[pos] > 0
+    return remap[pos] > 0
 end
 
+Base.haskey(x::SubIndex, key::AbstractString) = haskey(x, Symbol(key))
 Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
 Base.haskey(x::SubIndex, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
-Base.keys(x::SubIndex) = names(x)
 
-function Base.getindex(x::SubIndex, idx::Symbol)
-    remap = x.remap
-    remap[x.parent[idx]]
-end
+Base.getindex(x::SubIndex, idx::Symbol) = x.remap[x.parent[idx]]
+Base.getindex(x::SubIndex, idx::AbstractString) = x[Symbol(idx)]
 
-function Base.getindex(x::SubIndex, idx::AbstractVector{Symbol})
+function Base.getindex(x::SubIndex, idx::Union{AbstractVector{Symbol},
+                                               AbstractVector{AbstractString}})
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
-    [x[i] for i in idx]
+    return [x[i] for i in idx]
 end

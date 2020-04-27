@@ -85,17 +85,17 @@ Base.summary(dfr::DataFrameRow) = # -> String
 Base.summary(io::IO, dfr::DataFrameRow) = print(io, summary(dfr))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
-                                   colinds::Union{Colon, AbstractVector, Regex, Not, Between, All}) =
+                                   colinds::MultiColumnIndex) =
     DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::Union{AbstractVector, Regex, Not, Between, All}) =
+                                       colinds::MultiColumnIndex) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector, Regex, Not, Between, All}) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::MultiColumnIndex) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
@@ -111,6 +111,9 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
         end
 
         if v isa AbstractDict
+            if all(x -> x isa AbstractString, keys(v))
+                v = (;(Symbol.(keys(v)) .=> values(v))...)
+            end
             for n in view(_names(df), idxs)
                 if !haskey(v, n)
                     throw(ArgumentError("Column :$n not found in source dictionary"))
@@ -118,8 +121,8 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
             end
         elseif !all(((a, b),) -> a == b, zip(view(_names(df), idxs), keys(v)))
             mismatched = findall(view(_names(df), idxs) .!= collect(keys(v)))
-            throw(ArgumentError("Selected column names do not match the names in assigned value in" *
-                                " positions $(join(mismatched, ", ", " and "))"))
+            throw(ArgumentError("Selected column names do not match the names in assigned " *
+                                "value in positions $(join(mismatched, ", ", " and "))"))
         end
 
         for (col, val) in pairs(v)
@@ -137,8 +140,10 @@ index(r::DataFrameRow) = getfield(r, :colindex)
 Base.names(r::DataFrameRow) = names(index(r))
 
 function Base.names(r::DataFrameRow, cols)
-    sel = index(r)[cols]
-    return _names(index(r))[sel isa Int ? (sel:sel) : sel]
+    nms = _names(index(r))
+    idx = index(r)[cols]
+    idxs = idx isa Int ? (idx:idx) : idx
+    return [string(nms[i]) for i in idxs]
 end
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
@@ -146,6 +151,7 @@ _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
+
 function Base.haskey(r::DataFrameRow, key::Symbol)
     hasproperty(parent(r), key) || return false
     index(r) isa Index && return true
@@ -154,17 +160,25 @@ function Base.haskey(r::DataFrameRow, key::Symbol)
     remap = index(r).remap
     length(remap) == 0 && lazyremap!(index(r))
     checkbounds(Bool, remap, pos) || return false
-    remap[pos] > 0
+    return remap[pos] > 0
 end
 
-Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
-Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
+Base.haskey(r::DataFrameRow, key::AbstractString) = haskey(r, Symbol(key))
+
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(r::DataFrameRow, idx::Symbol) = r[idx]
+Base.getproperty(r::DataFrameRow, idx::AbstractString) = r[idx]
+Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = (r[idx] = x)
+Base.setproperty!(r::DataFrameRow, idx::AbstractString, x::Any) = (r[idx] = x)
+Compat.hasproperty(r::DataFrameRow, s::Symbol) = haskey(index(r), s)
+Compat.hasproperty(r::DataFrameRow, s::AbstractString) = haskey(index(r), s)
+
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(r::DataFrameRow, private::Bool=false) = Tuple(_names(r))
+Base.propertynames(r::DataFrameRow, private::Bool=false) = copy(_names(r))
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex, Not, Between, All}) =
+Base.view(r::DataFrameRow, cols::MultiColumnIndex) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
@@ -172,8 +186,8 @@ Base.view(r::DataFrameRow, ::Colon) = r
     size(dfr::DataFrameRow, [dim])
 
 Return a 1-tuple containing the number of elements of `dfr`.
-If an optional dimension `dim` is specified, it must be `1`, and the number of elements
-is returned directly as a number.
+If an optional dimension `dim` is specified, it must be `1`, and the number of
+elements is returned directly as a number.
 
 See also: [`length`](@ref)
 
@@ -245,7 +259,7 @@ Base.convert(::Type{Array{T}}, dfr::DataFrameRow) where {T} = Vector{T}(dfr)
 Base.Array(dfr::DataFrameRow) = Vector(dfr)
 Base.Array{T}(dfr::DataFrameRow) where {T} = Vector{T}(dfr)
 
-Base.keys(r::DataFrameRow) = Tuple(_names(r))
+Base.keys(r::DataFrameRow) = propertynames(r)
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
@@ -334,12 +348,14 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
     if columns !== nothing
         cols = columns
-        Base.depwarn("`columns` keyword argument is deprecated. Use `cols` instead.", :push!)
+        Base.depwarn("`columns` keyword argument is deprecated. " *
+                     "Use `cols` instead.", :push!)
     end
 
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
-        throw(ArgumentError("`cols` keyword argument must be any of :" * join(possible_cols, ", :")))
+        throw(ArgumentError("`cols` keyword argument must be any of :" *
+                            join(possible_cols, ", :")))
     end
 
     nrows, ncols = size(df)
@@ -398,7 +414,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 throw(AssertionError("Error adding value to column :$colname"))
             end
         end
-        for colname in setdiff(keys(dfr), _names(df))
+        for colname in setdiff(_names(dfr), _names(df))
             val = dfr[colname]
             S = typeof(val)
             if nrows == 0
@@ -417,8 +433,8 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
     try
         if cols === :orderequal
             if _names(df) != _names(dfr)
-                msg = "when `cols == :orderequal` pushed row must have the same column " *
-                      "names and in the same order as the target data frame"
+                msg = "when `cols == :orderequal` pushed row must have the same " *
+                      "column names and in the same order as the target data frame"
                 throw(ArgumentError(msg))
             end
         elseif cols === :setequal || cols === :equal
@@ -457,7 +473,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             resize!(col, nrows)
         end
         if current_col > 0
-            @error "Error adding value to column :$(names(df)[current_col])."
+            @error "Error adding value to column :$(_names(df)[current_col])."
         end
         rethrow(err)
     end

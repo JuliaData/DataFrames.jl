@@ -5,13 +5,17 @@
 """
     groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
-Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split into row groups.
+Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
+into row groups.
 
 # Arguments
 - `df` : an `AbstractDataFrame` to split
-- `cols` : data frame columns to group by
-- `sort` : whether to sort rows according to the values of the grouping columns `cols`
-- `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
+- `cols` : data frame columns to group by. Can be any column selector
+  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `sort` : whether to sort rows according to the values of the grouping columns
+  `cols`
+- `skipmissing` : whether to skip rows with `missing` values in one of the
+  grouping columns `cols`
 
 # Details
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
@@ -30,8 +34,10 @@ and combines the result into a data frame).
 See the following for additional split-apply-combine operations:
 
 * [`by`](@ref) : split-apply-combine using functions
-* [`map`](@ref) : apply a function to each group of a `GroupedDataFrame` (without combining)
-* [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying a function to each group
+* [`map`](@ref) : apply a function to each group of a `GroupedDataFrame`
+  (without combining)
+* [`combine`](@ref) : combine a `GroupedDataFrame`, optionally applying
+  a function to each group
 
 `GroupedDataFrame` also supports the dictionary interface. The keys are
 [`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
@@ -215,8 +221,8 @@ view for each group and can return any return value defined below.
 Note that this form is slower than `pair` due to type instability.
 
 If `pair` is passed then it must follow the rules specified for transformations in
-[`select`](@ref) and have the form `source_cols => fun`, `source_cols => fun => target_col`,
-or `source_col => target_col`.
+[`select`](@ref) and have the form `source_cols => fun`,
+`source_cols => fun => target_col`, or `source_col => target_col`.
 Function defined by `fun` is passed `SubArray` views as positional arguments for
 each column specified to be selected and can return any return value defined below,
 or a `NamedTuple` containing these `SubArray`s if `source_cols` is an `AsTable` selector.
@@ -330,7 +336,7 @@ function Base.map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame)
             end
         end
         newparent = hcat!(parent(gd)[idx, gd.cols],
-                          without(valscat, intersect(keys, _names(valscat))))
+                          select(valscat, Not(intersect(keys, _names(valscat))), copycols=false))
         if length(idx) == 0
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), idx,
                                     Int[], Int[], Int[], 0, Dict{Any,Int}())
@@ -363,9 +369,7 @@ const F_ARGUMENT_RULES =
 
     Arguments passed as `args...` can be:
 
-    * Any index that is allowed for column indexing. In particular, symbols, integers,
-      vectors of symbols, vectors of integers, vectors of bools, regular expressions,
-      `All`, `Between`, and `Not` selectors are supported.
+    * Any index that is allowed for column indexing ($COLUMNINDEX_STR, $MULTICOLUMNINDEX_STR).
     * Column transformation operations using the `Pair` notation that is described below
       and vectors of such pairs.
 
@@ -598,9 +602,8 @@ function combine(gd::GroupedDataFrame, p::Pair; keepkeys::Bool=true)
 end
 
 function combine(gd::GroupedDataFrame,
-                 @nospecialize(cs::Union{Pair, AbstractVector{<:Pair}, typeof(nrow),
-                                         AbstractVector{<:Integer}, AbstractVector{Symbol},
-                                         ColumnIndex, Colon, Regex, Not, All, Between}...);
+                 @nospecialize(cs::Union{Pair, typeof(nrow),
+                                         ColumnIndex, MultiColumnIndex}...);
                  keepkeys::Bool=true)
     @assert !isempty(cs)
     cs_vec = []
@@ -703,7 +706,7 @@ function combine_helper(f, gd::GroupedDataFrame,
             end
         end
         return hcat!(parent(gd)[idx, gd.cols],
-                     without(valscat, intersect(keys, _names(valscat))))
+                     select(valscat, Not(intersect(keys, _names(valscat))), copycols=false))
     else
         return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
     end
@@ -1068,7 +1071,8 @@ function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedData
     end
 end
 
-isagg(p::Pair) = check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
+isagg(p::Pair) =
+    check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
 
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
@@ -1123,8 +1127,8 @@ function _combine(f::AbstractVector{<:Pair},
             firstres = do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1)
             firstmulticol = firstres isa MULTI_COLS_TYPE
             if firstmulticol
-                throw(ArgumentError("a single value or vector result is required when passing " *
-                                    "multiple functions (got $(typeof(res)))"))
+                throw(ArgumentError("a single value or vector result is required when " *
+                                    "passing multiple functions (got $(typeof(res)))"))
             end
             # if idx_agg was not computed yet it is nothing
             # in this case if we are not passed a vector compute it.
@@ -1622,10 +1626,8 @@ by(d::AbstractDataFrame, cols::Any, f::Pair;
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f,
             keepkeys=keepkeys)
 
-by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair},
-                                             typeof(nrow), AbstractVector{<:Integer},
-                                             AbstractVector{Symbol}, ColumnIndex,
-                                             Colon, Regex, Not, All, Between}...;
+by(d::AbstractDataFrame, cols::Any, f::Union{Pair, typeof(nrow),
+                                             ColumnIndex, MultiColumnIndex}...;
    sort::Bool=false, skipmissing::Bool=false, keepkeys::Bool=true) =
     combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
             f..., keepkeys=keepkeys)
