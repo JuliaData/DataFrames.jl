@@ -836,8 +836,8 @@ end
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
-Internally `deleteat!` is called for all columns so `inds` must
-be: a vector of sorted and unique integers, a boolean vector or an integer.
+Internally `deleteat!` is called for all columns so `inds` must be:
+a vector of sorted and unique integers, a boolean vector, an integer, or `Not`.
 
 # Examples
 ```jldoctest
@@ -865,8 +865,9 @@ function Base.delete!(df::DataFrame, inds)
         throw(BoundsError(df, (inds, :)))
     end
     # we require ind to be stored and unique like in Base
+    # otherwise an error will be thrown and the data frame will get corrupted
     foreach(col -> deleteat!(col, inds), _columns(df))
-    df
+    return df
 end
 
 function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
@@ -875,8 +876,10 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
     end
     drop = findall(inds)
     foreach(col -> deleteat!(col, drop), _columns(df))
-    df
+    return df
 end
+
+Base.delete!(df::DataFrame, inds::Not) = delete!(df, axes(df, 1)[inds])
 
 ##############################################################################
 ##
