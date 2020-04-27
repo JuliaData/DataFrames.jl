@@ -29,9 +29,6 @@ _by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
     throw(ArgumentError("return value of type $(typeof(x)) " *
                         "is currently not allowed with ByRow."))
 
-
-Base.broadcastable(x::ByRow) = Ref(x)
-
 (f::ByRow)(cols::AbstractVector...) = _by_row_helper.(f.fun.(cols...))
 (f::ByRow)(table::NamedTuple) =
     _by_row_helper.(f.fun.(Tables.namedtupleiterator(table)))
