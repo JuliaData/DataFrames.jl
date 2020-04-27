@@ -12,7 +12,7 @@ using DataFrames, Random, Test
 
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[:, [:dv3, :dv1]]) == sortperm(dv3)
-    @test sort(d, :dv1)[!, :dv3] == sortperm(dv1)
+    @test sort(d, :dv1)[!, :dv3] == sort(d, "dv1")[!, "dv3"] == sortperm(dv1)
     @test sort(d, :dv2)[!, :dv3] == sortperm(dv1)
     @test sort(d, :cv1)[!, :dv3] == sortperm(dv1)
     @test sort(d, [:dv1, :cv1])[!, :dv3] == sortperm(dv1)
@@ -25,13 +25,24 @@ using DataFrames, Random, Test
     @test issorted(sort(df))
     @test issorted(sort(df, rev=true), rev=true)
     @test issorted(sort(df, [:chrom,:pos])[:, [:chrom,:pos]])
+    @test issorted(sort(df, ["chrom", "pos"])[:, ["chrom", "pos"]])
 
     ds = sort(df, [order(:rank, rev=true),:chrom,:pos])
     @test issorted(ds, [order(:rank, rev=true),:chrom,:pos])
     @test issorted(ds, rev=(true, false, false))
 
+    ds = sort(df, [order("rank", rev=true), "chrom", "pos"])
+    @test issorted(ds, [order("rank", rev=true), "chrom", "pos"])
+    @test issorted(ds, rev=(true, false, false))
+
     ds2 = sort(df, [:rank, :chrom, :pos], rev=(true, false, false))
     @test issorted(ds2, [order(:rank, rev=true), :chrom, :pos])
+    @test issorted(ds2, rev=(true, false, false))
+
+    @test ds2 == ds
+
+    ds2 = sort(df, ["rank", "chrom", "pos"], rev=(true, false, false))
+    @test issorted(ds2, [order("rank", rev=true), "chrom", "pos"])
     @test issorted(ds2, rev=(true, false, false))
 
     @test ds2 == ds
@@ -42,9 +53,19 @@ using DataFrames, Random, Test
 
     @test df == ds
 
+    sort!(df, ["rank", "chrom", "pos"], rev=(true, false, false))
+    @test issorted(df, [order("rank", rev=true), "chrom", "pos"])
+    @test issorted(df, rev=(true, false, false))
+
+    @test df == ds
+
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test !issorted(df, :x)
     @test issorted(sort(df, :x), :x)
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test !issorted(df, "x")
+    @test issorted(sort(df, "x"), "x")
 
     x = DataFrame(a=1:3,b=3:-1:1,c=3:-1:1)
     @test issorted(x)
@@ -52,6 +73,13 @@ using DataFrames, Random, Test
     @test !issorted(x[:, 2:3], [:b,:c])
     @test issorted(sort(x,[2,3]), [:b,:c])
     @test issorted(sort(x[:, 2:3]), [:b,:c])
+
+    x = DataFrame(a=1:3,b=3:-1:1,c=3:-1:1)
+    @test issorted(x)
+    @test !issorted(x, ["b","c"])
+    @test !issorted(x[:, 2:3], ["b","c"])
+    @test issorted(sort(x,[2,3]), ["b","c"])
+    @test issorted(sort(x[:, 2:3]), ["b","c"])
 
     # Check that columns that shares the same underlying array are only permuted once PR#1072
     df = DataFrame(a=[2,1])

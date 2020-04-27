@@ -167,21 +167,21 @@ end
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, :variable, :value)
+    @test_logs (:warn, "Missing value in variable :variable at row 3. Skipping.") unstack(df, :variable, :value)
     udf = with_logger(NullLogger()) do
         unstack(df, :variable, :value)
     end
-    @test names(udf) == [:id, :a, :b, :missing]
+    @test propertynames(udf) == [:id, :a, :b, :missing]
     @test udf[!, :missing] ≅ [missing, 9.0, missing]
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
+    @test_logs (:warn, "Missing value in variable :variable at row 3. Skipping.") unstack(df, 3, 4)
     udf = with_logger(NullLogger()) do
         unstack(df, 3, 4)
     end
-    @test names(udf) == [:id, :id2, :a, :b, :missing]
+    @test propertynames(udf) == [:id, :id2, :a, :b, :missing]
     @test udf[!, :missing] ≅ [missing, 9.0, missing]
 end
 
@@ -209,7 +209,7 @@ end
                 d = Array{Union{Float64, Missing}}(randn(12)),
                 e = Array{Union{String, Missing}}(map(string, 'a':'l')))
 
-    @test names(stack(d1, :a)) == [:b, :c, :d, :e, :variable, :value]
+    @test propertynames(stack(d1, :a)) == [:b, :c, :d, :e, :variable, :value]
     d1s = stack(d1, [:a, :b])
     @test d1s == stack(d1, r"[ab]")
     @test d1s == stack(d1, Not(r"[cde]"))
@@ -223,35 +223,35 @@ end
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
-    @test names(d1s) == [:c, :d, :e, :variable, :value]
+    @test propertynames(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
     d1m = stack(d1[:, [1,3,4]], Not(:a))
-    @test names(d1m) == [:a, :variable, :value]
+    @test propertynames(d1m) == [:a, :variable, :value]
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
-    @test names(d1s_named) == [:c, :d, :e, :letter, :someval]
+    @test propertynames(d1s_named) == [:c, :d, :e, :letter, :someval]
     d1m_named = stack(d1[:, [1,3,4]], Not(:a), variable_name=:letter, value_name=:someval)
-    @test names(d1m_named) == [:a, :letter, :someval]
+    @test propertynames(d1m_named) == [:a, :letter, :someval]
 
     # test empty measures or ids
     dx = stack(d1, [], [:a])
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:a, :variable, :value]
+    @test propertynames(dx) == [:a, :variable, :value]
     dx = stack(d1, :a, [])
     @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
+    @test propertynames(dx) == [:variable, :value]
     dx = stack(d1, [:a], [])
     @test dx == stack(d1, r"a", r"xxx")
     @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
+    @test propertynames(dx) == [:variable, :value]
     dx = stack(d1, [], :a)
     @test dx == stack(d1, r"xxx", r"a")
     @test size(dx) == (0, 3)
-    @test names(dx) == [:a, :variable, :value]
+    @test propertynames(dx) == [:a, :variable, :value]
 
     @test stack(d1, :a, view=true) == stack(d1, [:a], view=true)
     @test all(isa.(eachcol(stack(d1, :a, view=true)),
@@ -305,17 +305,17 @@ end
     @test d1s[1:12, :c] == d1[!, :c]
     @test d1s[13:24, :c] == d1[!, :c]
     @test d1s2 == d1s3
-    @test names(d1s) == [:c, :d, :e, :variable, :value]
+    @test propertynames(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
     d1m = stack(d1[:, [1,3,4]], Not(:a), view=true)
-    @test names(d1m) == [:a, :variable, :value]
+    @test propertynames(d1m) == [:a, :variable, :value]
 
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1s_named) == [:c, :d, :e, :letter, :someval]
+    @test propertynames(d1s_named) == [:c, :d, :e, :letter, :someval]
     d1m_named = stack(d1, Not([:c, :d, :e]), variable_name=:letter, value_name=:someval, view=true)
     @test d1m_named == stack(d1, Not(r"[cde]"), variable_name=:letter, value_name=:someval, view=true)
-    @test names(d1m_named) == [:c, :d, :e, :letter, :someval]
+    @test propertynames(d1m_named) == [:c, :d, :e, :letter, :someval]
 
     d1s[!, :id] = Union{Int, Missing}[1:12; 1:12]
     d1s2[!, :id] =  Union{Int, Missing}[1:12; 1:12]
@@ -369,24 +369,29 @@ end
     df_tup = DataFrame(a = [1, 2], b = [(1, 2), (3, 4)])
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
     @test flatten(df_vec, :b) == flatten(df_tup, :b) == ref
+    @test flatten(df_vec, "b") == flatten(df_tup, "b") == ref
     df_mixed_types = DataFrame(a = [1, 2], b = [[1, 2], ["x", "y"]])
     ref_mixed_types = DataFrame(a = [1, 1, 2, 2], b = [1, 2, "x", "y"])
     @test flatten(df_mixed_types, :b) == ref_mixed_types
     df_three = DataFrame(a = [1, 2, 3], b = [[1, 2], [10, 20], [100, 200, 300]])
     ref_three = DataFrame(a = [1, 1, 2, 2, 3, 3, 3], b = [1, 2, 10, 20, 100, 200, 300])
     @test flatten(df_three, :b) == ref_three
+    @test flatten(df_three, "b") == ref_three
     df_gen = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
     ref_gen = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
     @test flatten(df_gen, :b) == ref_gen
+    @test flatten(df_gen, "b") == ref_gen
     df_miss = DataFrame(a = [1, 2], b = [Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
     @test flatten(df_miss, :b) == ref
+    @test flatten(df_miss, "b") == ref
     v1 = [[1, 2], [3, 4]]
     v2 = [[5, 6], [7, 8]]
     v = [v1, v2]
     df_vec_vec = DataFrame(a = [1, 2], b = v)
     ref_vec_vec = DataFrame(a = [1, 1, 2, 2], b = [v1 ; v2])
     @test flatten(df_vec_vec, :b) == ref_vec_vec
+    @test flatten(df_vec_vec, "b") == ref_vec_vec
     df_cat = DataFrame(a = [1, 2], b = [CategoricalArray([1, 2]), CategoricalArray([1, 2])])
     df_flat_cat = flatten(df_cat, :b)
     ref_cat = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 1, 2])
@@ -400,6 +405,8 @@ end
     ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4], c = [5, 6, 7, 8])
     @test flatten(df, [:b, :c]) == ref
     @test flatten(df, [:c, :b]) == ref
+    @test flatten(df, ["b", "c"]) == ref
+    @test flatten(df, ["c", "b"]) == ref
     @test flatten(df, 2:3) == ref
     @test flatten(df, r"[bc]") == ref
     @test flatten(df, Not(:a)) == ref

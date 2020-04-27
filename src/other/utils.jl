@@ -1,8 +1,8 @@
 """
     AsTable(cols)
 
-A type used for selection operations to signal that the columns selected by the wrapped
-selector should be passed as a `NamedTuple` to the function.
+A type used for selection operations to signal that the columns selected by the
+wrapped selector should be passed as a `NamedTuple` to the function.
 """
 struct AsTable
     cols
@@ -10,7 +10,8 @@ end
 
 Base.broadcastable(x::AsTable) = Ref(x)
 
-function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol}; makeunique::Bool=false)
+function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
+                      makeunique::Bool=false)
     if length(names) != length(src)
         throw(DimensionMismatch("Length of src doesn't match length of names."))
     end
@@ -59,11 +60,11 @@ end
 """
     gennames(n::Integer)
 
-Generate standardized names for columns of a DataFrame. The first name will be `:x1`, the
-second `:x2`, etc.
+Generate standardized names for columns of a DataFrame.
+The first name will be `:x1`, the second `:x2`, etc.
 """
 function gennames(n::Integer)
-    res = Array{Symbol}(undef, n)
+    res = Vector{Symbol}(undef, n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end

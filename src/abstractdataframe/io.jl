@@ -128,7 +128,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                   else
                       ""
                   end
-        write(io, "<p>$(digitsep(size(df, 1))) rows × $(digitsep(ncol(df))) columns$omitmsg</p>")
+        write(io, "<p>$(digitsep(nrow(df))) rows × $(digitsep(ncol(df))) columns$omitmsg</p>")
     end
     for row in 1:mxrow
         write(io, "<tr>")
@@ -194,9 +194,8 @@ end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
     N = length(gd)
-    keynames = names(gd.parent)[gd.cols]
-    parent_names = names(gd.parent)
-    keys = html_escape(join(string.(keynames), ", "))
+    parent_names = _names(gd)
+    keys = html_escape(join(string.(groupcols(gd)), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
     write(io, "<p><b>$(typeof(gd).name) with $N $groupstr based on $keystr: $keys</b></p>")
@@ -204,7 +203,8 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[1][!, col]))))
+        identified_groups = [html_escape(string(parent_names[col], " = ",
+                                                repr(first(gd[1][!, col]))))
                              for col in gd.cols]
 
         write(io, "<p><i>First Group ($nrows $rows): ")
@@ -216,7 +216,8 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(parent_names[col], " = ", repr(first(gd[N][!, col]))))
+        identified_groups = [html_escape(string(parent_names[col], " = ",
+                                                repr(first(gd[N][!, col]))))
                              for col in gd.cols]
 
         write(io, "<p>&vellip;</p>")
@@ -284,7 +285,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     write(io, "\t\\hline\n")
     if eltypes
         write(io, "\t& ")
-        header = join(map(c -> latex_escape(string(compacttype(c))), eltype.(eachcol(df)[1:mxcol])), " & ")
+        header = join(map(c -> latex_escape(string(compacttype(c))),
+                          eltype.(eachcol(df)[1:mxcol])), " & ")
         write(io, header)
         mxcol < size(df, 2) && write(io, " & ")
         write(io, "\\\\\n")
@@ -340,9 +342,8 @@ Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns; eltypes::Bool=
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
-    keynames = names(gd.parent)[gd.cols]
-    parent_names = names(gd.parent)
-    keys = join(latex_escape.(string.(keynames)), ", ")
+    parent_names = _names(gd)
+    keys = join(latex_escape.(string.(groupcols(gd))), ", ")
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
     write(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys\n\n")
@@ -382,7 +383,8 @@ end
 ##############################################################################
 
 escapedprint(io::IO, x::Any, escapes::AbstractString) = ourshow(io, x)
-escapedprint(io::IO, x::AbstractString, escapes::AbstractString) = escape_string(io, x, escapes)
+escapedprint(io::IO, x::AbstractString, escapes::AbstractString) =
+    escape_string(io, x, escapes)
 
 function printtable(io::IO,
                     df::AbstractDataFrame;

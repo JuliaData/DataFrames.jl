@@ -27,12 +27,13 @@ const ≇ = !isequal
         i = lcm(cyclelength)
         while true
             rename!(df, p)
-            @test sort(names(df)) == n
+            @test sort(propertynames(df)) == n
+            @test sort(names(df)) == string.(n)
             @test sort(collect(keys(index(df).lookup))) == n
             @test sort(collect(values(index(df).lookup))) == 1:26
-            @test all(index(df).lookup[x] == i for (i,x) in enumerate(names(df)))
+            @test all(index(df).lookup[x] == i for (i,x) in enumerate(propertynames(df)))
             i -= 1
-            names(df) == n && break
+            propertynames(df) == n && break
         end
         @test i == 0
     end
@@ -52,23 +53,23 @@ end
         newnames = [Symbol.(rand('a':'z', 4)); oldnames[5:end]]
         df = DataFrame([[] for i in 1:8], oldnames)
         if allunique(newnames)
-            @test names(rename(df, Pair.(oldnames[1:4], newnames[1:4])...)) == newnames
-            @test names(df) == oldnames
+            @test names(rename(df, Pair.(oldnames[1:4], newnames[1:4])...)) == string.(newnames)
+            @test propertynames(df) == oldnames
             rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
-            @test names(df) == newnames
+            @test propertynames(df) == newnames
         else
             @test_throws ArgumentError rename(df, Pair.(oldnames[1:4], newnames[1:4])...)
-            @test names(df) == oldnames
+            @test propertynames(df) == oldnames
             @test_throws ArgumentError rename!(df, Pair.(oldnames[1:4], newnames[1:4])...)
-            @test names(df) == oldnames
+            @test propertynames(df) == oldnames
         end
 
         newnames = [oldnames[1:2]; reverse(oldnames[3:6]); oldnames[7:end]]
         df = DataFrame([[] for i in 1:8], oldnames)
-        @test names(rename(df, Pair.(oldnames[3:6], newnames[3:6])...)) == newnames
-        @test names(df) == oldnames
+        @test names(rename(df, Pair.(oldnames[3:6], newnames[3:6])...)) == string.(newnames)
+        @test propertynames(df) == oldnames
         rename!(df, Pair.(oldnames[3:6], newnames[3:6])...)
-        @test names(df) == newnames
+        @test propertynames(df) == newnames
     end
 end
 
@@ -127,20 +128,20 @@ end
     df[1, :a] = 4
     df[1, :b][!, :e] .= 5
 
-    @test names(rename(df, [:f, :g])) == [:f, :g]
-    @test names(rename(df, [:f, :f], makeunique=true)) == [:f, :f_1]
-    @test names(df) == [:a, :b]
+    @test names(rename(df, [:f, :g])) == ["f", "g"]
+    @test names(rename(df, [:f, :f], makeunique=true)) == ["f", "f_1"]
+    @test names(df) == ["a", "b"]
 
     rename!(df, [:f, :g])
 
-    @test names(dfc) == [:a, :b]
-    @test names(dfdc) == [:a, :b]
+    @test names(dfc) == ["a", "b"]
+    @test names(dfdc) == ["a", "b"]
 
     @test dfc[1, :a] === 2
     @test dfdc[1, :a] === 2
 
-    @test names(dfc[1, :b]) == [:c, :e]
-    @test names(dfdc[1, :b]) == [:c]
+    @test names(dfc[1, :b]) == ["c", "e"]
+    @test names(dfdc[1, :b]) == ["c"]
 end
 
 @testset "similar / missings" begin
@@ -171,14 +172,14 @@ end
     @test_throws ArgumentError insertcols!(df, 0, :newcol => ["a", "b"])
     @test_throws DimensionMismatch insertcols!(df, 1, :newcol => ["a"])
     @test insertcols!(df, 1, :newcol => ["a", "b"]) == df
-    @test names(df) == [:newcol, :a, :b]
+    @test names(df) == ["newcol", "a", "b"]
     @test df.a == [1, 2]
     @test df.b == [3.0, 4.0]
     @test df.newcol == ["a", "b"]
 
     @test_throws ArgumentError insertcols!(df, 1, :newcol => ["a1", "b1"])
     @test insertcols!(df, 1, :newcol => ["a1", "b1"], makeunique=true) == df
-    @test names(df) == [:newcol_1, :newcol, :a, :b]
+    @test propertynames(df) == [:newcol_1, :newcol, :a, :b]
     @test df.a == [1, 2]
     @test df.b == [3.0, 4.0]
     @test df.newcol == ["a", "b"]
@@ -193,13 +194,40 @@ end
     @test insertcols!(df, 1, :c3 => x, copycols=false) === df
     @test df.c3 === x
 
+    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+    @test_throws ArgumentError insertcols!(df, 5, "newcol" => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, 0, "newcol" => ["a", "b"])
+    @test_throws DimensionMismatch insertcols!(df, 1, "newcol" => ["a"])
+    @test insertcols!(df, 1, "newcol" => ["a", "b"]) == df
+    @test names(df) == ["newcol", "a", "b"]
+    @test df.a == [1, 2]
+    @test df.b == [3.0, 4.0]
+    @test df.newcol == ["a", "b"]
+
+    @test_throws ArgumentError insertcols!(df, 1, "newcol" => ["a1", "b1"])
+    @test insertcols!(df, 1, "newcol" => ["a1", "b1"], makeunique=true) == df
+    @test propertynames(df) == [:newcol_1, :newcol, :a, :b]
+    @test df.a == [1, 2]
+    @test df.b == [3.0, 4.0]
+    @test df.newcol == ["a", "b"]
+    @test df.newcol_1 == ["a1", "b1"]
+
+    @test insertcols!(df, 1, "c1" => 1:2) === df
+    @test df.c1 isa Vector{Int}
+    x = [1, 2]
+    @test insertcols!(df, 1, "c2" => x, copycols=true) === df
+    @test df.c2 == x
+    @test df.c2 !== x
+    @test insertcols!(df, 1, "c3" => x, copycols=false) === df
+    @test df.c3 === x
+
     df = DataFrame(a=[1,2], a_1=[3,4])
     @test_throws ArgumentError insertcols!(df, 1, :a => [11,12])
     @test df == DataFrame(a=[1,2], a_1=[3,4])
     insertcols!(df, 1, :a => [11,12], makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1]
+    @test propertynames(df) == [:a_2, :a, :a_1]
     insertcols!(df, 4, :a => [11,12], makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1, :a_3]
+    @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
     @test_throws ArgumentError insertcols!(df, 10, :a => [11,12], makeunique=true)
 
     # TODO: re-enable this test after the deprecation; this should be no-op
@@ -250,6 +278,10 @@ end
           DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
 
     df = DataFrame(p='a':'b',q='r':'s')
+    @test insertcols!(df, 2, "a"=>v1, "b"=>v2, "c"=>v3) ==
+          DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
+
+    df = DataFrame(p='a':'b',q='r':'s')
     @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
     @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, makeunique=true, copycols=true) ==
           DataFrame(p='a':'b', p_1=v1, q_1=v2, p_2=v3, q='r':'s')
@@ -264,10 +296,10 @@ end
 
     df = DataFrame(a=[1,2], a_1=[3,4])
     insertcols!(df, 1, :a => 11, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1]
+    @test propertynames(df) == [:a_2, :a, :a_1]
     @test df[!, 1] == [11, 11]
     insertcols!(df, 4, :a => 12, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1, :a_3]
+    @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
     @test df[!, 4] == [12, 12]
     df = DataFrame()
     @test insertcols!(df, :a => "a", :b => 1:2) == DataFrame(a=["a", "a"], b=1:2)
@@ -517,14 +549,6 @@ end
     @test delete!(df, 2) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-    @test delete!(df, 2:3) === df
-    @test df == DataFrame(a=[1], b=[3.0])
-
-    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-    @test delete!(df, [2, 3]) === df
-    @test df == DataFrame(a=[1], b=[3.0])
-
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test delete!(df, 1) === df
     @test df == DataFrame(a=[2], b=[4.0])
@@ -533,13 +557,15 @@ end
     @test delete!(df, 2) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-    @test delete!(df, 2:3) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+    for v in (2:3, [2, 3])
+        df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
+        @test delete!(df, v) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-    @test delete!(df, [2, 3]) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+        @test delete!(df, v) === df
+        @test df == DataFrame(a=[1], b=[3.0])
+    end
 
     df = DataFrame()
     @test_throws BoundsError delete!(df, 10)
@@ -557,45 +583,19 @@ end
     @test delete!(df, [false, true, false]) === df
     @test df == DataFrame(a=[1, 3], b=[3, 1])
 
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, 1) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
+    for v in (1, [1], 1:1, [true, false, false])
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test delete!(df, v) == DataFrame(x=[2, 3])
+        @test x == [1, 2, 3]
+    end
 
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, [1]) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, 1:1) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x)
-    @test delete!(df, [true, false, false]) == DataFrame(x=[2, 3])
-    @test x == [1, 2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, 1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, [1]) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, 1:1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
-
-    x = [1, 2, 3]
-    df = DataFrame(x=x, copycols=false)
-    @test delete!(df, [true, false, false]) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    for v in (1, [1], 1:1, [true, false, false], Not(2,3), Not([false, true, true]))
+        x = [1, 2, 3]
+        df = DataFrame(x=x, copycols=false)
+        @test delete!(df, v) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
+    end
 end
 
 @testset "describe" begin
@@ -638,7 +638,10 @@ end
     # Test that it works on a custom function
     describe_output.test_std = describe_output.std
     # Test that describe works with a Pair and a symbol
-    @test describe_output[:, [:variable, :mean, :test_std]] ≅ describe(df, :mean, :test_std => std)
+    @test describe_output[:, [:variable, :mean, :test_std]] ≅
+          describe(df, :mean, :test_std => std)
+    @test describe_output[:, [:variable, :mean, :test_std]] ≅
+          describe(df, :mean, "test_std" => std)
 
     # Test that describe works with a dataframe with no observations
     df = DataFrame(a = Int[], b = String[], c = [])
@@ -647,6 +650,7 @@ end
 
     @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
+    @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
 
     @test_throws ArgumentError describe(df, :mean, :all)
 end
@@ -661,12 +665,12 @@ end
         @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
     end
     @test df == df2
-    @test occursin("Error adding value to column B", String(take!(buf)))
+    @test occursin("Error adding value to column :B", String(take!(buf)))
     with_logger(sl) do
         @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
     end
     @test df == df2
-    @test occursin("Error adding value to column B", String(take!(buf)))
+    @test occursin("Error adding value to column :B", String(take!(buf)))
     @test_throws ArgumentError append!(df, DataFrame(A = 1:4, C = 1:4))
     @test df == df2
 
@@ -689,7 +693,7 @@ end
         @test_throws AssertionError append!(df, dfc)
     end
     @test df == dfc
-    @test occursin("Error adding value to column a", String(take!(buf)))
+    @test occursin("Error adding value to column :a", String(take!(buf)))
 
     df = DataFrame()
     df.a = [1,2,3,4]
@@ -700,7 +704,7 @@ end
         @test_throws AssertionError append!(df, dfc)
     end
     @test df == dfc
-    @test occursin("Error adding value to column a", String(take!(buf)))
+    @test occursin("Error adding value to column :a", String(take!(buf)))
 
     rename!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
@@ -946,41 +950,39 @@ end
 
 @testset "rename" begin
     df = DataFrame(A = 1:3, B = 'A':'C')
-    @test names(rename(df, :A => :A_1)) == [:A_1, :B]
-    @test names(df) == [:A, :B]
-    @test names(rename(df, :A => :A_1, :B => :B_1)) == [:A_1, :B_1]
-    @test names(df) == [:A, :B]
-    @test names(rename(df, [:A => :A_1, :B => :B_1])) == [:A_1, :B_1]
-    @test names(df) == [:A, :B]
-    @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == [:A_1, :B_1]
-    @test names(df) == [:A, :B]
-    @test names(rename(x->Symbol(lowercase(string(x))), df)) == [:a, :b]
-    @test names(rename(x->lowercase(string(x)), df)) == [:a, :b]
-    @test names(df) == [:A, :B]
+    @test names(rename(df, :A => :A_1)) == ["A_1", "B"]
+    @test names(df) == ["A", "B"]
+    @test names(rename(df, :A => :A_1, :B => :B_1)) == ["A_1", "B_1"]
+    @test names(df) == ["A", "B"]
+    @test names(rename(df, [:A => :A_1, :B => :B_1])) == ["A_1", "B_1"]
+    @test names(df) == ["A", "B"]
+    @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == ["A_1", "B_1"]
+    @test names(df) == ["A", "B"]
+    @test names(rename(lowercase, df)) == ["a", "b"]
+    @test names(df) == ["A", "B"]
 
     @test rename!(df, :A => :A_1) === df
-    @test names(df) == [:A_1, :B]
+    @test propertynames(df) == [:A_1, :B]
     @test rename!(df, :A_1 => :A_2, :B => :B_2) === df
-    @test names(df) == [:A_2, :B_2]
+    @test propertynames(df) == [:A_2, :B_2]
     @test rename!(df, [:A_2 => :A_3, :B_2 => :B_3]) === df
-    @test names(df) == [:A_3, :B_3]
+    @test propertynames(df) == [:A_3, :B_3]
     @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
-    @test names(df) == [:A_4, :B_4]
-    @test rename!(x->Symbol(lowercase(string(x))), df) === df
-    @test rename!(x->lowercase(string(x)), df) === df
-    @test names(df) == [:a_4, :b_4]
+    @test propertynames(df) == [:A_4, :B_4]
+    @test rename!(lowercase, df) === df
+    @test propertynames(df) == [:a_4, :b_4]
 
     df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
     @test rename!(df, :A => :B, :B => :A) === df
-    @test names(df) == [:B, :A, :C]
+    @test propertynames(df) == [:B, :A, :C]
     @test rename!(df, :A => :B, :B => :A, :C => :D) === df
-    @test names(df) == [:A, :B, :D]
+    @test propertynames(df) == [:A, :B, :D]
     @test rename!(df, :A => :B, :B => :C, :D => :A) === df
-    @test names(df) == [:B, :C, :A]
+    @test propertynames(df) == [:B, :C, :A]
     @test rename!(df, :A => :C, :B => :A, :C => :B) === df
-    @test names(df) == [:A, :B, :C]
+    @test propertynames(df) == [:A, :B, :C]
     @test rename!(df, :A => :A, :B => :B, :C => :C) === df
-    @test names(df) == [:A, :B, :C]
+    @test propertynames(df) == [:A, :B, :C]
 
     cdf = copy(df)
     @test_throws ArgumentError rename!(df, :X => :Y)
@@ -999,6 +1001,9 @@ end
     @test df == cdf
     @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
     @test df == cdf
+
+    df = DataFrame(A=1)
+    @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
 end
 
 @testset "flexible rename arguments" begin
@@ -1156,6 +1161,14 @@ end
         @test eltype(df.b) == Union{Int, Missing}
         @test eltype(df.c) == Int
         @test eltype(df.d) == Int
+        @test allowmissing!(df, [:d]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Union{Int, Missing}
+        @test disallowmissing!(df, [:c, :d], error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
         @test allowmissing!(df, [false, false, true]) === df
         @test eltype(df.b) == Union{Int, Missing}
         @test eltype(df.c) == Int
@@ -1164,6 +1177,26 @@ end
         @test eltype(df.b) == Int
         @test eltype(df.c) == Int
         @test eltype(df.d) == Union{Int, Missing}
+    end
+
+    for em in [true, false]
+        df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+        @test allowmissing!(df, ["b", "c"]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Union{Int, Missing}
+        @test eltype(df.d) == Int
+        @test disallowmissing!(df, "c", error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
+        @test allowmissing!(df, ["d"]) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Union{Int, Missing}
+        @test disallowmissing!(df, ["c", "d"], error=em) === df
+        @test eltype(df.b) == Union{Int, Missing}
+        @test eltype(df.c) == Int
+        @test eltype(df.d) == Int
     end
 
     df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
@@ -1202,7 +1235,7 @@ end
             @test eltype.(eachcol(y)) == [Int, Int, Int]
         end
 
-        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x", 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
@@ -1212,7 +1245,7 @@ end
             @test eltype.(eachcol(y)) == [Int, Union{Missing, Int}, Int]
         end
 
-        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+        for colsel in [:z, "z", 3, [:z], ["z"], [3], [false, false, true], r"z", Not(1:2)]
             y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
@@ -1273,7 +1306,7 @@ end
             @test eltype.(eachcol(y)) == fill(Union{Missing, Int}, 3)
         end
 
-        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x", 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = allowmissing(x, colsel)
             @test y isa DataFrame
             @test x == y
@@ -1283,7 +1316,7 @@ end
             @test eltype.(eachcol(y)) == [Union{Missing, Int}, Int, Int]
         end
 
-        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+        for colsel in [:z, "z", 3, [:z], ["z"], [3], [false, false, true], r"z", Not(1:2)]
             y = allowmissing(x, colsel)
             @test y isa DataFrame
             @test x == y
@@ -1342,7 +1375,7 @@ end
             @test y.z isa CategoricalVector{Int}
         end
 
-        for colsel in [:x, 1, [:x], [1], [true, false, false], r"x", Not(2:3)]
+        for colsel in [:x, "x", 1, [:x], ["x"], [1], [true, false, false], r"x", Not(2:3)]
             y = categorical(x, colsel)
             @test y isa DataFrame
             @test x ≅ y
@@ -1354,7 +1387,7 @@ end
             @test y.z isa Vector{Int}
         end
 
-        for colsel in [:z, 3, [:z], [3], [false, false, true], r"z", Not(1:2)]
+        for colsel in [:z, "z", 3, [:z], ["z"], [3], [false, false, true], r"z", Not(1:2)]
             y = categorical(x, colsel)
             @test y isa DataFrame
             @test x ≅ y
@@ -1527,7 +1560,7 @@ end
     z = collect(10:-1:1)
     df = DataFrame(x=x, y=y, copycols=false)
 
-    @test Base.propertynames(df) == Tuple(names(df))
+    @test propertynames(df) == Symbol.(names(df))
 
     @test df.x === x
     @test df.y === y

@@ -13,10 +13,10 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     df = deepcopy(ref_df)
     sdf = view(df, [5, 3], [3, 1, 2])
 
-    @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
+    @test names(DataFrameRow(df, 1, :)) == ["a", "b", "c", "d"]
     @test DataFrameRow(df, 1) == DataFrameRow(df, 1, :)
     @test DataFrameRow(df, 1) == DataFrameRow(df, 1, r"")
-    @test names(DataFrameRow(df, 3, [3, 2])) == [:c, :b]
+    @test names(DataFrameRow(df, 3, [3, 2])) == ["c", "b"]
     @test copy(DataFrameRow(df, 3, [3, 2])) == (c = "C", b = 1.2)
     @test copy(DataFrameRow(df, 3, r"[bc]")) == (b = 1.2, c = "C")
     @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b = 1.2, a = 3)
@@ -108,7 +108,7 @@ end
     df = DataFrame([1 2 3 4
                     5 6 7 8])
     r = df[1, r"[1-3]"]
-    @test names(r) == [:x1, :x2, :x3]
+    @test names(r) == ["x1", "x2", "x3"]
     r[:] .= 10
     @test df == DataFrame([10 10 10 4
                             5  6  7 8])
@@ -206,7 +206,7 @@ end
     df = deepcopy(ref_df)
 
     r = DataFrameRow(df, 1, :)
-    @test Base.propertynames(r) == Tuple(names(df))
+    @test propertynames(r) == keys(r) == Symbol.(names(df))
     @test r.a === 1
     @test r.b === 2.0
     @test copy(r[[:a,:b]]) === (a=1, b=2.0)
@@ -221,7 +221,7 @@ end
     df = deepcopy(ref_df)
     r = DataFrameRow(df, 1, :)
 
-    @test keys(r) == Tuple(names(df))
+    @test keys(r) == propertynames(df)
     @test values(r) == (df[1, 1], df[1, 2], df[1, 3], df[1, 4])
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
 
@@ -247,7 +247,7 @@ end
     @test size(r) == (4,)
     @test size(r, 1) == 4
     @test_throws BoundsError size(r, 2)
-    @test keys(r) == (:x8, :x5, :x1, :x3)
+    @test keys(r) == [:x8, :x5, :x1, :x3]
     r[:] .= 0.0
     r[1:2] .= 2.0
     @test values(r) == (2.0, 2.0, 0.0, 0.0)

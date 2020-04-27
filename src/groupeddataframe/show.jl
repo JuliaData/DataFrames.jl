@@ -14,7 +14,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true)
     N = length(gd)
-    parent_names = names(gd.parent)
+    parent_names = _names(gd.parent)
 
     summary && Base.summary(io, gd)
 
@@ -70,6 +70,6 @@ function Base.show(df::GroupedDataFrame;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,
-                allrows=allrows, allcols=allcols, allgroups=allgroups, splitcols=splitcols,
-                rowlabel=rowlabel, summary=summary)
+                allrows=allrows, allcols=allcols, allgroups=allgroups,
+                splitcols=splitcols, rowlabel=rowlabel, summary=summary)
 end

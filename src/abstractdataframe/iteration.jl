@@ -81,15 +81,22 @@ Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
 Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows, i::Int)
     df = parent(itr)
-    DataFrameRow(df, index(df), i)
+    return DataFrameRow(df, index(df), i)
 end
 
 Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
     sdf = parent(itr)
-    DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
+    return DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
 end
 
-Base.getproperty(itr::DataFrameRows, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(itr::DataFrameRows, col_ind::Symbol) =
+    getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameRows, col_ind::AbstractString) =
+    getproperty(parent(itr), col_ind)
+Compat.hasproperty(itr::DataFrameRows, s::Symbol) = haskey(index(parent(itr)), s)
+Compat.hasproperty(itr::DataFrameRows, s::AbstractString) = haskey(index(parent(itr)), s)
+
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
@@ -158,16 +165,26 @@ end
 
 Base.getindex(itr::DataFrameColumns, j::Symbol) = parent(itr)[!, j]
 
-Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) = getproperty(parent(itr), col_ind)
+# separate methods are needed due to dispatch ambiguity
+Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) =
+    getproperty(parent(itr), col_ind)
+Base.getproperty(itr::DataFrameColumns, col_ind::AbstractString) =
+    getproperty(parent(itr), col_ind)
+Compat.hasproperty(itr::DataFrameColumns, s::Symbol) =
+    haskey(index(parent(itr)), s)
+Compat.hasproperty(itr::DataFrameColumns, s::AbstractString) =
+    haskey(index(parent(itr)), s)
+
 # Private fields are never exposed since they can conflict with column names
-Base.propertynames(itr::DataFrameColumns, private::Bool=false) = propertynames(parent(itr))
+Base.propertynames(itr::DataFrameColumns, private::Bool=false) =
+    propertynames(parent(itr))
 
 """
     keys(dfc::DataFrameColumns)
 
-Get a vector of column names of `dfc`.
+Get a vector of column names of `dfc` as `Symbol`s.
 """
-Base.keys(itr::DataFrameColumns) = names(parent(itr))
+Base.keys(itr::DataFrameColumns) = propertynames(itr)
 
 """
     pairs(dfc::DataFrameColumns)
@@ -236,6 +253,7 @@ end
 
 Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
 Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))
+Base.names(itr::Union{DataFrameRows, DataFrameColumns}, cols) = names(parent(itr), cols)
 
 function Base.show(io::IO, dfrs::DataFrameRows;
                    allrows::Bool = !get(io, :limit, false),
