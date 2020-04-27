@@ -44,7 +44,7 @@ julia&gt; sort(cv)
  &quot;Group A&quot;
  missing
  missing
-</code></pre><p>By default, a <code>CategoricalArray</code> is able to represent 2&lt;sup&gt;32&lt;/sup&gt; different levels. You can use less memory by calling the <code>compress</code> function:</p><pre><code class="language-julia-repl">julia&gt; cv = compress(cv)
+</code></pre><p>By default, a <code>CategoricalArray</code> is able to represent <span>$2^32$</span> different levels. You can use less memory by calling the <code>compress</code> function:</p><pre><code class="language-julia-repl">julia&gt; cv = compress(cv)
 6-element CategoricalArray{Union{Missing, String},1,UInt8}:
  &quot;Group A&quot;
  missing
