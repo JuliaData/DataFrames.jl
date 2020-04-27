@@ -694,6 +694,7 @@ end
           by(df, :a, 1 => length => :res, 1 => length => :nrow, 1 => length => :res2)
 
     @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
+    @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => "xxx", df, :a)
     @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
     @test_throws ArgumentError by(df, :a, nrow, nrow)
     @test_throws ArgumentError by(df, :a, [nrow])
