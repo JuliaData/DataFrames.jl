@@ -1097,10 +1097,32 @@ function _agg2idx_map_helper(idx, idx_agg)
 end
 
 function _combine(f::AbstractVector{<:Pair},
-                  gd::GroupedDataFrame, nms::AbstractVector{Symbol})
+                  gd::GroupedDataFrame, nms::AbstractVector{Symbol},
+                  copycols::Bool=true, keeprows::Bool=false) # TODO: remove these defaults
     # here f should be normalized and in a form of source_cols => fun
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
     @assert all(x -> last(x) isa Union{Base.Callable, ByRow}, f)
+
+    if keeprows
+        if !_check_cannonical(gd)
+            throw(ArgumentError("select or transform functions require that" *
+                                "GroupedDataFrame is not sorted or subsetted"))
+        end
+        idx_keeprows = Vector{Int}(undef, nrow(parent(gd)))
+        let i = 0
+            for (s, e) in zip(gd.starts, gd.ends)
+                v = gd.idx[s]
+                for k in s:e
+                    i += 1
+                    idx_keeprows[i] = v
+                end
+            end
+            @assert i == nrow(parent(gd))
+        end
+    else
+        idx_keeprows = nothing # should not be used but do not leave it unassigned
+    end
+
     idx_agg = nothing
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
@@ -1120,6 +1142,11 @@ function _combine(f::AbstractVector{<:Pair},
             agg = check_aggregate(last(p))
             outcol = agg(incol, gd)
             res[i] = idx_agg, outcol
+        elseif keeprows && fun isa identity && !(source_cols isa AsTable)
+            @assert source_cols isa Union{Int, AbstractVector{Int}}
+            @assert length(source_cols) == 1
+            outcol = parentdf[!, first(source_cols)]
+            res[i] = idx_keeprows, copycols ? copy(outcol) : outcol
         else
             if source_cols isa Int
                 incols = (parentdf[!, source_cols],)
@@ -1160,11 +1187,15 @@ function _combine(f::AbstractVector{<:Pair},
     # idx_agg === nothing then we have only functions that
     # returned multiple rows and idx_loc = 1
     idx_loc = findfirst(x -> x[1] !== idx_agg, res)
-    if isnothing(idx_loc)
+    if !keeprows && isnothing(idx_loc)
         @assert !isnothing(idx_agg)
         idx = idx_agg
     else
-        idx = res[idx_loc][1]
+        if keeprows
+            idx = idx_keeprows
+        else
+            idx = res[idx_loc][1]
+        end
         agg2idx_map = nothing
         for i in 1:length(res)
             if res[i][1] !== idx && res[i][1] != idx
@@ -1176,7 +1207,13 @@ function _combine(f::AbstractVector{<:Pair},
                     end
                     res[i] = idx, res[i][2][agg2idx_map]
                 elseif idx != res[i][1]
-                    throw(ArgumentError("all functions must return vectors of the same length"))
+                    if keeprows
+                        throw(ArgumentError("all functions must return vectors of " *
+                                            "the length equal to the group rows count " *
+                                            "in the source GroupedDataFrame"))
+                    else
+                        throw(ArgumentError("all functions must return vectors of the same length"))
+                    end
                 end
             end
         end

@@ -3,12 +3,10 @@
 
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
-# 1) Int
-# 2) AbstractVector{Int}
-# 4) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
-# 5) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
-# 6) Pair{Int, Pair{ByRow, Symbol}}
-# 7) Pair{AbstractVector{Int}, Pair{ByRow, Symbol}}
+# 1) AbstractVector{Int}
+# 2) Pair{Int, <:Pair{<:Base.Callable, Symbol}}
+# 3) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, Symbol}}
+# 4) Pair{AsTable, <:Pair{<:Base.Callable, Symbol}}
 
 """
     ByRow
