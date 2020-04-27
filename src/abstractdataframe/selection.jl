@@ -531,7 +531,7 @@ julia> select(df, AsTable(:) => ByRow(mean))
 
 """
 select(df::AbstractDataFrame, args...; copycols::Bool=true) =
-    _select(df, args..., copycols=copycols, keeprows=true)
+    _manipulate(df, args..., copycols=copycols, keeprows=true)
 
 """
     transform(df::AbstractDataFrame, args...; copycols::Bool=true)
@@ -546,26 +546,26 @@ transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
     select(df, :, args..., copycols=copycols)
 
 combine(df::AbstractDataFrame, args...) =
-    _select(df, args..., copycols=true, keeprows=false)
+    _manipulate(df, args..., copycols=true, keeprows=false)
 
 combine(arg, df::AbstractDataFrame) = combine(arg, groupby(df, []))
 
-_select(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
+_manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
 
-function _select(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool)
+function _manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool)
     if c isa AbstractVector{<:Pair}
-        return _select(df, c..., copycols=copycols, keeprows=keeprows)
+        return _manipulate(df, c..., copycols=copycols, keeprows=keeprows)
     else
-        return _select(df, index(df)[c], copycols=copycols, keeprows=keeprows)
+        return _manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows)
     end
 end
 
-_select(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool) =
-    _select(df, [c], copycols=copycols, keeprows=keeprows)
+_manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool) =
+    _manipulate(df, [c], copycols=copycols, keeprows=keeprows)
 
-function _select(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
+function _manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVector{<:Pair}
@@ -679,19 +679,19 @@ function _process(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows
     return newdf
 end
 
-_select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool) =
-    _select(dfv, [ind], copycols=copycols, keeprows=keeprows)
+_manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool) =
+    _manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows)
 
-function _select(dfv::SubDataFrame, args::MultiColumnIndex;
+function _manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
                  copycols::Bool, keeprows::Bool)
     if args isa AbstractVector{<:Pair}
-        return _select(dfv, args..., copycols=copycols, keeprows=keeprows)
+        return _manipulate(dfv, args..., copycols=copycols, keeprows=keeprows)
     else
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
 
-function select(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
+function _manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
     if copycols
         cs_vec = []
         for v in args

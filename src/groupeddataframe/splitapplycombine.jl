@@ -173,6 +173,15 @@ function groupby(df::AbstractDataFrame, cols;
     return gd
 end
 
+function _check_cannonical(gdf::GroupedDataFrame)
+    @assert length(gdf.starts) == length(gdf.ends)
+    (gdf.starts[1] != 1 || gdf.ends[end] != nrow(parent(gdf))) && return false
+    for i in 2:length(gdf.starts)
+        gdf.starts[i] - gdf.ends[i-1] != 1 && return false
+    end
+    return true
+end
+
 const F_TYPE_RULES =
     """
     `fun` can return a single value, a row, a vector, or multiple rows.
@@ -574,14 +583,12 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum)
 
 See [`by`](@ref) for more examples.
 """
-combine(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame; keepkeys::Bool=true) =
-    combine(gd, f, keepkeys=keepkeys)
-combine(gd::GroupedDataFrame, f::Base.Callable; keepkeys::Bool=true) =
+combine(f::Base.Callable, gd::GroupedDataFrame; keepkeys::Bool=true) =
     combine_helper(f, gd, keepkeys=keepkeys)
-combine(gd::GroupedDataFrame, f::typeof(nrow); keepkeys::Bool=true) =
+combine(f::typeof(nrow), gd::GroupedDataFrame; keepkeys::Bool=true) =
     combine(gd, [nrow => :nrow], keepkeys=keepkeys)
 
-function combine(gd::GroupedDataFrame, p::Pair; keepkeys::Bool=true)
+function combine(p::Pair, gd::GroupedDataFrame; keepkeys::Bool=true)
     # move handling of aggregate to specialized combine
     p_from, p_to = p
 
