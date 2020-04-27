@@ -161,7 +161,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
     col_idx, (fun, newname) = nc
     # It is allowed to request a tranformation operation into a newname column
     # only once. This is ensured by the logic related to transformed_cols dictionaly
-    # in _select, therefore in select_transform! such a duplicate should not happen
+    # in _process, therefore in select_transform! such a duplicate should not happen
     @assert !hasproperty(newdf, newname)
     cdf = eachcol(df)
     if col_idx isa Int
@@ -185,6 +185,13 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                 newdfcols[i] = fill!(similar(col, length(res)), first(col))
             end
         end
+
+        # this means that we use `select` or `transform` not `combine`
+        if !allow_resizing_newdf[] && ncol(newdf) == 0 && length(res) != nrow(df)
+            throw(ArgumentError("length $(length(res)) of vector returned from " *
+                                "function $fun is different than number of rows" *
+                                "$(nrow(df)) of the source data frame."))
+        end
         allow_resizing_newdf[] = false
         respar = parent(res)
         parent_cols = col_idx isa AsTable ? col_idx.cols : col_idx
@@ -196,9 +203,14 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         end
     else
         res_unwrap = res isa Union{AbstractArray{<:Any, 0}, Ref} ? res[] : res
-        # allow squashing a scalar to 0 rows
-        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap),
-                                                        ncol(newdf) == 0 ? 1 : nrow(newdf)),
+        if ncol(newdf) == 0
+            # if allow_resizing_newdf[] is false we know this is select or transform
+            rows = allow_resizing_newdf[] ? 1 : nrow(df)
+        else
+            # allow squashing a scalar to 0 rows
+            rows = nrow(newdf)
+        end
+        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap), rows),
                                   res_unwrap)
     end
     # mark that column transformation was applied
@@ -518,22 +530,42 @@ julia> select(df, AsTable(:) => ByRow(mean))
 ```
 
 """
-select(df::DataFrame, args::AbstractVector{Int}; copycols::Bool=true) =
+select(df::AbstractDataFrame, args...; copycols::Bool=true) =
+    _select(df, args..., copycols=copycols, keeprows=true)
+
+"""
+    transform(df::AbstractDataFrame, args...; copycols::Bool=true)
+
+Create a new data frame that contains columns from `df` and adds columns
+specified by `args` and return it.
+Equivalent to `select(df, :, args..., copycols=copycols)`.
+
+See [`select`](@ref) for detailed rules regarding accepted values for `args`.
+"""
+transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
+    select(df, :, args..., copycols=copycols)
+
+combine(df::AbstractDataFrame, args...) =
+    _select(df, args..., copycols=true, keeprows=false)
+
+combine(arg, df::AbstractDataFrame) = combine(arg, groupby(df, []))
+
+_select(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
 
-function select(df::DataFrame, c::MultiColumnIndex; copycols::Bool=true)
+function _select(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool)
     if c isa AbstractVector{<:Pair}
-        return select(df, c..., copycols=copycols)
+        return _select(df, c..., copycols=copycols, keeprows=keeprows)
     else
-        return select(df, index(df)[c], copycols=copycols)
+        return _select(df, index(df)[c], copycols=copycols, keeprows=keeprows)
     end
 end
 
-select(df::DataFrame, c::ColumnIndex; copycols::Bool=true) =
-    select(df, [c], copycols=copycols)
+_select(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool) =
+    _select(df, [c], copycols=copycols, keeprows=keeprows)
 
-function select(df::DataFrame, cs...; copycols::Bool=true)
+function _select(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVector{<:Pair}
@@ -542,10 +574,11 @@ function select(df::DataFrame, cs...; copycols::Bool=true)
             push!(cs_vec, v)
         end
     end
-    _select(df, [normalize_selection(index(df), c) for c in cs_vec], copycols)
+    return _process(df, [normalize_selection(index(df), c) for c in cs_vec],
+                    copycols, keeprows)
 end
 
-function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
+function _process(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
     # the role of transformed_cols is the following
@@ -593,7 +626,9 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     end
     # we allow resizing newdf only if up to some point only scalars were put
     # in it. The moment we put any vector into newdf its number of rows becomes fixed
-    allow_resizing_newdf = Ref(true)
+    # Also if keeprows is true then we make sure to rpoduce nrow(df) rows so resizing
+    # is not allowed
+    allow_resizing_newdf = Ref(!keeprows)
     for nc in normalized_cs
         if nc isa AbstractVector{Int}
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
@@ -621,6 +656,7 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
                                 newdfcols[i] = fill!(similar(col, nrow(df)), first(col))
                             end
                         end
+                        # here even if keeprows is true all is OK
                         newdf[!, newname] = copycols ? df[:, i] : df[!, i]
                         allow_resizing_newdf[] = false
                     end
@@ -643,18 +679,19 @@ function _select(df::AbstractDataFrame, normalized_cs, copycols::Bool)
     return newdf
 end
 
-select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool=true) =
-    select(dfv, [ind], copycols=copycols)
+_select(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool) =
+    _select(dfv, [ind], copycols=copycols, keeprows=keeprows)
 
-function select(dfv::SubDataFrame, args::MultiColumnIndex; copycols::Bool=true)
+function _select(dfv::SubDataFrame, args::MultiColumnIndex;
+                 copycols::Bool, keeprows::Bool)
     if args isa AbstractVector{<:Pair}
-        return select(dfv, args..., copycols=copycols)
+        return _select(dfv, args..., copycols=copycols, keeprows=keeprows)
     else
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
 
-function select(dfv::SubDataFrame, args...; copycols::Bool=true)
+function select(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
     if copycols
         cs_vec = []
         for v in args
@@ -664,7 +701,7 @@ function select(dfv::SubDataFrame, args...; copycols::Bool=true)
                 push!(cs_vec, v)
             end
         end
-        return _select(dfv, [normalize_selection(index(dfv), c) for c in cs_vec], true)
+        return _process(dfv, [normalize_selection(index(dfv), c) for c in cs_vec], true, true)
     else
         # we do not support transformations here
         # newinds contains only indexing; making it Vector{Any} avoids some compilation
@@ -692,15 +729,3 @@ function select(dfv::SubDataFrame, args...; copycols::Bool=true)
         return view(dfv, :, isempty(newinds) ? [] : All(newinds...))
     end
 end
-
-"""
-    transform(df::AbstractDataFrame, args...; copycols::Bool=true)
-
-Create a new data frame that contains columns from `df` and adds columns
-specified by `args` and return it.
-Equivalent to `select(df, :, args..., copycols=copycols)`.
-
-See [`select`](@ref) for detailed rules regarding accepted values for `args`.
-"""
-transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
-    select(df, :, args..., copycols=copycols)
