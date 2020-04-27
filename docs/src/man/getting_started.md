@@ -45,7 +45,7 @@ julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-Columns can be directly (i.e. without copying) accessed via `df.col`, `df."col"`, `df[!, :col]` or `df[!, "col"]`. The two latter syntaxes are more flexible as they allow passing a variable holding the name of the column, and not only a literal name. Note that column names can be either symbols (written as `:col`, `:var"col"` or `Symbol("col")`) or strings (written as `"col"`).
+Columns can be directly (i.e. without copying) accessed via `df.col`, `df."col"`, `df[!, :col]` or `df[!, "col"]`. The two latter syntaxes are more flexible as they allow passing a variable holding the name of the column, and not only a literal name. Note that column names can be either symbols (written as `:col`, `:var"col"` or `Symbol("col")`) or strings (written as `"col"`; in particular variable interpolation using `$` is not allowed).
 Columns can also be accessed using an integer index specifying their position.
 
 Since `df[!, :col]` does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original `df`. To get a copy of the column use `df[:, :col]`: changing the vector returned by this syntax does not change `df`.
@@ -127,7 +127,7 @@ julia> propertynames(df)
 
     DataFrames.jl allows to use `Symbol`s (like `:A`) and strings (like `"A"`)
     for all column indexing operations for convenience.
-    However, using `Symbol`s is slightly faster and should generally be preferred.
+    However, using `Symbol`s is slightly faster and should generally be preferred, if not generating them via string manipulation.
 
 
 ### Constructing Column by Column

@@ -572,7 +572,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
     # Put the summary stats into the return data frame
     data = DataFrame()
-    data.variable = copy(_names(df))
+    data.variable = propertynames(df)
 
     # An array of Dicts for summary statistics
     col_stats_dicts = map(eachcol(df)) do col
