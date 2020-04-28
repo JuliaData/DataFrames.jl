@@ -41,6 +41,7 @@ function validate_gdf(ogd::GroupedDataFrame)
     @assert g == g[1]:g[end]
     @assert length(gd.starts) == length(gd.ends) == g[end]
     @assert isperm(gd.idx)
+    @assert length(gd.idx) == length(gd.groups) == nrow(parent(gd))
 
     # checking that groups field is consistent with other fields
     # (since == and isequal do not use it)
@@ -88,7 +89,7 @@ end
 
 @testset "parent" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
-    gd = groupby(df, :a)
+    gd = groupby_checked(df, :a)
     @test parent(gd) === df
     @test_throws ArgumentError identity.(gd)
 end
@@ -96,20 +97,20 @@ end
 @testset "consistency" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(df.c, 5)
-    @test_throws AssertionError groupby(df, :a)
+    @test_throws AssertionError groupby_checked(df, :a)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(DataFrames._columns(df), df[:, :a])
-    @test_throws AssertionError groupby(df, :a)
+    @test_throws AssertionError groupby_checked(df, :a)
 end
 
 @testset "accepted columns" begin
     df = DataFrame(A=[1,1,1,2,2,2], B=[1,2,1,2,1,2], C=1:6)
-    @test groupby(df, [1,2]) == groupby(df, 1:2) == groupby(df, [:A, :B])
-    @test groupby(df, [2,1]) == groupby(df, 2:-1:1) == groupby(df, [:B, :A])
+    @test groupby_checked(df, [1,2]) == groupby_checked(df, 1:2) == groupby_checked(df, [:A, :B])
+    @test groupby_checked(df, [2,1]) == groupby_checked(df, 2:-1:1) == groupby_checked(df, [:B, :A])
 end
 
-@testset "by, groupby and map(::Function, ::GroupedDataFrame)" begin
+@testset "groupby and combine(::Function, ::GroupedDataFrame)" begin
     Random.seed!(1)
     df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
                    b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
@@ -152,7 +153,7 @@ end
         sres3 = sort(res3, colssym)
         sres4 = sort(res4, colssym)
 
-        # groupby() without groups sorting
+        # groupby_checked() without groups sorting
         gd = groupby_checked(df, cols)
         @test names(parent(gd))[gd.cols] == string.(colssym)
         df_comb = combine(identity, gd)
@@ -171,7 +172,7 @@ end
         @test sort(combine(f7, gd), colssym) == sort(res4, colssym)
         @test sort(combine(f8, gd), colssym) == sort(res4, colssym)
 
-        # groupby() with groups sorting
+        # groupby_checked() with groups sorting
         gd = groupby_checked(df, cols, sort=true)
         @test names(parent(gd))[gd.cols] == string.(colssym)
         for i in 1:length(gd)
@@ -253,7 +254,7 @@ end
     df = DataFrame(v1=x, v2=x)
     groupby_checked(df, [:v1, :v2])
 
-    df2 = combine(e->1, groupby(DataFrame(x=Int64[]), :x))
+    df2 = combine(e->1, groupby_checked(DataFrame(x=Int64[]), :x))
     @test size(df2) == (0, 1)
     @test sum(df2.x) == 0
 
@@ -349,7 +350,7 @@ end
     df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
 
     # Test function returning DataFrameRow
-    res = by(d -> DataFrameRow(d, 1, :), df, :x)
+    res = combine(d -> DataFrameRow(d, 1, :), groupby_checked(df, :x))
     @test res == DataFrame(x=df.x, y=df.y)
 
     # Test function returning Tuple
@@ -359,7 +360,7 @@ end
     # Test with some groups returning empty data frames
     @test by(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), df, :x) ==
         DataFrame(x=[2, 3], z=[1, 1])
-    v = map(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), groupby_checked(df, :x))
+    v = combine(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), groupby_checked(df, :x), regroup=true)
     @test length(v) == 2
     @test vcat(v[1], v[2]) == DataFrame(x=[2, 3], z=[1, 1])
 
@@ -692,7 +693,7 @@ end
     @test_throws ArgumentError by(df, :a, nrow, nrow)
     @test_throws ArgumentError by(df, :a, [nrow])
 
-    gd = groupby(df, :a)
+    gd = groupby_checked(df, :a)
 
     # Only test that different combine syntaxes work,
     # and rely on tests below for deeper checks
@@ -958,7 +959,7 @@ end
 
 @testset "combine and map with columns named like grouping keys" begin
     df = DataFrame(x=["a", "a", "b", missing], y=1:4)
-    gd = groupby(df, :x)
+    gd = groupby_checked(df, :x)
     @test combine(identity, gd) ≅ df
     @test combine(d -> d[:, [2, 1]], gd) ≅ df
     @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
@@ -966,7 +967,7 @@ end
     @test map(d -> d[:, [2, 1]], gd) ≅ gd
     @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
 
-    gd = groupby(df, :x, skipmissing=true)
+    gd = groupby_checked(df, :x, skipmissing=true)
     @test combine(identity, gd) == df[1:3, :]
     @test combine(d -> d[:, [2, 1]], gd) == df[1:3, :]
     @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
@@ -1199,7 +1200,7 @@ end
         \\end{tabular}
         """
 
-    gd = groupby(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
+    gd = groupby_checked(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
     summary_str = summary(gd)
     @test summary_str == "$GroupedDataFrame with 1 group based on keys: a, b"
     @test sprint(show, gd) === """
@@ -1231,7 +1232,7 @@ end
         \\end{tabular}
         """
 
-        gd = groupby(DataFrame(a = [1,2], b = [1.0, 2.0]), :a)
+        gd = groupby_checked(DataFrame(a = [1,2], b = [1.0, 2.0]), :a)
         @test sprint(show, "text/csv", gd) == """
         "a","b"
         1,1.0
@@ -1331,7 +1332,7 @@ end
     df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
     for dosort in (false, true), doskipmissing in (false, true)
         @test by(df, :a, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
-            combine(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
+            combine(groupby_checked(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
     end
 end
 
@@ -1376,7 +1377,7 @@ end
         "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
 
     df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
-    gd = groupby(df, :a)
+    gd = groupby_checked(df, :a)
     @test_throws ArgumentError combine(gd)
 end
 
@@ -1486,8 +1487,8 @@ end
     @test cnt == length(gd)
 
     # Indexing using another GroupedDataFrame instance should fail
-    gd2 = groupby(df, cols, skipmissing=true)
-    gd3 = groupby(df, cols, skipmissing=true)
+    gd2 = groupby_checked(df, cols, skipmissing=true)
+    gd3 = groupby_checked(df, cols, skipmissing=true)
     @test gd2 == gd3  # Use GDF's without missing so they compare equal
     @test_throws ErrorException gd3[first(keys(gd2))]
 
@@ -1501,7 +1502,7 @@ end
                    b = repeat(1:2, outer=[6]),
                    c = 1:12)
 
-    gd = groupby(df, [:a, :b])
+    gd = groupby_checked(df, [:a, :b])
 
     @test map(repr, keys(gd)) == [
         "GroupKey: (a = :foo, b = 1)",
@@ -1649,7 +1650,7 @@ end
 end
 
 @testset "haskey for GroupKey" begin
-    gdf = groupby(DataFrame(a=1, b=2, c=3), [:a, :b])
+    gdf = groupby_checked(DataFrame(a=1, b=2, c=3), [:a, :b])
     k = keys(gdf)[1]
     @test !haskey(k, 0)
     @test haskey(k, 1)
@@ -1666,7 +1667,7 @@ end
     @test_throws MethodError haskey(gdf, true)
 
     @test haskey(gdf, k)
-    @test_throws ArgumentError haskey(gdf, keys(groupby(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
+    @test_throws ArgumentError haskey(gdf, keys(groupby_checked(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
     @test_throws BoundsError haskey(gdf, DataFrames.GroupKey(gdf, 0))
     @test_throws BoundsError haskey(gdf, DataFrames.GroupKey(gdf, 2))
     @test haskey(gdf, (1,2))
@@ -1733,11 +1734,11 @@ end
     @test by(df, :g, :x1 => :z) ==
           by(df, :g, [:x1 => :z]) ==
           by(:x1 => :z, df, :g) ==
-          combine(groupby(df, :g), :x1 => :z) ==
-          combine(groupby(df, :g), [:x1 => :z]) ==
-          combine(:x1 => :z, groupby(df, :g)) ==
+          combine(groupby_checked(df, :g), :x1 => :z) ==
+          combine(groupby_checked(df, :g), [:x1 => :z]) ==
+          combine(:x1 => :z, groupby_checked(df, :g)) ==
           DataFrame(g=[1,1,1,2,2,2], z=1:6)
-    @test map(:x1 => :z, groupby(df, :g)) == groupby(DataFrame(g=[1,1,1,2,2,2], z=1:6), :g)
+    @test map(:x1 => :z, groupby_checked(df, :g)) == groupby_checked(DataFrame(g=[1,1,1,2,2,2], z=1:6), :g)
 end
 
 @testset "hard tabular return value cases" begin
@@ -1810,7 +1811,7 @@ end
 @testset "additional do_call tests" begin
     Random.seed!(1234)
     df = DataFrame(g = rand(1:10, 100), x1 = rand(1:1000, 100))
-    gdf = groupby(df, :g)
+    gdf = groupby_checked(df, :g)
 
     @test combine(gdf, [] => () -> 1, :x1 => length) == combine(gdf) do sdf
         (;[:function => 1, :x1_length => nrow(sdf)]...)
@@ -1927,7 +1928,7 @@ end
 
 @testset "AsTable tests" begin
     df = DataFrame(g=[1,1,1,2,2], x=1:5, y=6:10)
-    gdf = groupby(df, :g)
+    gdf = groupby_checked(df, :g)
 
     # whole column 4 options of single pair passed
     @test by(df, :g , AsTable([:x, :y]) => Ref) ==
@@ -1936,7 +1937,7 @@ end
           combine(AsTable([:x, :y]) => Ref, gdf) ==
           DataFrame(g=1:2, x_y_Ref=[(x=[1,2,3], y=[6,7,8]), (x=[4,5], y=[9,10])])
     @test map(AsTable([:x, :y]) => Ref, gdf) ==
-          groupby(by(df, :g , AsTable([:x, :y]) => Ref), :g)
+          groupby_checked(by(df, :g , AsTable([:x, :y]) => Ref), :g)
 
     @test by(df, :g, AsTable(1) => Ref) ==
           combine(gdf, AsTable(1) => Ref) ==
@@ -1951,7 +1952,7 @@ end
           DataFrame(g=[1,1,1,2,2],
                     x_y_function=[[(x=1,y=6)], [(x=2,y=7)], [(x=3,y=8)], [(x=4,y=9)], [(x=5,y=10)]])
     @test map(AsTable([:x, :y]) => ByRow(x -> [x]), gdf) ==
-          groupby(by(df, :g, AsTable([:x, :y]) => ByRow(x -> [x])), :g)
+          groupby_checked(by(df, :g, AsTable([:x, :y]) => ByRow(x -> [x])), :g)
 
     # whole column and ByRow test for multiple pairs passed
     @test by(df, :g, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
@@ -1968,7 +1969,7 @@ end
 
 @testset "test correctness of regrouping" begin
     df = DataFrame(g=[2,2,1,3,1,2,1,2,3])
-    gdf = groupby(df, :g)
+    gdf = groupby_checked(df, :g)
     gdf2 = combine(identity, gdf, regroup=true)
     @test combine(gdf, :g => sum) == combine(gdf2, :g => sum)
 

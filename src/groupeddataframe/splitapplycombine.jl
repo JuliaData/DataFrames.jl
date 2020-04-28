@@ -169,17 +169,7 @@ function groupby(df::AbstractDataFrame, cols;
     return gd
 end
 
-function _check_cannonical(gd::GroupedDataFrame)
-    groups = gd.groups
-    isempty(groups) && return true
-    maxseen = 1
-    for g in groups
-        1 <= g <= maxseen + 1 || return false
-        maxseen = max(maxseen, g)
-    end
-    @assert maxseen == gd.ngroups
-    return true
-end
+_check_cannonical(gd::GroupedDataFrame) = !any(==(0), gd.groups)
 
 const F_TYPE_RULES =
     """
@@ -602,13 +592,8 @@ function combine_helper(f, gd::GroupedDataFrame,
             # in this case we are sure that the result GroupedDataFrame has the
             # same structure as the source
             # we do not copy data as it should be safe - we never mutate fields of gd
-            if isnothing(getfield(gd, :keymap))
-                return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
-                                        gd.starts, gd.ends, gd.ngroups, nothing)
-            else
-                return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
-                                        gd.starts, gd.ends, gd.ngroups, gd.keymap)
-            end
+            return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
+                                    gd.starts, gd.ends, gd.ngroups, getfield(gd, :keymap))
         else
             starts = Vector{Int}(undef, length(gd))
             ends = Vector{Int}(undef, length(gd))
@@ -1036,7 +1021,7 @@ function _combine(f::AbstractVector{<:Pair},
 
     if keeprows
         if !_check_cannonical(gd)
-            throw(ArgumentError("select or transform functions require that" *
+            throw(ArgumentError("select or transform functions require that " *
                                 "GroupedDataFrame is not sorted or subsetted"))
         end
         idx_keeprows = Vector{Int}(undef, nrow(parent(gd)))
