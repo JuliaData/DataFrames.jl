@@ -1093,7 +1093,7 @@ function _combine(f::AbstractVector{<:Pair},
                   gd::GroupedDataFrame, nms::AbstractVector{Symbol})
     # here f should be normalized and in a form of source_cols => fun
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
-    @assert all(x -> last(x) isa Union{Base.Callable, ByRow}, f)
+    @assert all(x -> last(x) isa Base.Callable, f)
     idx_agg = nothing
     if any(isagg, f)
         # Compute indices of representative rows only once for all AbstractAggregates
