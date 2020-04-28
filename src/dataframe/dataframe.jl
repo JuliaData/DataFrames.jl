@@ -1372,9 +1372,9 @@ end
 """
     repeat!(df::DataFrame; inner::Integer = 1, outer::Integer = 1)
 
-Update a data frame `df` in place by repeating its rows. `inner` specifies how many
+Update a data frame `df` in-place by repeating its rows. `inner` specifies how many
 times each row is repeated, and `outer` specifies how many times the full set
-of rows is repeated.
+of rows is repeated. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
@@ -1416,8 +1416,8 @@ end
 """
     repeat!(df::DataFrame, count::Integer)
 
-Update a data frame `df` in place by repeating its rows the number of times
-specified by `count`.
+Update a data frame `df` in-place by repeating its rows the number of times
+specified by `count`. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
