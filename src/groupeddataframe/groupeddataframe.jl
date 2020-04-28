@@ -79,7 +79,7 @@ Base.names(gd::GroupedDataFrame) = names(gd.parent)
 Base.names(gd::GroupedDataFrame, cols) = names(gd.parent, cols)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
-function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
+function DataFrame(gd::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=true)
     if !copycols
         throw(ArgumentError("It is not possible to construct a `DataFrame`" *
                             "from GroupedDataFrame with `copycols=false`"))
@@ -94,7 +94,11 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
         doff += n
     end
     resize!(idx, doff - 1)
-    parent(gd)[idx, :]
+    if keepkeys
+        return parent(gd)[idx, :]
+    else
+        return parent(gd)[idx, Not(gd.cols)]
+    end
 end
 
 
