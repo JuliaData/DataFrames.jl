@@ -444,3 +444,25 @@ function aggregate(d::AbstractDataFrame, cols, fs::AbstractVector;
 end
 
 @deprecate deleterows!(df::DataFrame, inds) delete!(df, inds)
+
+@deprecate by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
+   sort::Bool=false, skipmissing::Bool=false,
+   keepkeys::Bool=true) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
+                                f, keepkeys=keepkeys)
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
+   sort::Bool=false, skipmissing::Bool=false,
+   keepkeys::Bool=true) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
+                                f, keepkeys=keepkeys)
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair;
+   sort::Bool=false, skipmissing::Bool=false,
+   keepkeys::Bool=true) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
+                                f, keepkeys=keepkeys)
+
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Union{Pair, typeof(nrow),
+                                             ColumnIndex, MultiColumnIndex}...;
+   sort::Bool=false, skipmissing::Bool=false,
+   keepkeys::Bool=true) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
+                                f..., keepkeys=keepkeys)
+
+import Base: map
+@deprecate map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame) combine(f, gd, regroup=true)
