@@ -1207,7 +1207,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
     idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
     # disallow passing target column name to genuine tables
     if firstres isa MULTI_COLS_TYPE
-        if p isa Pair{<:Any, <:Pair{<:Any, Symbol}}
+        if p isa Pair{<:Any, <:Pair{<:Any, <:SymbolOrString}}
             throw(ArgumentError("setting column name for tabular return value is disallowed"))
         end
     else
