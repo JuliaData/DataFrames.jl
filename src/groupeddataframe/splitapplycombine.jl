@@ -583,12 +583,15 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum)
 
 See [`by`](@ref) for more examples.
 """
-combine(f::Base.Callable, gd::GroupedDataFrame; keepkeys::Bool=true) =
-    combine_helper(f, gd, keepkeys=keepkeys)
-combine(f::typeof(nrow), gd::GroupedDataFrame; keepkeys::Bool=true) =
-    combine(gd, [nrow => :nrow], keepkeys=keepkeys)
+combine(f::Base.Callable, gd::GroupedDataFrame;
+        keepkeys::Bool=true, regroup::Bool=false) =
+    combine_helper(f, gd, keepkeys=keepkeys, regroup=regroup)
+combine(f::typeof(nrow), gd::GroupedDataFrame;
+        keepkeys::Bool=true, regroup::Bool=false) =
+    combine(gd, [nrow => :nrow], keepkeys=keepkeys, regroup=regroup)
 
-function combine(p::Pair, gd::GroupedDataFrame; keepkeys::Bool=true)
+function combine(p::Pair, gd::GroupedDataFrame;
+                 keepkeys::Bool=true, regroup::Bool=false)
     # move handling of aggregate to specialized combine
     p_from, p_to = p
 
@@ -605,13 +608,13 @@ function combine(p::Pair, gd::GroupedDataFrame; keepkeys::Bool=true)
     else
         cs = p_from
     end
-    return combine_helper(cs => p_to, gd, keepkeys=keepkeys)
+    return combine_helper(cs => p_to, gd, keepkeys=keepkeys, regroup=regroup)
 end
 
 function combine(gd::GroupedDataFrame,
                  @nospecialize(cs::Union{Pair, typeof(nrow),
                                          ColumnIndex, MultiColumnIndex}...);
-                 keepkeys::Bool=true)
+                 keepkeys::Bool=true, regroup::Bool=false)
     @assert !isempty(cs)
     cs_vec = []
     for p in cs
@@ -684,7 +687,7 @@ function combine(gd::GroupedDataFrame,
     end
     f = Pair[first(x) => first(last(x)) for x in cs_norm]
     nms = Symbol[last(last(x)) for x in cs_norm]
-    return combine_helper(f, gd, nms, keepkeys=keepkeys)
+    return combine_helper(f, gd, nms, keepkeys=keepkeys, regroup=regroup)
 end
 
 function combine(gd::GroupedDataFrame; f...)
@@ -700,7 +703,10 @@ end
 
 function combine_helper(f, gd::GroupedDataFrame,
                         nms::Union{AbstractVector{Symbol},Nothing}=nothing;
-                        keepkeys::Bool=true)
+                        keepkeys::Bool, regroup::Bool)
+    if regroup && !keepkeys
+        throw(ArgumentError("keepkeys=false when regroup=true is not allowed"))
+    end
     if length(gd) > 0
         idx, valscat = _combine(f, gd, nms)
         keepkeys || return valscat
