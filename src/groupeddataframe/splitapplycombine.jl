@@ -636,7 +636,7 @@ function combine_helper(f, gd::GroupedDataFrame,
                 end
             end
             # all groups must be filled
-            @assert minimum(grouups) == 1
+            @assert minimum(groups) == 1
 
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), groups,
                                     collect(1:length(idx)), starts, ends, j, nothing)
@@ -1172,16 +1172,20 @@ function _combine(f::AbstractVector{<:Pair},
     return idx, DataFrame(collect(AbstractVector, outcols), nms)
 end
 
-function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing)
+function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
+                  copycols::Bool, keeprows::Bool)
+    @assert copycols && !keeprows
     firstres = fun(gd[1])
     idx, outcols, nms = _combine_multicol(firstres, fun, gd, nothing)
     valscat = DataFrame(collect(AbstractVector, outcols), nms)
     return idx, valscat
 end
 
-function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing)
+function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing,
+                  copycols::Bool, keeprows::Bool)
     # here p should not be normalized as we allow tabular return value from fun
     # map and combine should not dispatch here if p is isagg
+    @assert copycols && !keeprows
     source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p)
     parentdf = parent(gd)
     if source_cols isa Int
