@@ -1,7 +1,3 @@
-#
-# groupby(), map(), combine(), by() and related
-#
-
 """
     groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
@@ -1141,7 +1137,7 @@ function _combine(f::AbstractVector{<:Pair},
                     if isnothing(agg2idx_map)
                         agg2idx_map = _agg2idx_map_helper(idx, idx_agg)
                     end
-                    res[i] = idx, res[i][2][agg2idx_map]
+                    res[i] = idx_agg, res[i][2][agg2idx_map]
                 elseif idx != res[i][1]
                     if keeprows
                         throw(ArgumentError("all functions must return vectors of " *
@@ -1154,6 +1150,10 @@ function _combine(f::AbstractVector{<:Pair},
             end
         end
     end
+
+    # remember that here first field in res[i] is not useful - it is just needed
+    # to keep track how the column was generated
+    # a correct index is stored in idx variable
 
     for (i, (col_idx, col)) in enumerate(res)
         if keeprows && res[i][1] !== idx_keeprows # we need to reorder the column
