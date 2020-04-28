@@ -119,7 +119,7 @@ function normalize_selection(idx::AbstractIndex,
         rawc = first(sel)
         wanttable = false
     end
-    if rawc isa AbstractVector{Int} 
+    if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}}
         c = [idx[n] for n in rawc]
