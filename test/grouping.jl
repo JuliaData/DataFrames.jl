@@ -28,11 +28,19 @@ function _levels!(x::PooledArray, levels::AbstractVector)
 end
 _levels!(x::CategoricalArray, levels::AbstractVector) = levels!(x, levels)
 
-function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
-    ogd = groupby(df, keys, args...; kwargs...)
-
+function validate_gdf(ogd::GroupedDataFrame)
     # To return original object to test when indices have not been computed
     gd = deepcopy(ogd)
+
+    @assert allunique(gd.cols)
+    @assert minimum(gd.cols) >= 1
+    @assert maximum(gd.cols) <= ncol(parent(gd))
+
+    g = sort!(unique(gd.groups))
+    @assert 0 <= g[1] <= 1
+    @assert g == g[1]:g[end]
+    @assert length(gd.starts) == length(gd.ends) == g[end]
+    @assert isperm(gd.idx)
 
     # checking that groups field is consistent with other fields
     # (since == and isequal do not use it)
@@ -54,9 +62,6 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
 
         # correct start-end relations
         for i in eachindex(se)
-            firstkeys = gd.parent[gd.idx[se[i][1]], gd.cols]
-            # all grouping keys must be equal within a group
-            @assert all(j -> gd.parent[gd.idx[j], gd.cols] ≅ firstkeys, se[i][1]:se[i][2])
             @assert se[i][1] <= se[i][2]
             if i > 1
                 # the blocks returned by groupby must be continuous
@@ -73,7 +78,12 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
         @test allunique(eachrow(gd.parent[gd.idx[gd.starts], gd.cols]))
     end
 
-    ogd
+end
+
+function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
+    ogd = groupby(df, keys, args...; kwargs...)
+    validate_gdf(ogd)
+    return ogd
 end
 
 @testset "parent" begin
@@ -86,11 +96,11 @@ end
 @testset "consistency" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(df.c, 5)
-    @test_throws AssertionError gd = groupby(df, :a)
+    @test_throws AssertionError groupby(df, :a)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(DataFrames._columns(df), df[:, :a])
-    @test_throws AssertionError gd = groupby(df, :a)
+    @test_throws AssertionError groupby(df, :a)
 end
 
 @testset "accepted columns" begin
@@ -142,40 +152,13 @@ end
         sres3 = sort(res3, colssym)
         sres4 = sort(res4, colssym)
 
-        # by() without groups sorting
-        @test sort(by(identity, df, cols), colssym) == shcatdf
-        @test sort(by(df -> df[1, :], df, cols), colssym) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
-        @test by(f1, df, cols) == res
-        @test by(f2, df, cols) == res
-        @test rename(by(f3, df, cols), :x1 => :xmax) == res
-        @test by(f4, df, cols) == res2
-        @test by(f5, df, cols) == res2
-        @test by(f6, df, cols) == res3
-        @test sort(by(f7, df, cols), colssym) == sres4
-        @test sort(by(f8, df, cols), colssym) == sres4
-
-        # by() with groups sorting
-        @test by(identity, df, cols, sort=true) == shcatdf
-        @test by(df -> df[1, :], df, cols, sort=true) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
-        @test by(f1, df, cols, sort=true) == sres
-        @test by(f2, df, cols, sort=true) == sres
-        @test rename(by(f3, df, cols, sort=true), :x1 => :xmax) == sres
-        @test by(f4, df, cols, sort=true) == sres2
-        @test by(f5, df, cols, sort=true) == sres2
-        @test by(f6, df, cols, sort=true) == sres3
-        @test by(f7, df, cols, sort=true) == sres4
-        @test by(f8, df, cols, sort=true) == sres4
-
-        @test by(f1, df, [:a]) == by(f1, df, :a)
-        @test by(f1, df, [:a], sort=true) == by(f1, df, :a, sort=true)
-
         # groupby() without groups sorting
         gd = groupby_checked(df, cols)
         @test names(parent(gd))[gd.cols] == string.(colssym)
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
+        @test sort(combine(df -> df[1, :], gd), colssym) ==
+            shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
@@ -196,6 +179,8 @@ end
             @test all(gd[i][!, colssym[2]] .== sres[i, colssym[2]])
         end
         @test combine(identity, gd) == shcatdf
+        @test combine(df -> df[1, :], gd, cols, sort=true) ==
+            shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test hcat(df_ref[!, cols], df_ref[!, Not(cols)]) == shcatdf
         @test combine(f1, gd) == sres
@@ -207,10 +192,10 @@ end
         @test combine(f7, gd) == sres4
         @test combine(f8, gd) == sres4
 
-        # map() without and with groups sorting
+        # combine() with regroup without and with groups sorting
         for sort in (false, true)
             gd = groupby_checked(df, cols, sort=sort)
-            v = map(d -> d[:, [:x]], gd)
+            v = combine(d -> d[:, [:x]], gd, regroup=true)
             @test length(gd) == length(v)
             nms = [colssym; :x]
             @test v[1] == gd[1][:, nms]
@@ -219,24 +204,33 @@ end
                 v[3] == gd[3][:, nms] &&
                 v[4] == gd[4][:, nms]
             @test names(parent(v))[v.cols] == string.(colssym)
-            v = map(f1, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
-            v = map(f2, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f2, df, cols, sort=sort)
-            v = map(f3, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f3, df, cols, sort=sort)
-            v = map(f4, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f4, df, cols, sort=sort)
-            v = map(f5, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f5, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f6, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f6, df, cols, sort=sort)
-            v = map(f7, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f7, df, cols, sort=sort)
-            v = map(f8, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f8, df, cols, sort=sort)
+            v = combine(f1, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f1, gd)
+            v = combine(f2, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f2, gd)
+            v = combine(f3, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f3, gd)
+            v = combine(f4, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f4, gd)
+            v = combine(f5, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f5, gd)
+            v = combine(f5, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f5, gd)
+            v = combine(f6, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f6, gd)
+            v = combine(f7, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f7, gd)
+            v = combine(f8, gd, regroup=true)
+            @test extrema(v.grous) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f8, gd)
         end
     end
 
@@ -259,7 +253,7 @@ end
     df = DataFrame(v1=x, v2=x)
     groupby_checked(df, [:v1, :v2])
 
-    df2 = by(e->1, DataFrame(x=Int64[]), :x)
+    df2 = combine(e->1, groupby(DataFrame(x=Int64[]), :x))
     @test size(df2) == (0, 1)
     @test sum(df2.x) == 0
 
@@ -1970,6 +1964,18 @@ end
 
     @test_throws ArgumentError by(df, :g, AsTable([:x, :y]) => ByRow(identity))
     @test_throws ArgumentError by(df, :g, AsTable([:x, :y]) => ByRow(x -> df[1, :]))
+end
+
+@testset "test correctness of regrouping" begin
+    df = DataFrame(g=[2,2,1,3,1,2,1,2,3])
+    gdf = groupby(df, :g)
+    gdf2 = combine(identity, gdf, regroup=true)
+    @test combine(gdf, :g => sum) == combine(gdf2, :g => sum)
+
+    df.id = 1:9
+    @test select(gdf, :g => sum) ==
+          sort!(combine(gdf, :g => sum, :id), :id)[:, Not(end)]
+    @test select(gdf2, :g => sum) == combine(gdf2, :g => sum, :g)
 end
 
 end # module

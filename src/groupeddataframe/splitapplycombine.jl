@@ -169,16 +169,15 @@ function groupby(df::AbstractDataFrame, cols;
     return gd
 end
 
-function _check_cannonical(gdf::GroupedDataFrame)
-    gmin, gmax = extrema(gdf.groups)
-    @assert length(gdf.starts) == length(gdf.ends) == gmax
-    @assert gmin <= 1
-    (gdf.starts[1] != 1 || gdf.ends[end] != nrow(parent(gdf))) && return false
-    for i in 2:length(gdf.starts)
-        gdf.starts[i] - gdf.ends[i-1] != 1 && return false
+function _check_cannonical(gd::GroupedDataFrame)
+    groups = gd.groups
+    isempty(groups) && return true
+    maxseen = 1
+    for g in groups
+        1 <= g <= maxseen + 1 || return false
+        maxseen = max(maxseen, g)
     end
-    # gmin == 0 means we have dropped groups which is not possible here
-    @assert gmin == 1
+    @assert maxseen == gd.ngroups
     return true
 end
 

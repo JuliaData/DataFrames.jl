@@ -166,25 +166,22 @@ end
     @test haskey(k[1], :a) == haskey(k[1], "a") == false
     @test  k[1].g == k[1]."g" == k[1][:g] == k[1]["g"]
 
-    @test by(df, :g, :a) == by(df, "g", "a") == combine(gdf, :a) == combine(gdf, "a") ==
-          by(df, :g, [:a]) == by(df, "g", ["a"]) == combine(gdf, [:a]) == combine(gdf, ["a"])
+    @test combine(gdf, :a) == combine(gdf, "a") ==
+          combine(gdf, [:a]) == combine(gdf, ["a"])
 
-    @test map("a" => identity, gdf) == map(:a => identity, gdf)
-    @test map(["a"] => identity, gdf) == map([:a] => identity, gdf)
-    @test map(nrow => :n, gdf) == map(nrow => "n", gdf)
+    @test combine("a" => identity, gdf, regroup=true) ==
+          combine(:a => identity, gdf, regroup=true)
+    @test combine(["a"] => identity, gdf, regroup=true) ==
+          combine([:a] => identity, gdf, regroup=true)
+    @test combine(nrow => :n, gdf, regroup=true) ==
+          combine(nrow => "n", gdf, regroup=true)
 
     @test combine("a" => identity, gdf) == combine(:a => identity, gdf) ==
-          combine(gdf, "a" => identity) == combine(gdf, :a => identity) ==
-          by("a" => identity, df, :g) == by(:a => identity, df, :g) ==
-          by(df, :g, "a" => identity) == by(df, :g, :a => identity)
+          combine(gdf, "a" => identity) == combine(gdf, :a => identity)
     @test combine(["a"] => identity, gdf) == combine([:a] => identity, gdf) ==
-          combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity) ==
-          by(["a"] => identity, df, :g) == by([:a] => identity, df, :g) ==
-          by(df, :g, ["a"] => identity) == by(df, :g, [:a] => identity)
+          combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
     @test combine(nrow => :n, gdf) == combine(nrow => "n", gdf) ==
-          combine(gdf, nrow => :n) == combine(gdf, nrow => "n") ==
-          by(nrow => :n, df, :g) == by(nrow => "n", df, :g) ==
-          by(df, :g, nrow => :n) == by(df, :g, nrow => "n")
+          combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
 end
 
 @testset "DataFrameRow" begin
