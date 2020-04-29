@@ -436,7 +436,7 @@ function combine(p::Pair, gd::GroupedDataFrame;
     # verify if it is not better to use a fast path, which we achieve
     # by moving to combine(::GroupedDataFrame, ::AbstractVector) method
     if isagg(p_from => (p_to isa Pair ? first(p_to) : p_to)) || p_from === nrow
-        return combine(gd, [p], keepkeys=keepkeys)
+        return combine(gd, [p], keepkeys=keepkeys, regroup=regroup)
     end
 
     if p_from isa Tuple

@@ -188,7 +188,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         if !allow_resizing_newdf[] && ncol(newdf) == 0 && length(res) != nrow(df)
             throw(ArgumentError("length $(length(res)) of vector returned from " *
                                 "function $fun is different than number of rows" *
-                                "$(nrow(df)) of the source data frame."))
+                                " $(nrow(df)) of the source data frame."))
         end
         allow_resizing_newdf[] = false
         respar = parent(res)
@@ -699,7 +699,8 @@ function _manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
                 push!(cs_vec, v)
             end
         end
-        return _process(dfv, [normalize_selection(index(dfv), c) for c in cs_vec], true, true)
+        return _process(dfv, [normalize_selection(index(dfv), c) for c in cs_vec],
+                        true, keeprows)
     else
         # we do not support transformations here
         # newinds contains only indexing; making it Vector{Any} avoids some compilation

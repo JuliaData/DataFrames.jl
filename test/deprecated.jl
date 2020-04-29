@@ -696,6 +696,14 @@ end
         deleterows!(DataFrame(x=[1, 2]), [true, false]) == DataFrame(x=[2])
 end
 
+@testset "by skipmissing and sort" begin
+    df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
+    for dosort in (false, true), doskipmissing in (false, true)
+        @test by(df, :a, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
+            combine(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
+    end
+end
+
 global_logger(old_logger)
 
 end # module

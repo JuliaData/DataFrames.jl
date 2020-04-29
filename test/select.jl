@@ -705,6 +705,8 @@ end
                df_ref[1:2, []], view(df_ref, 1:2, []),
                df_ref[[], 1:2], view(df_ref, [], 1:2)]
         @test select(df, nrow => :z, nrow, [nrow => :z2]) ==
+              repeat(DataFrame(z=nrow(df), nrow=nrow(df), z2=nrow(df)), nrow(df))
+        @test combine(df, nrow => :z, nrow, [nrow => :z2]) ==
               DataFrame(z=nrow(df), nrow=nrow(df), z2=nrow(df))
         @test_throws ArgumentError select(df, nrow, nrow)
         @test_throws ArgumentError select(df, [nrow])
@@ -743,10 +745,13 @@ end
 
 @testset "select and select! empty selection" begin
     df = DataFrame(rand(10, 4))
-    x = [1,2,3]
+    x = [1:10;]
+    y = [1,2,3]
 
     @test select(df, r"z") == DataFrame()
     @test select(df, r"z" => () -> x) == DataFrame(:function => x)
+    @test_throws ArgumentError select(df, r"z" => () -> y)
+    @test combine(df, r"z" => () -> y) == DataFrame(:function => y)
     @test select(df, r"z" => () -> x)[!, 1] === x # no copy even for copycols=true
     @test_throws MethodError select(df, r"z" => x -> 1)
     @test_throws ArgumentError select(df, r"z" => ByRow(rand))
@@ -890,10 +895,16 @@ end
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
     @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
-    @test transform(df, names(df) .=> (x -> 9) .=> names(df)) == DataFrame([9 9 9])
+    @test transform(df, names(df) .=> (x -> 9) .=> names(df)) ==
+          repeat(DataFrame([9 9 9]), nrow(df))
+    @test combine(df, names(df) .=> (x -> 9) .=> names(df)) ==
+          DataFrame([9 9 9])
     @test transform(df, names(df) .=> (x -> 9) .=> names(df), :x1 => :x4) ==
           DataFrame([9 9 9 1; 9 9 9 4])
-    @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3)) == DataFrame([9 9 9])
+    @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3)) ==
+          repeat(DataFrame([9 9 9]), nrow(df3))
+    @test combine(df3, names(df3) .=> (x -> 9) .=> names(df3)) ==
+          DataFrame([9 9 9])
     @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3), :x1 => :x4) ==
           DataFrame(ones(0, 4))
 
@@ -901,6 +912,14 @@ end
                    x3=[missing,2], x4=categorical([missing, 2]))
 
     df2 = select(df, names(df) .=> first)
+    @test df2 ≅ repeat(DataFrame(x1_first=1, x2_first=1, x3_first=missing,
+                                 x4_first=missing), nrow(df2))
+    @test df2.x1_first isa Vector{Int}
+    @test df2.x2_first isa CategoricalVector{Int}
+    @test df2.x3_first isa Vector{Missing}
+    @test df2.x4_first isa Vector{Missing}
+
+    df2 = combine(df, names(df) .=> first)
     @test df2 ≅ DataFrame(x1_first=1, x2_first=1, x3_first=missing,
                           x4_first=missing)
     @test df2.x1_first isa Vector{Int}
@@ -909,6 +928,14 @@ end
     @test df2.x4_first isa Vector{Missing}
 
     df2 = select(df, names(df) .=> last)
+    @test df2 ≅ repeat(DataFrame(x1_last=2, x2_last=2, x3_last=2,
+                                 x4_last=2), nrow(df2))
+    @test df2.x1_last isa Vector{Int}
+    @test df2.x2_last isa CategoricalVector{Int}
+    @test df2.x3_last isa Vector{Int}
+    @test df2.x4_last isa CategoricalVector{Int}
+
+    df2 = combine(df, names(df) .=> last)
     @test df2 ≅ DataFrame(x1_last=2, x2_last=2, x3_last=2,
                           x4_last=2)
     @test df2.x1_last isa Vector{Int}
@@ -953,31 +980,32 @@ end
         @test df2.x4_last isa CategoricalVector{Int}
     end
 
-    df2 = select(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
+    @test_throws ArgumentError select(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
+    df2 = combine(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
     @test size(df2) == (0, 5)
     @test df2.x1_first isa Vector{Int}
     @test df2.x2_first isa CategoricalVector{Int}
     @test df2.x3_first isa Vector{Missing}
     @test df2.x4_first isa Vector{Missing}
 
-
-    df2 = select(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
+    @test_throws ArgumentError select(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
+    df2 = combine(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
     @test size(df2) == (0, 5)
     @test df2.x1_last isa Vector{Int}
     @test df2.x2_last isa CategoricalVector{Int}
     @test df2.x3_last isa Vector{Int}
     @test df2.x4_last isa CategoricalVector{Int}
 
-
-    df2 = select(df, [] => (() -> Int[]) => :x1, names(df) .=> first)
+    @test_throws ArgumentError select(df, [] => (() -> Int[]) => :x1, names(df) .=> first)
+    df2 = combine(df, [] => (() -> Int[]) => :x1, names(df) .=> first)
     @test size(df2) == (0, 5)
     @test df2.x1_first isa Vector{Int}
     @test df2.x2_first isa CategoricalVector{Int}
     @test df2.x3_first isa Vector{Missing}
     @test df2.x4_first isa Vector{Missing}
 
-
-    df2 = select(df, [] => (() -> Int[]) => :x1, names(df) .=> last)
+    @test_throws ArgumentError select(df, [] => (() -> Int[]) => :x1, names(df) .=> last)
+    df2 = combine(df, [] => (() -> Int[]) => :x1, names(df) .=> last)
     @test size(df2) == (0, 5)
     @test df2.x1_last isa Vector{Int}
     @test df2.x2_last isa CategoricalVector{Int}
@@ -988,7 +1016,8 @@ end
 @testset "copycols special cases" begin
     df = DataFrame(a=1:3, b=4:6)
     c = [7, 8]
-    df2 = select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)
+    @test_throws ArgumentError select(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)
+    df2 = combine(df, :a => (x -> c) => :c1, :b => (x -> c) => :c2)
     @test df2.c1 === df2.c2
     df2 = select(df, :a => identity => :c1, :a => :c2)
     @test df2.c1 !== df2.c2
@@ -996,9 +1025,11 @@ end
     @test df2.c1 !== df.a
     df2 = select(df, :a => (x -> df.b) => :c1)
     @test df2.c1 === df.b
-    df2 = select(view(df, 1:2, :), :a => parent => :c1)
+    @test_throws ArgumentError select(view(df, 1:2, :), :a => parent => :c1)
+    df2 = combine(view(df, 1:2, :), :a => parent => :c1)
     @test df2.c1 !== df.a
-    df2 = select(view(df, 1:2, :), :a => (x -> view(x, 1:1)) => :c1)
+    @test_throws ArgumentError select(view(df, 1:2, :), :a => (x -> view(x, 1:1)) => :c1)
+    df2 = combine(view(df, 1:2, :), :a => (x -> view(x, 1:1)) => :c1)
     @test df2.c1 isa Vector
     df2 = select(df, :a, :a => :b, :a => identity => :c, copycols=false)
     @test df2.b === df2.c === df.a
@@ -1059,14 +1090,16 @@ end
     df_ref = DataFrame(a=1:3, b=4:6)
     for df in [df_ref, view(df_ref, :, :)]
         @test select(df, [] .=> sum) == DataFrame()
-        @test select(df, names(df) .=> sum) == DataFrame(a_sum=6, b_sum=15)
+        @test select(df, names(df) .=> sum) == repeat(DataFrame(a_sum=6, b_sum=15), nrow(df))
+        @test combine(df, names(df) .=> sum) == DataFrame(a_sum=6, b_sum=15)
         @test transform(df, names(df) .=> ByRow(-)) ==
               DataFrame(:a => 1:3, :b => 4:6,
                         Symbol("a_-") => -1:-1:-3,
                         Symbol("b_-") => -4:-1:-6)
         @test select(df, :a, [] .=> sum, :b => :x, [:b, :a] .=> identity) ==
               DataFrame(a=1:3, x=4:6, b_identity=4:6, a_identity=1:3)
-        @test select(df, names(df) .=> sum .=> [:A, :B]) == DataFrame(A=6, B=15)
+        @test select(df, names(df) .=> sum .=> [:A, :B]) == repeat(DataFrame(A=6, B=15), nrow(df))
+        @test combine(df, names(df) .=> sum .=> [:A, :B]) == DataFrame(A=6, B=15)
         @test Base.broadcastable(ByRow(+)) isa Base.RefValue{ByRow{typeof(+)}}
         @test identity.(ByRow(+)) == ByRow(+)
     end
@@ -1079,6 +1112,8 @@ end
     @test transform(df, AsTable(:) => sum) ==
           DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_sum=map(sum, eachrow(df)))
     @test select(df, AsTable(:) => sum ∘ sum) ==
+          repeat(DataFrame(a_b_c_function=45), nrow(df))
+    @test combine(df, AsTable(:) => sum ∘ sum) ==
           DataFrame(a_b_c_function=45)
     @test transform(df, AsTable(:) => sum ∘ sum) ==
           DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_function=45)
@@ -1095,7 +1130,8 @@ end
     @test_throws ArgumentError select(df, AsTable(:) => ByRow(x -> df[1, :]))
     @test_throws ArgumentError transform(df, AsTable(Not(:)) => ByRow(identity))
 
-    @test select(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
+    @test select(df, AsTable(Not(:)) => Ref) == repeat(DataFrame(Ref = NamedTuple()), nrow(df))
+    @test combine(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
     @test transform(df, AsTable(Not(:)) => Ref) ==
           DataFrame(a=1:3, b=4:6, c=7:9, Ref=NamedTuple())
 

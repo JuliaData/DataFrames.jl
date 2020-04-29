@@ -360,28 +360,28 @@ end
 export aggregate
 
 function aggregate(d::AbstractDataFrame, f::Any; sort::Bool=false)
-    df = select(d, names(d) .=> [f])
+    df = combine(d, names(d) .=> [f])
     if sort
         Base.depwarn("`aggregate(d, f, sort=true)` is deprecated. " *
-                     "Instead use `sort!(select(d, names(d) .=> f))`.", :aggregate)
+                     "Instead use `sort!(combine(d, names(d) .=> f))`.", :aggregate)
         sort!(df)
     else
         Base.depwarn("`aggregate(d, f)` is deprecated. " *
-                     "Instead use `select(d, names(d) .=> f)`.", :aggregate)
+                     "Instead use `combine(d, names(d) .=> f)`.", :aggregate)
     end
     return df
 end
 
 function aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false)
-    df = hcat([select(d, names(d) .=> [f]) for f in fs]..., makeunique=true)
+    df = hcat([combine(d, names(d) .=> [f]) for f in fs]..., makeunique=true)
     if sort
         Base.depwarn("`aggregate(d, fs, sort=true)` is deprecated. Instead" *
-                     " use `sort!(select(d, [names(d) .=> f for f in fs]...))` " *
+                     " use `sort!(combine(d, [names(d) .=> f for f in fs]...))` " *
                      "if functions in `fs` have unique names.", :aggregate)
         sort!(df)
     else
         Base.depwarn("`aggregate(d, fs)` is deprecated. Instead use " *
-                     "`select(d, [names(d) .=> f for f in fs]...)` if functions " *
+                     "`combine(d, [names(d) .=> f for f in fs]...)` if functions " *
                      "in `fs` have unique names.", :aggregate)
     end
     return df
@@ -424,7 +424,8 @@ function aggregate(d::AbstractDataFrame, cols, f::Any;
                    sort::Bool=false, skipmissing::Bool=false)
     Base.depwarn("`aggregate(d, cols, f, sort=$sort, skipmissing=$skipmissing)` " *
                  "is deprecated. Instead use " *
-                 "by(gd, cols, names(gd) .=> f, sort=$sort, skipmissing=$skipmissing)`",
+                 "combine(groupby(d, cols, sort=$sort, skipmissing=$skipmissing)," *
+                 " names(d, Not(cols)) .=> f)`",
                  :aggregate)
     gd = groupby(d, cols, sort=sort, skipmissing=skipmissing)
     df = combine(gd, valuecols(gd) .=> [f])
@@ -435,7 +436,8 @@ function aggregate(d::AbstractDataFrame, cols, fs::AbstractVector;
                    sort::Bool=false, skipmissing::Bool=false)
     Base.depwarn("`aggregate(d, cols, fs, sort=$sort, skipmissing=$skipmissing)` " *
                  " is deprecated. Instead use " *
-                 "by(gd, cols, [names(gd) .=> f for f in fs]..., sort=$sort, skipmissing=$skipmissing)`" *
+                 "combine(groupby(d, cols, sort=$sort, skipmissing=$skipmissing), "*
+                 "[names(d, Not(cols)) .=> f for f in fs]...)`" *
                  " if functions in `fs` have unique names.", :aggregate)
     gd = groupby(d, cols, sort=sort, skipmissing=skipmissing)
     df = hcat([combine(gd, valuecols(gd) .=> [f], keepkeys=i==1) for (i, f) in enumerate(fs)]...,
