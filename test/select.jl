@@ -1158,4 +1158,172 @@ end
     @test propertynames(df) == [:a,]
 end
 
+@testset "combine AbstractDataFrame" begin
+    df = DataFrame(x=1:3, y=4:6)
+
+    @test combine(x -> Matrix(x), df) == rename(df, [:x1, :x2])
+    @test combine(x -> Ref(1:3), df) == DataFrame(x1=[1:3])
+    @test_throws ArgumentError combine(df, x -> Ref(1:3))
+
+    @test combine(AsTable(:) => identity, df) == df
+    @test combine((:) => cor, df) == DataFrame(x_y_cor = 1.0)
+    @test combine(:x => x -> Ref(1:3), df) == DataFrame(x_function=[1:3])
+    @test_throws ArgumentError combine(df, :x => x -> ones(1,1))
+
+    df2 = combine(df, :x => identity)
+    @test df2[:, 1] == df.x
+    @test df2[:, 1] !== df.x
+
+    @test combine(df, :x => sum, :y => collect ∘ extrema) ==
+          DataFrame(x_sum=[6, 6], y_function = [4, 6])
+    @test combine(df, :y => collect ∘ extrema, :x => sum) ==
+          DataFrame(y_function = [4, 6], x_sum=[6, 6])
+    @test combine(df, :x => sum, :y => x -> []) ==
+          DataFrame(x_sum=[], y_function = [])
+    @test combine(df, :y => x -> [], :x => sum) ==
+          DataFrame(y_function = [], x_sum=[])
+
+    dfv = view(df, [2, 1], [2, 1])
+
+    @test combine(x -> Matrix(x), dfv) == rename(dfv, [:x1, :x2])
+
+    @test combine(AsTable(:) => identity, dfv) == dfv
+    @test combine((:) => cor, dfv) == DataFrame(y_x_cor = 1.0)
+
+    df2 = combine(dfv, :x => identity)
+    @test df2[:, 1] == dfv.x
+    @test df2[:, 1] !== dfv.x
+
+    @test combine(dfv, :x => sum, :y => collect ∘ extrema) ==
+          DataFrame(x_sum=[3, 3], y_function = [4, 5])
+    @test combine(dfv, :y => collect ∘ extrema, :x => sum) ==
+          DataFrame(y_function = [4, 5], x_sum=[3, 3])
+end
+
+@testset "combine GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8))
+        if !(df.g isa CategoricalVector)
+            gdf = groupby(df, :g, sort=false, skipmissing=false)
+            @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5, 4])
+            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+            @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:3
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+
+            @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+                  DataFrame(x_sum = [1, 5, 5, 4], g = [3, 1, 1, missing])
+            @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+            gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == [1, 2, 2, 3]
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5, 4])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:3
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+
+            gdf = groupby(df, :g, sort=false, skipmissing=true)
+
+            @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5])
+            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+            @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:2
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+
+            @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+                  DataFrame(x_sum = [1, 5, 5], g = [3, 1, 1])
+            @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+            gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == [1, 2, 2]
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:2
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+        end
+
+        gdf = groupby(df, :g, sort=true, skipmissing=false)
+
+        @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1, 4])
+        @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+        @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:3
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+
+        @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+              DataFrame(x_sum = [5, 5, 1, 4], g = [1, 1, 3, missing])
+        @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+        gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == [1, 1, 2, 3]
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1, 4])
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:3
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+
+        gdf = groupby(df, :g, sort=true, skipmissing=true)
+
+        @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1])
+        @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+        @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3], x_sum = [5, 1])
+        gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:2
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+
+        @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+              DataFrame(x_sum = [5, 5, 1], g = [1, 1, 3])
+        @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+        gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == [1, 1, 2]
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1])
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3], x_sum = [5, 1])
+        gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:2
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+    end
+end
+
 end # module
