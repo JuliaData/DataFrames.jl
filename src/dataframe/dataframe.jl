@@ -31,7 +31,7 @@ DataFrame(column_eltypes::AbstractVector, names::AbstractVector{<:AbstractString
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
-DataFrame(::GroupedDataFrame)
+DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
 
 # Arguments
@@ -64,6 +64,9 @@ not an `AbstractArray`, in which case the passed value is automatically repeated
 to fill a new vector of the appropriate length. As a particular rule values
 stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
 in the same way.
+
+Additionally `DataFrame` can be used to collect [`GroupedDataFrame`](@ref)
+into a `DataFrame`.
 
 # Notes
 The `DataFrame` constructor by default copies all columns vectors passed to it.

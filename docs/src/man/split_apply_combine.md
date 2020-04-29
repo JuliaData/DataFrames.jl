@@ -6,10 +6,24 @@ framework for handling this sort of computation is described in the paper
 "[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)",
 written by Hadley Wickham.
 
-The DataFrames package supports the split-apply-combine strategy through the `by`
-function, which is a shorthand for `groupby` followed by `map` and/or `combine`.
-`by` takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split
-the `DataFrame` on, and (3) a specification of one or more functions to apply to
+The DataFrames package supports the split-apply-combine strategy through the
+`combine`, `select`/`select!` and `transform`/`transform!` functions.
+
+In order to perform operations by groups you first need to create a `GroupedDataFrame`
+object from your data frame using `groupby` function that takes two arguments:
+(1) a data frame to be grouped, and (2) a set of columns to group by.
+
+The differences between the above functions are the following:
+* `select`: return a data frame with the number and order of rows exactly the same
+  as the source, preserve only columns that have been calculated;
+* `transform`: return a data frame with the number and order of rows exactly the same
+  as the source, preserve all columns from the source and columns that have been calculated;
+* `select!`: is an in-place version of `select`;
+* `transform!`: is an in-place version of `transform`;
+* `combine`: does not put restrictions on number of rows returned, the order of rows
+  is specified by the order of groups in `GroupedDataFrame`.
+
+All these functions take a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
 1. standard column selectors (integers, symbols, vectors of integers, vectors of symbols,
    `All`, `:`, `Between`, `Not` and regular expressions)
@@ -27,19 +41,20 @@ each subset of the `DataFrame`. This specification can be of the following forms
    number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)
 
-All forms except 1 and 6 can be also passed as the first argument to `map`.
-
 As a special rule that applies to `cols => function` syntax, if `cols` is wrapped
 in an `AsTable` object then a `NamedTuple` containing columns selected by `cols` is
 passed to `function`.
 
 In all of these cases, `function` can return either a single row or multiple rows.
 `function` can always generate a single column by returning a single value or a vector.
-Additionally, if `by` is passed exactly one `function` and `target_col` is not specified,
+Additionally, if `combine` is passed exactly one `function` as a first argument
+and `target_col` is not specified,
 `function` can return multiple columns in the form of an `AbstractDataFrame`,
 `AbstractMatrix`, `NamedTuple` or `DataFrameRow`.
 
-Here are the rules specifying the shape of the resulting `DataFrame`:
+Here are the rules specifying the shape of the resulting `DataFrame` in `combine`
+(in `select`/`select!` and `transform`/`transform!` the result has the number
+and order of rows equal to the source):
 - a single value produces a single row and column per group
 - a named tuple or `DataFrameRow` produces a single row and one column per field
 - a vector produces a single column with one row per entry
@@ -87,7 +102,51 @@ julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/
 │ 149 │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
 │ 150 │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
 
-julia> by(iris, :Species, :PetalLength => mean)
+julia> gdf = groupby(iris, :Species)
+GroupedDataFrame with 3 groups based on key: Species
+First Group (50 rows): Species = "Iris-setosa"
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String      │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
+│ 7   │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ Iris-setosa │
+⋮
+│ 43  │ 4.4         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 44  │ 5.0         │ 3.5        │ 1.6         │ 0.6        │ Iris-setosa │
+│ 45  │ 5.1         │ 3.8        │ 1.9         │ 0.4        │ Iris-setosa │
+│ 46  │ 4.8         │ 3.0        │ 1.4         │ 0.3        │ Iris-setosa │
+│ 47  │ 5.1         │ 3.8        │ 1.6         │ 0.2        │ Iris-setosa │
+│ 48  │ 4.6         │ 3.2        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 49  │ 5.3         │ 3.7        │ 1.5         │ 0.2        │ Iris-setosa │
+│ 50  │ 5.0         │ 3.3        │ 1.4         │ 0.2        │ Iris-setosa │
+⋮
+Last Group (50 rows): Species = "Iris-virginica"
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 6.3         │ 3.3        │ 6.0         │ 2.5        │ Iris-virginica │
+│ 2   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 3   │ 7.1         │ 3.0        │ 5.9         │ 2.1        │ Iris-virginica │
+│ 4   │ 6.3         │ 2.9        │ 5.6         │ 1.8        │ Iris-virginica │
+│ 5   │ 6.5         │ 3.0        │ 5.8         │ 2.2        │ Iris-virginica │
+│ 6   │ 7.6         │ 3.0        │ 6.6         │ 2.1        │ Iris-virginica │
+│ 7   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ Iris-virginica │
+⋮
+│ 43  │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 44  │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ Iris-virginica │
+│ 45  │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │
+│ 46  │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │
+│ 47  │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 48  │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 49  │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 50  │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
+
+julia> combine(gdf, :PetalLength => mean)
 3×2 DataFrame
 │ Row │ Species         │ PetalLength_mean │
 │     │ String          │ Float64          │
@@ -96,7 +155,7 @@ julia> by(iris, :Species, :PetalLength => mean)
 │ 2   │ Iris-versicolor │ 4.26             │
 │ 3   │ Iris-virginica  │ 5.552            │
 
-julia> by(iris, :Species, nrow)
+julia> combine(gdf, nrow)
 3×2 DataFrame
 │ Row │ Species         │ nrow  │
 │     │ String          │ Int64 │
@@ -105,7 +164,7 @@ julia> by(iris, :Species, nrow)
 │ 2   │ Iris-versicolor │ 50    │
 │ 3   │ Iris-virginica  │ 50    │
 
-julia> by(iris, :Species, nrow, :PetalLength => mean => :mean)
+julia> combine(gdf, nrow, :PetalLength => mean => :mean)
 3×3 DataFrame
 │ Row │ Species         │ nrow  │ mean    │
 │     │ String          │ Int64 │ Float64 │
@@ -114,9 +173,8 @@ julia> by(iris, :Species, nrow, :PetalLength => mean => :mean)
 │ 2   │ Iris-versicolor │ 50    │ 4.26    │
 │ 3   │ Iris-virginica  │ 50    │ 5.552   │
 
-julia> by(iris, :Species,
-          [:PetalLength, :SepalLength] =>
-          (p, s) -> (a=mean(p)/mean(s), b=sum(p))) # multiple columns are passed as arguments
+julia> combine([:PetalLength, :SepalLength] => (p, s) -> (a=mean(p)/mean(s), b=sum(p)),
+               gdf) # multiple columns are passed as arguments
 3×3 DataFrame
 │ Row │ Species         │ a        │ b       │
 │     │ String          │ Float64  │ Float64 │
@@ -125,9 +183,9 @@ julia> by(iris, :Species,
 │ 2   │ Iris-versicolor │ 0.717655 │ 213.0   │
 │ 3   │ Iris-virginica  │ 0.842744 │ 277.6   │
 
-julia> by(iris, :Species,
-          AsTable([:PetalLength, :SepalLength]) =>
-          x -> std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
+julia> combine(gdf,
+               AsTable([:PetalLength, :SepalLength]) =>
+               x -> std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
 3×2 DataFrame
 │ Row │ Species         │ PetalLength_SepalLength_function │
 │     │ String          │ Float64                          │
@@ -136,7 +194,7 @@ julia> by(iris, :Species,
 │ 2   │ Iris-versicolor │ 0.910378                         │
 │ 3   │ Iris-virginica  │ 0.867923                         │
 
-julia> by(iris, :Species, 1:2 => cor, nrow)
+julia> combine(gdf, 1:2 => cor, nrow)
 3×3 DataFrame
 │ Row │ Species         │ SepalLength_SepalWidth_cor │ nrow  │
 │     │ String          │ Float64                    │ Int64 │
@@ -147,11 +205,61 @@ julia> by(iris, :Species, 1:2 => cor, nrow)
 
 ```
 
-The `by` function also supports the `do` block form. However, as noted above,
+If we use `select` or `transform` instead of `combine` we always obtain the number
+and of order of rows in the result equal to the source. In the example below
+the return values in columns `:SepalLength_SepalWidth_cor` and `:nrow` are
+broadcasted to match the number of elements in each group:
+```
+julia> select(gdf, 1:2 => cor, nrow)
+150×3 DataFrame
+│ Row │ Species        │ SepalLength_SepalWidth_cor │ nrow  │
+│     │ String         │ Float64                    │ Int64 │
+├─────┼────────────────┼────────────────────────────┼───────┤
+│ 1   │ Iris-setosa    │ 0.74678                    │ 50    │
+│ 2   │ Iris-setosa    │ 0.74678                    │ 50    │
+│ 3   │ Iris-setosa    │ 0.74678                    │ 50    │
+│ 4   │ Iris-setosa    │ 0.74678                    │ 50    │
+│ 5   │ Iris-setosa    │ 0.74678                    │ 50    │
+│ 6   │ Iris-setosa    │ 0.74678                    │ 50    │
+│ 7   │ Iris-setosa    │ 0.74678                    │ 50    │
+⋮
+│ 143 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 144 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 145 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 146 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 147 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 148 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 149 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 150 │ Iris-virginica │ 0.457228                   │ 50    │
+
+julia> transform(gdf, nrow)
+150×6 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ nrow  │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │ Int64 │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┼───────┤
+│ 1   │ Iris-setosa    │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ 50    │
+│ 2   │ Iris-setosa    │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ 50    │
+│ 3   │ Iris-setosa    │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ 50    │
+│ 4   │ Iris-setosa    │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ 50    │
+│ 5   │ Iris-setosa    │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ 50    │
+│ 6   │ Iris-setosa    │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ 50    │
+│ 7   │ Iris-setosa    │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ 50    │
+⋮
+│ 143 │ Iris-virginica │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ 50    │
+│ 144 │ Iris-virginica │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ 50    │
+│ 145 │ Iris-virginica │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ 50    │
+│ 146 │ Iris-virginica │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ 50    │
+│ 147 │ Iris-virginica │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ 50    │
+│ 148 │ Iris-virginica │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ 50    │
+│ 149 │ Iris-virginica │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ 50    │
+│ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ 50    │
+```
+
+The `combine` function also supports the `do` block form. However, as noted above,
 this form is slow and should therefore be avoided when performance matters.
 
 ```jldoctest sac
-julia> by(iris, :Species) do df
+julia> combine(gdf) do df
            (m = mean(df.PetalLength), s² = var(df.PetalLength))
        end
 3×3 DataFrame

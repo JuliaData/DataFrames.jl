@@ -1920,4 +1920,280 @@ end
     @test select(gdf2, :g => sum) == combine(gdf2, :g => sum, :g)
 end
 
+@testset "combine GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8))
+        if !(df.g isa CategoricalVector)
+            gdf = groupby_checked(df, :g, sort=false, skipmissing=false)
+
+            @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5, 4])
+            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+            @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, regroup=true))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:3
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            @test DataFrame(gdf2, keepkeys=false) == DataFrame(x_sum = [1, 5, 4])
+
+            @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+                  DataFrame(x_sum = [1, 5, 5, 4], g = [3, 1, 1, missing])
+            @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, regroup=true))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == [1, 2, 2, 3]
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 5, 4])
+
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5, 4])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:3
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 4])
+
+            gdf = groupby_checked(df, :g, sort=false, skipmissing=true)
+
+            @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5])
+            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+            @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, regroup=true))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:2
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5])
+
+            @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+                  DataFrame(x_sum = [1, 5, 5], g = [3, 1, 1])
+            @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, regroup=true))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == [1, 2, 2]
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 5])
+
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+                  DataFrame(x_sum = [1, 5])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:2
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5])
+        end
+
+        gdf = groupby_checked(df, :g, sort=true, skipmissing=false)
+
+        @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1, 4])
+        @test_throws ArgumentError validate_gdf(combine(gdf, :x => sum, keepkeys=false, regroup=true))
+        @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:3
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1, 4])
+
+        @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+              DataFrame(x_sum = [5, 5, 1, 4], g = [1, 1, 3, missing])
+        @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == [1, 1, 2, 3]
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 5, 1, 4])
+
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1, 4])
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:3
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1, 4])
+
+        gdf = groupby_checked(df, :g, sort=true, skipmissing=true)
+
+        @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1])
+        @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
+        @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3], x_sum = [5, 1])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:2
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1])
+
+        @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+              DataFrame(x_sum = [5, 5, 1], g = [1, 1, 3])
+        @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == [1, 1, 2]
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 5, 1])
+
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [5, 1])
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
+              DataFrame(g = [1, 3], x_sum = [5, 1])
+        gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:2
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1])
+    end
+end
+
+@testset "select and transform GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8)),
+        dosort in (true, false)
+
+        gdf = groupby_checked(df, :g, sort=dosort, skipmissing=false)
+
+        @test select(gdf, :x => sum, keepkeys=false, regroup=false) ==
+              DataFrame(x_sum = [1, 5, 5, 4])
+        @test_throws ArgumentError select(gdf, :x => sum, keepkeys=false, regroup=true)
+        @test select(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+              DataFrame(g = df.g, x_sum = [1, 5, 5, 4])
+        gdf2 = validate_gdf(select(gdf, :x => sum, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).g !== df.g
+
+        @test select(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+              DataFrame(x_sum = [1, 5, 5, 4], g = df.g)
+        @test select(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+              DataFrame(g = df.g, x_sum = [1, 5, 5, 4])
+        gdf2 = validate_gdf(select(gdf, :x => sum, :g, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).g !== df.g
+
+        @test transform(gdf, :x => sum, keepkeys=false, regroup=false) ≅
+              [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test_throws ArgumentError transform(gdf, :x => sum, keepkeys=false, regroup=true)
+        @test transform(gdf, :x => sum, keepkeys=true, regroup=false) ≅
+              DataFrame(g = df.g, x = df.x, y = df.y, x_sum = [1, 5, 5, 4])
+        gdf2 = validate_gdf(transform(gdf, :x => sum, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).x ≅ df.x
+        @test parent(gdf2).y ≅ df.y
+        @test parent(gdf2).g !== df.g
+
+        @test transform(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
+              [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test transform(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
+              [df DataFrame(x_sum = [1, 5, 5, 4])]
+        gdf2 = validate_gdf(transform(gdf, :x => sum, :g, keepkeys=true, regroup=true))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).x ≅ df.x
+        @test parent(gdf2).y ≅ df.y
+        @test parent(gdf2).g !== df.g
+
+        df2 = transform(gdf, :x => sum, :g, keepkeys=false, regroup=false, copycols=false)
+        @test df2 ≅ [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test df2.g === df.g
+        @test df2.x === df.x
+        @test df2.y === df.y
+        df2 = transform(gdf, :x => sum, :g, keepkeys=true, regroup=false, copycols=false)
+        @test df2 ≅ [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test df2.g === df.g
+        @test df2.x === df.x
+        @test df2.y === df.y
+        gdf2 = validate_gdf(transform(gdf, :x => sum, :g, keepkeys=true, regroup=true, copycols=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).x ≅ df.x
+        @test parent(gdf2).y ≅ df.y
+        @test parent(gdf2).g === df.g
+
+        gdf = groupby_checked(df, :g, sort=dosort, skipmissing=true)
+        @test_throws ArgumentError select(gdf, :x => sum)
+        @test_throws ArgumentError select(gdf, :x => sum, regroup=true)
+        @test_throws ArgumentError transform(gdf, :x => sum)
+        @test_throws ArgumentError transform(gdf, :x => sum, regroup=true)
+    end
+end
+
+@testset "select! and transform! GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8)),
+        dosort in (true, false)
+
+        @test_throws MethodError select!(groupby_checked(view(df, :, :), :g), :x)
+        @test_throws MethodError transform!(groupby_checked(view(df, :, :), :g), :x)
+
+        dfc = copy(df)
+        g = dfc.g
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test select!(gdf, :x => sum) === dfc
+        @test dfc.g === g
+        @test dfc.x_sum == [1, 5, 5, 4]
+        @test propertynames(dfc) == [:g, :x_sum]
+
+        dfc = copy(df)
+        g = dfc.g
+        x = dfc.x
+        y = dfc.y
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test transform!(gdf, :g => first => :g, :x => first) === dfc
+        @test dfc.g === g
+        @test dfc.x === x
+        @test dfc.y === y
+        @test dfc.x_first == [1, 2, 2, 4]
+        @test propertynames(dfc) == [:g, :x, :y, :x_first]
+
+        dfc = copy(df)
+        g = dfc.g
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test select!(gdf, :x => sum, regroup=true) === gdf
+        @test dfc.g === g
+        @test dfc.x_sum == [1, 5, 5, 4]
+        @test propertynames(dfc) == [:g, :x_sum]
+
+        dfc = copy(df)
+        g = dfc.g
+        x = dfc.x
+        y = dfc.y
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test transform!(gdf, :g => first => :g, :x => first, regroup=true) === gdf
+        @test dfc.g === g
+        @test dfc.x === x
+        @test dfc.y === y
+        @test dfc.x_first == [1, 2, 2, 4]
+        @test propertynames(dfc) == [:g, :x, :y, :x_first]
+
+        dfc = copy(df)
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=true)
+        @test_throws ArgumentError select!(gdf, :x => sum)
+        @test_throws ArgumentError select!(gdf, :x => sum, regroup=true)
+        @test_throws ArgumentError transform!(gdf, :x => sum)
+        @test_throws ArgumentError transform!(gdf, :x => sum, regroup=true)
+        @test dfc ≅ df
+    end
+end
+
 end # module

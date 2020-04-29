@@ -1200,130 +1200,85 @@ end
           DataFrame(y_function = [4, 5], x_sum=[3, 3])
 end
 
-@testset "combine GroupedDataFrame" begin
-    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
-               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8))
-        if !(df.g isa CategoricalVector)
-            gdf = groupby(df, :g, sort=false, skipmissing=false)
-            @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
-                  DataFrame(x_sum = [1, 5, 4])
-            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
-            @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
-                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
-            gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
-            @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:3
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+@testset "select and transform AbstractDataFrame" begin
+    df = DataFrame(x=1:3, y=4:6)
+    @test select(df, :x => first) == DataFrame(x_first=fill(1,3))
+    df2 = select(df, :x, :x => first, copycols=true)
+    @test df2 == DataFrame(x=df.x, x_first=fill(1,3))
+    @test df2.x !== df.x
+    df2 = select(df, :x, :x => first, copycols=false)
+    @test df2 == DataFrame(x=df.x, x_first=fill(1,3))
+    @test df2.x === df.x
+    @test_throws ArgumentError select(df, :x => x -> [first(x)], copycols=true)
+    @test_throws ArgumentError select(df, :x => x -> [first(x)], copycols=false)
 
-            @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
-                  DataFrame(x_sum = [1, 5, 5, 4], g = [3, 1, 1, missing])
-            @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
-                  DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
-            gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
-            @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == [1, 2, 2, 3]
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+    df2 = transform(df, :x => first, copycols=true)
+    @test df2 == [df DataFrame(x_first=fill(1,3))]
+    @test df2.x !== df.x
+    @test df2.y !== df.y
+    df2 = transform(df, :x => first, copycols=false)
+    @test df2 == [df DataFrame(x_first=fill(1,3))]
+    @test df2.x === df.x
+    @test df2.y === df.y
+    @test transform(df, names(df) .=> first .=> names(df)) ==
+          DataFrame(x=fill(1, 3), y=fill(4, 3))
+    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=true)
+    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=false)
 
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
-                  DataFrame(x_sum = [1, 5, 4])
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
-                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
-            gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
-            @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:3
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+    dfv = view(df, [2, 1], [2, 1])
+    @test select(dfv, :x => first) == DataFrame(x_first=fill(2,2))
+    df2 = select(dfv, :x, :x => first, copycols=true)
+    @test df2 == DataFrame(x=dfv.x, x_first=fill(2,2))
+    @test df2.x !== dfv.x
+    @test_throws ArgumentError select(dfv, :x, :x => first, copycols=false)
+    @test_throws ArgumentError select(dfv, :x => x -> [first(x)], copycols=true)
+    @test_throws ArgumentError select(dfv, :x => x -> [first(x)], copycols=false)
 
-            gdf = groupby(df, :g, sort=false, skipmissing=true)
+    df2 = transform(dfv, :x => first, copycols=true)
+    @test df2 == [dfv DataFrame(x_first=fill(2,2))]
+    @test df2.x !== dfv.x
+    @test df2.y !== dfv.y
+    @test_throws ArgumentError transform(dfv, :x => first, copycols=false)
+    @test transform(dfv, names(dfv) .=> first .=> names(dfv)) ==
+          DataFrame(y=fill(5, 2), x=fill(2, 2))
+    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=true)
+    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=false)
+end
 
-            @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
-                  DataFrame(x_sum = [1, 5])
-            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
-            @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
-                  DataFrame(g = [3, 1], x_sum = [1, 5])
-            gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
-            @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:2
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+@testset "select! and transform! AbstractDataFrame" begin
+    df = DataFrame(x=1:3, y=4:6)
+    select!(df, :x => first)
+    @test df == DataFrame(x_first = fill(1,3))
 
-            @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
-                  DataFrame(x_sum = [1, 5, 5], g = [3, 1, 1])
-            @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
-                  DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
-            gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
-            @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == [1, 2, 2]
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+    # if we select! we do copycols=false, so we can get aliases
+    df = DataFrame(x=1:3, y=4:6)
+    x = df.x
+    select!(df, :x => (x->x), :x)
+    @test x === df.x_function === df.x
 
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
-                  DataFrame(x_sum = [1, 5])
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
-                  DataFrame(g = [3, 1], x_sum = [1, 5])
-            gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
-            @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:2
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
-        end
+    df = DataFrame(x=1:3, y=4:6)
+    @test_throws ArgumentError select!(df, :x => x -> [1])
+    @test df == DataFrame(x=1:3, y=4:6)
 
-        gdf = groupby(df, :g, sort=true, skipmissing=false)
+    df = DataFrame(x=1:3, y=4:6)
+    x = df.x
+    y = df.y
+    transform!(df, :x => first)
+    @test df == DataFrame(x=x, y=y, x_first=fill(1,3))
+    @test df.x == x
+    @test df.y == y
 
-        @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
-              DataFrame(x_sum = [5, 1, 4])
-        @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
-        @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
-              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
-        gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
-        @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:3
-        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+    df = DataFrame(x=1:3, y=4:6)
+    transform!(df, names(df) .=> first .=> names(df))
+    @test df == DataFrame(x=fill(1,3), y=fill(4,3))
 
-        @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
-              DataFrame(x_sum = [5, 5, 1, 4], g = [1, 1, 3, missing])
-        @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
-              DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
-        gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
-        @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == [1, 1, 2, 3]
-        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+    df = DataFrame(x=1:3, y=4:6)
+    @test_throws ArgumentError transform!(df, :x => x -> [1])
+    @test df == DataFrame(x=1:3, y=4:6)
 
-        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
-              DataFrame(x_sum = [5, 1, 4])
-        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
-              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
-        gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
-        @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:3
-        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
-
-        gdf = groupby(df, :g, sort=true, skipmissing=true)
-
-        @test combine(gdf, :x => sum, keepkeys=false, regroup=false) ==
-              DataFrame(x_sum = [5, 1])
-        @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, regroup=true)
-        @test combine(gdf, :x => sum, keepkeys=true, regroup=false) ≅
-              DataFrame(g = [1, 3], x_sum = [5, 1])
-        gdf2 = combine(gdf, :x => sum, keepkeys=true, regroup=true)
-        @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:2
-        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
-
-        @test combine(gdf, :x => sum, :g, keepkeys=false, regroup=false) ≅
-              DataFrame(x_sum = [5, 5, 1], g = [1, 1, 3])
-        @test combine(gdf, :x => sum, :g, keepkeys=true, regroup=false) ≅
-              DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
-        gdf2 = combine(gdf, :x => sum, :g, keepkeys=true, regroup=true)
-        @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == [1, 1, 2]
-        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
-
-        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, regroup=false) ==
-              DataFrame(x_sum = [5, 1])
-        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=false) ≅
-              DataFrame(g = [1, 3], x_sum = [5, 1])
-        gdf2 = combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, regroup=true)
-        @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:2
-        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
-    end
+    dfv = view(df, [2, 1], [2, 1])
+    @test_throws MethodError select!(dfv, 1)
+    @test_throws MethodError transform!(dfv, 1)
 end
 
 end # module

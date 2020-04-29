@@ -792,7 +792,9 @@ julia> mean(df.A)
 2.5
 ```
 
-We can also apply a function to each column of a `DataFrame` using `select`. For example:
+We can also apply a function to each column of a `DataFrame` using `select`.
+`select` always returns the same number of rows in the result as the source
+data frame. For example:
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
@@ -805,13 +807,37 @@ julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 │ 4   │ 4     │ 1.0     │
 
 julia> select(df, names(df) .=> sum)
+4×2 DataFrame
+│ Row │ A_sum │ B_sum   │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 10    │ 10.0    │
+│ 2   │ 10    │ 10.0    │
+│ 3   │ 10    │ 10.0    │
+│ 4   │ 10    │ 10.0    │
+
+julia> select(df, names(df) .=> sum, names(df) .=> prod)
+4×4 DataFrame
+│ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
+│     │ Int64 │ Float64 │ Int64  │ Float64 │
+├─────┼───────┼─────────┼────────┼─────────┤
+│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │
+│ 2   │ 10    │ 10.0    │ 24     │ 24.0    │
+│ 3   │ 10    │ 10.0    │ 24     │ 24.0    │
+│ 4   │ 10    │ 10.0    │ 24     │ 24.0    │
+```
+
+If instead you prefer to get a result collapsed to the number of rows returned
+by the applied functions use the `combine` function:
+```
+julia> combine(df, names(df) .=> sum)
 1×2 DataFrame
 │ Row │ A_sum │ B_sum   │
 │     │ Int64 │ Float64 │
 ├─────┼───────┼─────────┤
 │ 1   │ 10    │ 10.0    │
 
-julia> select(df, names(df) .=> sum, names(df) .=> prod)
+julia> combine(df, names(df) .=> sum, names(df) .=> prod)
 1×4 DataFrame
 │ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
 │     │ Int64 │ Float64 │ Int64  │ Float64 │

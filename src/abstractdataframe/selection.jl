@@ -277,6 +277,7 @@ SELECT_ARG_RULES =
     select!(df::DataFrame, args...)
 
 Mutate `df` in place to retain only columns specified by `args...` and return it.
+The result is guaranteed to have the same number of rows as `df`.
 
 $SELECT_ARG_RULES
 
@@ -330,11 +331,13 @@ julia> df = DataFrame(a=1:3, b=4:6);
 julia> select!(df, names(df) .=> sum);
 
 julia> df
-1×2 DataFrame
+3×2 DataFrame
 │ Row │ a_sum │ b_sum │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+│ 2   │ 6     │ 15    │
+│ 3   │ 6     │ 15    │
 
 julia> df = DataFrame(a=1:3, b=4:6);
 
@@ -403,6 +406,7 @@ end
     transform!(df::DataFrame, args...)
 
 Mutate `df` in place to add columns specified by `args...` and return it.
+The result is guaranteed to have the same number of rows as `df`.
 Equivalent to `select!(df, :, args...)`.
 
 See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
@@ -413,7 +417,7 @@ transform!(df::DataFrame, args...) = select!(df, :, args...)
     select(df::AbstractDataFrame, args...; copycols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `args` and
-return it.
+return it. The result is guaranteed to have the same number of rows as `df`.
 
 If `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
 are supported.
@@ -500,18 +504,22 @@ julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 │ 3   │ 3     │ 6     │ 4.0          │
 
 julia> select(df, names(df) .=> sum)
-1×2 DataFrame
+3×2 DataFrame
 │ Row │ a_sum │ b_sum │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+│ 2   │ 6     │ 15    │
+│ 3   │ 6     │ 15    │
 
 julia> select(df, names(df) .=> sum .=> [:A, :B])
-1×2 DataFrame
+3×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 15    │
+│ 2   │ 6     │ 15    │
+│ 3   │ 6     │ 15    │
 
 julia> select(df, AsTable(:) => ByRow(mean))
 3×1 DataFrame
@@ -532,6 +540,7 @@ select(df::AbstractDataFrame, args...; copycols::Bool=true) =
 
 Create a new data frame that contains columns from `df` and adds columns
 specified by `args` and return it.
+The result is guaranteed to have the same number of rows as `df`.
 Equivalent to `select(df, :, args..., copycols=copycols)`.
 
 See [`select`](@ref) for detailed rules regarding accepted values for `args`.
@@ -539,6 +548,34 @@ See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
     select(df, :, args..., copycols=copycols)
 
+
+"""
+    combine(df::AbstractDataFrame, args...)
+
+Create a new data frame that contains columns from `df` specified by `args` and
+return it. The result can have any number of rows that is determined by the
+passed transformations.
+
+See [`select`](@ref) for detailed rules regarding accepted values for `args`.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+
+julia> combine(df, :a => sum, nrow)
+1×2 DataFrame
+│ Row │ a_sum │ nrow  │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 6     │ 3     │
+"""
 combine(df::AbstractDataFrame, args...) =
     _manipulate(df, args..., copycols=true, keeprows=false)
 
