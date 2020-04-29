@@ -1017,7 +1017,7 @@ function _combine(f::AbstractVector{<:Pair},
                   copycols::Bool, keeprows::Bool) # TODO: remove these defaults
     # here f should be normalized and in a form of source_cols => fun
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
-    @assert all(x -> last(x) isa Union{Base.Callable, ByRow}, f)
+    @assert all(x -> last(x) isa Base.Callable, f)
 
     if keeprows
         if !_check_cannonical(gd)
@@ -1186,7 +1186,7 @@ function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing,
     idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
     # disallow passing target column name to genuine tables
     if firstres isa MULTI_COLS_TYPE
-        if p isa Pair{<:Any, <:Pair{<:Any, Symbol}}
+        if p isa Pair{<:Any, <:Pair{<:Any, <:SymbolOrString}}
             throw(ArgumentError("setting column name for tabular return value is disallowed"))
         end
     else

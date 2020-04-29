@@ -57,6 +57,7 @@ hcat
 insertcols!
 length
 mapcols
+mapcols!
 names
 ncol
 ndims
@@ -67,6 +68,7 @@ push!
 rename
 rename!
 repeat
+repeat!
 select
 select!
 show

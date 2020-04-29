@@ -80,7 +80,7 @@ julia> sort(cv)
 
 ```
 
-By default, a `CategoricalArray` is able to represent 2<sup>32</sup> different levels.
+By default, a `CategoricalArray` is able to represent ``2^{32}`` different levels.
 You can use less memory by calling the `compress` function:
 
 ```jldoctest categorical

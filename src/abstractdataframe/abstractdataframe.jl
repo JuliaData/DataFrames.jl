@@ -572,7 +572,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
     # Put the summary stats into the return data frame
     data = DataFrame()
-    data.variable = copy(_names(df))
+    data.variable = propertynames(df)
 
     # An array of Dicts for summary statistics
     col_stats_dicts = map(eachcol(df)) do col
@@ -1494,8 +1494,11 @@ julia> repeat(df, inner = 2, outer = 3)
 │ 12  │ 2     │ 4     │
 ```
 """
-Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1) =
-    mapcols(x -> repeat(x, inner = inner, outer = outer), df)
+function Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)
+    inner < 0 && throw(ArgumentError("inner keyword argument must be non-negative"))
+    outer < 0 && throw(ArgumentError("outer keyword argument must be non-negative"))
+    return mapcols(x -> repeat(x, inner = inner, outer = outer), df)
+end
 
 """
     repeat(df::AbstractDataFrame, count::Integer)
@@ -1524,8 +1527,10 @@ julia> repeat(df, 2)
 │ 4   │ 2     │ 4     │
 ```
 """
-Base.repeat(df::AbstractDataFrame, count::Integer) =
-    mapcols(x -> repeat(x, count), df)
+function Base.repeat(df::AbstractDataFrame, count::Integer)
+    count < 0 && throw(ArgumentError("count must be non-negative"))
+    return mapcols(x -> repeat(x, count), df)
+end
 
 ##############################################################################
 ##
