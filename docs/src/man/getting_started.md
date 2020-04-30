@@ -26,6 +26,20 @@ Throughout the rest of this tutorial, we will assume that you have installed the
     See [here](https://jupyter-client.readthedocs.io/en/stable/kernels.html) for information about location
     and specification of Jupyter kernels.
 
+
+## DataFrame Introduction
+ 
+A DataFrame is a table that can contain data of various types side-by-side. It is a two-dimensional data structure with three main components: rows, columns, and the data:
+
+![DataFrame_Concept](https://user-images.githubusercontent.com/8378161/80563049-9ec88180-899e-11ea-87da-a850bd24bb5d.png)
+
+In contrast to a matrix which can only be referenced by row and column indices, the columns of DataFrames have _names_ or _labels_ attached to them. The columns in a DataFrame can be referenced by name (and also by integer indexes).  In the example above, the names of the columns are Title, Author, PublishDate, Inventory, and Price. 
+
+Each column can, and usually does, have a  different data type. In the example table above, you see the datatypes of strings, dates, integers, and real numbers. 
+
+DataFrames are a powerful and useful way to organize, store, analyze, and report data. The Julia DataFrames package has many functions for creating DataFrames, subsetting and reshaping DataFrames, joining two DataFrames together, and more. 
+
+
 ## The `DataFrame` Type
 
 Objects of the `DataFrame` type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a `DataFrame` is to pass column vectors using keyword arguments or pairs:
@@ -350,6 +364,71 @@ we can observe that:
 * the second column `:b` can hold `Float64` or `Missing`, which is indicated by `?` printed after the name of type;
 * the third column `:c` can hold categorical data; here we notice `…`, which indicates that the actual name of the type was long and got truncated;
 * the type information in fourth column `:d` presents a situation where the name is both truncated and the type allows `Missing`.
+
+#### Referencing Single Cells
+
+Now that your DataFrame is created, you can reference single cells by row number and column name. You can use the DataFrame.name notation, or the :name notation to refer to columns.
+
+```
+julia> mydiet = DataFrame(Food = ["Apple","Bagel","Cookie","Egg"], Calories=[72, 289, 59, 102])
+4×2 DataFrame
+│ Row │ Food   │ Calories │
+│     │ String │ Int64    │
+├─────┼────────┼──────────┤
+│ 1   │ Apple  │ 72       │
+│ 2   │ Bagel  │ 289      │
+│ 3   │ Cookie │ 59       │
+│ 4   │ Egg    │ 102      │
+julia> mydiet.Food
+4-element Array{String,1}:
+ "Apple"
+ "Bagel"
+ "Cookie"
+ "Egg"
+
+julia> mydiet[:,:Food]
+4-element Array{String,1}:
+ "Apple"
+ "Bagel"
+ "Cookie"
+ "Egg"
+```
+
+To reference a single cell, you can use the row number and the column name as in DataFrame[row,:name] or using the dot notation, DataFrame.name[row]
+
+```
+julia> mydiet[1,:Food]
+"Apple"
+julia> mydiet.Food[1]
+"Apple"
+```
+An advantage of the DataFrame[row,:name] syntax is that ":name" can be replaced by a variable that holds the name of the column. 
+```
+julia> cname=Symbol("Calories")
+:Calories
+julia> mydiet[1,cname]
+72
+```
+
+You can also reference individual cells by numeric indexes
+
+```
+julia> mydiet[2,1]
+"Bagel"
+```
+
+If you want to reference multiple columns for a row, you can use the DataFrame[row,[:name1,:name2,...]] syntax
+
+```
+julia> mydiet[1:2,[:Food,:Calories]]
+2×2 DataFrame
+│ Row │ Food   │ Calories │
+│     │ String │ Int64    │
+├─────┼────────┼──────────┤
+│ 1   │ Apple  │ 72       │
+│ 2   │ Bagel  │ 289      │
+```
+These are a simplest methods to access the data in the table. The next section discusses powerful indexing methods to let you subset the DataFrame, or select subsets based on the values of the data in the DataFrame. 
 
 ### Taking a Subset
 
@@ -1053,15 +1132,18 @@ The CSV.jl functions are not loaded automatically and must be imported into the 
 using CSV
 ```
 
-A dataset can now be read from a CSV file at path `input` using
-```julia
-DataFrame(CSV.File(input))
-```
+You can read a .csv file containing your dataset at file pathname _fpath_ using (Windows example):
 
-A `DataFrame` can be written to a CSV file at path `output` using
-```julia
-df = DataFrame(x = 1, y = 2)
-CSV.write(output, df)
 ```
+fpath = "C:\\Users\\biff\\Documents\\myData\\mydataset.csv"
+df = CSV.read(fpath,copycols=true;dateformat="mm/dd/yyyy") 
+```
+**Note** that if you don't include _copycols=true_, then your DataFrame will be **built with immutable, read-only, CSV.Column vectors.** If you only want a read-only table, set _copycols=false_. However, you likely want to mutate data in your DataFrame, so be sure to include _copycols=true_. See the [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/) for other input options, such as _dateformat_, which will help get your data read in correctly. 
 
-The behavior of CSV functions can be adapted via keyword arguments. For more information, see `?CSV.File`, `?CSV.read` and `?CSV.write`, or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
+To write your DataFrame to .csv file, use the CSV.write function:
+```
+julia> mydiet = DataFrame(Food = ["Apple","Bagel","Cookie","Egg"], Calories=[72, 289, 59, 102])
+julia> fname = "C:\\Users\\biff\\Documents\\myData\\mydiet.csv"
+julia> CSV.write(fname,mydiet,writeheader=true,quotestrings=true)
+```
+In the above, writeheader=true will write the column names at the top of the file and quotestrings=true will put quotes around string data. See the  See the [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/) for other output options which will help you get your DataFrame written to a file correctly. 
