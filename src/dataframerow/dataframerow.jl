@@ -14,8 +14,7 @@ DataFrameRow(parent::AbstractDataFrame, row::Integer, cols=:)
 ```
 
 A `DataFrameRow` supports the iteration interface and can therefore be passed to
-functions that expect a collection as an argument. In such situations `eltype`
-of `DataFrameRow` is always `Any`.
+functions that expect a collection as an argument. Its element type is always `Any`.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
 You can also access the data in a `DataFrameRow` using the `getproperty` and
@@ -272,11 +271,12 @@ Base.broadcastable(::DataFrameRow) =
     throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 function Base.NamedTuple(dfr::DataFrameRow)
-    k = keys(dfr)
-    v = values(dfr)
-    n = names(dfr)
-    s = eltype.(parent(dfr)[!, ni] for ni in n)
-    NamedTuple{Tuple(k), Tuple{s...}}(Tuple(v))
+    k = Tuple(_names(dfr))
+    v = ntuple(i -> dfr[i], length(dfr))
+    pc = parentcols(index(dfr))
+    cols = _columns(parent(dfr))
+    s = ntuple(i -> eltype(cols[pc[i]]), length(dfr))
+    NamedTuple{k, s...}(v)
 end
 
 """

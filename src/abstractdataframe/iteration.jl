@@ -32,7 +32,7 @@ with each row represented as a `DataFrameRow`.
 
 Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain 
 a named tuple, which supports iteration and property access like a `DataFrameRow`, 
-but also passes information of the `eltypes` of the columns of `df`. 
+but also passes information on the `eltypes` of the columns of `df`. 
 
 # Examples
 ```jldoctest
