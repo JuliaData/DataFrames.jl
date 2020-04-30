@@ -276,7 +276,7 @@ function Base.NamedTuple(dfr::DataFrameRow)
     pc = parentcols(index(dfr))
     cols = _columns(parent(dfr))
     s = ntuple(i -> eltype(cols[pc[i]]), length(dfr))
-    NamedTuple{k, s...}(v)
+    NamedTuple{k, Tuple{s...}}(v)
 end
 
 """
