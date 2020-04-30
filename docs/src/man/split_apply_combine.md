@@ -16,10 +16,10 @@ object from your data frame using `groupby` function that takes two arguments:
 The differences between the above functions are the following:
 * `select`: return a data frame with the number and order of rows exactly the same
   as the source, preserve only columns that have been calculated;
+  `select!`: is an in-place version of `select`;
 * `transform`: return a data frame with the number and order of rows exactly the same
   as the source, preserve all columns from the source and columns that have been calculated;
-* `select!`: is an in-place version of `select`;
-* `transform!`: is an in-place version of `transform`;
+  `transform!`: is an in-place version of `transform`;
 * `combine`: does not put restrictions on number of rows returned, the order of rows
   is specified by the order of groups in `GroupedDataFrame`.
 

@@ -2136,6 +2136,27 @@ end
         @test_throws ArgumentError transform(gdf, :x => sum)
         @test_throws ArgumentError transform(gdf, :x => sum, regroup=true)
     end
+
+    # show the difference between the ordering of rows in select and combine
+    Random.seed!(1)
+    for df in (DataFrame(g=rand(1:20, 1000), x=rand(1000), id=1:1000),
+               DataFrame(g=categorical(rand(1:20, 1000)), x=rand(1000), id=1:1000)),
+        dosort in (true, false)
+
+        gdf = groupby(df, :g, sort=dosort)
+
+        res1 = select(gdf, :x => mean, :x => x -> x .- mean(x), :id)
+        @test res1.g == df.g
+        @test res1.id == df.id
+        @test res1.x_mean + res1.x_function ≈ df.x
+
+        res2 = combine(gdf, :x => mean, :x => x -> x .- mean(x), :id)
+        @test unique(res2.g) ==
+              (dosort || df.g isa CategoricalVector ? sort! : identity)(unique(df.g))
+        for i in unique(res2.g)
+            @test issorted(filter(:g => x -> x == i, res2).id)
+        end
+    end
 end
 
 @testset "select! and transform! GroupedDataFrame" begin
@@ -2169,7 +2190,7 @@ end
         dfc = copy(df)
         g = dfc.g
         gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
-        @test select!(gdf, :x => sum, regroup=true) === gdf
+        @test validate_gdf(select!(gdf, :x => sum, regroup=true)) === gdf
         @test dfc.g === g
         @test dfc.x_sum == [1, 5, 5, 4]
         @test propertynames(dfc) == [:g, :x_sum]
@@ -2179,7 +2200,7 @@ end
         x = dfc.x
         y = dfc.y
         gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
-        @test transform!(gdf, :g => first => :g, :x => first, regroup=true) === gdf
+        @test validate_gdf(transform!(gdf, :g => first => :g, :x => first, regroup=true)) === gdf
         @test dfc.g === g
         @test dfc.x === x
         @test dfc.y === y
