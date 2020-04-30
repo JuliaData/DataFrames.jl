@@ -270,7 +270,7 @@ end
     df = DataFrame(a=[1, missing, missing], b=[2.0, 3.0, 0.0])
     dfr = DataFrameRow(df, 1, :)
     nt = first(Tables.namedtupleiterator(df))
-    @test copy(dfr) === nt === NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Float64}}((1, 2.0))
+    @test copy(dfr) === nt === NamedTuple{(:a, :b),Tuple{Union{Missing, Int},Float64}}((1, 2.0))
     @test sum(skipmissing(copy(df[3, :]))) == 0
     @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
