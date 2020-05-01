@@ -556,6 +556,20 @@ function combine(gd::GroupedDataFrame; f...)
     return combine(gd, [source_cols => fun => out_col for (out_col, (source_cols, fun)) in f])
 end
 
+function gen_groups(idx::Vector{Int})
+    groups = zeros(Int, length(idx))
+    groups[1] = 1
+    j = 1
+    last_idx = idx[1]
+    @inbounds @simd for i in 2:length(idx)
+        cur_idx = idx[i]
+        j += cur_idx != last_idx
+        last_idx = cur_idx
+        groups[i] = j
+    end
+    return groups
+end
+
 function combine_helper(f, gd::GroupedDataFrame,
                         nms::Union{AbstractVector{Symbol},Nothing}=nothing;
                         keepkeys::Bool, regroup::Bool,
@@ -597,19 +611,10 @@ function combine_helper(f, gd::GroupedDataFrame,
             return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
                                     gd.starts, gd.ends, gd.ngroups, getfield(gd, :keymap))
         else
-            groups = zeros(Int, length(idx))
-            groups[1] = 1
-            j = 1
-            last_idx = idx[1]
-            @inbounds for i in 2:length(idx)
-                cur_idx = idx[i]
-                j += cur_idx != last_idx
-                last_idx = cur_idx
-                groups[i] = j
-            end
-            @assert j <= length(gd)
+            groups = gen_groups(idx)
+            @assert groups[end] <= length(gd)
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), groups,
-                                    nothing, nothing, nothing, j, nothing)
+                                    nothing, nothing, nothing, groups[end], nothing)
         end
     else
         if regroup
@@ -998,6 +1003,20 @@ function _agg2idx_map_helper(idx, idx_agg)
     return agg2idx_map
 end
 
+function prepare_idx_keeprows(idx, starts, ends, nrowparent)
+    idx_keeprows = Vector{Int}(undef, nrowparent)
+    i = 0
+    for (s, e) in zip(starts, ends)
+        v = idx[s]
+        for k in s:e
+            i += 1
+            idx_keeprows[i] = v
+        end
+    end
+    @assert i == nrowparent
+    return idx_keeprows
+end
+
 function _combine(f::AbstractVector{<:Pair},
                   gd::GroupedDataFrame, nms::AbstractVector{Symbol},
                   copycols::Bool, keeprows::Bool)
@@ -1011,17 +1030,7 @@ function _combine(f::AbstractVector{<:Pair},
                                 "`GroupedDataFrame`s from which some groups have "*
                                 "been dropped (including skipmissing=true)"))
         end
-        idx_keeprows = Vector{Int}(undef, nrow(parent(gd)))
-        let i = 0
-            for (s, e) in zip(gd.starts, gd.ends)
-                v = gd.idx[s]
-                for k in s:e
-                    i += 1
-                    idx_keeprows[i] = v
-                end
-            end
-            @assert i == nrow(parent(gd))
-        end
+        idx_keeprows = prepare_idx_keeprows(gd.idx, gd.starts, gd.ends, nrow(parent(gd)))
     else
         idx_keeprows = nothing
     end
