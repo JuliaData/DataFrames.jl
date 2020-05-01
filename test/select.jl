@@ -239,8 +239,8 @@ end
 
 @testset "select!" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError select!(df, 0)
-    @test_throws ArgumentError select!(df, 6)
+    @test_throws BoundsError select!(df, 0)
+    @test_throws BoundsError select!(df, 6)
     @test_throws ArgumentError select!(df, [1, 1])
     @test_throws ArgumentError select!(df, :f)
     @test_throws BoundsError select!(df, [true, false])
@@ -552,7 +552,7 @@ end
     @test df == expected
 
     df = DataFrame(a=a, b=b, c=c)
-    @test_throws ArgumentError select!(df, 1:4)
+    @test_throws BoundsError select!(df, 1:4)
     @test_throws ArgumentError select!(df, [:a, :b, :c, :d])
     @test_throws ArgumentError select!(df, [1, 2, 3, 1])
     @test_throws ArgumentError select!(df, [:a, :b, :c, :a])
