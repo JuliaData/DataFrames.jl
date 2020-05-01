@@ -7,19 +7,19 @@ framework for handling this sort of computation is described in the paper
 written by Hadley Wickham.
 
 The DataFrames package supports the split-apply-combine strategy through the
-`combine`, `select`/`select!` and `transform`/`transform!` functions.
+`groupby` function followed by `combine`, `select`/`select!` or transform`/`transform!`.
 
 In order to perform operations by groups you first need to create a `GroupedDataFrame`
-object from your data frame using `groupby` function that takes two arguments:
+object from your data frame using the `groupby` function that takes two arguments:
 (1) a data frame to be grouped, and (2) a set of columns to group by.
 
-The differences between the above functions are the following:
+Operations can then be applied on each group using one of the following functions:
 * `select`: return a data frame with the number and order of rows exactly the same
-  as the source, preserve only columns that have been calculated;
-  `select!`: is an in-place version of `select`;
+  as the source data frame, including only new calculated columns;
+  `select!` is an in-place version of `select`;
 * `transform`: return a data frame with the number and order of rows exactly the same
-  as the source, preserve all columns from the source and columns that have been calculated;
-  `transform!`: is an in-place version of `transform`;
+  as the source data frame, including all columns from the source and new calculated columns;
+  `transform!` is an in-place version of `transform`;
 * `combine`: does not put restrictions on number of rows returned, the order of rows
   is specified by the order of groups in `GroupedDataFrame`.
 
@@ -52,9 +52,10 @@ and `target_col` is not specified,
 `function` can return multiple columns in the form of an `AbstractDataFrame`,
 `AbstractMatrix`, `NamedTuple` or `DataFrameRow`.
 
-Here are the rules specifying the shape of the resulting `DataFrame` in `combine`
-(in `select`/`select!` and `transform`/`transform!` the result has the number
-and order of rows equal to the source):
+`select`/`select!` and `transform`/`transform!` always return a `DataFrame`
+with the same number of rows as the source.
+For `combine`, the shape of the resulting `DataFrame` is determined
+according to the following rules:
 - a single value produces a single row and column per group
 - a named tuple or `DataFrameRow` produces a single row and one column per field
 - a vector produces a single column with one row per entry
@@ -205,8 +206,9 @@ julia> combine(gdf, 1:2 => cor, nrow)
 
 ```
 
-If we use `select` or `transform` instead of `combine` we always obtain the number
-and of order of rows in the result equal to the source. In the example below
+Contrary to `combine`, the `select` and `transform` functions always return
+a data frame with the same number and order of rows as the source.
+In the example below
 the return values in columns `:SepalLength_SepalWidth_cor` and `:nrow` are
 broadcasted to match the number of elements in each group:
 ```

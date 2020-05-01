@@ -183,8 +183,8 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         # this means that we use `select` or `transform` not `combine`
         if !allow_resizing_newdf[] && ncol(newdf) == 0 && length(res) != nrow(df)
             throw(ArgumentError("length $(length(res)) of vector returned from " *
-                                "function $fun is different than number of rows" *
-                                " $(nrow(df)) of the source data frame."))
+                                "function $fun is different from number of rows " *
+                                "$(nrow(df)) of the source data frame."))
         end
         allow_resizing_newdf[] = false
         respar = parent(res)
@@ -554,7 +554,7 @@ transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
 
 Create a new data frame that contains columns from `df` specified by `args` and
 return it. The result can have any number of rows that is determined by the
-passed transformations.
+values returned by passed transformations.
 
 See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 
@@ -657,7 +657,7 @@ function _process(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows
     end
     # we allow resizing newdf only if up to some point only scalars were put
     # in it. The moment we put any vector into newdf its number of rows becomes fixed
-    # Also if keeprows is true then we make sure to rpoduce nrow(df) rows so resizing
+    # Also if keeprows is true then we make sure to produce nrow(df) rows so resizing
     # is not allowed
     allow_resizing_newdf = Ref(!keeprows)
     for nc in normalized_cs

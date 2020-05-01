@@ -9,7 +9,7 @@ into row groups.
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort groups according to the values of the grouping columns
-  `cols`; if all `cols` are `CategoricalVector` then groups are always sorted
+  `cols`; if all `cols` are `CategoricalVector`s then groups are always sorted
   irrespective of the value of `sort`
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
@@ -252,7 +252,7 @@ const KWARG_PROCESSING_RULES =
     value contains columns with the same names as the grouping columns, they are
     required to be equal.
 
-    If `regroup=false`, if the returned value should be a `DataFrame` or a
+    If `regroup=true`, the returned value must be a `DataFrame` or a
     `GroupedDataFrame` grouped using `keycols(gdf)`.
     """
 
@@ -264,10 +264,9 @@ const KWARG_PROCESSING_RULES =
     combine(fun::Union{Function, Type}, df::AbstractDataFrame)
     combine(pair::Pair, df::AbstractDataFrame)
 
-Transform a [`GroupedDataFrame`](@ref) into a `DataFrame`.
-
-As a special case if `combine` is passed an `AbstractDataFrame` it applies `fun`
-or `pair` to the passed data frame as a whole.
+Apply operations to each group in a [`GroupedDataFrame`](@ref) and return
+the combined result as a `DataFrame`.
+If an `AbstractDataFrame` is passed, apply operations to the data frame as a whole.
 
 $F_ARGUMENT_RULES
 
@@ -574,27 +573,20 @@ function combine_helper(f, gd::GroupedDataFrame,
         keys = groupcols(gd)
         for key in keys
             if hasproperty(valscat, key)
-                if keeprows
-                    isequal(valscat[!, key], parent(gd)[!, key]) ||
-                    throw(ArgumentError("column :$key in returned data frame " *
-                                        "is not equal to grouping key :$key"))
-
-                else
-                    isequal(valscat[!, key], view(parent(gd)[!, key], idx)) ||
+                if (keeprows && !isequal(valscat[!, key], parent(gd)[!, key])) ||
+                    (!keeprows && !isequal(valscat[!, key], view(parent(gd)[!, key], idx)))
                     throw(ArgumentError("column :$key in returned data frame " *
                                         "is not equal to grouping key :$key"))
                 end
             end
         end
         if keeprows
-            newparent = hcat!(select(parent(gd), gd.cols, copycols=copycols),
-                              select(valscat, Not(intersect(keys, _names(valscat))),
-                                     copycols=false), copycols=false)
+            newparent = select(parent(gd), gd.cols, copycols=copycols)
         else
-            newparent = hcat!(parent(gd)[idx, gd.cols],
-                              select(valscat, Not(intersect(keys, _names(valscat))),
-                                     copycols=false), copycols=false)
+            newparent = parent(gd)[idx, gd.cols]
         end
+        hcat!(newparent, select(valscat, Not(intersect(keys, _names(valscat))), copycols=false),
+              copycols=false)
         regroup || return newparent
 
         if length(idx) == 0
@@ -1035,8 +1027,9 @@ function _combine(f::AbstractVector{<:Pair},
 
     if keeprows
         if !_check_cannonical(gd)
-            throw(ArgumentError("select or transform functions require that " *
-                                "GroupedDataFrame is not subsetted"))
+            throw(ArgumentError("select and transform do not support " *
+                                "GroupedDataFrames from which some groups have been dropped "*
+                                "(including skipmissing=true)")))
         end
         idx_keeprows = Vector{Int}(undef, nrow(parent(gd)))
         let i = 0
@@ -1121,11 +1114,7 @@ function _combine(f::AbstractVector{<:Pair},
         @assert !isnothing(idx_agg)
         idx = idx_agg
     else
-        if keeprows
-            idx = idx_keeprows
-        else
-            idx = res[idx_loc][1]
-        end
+        idx = keeprows ? idx_keeprows : res[idx_loc][1]
         agg2idx_map = nothing
         for i in 1:length(res)
             if res[i][1] !== idx && res[i][1] != idx
@@ -1138,9 +1127,8 @@ function _combine(f::AbstractVector{<:Pair},
                     res[i] = idx_agg, res[i][2][agg2idx_map]
                 elseif idx != res[i][1]
                     if keeprows
-                        throw(ArgumentError("all functions must return vectors of " *
-                                            "the length equal to the group rows count " *
-                                            "in the source GroupedDataFrame"))
+                        throw(ArgumentError("all functions must return vectors with " *
+                                            "as many values as rows in each group"))
                     else
                         throw(ArgumentError("all functions must return vectors of the same length"))
                     end
@@ -1157,8 +1145,9 @@ function _combine(f::AbstractVector{<:Pair},
         if keeprows && res[i][1] !== idx_keeprows # we need to reorder the column
             newcol = similar(col)
             # we can probably make it more efficient, but I leave it as an optimization for the future
-            for i in axes(col, 1)
-                newcol[gd.idx[i]] = col[i]
+            gd_idx = gd.idx
+            for j in eachindex(gd.idx, col)
+                newcol[gd_idx[j]] = col[j]
             end
             res[i] = (col_idx, newcol)
         end
@@ -1470,10 +1459,10 @@ transform(gd::GroupedDataFrame, args...;
 
 An equivalent of
 `select(gd, args..., copycols=false, keepkeys=true, regroup=regroup)`
-but updates the `parent(gd)` in place.
+but updates `parent(gd)` in place.
 """
 function select!(gd::GroupedDataFrame{DataFrame}, args...; regroup::Bool=false)
-    newdf = select(gd, args..., copycols=false, regroup=false)
+    newdf = select(gd, args..., copycols=false)
     df = parent(gd)
     copy!(_columns(df), _columns(newdf))
     x = index(df)
@@ -1490,7 +1479,7 @@ end
 
 An equivalent of
 `transform(gd, args..., copycols=false, keepkeys=true, regroup=regroup)`
-but updates the `parent(gd)` in place.
+but updates `parent(gd)` in place.
 """
 transform!(gd::GroupedDataFrame{DataFrame}, args...; regroup::Bool=false) =
     select!(gd, :, args..., regroup=regroup)

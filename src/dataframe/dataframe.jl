@@ -65,7 +65,7 @@ to fill a new vector of the appropriate length. As a particular rule values
 stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
 in the same way.
 
-Additionally `DataFrame` can be used to collect [`GroupedDataFrame`](@ref)
+Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
 into a `DataFrame`.
 
 # Notes

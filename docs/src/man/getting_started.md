@@ -792,9 +792,9 @@ julia> mean(df.A)
 2.5
 ```
 
-We can also apply a function to each column of a `DataFrame` using `select`.
-`select` always returns the same number of rows in the result as the source
-data frame. For example:
+We can also apply a function to each column of a `DataFrame` using `select`,
+which always returns the same number of rows in the result as the source
+data frame (repeating values as necessary). For example:
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
