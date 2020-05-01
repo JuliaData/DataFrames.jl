@@ -561,7 +561,7 @@ function gen_groups(idx::Vector{Int})
     groups[1] = 1
     j = 1
     last_idx = idx[1]
-    @inbounds @simd for i in 2:length(idx)
+    @inbounds for i in 2:length(idx)
         cur_idx = idx[i]
         j += cur_idx != last_idx
         last_idx = cur_idx
