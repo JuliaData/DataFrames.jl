@@ -48,7 +48,7 @@ passed to `function`.
 
 In all of these cases, `function` can return either a single row or multiple rows.
 `function` can always generate a single column by returning a single value or a vector.
-Additionally, if `combine` is passed exactly one `function` as a first argument
+Additionally, if `combine` is passed exactly one `function`, `cols => function`, or `cols => function => outcol` as a first argument
 and `target_col` is not specified,
 `function` can return multiple columns in the form of an `AbstractDataFrame`,
 `AbstractMatrix`, `NamedTuple` or `DataFrameRow`.
