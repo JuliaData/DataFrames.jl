@@ -196,6 +196,15 @@ julia> combine(gdf,
 │ 2   │ Iris-versicolor │ 0.910378                         │
 │ 3   │ Iris-virginica  │ 0.867923                         │
 
+julia> combine(x -> std(x.PetalLength) / std(x.SepalLength), gdf) # passing a SubDataFrame
+3×2 DataFrame
+│ Row │ Species         │ PetalLength_SepalLength_function │
+│     │ String          │ Float64                          │
+├─────┼─────────────────┼──────────────────────────────────┤
+│ 1   │ Iris-setosa     │ 0.492245                         │
+│ 2   │ Iris-versicolor │ 0.910378                         │
+│ 3   │ Iris-virginica  │ 0.867923                         │
+
 julia> combine(gdf, 1:2 => cor, nrow)
 3×3 DataFrame
 │ Row │ Species         │ SepalLength_SepalWidth_cor │ nrow  │
