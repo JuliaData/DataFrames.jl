@@ -7,21 +7,22 @@ framework for handling this sort of computation is described in the paper
 written by Hadley Wickham.
 
 The DataFrames package supports the split-apply-combine strategy through the
-`groupby` function followed by `combine`, `select`/`select!` or transform`/`transform!`.
+`groupby` function followed by `combine`, `select`/`select!` or `transform`/`transform!`.
 
 In order to perform operations by groups you first need to create a `GroupedDataFrame`
 object from your data frame using the `groupby` function that takes two arguments:
 (1) a data frame to be grouped, and (2) a set of columns to group by.
 
 Operations can then be applied on each group using one of the following functions:
+* `combine`: does not put restrictions on number of rows returned, the order of rows
+  is specified by the order of groups in `GroupedDataFrame`; it is typically used
+  to compute summary statistics by group;
 * `select`: return a data frame with the number and order of rows exactly the same
   as the source data frame, including only new calculated columns;
   `select!` is an in-place version of `select`;
 * `transform`: return a data frame with the number and order of rows exactly the same
   as the source data frame, including all columns from the source and new calculated columns;
-  `transform!` is an in-place version of `transform`;
-* `combine`: does not put restrictions on number of rows returned, the order of rows
-  is specified by the order of groups in `GroupedDataFrame`.
+  `transform!` is an in-place version of `transform`.
 
 All these functions take a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
@@ -212,49 +213,49 @@ In the example below
 the return values in columns `:SepalLength_SepalWidth_cor` and `:nrow` are
 broadcasted to match the number of elements in each group:
 ```
-julia> select(gdf, 1:2 => cor, nrow)
-150×3 DataFrame
-│ Row │ Species        │ SepalLength_SepalWidth_cor │ nrow  │
-│     │ String         │ Float64                    │ Int64 │
-├─────┼────────────────┼────────────────────────────┼───────┤
-│ 1   │ Iris-setosa    │ 0.74678                    │ 50    │
-│ 2   │ Iris-setosa    │ 0.74678                    │ 50    │
-│ 3   │ Iris-setosa    │ 0.74678                    │ 50    │
-│ 4   │ Iris-setosa    │ 0.74678                    │ 50    │
-│ 5   │ Iris-setosa    │ 0.74678                    │ 50    │
-│ 6   │ Iris-setosa    │ 0.74678                    │ 50    │
-│ 7   │ Iris-setosa    │ 0.74678                    │ 50    │
+julia> select(gdf, 1:2 => cor)
+150×2 DataFrame
+│ Row │ Species        │ SepalLength_SepalWidth_cor │
+│     │ String         │ Float64                    │
+├─────┼────────────────┼────────────────────────────┤
+│ 1   │ Iris-setosa    │ 0.74678                    │
+│ 2   │ Iris-setosa    │ 0.74678                    │
+│ 3   │ Iris-setosa    │ 0.74678                    │
+│ 4   │ Iris-setosa    │ 0.74678                    │
+│ 5   │ Iris-setosa    │ 0.74678                    │
+│ 6   │ Iris-setosa    │ 0.74678                    │
+│ 7   │ Iris-setosa    │ 0.74678                    │
 ⋮
-│ 143 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 144 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 145 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 146 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 147 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 148 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 149 │ Iris-virginica │ 0.457228                   │ 50    │
-│ 150 │ Iris-virginica │ 0.457228                   │ 50    │
+│ 143 │ Iris-virginica │ 0.457228                   │
+│ 144 │ Iris-virginica │ 0.457228                   │
+│ 145 │ Iris-virginica │ 0.457228                   │
+│ 146 │ Iris-virginica │ 0.457228                   │
+│ 147 │ Iris-virginica │ 0.457228                   │
+│ 148 │ Iris-virginica │ 0.457228                   │
+│ 149 │ Iris-virginica │ 0.457228                   │
+│ 150 │ Iris-virginica │ 0.457228                   │
 
-julia> transform(gdf, nrow)
+julia> transform(gdf, :Species => x -> chop.(x, head=5, tail=0))
 150×6 DataFrame
-│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ nrow  │
-│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │ Int64 │
-├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┼───────┤
-│ 1   │ Iris-setosa    │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ 50    │
-│ 2   │ Iris-setosa    │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ 50    │
-│ 3   │ Iris-setosa    │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ 50    │
-│ 4   │ Iris-setosa    │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ 50    │
-│ 5   │ Iris-setosa    │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ 50    │
-│ 6   │ Iris-setosa    │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ 50    │
-│ 7   │ Iris-setosa    │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ 50    │
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species_function │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │ SubString…       │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┼──────────────────┤
+│ 1   │ Iris-setosa    │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa           │
+│ 2   │ Iris-setosa    │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa           │
+│ 3   │ Iris-setosa    │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ setosa           │
+│ 4   │ Iris-setosa    │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa           │
+│ 5   │ Iris-setosa    │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa           │
+│ 6   │ Iris-setosa    │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa           │
+│ 7   │ Iris-setosa    │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ setosa           │
 ⋮
-│ 143 │ Iris-virginica │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ 50    │
-│ 144 │ Iris-virginica │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ 50    │
-│ 145 │ Iris-virginica │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ 50    │
-│ 146 │ Iris-virginica │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ 50    │
-│ 147 │ Iris-virginica │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ 50    │
-│ 148 │ Iris-virginica │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ 50    │
-│ 149 │ Iris-virginica │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ 50    │
-│ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ 50    │
+│ 143 │ Iris-virginica │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica        │
+│ 144 │ Iris-virginica │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ virginica        │
+│ 145 │ Iris-virginica │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica        │
+│ 146 │ Iris-virginica │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ virginica        │
+│ 147 │ Iris-virginica │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ virginica        │
+│ 148 │ Iris-virginica │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ virginica        │
+│ 149 │ Iris-virginica │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ virginica        │
+│ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ virginica        │
 ```
 
 The `combine` function also supports the `do` block form. However, as noted above,

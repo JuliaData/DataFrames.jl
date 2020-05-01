@@ -155,7 +155,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
     col_idx, (fun, newname) = nc
     # It is allowed to request a tranformation operation into a newname column
     # only once. This is ensured by the logic related to transformed_cols dictionaly
-    # in _process, therefore in select_transform! such a duplicate should not happen
+    # in _manipulate, therefore in select_transform! such a duplicate should not happen
     @assert !hasproperty(newdf, newname)
     cdf = eachcol(df)
     if col_idx isa Int
@@ -180,7 +180,8 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
             end
         end
 
-        # this means that we use `select` or `transform` not `combine`
+        # !allow_resizing_newdf[] && ncol(newdf) == 0
+        # means that we use `select` or `transform` not `combine`
         if !allow_resizing_newdf[] && ncol(newdf) == 0 && length(res) != nrow(df)
             throw(ArgumentError("length $(length(res)) of vector returned from " *
                                 "function $fun is different from number of rows " *
@@ -354,53 +355,8 @@ julia> select!(df, AsTable(:) => ByRow(mean))
 ```
 
 """
-function select!(df::DataFrame, args::AbstractVector{Int})
-    if isempty(args)
-        empty!(_columns(df))
-        empty!(index(df))
-        return df
-    end
-    indmin, indmax = extrema(args)
-    if indmin < 1
-        throw(ArgumentError("indices must be positive"))
-    end
-    if indmax > ncol(df)
-        throw(ArgumentError("indices must not be greater than number of columns"))
-    end
-    if !allunique(args)
-        throw(ArgumentError("indices must not contain duplicates"))
-    end
-    copy!(_columns(df), _columns(df)[args])
-    x = index(df)
-    copy!(_names(x), _names(df)[args])
-    empty!(x.lookup)
-    for (i, n) in enumerate(x.names)
-        x.lookup[n] = i
-    end
-    return df
-end
-
-select!(df::DataFrame, c::Int) = select!(df, [c])
-
-function select!(df::DataFrame, c::MultiColumnIndex)
-    if c isa AbstractVector{<:Pair}
-        return select!(df, c...)
-    else
-        return select!(df, index(df)[c])
-    end
-end
-
-function select!(df::DataFrame, cs...)
-    newdf = select(df, cs..., copycols=false)
-    copy!(_columns(df), _columns(newdf))
-    x = index(df)
-    copy!(_names(x), _names(newdf))
-    empty!(x.lookup)
-    for (i, n) in enumerate(x.names)
-        x.lookup[n] = i
-    end
-    return df
-end
+select!(df::DataFrame, args...) =
+    _replace_columns!(df, select(df, args..., copycols=false))
 
 """
     transform!(df::DataFrame, args...)
@@ -533,7 +489,7 @@ julia> select(df, AsTable(:) => ByRow(mean))
 
 """
 select(df::AbstractDataFrame, args...; copycols::Bool=true) =
-    _manipulate(df, args..., copycols=copycols, keeprows=true)
+    manipulate(df, args..., copycols=copycols, keeprows=true)
 
 """
     transform(df::AbstractDataFrame, args...; copycols::Bool=true)
@@ -547,7 +503,6 @@ See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 """
 transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
     select(df, :, args..., copycols=copycols)
-
 
 """
     combine(df::AbstractDataFrame, args...)
@@ -577,26 +532,26 @@ julia> combine(df, :a => sum, nrow)
 │ 1   │ 6     │ 3     │
 """
 combine(df::AbstractDataFrame, args...) =
-    _manipulate(df, args..., copycols=true, keeprows=false)
+    manipulate(df, args..., copycols=true, keeprows=false)
 
 combine(arg, df::AbstractDataFrame) = combine(arg, groupby(df, []))
 
-_manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
+manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
 
-function _manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool)
+function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool)
     if c isa AbstractVector{<:Pair}
-        return _manipulate(df, c..., copycols=copycols, keeprows=keeprows)
+        return manipulate(df, c..., copycols=copycols, keeprows=keeprows)
     else
-        return _manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows)
+        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows)
     end
 end
 
-_manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool) =
-    _manipulate(df, [c], copycols=copycols, keeprows=keeprows)
+manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool) =
+    manipulate(df, [c], copycols=copycols, keeprows=keeprows)
 
-function _manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
+function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVector{<:Pair}
@@ -605,11 +560,11 @@ function _manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
             push!(cs_vec, v)
         end
     end
-    return _process(df, [normalize_selection(index(df), c) for c in cs_vec],
+    return _manipulate(df, [normalize_selection(index(df), c) for c in cs_vec],
                     copycols, keeprows)
 end
 
-function _process(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows::Bool)
+function _manipulate(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
     # the role of transformed_cols is the following
@@ -710,19 +665,19 @@ function _process(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows
     return newdf
 end
 
-_manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool) =
-    _manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows)
+manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool) =
+    manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows)
 
-function _manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
+function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
                  copycols::Bool, keeprows::Bool)
     if args isa AbstractVector{<:Pair}
-        return _manipulate(dfv, args..., copycols=copycols, keeprows=keeprows)
+        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows)
     else
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
 
-function _manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
+function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
     if copycols
         cs_vec = []
         for v in args
@@ -732,7 +687,7 @@ function _manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
                 push!(cs_vec, v)
             end
         end
-        return _process(dfv, [normalize_selection(index(dfv), c) for c in cs_vec],
+        return _manipulate(dfv, [normalize_selection(index(dfv), c) for c in cs_vec],
                         true, keeprows)
     else
         # we do not support transformations here

@@ -66,7 +66,8 @@ stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
 in the same way.
 
 Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
-into a `DataFrame`.
+into a `DataFrame`. In this case the row ofder of the result follows the order
+of groups in the `GroupedDataFrame` passed.
 
 # Notes
 The `DataFrame` constructor by default copies all columns vectors passed to it.
@@ -1670,4 +1671,12 @@ julia> repeat(df, 2)
 function repeat!(df::DataFrame, count::Integer)
     count < 0 && throw(ArgumentError("count must be non-negative"))
     return mapcols!(x -> repeat(x, count), df)
+end
+
+# it is not exactly copy! as in general we alow axes to be different
+function _replace_columns!(df::DataFrame, newdf::DataFrame)
+    copy!(_columns(df), _columns(newdf))
+    copy!(_names(index(df)), _names(newdf))
+    copy!(index(df).lookup, index(newdf).lookup)
+    return df
 end
