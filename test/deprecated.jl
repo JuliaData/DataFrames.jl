@@ -704,6 +704,15 @@ end
     end
 end
 
+@testset "map skipmissing and sort" begin
+    df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
+    for dosort in (false, true), doskipmissing in (false, true)
+        gdf = groupby(df, :a, sort=dosort, skipmissing=doskipmissing)
+        @test map(identity, gdf) ≅ combine(identity, gdf, regroup=true)
+        @test map(:b => sum, gdf) ≅ combine(:b => sum, gdf, regroup=true)
+    end
+end
+
 global_logger(old_logger)
 
 end # module
