@@ -597,35 +597,19 @@ function combine_helper(f, gd::GroupedDataFrame,
             return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
                                     gd.starts, gd.ends, gd.ngroups, getfield(gd, :keymap))
         else
-            starts = Vector{Int}(undef, length(gd))
-            ends = Vector{Int}(undef, length(gd))
-            starts[1] = 1
-            j = 1
-            for i in 2:length(idx)
-                if idx[i] != idx[i-1]
-                    j += 1
-                    starts[j] = i
-                    ends[j-1] = i - 1
-                end
-            end
-            # it is impossible to get more groups in the output than we had initially
-            @assert j <= length(gd)
-            # In case some groups have to be dropped
-            resize!(starts, j)
-            resize!(ends, j)
-            ends[end] = length(idx)
-
             groups = zeros(Int, length(idx))
-            for i in 1:j
-                @inbounds for k in starts[i]:ends[i]
-                    groups[k] = i
-                end
+            groups[1] = 1
+            j = 1
+            last_idx = idx[1]
+            @inbounds for i in 2:length(idx)
+                cur_idx = idx[i]
+                j += cur_idx != last_idx
+                last_idx = cur_idx
+                groups[i] = j
             end
-            # all groups must be filled
-            @assert minimum(groups) == 1
-
+            @assert j <= length(gd)
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), groups,
-                                    collect(1:length(idx)), starts, ends, j, nothing)
+                                    nothing, nothing, nothing, j, nothing)
         end
     else
         if regroup
