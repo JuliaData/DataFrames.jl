@@ -463,4 +463,4 @@ end
                                                               skipmissing=skipmissing), f...)
 
 import Base: map
-@deprecate map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame) combine(f, gd, regroup=true)
+@deprecate map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame) combine(f, gd, ungroup=false)

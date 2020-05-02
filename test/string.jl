@@ -169,12 +169,12 @@ end
     @test combine(gdf, :a) == combine(gdf, "a") ==
           combine(gdf, [:a]) == combine(gdf, ["a"])
 
-    @test combine("a" => identity, gdf, regroup=true) ==
-          combine(:a => identity, gdf, regroup=true)
-    @test combine(["a"] => identity, gdf, regroup=true) ==
-          combine([:a] => identity, gdf, regroup=true)
-    @test combine(nrow => :n, gdf, regroup=true) ==
-          combine(nrow => "n", gdf, regroup=true)
+    @test combine("a" => identity, gdf, ungroup=false) ==
+          combine(:a => identity, gdf, ungroup=false)
+    @test combine(["a"] => identity, gdf, ungroup=false) ==
+          combine([:a] => identity, gdf, ungroup=false)
+    @test combine(nrow => :n, gdf, ungroup=false) ==
+          combine(nrow => "n", gdf, ungroup=false)
 
     @test combine("a" => identity, gdf) == combine(:a => identity, gdf) ==
           combine(gdf, "a" => identity) == combine(gdf, :a => identity)
