@@ -76,14 +76,15 @@ const ≅ = isequal
     d3 = randn(N)
     d4 = randn(N)
     df7 = DataFrame([d1, d2, d3], [:d1, :d2, :d3])
+    ref_d1 = unique(d1)
 
     #test_group("groupby")
     gd = groupby(df7, :d1)
     @test length(gd) == 2
-    @test gd[1][:, :d2] ≅ d2[d1 .== 1]
-    @test gd[2][:, :d2] ≅ d2[d1 .== 2]
-    @test gd[1][:, :d3] == d3[d1 .== 1]
-    @test gd[2][:, :d3] == d3[d1 .== 2]
+    @test gd[1][:, :d2] ≅ d2[d1 .== ref_d1[1]]
+    @test gd[2][:, :d2] ≅ d2[d1 .== ref_d1[2]]
+    @test gd[1][:, :d3] == d3[d1 .== ref_d1[1]]
+    @test gd[2][:, :d3] == d3[d1 .== ref_d1[2]]
 
     g1 = groupby(df7, [:d1, :d2])
     g2 = groupby(df7, [:d2, :d1])
