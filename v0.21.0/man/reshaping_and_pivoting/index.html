@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Reshaping · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../"><img class="logo" src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="../getting_started/">Getting Started</a></li><li><a class="toctext" href="../joins/">Joins</a></li><li><a class="toctext" href="../split_apply_combine/">Split-apply-combine</a></li><li class="current"><a class="toctext" href>Reshaping</a><ul class="internal"></ul></li><li><a class="toctext" href="../sorting/">Sorting</a></li><li><a class="toctext" href="../categorical/">Categorical Data</a></li><li><a class="toctext" href="../missing/">Missing Data</a></li><li><a class="toctext" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../../lib/types/">Types</a></li><li><a class="toctext" href="../../lib/functions/">Functions</a></li><li><a class="toctext" href="../../lib/indexing/">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href>Reshaping</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/reshaping_and_pivoting.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Reshaping</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Reshaping-and-Pivoting-Data-1" href="#Reshaping-and-Pivoting-Data-1">Reshaping and Pivoting Data</a></h1><p>Reshape data from wide to long format using the <code>stack</code> function:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames, CSV
+
+julia&gt; iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), &quot;../docs/src/assets/iris.csv&quot;)));
+
+julia&gt; first(iris, 6)
+6×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String      │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
+
+julia&gt; last(iris, 6)
+6×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │
+│ 2   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │
+│ 3   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 4   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 5   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 6   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
+
+julia&gt; d = stack(iris, 1:4);
+
+julia&gt; first(d, 6)
+6×3 DataFrame
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
+
+julia&gt; last(d, 6)
+6×3 DataFrame
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ PetalWidth │ 1.8     │</code></pre><p>The second optional argument to <code>stack</code> indicates the columns to be stacked. These are normally referred to as the measured variables. Column names can also be given:</p><pre><code class="language-julia-repl">julia&gt; d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth]);
+
+julia&gt; first(d, 6)
+6×3 DataFrame
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
+
+julia&gt; last(d, 6)
+6×3 DataFrame
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ PetalWidth │ 1.8     │</code></pre><p>Note that all columns can be of different types. Type promotion follows the rules of <code>vcat</code>.</p><p>The stacked <code>DataFrame</code> that results includes all of the columns not specified to be stacked. These are repeated for each stacked column. These are normally refered to as identifier (id) columns. In addition to the id columns, two additional columns labeled <code>:variable</code> and <code>:values</code> contain the column identifier and the stacked columns.</p><p>A third optional argument to <code>stack</code> represents the id columns that are repeated. This makes it easier to specify which variables you want included in the long format:</p><pre><code class="language-julia-repl">julia&gt; d = stack(iris, [:SepalLength, :SepalWidth], :Species);
+
+julia&gt; first(d, 6)
+6×3 DataFrame
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
+
+julia&gt; last(d, 6)
+6×3 DataFrame
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ SepalWidth │ 3.3     │
+│ 2   │ Iris-virginica │ SepalWidth │ 3.0     │
+│ 3   │ Iris-virginica │ SepalWidth │ 2.5     │
+│ 4   │ Iris-virginica │ SepalWidth │ 3.0     │
+│ 5   │ Iris-virginica │ SepalWidth │ 3.4     │
+│ 6   │ Iris-virginica │ SepalWidth │ 3.0     │</code></pre><p>If you prefer to specify the id columns then use <code>Not</code> with <code>stack</code> like this:</p><pre><code class="language-julia-repl">julia&gt; d = stack(iris, Not(:Species));
+
+julia&gt; first(d, 6)
+6×3 DataFrame
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
+
+julia&gt; last(d, 6)
+6×3 DataFrame
+│ Row │ Species        │ variable   │ value   │
+│     │ String         │ Cat…       │ Float64 │
+├─────┼────────────────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ PetalWidth │ 1.8     │</code></pre><p><code>unstack</code> converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:</p><pre><code class="language-julia-repl">julia&gt; iris.id = 1:size(iris, 1)
+1:150
+
+julia&gt; longdf = stack(iris, Not([:Species, :id]));
+
+julia&gt; first(longdf, 6)
+6×4 DataFrame
+│ Row │ Species     │ id    │ variable    │ value   │
+│     │ String      │ Int64 │ Cat…        │ Float64 │
+├─────┼─────────────┼───────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ 1     │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ 2     │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ 3     │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ 4     │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ 5     │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ 6     │ SepalLength │ 5.4     │
+
+julia&gt; last(longdf, 6)
+6×4 DataFrame
+│ Row │ Species        │ id    │ variable   │ value   │
+│     │ String         │ Int64 │ Cat…       │ Float64 │
+├─────┼────────────────┼───────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ 145   │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ 146   │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ 147   │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ 148   │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ 149   │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ 150   │ PetalWidth │ 1.8     │
+
+julia&gt; widedf = unstack(longdf, :id, :variable, :value);
+
+julia&gt; first(widedf, 6)
+6×5 DataFrame
+│ Row │ id    │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
+├─────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ 1     │ 5.1         │ 3.5        │ 1.4         │ 0.2        │
+│ 2   │ 2     │ 4.9         │ 3.0        │ 1.4         │ 0.2        │
+│ 3   │ 3     │ 4.7         │ 3.2        │ 1.3         │ 0.2        │
+│ 4   │ 4     │ 4.6         │ 3.1        │ 1.5         │ 0.2        │
+│ 5   │ 5     │ 5.0         │ 3.6        │ 1.4         │ 0.2        │
+│ 6   │ 6     │ 5.4         │ 3.9        │ 1.7         │ 0.4        │
+
+julia&gt; last(widedf, 6)
+6×5 DataFrame
+│ Row │ id    │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
+├─────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ 145   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │
+│ 2   │ 146   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │
+│ 3   │ 147   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │
+│ 4   │ 148   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │
+│ 5   │ 149   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │
+│ 6   │ 150   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │</code></pre><p>If the remaining columns are unique, you can skip the id variable and use:</p><pre><code class="language-julia-repl">julia&gt; longdf = stack(iris, Not([:Species, :id]));
+
+julia&gt; first(longdf, 6)
+6×4 DataFrame
+│ Row │ Species     │ id    │ variable    │ value   │
+│     │ String      │ Int64 │ Cat…        │ Float64 │
+├─────┼─────────────┼───────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ 1     │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ 2     │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ 3     │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ 4     │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ 5     │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ 6     │ SepalLength │ 5.4     │
+
+julia&gt; last(longdf, 6)
+6×4 DataFrame
+│ Row │ Species        │ id    │ variable   │ value   │
+│     │ String         │ Int64 │ Cat…       │ Float64 │
+├─────┼────────────────┼───────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ 145   │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ 146   │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ 147   │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ 148   │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ 149   │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ 150   │ PetalWidth │ 1.8     │
+
+julia&gt; widedf = unstack(longdf, :variable, :value);
+
+julia&gt; first(widedf, 6)
+6×6 DataFrame
+│ Row │ Species     │ id    │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String      │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
+├─────┼─────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-setosa │ 1     │ 5.1         │ 3.5        │ 1.4         │ 0.2        │
+│ 2   │ Iris-setosa │ 2     │ 4.9         │ 3.0        │ 1.4         │ 0.2        │
+│ 3   │ Iris-setosa │ 3     │ 4.7         │ 3.2        │ 1.3         │ 0.2        │
+│ 4   │ Iris-setosa │ 4     │ 4.6         │ 3.1        │ 1.5         │ 0.2        │
+│ 5   │ Iris-setosa │ 5     │ 5.0         │ 3.6        │ 1.4         │ 0.2        │
+│ 6   │ Iris-setosa │ 6     │ 5.4         │ 3.9        │ 1.7         │ 0.4        │
+
+julia&gt; last(widedf, 6)
+6×6 DataFrame
+│ Row │ Species        │ id    │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String         │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
+├─────┼────────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-virginica │ 145   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │
+│ 2   │ Iris-virginica │ 146   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │
+│ 3   │ Iris-virginica │ 147   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │
+│ 4   │ Iris-virginica │ 148   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │
+│ 5   │ Iris-virginica │ 149   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │
+│ 6   │ Iris-virginica │ 150   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │</code></pre><p>You can even skip passing the <code>:variable</code> and <code>:value</code> values as positional arguments, as they will be used by default, and write:</p><pre><code class="language-julia-repl">julia&gt; widedf = unstack(longdf);
+
+julia&gt; first(widedf, 6)
+6×6 DataFrame
+│ Row │ Species     │ id    │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String      │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
+├─────┼─────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-setosa │ 1     │ 5.1         │ 3.5        │ 1.4         │ 0.2        │
+│ 2   │ Iris-setosa │ 2     │ 4.9         │ 3.0        │ 1.4         │ 0.2        │
+│ 3   │ Iris-setosa │ 3     │ 4.7         │ 3.2        │ 1.3         │ 0.2        │
+│ 4   │ Iris-setosa │ 4     │ 4.6         │ 3.1        │ 1.5         │ 0.2        │
+│ 5   │ Iris-setosa │ 5     │ 5.0         │ 3.6        │ 1.4         │ 0.2        │
+│ 6   │ Iris-setosa │ 6     │ 5.4         │ 3.9        │ 1.7         │ 0.4        │
+
+julia&gt; last(widedf, 6)
+6×6 DataFrame
+│ Row │ Species        │ id    │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String         │ Int64 │ Float64?    │ Float64?   │ Float64?    │ Float64?   │
+├─────┼────────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-virginica │ 145   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │
+│ 2   │ Iris-virginica │ 146   │ 6.7         │ 3.0        │ 5.2         │ 2.3        │
+│ 3   │ Iris-virginica │ 147   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │
+│ 4   │ Iris-virginica │ 148   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │
+│ 5   │ Iris-virginica │ 149   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │
+│ 6   │ Iris-virginica │ 150   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │</code></pre><p>Passing <code>view=true</code> to <code>stack</code> returns a data frame whose columns are views into the original wide data frame. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; d = stack(iris, view=true);
+
+julia&gt; first(d, 6)
+6×4 DataFrame
+│ Row │ Species     │ id    │ variable    │ value   │
+│     │ String      │ Int64 │ Cat…        │ Float64 │
+├─────┼─────────────┼───────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ 1     │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ 2     │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ 3     │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ 4     │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ 5     │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ 6     │ SepalLength │ 5.4     │
+
+julia&gt; last(d, 6)
+6×4 DataFrame
+│ Row │ Species        │ id    │ variable   │ value   │
+│     │ String         │ Int64 │ Cat…       │ Float64 │
+├─────┼────────────────┼───────┼────────────┼─────────┤
+│ 1   │ Iris-virginica │ 145   │ PetalWidth │ 2.5     │
+│ 2   │ Iris-virginica │ 146   │ PetalWidth │ 2.3     │
+│ 3   │ Iris-virginica │ 147   │ PetalWidth │ 1.9     │
+│ 4   │ Iris-virginica │ 148   │ PetalWidth │ 2.0     │
+│ 5   │ Iris-virginica │ 149   │ PetalWidth │ 2.3     │
+│ 6   │ Iris-virginica │ 150   │ PetalWidth │ 1.8     │</code></pre><p>This saves memory. To create the view, several <code>AbstractVector</code>s are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code> This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code> This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code> This repeats the original columns N times where N is the number of columns stacked.</p><p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
+
+julia&gt; d = stack(iris, Not(:Species));
+
+julia&gt; first(d, 6)
+6×3 DataFrame
+│ Row │ Species     │ variable    │ value   │
+│     │ String      │ Cat…        │ Float64 │
+├─────┼─────────────┼─────────────┼─────────┤
+│ 1   │ Iris-setosa │ SepalLength │ 5.1     │
+│ 2   │ Iris-setosa │ SepalLength │ 4.9     │
+│ 3   │ Iris-setosa │ SepalLength │ 4.7     │
+│ 4   │ Iris-setosa │ SepalLength │ 4.6     │
+│ 5   │ Iris-setosa │ SepalLength │ 5.0     │
+│ 6   │ Iris-setosa │ SepalLength │ 5.4     │
+
+julia&gt; x = by(d, [:variable, :Species], :value =&gt; mean =&gt; :vsum);
+
+julia&gt; first(x, 6)
+│ Row │ variable    │ Species         │ vsum    │
+│     │ Cat…        │ String          │ Float64 │
+├─────┼─────────────┼─────────────────┼─────────┤
+│ 1   │ SepalLength │ Iris-setosa     │ 5.006   │
+│ 2   │ SepalLength │ Iris-versicolor │ 5.936   │
+│ 3   │ SepalLength │ Iris-virginica  │ 6.588   │
+│ 4   │ SepalWidth  │ Iris-setosa     │ 3.418   │
+│ 5   │ SepalWidth  │ Iris-versicolor │ 2.77    │
+│ 6   │ SepalWidth  │ Iris-virginica  │ 2.974   │
+
+julia&gt; first(unstack(x, :Species, :vsum), 6)
+5×4 DataFrame
+│ Row │ variable    │ Iris-setosa │ Iris-versicolor │ Iris-virginica │
+│     │ Cat…        │ Float64?    │ Float64?        │ Float64?       │
+├─────┼─────────────┼─────────────┼─────────────────┼────────────────┤
+│ 1   │ SepalLength │ 5.006       │ 5.936           │ 6.588          │
+│ 2   │ SepalWidth  │ 3.418       │ 2.77            │ 2.974          │
+│ 3   │ PetalLength │ 1.464       │ 4.26            │ 5.552          │
+│ 4   │ PetalWidth  │ 0.244       │ 1.326           │ 2.026          │
+│ 5   │ id          │ 25.5        │ 75.5            │ 125.5          │</code></pre><footer><hr/><a class="previous" href="../split_apply_combine/"><span class="direction">Previous</span><span class="title">Split-apply-combine</span></a><a class="next" href="../sorting/"><span class="direction">Next</span><span class="title">Sorting</span></a></footer></article></body></html>

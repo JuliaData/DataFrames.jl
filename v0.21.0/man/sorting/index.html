@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Sorting · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../"><img class="logo" src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="../getting_started/">Getting Started</a></li><li><a class="toctext" href="../joins/">Joins</a></li><li><a class="toctext" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="toctext" href="../reshaping_and_pivoting/">Reshaping</a></li><li class="current"><a class="toctext" href>Sorting</a><ul class="internal"></ul></li><li><a class="toctext" href="../categorical/">Categorical Data</a></li><li><a class="toctext" href="../missing/">Missing Data</a></li><li><a class="toctext" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../../lib/types/">Types</a></li><li><a class="toctext" href="../../lib/functions/">Functions</a></li><li><a class="toctext" href="../../lib/indexing/">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href>Sorting</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/sorting.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Sorting</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Sorting-1" href="#Sorting-1">Sorting</a></h1><p>Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling <code>sort!</code> will sort all columns, in place:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames, CSV
+
+julia&gt; iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), &quot;../docs/src/assets/iris.csv&quot;)));
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 2   │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 3   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 4   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
+
+julia&gt; sort!(iris);
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 4.3         │ 3.0        │ 1.1         │ 0.1        │ Iris-setosa │
+│ 2   │ 4.4         │ 2.9        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 3   │ 4.4         │ 3.0        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.4         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 7.7         │ 2.8        │ 6.7         │ 2.0        │ Iris-virginica │
+│ 2   │ 7.7         │ 3.0        │ 6.1         │ 2.3        │ Iris-virginica │
+│ 3   │ 7.7         │ 3.8        │ 6.7         │ 2.2        │ Iris-virginica │
+│ 4   │ 7.9         │ 3.8        │ 6.4         │ 2.0        │ Iris-virginica │</code></pre><p>Observe that all columns are taken into account lexicographically when sorting the <code>DataFrame</code>.</p><p>You can also call the <code>sort</code> function to create a new <code>DataFrame</code> with freshly allocated sorted vectors.</p><p>In sorting <code>DataFrame</code>s, you may want to sort different columns with different options. Here are some examples showing most of the possible options:</p><pre><code class="language-julia-repl">julia&gt; sort!(iris, rev = true);
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 7.9         │ 3.8        │ 6.4         │ 2.0        │ Iris-virginica │
+│ 2   │ 7.7         │ 3.8        │ 6.7         │ 2.2        │ Iris-virginica │
+│ 3   │ 7.7         │ 3.0        │ 6.1         │ 2.3        │ Iris-virginica │
+│ 4   │ 7.7         │ 2.8        │ 6.7         │ 2.0        │ Iris-virginica │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 4.4         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 2   │ 4.4         │ 3.0        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 3   │ 4.4         │ 2.9        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.3         │ 3.0        │ 1.1         │ 0.1        │ Iris-setosa │
+
+julia&gt; sort!(iris, [:Species, :SepalWidth]);
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 4.5         │ 2.3        │ 1.3         │ 0.3        │ Iris-setosa │
+│ 2   │ 4.4         │ 2.9        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 3   │ 5.0         │ 3.0        │ 1.6         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 2   │ 7.2         │ 3.6        │ 6.1         │ 2.5        │ Iris-virginica │
+│ 3   │ 7.9         │ 3.8        │ 6.4         │ 2.0        │ Iris-virginica │
+│ 4   │ 7.7         │ 3.8        │ 6.7         │ 2.2        │ Iris-virginica │
+
+julia&gt; sort!(iris, (order(:Species, by=length), order(:SepalLength, rev=true)));
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.8         │ 4.0        │ 1.2         │ 0.2        │ Iris-setosa │
+│ 2   │ 5.7         │ 3.8        │ 1.7         │ 0.3        │ Iris-setosa │
+│ 3   │ 5.7         │ 4.4        │ 1.5         │ 0.4        │ Iris-setosa │
+│ 4   │ 5.5         │ 3.5        │ 1.3         │ 0.2        │ Iris-setosa │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species         │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────────┤
+│ 1   │ 5.1         │ 2.5        │ 3.0         │ 1.1        │ Iris-versicolor │
+│ 2   │ 5.0         │ 2.0        │ 3.5         │ 1.0        │ Iris-versicolor │
+│ 3   │ 5.0         │ 2.3        │ 3.3         │ 1.0        │ Iris-versicolor │
+│ 4   │ 4.9         │ 2.4        │ 3.3         │ 1.0        │ Iris-versicolor │</code></pre><p>Keywords used above include <code>rev</code> (to sort in reverse), and <code>by</code> (to apply a function to values before comparing them). Each keyword can either be a single value, a vector with values corresponding to individual columns, or a selector: <code>:</code>, <code>All</code>, <code>Not</code>, <code>Between</code>, or <code>Regex</code>.</p><p>As an alternative to using a vector values you can use <code>order</code> to specify an ordering for a particular column within a set of columns.</p><p>The following two examples show two ways to sort the <code>iris</code> dataset with the same result: <code>:Species</code> will be ordered in reverse order, and within groups, rows will be sorted by increasing <code>:PetalLength</code>:</p><pre><code class="language-julia-repl">julia&gt; sort!(iris, [:Species, :PetalLength], rev=(true, false));
+
+julia&gt; julia&gt; sort!(iris, [:Species, :PetalLength], rev=(true, false));
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ Iris-virginica │
+│ 2   │ 6.2         │ 2.8        │ 4.8         │ 1.8        │ Iris-virginica │
+│ 3   │ 6.0         │ 3.0        │ 4.8         │ 1.8        │ Iris-virginica │
+│ 4   │ 6.3         │ 2.7        │ 4.9         │ 1.8        │ Iris-virginica │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
+│ 2   │ 5.1         │ 3.3        │ 1.7         │ 0.5        │ Iris-setosa │
+│ 3   │ 5.1         │ 3.8        │ 1.9         │ 0.4        │ Iris-setosa │
+│ 4   │ 4.8         │ 3.4        │ 1.9         │ 0.2        │ Iris-setosa │
+
+julia&gt; sort!(iris, [order(:Species, rev=true), :PetalLength]);
+
+julia&gt; first(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?        │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ Iris-virginica │
+│ 2   │ 6.2         │ 2.8        │ 4.8         │ 1.8        │ Iris-virginica │
+│ 3   │ 6.0         │ 3.0        │ 4.8         │ 1.8        │ Iris-virginica │
+│ 4   │ 6.3         │ 2.7        │ 4.9         │ 1.8        │ Iris-virginica │
+
+julia&gt; last(iris, 4)
+4×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64?    │ Float64?   │ Float64?    │ Float64?   │ String?     │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
+│ 2   │ 5.1         │ 3.3        │ 1.7         │ 0.5        │ Iris-setosa │
+│ 3   │ 5.1         │ 3.8        │ 1.9         │ 0.4        │ Iris-setosa │
+│ 4   │ 4.8         │ 3.4        │ 1.9         │ 0.2        │ Iris-setosa │</code></pre><footer><hr/><a class="previous" href="../reshaping_and_pivoting/"><span class="direction">Previous</span><span class="title">Reshaping</span></a><a class="next" href="../categorical/"><span class="direction">Next</span><span class="title">Categorical Data</span></a></footer></article></body></html>
