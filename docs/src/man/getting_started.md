@@ -558,6 +558,21 @@ Equivalently, the `in` function can be called with a single argument to create
 a function object that tests whether each value belongs to the subset
 (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
+!!! note
+
+    As with matrices, subsetting from a data frame will usually return a copy of
+    columns, not a view or direct reference.
+
+    The only indexing situations where data frames will **not** return a copy are:
+
+    - when a `!` is placed in the first indexing position (`df[!, :A]`, or `df[!, [:A, :B]]`),
+    - when using `.` (`getpropery`) notation (`df.A`),
+    - when a single row is selected using an integer (`df[1, [:A, :B]]`)
+    - when `view` or `@view` is used (e.g. `@view df[1:3, :A]`).
+
+    More details on copies, views, and references can be found
+    [here.](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/#getindex-and-view-1)
+
 #### Column selection using `select` and `select!`, `transform` and `transform!`
 
 You can also use the [`select`](@ref) and [`select!`](@ref) functions to select,
