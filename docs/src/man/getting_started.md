@@ -773,8 +773,8 @@ julia> describe(df)
 
 ```
 
-If you are interested in describing only a subset of columns then the easiest way to do it is to
-pass a subset of an original data frame to `describe` like this:
+If you are interested in describing only a subset of columns then the easiest way
+to do it is to pass a subset of an original data frame to `describe` like this:
 ```jldoctest dataframe
 julia> describe(df[!, [:A]))
 1×8 DataFrame
@@ -792,7 +792,7 @@ julia> mean(df.A)
 2.5
 ```
 
-We can also apply a function to each column of a `DataFrame` using `select`. For example:
+We can also apply a function to each column of a `DataFrame` using `combine`. For example:
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
@@ -804,20 +804,23 @@ julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 │ 3   │ 3     │ 2.0     │
 │ 4   │ 4     │ 1.0     │
 
-julia> select(df, names(df) .=> sum)
+julia> combine(df, names(df) .=> sum)
 1×2 DataFrame
 │ Row │ A_sum │ B_sum   │
 │     │ Int64 │ Float64 │
 ├─────┼───────┼─────────┤
 │ 1   │ 10    │ 10.0    │
 
-julia> select(df, names(df) .=> sum, names(df) .=> prod)
+julia> combine(df, names(df) .=> sum, names(df) .=> prod)
 1×4 DataFrame
 │ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
 │     │ Int64 │ Float64 │ Int64  │ Float64 │
 ├─────┼───────┼─────────┼────────┼─────────┤
 │ 1   │ 10    │ 10.0    │ 24     │ 24.0    │
 ```
+
+If you would prefer the result to have the same number of rows as the source data
+frame use `select` instead of `combine`.
 
 ### Handling of Columns Stored in a `DataFrame`
 

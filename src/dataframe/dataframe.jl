@@ -31,7 +31,7 @@ DataFrame(column_eltypes::AbstractVector, names::AbstractVector{<:AbstractString
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
-DataFrame(::GroupedDataFrame)
+DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
 
 # Arguments
@@ -64,6 +64,10 @@ not an `AbstractArray`, in which case the passed value is automatically repeated
 to fill a new vector of the appropriate length. As a particular rule values
 stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
 in the same way.
+
+Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
+into a `DataFrame`. In this case the order of rows in the result follows the order
+of groups in the `GroupedDataFrame` passed.
 
 # Notes
 The `DataFrame` constructor by default copies all columns vectors passed to it.
@@ -1667,4 +1671,12 @@ julia> repeat(df, 2)
 function repeat!(df::DataFrame, count::Integer)
     count < 0 && throw(ArgumentError("count must be non-negative"))
     return mapcols!(x -> repeat(x, count), df)
+end
+
+# This is not exactly copy! as in general we allow axes to be different
+function _replace_columns!(df::DataFrame, newdf::DataFrame)
+    copy!(_columns(df), _columns(newdf))
+    copy!(_names(index(df)), _names(newdf))
+    copy!(index(df).lookup, index(newdf).lookup)
+    return df
 end

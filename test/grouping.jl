@@ -28,11 +28,26 @@ function _levels!(x::PooledArray, levels::AbstractVector)
 end
 _levels!(x::CategoricalArray, levels::AbstractVector) = levels!(x, levels)
 
-function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
-    ogd = groupby(df, keys, args...; kwargs...)
-
+function validate_gdf(ogd::GroupedDataFrame)
     # To return original object to test when indices have not been computed
     gd = deepcopy(ogd)
+
+    if !isempty(gd.cols)
+        @assert allunique(gd.cols)
+        @assert minimum(gd.cols) >= 1
+        @assert maximum(gd.cols) <= ncol(parent(gd))
+    end
+
+    g = sort!(unique(gd.groups))
+    if length(gd) > 0
+        @assert 0 <= g[1] <= 1
+        @assert g == g[1]:g[end]
+        @assert length(gd.starts) == length(gd.ends) == g[end]
+    else
+        @assert length(gd.starts) == length(gd.ends) == 0
+    end
+    @assert isperm(gd.idx)
+    @assert length(gd.idx) == length(gd.groups) == nrow(parent(gd))
 
     # checking that groups field is consistent with other fields
     # (since == and isequal do not use it)
@@ -54,9 +69,6 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
 
         # correct start-end relations
         for i in eachindex(se)
-            firstkeys = gd.parent[gd.idx[se[i][1]], gd.cols]
-            # all grouping keys must be equal within a group
-            @assert all(j -> gd.parent[gd.idx[j], gd.cols] ≅ firstkeys, se[i][1]:se[i][2])
             @assert se[i][1] <= se[i][2]
             if i > 1
                 # the blocks returned by groupby must be continuous
@@ -72,13 +84,18 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
         # all groups have different grouping keys
         @test allunique(eachrow(gd.parent[gd.idx[gd.starts], gd.cols]))
     end
+    return ogd
+end
 
-    ogd
+function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
+    ogd = groupby(df, keys, args...; kwargs...)
+    validate_gdf(ogd)
+    return ogd
 end
 
 @testset "parent" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
-    gd = groupby(df, :a)
+    gd = groupby_checked(df, :a)
     @test parent(gd) === df
     @test_throws ArgumentError identity.(gd)
 end
@@ -86,20 +103,22 @@ end
 @testset "consistency" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(df.c, 5)
-    @test_throws AssertionError gd = groupby(df, :a)
+    @test_throws AssertionError groupby_checked(df, :a)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
     push!(DataFrames._columns(df), df[:, :a])
-    @test_throws AssertionError gd = groupby(df, :a)
+    @test_throws AssertionError groupby_checked(df, :a)
 end
 
 @testset "accepted columns" begin
     df = DataFrame(A=[1,1,1,2,2,2], B=[1,2,1,2,1,2], C=1:6)
-    @test groupby(df, [1,2]) == groupby(df, 1:2) == groupby(df, [:A, :B])
-    @test groupby(df, [2,1]) == groupby(df, 2:-1:1) == groupby(df, [:B, :A])
+    @test groupby_checked(df, [1,2]) == groupby_checked(df, 1:2) ==
+          groupby_checked(df, [:A, :B])
+    @test groupby_checked(df, [2,1]) == groupby_checked(df, 2:-1:1) ==
+          groupby_checked(df, [:B, :A])
 end
 
-@testset "by, groupby and map(::Function, ::GroupedDataFrame)" begin
+@testset "groupby and combine(::Function, ::GroupedDataFrame)" begin
     Random.seed!(1)
     df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
                    b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
@@ -142,40 +161,13 @@ end
         sres3 = sort(res3, colssym)
         sres4 = sort(res4, colssym)
 
-        # by() without groups sorting
-        @test sort(by(identity, df, cols), colssym) == shcatdf
-        @test sort(by(df -> df[1, :], df, cols), colssym) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
-        @test by(f1, df, cols) == res
-        @test by(f2, df, cols) == res
-        @test rename(by(f3, df, cols), :x1 => :xmax) == res
-        @test by(f4, df, cols) == res2
-        @test by(f5, df, cols) == res2
-        @test by(f6, df, cols) == res3
-        @test sort(by(f7, df, cols), colssym) == sres4
-        @test sort(by(f8, df, cols), colssym) == sres4
-
-        # by() with groups sorting
-        @test by(identity, df, cols, sort=true) == shcatdf
-        @test by(df -> df[1, :], df, cols, sort=true) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
-        @test by(f1, df, cols, sort=true) == sres
-        @test by(f2, df, cols, sort=true) == sres
-        @test rename(by(f3, df, cols, sort=true), :x1 => :xmax) == sres
-        @test by(f4, df, cols, sort=true) == sres2
-        @test by(f5, df, cols, sort=true) == sres2
-        @test by(f6, df, cols, sort=true) == sres3
-        @test by(f7, df, cols, sort=true) == sres4
-        @test by(f8, df, cols, sort=true) == sres4
-
-        @test by(f1, df, [:a]) == by(f1, df, :a)
-        @test by(f1, df, [:a], sort=true) == by(f1, df, :a, sort=true)
-
-        # groupby() without groups sorting
+        # groupby_checked() without groups sorting
         gd = groupby_checked(df, cols)
         @test names(parent(gd))[gd.cols] == string.(colssym)
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
+        @test sort(combine(df -> df[1, :], gd), colssym) ==
+            shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
@@ -188,7 +180,7 @@ end
         @test sort(combine(f7, gd), colssym) == sort(res4, colssym)
         @test sort(combine(f8, gd), colssym) == sort(res4, colssym)
 
-        # groupby() with groups sorting
+        # groupby_checked() with groups sorting
         gd = groupby_checked(df, cols, sort=true)
         @test names(parent(gd))[gd.cols] == string.(colssym)
         for i in 1:length(gd)
@@ -196,6 +188,8 @@ end
             @test all(gd[i][!, colssym[2]] .== sres[i, colssym[2]])
         end
         @test combine(identity, gd) == shcatdf
+        @test combine(df -> df[1, :], gd) ==
+            shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test hcat(df_ref[!, cols], df_ref[!, Not(cols)]) == shcatdf
         @test combine(f1, gd) == sres
@@ -207,36 +201,43 @@ end
         @test combine(f7, gd) == sres4
         @test combine(f8, gd) == sres4
 
-        # map() without and with groups sorting
-        for sort in (false, true)
-            gd = groupby_checked(df, cols, sort=sort)
-            v = map(d -> d[:, [:x]], gd)
+        # combine() with ungroup without and with groups sorting
+        for dosort in (false, true)
+            gd = groupby_checked(df, cols, sort=dosort)
+            v = validate_gdf(combine(d -> d[:, [:x]], gd, ungroup=false))
             @test length(gd) == length(v)
             nms = [colssym; :x]
             @test v[1] == gd[1][:, nms]
-            @test v[1] == gd[1][:, nms] &&
-                v[2] == gd[2][:, nms] &&
-                v[3] == gd[3][:, nms] &&
-                v[4] == gd[4][:, nms]
+            @test v[1] == gd[1][:, nms] && v[2] == gd[2][:, nms] &&
+                v[3] == gd[3][:, nms] && v[4] == gd[4][:, nms]
             @test names(parent(v))[v.cols] == string.(colssym)
-            v = map(f1, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
-            v = map(f2, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f2, df, cols, sort=sort)
-            v = map(f3, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f3, df, cols, sort=sort)
-            v = map(f4, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f4, df, cols, sort=sort)
-            v = map(f5, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f5, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f6, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f6, df, cols, sort=sort)
-            v = map(f7, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f7, df, cols, sort=sort)
-            v = map(f8, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f8, df, cols, sort=sort)
+            v = validate_gdf(combine(f1, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f1, gd)
+            v = validate_gdf(combine(f2, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f2, gd)
+            v = validate_gdf(combine(f3, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f3, gd)
+            v = validate_gdf(combine(f4, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f4, gd)
+            v = validate_gdf(combine(f5, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f5, gd)
+            v = validate_gdf(combine(f5, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f5, gd)
+            v = validate_gdf(combine(f6, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f6, gd)
+            v = validate_gdf(combine(f7, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f7, gd)
+            v = validate_gdf(combine(f8, gd, ungroup=false))
+            @test extrema(v.groups) == extrema(gd.groups)
+            @test vcat(v[1], v[2], v[3], v[4]) == combine(f8, gd)
         end
     end
 
@@ -259,7 +260,7 @@ end
     df = DataFrame(v1=x, v2=x)
     groupby_checked(df, [:v1, :v2])
 
-    df2 = by(e->1, DataFrame(x=Int64[]), :x)
+    df2 = combine(e->1, groupby_checked(DataFrame(x=Int64[]), :x))
     @test size(df2) == (0, 1)
     @test sum(df2.x) == 0
 
@@ -327,112 +328,109 @@ end
     df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B", "B", "A"]),
                     Key2 = CategoricalArray(["A", "B", "A", "B", "B", "A"]),
                     Value = 1:6)
-
+    gdf = groupby_checked(df, :Key1)
     # Check that CategoricalArray column is preserved when returning a value...
-    res = combine(d -> DataFrame(x=d[1, :Key2]), groupby_checked(df, :Key1))
+    res = combine(d -> DataFrame(x=d[1, :Key2]), gdf)
     @test typeof(res.x) == typeof(df.Key2)
-    res = combine(d -> (x=d[1, :Key2],), groupby_checked(df, :Key1))
+    res = combine(d -> (x=d[1, :Key2],), gdf)
     @test typeof(res.x) == typeof(df.Key2)
     # ...and when returning an array
-    res = combine(d -> DataFrame(x=d.Key1), groupby_checked(df, :Key1))
+    res = combine(d -> DataFrame(x=d.Key1), gdf)
     @test typeof(res.x) == typeof(df.Key1)
 
     # Check that CategoricalArray and String give a String...
-    res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
-                  groupby_checked(df, :Key1))
+    res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"), gdf)
     @test res.x isa Vector{String}
-    res = combine(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",),
-                  groupby_checked(df, :Key1))
+    res = combine(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",), gdf)
     @test res.x isa Vector{String}
     # ...even when CategoricalValue comes second
-    res = combine(d -> d.Key1 == ["B", "B"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
-                  groupby_checked(df, :Key1))
+    res = combine(d -> d.Key1 == ["B", "B"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"), gdf)
     @test res.x isa Vector{String}
-    res = combine(d -> d.Key1 == ["B", "B"] ? (x=d[1, :Key1],) : (x="C",),
-                  groupby_checked(df, :Key1))
+    res = combine(d -> d.Key1 == ["B", "B"] ? (x=d[1, :Key1],) : (x="C",), gdf)
     @test res.x isa Vector{String}
 
     df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
-
+    gdf = groupby_checked(df, :x)
     # Test function returning DataFrameRow
-    res = by(d -> DataFrameRow(d, 1, :), df, :x)
+    res = combine(d -> DataFrameRow(d, 1, :), gdf)
     @test res == DataFrame(x=df.x, y=df.y)
 
     # Test function returning Tuple
-    res = by(d -> (sum(d.y),), df, :x)
+    res = combine(d -> (sum(d.y),), gdf)
     @test res == DataFrame(x=df.x, x1=tuple.([2, 3, 1]))
 
     # Test with some groups returning empty data frames
-    @test by(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), df, :x) ==
+    @test combine(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), gdf) ==
         DataFrame(x=[2, 3], z=[1, 1])
-    v = map(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), groupby_checked(df, :x))
+    v = validate_gdf(combine(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1),
+                             groupby_checked(df, :x), ungroup=false))
     @test length(v) == 2
     @test vcat(v[1], v[2]) == DataFrame(x=[2, 3], z=[1, 1])
 
     # Test that returning values of different types works with NamedTuple
-    res = by(d -> d.x == [1] ? 1 : 2.0, df, :x)
+    res = combine(d -> d.x == [1] ? 1 : 2.0, gdf)
     @test res.x1 isa Vector{Float64}
     @test res.x1 == [1, 2, 2]
     # Two columns need to be widened at different times
-    res = by(d -> (a=d.x == [1] ? 1 : 2.0, b=d.x == [3] ? missing : "a"), df, :x)
+    res = combine(d -> (a=d.x == [1] ? 1 : 2.0, b=d.x == [3] ? missing : "a"), gdf)
     @test res.a isa Vector{Float64}
     @test res.a == [1, 2, 2]
     @test res.b isa Vector{Union{String,Missing}}
     @test res.b ≅ ["a", "a", missing]
     # Corner case: two columns need to be widened at the same time
-    res = by(d -> (a=d.x == [1] ? 1 : 2.0, b=d.x == [1] ? missing : "a"), df, :x)
+    res = combine(d -> (a=d.x == [1] ? 1 : 2.0, b=d.x == [1] ? missing : "a"), gdf)
     @test res.a isa Vector{Float64}
     @test res.a == [1, 2, 2]
     @test res.b isa Vector{Union{String,Missing}}
     @test res.b ≅ [missing, "a", "a"]
 
     # Test that returning values of different types works with DataFrame
-    res = by(d -> DataFrame(x1 = d.x == [1] ? 1 : 2.0), df, :x)
+    res = combine(d -> DataFrame(x1 = d.x == [1] ? 1 : 2.0), gdf)
     @test res.x1 isa Vector{Float64}
     @test res.x1 == [1, 2, 2]
     # Two columns need to be widened at different times
-    res = by(d -> DataFrame(a=d.x == [1] ? 1 : 2.0, b=d.x == [3] ? missing : "a"), df, :x)
+    res = combine(d -> DataFrame(a=d.x == [1] ? 1 : 2.0, b=d.x == [3] ? missing : "a"), gdf)
     @test res.a isa Vector{Float64}
     @test res.a == [1, 2, 2]
     @test res.b isa Vector{Union{String,Missing}}
     @test res.b ≅ ["a", "a", missing]
     # Corner case: two columns need to be widened at the same time
-    res = by(d -> DataFrame(a=d.x == [1] ? 1 : 2.0, b=d.x == [1] ? missing : "a"), df, :x)
+    res = combine(d -> DataFrame(a=d.x == [1] ? 1 : 2.0, b=d.x == [1] ? missing : "a"), gdf)
     @test res.a isa Vector{Float64}
     @test res.a == [1, 2, 2]
     @test res.b isa Vector{Union{String,Missing}}
     @test res.b ≅ [missing, "a", "a"]
 
     # Test return values with columns in different orders
-    @test by(d -> d.x == [1] ? (x1=1, x2=3) : (x2=2, x1=4), df, :x) ==
+    @test combine(d -> d.x == [1] ? (x1=1, x2=3) : (x2=2, x1=4), gdf) ==
         DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
-    @test by(d -> d.x == [1] ? DataFrame(x1=1, x2=3) : DataFrame(x2=2, x1=4), df, :x) ==
+    @test combine(d -> d.x == [1] ? DataFrame(x1=1, x2=3) : DataFrame(x2=2, x1=4), gdf) ==
         DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
 
     # Test with NamedTuple with columns of incompatible lengths
-    @test_throws DimensionMismatch by(d -> (x1=[1], x2=[3, 4]), df, :x)
-    @test_throws DimensionMismatch by(d -> d.x == [1] ? (x1=[1], x2=[3]) :
-                                                        (x1=[1], x2=[3, 4]), df, :x)
+    @test_throws DimensionMismatch combine(d -> (x1=[1], x2=[3, 4]), gdf)
+    @test_throws DimensionMismatch combine(d -> d.x == [1] ? (x1=[1], x2=[3]) :
+                                                        (x1=[1], x2=[3, 4]), gdf)
 
     # Test with incompatible return values
-    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1,) : DataFrame(x1=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(x1=1) : (x1=1,), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? NamedTuple() : (x1=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1) : NamedTuple(), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? 1 : DataFrame(x1=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(x1=1) : 1, df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1) : (x1=[1]), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=[1]) : (x1=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? 1 : [1], df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? [1] : 1, df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1, x2=1) : (x1=[1], x2=1), df, :x)
-    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=[1], x2=1) : (x1=1, x2=1), df, :x)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=1,) : DataFrame(x1=1), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? DataFrame(x1=1) : (x1=1,), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? NamedTuple() : (x1=1), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=1) : NamedTuple(), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? 1 : DataFrame(x1=1), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? DataFrame(x1=1) : 1, gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=1) : (x1=[1]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=[1]) : (x1=1), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? 1 : [1], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? [1] : 1, gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=1, x2=1) : (x1=[1], x2=1), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=[1], x2=1) : (x1=1, x2=1), gdf)
     # Special case allowed due to how implementation works
-    @test by(d -> d.x == [1] ? 1 : (x1=1), df, :x) == by(d -> 1, df, :x)
+    @test combine(d -> d.x == [1] ? 1 : (x1=1), gdf) == combine(d -> 1, gdf)
 
     # Test that columns names and types are respected for empty input
     df = DataFrame(x=Int[], y=String[])
-    res = by(d -> 1, df, :x)
+    res = combine(d -> 1, groupby_checked(df, :x))
     @test size(res) == (0, 1)
     @test res.x isa Vector{Int}
 
@@ -440,14 +438,14 @@ end
     df = DataFrame(x=[], y=[])
     gd = groupby_checked(df, :x)
     @test combine(df -> sum(df.x), gd) == DataFrame(x=[])
-    res = map(df -> sum(df.x), gd)
+    res = validate_gdf(combine(df -> sum(df.x), gd, ungroup=false))
     @test length(res) == 0
     @test res.parent == DataFrame(x=[])
 
     # Test with zero groups in output
     df = DataFrame(A = [1, 2])
     gd = groupby_checked(df, :A)
-    gd2 = map(d -> DataFrame(), gd)
+    gd2 = validate_gdf(combine(d -> DataFrame(), gd, ungroup=false))
     @test length(gd2) == 0
     @test gd.cols == [1]
     @test isempty(gd2.groups)
@@ -457,7 +455,7 @@ end
     @test parent(gd2) == DataFrame(A=[])
     @test eltype.(eachcol(parent(gd2))) == [Int]
 
-    gd2 = map(d -> DataFrame(X=Int[]), gd)
+    gd2 = validate_gdf(combine(d -> DataFrame(X=Int[]), gd, ungroup=false))
     @test length(gd2) == 0
     @test gd.cols == [1]
     @test isempty(gd2.groups)
@@ -627,79 +625,14 @@ end
     @test DataFrame(df) == df
 end
 
-@testset "by, combine and map with pair interface" begin
+@testset "combine with pair interface" begin
     vexp = x -> exp.(x)
     Random.seed!(1)
     df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]),
                    c = rand(Int, 8))
 
-    # Only test that different by syntaxes work,
-    # and rely on tests below for deeper checks
-    @test by(df, :a, :c => sum) ==
-        by(:c => sum, df, :a) ==
-        by(df, :a, :c => sum => :c_sum) ==
-        by(:c => sum => :c_sum, df, :a) ==
-        by(df, :a, [:c => sum]) ==
-        by(df, :a, [:c => sum => :c_sum]) ==
-        by(d -> (c_sum=sum(d.c),), df, :a) ==
-        by(df, :a, d -> (c_sum=sum(d.c),))
-
-    @test by(df, :a, :c => vexp) ==
-        by(:c => vexp, df, :a) ==
-        by(df, :a, :c => vexp => :c_function) ==
-        by(:c => vexp => :c_function, df, :a) ==
-        by(:c => c -> (c_function = vexp(c),), df, :a) ==
-        by(df, :a, :c => c -> (c_function = vexp(c),)) ==
-        by(df, :a, [:c => vexp]) ==
-        by(df, :a, [:c => vexp => :c_function]) ==
-        by(d -> (c_function=vexp(d.c),), df, :a) ==
-        by(df, :a, d -> (c_function=vexp(d.c),))
-
-    @test by(df, :a, :b => sum, :c => sum) ==
-        by(df, :a, :b => sum => :b_sum, :c => sum => :c_sum) ==
-        by(df, :a, [:b => sum, :c => sum]) ==
-        by(df, :a, [:b => sum => :b_sum, :c => sum => :c_sum]) ==
-        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a) ==
-        by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
-
-    @test by(df, :a, :b => vexp, :c => identity) ==
-        by(df, :a, :b => vexp => :b_function, :c => identity => :c_identity) ==
-        by(df, :a, [:b => vexp, :c => identity]) ==
-        by(df, :a, [:b => vexp => :b_function, :c => identity => :c_identity]) ==
-        by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a) ==
-        by(df, :a, d -> (b_function=vexp(d.b), c_identity=identity(d.c))) ==
-        by(df, :a, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=identity(c))) ==
-        by([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=identity(c)), df, :a)
-
-    @test by(x -> extrema(x.c), df, :a) == by(:c => (x -> extrema(x)) => :x1, df, :a)
-    @test by(x -> x.b+x.c, df, :a) == by([:b,:c] => (+) => :x1, df, :a)
-    @test by(x -> (p=x.b, q=x.c), df, :a) ==
-          by([:b,:c] => (b,c) -> (p=b,q=c), df, :a) ==
-          by(df, :a, x -> (p=x.b, q=x.c)) ==
-          by(df, :a, [:b,:c] => (b,c) -> (p=b,q=c))
-    @test by(x -> DataFrame(p=x.b, q=x.c), df, :a) ==
-          by([:b,:c] => (b,c) -> DataFrame(p=b,q=c), df, :a) ==
-          by(df, :a, x -> DataFrame(p=x.b, q=x.c)) ==
-          by(df, :a, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
-    @test by(x -> [1 2; 3 4], df, :a) ==
-          by([:b,:c] => (b,c) -> [1 2; 3 4], df, :a) ==
-          by(df, :a, x -> [1 2; 3 4]) ==
-          by(df, :a, [:b,:c] => (b,c) -> [1 2; 3 4])
-    @test by(nrow, df, :a) == by(df, :a, nrow) == by(df, :a, [nrow => :nrow]) ==
-          by(df, :a, 1 => length => :nrow)
-    @test by(nrow => :res, df, :a) == by(df, :a, nrow => :res) ==
-          by(df, :a, [nrow => :res]) == by(df, :a, 1 => length => :res)
-    @test by(df, :a, nrow => :res, nrow, [nrow => :res2]) ==
-          by(df, :a, 1 => length => :res, 1 => length => :nrow, 1 => length => :res2)
-
-    @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, df, :a)
-    @test_throws ArgumentError by([:b,:c] => ((b,c) -> [1 2; 3 4]) => "xxx", df, :a)
-    @test_throws ArgumentError by(df, :a, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
-    @test_throws ArgumentError by(df, :a, nrow, nrow)
-    @test_throws ArgumentError by(df, :a, [nrow])
-
-    gd = groupby(df, :a)
+    gd = groupby_checked(df, :a)
 
     # Only test that different combine syntaxes work,
     # and rely on tests below for deeper checks
@@ -709,50 +642,53 @@ end
         combine(:c => sum => :c_sum, gd) ==
         combine(gd, [:c => sum]) ==
         combine(gd, [:c => sum => :c_sum]) ==
-        combine(d -> (c_sum=sum(d.c),), gd) ==
-        combine(gd, d -> (c_sum=sum(d.c),))
+        combine(d -> (c_sum=sum(d.c),), gd)
+    @test_throws MethodError combine(gd, d -> (c_sum=sum(d.c),))
 
     @test combine(gd, :c => vexp) ==
         combine(:c => vexp, gd) ==
         combine(gd, :c => vexp => :c_function) ==
         combine(:c => vexp => :c_function, gd) ==
         combine(:c => c -> (c_function = vexp(c),), gd) ==
-        combine(gd, :c => c -> (c_function = vexp(c),)) ==
         combine(gd, [:c => vexp]) ==
         combine(gd, [:c => vexp => :c_function]) ==
-        combine(d -> (c_function=exp.(d.c),), gd) ==
-        combine(gd, d -> (c_function=exp.(d.c),))
+        combine(d -> (c_function=exp.(d.c),), gd)
+    @test_throws ArgumentError combine(gd, :c => c -> (c_function = vexp(c),))
+    @test_throws MethodError combine(gd, d -> (c_function=exp.(d.c),))
 
     @test combine(gd, :b => sum, :c => sum) ==
         combine(gd, :b => sum => :b_sum, :c => sum => :c_sum) ==
         combine(gd, [:b => sum, :c => sum]) ==
         combine(gd, [:b => sum => :b_sum, :c => sum => :c_sum]) ==
-        combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd) ==
-        combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
+        combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
+    @test_throws MethodError combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
     @test combine(gd, :b => vexp, :c => identity) ==
         combine(gd, :b => vexp => :b_function, :c => identity => :c_identity) ==
         combine(gd, [:b => vexp, :c => identity]) ==
         combine(gd, [:b => vexp => :b_function, :c => identity => :c_identity]) ==
         combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd) ==
-        combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c)) ==
-        combine([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c), gd) ==
-        combine(gd, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c))
+        combine([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c), gd)
+    @test_throws MethodError combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c))
+    @test_throws ArgumentError combine(gd, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c))
 
     @test combine(x -> extrema(x.c), gd) == combine(:c => (x -> extrema(x)) => :x1, gd)
     @test combine(x -> x.b+x.c, gd) == combine([:b,:c] => (+) => :x1, gd)
     @test combine(x -> (p=x.b, q=x.c), gd) ==
-          combine([:b,:c] => (b,c) -> (p=b,q=c), gd) ==
-          combine(gd, x -> (p=x.b, q=x.c)) ==
-          combine(gd, [:b,:c] => (b,c) -> (p=b,q=c))
+          combine([:b,:c] => (b,c) -> (p=b,q=c), gd)
+    @test_throws MethodError combine(gd, x -> (p=x.b, q=x.c))
+    @test_throws ArgumentError combine(gd, [:b,:c] => (b,c) -> (p=b,q=c))
+
     @test combine(x -> DataFrame(p=x.b, q=x.c), gd) ==
-          combine([:b,:c] => (b,c) -> DataFrame(p=b,q=c), gd) ==
-          combine(gd, x -> DataFrame(p=x.b, q=x.c)) ==
-          combine(gd, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
+          combine([:b,:c] => (b,c) -> DataFrame(p=b,q=c), gd)
+    @test_throws MethodError combine(gd, x -> DataFrame(p=x.b, q=x.c))
+    @test_throws ArgumentError combine(gd, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
+
     @test combine(x -> [1 2; 3 4], gd) ==
-          combine([:b,:c] => (b,c) -> [1 2; 3 4], gd) ==
-          combine(gd, x -> [1 2; 3 4]) ==
-          combine(gd, [:b,:c] => (b,c) -> [1 2; 3 4])
+          combine([:b,:c] => (b,c) -> [1 2; 3 4], gd)
+    @test_throws MethodError combine(gd, x -> [1 2; 3 4])
+    @test_throws ArgumentError combine(gd, [:b,:c] => (b,c) -> [1 2; 3 4])
+
     @test combine(nrow, gd) == combine(gd, nrow) == combine(gd, [nrow => :nrow]) ==
           combine(gd, 1 => length => :nrow)
     @test combine(nrow => :res, gd) == combine(gd, nrow => :res) ==
@@ -764,62 +700,65 @@ end
     @test_throws ArgumentError combine(gd, nrow, nrow)
     @test_throws ArgumentError combine(gd, [nrow])
 
-    for f in (map, combine)
-        for col in (:c, 3)
-            @test f(col => sum, gd) == f(d -> (c_sum=sum(d.c),), gd)
-            @test f(col => x -> sum(x), gd) == f(d -> (c_function=sum(d.c),), gd)
-            @test f(col => x -> (z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
-            @test f(col => x -> DataFrame(z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
-            @test f(col => identity, gd) == f(d -> (c_identity=d.c,), gd)
-            @test f(col => x -> (z=x,), gd) == f(d -> (z=d.c,), gd)
+    for col in (:c, 3)
+        @test combine(col => sum, gd) == combine(d -> (c_sum=sum(d.c),), gd)
+        @test combine(col => x -> sum(x), gd) == combine(d -> (c_function=sum(d.c),), gd)
+        @test combine(col => x -> (z=sum(x),), gd) == combine(d -> (z=sum(d.c),), gd)
+        @test combine(col => x -> DataFrame(z=sum(x),), gd) == combine(d -> (z=sum(d.c),), gd)
+        @test combine(col => identity, gd) == combine(d -> (c_identity=d.c,), gd)
+        @test combine(col => x -> (z=x,), gd) == combine(d -> (z=d.c,), gd)
 
-            @test f(col => sum => :xyz, gd) ==
-                f(d -> (xyz=sum(d.c),), gd)
-            @test f(col => (x -> sum(x)) => :xyz, gd) ==
-                f(d -> (xyz=sum(d.c),), gd)
-            @test f(col => (x -> (sum(x),)) => :xyz, gd) ==
-                f(d -> (xyz=(sum(d.c),),), gd)
-            @test f(nrow, gd) == f(d -> (nrow=length(d.c),), gd)
-            @test f(nrow => :res, gd) == f(d -> (res=length(d.c),), gd)
-            @test f(col => sum => :res, gd) == f(d -> (res=sum(d.c),), gd)
-            @test f(col => (x -> sum(x)) => :res, gd) == f(d -> (res=sum(d.c),), gd)
-            @test_throws ArgumentError f(col => (x -> (z=sum(x),)) => :xyz, gd)
-            @test_throws ArgumentError f(col => (x -> DataFrame(z=sum(x),)) => :xyz, gd)
-            @test_throws ArgumentError f(col => (x -> (z=x,)) => :xyz, gd)
-            @test_throws ArgumentError f(col => x -> (z=1, xzz=[1]), gd)
+        @test combine(col => sum => :xyz, gd) ==
+            combine(d -> (xyz=sum(d.c),), gd)
+        @test combine(col => (x -> sum(x)) => :xyz, gd) ==
+            combine(d -> (xyz=sum(d.c),), gd)
+        @test combine(col => (x -> (sum(x),)) => :xyz, gd) ==
+            combine(d -> (xyz=(sum(d.c),),), gd)
+        @test combine(nrow, gd) == combine(d -> (nrow=length(d.c),), gd)
+        @test combine(nrow => :res, gd) == combine(d -> (res=length(d.c),), gd)
+        @test combine(col => sum => :res, gd) == combine(d -> (res=sum(d.c),), gd)
+        @test combine(col => (x -> sum(x)) => :res, gd) == combine(d -> (res=sum(d.c),), gd)
+        @test_throws ArgumentError combine(col => (x -> (z=sum(x),)) => :xyz, gd)
+        @test_throws ArgumentError combine(col => (x -> DataFrame(z=sum(x),)) => :xyz, gd)
+        @test_throws ArgumentError combine(col => (x -> (z=x,)) => :xyz, gd)
+        @test_throws ArgumentError combine(col => x -> (z=1, xzz=[1]), gd)
+    end
+    for cols in ([:b, :c], 2:3, [2, 3], [false, true, true]), ungroup in (true, false)
+        @test combine(cols => (b,c) -> (y=exp.(b), z=c), gd, ungroup=ungroup) ==
+            combine(d -> (y=exp.(d.b), z=d.c), gd, ungroup=ungroup)
+        @test combine(cols => (b,c) -> [exp.(b) c], gd, ungroup=ungroup) ==
+            combine(d -> [exp.(d.b) d.c], gd, ungroup=ungroup)
+        @test combine(cols => ((b,c) -> sum(b) + sum(c)) => :xyz, gd, ungroup=ungroup) ==
+            combine(d -> (xyz=sum(d.b) + sum(d.c),), gd, ungroup=ungroup)
+        if eltype(cols) === Bool
+            cols2 = [[false, true, false], [false, false, true]]
+            @test_throws MethodError combine((xyz = cols[1] => sum, xzz = cols2[2] => sum),
+                                             gd, ungroup=ungroup)
+            @test_throws MethodError combine((xyz = cols[1] => sum, xzz = cols2[1] => sum),
+                                             gd, ungroup=ungroup)
+            @test_throws MethodError combine((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)),
+                                             gd, ungroup=ungroup)
+        else
+            cols2 = cols
+            @test combine(gd, cols2[1] => sum => :xyz, cols2[2] => sum => :xzz, ungroup=ungroup) ==
+                combine(d -> (xyz=sum(d.b), xzz=sum(d.c)), gd, ungroup=ungroup)
+            @test combine(gd, cols2[1] => sum => :xyz, cols2[1] => sum => :xzz, ungroup=ungroup) ==
+                combine(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd, ungroup=ungroup)
+            @test combine(gd, cols2[1] => sum => :xyz,
+                    cols2[2] => (x -> first(x)) => :xzz, ungroup=ungroup) ==
+                combine(d -> (xyz=sum(d.b), xzz=first(d.c)), gd, ungroup=ungroup)
+            @test combine(gd, cols2[1] => vexp => :xyz,
+                    cols2[2] => sum => :xzz, ungroup=ungroup) ==
+                combine(d -> (xyz=vexp(d.b), xzz=fill(sum(d.c), length(vexp(d.b)))),
+                        gd, ungroup=ungroup)
         end
-        for cols in ([:b, :c], 2:3, [2, 3], [false, true, true])
-            @test f(cols => (b,c) -> (y=exp.(b), z=c), gd) ==
-                f(d -> (y=exp.(d.b), z=d.c), gd)
-            @test f(cols => (b,c) -> [exp.(b) c], gd) ==
-                f(d -> [exp.(d.b) d.c], gd)
-            @test f(cols => ((b,c) -> sum(b) + sum(c)) => :xyz, gd) ==
-                f(d -> (xyz=sum(d.b) + sum(d.c),), gd)
-            if eltype(cols) === Bool
-                cols2 = [[false, true, false], [false, false, true]]
-                @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
-                @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
-                @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
-            else
-                cols2 = cols
-                if f === combine
-                    @test f(gd, cols2[1] => sum => :xyz, cols2[2] => sum => :xzz) ==
-                        f(d -> (xyz=sum(d.b), xzz=sum(d.c)), gd)
-                    @test f(gd, cols2[1] => sum => :xyz, cols2[1] => sum => :xzz) ==
-                        f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
-                    @test f(gd, cols2[1] => sum => :xyz,
-                            cols2[2] => (x -> first(x)) => :xzz) ==
-                        f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
-                    @test f(gd, cols2[1] => vexp => :xyz,
-                            cols2[2] => sum => :xzz) ==
-                        f(d -> (xyz=vexp(d.b), xzz=fill(sum(d.c), length(vexp(d.b)))), gd)
-                end
-            end
 
-            @test_throws ArgumentError f(cols => (b,c) -> (y=exp.(b), z=sum(c)), gd)
-            @test_throws ArgumentError f(cols2 => ((b,c) -> DataFrame(y=exp.(b), z=sum(c))) => :xyz, gd)
-            @test_throws ArgumentError f(cols2 => ((b,c) -> [exp.(b) c]) => :xyz, gd)
-        end
+        @test_throws ArgumentError combine(cols => (b,c) -> (y=exp.(b), z=sum(c)),
+                                           gd, ungroup=ungroup)
+        @test_throws ArgumentError combine(cols2 => ((b,c) -> DataFrame(y=exp.(b),
+                                           z=sum(c))) => :xyz, gd, ungroup=ungroup)
+        @test_throws ArgumentError combine(cols2 => ((b,c) -> [exp.(b) c]) => :xyz,
+                                           gd, ungroup=ungroup)
     end
 end
 
@@ -948,9 +887,9 @@ Base.isless(::TestType, ::TestType) = false
     end
 
     df = DataFrame(x = [1, 1, 2, 2], y = Any[1, 2.0, 3.0, 4.0])
-    res = by(df, :x, :y => maximum => :z)
+    res = combine(groupby_checked(df, :x), :y => maximum => :z)
     @test res.z isa Vector{Float64}
-    @test res.z == by(df, :x, :y => (x -> maximum(x)) => :z).z
+    @test res.z == combine(groupby_checked(df, :x), :y => (x -> maximum(x)) => :z).z
 
     # Test maximum when no promotion rule exists
     df = DataFrame(x = [1, 1, 2, 2], y = [1, TestType(), TestType(), TestType()])
@@ -959,27 +898,29 @@ Base.isless(::TestType, ::TestType) = false
     for f in (maximum, minimum)
         res = combine(gd, :y => maximum => :z)
         @test res.z isa Vector{Any}
-        @test res.z == by(df, :x, :y => (x -> maximum(x)) => :z).z
+        @test res.z == combine(gd, :y => (x -> maximum(x)) => :z).z
     end
 end
 
-@testset "combine and map with columns named like grouping keys" begin
+@testset "combine with columns named like grouping keys" begin
     df = DataFrame(x=["a", "a", "b", missing], y=1:4)
-    gd = groupby(df, :x)
+    gd = groupby_checked(df, :x)
     @test combine(identity, gd) ≅ df
     @test combine(d -> d[:, [2, 1]], gd) ≅ df
     @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
-    @test map(identity, gd) ≅ gd
-    @test map(d -> d[:, [2, 1]], gd) ≅ gd
-    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test validate_gdf(combine(identity, gd, ungroup=false)) ≅ gd
+    @test combine(d -> d[:, [2, 1]], gd, ungroup=false) ≅ gd
+    @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd,
+                                       ungroup=false)
 
-    gd = groupby(df, :x, skipmissing=true)
+    gd = groupby_checked(df, :x, skipmissing=true)
     @test combine(identity, gd) == df[1:3, :]
     @test combine(d -> d[:, [2, 1]], gd) == df[1:3, :]
     @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
-    @test map(identity, gd) == gd
-    @test map(d -> d[:, [2, 1]], gd) == gd
-    @test_throws ArgumentError map(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd)
+    @test validate_gdf(combine(identity, gd, ungroup=false)) == gd
+    @test validate_gdf(combine(d -> d[:, [2, 1]], gd, ungroup=false)) == gd
+    @test_throws ArgumentError combine(f -> DataFrame(x=["a", "b"], z=[1, 1]), gd,
+                                       ungroup=false)
 end
 
 @testset "iteration protocol" begin
@@ -1206,7 +1147,7 @@ end
         \\end{tabular}
         """
 
-    gd = groupby(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
+    gd = groupby_checked(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
     summary_str = summary(gd)
     @test summary_str == "$GroupedDataFrame with 1 group based on keys: a, b"
     @test sprint(show, gd) === """
@@ -1238,7 +1179,7 @@ end
         \\end{tabular}
         """
 
-        gd = groupby(DataFrame(a = [1,2], b = [1.0, 2.0]), :a)
+        gd = groupby_checked(DataFrame(a = [1,2], b = [1.0, 2.0]), :a)
         @test sprint(show, "text/csv", gd) == """
         "a","b"
         1,1.0
@@ -1334,14 +1275,6 @@ end
     @test valuecols(gd) == [:C]
 end
 
-@testset "by skipmissing and sort" begin
-    df = DataFrame(a=[2, 2, missing, missing, 1, 1, 3, 3], b=1:8)
-    for dosort in (false, true), doskipmissing in (false, true)
-        @test by(df, :a, :b=>sum, sort=dosort, skipmissing=doskipmissing) ≅
-            combine(groupby(df, :a, sort=dosort, skipmissing=doskipmissing), :b=>sum)
-    end
-end
-
 @testset "non standard cols arguments" begin
     df = DataFrame(x1=Int64[1,2,2], x2=Int64[1,1,2], y=Int64[1,2,3])
     gdf = groupby_checked(df, r"x")
@@ -1364,7 +1297,8 @@ end
     @test valuecols(gdf) == [:x1, :x2, :y]
     @test groupindices(gdf) == [1,1,1]
 
-    @test by(df, [], :x1 => sum => :a, :x2=>length => :b) == DataFrame(a=5, b=3)
+    @test combine(groupby_checked(df, []),
+                  :x1 => sum => :a, :x2=>length => :b) == DataFrame(a=5, b=3)
 
     gdf = groupby_checked(df, [])
     @test gdf[1] == df
@@ -1372,8 +1306,9 @@ end
     @test gdf[:] == gdf
     @test gdf[1:1] == gdf
 
-    @test map(nrow => :x1, gdf) == groupby_checked(DataFrame(x1=3), [])
-    @test map(:x2 => identity => :x2_identity, gdf) ==
+    @test validate_gdf(combine(nrow => :x1, gdf, ungroup=false)) ==
+          groupby_checked(DataFrame(x1=3), [])
+    @test validate_gdf(combine(:x2 => identity => :x2_identity, gdf, ungroup=false)) ==
           groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test DataFrame(gdf) == df
 
@@ -1383,7 +1318,7 @@ end
         "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
 
     df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
-    gd = groupby(df, :a)
+    gd = groupby_checked(df, :a)
     @test_throws ArgumentError combine(gd)
 end
 
@@ -1493,8 +1428,8 @@ end
     @test cnt == length(gd)
 
     # Indexing using another GroupedDataFrame instance should fail
-    gd2 = groupby(df, cols, skipmissing=true)
-    gd3 = groupby(df, cols, skipmissing=true)
+    gd2 = groupby_checked(df, cols, skipmissing=true)
+    gd3 = groupby_checked(df, cols, skipmissing=true)
     @test gd2 == gd3  # Use GDF's without missing so they compare equal
     @test_throws ErrorException gd3[first(keys(gd2))]
 
@@ -1508,7 +1443,7 @@ end
                    b = repeat(1:2, outer=[6]),
                    c = 1:12)
 
-    gd = groupby(df, [:a, :b])
+    gd = groupby_checked(df, [:a, :b])
 
     @test map(repr, keys(gd)) == [
         "GroupKey: (a = :foo, b = 1)",
@@ -1656,7 +1591,7 @@ end
 end
 
 @testset "haskey for GroupKey" begin
-    gdf = groupby(DataFrame(a=1, b=2, c=3), [:a, :b])
+    gdf = groupby_checked(DataFrame(a=1, b=2, c=3), [:a, :b])
     k = keys(gdf)[1]
     @test !haskey(k, 0)
     @test haskey(k, 1)
@@ -1673,7 +1608,7 @@ end
     @test_throws MethodError haskey(gdf, true)
 
     @test haskey(gdf, k)
-    @test_throws ArgumentError haskey(gdf, keys(groupby(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
+    @test_throws ArgumentError haskey(gdf, keys(groupby_checked(DataFrame(a=1,b=2,c=3), [:a, :b]))[1])
     @test_throws BoundsError haskey(gdf, DataFrames.GroupKey(gdf, 0))
     @test_throws BoundsError haskey(gdf, DataFrames.GroupKey(gdf, 2))
     @test haskey(gdf, (1,2))
@@ -1689,10 +1624,12 @@ end
 @testset "Check aggregation of DataFrameRow" begin
     df = DataFrame(a=1)
     dfr = DataFrame(x=1, y="1")[1, 2:2]
-    @test by(sdf -> dfr, df, :a) == DataFrame(a=1, y="1")
+    gdf = groupby_checked(df, :a)
+    @test combine(sdf -> dfr, gdf) == DataFrame(a=1, y="1")
 
     df = DataFrame(a=[1,1,2,2,3,3], b='a':'f', c=string.(1:6))
-    @test by(sdf -> sdf[1, [3,2,1]], df, :a) == df[1:2:5, [1,3,2]]
+    gdf = groupby_checked(df, :a)
+    @test combine(sdf -> sdf[1, [3,2,1]], gdf) == df[1:2:5, [1,3,2]]
 end
 
 @testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
@@ -1706,12 +1643,14 @@ end
         fr in (DataFrame(x1=[true]), (x1=[true],))
 
         df = DataFrame(a = 1:N, x1 = x1)
-        res = by(sdf -> sdf.x1[1] ? fr : er, df, :a)
-        @test res == DataFrame(map(sdf -> sdf.x1[1] ? fr : er, groupby_checked(df, :a)))
+        gdf = groupby_checked(df, :a)
+        res = combine(sdf -> sdf.x1[1] ? fr : er, gdf)
+        @test res == DataFrame(validate_gdf(combine(sdf -> sdf.x1[1] ? fr : er,
+                                                    groupby_checked(df, :a), ungroup=false)))
         if fr isa AbstractVector && df.x1[1]
-            @test res == by(:x1 => (x1 -> x1[1] ? fr : er) => :x1, df, :a)
+            @test res == combine(:x1 => (x1 -> x1[1] ? fr : er) => :x1, gdf)
         else
-            @test res == by(:x1 => x1 -> x1[1] ? fr : er, df, :a)
+            @test res == combine(:x1 => x1 -> x1[1] ? fr : er, gdf)
         end
         if nrow(res) == 0 && length(propertynames(er)) == 0 && er != rand(0, 1)
             @test res == DataFrame(a=[])
@@ -1720,67 +1659,65 @@ end
             @test res == df[df.x1, :]
         end
         if 1 < i < 2^N
-            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? (x1=true,) : er, df, :a)
+            @test_throws ArgumentError combine(sdf -> sdf.x1[1] ? (x1=true,) : er, gdf)
             if df.x1[1] || !(fr isa AbstractVector)
-                @test_throws ArgumentError by(sdf -> sdf.x1[1] ? fr : (x2=[true],), df, :a)
+                @test_throws ArgumentError combine(sdf -> sdf.x1[1] ? fr : (x2=[true],), gdf)
             else
-                res = by(sdf -> sdf.x1[1] ? fr : (x2=[true],), df, :a)
+                res = combine(sdf -> sdf.x1[1] ? fr : (x2=[true],), gdf)
                 @test names(res) == ["a", "x2"]
             end
-            @test_throws ArgumentError by(sdf -> sdf.x1[1] ? true : er, df, :a)
+            @test_throws ArgumentError combine(sdf -> sdf.x1[1] ? true : er, gdf)
         end
     end
 end
 
 @testset "auto-splatting, ByRow, and column renaming" begin
     df = DataFrame(g=[1,1,1,2,2,2], x1=1:6, x2=1:6)
-    @test by(df, :g, r"x" => cor) == DataFrame(g=[1,2], x1_x2_cor = [1.0, 1.0])
-    @test by(df, :g, Not(:g) => ByRow(/)) == DataFrame(:g => [1,1,1,2,2,2], Symbol("x1_x2_/") => 1.0)
-    @test by(df, :g, Between(:x2, :x1) => () -> 1) == DataFrame(:g => 1:2, Symbol("function") => 1)
-    @test by(df, :g, :x1 => :z) ==
-          by(df, :g, [:x1 => :z]) ==
-          by(:x1 => :z, df, :g) ==
-          combine(groupby(df, :g), :x1 => :z) ==
-          combine(groupby(df, :g), [:x1 => :z]) ==
-          combine(:x1 => :z, groupby(df, :g)) ==
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, r"x" => cor) == DataFrame(g=[1,2], x1_x2_cor = [1.0, 1.0])
+    @test combine(gdf, Not(:g) => ByRow(/)) == DataFrame(:g => [1,1,1,2,2,2], Symbol("x1_x2_/") => 1.0)
+    @test combine(gdf, Between(:x2, :x1) => () -> 1) == DataFrame(:g => 1:2, Symbol("function") => 1)
+    @test combine(gdf, :x1 => :z) == combine(gdf, [:x1 => :z]) == combine(:x1 => :z, gdf) ==
           DataFrame(g=[1,1,1,2,2,2], z=1:6)
-    @test map(:x1 => :z, groupby(df, :g)) == groupby(DataFrame(g=[1,1,1,2,2,2], z=1:6), :g)
+    @test validate_gdf(combine(:x1 => :z, groupby_checked(df, :g), ungroup=false)) ==
+          groupby_checked(DataFrame(g=[1,1,1,2,2,2], z=1:6), :g)
 end
 
 @testset "hard tabular return value cases" begin
     Random.seed!(1)
     df = DataFrame(b = repeat([2, 1], outer=[4]), x = randn(8))
-    res = by(sdf -> sdf.x[1:2], df, :b)
+    gdf = groupby_checked(df, :b)
+    res = combine(sdf -> sdf.x[1:2], gdf)
     @test names(res) == ["b", "x1"]
-    res2 = by(:x => x -> x[1:2], df, :b)
+    res2 = combine(:x => x -> x[1:2], gdf)
     @test names(res2) == ["b", "x_function"]
     @test Matrix(res) == Matrix(res2)
-    res2 = by(:x => (x -> x[1:2]) => :z, df, :b)
+    res2 = combine(:x => (x -> x[1:2]) => :z, gdf)
     @test names(res2) == ["b", "z"]
     @test Matrix(res) == Matrix(res2)
 
-    @test_throws ArgumentError by(df, :b) do sdf
+    @test_throws ArgumentError combine(gdf) do sdf
         if sdf.b[1] == 2
             return (c=sdf.x[1:2],)
         else
             return sdf.x[1:2]
         end
     end
-    @test_throws ArgumentError by(df, :b) do sdf
+    @test_throws ArgumentError combine(gdf) do sdf
         if sdf.b[1] == 1
             return (c=sdf.x[1:2],)
         else
             return sdf.x[1:2]
         end
     end
-    @test_throws ArgumentError by(df, :b) do sdf
+    @test_throws ArgumentError combine(gdf) do sdf
         if sdf.b[1] == 2
             return (c=sdf.x[1],)
         else
             return sdf.x[1]
         end
     end
-    @test_throws ArgumentError by(df, :b) do sdf
+    @test_throws ArgumentError combine(gdf) do sdf
         if sdf.b[1] == 1
             return (c=sdf.x[1],)
         else
@@ -1789,26 +1726,25 @@ end
     end
 
     for i in 1:2, v1 in [1, 1:2], v2 in [1, 1:2]
-        @test_throws ArgumentError by([:b, :x] => ((b,x) -> b[1] == i ? x[v1] : (c=x[v2],)) => :v, df, :b)
-        @test_throws ArgumentError by([:b, :x] => ((b,x) -> b[1] == i ? x[v1] : (v=x[v2],)) => :v, df, :b)
+        @test_throws ArgumentError combine([:b, :x] => ((b,x) -> b[1] == i ? x[v1] : (c=x[v2],)) => :v, gdf)
+        @test_throws ArgumentError combine([:b, :x] => ((b,x) -> b[1] == i ? x[v1] : (v=x[v2],)) => :v, gdf)
     end
 end
 
 @testset "last Pair interface with multiple return values" begin
     df = DataFrame(g=[1,1,1,2,2,2], x1=1:6)
-    @test by(df, :g, :x1 => x -> DataFrame()) == by(:x1 => x -> DataFrame(), df, :g)
-    @test by(df, :g, :x1 => x -> (x=1, y=2)) == by(:x1 => x -> (x=1, y=2), df, :g)
-    @test by(df, :g, :x1 => x -> (x=[1], y=[2])) == by(:x1 => x -> (x=[1], y=[2]), df, :g)
-    @test_throws ArgumentError by(df, :g, :x1 => x -> (x=[1],y=2))
-    @test_throws ArgumentError by(:x1 => x -> (x=[1], y=2), df, :g)
-    @test by(df, :g, :x1 => x -> ones(2, 2)) == by(:x1 => x -> ones(2, 2), df, :g)
-    @test by(df, :g, :x1 => x -> df[1, Not(:g)]) == by(:x1 => x -> df[1, Not(:g)], df, :g)
+    gdf = groupby_checked(df, :g)
+    @test_throws ArgumentError combine(gdf, :x1 => x -> DataFrame())
+    @test_throws ArgumentError combine(gdf, :x1 => x -> (x=1, y=2))
+    @test_throws ArgumentError combine(gdf, :x1 => x -> (x=[1], y=[2]))
+    @test_throws ArgumentError combine(gdf, :x1 => x -> (x=[1],y=2))
+    @test_throws ArgumentError combine(:x1 => x -> (x=[1], y=2), gdf)
+    @test_throws ArgumentError combine(gdf, :x1 => x -> ones(2, 2))
+    @test_throws ArgumentError combine(gdf, :x1 => x -> df[1, Not(:g)])
 end
 
 @testset "keepkeys" begin
     df = DataFrame(g=[1,1,1,2,2,2], x1=1:6)
-    @test by(df, :g, :x1 => identity, keepkeys=false) == DataFrame(x1_identity=1:6)
-    @test by(x -> DataFrame(g=x.x1), df, :g, keepkeys=false) == DataFrame(g=1:6)
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x1 => identity => :g, keepkeys=false) == DataFrame(g=1:6)
     @test combine(x -> (z=x.x1,), gdf, keepkeys=false) == DataFrame(z=1:6)
@@ -1817,7 +1753,7 @@ end
 @testset "additional do_call tests" begin
     Random.seed!(1234)
     df = DataFrame(g = rand(1:10, 100), x1 = rand(1:1000, 100))
-    gdf = groupby(df, :g)
+    gdf = groupby_checked(df, :g)
 
     @test combine(gdf, [] => () -> 1, :x1 => length) == combine(gdf) do sdf
         (;[:function => 1, :x1_length => nrow(sdf)]...)
@@ -1838,28 +1774,31 @@ end
 end
 
 @testset "mixing of different return lengths and pseudo-broadcasting" begin
-    df = DataFrame(g=[1,1,1,2,2]);
-    f1(i) = i[1] == 1 ? ["a", "b"] : ["c"];
-    f2(i) = i[1] == 1 ? ["d"] : ["e", "f"];
-    @test_throws ArgumentError by(df, :g, :g => f1, :g => f2)
+    df = DataFrame(g=[1,1,1,2,2])
+    gdf = groupby_checked(df, :g)
 
-    f1(i) = i[1] == 1 ? ["a"] : ["c"];
-    f2(i) = i[1] == 1 ? "d" : "e";
-    @test by(df, :g, :g => f1, :g => f2) ==
+    f1(i) = i[1] == 1 ? ["a", "b"] : ["c"]
+    f2(i) = i[1] == 1 ? ["d"] : ["e", "f"]
+    @test_throws ArgumentError combine(gdf, :g => f1, :g => f2)
+
+    f1(i) = i[1] == 1 ? ["a"] : ["c"]
+    f2(i) = i[1] == 1 ? "d" : "e"
+    @test combine(gdf, :g => f1, :g => f2) ==
           DataFrame(g=[1,2], g_f1=["a", "c"], g_f2 = ["d", "e"])
 
-    f1(i) = i[1] == 1 ? ["a","c"] : [];
-    f2(i) = i[1] == 1 ? "d" : "e";
-    @test by(df, :g, :g => f1, :g => f2) ==
+    f1(i) = i[1] == 1 ? ["a","c"] : []
+    f2(i) = i[1] == 1 ? "d" : "e"
+    @test combine(gdf, :g => f1, :g => f2) ==
           DataFrame(g = [1,1], g_f1 = ["a", "c"], g_f2 = ["d", "d"])
 
-    @test by(df, :g, :g => Ref) == DataFrame(g=[1,2], g_Ref=[[1,1,1], [2,2]])
-    @test by(df, :g, :g => x -> view([x],1)) == DataFrame(g=[1,2], g_function=[[1,1,1], [2,2]])
+    @test combine(gdf, :g => Ref) == DataFrame(g=[1,2], g_Ref=[[1,1,1], [2,2]])
+    @test combine(gdf, :g => x -> view([x],1)) == DataFrame(g=[1,2], g_function=[[1,1,1], [2,2]])
 
     Random.seed!(1234)
     df = DataFrame(g=1:100)
+    gdf = groupby_checked(df, :g)
     for i in 1:10
-        @test by(df, :g, :g => x -> rand([x[1], Ref(x[1]), view(x, 1)])) ==
+        @test combine(gdf, :g => x -> rand([x[1], Ref(x[1]), view(x, 1)])) ==
               DataFrame(g=1:100, g_function=1:100)
     end
 
@@ -1868,12 +1807,13 @@ end
 
     for i in 0:nrow(df_ref), dosort in [true, false], dokeepkeys in [true, false]
         df = df_ref[1:i, :]
-        @test by(df, :g, :x1 => sum => :x1, :x2 => identity => :x2,
-                 :x3 => (x -> Ref(sum(x))) => :x3, nrow, :x4 => ByRow(sin) => :x4,
-                 sort=dosort, keepkeys=dokeepkeys) ==
-              by(df, :g, sort=dosort, keepkeys=dokeepkeys) do sdf
-                  DataFrame(x1 = sum(sdf.x1), x2 = sdf.x2, x3 = sum(sdf.x3),
-                            nrow = nrow(sdf), x4 = sin.(sdf.x4))
+        gdf = groupby_checked(df, :g, sort=dosort)
+        @test combine(gdf, :x1 => sum => :x1, :x2 => identity => :x2,
+                      :x3 => (x -> Ref(sum(x))) => :x3, nrow, :x4 => ByRow(sin) => :x4,
+                      keepkeys=dokeepkeys) ==
+              combine(gdf, keepkeys=dokeepkeys) do sdf
+                      DataFrame(x1 = sum(sdf.x1), x2 = sdf.x2, x3 = sum(sdf.x3),
+                                nrow = nrow(sdf), x4 = sin.(sdf.x4))
               end
     end
 end
@@ -1881,96 +1821,400 @@ end
 @testset "passing columns" begin
     df = DataFrame(rand(10, 4))
     df.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
+    gdf = groupby_checked(df, :g)
 
     for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
                      [1, 2, 3, 4], [true, true, true, true, false]]
-        @test by(df, :g, selector, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3) ==
-              by(df, :g) do sdf
+        @test combine(gdf, selector, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3) ==
+              combine(gdf) do sdf
                   DataFrame(x1 = sin.(sdf.x1), x2 = sdf.x2, x3 = sin.(sdf.x2), x4 = sdf.x4)
               end
     end
 
     for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
                      [1, 2, 3, 4], [true, true, true, true, false]]
-        @test by(df, :g, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, selector) ==
-              by(df, :g) do sdf
+        @test combine(gdf, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, selector) ==
+              combine(gdf) do sdf
                   DataFrame(x1 = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2, x4 = sdf.x4)
               end
     end
 
     for selector in [Between(:x1, :x3), Not(:x4), [:x1, :x2, :x3], [1, 2, 3],
                      [true, true, true, false, false]]
-        @test by(df, :g, :x2 => ByRow(sin) => :x3, selector, :x1 => ByRow(sin) => :x1) ==
-              by(df, :g) do sdf
+        @test combine(gdf, :x2 => ByRow(sin) => :x3, selector, :x1 => ByRow(sin) => :x1) ==
+              combine(gdf) do sdf
                   DataFrame(x3 = sin.(sdf.x2), x1 = sin.(sdf.x1), x2 = sdf.x2)
               end
     end
 
-    @test by(df, :g, 4, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, :x2) ==
-          by(df, :g) do sdf
+    @test combine(gdf, 4, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, :x2) ==
+          combine(gdf) do sdf
               DataFrame(x4 = sdf.x4, x1 = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2)
           end
 
-    @test by(df, :g, 4 => :h, :x1 => ByRow(sin) => :z, :x2 => ByRow(sin) => :x3, :x2) ==
-          by(df, :g) do sdf
+    @test combine(gdf, 4 => :h, :x1 => ByRow(sin) => :z, :x2 => ByRow(sin) => :x3, :x2) ==
+          combine(gdf) do sdf
               DataFrame(h = sdf.x4, z = sin.(sdf.x1), x3 = sin.(sdf.x2), x2 = sdf.x2)
           end
 
-    @test_throws ArgumentError by(df, :g, 4 => :h, :x1 => ByRow(sin) => :h)
-    @test_throws ArgumentError by(df, :g, :x1 => :x1_sin, :x1 => ByRow(sin))
-    @test_throws ArgumentError by(df, :g, 1, :x1 => ByRow(sin) => :x1)
+    @test_throws ArgumentError combine(gdf, 4 => :h, :x1 => ByRow(sin) => :h)
+    @test_throws ArgumentError combine(gdf, :x1 => :x1_sin, :x1 => ByRow(sin))
+    @test_throws ArgumentError combine(gdf, 1, :x1 => ByRow(sin) => :x1)
 end
 
 @testset "correct dropping of groups" begin
     df = DataFrame(g = 10:-1:1)
-
+    gdf = groupby_checked(df, :g)
+    sgdf = groupby_checked(df, :g, sort=true)
     for keep in [[3,2,1], [5,3,1], [9], Int[]]
-        @test by(df, :g, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
+        @test combine(gdf, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
               DataFrame(g=keep, keep=keep, g_function=keep)
-        @test by(df, :g, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[],
-                 sort=true) == sort(DataFrame(g=keep, keep=keep, g_function=keep))
+        @test combine(sgdf, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
+              sort(DataFrame(g=keep, keep=keep, g_function=keep))
     end
 end
 
 @testset "AsTable tests" begin
     df = DataFrame(g=[1,1,1,2,2], x=1:5, y=6:10)
-    gdf = groupby(df, :g)
+    gdf = groupby_checked(df, :g)
 
     # whole column 4 options of single pair passed
-    @test by(df, :g , AsTable([:x, :y]) => Ref) ==
-          by(AsTable([:x, :y]) => Ref, df, :g) ==
-          combine(gdf , AsTable([:x, :y]) => Ref) ==
+    @test combine(gdf , AsTable([:x, :y]) => Ref) ==
           combine(AsTable([:x, :y]) => Ref, gdf) ==
           DataFrame(g=1:2, x_y_Ref=[(x=[1,2,3], y=[6,7,8]), (x=[4,5], y=[9,10])])
-    @test map(AsTable([:x, :y]) => Ref, gdf) ==
-          groupby(by(df, :g , AsTable([:x, :y]) => Ref), :g)
+    @test validate_gdf(combine(AsTable([:x, :y]) => Ref, gdf, ungroup=false)) ==
+          groupby_checked(combine(gdf, AsTable([:x, :y]) => Ref), :g)
 
-    @test by(df, :g, AsTable(1) => Ref) ==
-          combine(gdf, AsTable(1) => Ref) ==
+    @test combine(gdf, AsTable(1) => Ref) ==
           DataFrame(g=1:2, g_Ref=[(g=[1,1,1],),(g=[2,2],)])
 
 
     # ByRow 4 options of single pair passed
-    @test by(df, :g, AsTable([:x, :y]) => ByRow(x -> [x])) ==
-          by(AsTable([:x, :y]) => ByRow(x -> [x]), df, :g) ==
-          combine(gdf, AsTable([:x, :y]) => ByRow(x -> [x])) ==
+    @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> [x])) ==
           combine(AsTable([:x, :y]) => ByRow(x -> [x]), gdf) ==
           DataFrame(g=[1,1,1,2,2],
                     x_y_function=[[(x=1,y=6)], [(x=2,y=7)], [(x=3,y=8)], [(x=4,y=9)], [(x=5,y=10)]])
-    @test map(AsTable([:x, :y]) => ByRow(x -> [x]), gdf) ==
-          groupby(by(df, :g, AsTable([:x, :y]) => ByRow(x -> [x])), :g)
+    @test validate_gdf(combine(AsTable([:x, :y]) => ByRow(x -> [x]), gdf, ungroup=false)) ==
+          groupby_checked(combine(gdf, AsTable([:x, :y]) => ByRow(x -> [x])), :g)
 
     # whole column and ByRow test for multiple pairs passed
-    @test by(df, :g, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
-          combine(gdf, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
+    @test combine(gdf, [:x, :y], [AsTable(v) => (x -> -x[1]) for v in [:x, :y]]) ==
           [df DataFrame(x_function=-df.x, y_function=-df.y)]
-    @test by(df, :g, [:x, :y], [AsTable(v) => ByRow(x -> (-x[1],)) for v in [:x, :y]]) ==
-          combine(gdf, [:x, :y], [AsTable(v) => ByRow(x -> (-x[1],)) for v in [:x, :y]]) ==
+    @test combine(gdf, [:x, :y], [AsTable(v) => ByRow(x -> (-x[1],)) for v in [:x, :y]]) ==
           [df DataFrame(x_function=[(-1,), (-2,) ,(-3,) ,(-4,) ,(-5,)],
                         y_function=[(-6,), (-7,) ,(-8,) ,(-9,) ,(-10,)])]
 
-    @test_throws ArgumentError by(df, :g, AsTable([:x, :y]) => ByRow(identity))
-    @test_throws ArgumentError by(df, :g, AsTable([:x, :y]) => ByRow(x -> df[1, :]))
+    @test_throws ArgumentError combine(gdf, AsTable([:x, :y]) => ByRow(identity))
+    @test_throws ArgumentError combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :]))
+end
+
+@testset "test correctness of ungrouping" begin
+    df = DataFrame(g=[2,2,1,3,1,2,1,2,3])
+    gdf = groupby_checked(df, :g)
+    gdf2 = validate_gdf(combine(identity, gdf, ungroup=false))
+    @test combine(gdf, :g => sum) == combine(gdf2, :g => sum)
+
+    df.id = 1:9
+    @test select(gdf, :g => sum) ==
+          sort!(combine(gdf, :g => sum, :id), :id)[:, Not(end)]
+    @test select(gdf2, :g => sum) == combine(gdf2, :g => sum, :g)
+end
+
+@testset "combine GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8))
+        if !(df.g isa CategoricalVector)
+            gdf = groupby_checked(df, :g, sort=false, skipmissing=false)
+
+            @test combine(gdf, :x => sum, keepkeys=false, ungroup=true) ==
+                  DataFrame(x_sum = [1, 5, 4])
+            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, ungroup=false)
+            @test combine(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
+                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:3
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            @test DataFrame(gdf2, keepkeys=false) == DataFrame(x_sum = [1, 5, 4])
+
+            @test combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+                  DataFrame(x_sum = [1, 5, 5, 4], g = [3, 1, 1, missing])
+            @test combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
+                  DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == [1, 2, 2, 3]
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 5, 4])
+
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ==
+                  DataFrame(x_sum = [1, 5, 4])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true) ≅
+                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:3
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 4])
+
+            gdf = groupby_checked(df, :g, sort=false, skipmissing=true)
+
+            @test combine(gdf, :x => sum, keepkeys=false, ungroup=true) ==
+                  DataFrame(x_sum = [1, 5])
+            @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, ungroup=false)
+            @test combine(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
+                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:2
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5])
+
+            @test combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+                  DataFrame(x_sum = [1, 5, 5], g = [3, 1, 1])
+            @test combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
+                  DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+            gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == [1, 2, 2]
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 5])
+
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ==
+                  DataFrame(x_sum = [1, 5])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true) ≅
+                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
+            @test gdf2 isa GroupedDataFrame{DataFrame}
+            @test gdf2.groups == 1:2
+            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
+            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5])
+        end
+
+        gdf = groupby_checked(df, :g, sort=true, skipmissing=false)
+
+        @test combine(gdf, :x => sum, keepkeys=false, ungroup=true) ==
+              DataFrame(x_sum = [5, 1, 4])
+        @test_throws ArgumentError validate_gdf(combine(gdf, :x => sum, keepkeys=false, ungroup=false))
+        @test combine(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:3
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1, 4])
+
+        @test combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+              DataFrame(x_sum = [5, 5, 1, 4], g = [1, 1, 3, missing])
+        @test combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == [1, 1, 2, 3]
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 5, 1, 4])
+
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ==
+              DataFrame(x_sum = [5, 1, 4])
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:3
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1, 4])
+
+        gdf = groupby_checked(df, :g, sort=true, skipmissing=true)
+
+        @test combine(gdf, :x => sum, keepkeys=false, ungroup=true) ==
+              DataFrame(x_sum = [5, 1])
+        @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, ungroup=false)
+        @test combine(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = [1, 3], x_sum = [5, 1])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:2
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1])
+
+        @test combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+              DataFrame(x_sum = [5, 5, 1], g = [1, 1, 3])
+        @test combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+        gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == [1, 1, 2]
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 5, 1])
+
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ==
+              DataFrame(x_sum = [5, 1])
+        @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = [1, 3], x_sum = [5, 1])
+        gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == 1:2
+        @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+        @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1])
+    end
+end
+
+@testset "select and transform GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8)),
+        dosort in (true, false)
+
+        gdf = groupby_checked(df, :g, sort=dosort, skipmissing=false)
+
+        @test select(gdf, :x => sum, keepkeys=false, ungroup=true) ==
+              DataFrame(x_sum = [1, 5, 5, 4])
+        @test_throws ArgumentError select(gdf, :x => sum, keepkeys=false, ungroup=false)
+        @test select(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = df.g, x_sum = [1, 5, 5, 4])
+        gdf2 = validate_gdf(select(gdf, :x => sum, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).g !== df.g
+
+        @test select(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+              DataFrame(x_sum = [1, 5, 5, 4], g = df.g)
+        @test select(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = df.g, x_sum = [1, 5, 5, 4])
+        gdf2 = validate_gdf(select(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).g !== df.g
+
+        @test transform(gdf, :x => sum, keepkeys=false, ungroup=true) ≅
+              [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test_throws ArgumentError transform(gdf, :x => sum, keepkeys=false, ungroup=false)
+        @test transform(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
+              DataFrame(g = df.g, x = df.x, y = df.y, x_sum = [1, 5, 5, 4])
+        gdf2 = validate_gdf(transform(gdf, :x => sum, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).x ≅ df.x
+        @test parent(gdf2).y ≅ df.y
+        @test parent(gdf2).g !== df.g
+
+        @test transform(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+              [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test transform(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
+              [df DataFrame(x_sum = [1, 5, 5, 4])]
+        gdf2 = validate_gdf(transform(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).x ≅ df.x
+        @test parent(gdf2).y ≅ df.y
+        @test parent(gdf2).g !== df.g
+
+        df2 = transform(gdf, :x => sum, :g, keepkeys=false, ungroup=true, copycols=false)
+        @test df2 ≅ [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test df2.g === df.g
+        @test df2.x === df.x
+        @test df2.y === df.y
+        df2 = transform(gdf, :x => sum, :g, keepkeys=true, ungroup=true, copycols=false)
+        @test df2 ≅ [df DataFrame(x_sum = [1, 5, 5, 4])]
+        @test df2.g === df.g
+        @test df2.x === df.x
+        @test df2.y === df.y
+        gdf2 = validate_gdf(transform(gdf, :x => sum, :g, keepkeys=true, ungroup=false, copycols=false))
+        @test gdf2 isa GroupedDataFrame{DataFrame}
+        @test gdf2.groups == gdf.groups
+        @test parent(gdf2).g ≅ df.g
+        @test parent(gdf2).x ≅ df.x
+        @test parent(gdf2).y ≅ df.y
+        @test parent(gdf2).g === df.g
+
+        gdf = groupby_checked(df, :g, sort=dosort, skipmissing=true)
+        @test_throws ArgumentError select(gdf, :x => sum)
+        @test_throws ArgumentError select(gdf, :x => sum, ungroup=false)
+        @test_throws ArgumentError transform(gdf, :x => sum)
+        @test_throws ArgumentError transform(gdf, :x => sum, ungroup=false)
+    end
+
+    # show the difference between the ordering of rows in select and combine
+    Random.seed!(1)
+    for df in (DataFrame(g=rand(1:20, 1000), x=rand(1000), id=1:1000),
+               DataFrame(g=categorical(rand(1:20, 1000)), x=rand(1000), id=1:1000)),
+        dosort in (true, false)
+
+        gdf = groupby(df, :g, sort=dosort)
+
+        res1 = select(gdf, :x => mean, :x => x -> x .- mean(x), :id)
+        @test res1.g == df.g
+        @test res1.id == df.id
+        @test res1.x_mean + res1.x_function ≈ df.x
+
+        res2 = combine(gdf, :x => mean, :x => x -> x .- mean(x), :id)
+        @test unique(res2.g) ==
+              (dosort || df.g isa CategoricalVector ? sort! : identity)(unique(df.g))
+        for i in unique(res2.g)
+            @test issorted(filter(:g => x -> x == i, res2).id)
+        end
+    end
+end
+
+@testset "select! and transform! GroupedDataFrame" begin
+    for df in (DataFrame(g=[3,1,1,missing],x=1:4, y=5:8),
+               DataFrame(g=categorical([3,1,1,missing]),x=1:4, y=5:8)),
+        dosort in (true, false)
+
+        @test_throws MethodError select!(groupby_checked(view(df, :, :), :g), :x)
+        @test_throws MethodError transform!(groupby_checked(view(df, :, :), :g), :x)
+
+        dfc = copy(df)
+        g = dfc.g
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test select!(gdf, :x => sum) === dfc
+        @test dfc.g === g
+        @test dfc.x_sum == [1, 5, 5, 4]
+        @test propertynames(dfc) == [:g, :x_sum]
+
+        dfc = copy(df)
+        g = dfc.g
+        x = dfc.x
+        y = dfc.y
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test transform!(gdf, :g => first => :g, :x => first) === dfc
+        @test dfc.g === g
+        @test dfc.x === x
+        @test dfc.y === y
+        @test dfc.x_first == [1, 2, 2, 4]
+        @test propertynames(dfc) == [:g, :x, :y, :x_first]
+
+        dfc = copy(df)
+        g = dfc.g
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test validate_gdf(select!(gdf, :x => sum, ungroup=false)) === gdf
+        @test dfc.g === g
+        @test dfc.x_sum == [1, 5, 5, 4]
+        @test propertynames(dfc) == [:g, :x_sum]
+
+        dfc = copy(df)
+        g = dfc.g
+        x = dfc.x
+        y = dfc.y
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
+        @test validate_gdf(transform!(gdf, :g => first => :g, :x => first, ungroup=false)) === gdf
+        @test dfc.g === g
+        @test dfc.x === x
+        @test dfc.y === y
+        @test dfc.x_first == [1, 2, 2, 4]
+        @test propertynames(dfc) == [:g, :x, :y, :x_first]
+
+        dfc = copy(df)
+        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=true)
+        @test_throws ArgumentError select!(gdf, :x => sum)
+        @test_throws ArgumentError select!(gdf, :x => sum, ungroup=false)
+        @test_throws ArgumentError transform!(gdf, :x => sum)
+        @test_throws ArgumentError transform!(gdf, :x => sum, ungroup=false)
+        @test dfc ≅ df
+    end
 end
 
 end # module
