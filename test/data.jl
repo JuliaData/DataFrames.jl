@@ -76,14 +76,15 @@ const ≅ = isequal
     d3 = randn(N)
     d4 = randn(N)
     df7 = DataFrame([d1, d2, d3], [:d1, :d2, :d3])
+    ref_d1 = unique(d1)
 
     #test_group("groupby")
     gd = groupby(df7, :d1)
     @test length(gd) == 2
-    @test gd[1][:, :d2] ≅ d2[d1 .== 1]
-    @test gd[2][:, :d2] ≅ d2[d1 .== 2]
-    @test gd[1][:, :d3] == d3[d1 .== 1]
-    @test gd[2][:, :d3] == d3[d1 .== 2]
+    @test gd[1][:, :d2] ≅ d2[d1 .== ref_d1[1]]
+    @test gd[2][:, :d2] ≅ d2[d1 .== ref_d1[2]]
+    @test gd[1][:, :d3] == d3[d1 .== ref_d1[1]]
+    @test gd[2][:, :d3] == d3[d1 .== ref_d1[2]]
 
     g1 = groupby(df7, [:d1, :d2])
     g2 = groupby(df7, [:d2, :d1])
@@ -237,21 +238,25 @@ end
 end
 
 @testset "join tests" begin
-    Random.seed!(1)
-    df1 = DataFrame(a = rand(Union{Symbol, Missing}[:x,:y], 10),
-                    b = rand(Union{Symbol, Missing}[:A,:B], 10),
-                    v1 = Vector{Union{Float64, Missing}}(randn(10)))
+    df1 = DataFrame(a = Union{Symbol, Missing}[:x,:y][[1,1,1,2,1,1]],
+                    b = Union{Symbol, Missing}[:A,:B,:D][[1,1,2,2,1,3]],
+                    v1 = 1:6)
 
-    df2 = DataFrame(a = Union{Symbol, Missing}[:x,:y][[1,2,1,1,2]],
-                    b = Union{Symbol, Missing}[:A,:B,:C][[1,1,1,2,3]],
-                    v2 = Vector{Union{Float64, Missing}}(randn(5)))
+    df2 = DataFrame(a = Union{Symbol, Missing}[:x,:y][[2,2,1,1,1,1]],
+                    b = Union{Symbol, Missing}[:A,:B,:C][[1,2,1,2,3,1]],
+                    v2 = 1:6)
     df2[1,:a] = missing
 
     m1 = innerjoin(df1, df2, on = [:a,:b])
-    @test m1[!, :a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
+    @test m1 == DataFrame(a=[:x,:x,:x,:x,:x,:y,:x,:x],
+                          b=[:A,:A,:A,:A,:B,:B,:A,:A],
+                          v1=[1,1,2,2,3,4,5,5],
+                          v2=[3,6,3,6,4,2,3,6])
     m2 = outerjoin(df1, df2, on = [:a,:b])
-    @test ismissing(m2[10,:v2])
-    @test m2[!, :a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
+    @test m2 ≅ DataFrame(a=[:x,:x,:x,:x,:x,:y,:x,:x,:x,missing,:x],
+                         b=[:A,:A,:A,:A,:B,:B,:A,:A,:D,:A,:C],
+                         v1=[1,1,2,2,3,4,5,5,6,missing,missing],
+                         v2=[3,6,3,6,4,2,3,6,missing,1,5])
 
     Random.seed!(1)
     function spltdf(d)

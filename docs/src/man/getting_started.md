@@ -113,7 +113,7 @@ julia> names(df)
 2-element Array{String,1}:
  "A"
  "B"
- ```
+```
 
 To get column names as `Symbol`s use the `propertynames` function:
 ```

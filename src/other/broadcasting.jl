@@ -86,6 +86,7 @@ struct LazyNewColDataFrame{T}
 end
 
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
+Base.ndims(::Type{<:LazyNewColDataFrame}) = 1
 
 struct ColReplaceDataFrame
     df::DataFrame
@@ -93,6 +94,7 @@ struct ColReplaceDataFrame
 end
 
 Base.axes(x::ColReplaceDataFrame) = (axes(x.df, 1), Base.OneTo(length(x.cols)))
+Base.ndims(::Type{ColReplaceDataFrame}) = 2
 
 Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
 Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
