@@ -1429,6 +1429,8 @@ If an operation returns a single value it is always broadcasted to have this num
 
 If `copycols=false` then do not perform copying of columns that are not transformed.
 
+$KWARG_PROCESSING_RULES
+
 # See also
 
 [`groupby](@ref), [`combine`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
