@@ -1003,7 +1003,10 @@ function _agg2idx_map_helper(idx, idx_agg)
     return agg2idx_map
 end
 
-function prepare_idx_keeprows(idx, starts, ends, nrowparent)
+function prepare_idx_keeprows(idx::AbstractVector{<:Integer},
+                              starts::AbstractVector{<:Integer},
+                              ends::AbstractVector{<:Integer},
+                              nrowparent::Integer)
     idx_keeprows = Vector{Int}(undef, nrowparent)
     i = 0
     for (s, e) in zip(starts, ends)
@@ -1421,8 +1424,8 @@ end
            copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true)
 
 Apply `args` to `gd` following the rules described in [`combine`](@ref).
-The return value has number of rows equal to `nrow(parent(gd))`
-(if single value is returned it is always broadcasted to have this number of rows).
+The returned object has as many rows as `parent(gd)`.
+If an operation returns a single value it is always broadcasted to have this number of rows.
 
 If `copycols=false` then do not perform copying of columns that are not transformed.
 
@@ -1513,7 +1516,7 @@ julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
 │ 8   │ 2     │ 4     │ 17    │
 
 julia> select(gd, :b => :b1, :c => :c1,
-              [:b, :c] => +, keepkeys=false) # auto-splatting, renaming and keepkeys
+              [:b, :c] => +, keepkeys=false) # multiple arguments, renaming and keepkeys
 8×3 DataFrame
 │ Row │ b1    │ c1    │ b_c_+ │
 │     │ Int64 │ Int64 │ Int64 │

@@ -66,7 +66,7 @@ stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
 in the same way.
 
 Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
-into a `DataFrame`. In this case the row ofder of the result follows the order
+into a `DataFrame`. In this case the order of rows in the result follows the order
 of groups in the `GroupedDataFrame` passed.
 
 # Notes
@@ -1673,7 +1673,7 @@ function repeat!(df::DataFrame, count::Integer)
     return mapcols!(x -> repeat(x, count), df)
 end
 
-# it is not exactly copy! as in general we alow axes to be different
+# This is not exactly copy! as in general we allow axes to be different
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_columns(df), _columns(newdf))
     copy!(_names(index(df)), _names(newdf))
