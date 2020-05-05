@@ -513,7 +513,7 @@ julia&gt; describe(df)
 │ 1   │ A        │ 2.5     │ 1     │ 2.5     │ 4     │         │          │ Int64    │</code></pre><p>Of course, one can also compute descriptive statistics directly on individual columns:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
 
 julia&gt; mean(df.A)
-2.5</code></pre><p>We can also apply a function to each column of a <code>DataFrame</code> using <code>select</code>. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+2.5</code></pre><p>We can also apply a function to each column of a <code>DataFrame</code> using <code>combine</code>. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
 │ Row │ A     │ B       │
 │     │ Int64 │ Float64 │
@@ -523,19 +523,19 @@ julia&gt; mean(df.A)
 │ 3   │ 3     │ 2.0     │
 │ 4   │ 4     │ 1.0     │
 
-julia&gt; select(df, names(df) .=&gt; sum)
+julia&gt; combine(df, names(df) .=&gt; sum)
 1×2 DataFrame
 │ Row │ A_sum │ B_sum   │
 │     │ Int64 │ Float64 │
 ├─────┼───────┼─────────┤
 │ 1   │ 10    │ 10.0    │
 
-julia&gt; select(df, names(df) .=&gt; sum, names(df) .=&gt; prod)
+julia&gt; combine(df, names(df) .=&gt; sum, names(df) .=&gt; prod)
 1×4 DataFrame
 │ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
 │     │ Int64 │ Float64 │ Int64  │ Float64 │
 ├─────┼───────┼─────────┼────────┼─────────┤
-│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │</code></pre><h3><a class="nav-anchor" id="Handling-of-Columns-Stored-in-a-DataFrame-1" href="#Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │</code></pre><p>If you would prefer the result to have the same number of rows as the source data frame use <code>select</code> instead of <code>combine</code>.</p><h3><a class="nav-anchor" id="Handling-of-Columns-Stored-in-a-DataFrame-1" href="#Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
 │ Row │ A     │ B       │
 │     │ Int64 │ Float64 │
