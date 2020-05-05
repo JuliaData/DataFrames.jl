@@ -1431,10 +1431,6 @@ result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=fals
 The `parent` of the returned value has as many rows as `parent(gd)`. If an operation
 in `args` returns a single value it is always broadcasted to have this number of rows.
 
-Apply operations to each group in a [`GroupedDataFrame`](@ref) and return the combined
-result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`.
-
-
 If `copycols=false` then do not perform copying of columns that are not transformed.
 
 $KWARG_PROCESSING_RULES
