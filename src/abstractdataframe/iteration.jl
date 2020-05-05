@@ -30,6 +30,10 @@ Base.iterate(::AbstractDataFrame) =
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
+Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain 
+a named tuple, which supports iteration and property access like a `DataFrameRow`, 
+but also passes information on the `eltypes` of the columns of `df`. 
+
 # Examples
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
