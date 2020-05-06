@@ -1437,7 +1437,7 @@ $KWARG_PROCESSING_RULES
 
 # See also
 
-[`groupby](@ref), [`combine`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
+[`groupby`](@ref), [`combine`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
 
 # Examples
 ```jldoctest
