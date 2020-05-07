@@ -80,3 +80,15 @@ transform!
 unique!
 vcat
 ```
+
+```@docs
+join
+summary
+first
+last
+unique
+isequal
+sum
+transform!
+propertynames
+```
