@@ -1437,7 +1437,7 @@ $KWARG_PROCESSING_RULES
 
 # See also
 
-[`groupby](@ref), [`combine`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
+[`groupby`](@ref), [`combine`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
 
 # Examples
 ```jldoctest
@@ -1579,7 +1579,7 @@ An equivalent of
 
 # See also
 
-[`groupby](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform!`](@ref)
+[`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform!`](@ref)
 """
 transform(gd::GroupedDataFrame, args...;
           copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true) =
@@ -1595,7 +1595,7 @@ but updates `parent(gd)` in place.
 
 # See also
 
-[`groupby](@ref), [`combine`](@ref), [`select`](@ref), [`transform`](@ref), [`transform!`](@ref)
+[`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`transform`](@ref), [`transform!`](@ref)
 """
 function select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
     newdf = select(gd, args..., copycols=false)
@@ -1614,7 +1614,7 @@ but updates `parent(gd)` in place.
 
 # See also
 
-[`groupby](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
+[`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
 """
 transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true) =
     select!(gd, :, args..., ungroup=ungroup)
