@@ -18,7 +18,6 @@ outerjoin
 antijoin
 semijoin
 crossjoin
-by
 combine
 groupby
 groupindices
@@ -26,7 +25,6 @@ groupcols
 valuecols
 keys
 get
-map
 stack
 unstack
 ```
