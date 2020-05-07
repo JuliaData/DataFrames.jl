@@ -1614,7 +1614,7 @@ but updates `parent(gd)` in place.
 
 # See also
 
-[`groupby](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
+[`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
 """
 transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true) =
     select!(gd, :, args..., ungroup=ungroup)
