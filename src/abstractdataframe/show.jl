@@ -411,6 +411,8 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `buffer::IOBuffer`: buffer passed around to avoid reallocations in `ourstrwidth`
 
 # Examples
+
+```jldoctest
 julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
