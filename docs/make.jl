@@ -30,7 +30,8 @@ makedocs(
         "API" => Any[
             "Types" => "lib/types.md",
             "Functions" => "lib/functions.md",
-            "Indexing" => "lib/indexing.md"
+            "Indexing" => "lib/indexing.md",
+            hide("Internals" => "lib/internals.md"),
         ]
     ],
     strict = true

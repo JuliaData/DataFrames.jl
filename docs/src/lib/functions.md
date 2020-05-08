@@ -87,7 +87,6 @@ last
 unique
 propertynames
 similar
-ourshow
 ourstrwidth
 sortperm
 pairs
@@ -95,7 +94,6 @@ parent
 issorted
 getmaxwidths
 getprintedwidth
-gennames
 getchunkbounds
 showrowindices
 compacttype
