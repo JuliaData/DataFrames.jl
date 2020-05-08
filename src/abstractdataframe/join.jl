@@ -384,7 +384,7 @@ passed data frames.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
@@ -493,7 +493,7 @@ the result. A left join includes all rows from `df1`.
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
@@ -596,7 +596,7 @@ the result. A right join includes all rows from `df2`.
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
@@ -705,7 +705,7 @@ of the passed data frames.
    the column name will be modified if `makeunique=true`.
    This argument is only supported when joining exactly two data frames.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
@@ -822,7 +822,7 @@ match with the keys in `df2`.
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
@@ -915,7 +915,7 @@ not match with the keys in `df2`.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.

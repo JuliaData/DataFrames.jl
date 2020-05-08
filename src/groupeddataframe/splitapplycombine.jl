@@ -37,7 +37,7 @@ be slower than using the equivalent `GroupKey`.
 
 # See also
 
-[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!](@ref)
+[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
 
 # Examples
 ```julia
@@ -192,7 +192,7 @@ const F_TYPE_RULES =
     `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length`)
     are specified using the `Pair` syntax (e.g. `:col => sum`).
     When computing the `sum` or `mean` over floating point columns, results will be
-    less accurate than the standard [`sum`](@ref) function (which uses pairwise
+    less accurate than the standard `sum` function (which uses pairwise
     summation). Use `col => x -> sum(x)` to avoid the optimized method and use the
     slower, more accurate one.
 
@@ -274,7 +274,7 @@ Ordering of rows follows the order of groups in `gdf`.
 
 # See also
 
-[`groupby`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!](@ref)
+[`groupby`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
 
 # Examples
 ```jldoctest

@@ -18,7 +18,6 @@ outerjoin
 antijoin
 semijoin
 crossjoin
-by
 combine
 groupby
 groupindices
@@ -26,7 +25,6 @@ groupcols
 valuecols
 keys
 get
-map
 stack
 unstack
 ```
@@ -79,4 +77,18 @@ transform
 transform!
 unique!
 vcat
+```
+
+## Unsorted
+
+```@docs
+first
+last
+unique
+propertynames
+similar
+sortperm
+pairs
+parent
+issorted
 ```

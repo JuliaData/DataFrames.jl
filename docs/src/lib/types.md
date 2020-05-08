@@ -65,7 +65,7 @@ The exception is if an `AbstractRange` is passed as a column, then it is always 
 Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
 unless they are passed `copycols=false` (available only for functions
 that could perform a transformation without copying the columns). Examples of such functions are [`vcat`](@ref),
-[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
+[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), `getindex`,
 [`copy`](@ref) or the [`DataFrame`](@ref) constructor mentioned above.
 
 On the contrary, functions that create a view of a `DataFrame` *do not* by definition make copies of
