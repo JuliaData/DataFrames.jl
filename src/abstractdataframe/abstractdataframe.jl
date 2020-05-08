@@ -12,7 +12,7 @@ for column names.
 The following are normally implemented for AbstractDataFrames:
 
 * [`describe`](@ref) : summarize columns
-* [`summary`](@ref) : show number of rows and columns
+* `summary` : show number of rows and columns
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
 * [`repeat`](@ref) : repeat rows
@@ -72,7 +72,7 @@ If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Not`, and `Between`).
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
-See also [propertynames](@ref) which returns a `Vector{Symbol}`.
+See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 
@@ -475,7 +475,7 @@ currently contain any.
 
 If custom functions are provided, they are called repeatedly with the vector
 corresponding to each column as the only argument. For columns allowing for
-missing values, the vector is wrapped in a call to [`skipmissing`](@ref): custom
+missing values, the vector is wrapped in a call to `skipmissing`: custom
 functions must therefore support such objects (and not only vectors), and cannot
 access missing values.
 

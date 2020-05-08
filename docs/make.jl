@@ -32,7 +32,8 @@ makedocs(
             "Functions" => "lib/functions.md",
             "Indexing" => "lib/indexing.md"
         ]
-    ]
+    ],
+    strict = true
 )
 
 # Deploy built documentation from Travis.

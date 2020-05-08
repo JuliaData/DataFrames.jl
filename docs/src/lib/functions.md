@@ -79,14 +79,25 @@ unique!
 vcat
 ```
 
+## Unsorted
+
 ```@docs
-join
-summary
 first
 last
 unique
-isequal
-sum
-transform!
 propertynames
+similar
+ourshow
+ourstrwidth
+sortperm
+pairs
+parent
+issorted
+getmaxwidths
+getprintedwidth
+gennames
+getchunkbounds
+showrowindices
+compacttype
+showrows
 ```
