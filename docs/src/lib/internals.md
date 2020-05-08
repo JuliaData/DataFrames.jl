@@ -10,6 +10,13 @@ CurrentModule = DataFrames
     **not considered to be part of the public API**.
 
 ```@docs
-ourshow
+compacttype
 gennames
+getchunkbounds
+getmaxwidths
+getprintedwidth
+ourshow
+ourstrwidth
+showrowindices
+showrows
 ```

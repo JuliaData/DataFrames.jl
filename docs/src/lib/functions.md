@@ -87,15 +87,8 @@ last
 unique
 propertynames
 similar
-ourstrwidth
 sortperm
 pairs
 parent
 issorted
-getmaxwidths
-getprintedwidth
-getchunkbounds
-showrowindices
-compacttype
-showrows
 ```
