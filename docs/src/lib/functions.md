@@ -17,7 +17,7 @@ similar
 ```
 
 ## Summary information
-```
+```@docs
 describe
 length
 ncol
