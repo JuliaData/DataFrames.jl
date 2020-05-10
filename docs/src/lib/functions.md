@@ -11,7 +11,6 @@ Pages = ["functions.md"]
 ## Constructing data frames
 ```@docs
 copy
-DataFrame
 DataFrame!
 similar
 ```
