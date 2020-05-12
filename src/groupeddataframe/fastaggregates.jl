@@ -157,24 +157,84 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
 end
 
 function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
-                      incol::AbstractVector, gd::GroupedDataFrame)
+                      incol::AbstractVector, gd::GroupedDataFrame, nthreads::Integer)
     n = length(gd)
+    groups = gd.groups
     if adjust !== nothing || checkempty
         counts = zeros(Int, n)
     end
-    groups = gd.groups
-    @inbounds for i in eachindex(incol, groups)
-        gix = groups[i]
-        x = incol[i]
-        if gix > 0 && (condf === nothing || condf(x))
-            # this check should be optimized out if U is not Any
-            if eltype(res) === Any && !isassigned(res, gix)
-                res[gix] = f(x, gix)
-            else
-                res[gix] = op(res[gix], f(x, gix))
+    nt = min(nthreads, Threads.nthreads())
+    if nt <= 1 || axes(incol) != axes(groups)
+        @inbounds for i in eachindex(incol, groups)
+            gix = groups[i]
+            x = incol[i]
+            if gix > 0 && (condf === nothing || condf(x))
+                # this check should be optimized out if eltype is not Any
+                if eltype(res) === Any && !isassigned(res, gix)
+                    res[gix] = f(x, gix)
+                else
+                    res[gix] = op(res[gix], f(x, gix))
+                end
+                if adjust !== nothing || checkempty
+                    counts[gix] += 1
+                end
             end
+        end
+    else
+        res_vec = Vector{typeof(res)}(undef, nt)
+        # needs to be always allocated to fix type instability with @threads
+        counts_vec = Vector{Vector{Int}}(undef, nt)
+        res_vec[1] = res
+        if adjust !== nothing || checkempty
+            counts_vec[1] = counts
+        end
+        for i in 2:nt
+            res_vec[i] = copy(res)
             if adjust !== nothing || checkempty
-                counts[gix] += 1
+                counts_vec[i] = zeros(Int, n)
+            end
+        end
+        Threads.@threads for tid in 1:nt
+            res′ = res_vec[tid]
+            if adjust !== nothing || checkempty
+                counts′ = counts_vec[tid]
+            end
+            start = 1 + ((tid - 1) * length(groups)) ÷ nt
+            stop = (tid * length(groups)) ÷ nt
+            @inbounds for i in start:stop
+                gix = groups[i]
+                x = incol[i]
+                if gix > 0 && (condf === nothing || condf(x))
+                    # this check should be optimized out if eltype is not Any
+                    if eltype(res′) === Any && !isassigned(res′, gix)
+                        res′[gix] = f(x, gix)
+                    else
+                        res′[gix] = op(res′[gix], f(x, gix))
+                    end
+                    if adjust !== nothing || checkempty
+                        counts′[gix] += 1
+                    end
+                end
+            end
+        end
+        for i in 2:length(res_vec)
+            resi = res_vec[i]
+            @inbounds @simd for j in eachindex(res)
+                # this check should be optimized out if eltype is not Any
+                if eltype(res) === Any
+                    if isassigned(resi, j) && isassigned(res, j)
+                        res[j] = op(res[j], resi[j])
+                    elseif isassigned(resi, j)
+                        res[j] = resi[j]
+                    end
+                else
+                    res[j] = op(res[j], resi[j])
+                end
+            end
+        end
+        if adjust !== nothing || checkempty
+            for i in 2:length(counts_vec)
+                counts .+= counts_vec[i]
             end
         end
     end
@@ -218,17 +278,20 @@ end
 
 # function barrier works around type instability of groupreduce_init due to applicable
 groupreduce(f, op, condf, adjust, checkempty::Bool,
-            incol::AbstractVector, gd::GroupedDataFrame) =
+            incol::AbstractVector, gd::GroupedDataFrame,
+            nthreads::Integer) =
     groupreduce!(groupreduce_init(op, condf, adjust, incol, gd),
-                 f, op, condf, adjust, checkempty, incol, gd)
+                 f, op, condf, adjust, checkempty, incol, gd, nthreads)
 # Avoids the overhead due to Missing when computing reduction
 groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
-            incol::AbstractVector, gd::GroupedDataFrame) =
+            incol::AbstractVector, gd::GroupedDataFrame,
+            nthreads::Integer) =
     groupreduce!(disallowmissing(groupreduce_init(op, condf, adjust, incol, gd)),
-                 f, op, condf, adjust, checkempty, incol, gd)
+                 f, op, condf, adjust, checkempty, incol, gd, nthreads)
 
-(r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd)
+(r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame;
+            nthreads::Integer=1) =
+    groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd, nthreads)
 
 # this definition is missing in Julia 1.0 LTS and is required by aggregation for var
 # TODO: remove this when we drop 1.0 support
@@ -236,8 +299,10 @@ if VERSION < v"1.1"
     Base.zero(::Type{Missing}) = missing
 end
 
-function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
-    means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
+function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame;
+                                       nthreads::Integer=1)
+    means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false,
+                        incol, gd, nthreads)
     # !ismissing check is purely an optimization to avoid a copy later
     if eltype(means) >: Missing && agg.condf !== !ismissing
         T = Union{Missing, real(eltype(means))}
@@ -247,11 +312,12 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
     res = zeros(T, length(gd))
     return groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
                         (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
-                        false, incol, gd)
+                        false, incol, gd, nthreads)
 end
 
-function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
-    outcol = Aggregate(var, agg.condf)(incol, gd)
+function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame;
+                                       nthreads::Integer=1)
+    outcol = Aggregate(var, agg.condf)(incol, gd; nthreads=nthreads)
     if eltype(outcol) <: Union{Missing, Rational}
         return sqrt.(outcol)
     else
@@ -259,20 +325,25 @@ function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFra
     end
 end
 
-for f in (first, last)
-    function (agg::Aggregate{typeof(f)})(incol::AbstractVector, gd::GroupedDataFrame)
-        n = length(gd)
-        outcol = similar(incol, n)
-        fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
-        if isconcretetype(eltype(outcol))
-            return outcol
-        else
-            return copyto_widen!(Tables.allocatecolumn(typeof(first(outcol)), n), outcol)
+for f in (:first, :last)
+    # Without using @eval the presence of a keyword argument triggers a Julia bug
+    @eval begin
+        function (agg::Aggregate{typeof($f)})(incol::AbstractVector, gd::GroupedDataFrame;
+                                              nthreads::Integer=1)
+            n = length(gd)
+            outcol = similar(incol, n)
+            fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
+            if isconcretetype(eltype(outcol))
+                return outcol
+            else
+                return copyto_widen!(Tables.allocatecolumn(typeof(first(outcol)), n), outcol)
+            end
         end
     end
 end
 
-function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame)
+function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame;
+                                          nthreads::Integer=1)
     if getfield(gd, :idx) === nothing
         lens = zeros(Int, length(gd))
         @inbounds for gix in gd.groups
