@@ -98,6 +98,22 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     return ogd
 end
 
+function combine_checked(gd::GroupedDataFrame, args...; kwargs...)
+    res1 = combine(gd, args...; nthreads=1, kwargs...)
+    res2 = combine(gd, args...; nthreads=2, kwargs...)
+    @test names(res1) == names(res2)
+    for (c1, c2) in zip(eachcol(res1), eachcol(res2))
+        if eltype(c1) <: Union{AbstractFloat, Missing}
+            @test ismissing.(c1) == ismissing.(c2)
+            @test isapprox(collect(skipmissing(c1)), collect(skipmissing(c2)),
+                           nans=true)
+        else
+            @test c1 ≅ c2
+        end
+    end
+    res1
+end
+
 @testset "parent" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
     gd = groupby_checked(df, :a)
@@ -911,7 +927,7 @@ Base.isless(::TestType, ::TestType) = false
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
 
-        res = combine(gd, :x1 => f => :y)
+        res = combine_checked(gd, :x1 => f => :y)
         expected = combine(gd, :x1 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
@@ -921,7 +937,7 @@ Base.isless(::TestType, ::TestType) = false
             df.x3 = Vector{T}(df.x1)
             gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
             indices && @test gd.idx !== nothing # Trigger computation of indices
-            res = combine(gd, :x3 => f => :y)
+            res = combine_checked(gd, :x3 => f => :y)
             expected = combine(gd, :x3 => (x -> f(x)) => :y)
             @test res ≅ expected
             @test typeof(res.y) == typeof(expected.y)
@@ -933,11 +949,11 @@ Base.isless(::TestType, ::TestType) = false
         df.x3[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
-        res = combine(gd, :x3 => f => :y)
+        res = combine_checked(gd, :x3 => f => :y)
         expected = combine(gd, :x3 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
-        res = combine(gd, :x3 => f∘skipmissing => :y)
+        res = combine_checked(gd, :x3 => f∘skipmissing => :y)
         expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
@@ -949,7 +965,7 @@ Base.isless(::TestType, ::TestType) = false
         if f in (maximum, minimum, first, last)
             @test_throws ArgumentError combine(gd, :x3 => f∘skipmissing => :y)
         else
-            res = combine(gd, :x3 => f∘skipmissing => :y)
+            res = combine_checked(gd, :x3 => f∘skipmissing => :y)
             expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
             @test res ≅ expected
             @test typeof(res.y) == typeof(expected.y)
@@ -960,7 +976,7 @@ Base.isless(::TestType, ::TestType) = false
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
 
-        res = combine(gd, :x2 => f => :y)
+        res = combine_checked(gd, :x2 => f => :y)
         expected = combine(gd, :x2 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
@@ -973,14 +989,14 @@ Base.isless(::TestType, ::TestType) = false
         m && (df.x3[1] = missing)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
-        res = combine(gd, :x3 => f => :y)
+        res = combine_checked(gd, :x3 => f => :y)
         expected = combine(gd, :x3 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
 
         f === length && continue
 
-        res = combine(gd, :x3 => f∘skipmissing => :y)
+        res = combine_checked(gd, :x3 => f∘skipmissing => :y)
         expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
@@ -989,7 +1005,7 @@ Base.isless(::TestType, ::TestType) = false
             @test_throws ArgumentError combine(gd, :x3 => f∘skipmissing => :y)
         end
     end
-    @test combine(gd, :x1 => maximum => :y, :x2 => sum => :z) ≅
+    @test combine_checked(gd, :x1 => maximum => :y, :x2 => sum => :z) ≅
         combine(gd, :x1 => (x -> maximum(x)) => :y, :x2 => (x -> sum(x)) => :z)
 
     # Test floating point corner cases
@@ -1000,7 +1016,7 @@ Base.isless(::TestType, ::TestType) = false
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
 
-        res = combine(gd, :x1 => f => :y)
+        res = combine_checked(gd, :x1 => f => :y)
         expected = combine(gd, :x1 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
@@ -1011,18 +1027,18 @@ Base.isless(::TestType, ::TestType) = false
         df.x3[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
-        res = combine(gd, :x3 => f => :y)
+        res = combine_checked(gd, :x3 => f => :y)
         expected = combine(gd, :x3 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
-        res = combine(gd, :x3 => f∘skipmissing => :y)
+        res = combine_checked(gd, :x3 => f∘skipmissing => :y)
         expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
     end
 
     df = DataFrame(x = [1, 1, 2, 2], y = Any[1, 2.0, 3.0, 4.0])
-    res = combine(groupby_checked(df, :x), :y => maximum => :z)
+    res = combine_checked(groupby_checked(df, :x), :y => maximum => :z)
     @test res.z isa Vector{Float64}
     @test res.z == combine(groupby_checked(df, :x), :y => (x -> maximum(x)) => :z).z
 
@@ -1031,7 +1047,7 @@ Base.isless(::TestType, ::TestType) = false
     gd = groupby_checked(df, :x, skipmissing=skip, sort=sort)
     indices && @test gd.idx !== nothing # Trigger computation of indices
     for f in (maximum, minimum)
-        res = combine(gd, :y => maximum => :z)
+        res = combine_checked(gd, :y => maximum => :z)
         @test res.z isa Vector{Any}
         @test res.z == combine(gd, :y => (x -> maximum(x)) => :z).z
     end

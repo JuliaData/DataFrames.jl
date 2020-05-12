@@ -17,6 +17,9 @@ arch:
 notifications:
   email: false
 
+env:
+  - JULIA_NUM_THREADS=2
+
 after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage;
               Codecov.submit(Codecov.process_folder())';
