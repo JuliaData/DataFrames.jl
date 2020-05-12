@@ -348,13 +348,6 @@ end
 
 @deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : eachcol(df)
 
-# this is deprecated because it calls deprecated combine
-function by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool=false, f...)
-    Base.depwarn("`by(gd, cols; target_col = source_cols => fun, ...)` is deprecated," *
-                 " use `by(gd, cols, source_cols => fun => :target_col, ...)` instead", :by)
-    return combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
-end
-
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
 
 export aggregate
@@ -447,20 +440,29 @@ end
 
 @deprecate deleterows!(df::DataFrame, inds) delete!(df, inds)
 
-@deprecate by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f)
-@deprecate by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f)
-@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f)
+@deprecate by(f::Base.Callable, d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false) combine(f, groupby(d, cols, sort=sort,
+                                                                 skipmissing=skipmissing))
+@deprecate by(f::Pair, d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false) combine(first(f) isa ColumnIndex ?
+    f : AsTable(first(f)) => last(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
 
-@deprecate by(d::AbstractDataFrame, cols::Any, f::Union{Pair, typeof(nrow),
-                                             ColumnIndex, MultiColumnIndex}...;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f...)
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
+    sort::Bool=false, skipmissing::Bool=false) combine(f, groupby(d, cols, sort=sort,
+                                                                  skipmissing=skipmissing))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair;
+    sort::Bool=false, skipmissing::Bool=false) combine(first(f) isa ColumnIndex ?
+    f : AsTable(first(f)) => last(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair...;
+    sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
+                                                              skipmissing=skipmissing),
+    [(col isa ColumnIndex ? col : AsTable(col)) => fun for (col, fun) in f]...)
+@deprecate by(d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false, f...) combine(groupby(d, cols,
+    sort=sort, skipmissing=skipmissing),
+    [(in_col isa ColumnIndex ? in_col : AsTable(in_col)) => fun => out_col for (out_col, (in_col, fun)) in f]...)
 
 import Base: map
-@deprecate map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
+@deprecate map(f::Base.Callable, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
+@deprecate map(f::Pair, gd::GroupedDataFrame) combine(first(f) isa ColumnIndex ?
+    f : AsTable(first(f)) => last(f), gd, ungroup=false)
