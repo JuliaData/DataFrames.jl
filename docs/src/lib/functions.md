@@ -34,7 +34,7 @@ rename
 rename!
 ```
 
-## Mutatiing and transforming data frames and grouped data frames
+## Mutating and transforming data frames and grouped data frames
 ```@docs
 append!
 combine

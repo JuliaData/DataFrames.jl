@@ -10,7 +10,7 @@ is a good complementary resource.
 
 If there is something you expect DataFrames to be capable of, but
 cannot figure out how to do, please reach out with questions in Domains/Data on
-[Discourse](https://discourse.julialang.org/new-topic?title=[DataFrames%20Question]:%20&body=%23%20Question:%0A%0A%23%20Dataset%20(if%20applicable):%0A%0A%23%20Minimal%20Working%20Example%20(if%20applicable):%0A&category=Domains/Data&tags=question). Additionally you might want to listen to an introduction to DataFrames.jl on [JuliaAcademy](https://juliaacademy.com/p/introduction-to-dataframes-jl)
+[Discourse](https://discourse.julialang.org/new-topic?title=[DataFrames%20Question]:%20&body=%23%20Question:%0A%0A%23%20Dataset%20(if%20applicable):%0A%0A%23%20Minimal%20Working%20Example%20(if%20applicable):%0A&category=Domains/Data&tags=question). Additionally you might want to listen to an introduction to DataFrames.jl on [JuliaAcademy](https://juliaacademy.com/p/introduction-to-dataframes-jl).
 
 Please report bugs by
 [opening an issue](https://github.com/JuliaData/DataFrames.jl/issues/new).
