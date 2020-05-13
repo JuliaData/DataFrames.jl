@@ -386,6 +386,8 @@ I/O stream.
 NOTE: The value of `maxwidths[end]` must be the string width of
 `rowlabel`.
 
+# Extended help
+
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `df::AbstractDataFrame`: An AbstractDataFrame.
@@ -619,6 +621,8 @@ representation chosen depends on the width of the display.
 If `io` is omitted, the result is printed to `stdout`,
 and `allrows`, `allcols` and `allgroups` default to `false`
 while `splitcols` defaults to `true`.
+
+# Extended help
 
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.

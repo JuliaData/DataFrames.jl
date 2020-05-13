@@ -6,6 +6,16 @@ An AbstractDataFrame that stores a set of named columns
 The columns are normally AbstractVectors stored in memory,
 particularly a Vector or CategoricalVector.
 
+# Examples
+```julia
+df = DataFrame()
+v = ["x","y","z"][rand(1:3, 10)]
+df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
+df2 = DataFrame(A = 1:10, B = v, C = rand(10))
+```
+
+# Extended help
+
 # Constructors
 ```julia
 DataFrame(columns::AbstractVector, names::AbstractVector{Symbol};
@@ -671,6 +681,8 @@ Insert a column into a data frame in place. Return the updated `DataFrame`.
 If `ind` is omitted it is set to `ncol(df)+1`
 (the column is inserted as the last column).
 
+# Extended help
+
 # Arguments
 - `df` : the DataFrame to which we want to add columns
 - `ind` : a position at which we want to insert a column
@@ -1039,6 +1051,8 @@ Change columns selected by `cols` in data frame `df` to `CategoricalVector`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR) or a `Type`.
 
+# Extended help
+
 If `categorical!` is called with the `cols` argument being a `Type`, then
 all columns whose element type is a subtype of this type
 (by default `Union{AbstractString, Missing}`) will be converted to categorical.
@@ -1134,6 +1148,8 @@ end
 Add the rows of `df2` to the end of `df`. If the second argument `table` is not an
 `AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
 before being appended.
+
+# Extended help
 
 The exact behavior of `append!` depends on the `cols` argument:
 * If `cols == :setequal` (this is the default)
@@ -1448,6 +1464,8 @@ end
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
+# Extended help
+
 Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
@@ -1603,6 +1621,8 @@ end
 Update a data frame `df` in-place by repeating its rows. `inner` specifies how many
 times each row is repeated, and `outer` specifies how many times the full set
 of rows is repeated. Columns of `df` are freshly allocated.
+
+# Extended help
 
 # Example
 ```jldoctest

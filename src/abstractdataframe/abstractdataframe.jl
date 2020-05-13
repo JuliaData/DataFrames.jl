@@ -4,10 +4,12 @@
 An abstract type for which all concrete types expose an interface
 for working with tabular data.
 
-# Common methods
-
 An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
 for column names.
+
+# Extended help
+
+# Common methods
 
 The following are normally implemented for AbstractDataFrames:
 
@@ -102,6 +104,8 @@ Compat.hasproperty(df::AbstractDataFrame, s::AbstractString) = haskey(index(df),
 
 Rename columns of `df` in-place.
 Each name is changed at most once. Permutation of names is allowed.
+
+# Extended help
 
 # Arguments
 - `df` : the `AbstractDataFrame`
@@ -224,6 +228,8 @@ end
 Create a new data frame that is a copy of `df` with changed column names.
 Each name is changed at most once. Permutation of names is allowed.
 
+# Extended help
+
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
@@ -305,6 +311,8 @@ Optionally a dimension `dim` can be specified, where `1` corresponds to rows
 and `2` corresponds to columns.
 
 See also: [`nrow`](@ref), [`ncol`](@ref)
+
+# Extended help
 
 # Examples
 ```julia
@@ -442,6 +450,8 @@ Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), 
 
 Return descriptive statistics for a data frame as a new `DataFrame`
 where each row represents a variable and each column a summary statistic.
+
+# Extended help
 
 # Arguments
 - `df` : the `AbstractDataFrame`
@@ -676,6 +686,8 @@ Return a Boolean vector with `true` entries indicating rows without missing valu
 If `cols` is provided, only missing values in the corresponding columns areconsidered.
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
+# Extended help
+
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
 
@@ -751,6 +763,8 @@ be converted so as not to allow for missing values using [`disallowmissing!`](@r
 
 See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
+# Extended help
+
 # Examples
 
 ```julia
@@ -821,6 +835,8 @@ If `disallowmissing` is `true` (the default) then the `cols` columns will
 get converted using [`disallowmissing!`](@ref).
 
 See also: [`dropmissing`](@ref) and [`completecases`](@ref).
+
+# Extended help
 
 ```jldoctest
 julia> df = DataFrame(i = 1:5,
@@ -897,6 +913,8 @@ is passed.
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
 See also: [`filter!`](@ref)
+
+# Extended help
 
 # Examples
 ```
@@ -996,6 +1014,8 @@ is passed.
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
 See also: [`filter`](@ref)
+
+# Extended help
 
 # Examples
 ```
@@ -1130,6 +1150,8 @@ equal values (according to `isequal`).
 
 See also [`unique`](@ref) and [`unique!`](@ref).
 
+# Extended help
+
 # Arguments
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) to compare. Can be any column
@@ -1185,6 +1207,8 @@ retaining in each case the first instance for which `df[cols]` is unique.
 When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
 
 See also [`nonunique`](@ref).
+
+# Extended help
 
 # Arguments
 - `df` : the AbstractDataFrame
@@ -1299,6 +1323,8 @@ The `cols` keyword argument determines the columns of the returned data frame:
   Columns not present in some data frames are filled with `missing` where necessary.
 * A vector of `Symbol`s or strings: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
+
+# Extended help
 
 The order of columns is determined by the order they appear in the included data
 frames, searching through the header of the first data frame, then the second,
@@ -1465,6 +1491,8 @@ Construct a data frame by repeating rows in `df`. `inner` specifies how many
 times each row is repeated, and `outer` specifies how many times the full set
 of rows is repeated.
 
+# Extended help
+
 # Example
 ```jldoctest
 julia> df = DataFrame(a = 1:2, b = 3:4)
@@ -1565,6 +1593,8 @@ Return the number of rows or columns in an `AbstractDataFrame` `df`.
 
 See also [`size`](@ref).
 
+# Extended help
+
 **Examples**
 
 ```jldoctest
@@ -1595,6 +1625,8 @@ If `cols` is omitted all columns in the data frame are converted.
 
 If `error=false` then columns containing a `missing` value will be skipped instead
 of throwing an error.
+
+# Extended help
 
 **Examples**
 
@@ -1663,6 +1695,8 @@ to element type `Union{T, Missing}` from `T` to allow support for missing values
 
 If `cols` is omitted all columns in the data frame are converted.
 
+# Extended help
+
 **Examples**
 
 ```jldoctest
@@ -1704,6 +1738,8 @@ end
                 compress::Bool=false)
 
 Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
+
+# Extended help
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
 or a `Type`.
@@ -1790,6 +1826,8 @@ according to the length of `df[i, col]`. These lengths must therefore be the
 same for each `col` in `cols`, or else an error is raised. Note that these
 elements are not copied, and thus if they are mutable changing them in the
 returned `DataFrame` will affect `df`.
+
+# Extended help
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 

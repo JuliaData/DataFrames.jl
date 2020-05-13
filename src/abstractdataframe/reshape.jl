@@ -15,6 +15,7 @@ If `view=true` then return a stacked view of a data frame (long format).
 The result is a view because the columns are special `AbstractVectors`
 that return views into the original data frame.
 
+# Extended help
 
 # Arguments
 - `df` : the AbstractDataFrame to be stacked
@@ -124,6 +125,8 @@ end
     unstack(df::AbstractDataFrame; renamecols::Function=identity)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
+
+# Extended help
 
 If `colkey` contains `missing` values then they will be skipped and a warning
 will be printed.

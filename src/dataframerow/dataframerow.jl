@@ -7,6 +7,8 @@ A `DataFrameRow` is returned by `getindex` or `view` functions when one row and 
 selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
 
+# Extended help
+
 The `DataFrameRow` constructor can also be called directly:
 
 ```

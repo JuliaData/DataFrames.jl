@@ -368,6 +368,8 @@ Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
 passed data frames.
 
+# Extended help
+
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
 
@@ -475,6 +477,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 Perform a left join of twodata frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
 
+# Extended help
+
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
@@ -577,6 +581,8 @@ leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
+
+# Extended help
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -683,6 +689,8 @@ rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
 of the passed data frames.
+
+# Extended help
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -804,6 +812,8 @@ Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
 match with the keys in `df2`.
 
+# Extended help
+
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
@@ -901,6 +911,8 @@ Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
 not match with the keys in `df2`.
 
+# Extended help
+
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
@@ -990,6 +1002,8 @@ antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 Perform a cross join of two or more data frame objects and return a `DataFrame`
 containing the result. A cross join returns the cartesian product of rows from
 all passed data frames.
+
+# Extended help
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined

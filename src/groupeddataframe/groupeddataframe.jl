@@ -403,6 +403,8 @@ Unlike the equivalent `Tuple` and `NamedTuple`, these keys can be used to index
 into `gd` efficiently. The ordering of the keys is identical to the ordering of
 the groups of `gd` under iteration and integer indexing.
 
+# Extended help
+
 # Examples
 
 ```jldoctest groupkeys
@@ -518,6 +520,8 @@ Get a group based on the values of the grouping columns.
 
 `key` may be a `NamedTuple` or `Tuple` of grouping column values (in the same
 order as the `cols` argument to `groupby`).
+
+# Extended help
 
 # Examples
 

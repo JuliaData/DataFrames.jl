@@ -3,6 +3,8 @@
 
 Render a data frame to an I/O stream in MIME type `mime`.
 
+# Extended help
+
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`,

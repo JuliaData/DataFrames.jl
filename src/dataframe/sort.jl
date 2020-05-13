@@ -8,6 +8,8 @@ Sort data frame `df` by column(s) `cols`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
+# Extended help
+
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
 on the type of the sorting columns and on the number of rows in `df`.

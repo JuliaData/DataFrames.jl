@@ -14,6 +14,8 @@ into row groups.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
+# Extended help
+
 # Details
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
@@ -262,7 +264,9 @@ Apply operations to each group in a [`GroupedDataFrame`](@ref) and return the co
 result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`.
 
 If an `AbstractDataFrame` is passed, apply operations to the data frame as a whole
-and a `DataFrame` is always returend.
+and a `DataFrame` is always returned.
+
+# Extended help
 
 $F_ARGUMENT_RULES
 
@@ -1432,6 +1436,8 @@ The `parent` of the returned value has as many rows as `parent(gd)`. If an opera
 in `args` returns a single value it is always broadcasted to have this number of rows.
 
 If `copycols=false` then do not perform copying of columns that are not transformed.
+
+# Extended help
 
 $KWARG_PROCESSING_RULES
 

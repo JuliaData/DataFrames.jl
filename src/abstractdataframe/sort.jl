@@ -364,6 +364,8 @@ end
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
 
+# Extended help
+
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
@@ -438,6 +440,8 @@ Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+
+# Extended help
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending

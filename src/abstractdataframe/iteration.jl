@@ -30,9 +30,11 @@ Base.iterate(::AbstractDataFrame) =
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
-Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain 
-a named tuple, which supports iteration and property access like a `DataFrameRow`, 
-but also passes information on the `eltypes` of the columns of `df`. 
+Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain
+a named tuple, which supports iteration and property access like a `DataFrameRow`,
+but also passes information on the `eltypes` of the columns of `df`.
+
+# Extended help
 
 # Examples
 ```jldoctest
@@ -126,6 +128,8 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 Return a `DataFrameColumns` that is an `AbstractVector`
 that allows iterating an `AbstractDataFrame` column by column.
 Additionally it is allowed to index `DataFrameColumns` using column names.
+
+# Extended help
 
 # Examples
 ```jldoctest
@@ -332,6 +336,8 @@ end
 Update a `DataFrame` in-place where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
 (all values other than `AbstractVector` are considered to be a scalar).
+
+# Extended help
 
 Note that `mapcols!` reuses the columns from `df` if they are returned by `f`.
 
