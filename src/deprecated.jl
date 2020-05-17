@@ -442,20 +442,24 @@ end
 
 @deprecate by(f::Base.Callable, d::AbstractDataFrame, cols::Any;
     sort::Bool=false, skipmissing::Bool=false) combine(f, groupby(d, cols, sort=sort,
-                                                                 skipmissing=skipmissing))
+@deprecate by(f::Pair{<:ColumnIndex}, d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(f::Pair, d::AbstractDataFrame, cols::Any;
-    sort::Bool=false, skipmissing::Bool=false) combine(first(f) isa ColumnIndex ?
-    f : AsTable(first(f)) => last(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
-
+    sort::Bool=false, skipmissing::Bool=false) combine(AsTable(first(f)) => last(f),
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
     sort::Bool=false, skipmissing::Bool=false) combine(f, groupby(d, cols, sort=sort,
-                                                                  skipmissing=skipmissing))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair{<:ColumnIndex};
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Pair;
-    sort::Bool=false, skipmissing::Bool=false) combine(first(f) isa ColumnIndex ?
-    f : AsTable(first(f)) => last(f), groupby(d, cols, sort=sort, skipmissing=skipmissing))
+    sort::Bool=false, skipmissing::Bool=false) combine(AsTable(first(f)) => last(f),
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair{<:ColumnIndex}...;
+    sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f...)
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Pair...;
-    sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing),
+    sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
     [(col isa ColumnIndex ? col : AsTable(col)) => fun for (col, fun) in f]...)
 @deprecate by(d::AbstractDataFrame, cols::Any;
     sort::Bool=false, skipmissing::Bool=false, f...) combine(groupby(d, cols,
@@ -464,5 +468,5 @@ end
 
 import Base: map
 @deprecate map(f::Base.Callable, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
-@deprecate map(f::Pair, gd::GroupedDataFrame) combine(first(f) isa ColumnIndex ?
-    f : AsTable(first(f)) => last(f), gd, ungroup=false)
+@deprecate map(f::Pair{<:ColumnIndex}, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
+@deprecate map(f::Pair, gd::GroupedDataFrame) combine(AsTable(first(f)) => last(f), gd, ungroup=false)
