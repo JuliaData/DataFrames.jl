@@ -373,6 +373,14 @@ function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
               copycols=false)
 end
 
+"""
+    empty(df::AbstractDataFrame)
+
+Create a new `DataFrame` with the same column names and column element types
+as `df` but with zero rows.
+"""
+Base.empty(df::AbstractDataFrame) = similar(df, 0)
+
 ##############################################################################
 ##
 ## Equality

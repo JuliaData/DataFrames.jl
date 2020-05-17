@@ -885,6 +885,16 @@ end
 
 Base.delete!(df::DataFrame, inds::Not) = delete!(df, axes(df, 1)[inds])
 
+"""
+    empty!(df::DataFrame)
+
+Remove all rows from `df` in place.
+"""
+function Base.empty!(df::DataFrame)
+    foreach(empty!, eachcol(df))
+    return df
+end
+
 ##############################################################################
 ##
 ## Hcat specialization
