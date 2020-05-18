@@ -615,11 +615,11 @@ end
                    b = repeat([2, 1], outer=[4]),
                    c = rand(Int, 8))
 
-    @test by(df, :a, [:c => sum]) == by(df, :a, c_sum = :c => sum)
-    @test by(df, :a, [:c => vexp]) == by(df, :a, c_function = :c => vexp)
-    @test by(df, :a, [:b => sum, :c => sum]) ==
+    @test combine(groupby(df, :a), [:c => sum]) == by(df, :a, c_sum = :c => sum)
+    @test combine(groupby(df, :a), [:c => vexp]) == by(df, :a, c_function = :c => vexp)
+    @test combine(groupby(df, :a), [:b => sum, :c => sum]) ==
         by(df, :a, b_sum = :b => sum, c_sum = :c => sum)
-    @test by(df, :a, [:b => vexp, :c => identity]) ==
+    @test combine(groupby(df, :a), [:b => vexp, :c => identity]) ==
         by(df, :a, b_function = :b => vexp, c_identity = :c => identity)
 
     gd = groupby(df, :a)
@@ -631,6 +631,23 @@ end
         combine(gd, (:b,) => sum, (:c,) => sum)
     @test combine(gd, [:b => vexp, :c => identity]) ==
         combine(gd, b_function = :b => vexp, c_identity = :c => identity)
+
+    @test map(identity, gd)  == combine(identity, gd, ungroup=false)
+    @test map(:b => mean, gd)  == combine(:b => mean, gd, ungroup=false)
+    @test map([:b,:c] => x -> x.b+x.c, gd) ==
+          combine(AsTable([:b, :c]) => x -> x.b+x.c, gd, ungroup=false)
+    @test by(identity, df, :a) == combine(identity, gd)
+    @test by(:b => mean, df, :a) == combine(:b => mean, gd)
+    @test by([:b,:c] => x -> x.b+x.c, df, :a) ==
+          combine(AsTable([:b, :c]) => x -> x.b+x.c, gd)
+    @test by(df, :a, identity) == combine(identity, gd)
+    @test by(df, :a, :b => mean) == combine(:b => mean, gd)
+    @test by(df, :a, [:b,:c] => x -> x.b+x.c) ==
+          combine(AsTable([:b, :c]) => x -> x.b+x.c, gd)
+    @test by(df, :a, :b => mean, [:b,:c] => x -> x.b+x.c) ==
+          combine(gd, :b => mean, AsTable([:b, :c]) => x -> x.b+x.c)
+    @test by(df, :a, p = :b => mean, q = [:b,:c] => x -> x.b+x.c) ==
+          combine(gd, :b => mean => :p, AsTable([:b, :c]) => (x -> x.b+x.c) => :q)
 end
 
 @testset "deprecated aggregate" begin
