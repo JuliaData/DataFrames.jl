@@ -432,4 +432,19 @@ end
     end
 end
 
+@testset "empty and empty!" begin
+    df = DataFrame(a=1, b="x")
+    df1 = empty(df)
+    @test df == DataFrame(a=1, b="x")
+    @test names(df1) == ["a", "b"]
+    @test nrow(df1) == 0
+    @test eltype(df1.a) <: Int
+    @test eltype(df1.b) <: String
+    @test empty!(df) === df
+    @test names(df) == ["a", "b"]
+    @test nrow(df) == 0
+    @test eltype(df.a) <: Int
+    @test eltype(df.b) <: String
+end
+
 end # module
