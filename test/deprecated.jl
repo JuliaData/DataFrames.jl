@@ -29,6 +29,153 @@ old_logger = global_logger(NullLogger())
     @test issorted(df, (order(:rank, rev=true), :chrom, :pos))
 end
 
+@testset "categorical constructor" begin
+    df = DataFrame([Int, String], [:a, :b], [false, true], 3)
+    @test !(df[:a] isa CategoricalVector)
+    @test df[:b] isa CategoricalVector
+    @test_throws DimensionMismatch DataFrame([Int, String], [:a, :b], [true], 3)
+end
+
+@testset "DataFrame constructors" begin
+    df = DataFrame(Union{Int, Missing}, 10, 3)
+    @test size(df, 1) == 10
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Int, Missing}}
+    @test typeof(df[3]) == Vector{Union{Int, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                [:A, :B, :C], [false, false, true], 100)
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[3]) <: CategoricalVector{Union{String, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+end
+
+df = DataFrame(Union{Int, Missing}, 2, 2)
+@test size(df) == (2, 2)
+@test eltype.(eachcol(df)) == [Union{Int, Missing}, Union{Int, Missing}]
+
+@test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
+
+@testset "colwise" begin
+    Random.seed!(1)
+    df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
+                   b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
+                   c = Vector{Union{Float64, Missing}}(randn(8)))
+
+    missingfree = DataFrame([collect(1:10)], [:x1])
+
+    @testset "::Function, ::AbstractDataFrame" begin
+        cw = colwise(sum, df)
+        answer = [20, 12, -0.4283098098931877]
+        @test isa(cw, Vector{Real})
+        @test size(cw) == (ncol(df),)
+        @test cw == answer
+
+        cw = colwise(sum, missingfree)
+        answer = [55]
+        @test isa(cw, Array{Int, 1})
+        @test size(cw) == (ncol(missingfree),)
+        @test cw == answer
+    end
+
+    @testset "::Function, ::GroupedDataFrame" begin
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        @test colwise(length, gd) == [[2,2], [2,2]]
+    end
+
+    @testset "::Vector, ::AbstractDataFrame" begin
+        cw = colwise([sum], df)
+        answer = [20 12 -0.4283098098931877]
+        @test isa(cw, Array{Real, 2})
+        @test size(cw) == (length([sum]),ncol(df))
+        @test cw == answer
+
+        cw = colwise([sum, minimum], missingfree)
+        answer = reshape([55, 1], (2,1))
+        @test isa(cw, Array{Int, 2})
+        @test size(cw) == (length([sum, minimum]), ncol(missingfree))
+        @test cw == answer
+
+        cw = colwise([Vector{Union{Int, Missing}}], missingfree)
+        answer = reshape([Vector{Union{Int, Missing}}(1:10)], (1,1))
+        @test isa(cw, Array{Vector{Union{Int, Missing}},2})
+        @test size(cw) == (1, ncol(missingfree))
+        @test cw == answer
+
+        @test_throws MethodError colwise(["Bob", :Susie], DataFrame(A = 1:10, B = 11:20))
+    end
+
+    @testset "::Vector, ::GroupedDataFrame" begin
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        @test colwise([length], gd) == [[2 2], [2 2]]
+    end
+
+    @testset "::Tuple, ::AbstractDataFrame" begin
+        cw = colwise((sum, length), df)
+        answer = Any[20 12 -0.4283098098931877; 8 8 8]
+        @test isa(cw, Array{Real, 2})
+        @test size(cw) == (length((sum, length)), ncol(df))
+        @test cw == answer
+
+        cw = colwise((sum, length), missingfree)
+        answer = reshape([55, 10], (2,1))
+        @test isa(cw, Array{Int, 2})
+        @test size(cw) == (length((sum, length)), ncol(missingfree))
+        @test cw == answer
+
+        cw = colwise((CategoricalArray, Vector{Union{Int, Missing}}), missingfree)
+        answer = reshape([CategoricalArray(1:10), Vector{Union{Int, Missing}}(1:10)],
+                         (2, ncol(missingfree)))
+        @test typeof(cw) == Array{AbstractVector,2}
+        @test size(cw) == (2, ncol(missingfree))
+        @test cw == answer
+
+        @test_throws MethodError colwise(("Bob", :Susie), DataFrame(A = 1:10, B = 11:20))
+    end
+
+    @testset "::Tuple, ::GroupedDataFrame" begin
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        @test colwise((length), gd) == [[2,2],[2,2]]
+    end
+end
+
 @testset "deletecols and deletecols!" begin
     df = DataFrame(a=[1,2], b=[3.0, 4.0])
     @test deletecols(df, :a) == DataFrame(b=[3.0, 4.0])

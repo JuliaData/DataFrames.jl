@@ -1,5 +1,57 @@
 import Base: @deprecate
 
+@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame([Vector{t}(undef, nrows) for i in 1:ncols])
+
+@deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
+                     nrows::Integer) DataFrame(column_eltypes, Symbol.('x' .* string.(1:length(column_eltypes))), nrows)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   categorical::AbstractVector{Bool}, nrows::Integer;
+                   makeunique::Bool=false)::DataFrame where T<:Type
+    Base.depwarn("`DataFrame` constructor with `categorical` positional argument is deprecated. " *
+                 "Instead use `DataFrame(columns, names)` constructor.",
+                 :DataFrame)
+    updated_types = convert(Vector{Type}, column_eltypes)
+    if length(categorical) != length(column_eltypes)
+        throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
+                                "(got $(length(column_eltypes)) and $(length(categorical)))"))
+    end
+    for i in eachindex(categorical)
+        categorical[i] || continue
+        elty = CategoricalValue{nonmissingtype(updated_types[i]),
+                                CategoricalArrays.DefaultRefType}
+        if updated_types[i] >: Missing
+            updated_types[i] = Union{elty, Missing}
+        else
+            updated_types[i] = elty
+        end
+    end
+    return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
+end
+
+import Base: show
+@deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)
+@deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(io, df, allcols=allcols, rowlabel=rowlabel)
+@deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool) show(io, df, allcols=allcols)
+@deprecate show(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(df, allcols=allcols, rowlabel=rowlabel, summary=summary)
+@deprecate show(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(df, allcols=allcols, rowlabel=rowlabel)
+@deprecate show(df::AbstractDataFrame, allcols::Bool) show(df, allcols=allcols)
+@deprecate showall(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allrows=true, allcols=allcols, rowlabel=rowlabel, summary=summary)
+@deprecate showall(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(io, df, allrows=true, allcols=allcols, rowlabel=rowlabel)
+@deprecate showall(io::IO, df::AbstractDataFrame, allcols::Bool = true) show(io, df, allrows=true, allcols=allcols)
+@deprecate showall(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(df, allrows=true, allcols=allcols, rowlabel=rowlabel, summary=summary)
+@deprecate showall(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(df, allrows=true, allcols=allcols, rowlabel=rowlabel)
+@deprecate showall(df::AbstractDataFrame, allcols::Bool = true) show(df, allrows=true, allcols=allcols)
+@deprecate showall(io::IO, dfvec::AbstractVector{T}) where {T <: AbstractDataFrame} foreach(df->show(io, df, allrows=true, allcols=true), dfvec)
+@deprecate showall(dfvec::AbstractVector{T}) where {T <: AbstractDataFrame} foreach(df->show(df, allrows=true, allcols=true), dfvec)
+@deprecate showall(io::IO, df::GroupedDataFrame) show(io, df, allgroups=true)
+@deprecate showall(df::GroupedDataFrame) show(df, allgroups=true)
+
+@deprecate colwise(f, d::AbstractDataFrame) [f(col) for col in eachcol(d)]
+@deprecate colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) [f(col) for f in fns, col in eachcol(d)]
+@deprecate colwise(f, gd::GroupedDataFrame) [[f(col) for col in eachcol(d)] for d in gd]
+@deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]
+
 @deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
 @deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)
 
