@@ -11,7 +11,6 @@ Pages = ["functions.md"]
 ## Constructing data frames
 ```@docs
 copy
-DataFrame!
 similar
 ```
 
@@ -115,7 +114,7 @@ disallowmissing
 disallowmissing!
 ```
 
-## Iterating data frames
+## Iteration
 ```@docs
 eachcol
 eachrow
