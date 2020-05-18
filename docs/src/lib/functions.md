@@ -95,6 +95,8 @@ completecases
 delete!
 dropmissing
 dropmissing!
+empty
+empty!
 filter
 filter!
 first

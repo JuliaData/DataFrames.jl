@@ -29,9 +29,6 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
     return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
 end
 
-import Base: insert!
-@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[!, col] = df2[!, col], names(df2)); df)
-
 import Base: show
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(io, df, allcols=allcols, rowlabel=rowlabel)
@@ -39,51 +36,21 @@ import Base: show
 @deprecate show(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(df, allcols=allcols, rowlabel=rowlabel, summary=summary)
 @deprecate show(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(df, allcols=allcols, rowlabel=rowlabel)
 @deprecate show(df::AbstractDataFrame, allcols::Bool) show(df, allcols=allcols)
-
 @deprecate showall(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allrows=true, allcols=allcols, rowlabel=rowlabel, summary=summary)
 @deprecate showall(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(io, df, allrows=true, allcols=allcols, rowlabel=rowlabel)
 @deprecate showall(io::IO, df::AbstractDataFrame, allcols::Bool = true) show(io, df, allrows=true, allcols=allcols)
 @deprecate showall(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(df, allrows=true, allcols=allcols, rowlabel=rowlabel, summary=summary)
 @deprecate showall(df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(df, allrows=true, allcols=allcols, rowlabel=rowlabel)
 @deprecate showall(df::AbstractDataFrame, allcols::Bool = true) show(df, allrows=true, allcols=allcols)
-
 @deprecate showall(io::IO, dfvec::AbstractVector{T}) where {T <: AbstractDataFrame} foreach(df->show(io, df, allrows=true, allcols=true), dfvec)
 @deprecate showall(dfvec::AbstractVector{T}) where {T <: AbstractDataFrame} foreach(df->show(df, allrows=true, allcols=true), dfvec)
-
 @deprecate showall(io::IO, df::GroupedDataFrame) show(io, df, allgroups=true)
 @deprecate showall(df::GroupedDataFrame) show(df, allgroups=true)
-
-import Base: insert!, merge!
-
-@deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcols!(df, col_ind, name => item; makeunique=makeunique)
-@deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[!, col] = df2[!, col], names(df2)); df1)
-
-import Base: map
-@deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
-
-@deprecate head(df::AbstractDataFrame) first(df, 6)
-@deprecate tail(df::AbstractDataFrame) last(df, 6)
-@deprecate head(df::AbstractDataFrame, n::Integer) first(df, n)
-@deprecate tail(df::AbstractDataFrame, n::Integer) last(df, n)
-
-@deprecate SubDataFrame(df::AbstractDataFrame, rows::AbstractVector{<:Integer}) SubDataFrame(df, rows, :)
-@deprecate SubDataFrame(df::AbstractDataFrame, ::Colon) SubDataFrame(df, :, :)
 
 @deprecate colwise(f, d::AbstractDataFrame) [f(col) for col in eachcol(d)]
 @deprecate colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) [f(col) for f in fns, col in eachcol(d)]
 @deprecate colwise(f, gd::GroupedDataFrame) [[f(col) for col in eachcol(d)] for d in gd]
 @deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]
-
-import Base: get
-@deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[!, key] : default
-
-import Base: haskey
-@deprecate haskey(df::AbstractDataFrame, key::Symbol) hasproperty(df, key)
-@deprecate haskey(df::AbstractDataFrame, key::Integer) key in 1:ncol(df)
-@deprecate haskey(df::AbstractDataFrame, key::Any) key in 1:ncol(df) || key in names(df)
-
-import Base: empty!
-@deprecate empty!(df::DataFrame) select!(df, Int[])
 
 @deprecate deletecols!(df::DataFrame, inds) select!(df, Not(inds))
 @deprecate deletecols(df::DataFrame, inds; copycols::Bool=true) select(df, Not(inds), copycols=copycols)
@@ -348,13 +315,6 @@ end
 
 @deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : eachcol(df)
 
-# this is deprecated because it calls deprecated combine
-function by(d::AbstractDataFrame, cols::Any; sort::Bool=false, skipmissing::Bool=false, f...)
-    Base.depwarn("`by(gd, cols; target_col = source_cols => fun, ...)` is deprecated," *
-                 " use `by(gd, cols, source_cols => fun => :target_col, ...)` instead", :by)
-    return combine(groupby(d, cols, sort=sort, skipmissing=skipmissing); f...)
-end
-
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
 
 export aggregate
@@ -447,20 +407,35 @@ end
 
 @deprecate deleterows!(df::DataFrame, inds) delete!(df, inds)
 
-@deprecate by(f::Union{Base.Callable, Pair}, d::AbstractDataFrame, cols::Any;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f)
+@deprecate by(f::Base.Callable, d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
+@deprecate by(f::Pair{<:ColumnIndex}, d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
+@deprecate by(f::Pair, d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false) combine(AsTable(first(f)) => last(f),
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f)
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair{<:ColumnIndex};
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Pair;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f)
-
-@deprecate by(d::AbstractDataFrame, cols::Any, f::Union{Pair, typeof(nrow),
-                                             ColumnIndex, MultiColumnIndex}...;
-   sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort,
-                                                              skipmissing=skipmissing), f...)
+    sort::Bool=false, skipmissing::Bool=false) combine(AsTable(first(f)) => last(f),
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair{<:ColumnIndex}...;
+    sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing), f...)
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Pair...;
+    sort::Bool=false, skipmissing::Bool=false) combine(groupby(d, cols, sort=sort, skipmissing=skipmissing),
+    [(col isa ColumnIndex ? col : AsTable(col)) => fun for (col, fun) in f]...)
+@deprecate by(d::AbstractDataFrame, cols::Any;
+    sort::Bool=false, skipmissing::Bool=false, f...) combine(groupby(d, cols,
+    sort=sort, skipmissing=skipmissing),
+    [(in_col isa ColumnIndex ? in_col : AsTable(in_col)) => fun => out_col for (out_col, (in_col, fun)) in f]...)
 
 import Base: map
-@deprecate map(f::Union{Base.Callable, Pair}, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
+@deprecate map(f::Base.Callable, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
+@deprecate map(f::Pair{<:ColumnIndex}, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
+@deprecate map(f::Pair, gd::GroupedDataFrame) combine(AsTable(first(f)) => last(f), gd, ungroup=false)
