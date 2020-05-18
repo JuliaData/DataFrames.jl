@@ -112,6 +112,7 @@ AbstractDataFrame
 AsTable
 ByRow
 DataFrame
+DataFrame!
 DataFrameRow
 GroupedDataFrame
 GroupKey

@@ -8,89 +8,117 @@ CurrentModule = DataFrames
 Pages = ["functions.md"]
 ```
 
-## Joining, Grouping, and Split-Apply-Combine
-
+## Constructing data frames
 ```@docs
-innerjoin
-leftjoin
-rightjoin
-outerjoin
-antijoin
-semijoin
-crossjoin
-combine
-groupby
-groupindices
-groupcols
-valuecols
-keys
-get
-stack
-unstack
+copy
+similar
 ```
 
-## Basics
-
+## Summary information
 ```@docs
-allowmissing
-allowmissing!
-append!
-categorical
-categorical!
-completecases
-copy
-DataFrame!
-delete!
 describe
-disallowmissing
-disallowmissing!
-dropmissing
-dropmissing!
-eachcol
-eachrow
-filter
-filter!
+length
+ncol
+ndims
+nrow
+show
+size
+```
+
+## Working with column names
+```@docs
+names
+propertynames
+rename
+rename!
+```
+
+## Mutating and transforming data frames and grouped data frames
+```@docs
+append!
+combine
 flatten
 hcat
 insertcols!
-length
 mapcols
 mapcols!
-names
-ncol
-ndims
-nonunique
-nrow
-order
 push!
-rename
-rename!
 repeat
 repeat!
 select
 select!
-show
-size
-sort
-sort!
 transform
 transform!
-unique!
 vcat
 ```
 
-## Unsorted
-
+## Reshaping data frames between tall and wide formats
 ```@docs
-first
-last
-unique
-propertynames
-similar
-sortperm
-pairs
-parent
+stack
+unstack
+```
+
+## Sorting
+```@docs
 issorted
+order
+sort
+sort!
+sortperm
+```
+
+## Joining
+```@docs
+antijoin
+crossjoin
+innerjoin
+leftjoin
+outerjoin
+rightjoin
+semijoin
+```
+
+## Grouping
+```@docs
+get
+groupby
+groupcols
+groupindices
+keys
+parent
+valuecols
+```
+
+## Filtering rows
+```@docs
+completecases
+delete!
+dropmissing
+dropmissing!
 empty
 empty!
+filter
+filter!
+first
+last
+nonunique
+unique
+unique!
+```
+
+## Changing column types
+```@docs
+allowmissing
+allowmissing!
+categorical
+categorical!
+disallowmissing
+disallowmissing!
+```
+
+## Iteration
+```@docs
+eachcol
+eachrow
+pairs
 ```
