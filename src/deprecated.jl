@@ -441,7 +441,8 @@ end
 @deprecate deleterows!(df::DataFrame, inds) delete!(df, inds)
 
 @deprecate by(f::Base.Callable, d::AbstractDataFrame, cols::Any;
-    sort::Bool=false, skipmissing::Bool=false) combine(f, groupby(d, cols, sort=sort,
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(f::Pair{<:ColumnIndex}, d::AbstractDataFrame, cols::Any;
     sort::Bool=false, skipmissing::Bool=false) combine(f,
     groupby(d, cols, sort=sort, skipmissing=skipmissing))
@@ -449,7 +450,8 @@ end
     sort::Bool=false, skipmissing::Bool=false) combine(AsTable(first(f)) => last(f),
     groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Base.Callable;
-    sort::Bool=false, skipmissing::Bool=false) combine(f, groupby(d, cols, sort=sort,
+    sort::Bool=false, skipmissing::Bool=false) combine(f,
+    groupby(d, cols, sort=sort, skipmissing=skipmissing))
 @deprecate by(d::AbstractDataFrame, cols::Any, f::Pair{<:ColumnIndex};
     sort::Bool=false, skipmissing::Bool=false) combine(f,
     groupby(d, cols, sort=sort, skipmissing=skipmissing))
