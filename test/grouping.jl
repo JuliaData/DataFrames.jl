@@ -770,7 +770,8 @@ Base.isless(::TestType, ::TestType) = false
 @testset "combine with aggregation functions (skipmissing=$skip, sort=$sort, indices=$indices)" for
     skip in (false, true), sort in (false, true), indices in (false, true)
     Random.seed!(1)
-    df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
+    df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(1:100, 20),
+                   x2 = rand(1:100, 20) +im*rand(1:100, 20))
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
@@ -2215,6 +2216,54 @@ end
         @test_throws ArgumentError transform!(gdf, :x => sum, ungroup=false)
         @test dfc ≅ df
     end
+end
+
+@testset "corner cases of group_reduce" begin
+    df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1.5,1.5,1.5])
+    gdf = groupby_checked(df, :g)
+    @test combine(groupby(df, :g), :x => sum) == DataFrame(g=1:2, x_sum=[3.0, 4.5])
+    @test combine(groupby(df, :g), :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3.0, 4.5])
+    @test combine(groupby(df, :g), :x => mean) == DataFrame(g=1:2, x_mean=[1.0, 1.5])
+    @test combine(groupby(df, :g), :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.5])
+    @test combine(groupby(df, :g), :x => var) == DataFrame(g=1:2, x_var=[0.0, 0.0])
+    @test combine(groupby(df, :g), :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
+
+    df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1,1,missing])
+    gdf = groupby_checked(df, :g)
+    @test combine(groupby(df, :g), :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
+    @test combine(groupby(df, :g), :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
+    @test combine(groupby(df, :g), :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
+    @test combine(groupby(df, :g), :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
+    @test combine(groupby(df, :g), :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
+    @test combine(groupby(df, :g), :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
+
+    df = DataFrame(g=[1,1,1,2,2,2], x=Union{Real, Missing}[1,1,1,1,1,missing])
+    gdf = groupby_checked(df, :g)
+    @test combine(groupby(df, :g), :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
+    @test combine(groupby(df, :g), :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
+    @test combine(groupby(df, :g), :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
+    @test combine(groupby(df, :g), :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
+    @test combine(groupby(df, :g), :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
+    @test combine(groupby(df, :g), :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
+
+    Random.seed!(1)
+    df = DataFrame(g = rand(1:2, 1000), x1 = rand(Int, 1000))
+    df.x2 = big.(df.x1)
+    gdf = groupby_checked(df, :g)
+
+    res = combine(gdf, :x1 => sum, :x2 => sum, :x1 => x -> sum(x), :x2 => x -> sum(x))
+    @test res.x1_sum == res.x1_function
+    @test res.x2_sum == res.x2_function
+    @test res.x1_sum != res.x2_sum # we are large enough to be sure we differ
+
+    res = combine(gdf, :x1 => mean, :x2 => mean, :x1 => x -> mean(x), :x2 => x -> mean(x))
+    if VERSION >= v"1.5"
+        @test res.x1_mean ≈ res.x1_function
+    else
+        @test !(res.x1_mean ≈ res.x1_function) # we are large enough to be sure we differ
+    end
+    @test res.x2_mean ≈ res.x2_function
+    @test res.x1_mean ≈ res.x2_mean
 end
 
 end # module
