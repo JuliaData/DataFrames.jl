@@ -855,7 +855,7 @@ end
 
 # Use reducedim_init to get a vector of the right type,
 # but trick it into using the expected length
-function groupreduce_init(op, condf, adjust, incol, gd)
+function groupreduce_init(op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame)
     U = eltype(incol)
     T = Base.promote_union(U)
 
