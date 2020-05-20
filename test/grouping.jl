@@ -2264,6 +2264,26 @@ end
     end
     @test res.x2_mean ≈ res.x2_function
     @test res.x1_mean ≈ res.x2_mean
+
+    # make sure we do correct promotions in corner case similar to Base
+    df = DataFrame(g=[1,1,1,1,1,1], x=Real[1,1,big(typemax(Int)),1,1,1])
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum)[1, 2] == sum(df.x)
+    df = DataFrame(g=[1,1,1,1,1,1], x=Real[1,1,typemax(Int),1,1,1])
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum)[1, 2] == sum(df.x)
+    df = DataFrame(g=[1,1,1,1,1,1], x=fill(missing, 6))
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum)[1, 2] isa Missing
+    @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
+    df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Real, Missing}}, fill(missing, 6)))
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum)[1, 2] isa Missing
+    @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
+    df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Int, Missing}}, fill(missing, 6)))
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum)[1, 2] isa Missing
+    @test combine(gdf, :x => sum∘skipmissing)[1, 2] == 0
 end
 
 end # module

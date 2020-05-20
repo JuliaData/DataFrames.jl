@@ -853,38 +853,48 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
     outcol
 end
 
-# Use reducedim_init to get a vector of the right type,
-# but trick it into using the expected length
-function groupreduce_init(op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame)
-    U = eltype(incol)
+# Use a strategy similar to reducedim_init from Base to get the vector of the right type,
+function groupreduce_init(op, condf, adjust,
+                          incol::AbstractVector{U}, gd::GroupedDataFrame) where U
     T = Base.promote_union(U)
 
     if op isa typeof(Base.add_sum)
-        f = zero
+        initf = zero
     elseif op isa typeof(Base.mul_prod)
-        f = one
+        initf = one
     else
         throw(ErrorException("Unrecognized op $op"))
     end
 
-    if T !== Any && applicable(f, T)
-        initv = f(T)
-        x = adjust isa typeof(/) ? (initv / 1) : initv
-        V = U >: Missing ? Union{typeof(x), Missing} : typeof(x)
+    Tnm = nonmissingtype(T)
+    if Tnm !== Any && isconcretetype(Tnm) && applicable(initf, Tnm)
+        tmpv = initf(Tnm)
+        initv = op(tmpv, tmpv)
+        x = adjust isa Nothing ? initv : adjust(initv, 1)
+        if condf isa typeof(!ismissing)
+            V = typeof(x)
+        else
+            V = U >: Missing ? Union{typeof(x), Missing} : typeof(x)
+        end
     else
         idx = findfirst(!ismissing, incol)
+        # here the definition of x is simpler as we do V = Any anyway
         if isnothing(idx)
+            if condf isa typeof(!ismissing)
+                throw(ArgumentError("Aggregating over a column containing " *
+                                    "only missing values that does not have a " *
+                                    "concrete union element type is not allowed"))
+            end
             x = missing
         else
-            initv = f(incol[idx])
-            x = adjust isa typeof(/) ? (initv / 1) : initv
+            x = initf(incol[idx])
         end
         # do not try to determine the narrowest possible type as this is not
         # possible to do correctly in general without processing groups
         # it will get fixed later in groupreduce!
         V = Any
     end
-    v = Vector{V}(undef, length(gd))
+    v = similar(incol, V, length(gd))
 
     fill!(v, x)
     return v
@@ -892,7 +902,8 @@ end
 
 for (op, initf) in ((:max, :typemin), (:min, :typemax))
     @eval begin
-        function groupreduce_init(::typeof($op), condf, adjust, incol::AbstractVector{T}, gd) where T
+        function groupreduce_init(::typeof($op), condf, adjust,
+                                  incol::AbstractVector{T}, gd::GroupedDataFrame) where T
             @assert isnothing(adjust)
             # !ismissing check is purely an optimization to avoid a copy later
             outcol = similar(incol, condf === !ismissing ? nonmissingtype(T) : T, length(gd))
@@ -963,7 +974,7 @@ function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
     end
 end
 
-# function barrier works around type instability of _groupreduce_init due to applicable
+# function barrier works around type instability of groupreduce_init due to applicable
 groupreduce(f, op, condf, adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce!(groupreduce_init(op, condf, adjust, incol, gd),
