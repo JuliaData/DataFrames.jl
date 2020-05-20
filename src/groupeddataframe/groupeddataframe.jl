@@ -316,6 +316,12 @@ end
 
 Base.to_index(gd::GroupedDataFrame, key::Tuple) = gd.keymap[key]
 
+Base.to_index(gd::GroupedDataFrame, key::Pair) = 
+    Base.to_index(gd, (; Symbol(first(key)) => last(key)))
+
+Base.to_index(gd::GroupedDataFrame, key::Vector{Pair}) = 
+    Base.to_index(gd, (; [Symbol(first(k)) => last(k) for k in keys]...))
+
 function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     if length(key) != length(gd.cols) || any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
         throw(KeyError(key))

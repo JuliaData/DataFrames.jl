@@ -1326,6 +1326,17 @@ end
     df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
 
+    function gkey_to_pair(key)
+        k = keys(key)
+        v = values(key)
+        if length(k) == 1 
+            return string(first(k)) => first(v)
+        else
+            return map(k, v) do ki, vi 
+                string(ki) => vi
+            end
+        end
+    end
     @test map(NamedTuple, keys(gd)) ≅
         [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
 
@@ -1338,6 +1349,8 @@ end
         @test gd[NamedTuple(key)] ≅ gd[i]
         # Plain tuple
         @test gd[Tuple(key)] ≅ gd[i]
+        # Vector with string
+        @test gd[gkey_to_pair(key)] ≅ gd[i]
     end
 
     # Equivalent value of different type
