@@ -2221,30 +2221,30 @@ end
 @testset "corner cases of group_reduce" begin
     df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1.5,1.5,1.5])
     gdf = groupby_checked(df, :g)
-    @test combine(groupby(df, :g), :x => sum) == DataFrame(g=1:2, x_sum=[3.0, 4.5])
-    @test combine(groupby(df, :g), :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3.0, 4.5])
-    @test combine(groupby(df, :g), :x => mean) == DataFrame(g=1:2, x_mean=[1.0, 1.5])
-    @test combine(groupby(df, :g), :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.5])
-    @test combine(groupby(df, :g), :x => var) == DataFrame(g=1:2, x_var=[0.0, 0.0])
-    @test combine(groupby(df, :g), :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
+    @test combine(gdf, :x => sum) == DataFrame(g=1:2, x_sum=[3.0, 4.5])
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3.0, 4.5])
+    @test combine(gdf, :x => mean) == DataFrame(g=1:2, x_mean=[1.0, 1.5])
+    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.5])
+    @test combine(gdf, :x => var) == DataFrame(g=1:2, x_var=[0.0, 0.0])
+    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
 
     df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1,1,missing])
     gdf = groupby_checked(df, :g)
-    @test combine(groupby(df, :g), :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
-    @test combine(groupby(df, :g), :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
-    @test combine(groupby(df, :g), :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
-    @test combine(groupby(df, :g), :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
-    @test combine(groupby(df, :g), :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
-    @test combine(groupby(df, :g), :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
+    @test combine(gdf, :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
+    @test combine(gdf, :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
+    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
+    @test combine(gdf, :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
+    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
 
     df = DataFrame(g=[1,1,1,2,2,2], x=Union{Real, Missing}[1,1,1,1,1,missing])
     gdf = groupby_checked(df, :g)
-    @test combine(groupby(df, :g), :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
-    @test combine(groupby(df, :g), :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
-    @test combine(groupby(df, :g), :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
-    @test combine(groupby(df, :g), :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
-    @test combine(groupby(df, :g), :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
-    @test combine(groupby(df, :g), :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
+    @test combine(gdf, :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
+    @test combine(gdf, :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
+    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
+    @test combine(gdf, :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
+    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
 
     Random.seed!(1)
     df = DataFrame(g = rand(1:2, 1000), x1 = rand(Int, 1000))
@@ -2278,7 +2278,7 @@ end
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
     @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
-    @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
+    @test_throws MethodError combine(gdf, :x => sum∘skipmissing)
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Real, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
@@ -2295,7 +2295,25 @@ end
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
     @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
-    @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
+    @test_throws MethodError combine(gdf, :x => sum∘skipmissing)
+
+    # these questions can go to a final exam in "mastering combine" class
+    df = DataFrame(g=[1,2,3], x=["a", "b", "c"])
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum => :a, :x => prod => :b) ==
+          combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
+    df = DataFrame(g=[1,2,3], x=Any["a", "b", "c"])
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum => :a, :x => prod => :b) ==
+          combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
+    df = DataFrame(g=[1,1], x=[missing, "a"])
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
+          combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
+    df = DataFrame(g=[1,1], x=Any[missing, "a"])
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
+          combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
 end
 
 end # module
