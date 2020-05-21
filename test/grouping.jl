@@ -2269,21 +2269,33 @@ end
     df = DataFrame(g=[1,1,1,1,1,1], x=Real[1,1,big(typemax(Int)),1,1,1])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] == sum(df.x)
+    @test eltype(combine(gdf, :x => sum)[!, 2]) === BigInt
     df = DataFrame(g=[1,1,1,1,1,1], x=Real[1,1,typemax(Int),1,1,1])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] == sum(df.x)
+    @test eltype(combine(gdf, :x => sum)[!, 2]) === Int
     df = DataFrame(g=[1,1,1,1,1,1], x=fill(missing, 6))
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
+    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
     @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Real, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
-    @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
+    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1, x_function=0)
+    @test eltype(combine(gdf, :x => sum∘skipmissing)[!, 2]) === Int
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Int, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
+    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
     @test combine(gdf, :x => sum∘skipmissing)[1, 2] == 0
+    @test eltype(combine(gdf, :x => sum∘skipmissing)[!, 2]) === Int
+    df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Any}, fill(missing, 6)))
+    gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum)[1, 2] isa Missing
+    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
+    @test_throws ArgumentError combine(gdf, :x => sum∘skipmissing)
 end
 
 end # module

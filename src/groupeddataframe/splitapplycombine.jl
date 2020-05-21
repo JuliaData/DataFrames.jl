@@ -867,7 +867,7 @@ function groupreduce_init(op, condf, adjust,
     end
 
     Tnm = nonmissingtype(T)
-    if Tnm !== Any && isconcretetype(Tnm) && applicable(initf, Tnm)
+    if isconcretetype(Tnm) && applicable(initf, Tnm)
         tmpv = initf(Tnm)
         initv = op(tmpv, tmpv)
         x = adjust isa Nothing ? initv : adjust(initv, 1)
@@ -881,11 +881,16 @@ function groupreduce_init(op, condf, adjust,
         # here the definition of x is simpler as we do V = Any anyway
         if isnothing(idx)
             if condf isa typeof(!ismissing)
-                throw(ArgumentError("Aggregating over a column containing " *
-                                    "only missing values that does not have a " *
-                                    "concrete union element type is not allowed"))
+                if Tnm !== Any && applicable(initf, Tnm)
+                    x = zero(Tnm)
+                else
+                    throw(ArgumentError("Aggregating over a column containing " *
+                                        "only missing values that does not have a " *
+                                        "concrete union element type is not allowed"))
+                end
+            else
+                x = missing
             end
-            x = missing
         else
             x = initf(incol[idx])
         end
