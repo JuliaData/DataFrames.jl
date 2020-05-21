@@ -853,7 +853,7 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
     outcol
 end
 
-# Use a strategy similar to reducedim_init from Base to get the vector of the right type,
+# Use a strategy similar to reducedim_init from Base to get the vector of the right type
 function groupreduce_init(op, condf, adjust,
                           incol::AbstractVector{U}, gd::GroupedDataFrame) where U
     T = Base.promote_union(U)
@@ -871,7 +871,7 @@ function groupreduce_init(op, condf, adjust,
         tmpv = initf(Tnm)
         initv = op(tmpv, tmpv)
         x = adjust isa Nothing ? initv : adjust(initv, 1)
-        if condf isa typeof(!ismissing)
+        if condf === !ismissing
             V = typeof(x)
         else
             V = U >: Missing ? Union{typeof(x), Missing} : typeof(x)
@@ -880,16 +880,7 @@ function groupreduce_init(op, condf, adjust,
         idx = findfirst(!ismissing, incol)
         # here the definition of x is simpler as we do V = Any anyway
         if isnothing(idx)
-            if condf isa typeof(!ismissing)
-                if Tnm !== Any && applicable(initf, Tnm)
-                    x = zero(Tnm)
-                else
-                    throw(ArgumentError("Aggregating over a column containing " *
-                                        "only missing values that does not have a " *
-                                        "concrete union element type is not allowed"))
-                end
-            else
-                x = missing
+
             end
         else
             x = initf(incol[idx])
