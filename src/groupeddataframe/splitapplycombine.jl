@@ -858,9 +858,9 @@ function groupreduce_init(op, condf, adjust,
                           incol::AbstractVector{U}, gd::GroupedDataFrame) where U
     T = Base.promote_union(U)
 
-    if op isa typeof(Base.add_sum)
+    if op === Base.add_sum
         initf = zero
-    elseif op isa typeof(Base.mul_prod)
+    elseif op === Base.mul_prod
         initf = one
     else
         throw(ErrorException("Unrecognized op $op"))
@@ -880,9 +880,9 @@ function groupreduce_init(op, condf, adjust,
         fill!(v, x)
         return v
     else
-        # do not try to determine the narrowest possible type nor statring value
+        # do not try to determine the narrowest possible type nor starting value
         # as this is not possible to do correctly in general without processing
-        # groups it will get fixed later in groupreduce!; later we
+        # groups; it will get fixed later in groupreduce!; later we
         # will make use of the fact that this vector is filled with #undef
         # while above the vector is filled with a concrete value
         return Vector{Any}(undef, length(gd))
@@ -941,7 +941,7 @@ function groupreduce!(res::AbstractVector{U}, f, op, condf, adjust, checkempty::
         gix = groups[i]
         x = incol[i]
         if gix > 0 && (condf === nothing || condf(x))
-            # this check should be optimized out if T is not Any
+            # this check should be optimized out if U is not Any
             if U === Any && !isassigned(res, gix)
                 res[gix] = f(x, gix)
             else
@@ -954,9 +954,9 @@ function groupreduce!(res::AbstractVector{U}, f, op, condf, adjust, checkempty::
     end
     # handle the case of an unitialized reduction
     if U === Any
-        if op isa typeof(Base.add_sum)
+        if op === Base.add_sum
             initf = zero
-        elseif op isa typeof(Base.mul_prod)
+        elseif op === Base.mul_prod
             initf = one
         else
             initf = x -> throw(ErrorException("Unrecognized op $op"))
