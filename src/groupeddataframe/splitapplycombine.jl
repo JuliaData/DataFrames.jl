@@ -853,15 +853,50 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
     outcol
 end
 
-# Use reducedim_init to get a vector of the right type,
-# but trick it into using the expected length
-groupreduce_init(op, condf, incol, gd) =
-    Base.reducedim_init(identity, op, view(incol, 1:length(gd)), 2)
+# Use a strategy similar to reducedim_init from Base to get the vector of the right type
+function groupreduce_init(op, condf, adjust,
+                          incol::AbstractVector{U}, gd::GroupedDataFrame) where U
+    T = Base.promote_union(U)
+
+    if op === Base.add_sum
+        initf = zero
+    elseif op === Base.mul_prod
+        initf = one
+    else
+        throw(ErrorException("Unrecognized op $op"))
+    end
+
+    Tnm = nonmissingtype(T)
+    if isconcretetype(Tnm) && applicable(initf, Tnm)
+        tmpv = initf(Tnm)
+        initv = op(tmpv, tmpv)
+        x = adjust isa Nothing ? initv : adjust(initv, 1)
+        if condf === !ismissing
+            V = typeof(x)
+        else
+            V = U >: Missing ? Union{typeof(x), Missing} : typeof(x)
+        end
+        v = similar(incol, V, length(gd))
+        fill!(v, x)
+        return v
+    else
+        # do not try to determine the narrowest possible type nor starting value
+        # as this is not possible to do correctly in general without processing
+        # groups; it will get fixed later in groupreduce!; later we
+        # will make use of the fact that this vector is filled with #undef
+        # while above the vector is filled with a concrete value
+        return Vector{Any}(undef, length(gd))
+    end
+end
+
 for (op, initf) in ((:max, :typemin), (:min, :typemax))
     @eval begin
-        function groupreduce_init(::typeof($op), condf, incol::AbstractVector{T}, gd) where T
+        function groupreduce_init(::typeof($op), condf, adjust,
+                                  incol::AbstractVector{T}, gd::GroupedDataFrame) where T
+            @assert isnothing(adjust)
+            S = nonmissingtype(T)
             # !ismissing check is purely an optimization to avoid a copy later
-            outcol = similar(incol, condf === !ismissing ? nonmissingtype(T) : T, length(gd))
+            outcol = similar(incol, condf === !ismissing ? S : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
             if incol isa CategoricalVector
                 U = Union{CategoricalArrays.leveltype(outcol),
@@ -870,7 +905,7 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             end
             # It is safe to use a non-missing init value
             # since missing will poison the result if present
-            S = nonmissingtype(T)
+            # we assume here that groups are non-empty (current design assures this)
             if isconcretetype(S) && hasmethod($initf, Tuple{S})
                 fill!(outcol, $initf(S))
             else
@@ -895,8 +930,8 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
-                      incol::AbstractVector{T}, gd::GroupedDataFrame) where T
+function groupreduce!(res::AbstractVector{U}, f, op, condf, adjust, checkempty::Bool,
+                      incol::AbstractVector{T}, gd::GroupedDataFrame) where {U,T}
     n = length(gd)
     if adjust !== nothing || checkempty
         counts = zeros(Int, n)
@@ -906,38 +941,60 @@ function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
         gix = groups[i]
         x = incol[i]
         if gix > 0 && (condf === nothing || condf(x))
-            res[gix] = op(res[gix], f(x, gix))
+            # this check should be optimized out if U is not Any
+            if U === Any && !isassigned(res, gix)
+                res[gix] = f(x, gix)
+            else
+                res[gix] = op(res[gix], f(x, gix))
+            end
             if adjust !== nothing || checkempty
                 counts[gix] += 1
             end
         end
     end
-    outcol = adjust === nothing ? res : map(adjust, res, counts)
+    # handle the case of an unitialized reduction
+    if U === Any
+        if op === Base.add_sum
+            initf = zero
+        elseif op === Base.mul_prod
+            initf = one
+        else
+            initf = x -> throw(ErrorException("Unrecognized op $op"))
+        end
+        @inbounds for gix in eachindex(res)
+            if !isassigned(res, gix)
+                res[gix] = initf(nonmissingtype(T))
+            end
+        end
+    end
+    if adjust !== nothing
+        res .= adjust.(res, counts)
+    end
     if checkempty && any(iszero, counts)
         throw(ArgumentError("some groups contain only missing values"))
     end
     # Undo pool sharing done by groupreduce_init
-    if outcol isa CategoricalVector && outcol.pool === incol.pool
-        U = Union{CategoricalArrays.leveltype(outcol),
-                  eltype(outcol) >: Missing ? Missing : Union{}}
-        outcol = CategoricalArray{U, 1}(outcol.refs, copy(outcol.pool))
+    if res isa CategoricalVector && res.pool === incol.pool
+        V = Union{CategoricalArrays.leveltype(res),
+                  eltype(res) >: Missing ? Missing : Union{}}
+        res = CategoricalArray{V, 1}(res.refs, copy(res.pool))
     end
-    if isconcretetype(eltype(outcol))
-        return outcol
+    if isconcretetype(eltype(res))
+        return res
     else
-        copyto_widen!(Tables.allocatecolumn(typeof(first(outcol)), n), outcol)
+        return copyto_widen!(Tables.allocatecolumn(typeof(first(res)), n), res)
     end
 end
 
-# function barrier works around type instability of _groupreduce_init due to applicable
+# function barrier works around type instability of groupreduce_init due to applicable
 groupreduce(f, op, condf, adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce!(groupreduce_init(op, condf, incol, gd),
+    groupreduce!(groupreduce_init(op, condf, adjust, incol, gd),
                  f, op, condf, adjust, checkempty, incol, gd)
 # Avoids the overhead due to Missing when computing reduction
 groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce!(disallowmissing(groupreduce_init(op, condf, incol, gd)),
+    groupreduce!(disallowmissing(groupreduce_init(op, condf, adjust, incol, gd)),
                  f, op, condf, adjust, checkempty, incol, gd)
 
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
