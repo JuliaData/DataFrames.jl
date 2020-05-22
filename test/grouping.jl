@@ -2298,22 +2298,43 @@ end
     @test_throws MethodError combine(gdf, :x => sum∘skipmissing)
 
     # these questions can go to a final exam in "mastering combine" class
-    df = DataFrame(g=[1,2,3], x=["a", "b", "c"])
+    df = DataFrame(g=[1, 2, 3], x=["a", "b", "c"])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum => :a, :x => prod => :b) ==
           combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
-    df = DataFrame(g=[1,2,3], x=Any["a", "b", "c"])
+    df = DataFrame(g=[1, 2, 3], x=Any["a", "b", "c"])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum => :a, :x => prod => :b) ==
           combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
-    df = DataFrame(g=[1,1], x=[missing, "a"])
+    df = DataFrame(g=[1, 1], x=[missing, "a"])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
           combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
-    df = DataFrame(g=[1,1], x=Any[missing, "a"])
+    df = DataFrame(g=[1, 1], x=Any[missing, "a"])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
           combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
+
+    df = DataFrame(g=[1, 2], x=Any[nothing, "a"])
+    gdf = groupby_checked(df, :g)
+    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    @test df2 == DataFrame(g=[1, 2], a=[nothing, "a"], b=[nothing, "a"])
+    @test eltype(df2.a) === eltype(df2.b) === Union{Nothing, String}
+    df = DataFrame(g=[1, 2], x=Any[1, 1.0])
+    gdf = groupby_checked(df, :g)
+    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    @test df2 == DataFrame(g=[1, 2], a=ones(2), b=ones(2))
+    @test eltype(df2.a) === eltype(df2.b) === Float64
+    df = DataFrame(g=[1, 2], x=[1, "1"])
+    gdf = groupby_checked(df, :g)
+    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    @test df2 == DataFrame(g=[1, 2], a=[1, "1"], b=[1, "1"])
+    @test eltype(df2.a) === eltype(df2.b) === Any
+    df = DataFrame(g=[1, 1, 2], x=[UInt8(1), UInt8(1), missing])
+    gdf = groupby_checked(df, :g)
+    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    @test df2 ≅ DataFrame(g=[1, 2], a=[2, missing], b=[1, missing])
+    @test eltype(df2.a) === eltype(df2.b) === Union{UInt, Missing}
 end
 
 end # module
