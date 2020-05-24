@@ -530,7 +530,6 @@ julia> combine(df, :a => sum, nrow)
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 3     │
-```
 """
 combine(df::AbstractDataFrame, args...) =
     manipulate(df, args..., copycols=true, keeprows=false)
