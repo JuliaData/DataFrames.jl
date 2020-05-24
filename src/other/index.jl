@@ -218,9 +218,26 @@ end
     if notidx.skip isa AbstractVector 
         toskip = filter(t -> haskey(x, t), notidx.skip)
         return setdiff(1:length(x), toskip)
+    elseif notidx.skip isa Between
+        if haskey(x, notidx.skip.first) && haskey(x, notidx.skip.last)
+            toskip = x[notidx.first]:x[notidx.last]
+            return setdiff(1:length(x), toskip)
+        elseif !(haskey(x, notidx.skip.first)) && !(haskey(x, notidx.skip.last))
+            return 1:length(x)
+        else
+            # one of these will error
+            getindex(x, notidx.skip.first)
+            getindex(x, notidx.skip.last)
+        end
+    elseif notidx.skip isa Regex
+        toskip = getindex(x, notidx.skip)
+        return setdiff(1:length(x), toskip)
+    elseif notidx.skip isa All
+        tokeep = intersect(getindex.(Ref(x), Not.(notidx.skip.cols))...)
+        return tokeep
     else
         if haskey(x, notidx.skip) 
-            return setdiff(1:length(x), notidx.skip)
+            return setdiff(1:length(x), getindex(x, notidx.skip))
         else 
             return 1:length(x)
         end
