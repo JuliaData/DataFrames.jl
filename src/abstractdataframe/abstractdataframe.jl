@@ -1614,7 +1614,6 @@ julia> disallowmissing(df)
 ├─────┼───────┤
 │ 1   │ 1     │
 │ 2   │ 2     │
-```
 
 julia> df = DataFrame(a=[1,missing])
 2×2 DataFrame
@@ -1631,6 +1630,7 @@ julia> disallowmissing(df, error=false)
 ├─────┼─────────┼───────┤
 │ 1   │ 1       │ 1     │
 │ 2   │ missing │ 2     │
+```
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
                                   cols::Union{ColumnIndex, MultiColumnIndex}=:;
