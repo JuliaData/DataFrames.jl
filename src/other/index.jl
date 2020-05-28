@@ -214,32 +214,28 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) =
     getindex(x, collect(Int, idx))
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
-@inline function Base.getindex(x::AbstractIndex, notidx::Not)
-    if notidx.skip isa AbstractVector 
-        toskip = [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)]
-        return setdiff(1:length(x), toskip)
-    elseif notidx.skip isa Between
-        if haskey(x, notidx.skip.first) && haskey(x, notidx.skip.last)
-            toskip = x[notidx.first]:x[notidx.last]
-            return setdiff(1:length(x), toskip)
-        elseif !(haskey(x, notidx.skip.first)) && !(haskey(x, notidx.skip.last))
-            return 1:length(x)
-        else
-            # one of these will error
-            getindex(x, notidx.skip.first)
-            getindex(x, notidx.skip.last)
-        end
-    elseif notidx.skip isa All
-        tokeep = isempty(notidx.skip.cols) ? Int[] : intersect(getindex.(Ref(x), Not.(notidx.skip.cols))...)
-        return tokeep
-    else
-        if notidx.skip isa Regex || haskey(x, notidx.skip) 
-            return setdiff(1:length(x), getindex(x, notidx.skip))
-        else 
-            return 1:length(x)
-        end
+
+@inline Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector}) =
+    setdiff(1:length(x), [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)])
+@inline function Base.getindex(x::AbstractIndex, notidx::Not{<:All})
+    if isempty(notidx.skip.cols) 
+        return Int[]
+    else 
+        intersect(getindex.(Ref(x), Not.(notidx.skip.cols))...)
     end
 end
+@inline Base.getindex(x::AbstractIndex, notidx::Not{<:Between}) =
+    return setdiff(1:length(x), getindex(x, notidx.skip))
+@inline Base.getindex(x::AbstractIndex, notidx::Not{<:Regex}) =
+    setdiff(1:length(x), getindex(x, notidx.skip))
+@inline function Base.getindex(x::AbstractIndex, notidx)
+    if haskey(x, notidx.skip) 
+        return setdiff(1:length(x), getindex(x, notidx.skip))
+    else 
+        return 1:length(x)
+    end
+end
+
 @inline Base.getindex(x::AbstractIndex, idx::Between) = x[idx.first]:x[idx.last]
 @inline Base.getindex(x::AbstractIndex, idx::All) =
     isempty(idx.cols) ? (1:length(x)) : union(getindex.(Ref(x), idx.cols)...)

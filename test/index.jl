@@ -363,10 +363,10 @@ end
 @testset "Not indexing with columns that don't exist" begin
     df = DataFrame(a=1, b=2, c=3)
     @test select(df, Not(:d)) == df
-    @test select(df, Not(Between(:x, :z))) == df
+    @test_throws ArgumentError select(df, Not(Between(:x, :z)))
     @test select(df, Not(r"zzz")) == df
     @test select(df, Not(:x)) == df
-    @test select(df, Not(All(:d, r"zzz", Between(:q, :p)))) == df
+    @test select(df, Not(All(:d, r"zzz", [:e, :f]))) == df
     @test select(df, Not(All())) == DataFrame()
     @test_throws ArgumentError select(df, Not(Between(:a, :d)))
 end
