@@ -216,7 +216,7 @@ end
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 @inline function Base.getindex(x::AbstractIndex, notidx::Not)
     if notidx.skip isa AbstractVector 
-        toskip = filter(t -> haskey(x, t), notidx.skip)
+        toskip = [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)]
         return setdiff(1:length(x), toskip)
     elseif notidx.skip isa Between
         if haskey(x, notidx.skip.first) && haskey(x, notidx.skip.last)
@@ -229,14 +229,11 @@ end
             getindex(x, notidx.skip.first)
             getindex(x, notidx.skip.last)
         end
-    elseif notidx.skip isa Regex
-        toskip = getindex(x, notidx.skip)
-        return setdiff(1:length(x), toskip)
     elseif notidx.skip isa All
-        tokeep = intersect(getindex.(Ref(x), Not.(notidx.skip.cols))...)
+        tokeep = isempty(notidx.skip.cols) ? Int[] : intersect(getindex.(Ref(x), Not.(notidx.skip.cols))...)
         return tokeep
     else
-        if haskey(x, notidx.skip) 
+        if notidx.skip isa Regex || haskey(x, notidx.skip) 
             return setdiff(1:length(x), getindex(x, notidx.skip))
         else 
             return 1:length(x)

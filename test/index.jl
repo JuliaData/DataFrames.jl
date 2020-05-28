@@ -367,6 +367,7 @@ end
     @test select(df, Not(r"zzz")) == df
     @test select(df, Not(:x)) == df
     @test select(df, Not(All(:d, r"zzz", Between(:q, :p)))) == df
+    @test select(df, Not(All())) == DataFrame()
     @test_throws ArgumentError select(df, Not(Between(:a, :d)))
 end
 
