@@ -362,13 +362,17 @@ end
 
 @testset "Not indexing with columns that don't exist" begin
     df = DataFrame(a=1, b=2, c=3)
+    @test_throws BoundsError select(df, Not(4))
+    @test_throws BoundsError select(df, [4, 5, 6])
+    @test_throws BoundsError select(df, 4:6)
+    @test_throws BoundsError select(df, Int32(4):Int32(6))
+    @test_throws BoundsError select(df, [false, true, false, false])
     @test select(df, Not(:d)) == df
-    @test_throws ArgumentError select(df, Not(Between(:x, :z)))
     @test select(df, Not(r"zzz")) == df
     @test select(df, Not(:x)) == df
     @test select(df, Not(All(:d, r"zzz", [:e, :f]))) == df
-    @test select(df, Not(All())) == DataFrame()
     @test_throws ArgumentError select(df, Not(Between(:a, :d)))
+    @test_throws ArgumentError select(df, Not(Between(:x, :z)))
 end
 
 @testset "Between indexing" begin
