@@ -215,7 +215,8 @@ end
     getindex(x, collect(Int, idx))
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-@inline Base.getindex(x::AbstractIndex, notidx::Union{Not{<:AbstractVector{Symbol}}, Not{<:AbstractVector{<:AbstractString}}}) =
+@inline Base.getindex(x::AbstractIndex, notidx::Union{Not{<:AbstractVector{Symbol}},
+                                                      Not{<:AbstractVector{<:AbstractString}}}) =
     setdiff(1:length(x), [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)])
 @inline Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector{Bool}}) = 
     getindex(x, .!(notidx.skip))
@@ -226,9 +227,7 @@ end
         intersect(getindex.(Ref(x), Not.(notidx.skip.cols))...)
     end
 end
-@inline Base.getindex(x::AbstractIndex, notidx::Not{<:Between}) =
-    return setdiff(1:length(x), getindex(x, notidx.skip))
-@inline Base.getindex(x::AbstractIndex, notidx::Not{<:Regex}) =
+@inline Base.getindex(x::AbstractIndex, notidx::Not) =
     setdiff(1:length(x), getindex(x, notidx.skip))
 @inline function Base.getindex(x::AbstractIndex, notidx::Union{Not{Symbol},Not{<:AbstractString}})
     if haskey(x, notidx.skip) 
