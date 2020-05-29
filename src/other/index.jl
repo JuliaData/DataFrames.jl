@@ -215,7 +215,7 @@ end
     getindex(x, collect(Int, idx))
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-@inline Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector}) =
+@inline Base.getindex(x::AbstractIndex, notidx::Union{Not{<:AbstractVector{Symbol}}, Not{<:AbstractVector{<:AbstractString}}}) =
     setdiff(1:length(x), [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)])
 @inline function Base.getindex(x::AbstractIndex, notidx::Not{<:All})
     if isempty(notidx.skip.cols) 
