@@ -228,7 +228,7 @@ end
     return setdiff(1:length(x), getindex(x, notidx.skip))
 @inline Base.getindex(x::AbstractIndex, notidx::Not{<:Regex}) =
     setdiff(1:length(x), getindex(x, notidx.skip))
-@inline function Base.getindex(x::AbstractIndex, notidx)
+@inline function Base.getindex(x::AbstractIndex, notidx::Union{Not{Symbol},Not{<:AbstractString}})
     if haskey(x, notidx.skip) 
         return setdiff(1:length(x), getindex(x, notidx.skip))
     else 
