@@ -318,46 +318,83 @@ end
     push!(i, :x131)
     push!(i, :y13)
     push!(i, :yy13)
-    @test i[Not(Not(r"x1."))] == [2, 3]
-    @test isempty(i[Not(Not(r"xx"))])
-    @test i[Not(Not(r""))] == 1:5
-    @test DataFrames._names(SubIndex(i, Not(Not(r"x1.")))) == [:x12, :x131]
-    @test isempty(names(SubIndex(i, Not(Not(r"xx")))))
-    @test names(SubIndex(i, Not(Not(r"")))) == names(i)
-    @test DataFrames._names(SubIndex(i, Not(Not(r"x1.")))) == [:x12, :x131]
-    @test isempty(DataFrames._names(SubIndex(i, Not(Not(r"xx")))))
-    @test DataFrames._names(SubIndex(i, Not(Not(r"")))) == DataFrames._names(i)
-    @test DataFrames.parentcols(SubIndex(i, Not(Not(r"x1.")))) == [2, 3]
-    @test isempty(DataFrames.parentcols(SubIndex(i, Not(Not(r"xx")))))
-    @test DataFrames.parentcols(SubIndex(i, Not(Not(r"")))) == 1:5
+        
+    @test i[Not([false, true, true, false, false])] == [1, 4, 5]
+    @test i[Not(fill(true, 5))] |> isempty
+    @test i[Not(fill(false, 5))] == 1:5
+    @test DataFrames._names(SubIndex(i, Not([false, true, true, false, false]))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(fill(true, 5)))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(fill(false, 5)))) == [:x1, :x12, :x131, :y13, :yy13]
 
-    i2 = SubIndex(i, Not(Not(r"")))
-    @test i2[Not(Not(r"x1."))] == [2, 3]
-    @test isempty(i2[Not(Not(r"xx"))])
-    @test i2[Not(Not(r""))] == 1:5
-    @test DataFrames._names(SubIndex(i2, Not(Not(r"x1.")))) == [:x12, :x131]
-    @test isempty(names(SubIndex(i2, Not(Not(r"xx")))))
-    @test names(SubIndex(i2, Not(Not(r"")))) == names(i)
-    @test DataFrames._names(SubIndex(i2, Not(Not(r"x1.")))) == [:x12, :x131]
-    @test isempty(DataFrames._names(SubIndex(i2, Not(Not(r"xx")))))
-    @test DataFrames._names(SubIndex(i2, Not(Not(r"")))) == DataFrames._names(i2)
-    @test DataFrames.parentcols(SubIndex(i2, Not(Not(r"x1.")))) == [2, 3]
-    @test isempty(DataFrames.parentcols(SubIndex(i2, Not(Not(r"xx")))))
-    @test DataFrames.parentcols(SubIndex(i2, Not(Not(r"")))) == 1:5
+    @test i[Not([2, 3])] == [1, 4, 5]
+    @test i[Not([1,2,3,4,5])] |> isempty
+    @test i[Not(Int[])] == 1:5
+    @test DataFrames._names(SubIndex(i, Not([2, 3]))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not([1,2,3,4,5]))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(Int[]))) == [:x1, :x12, :x131, :y13, :yy13]
 
-    i3 = SubIndex(i, Not(Not(r"x1.")))
-    @test i3[Not(Not(r"x1.$"))] == [1]
-    @test isempty(i3[Not(Not(r"xx"))])
-    @test i3[Not(Not(r""))] == 1:2
-    @test DataFrames._names(SubIndex(i3, Not(Not(r"x1.$")))) == [:x12]
-    @test isempty(names(SubIndex(i3, Not(Not(r"xx")))))
-    @test names(SubIndex(i3, Not(Not(r"")))) == names(i3)
-    @test DataFrames._names(SubIndex(i3, Not(Not(r"x1.$")))) == [:x12]
-    @test isempty(DataFrames._names(SubIndex(i3, Not(Not(r"xx")))))
-    @test DataFrames._names(SubIndex(i3, Not(Not(r"")))) == DataFrames._names(i3)
-    @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"x1.$")))) == [1]
-    @test isempty(DataFrames.parentcols(SubIndex(i3, Not(Not(r"xx")))))
-    @test DataFrames.parentcols(SubIndex(i3, Not(Not(r"")))) == 1:2
+    @test i[Not(2:3)] == [1, 4, 5]
+    @test i[Not(1:5)] |> isempty
+    @test DataFrames._names(SubIndex(i, Not(2:3))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(1:5))) |> isempty
+
+    @test i[Not([:x12, :x131])] == [1, 4, 5]
+    @test i[Not([:x1, :x12, :x131, :y13, :yy13])] |> isempty
+    @test i[Not(Symbol[])] == 1:5
+    @test DataFrames._names(SubIndex(i, Not([:x12, :x131]))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not([:x1, :x12, :x131, :y13, :yy13]))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(Symbol[]))) == [:x1, :x12, :x131, :y13, :yy13]
+
+    @test i[Not(["x12", "x131"])] == [1, 4, 5]
+    @test i[Not(["x1", "x12", "x131", "y13", "yy13"])] |> isempty
+    @test i[Not(String[])] == 1:5
+    @test DataFrames._names(SubIndex(i, Not(["x12", "x131"]))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(["x1", "x12", "x131", "y13", "yy13"]))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(String[]))) == [:x1, :x12, :x131, :y13, :yy13]
+
+    @test i[Not(Any["x12", "x131"])] == [1, 4, 5]
+    @test i[Not(Any["x1", "x12", "x131", "y13", "yy13"])] |> isempty
+    @test i[Not(Any[])] == 1:5
+    @test DataFrames._names(SubIndex(i, Not(Any["x12", "x131"]))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(Any["x1", "x12", "x131", "y13", "yy13"]))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(Any[]))) == [:x1, :x12, :x131, :y13, :yy13]
+
+    @test i[Not(Between(2, 3))] == [1, 4, 5]
+    @test i[Not(Between(1, 5))] |> isempty
+    @test DataFrames._names(SubIndex(i, Not(Between(2, 3)))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(Between(1, 5)))) |> isempty
+
+    @test i[Not([r"x1."])] == [1, 4, 5]
+    @test i[Not(r"")] |> isempty
+    @test i[Not(r"z")] == 1:5
+    @test DataFrames._names(SubIndex(i, Not(r"x1."))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(r""))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(r"z"))) == [:x1, :x12, :x131, :y13, :yy13]
+
+    @test i[Not(All(r"x1.", 2:3))] == [1, 4, 5]
+    @test i[Not(All("x12", 3))] == [1, 4, 5]
+    @test i[Not(All())] |> isempty
+    @test i[Not(All(1, 2, 3, 4, 5))] |> isempty
+    @test DataFrames._names(SubIndex(i, Not(All(r"x1.", 2:3)))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(All("x12", 3)))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(All()))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(All(1,2,3,4,5)))) |> isempty
+
+    @test i[Not(Not([1,4,5]))] == [1, 4, 5]
+    @test i[Not(Not(Int[]))] |> isempty
+    @test i[Not(Not([1,2,3,4,5]))] == 1:5
+    @test DataFrames._names(SubIndex(i, Not(Not([1, 4,5])))) == [:x1, :y13, :yy13]
+    @test DataFrames._names(SubIndex(i, Not(Not(Int[])))) |> isempty
+    @test DataFrames._names(SubIndex(i, Not(Not([1,2,3,4,5])))) == [:x1, :x12, :x131, :y13, :yy13]
+
+    @test i[Not("x1")] == 2:5
+    @test i[Not(:x1)] == 2:5  
+    @test i[Not(1)] == 2:5
+
+    @test i[Not(:)] |> isempty
+
+    @test_throws ArgumentError i[Not(true)]
+    @test_throws ArgumentError SubIndex(i, Not(true))
 end
 
 @testset "Not indexing with columns that don't exist" begin
