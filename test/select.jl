@@ -11,7 +11,7 @@ Random.seed!(1234)
     @test_throws BoundsError select!(df, Not(0))
     @test_throws BoundsError select!(df, Not(6))
     @test_throws ArgumentError select!(df, Not([1, 1]))
-    @test_throws ArgumentError select!(df, Not(:f))
+    @test select!(df, Not(:f)) == df
     @test_throws BoundsError select!(df, Not([true, false]))
 
     d = copy(df)
@@ -54,7 +54,7 @@ end
     @test_throws BoundsError select(df, Not(0))
     @test_throws BoundsError select(df, Not(6))
     @test_throws ArgumentError select(df, Not([1, 1]))
-    @test_throws ArgumentError select(df, Not(:f))
+    @test select(df, Not(:f)) == df
     @test_throws BoundsError select(df, Not([true, false]))
 
     df2 = copy(df)
@@ -142,7 +142,7 @@ end
     @test_throws BoundsError select(df, Not(0))
     @test_throws BoundsError select(df, Not(6))
     @test_throws ArgumentError select(df, Not([1, 1]))
-    @test_throws ArgumentError select(df, Not(:f))
+    @test select(df, Not(:f)) == df
     @test_throws BoundsError select(df, Not([true, false]))
 
     df2 = copy(df)
