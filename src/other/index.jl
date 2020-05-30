@@ -217,7 +217,7 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, notidx::Union{Not{<:AbstractVector{Symbol}},
                                                          Not{<:AbstractVector{<:AbstractString}}})
-    allunique(notidx.skip) || throw(ArgumentError("Elements of $idx must be unique"))
+    allunique(notidx.skip) || throw(ArgumentError("Elements of $(notidx.skip) must be unique"))
     setdiff(1:length(x), [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)])
 end
 
