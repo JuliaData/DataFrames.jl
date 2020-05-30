@@ -364,7 +364,7 @@ end
     @test DataFrames._names(SubIndex(i, Not(Between(2, 3)))) == [:x1, :y13, :yy13]
     @test DataFrames._names(SubIndex(i, Not(Between(1, 5)))) |> isempty
 
-    @test i[Not([r"x1."])] == [1, 4, 5]
+    @test i[Not(r"x1.")] == [1, 4, 5]
     @test i[Not(r"")] |> isempty
     @test i[Not(r"z")] == 1:5
     @test DataFrames._names(SubIndex(i, Not(r"x1."))) == [:x1, :y13, :yy13]

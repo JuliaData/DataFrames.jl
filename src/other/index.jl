@@ -215,9 +215,20 @@ end
     getindex(x, collect(Int, idx))
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-@inline Base.getindex(x::AbstractIndex, notidx::Union{Not{<:AbstractVector{Symbol}},
-                                                      Not{<:AbstractVector{<:AbstractString}}}) =
+@inline function Base.getindex(x::AbstractIndex, notidx::Union{Not{<:AbstractVector{Symbol}},
+                                                         Not{<:AbstractVector{<:AbstractString}}})
+    allunique(notidx.skip) || throw(ArgumentError("Elements of $idx must be unique"))
     setdiff(1:length(x), [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)])
+end
+
+@inline function Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector{<:Integer}})
+    allunique(notidx.skip) || throw(ArgumentError("Elements of $(notidx.skip) must be unique"))
+    setdiff(1:length(x), getindex(x, notidx.skip))
+end
+
+@inline function Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector{Bool}})
+    setdiff(1:length(x), getindex(x, notidx.skip))
+end
     
 @inline function Base.getindex(x::AbstractIndex, notidx::Not{<:All})
     if isempty(notidx.skip.cols) 
