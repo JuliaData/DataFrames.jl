@@ -481,7 +481,7 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
-The `Not` selector will ignore `String` and `Symbol` inputs that are not in the data frame. 
+The `Not` selector will ignore string and `Symbol` inputs that are not in the data frame. 
 
 ```jldoctest dataframe
 julia> df[:, Not(:z)]
