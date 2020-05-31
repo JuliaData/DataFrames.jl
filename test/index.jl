@@ -393,18 +393,42 @@ end
 end
 
 @testset "Not indexing with columns that don't exist" begin
-    df = DataFrame(a=1, b=2, c=3)
-    @test_throws BoundsError select(df, Not(4))
-    @test_throws BoundsError select(df, [4, 5, 6])
-    @test_throws BoundsError select(df, 4:6)
-    @test_throws BoundsError select(df, Int32(4):Int32(6))
-    @test_throws BoundsError select(df, [false, true, false, false])
-    @test select(df, Not(:d)) == df
-    @test select(df, Not(r"zzz")) == df
-    @test select(df, Not(:x)) == df
-    @test select(df, Not(All(:d, r"zzz", [:e, :f]))) == df
-    @test_throws ArgumentError select(df, Not(Between(:a, :d)))
-    @test_throws ArgumentError select(df, Not(Between(:x, :z)))
+    i = Index()
+    push!(i, :a)
+    push!(i, :b)
+    push!(i, :c)
+    @test_throws BoundsError i[Not(4)]
+    @test_throws BoundsError SubIndex(i, Not(4))
+    
+    @test_throws BoundsError i[Not([4, 5, 6])]
+    @test_throws BoundsError SubIndex(i, Not([4, 5, 6]))
+
+    @test_throws BoundsError i[Not(4:6)]
+    @test_throws BoundsError SubIndex(i, Not(4:6))
+
+    @test_throws BoundsError i[Not(Int32(4):Int32(6))]
+    @test_throws BoundsError SubIndex(i, Not(Int32(4):Int32(6)))
+
+    @test_throws BoundsError i[Not([false, true, false, false])]
+    @test_throws BoundsError SubIndex(i, Not([false, true, false, false]))
+
+    @test i[Not(:d)] == [1, 2, 3]
+    @test DataFrames._names(SubIndex(i, Not(:d))) == [:a, :b, :c]
+    
+    @test i[Not("d")] == [1, 2, 3]
+    @test DataFrames._names(SubIndex(i, Not("d"))) == [:a, :b, :c]
+    
+    @test i[Not(r"zzz")] == [1, 2, 3]
+    @test DataFrames._names(SubIndex(i, Not(r"zzz"))) == [:a, :b, :c]
+
+    @test i[Not(All(:d, r"zzz", [:e, :f]))] == [1, 2, 3]
+    @test DataFrames._names(SubIndex(i, Not(All(:d, r"zzz", [:e, :f])))) == [:a, :b, :c]
+   
+    @test_throws ArgumentError i[Not(Between(:a, :d))]
+    @test_throws ArgumentError SubIndex(i, Not(Between(:a, :d)))
+
+    @test_throws ArgumentError i[Not(Between(:x, :z))]
+    @test_throws ArgumentError SubIndex(i, Not(Between(:x, :z)))
 end
 
 @testset "Between indexing" begin

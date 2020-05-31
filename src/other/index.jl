@@ -220,15 +220,6 @@ end
     allunique(notidx.skip) || throw(ArgumentError("Elements of $(notidx.skip) must be unique"))
     setdiff(1:length(x), [getindex(x, idx) for idx in notidx.skip if haskey(x, idx)])
 end
-
-@inline function Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector{<:Integer}})
-    allunique(notidx.skip) || throw(ArgumentError("Elements of $(notidx.skip) must be unique"))
-    setdiff(1:length(x), getindex(x, notidx.skip))
-end
-
-@inline function Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector{Bool}})
-    setdiff(1:length(x), getindex(x, notidx.skip))
-end
     
 @inline function Base.getindex(x::AbstractIndex, notidx::Not{<:All})
     if isempty(notidx.skip.cols) 
