@@ -75,3 +75,7 @@ function funname(f)
     n = nameof(f)
     String(n)[1] == '#' ? :function : n
 end
+
+if isdefined(Base, :ComposedFunction)
+    funname(::Base.ComposedFunction) = :function
+end
