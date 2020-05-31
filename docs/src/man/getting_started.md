@@ -481,6 +481,24 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
+The `Not` selector will ignore `String` and `Symbol` inputs that are not in the data frame. 
+
+```jldoctest dataframe
+julia> df[:, Not(:z)]
+1×3 DataFrame
+│ Row │ x1    │ x2    │ y     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 3     │
+
+julia> df[:, Not(["x1", "z"])]
+1×2 DataFrame
+│ Row │ x2    │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 2     │ 3     │
+```
+
 Finally, you can use `Not` and `All` selectors in more complex column selection scenarios.
 The following examples move all columns whose names match `r"x"` regular expression respectively to the front and to the end of a data frame:
 ```
