@@ -1273,15 +1273,19 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                     _columns(df1)[j] = newcol
                 end
             else
-                # we can safely do it - if we got here this means that this is allowed
-                if Missing <: eltype(df1[!, j]) || !promote
-                    append!(df1[!, j], df2[!, n])
-                else
+                if Missing <: eltype(df1[!, j])
+                    resize!(df1[!, j], targetrows)
+                    df1[nrows+1:targetrows, j] .= missing
+                elseif promote
                     newcol = similar(df1[!, j], Union{Missing, eltype(df1[!, j])},
                                      targetrows)
                     copyto!(newcol, 1, df1[!, j], 1, nrows)
                     newcol[nrows+1:targetrows] .= missing
                     _columns(df1)[j] = newcol
+                else
+                    throw(ArgumentError("promote=false and source data frame does " *
+                                        "not contain column :$n, while destination" *
+                                        " column does not allowmissing values"))
                 end
             end
         end
@@ -1360,9 +1364,18 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
             end
             S = typeof(val)
             T = eltype(col)
-            if S <: T || !promote || promote_type(S, T) <: T
-                # if S <: T || promote_type(S, T) <: T this should never throw an exception
+            if S <: T || promote_type(S, T) <: T
                 push!(col, val)
+            elseif !promote
+                try
+                    push!(col, val)
+                catch err
+                    for col in _columns(df)
+                        resize!(col, nrows)
+                    end
+                    @error "Error adding value to column :$colname."
+                    rethrow(err)
+                end
             else
                 newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
@@ -1427,7 +1440,6 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
             S = typeof(val)
             T = eltype(col)
             if S <: T || !promote || promote_type(S, T) <: T
-                # if S <: T || promote_type(S, T) <: T this should never throw an exception
                 push!(col, val)
             else
                 newcol = similar(col, promote_type(S, T), targetrows)
@@ -1582,7 +1594,6 @@ function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
             S = typeof(val)
             T = eltype(col)
             if S <: T || !promote || promote_type(S, T) <: T
-                # if S <: T || promote_type(S, T) <: T this should never throw an exception
                 push!(col, val)
             else
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
