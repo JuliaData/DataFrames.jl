@@ -29,6 +29,12 @@ The rules for a valid type of index into a column are the following:
     * an `All` or `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
     * a colon literal `:`.
 
+Indexing with `Not` has special behavior, in particular:
+* `String`s and `Symbol`s that do not belong in the column names of the data frame are ignored. The same applies for elements of `AbstractVector{<:String}` and `AbstractVector{Symbol}` that do not belong in the column names of the data frame; 
+* Integer indexing for column indices that are not in the data frame will throw an error; 
+* Indexing using `Not` with regular expressions that do not match any column names in the data frame will return all columns;
+* Indexing with `Between` will throw an error if either of the columns specified by `Between` are not found in the columns of the data frame;
+
 The rules for a valid type of index into a row are the following:
 * a value, later denoted as `row`:
     * an `Integer` that is not `Bool`;
