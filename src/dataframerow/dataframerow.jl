@@ -403,9 +403,18 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             end
             S = typeof(val)
             T = eltype(col)
-            if S <: T || !promote || promote_type(S, T) <: T
-                # if S <: T || promote_type(S, T) <: T this should never throw an exception
+            if S <: T || promote_type(S, T) <: T
                 push!(col, val)
+            elseif !promote
+                try
+                    push!(col, val)
+                catch err
+                    for col in _columns(df)
+                        resize!(col, nrows)
+                    end
+                    @error "Error adding value to column :$colname."
+                    rethrow(err)
+                end
             else
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
@@ -463,7 +472,6 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             S = typeof(val)
             T = eltype(col)
             if S <: T || !promote || promote_type(S, T) <: T
-                # if S <: T || promote_type(S, T) <: T this should never throw an exception
                 push!(col, val)
             else
                 newcol = similar(col, promote_type(S, T), targetrows)

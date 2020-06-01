@@ -858,6 +858,58 @@ end
     end
 end
 
+@testset "new append! and push! tests" begin
+    for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
+        @test append!(df, DataFrame(b=1), cols=:union) ≅
+              DataFrame(a=[1, missing], b=[missing, 1])
+        @test append!(df, DataFrame(b=1), cols=:union) ≅
+              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        df.x = 1:3
+        with_logger(SimpleLogger(IOBuffer())) do
+            @test_throws ArgumentError append!(df, DataFrame(b=1), cols=:union,
+                                               promote=false)
+        end
+        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        allowmissing!(df, :x)
+        @test append!(df, DataFrame(b=1), cols=:union, promote=false) ≅
+              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
+                        x=[1:3; missing])
+    end
+
+    for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
+        @test push!(df, (b=1,), cols=:union) ≅
+              DataFrame(a=[1, missing], b=[missing, 1])
+        @test push!(df, (b=1,), cols=:union) ≅
+              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        df.x = 1:3
+        with_logger(SimpleLogger(IOBuffer())) do
+            @test_throws MethodError push!(df, (b=1,), cols=:union, promote=false)
+        end
+        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        allowmissing!(df, :x)
+        @test push!(df, (b=1,), cols=:union, promote=false) ≅
+              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
+                        x=[1:3; missing])
+    end
+
+    for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
+        @test push!(df, DataFrame(b=1)[1, :], cols=:union) ≅
+              DataFrame(a=[1, missing], b=[missing, 1])
+        @test push!(df, DataFrame(b=1)[1, :], cols=:union) ≅
+              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        df.x = 1:3
+        with_logger(SimpleLogger(IOBuffer())) do
+            @test_throws MethodError push!(df, DataFrame(b=1)[1, :], cols=:union,
+                                           promote=false)
+        end
+        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        allowmissing!(df, :x)
+        @test push!(df, DataFrame(b=1)[1, :], cols=:union, promote=false) ≅
+              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
+                        x=[1:3; missing])
+    end
+end
+
 @testset "test categorical!" begin
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
     DRT = CategoricalArrays.DefaultRefType
