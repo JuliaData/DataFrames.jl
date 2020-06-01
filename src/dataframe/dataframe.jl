@@ -1284,8 +1284,8 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                     _columns(df1)[j] = newcol
                 else
                     throw(ArgumentError("promote=false and source data frame does " *
-                                        "not contain column :$n, while destination" *
-                                        " column does not allowmissing values"))
+                                        "not contain column :$n, while destination " *
+                                        "column does not allow for missing values"))
                 end
             end
         end
