@@ -1107,21 +1107,12 @@ end
     @test transform(df, AsTable(:) => sum) ==
           DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_sum=map(sum, eachrow(df)))
 
-    if VERSION >= v"1.6.0-DEV.85"
-        @test select(df, AsTable(:) => sum ∘ sum) ==
-              repeat(DataFrame(a_b_c_sum_sum=45), nrow(df))
-        @test combine(df, AsTable(:) => sum ∘ sum) ==
-              DataFrame(a_b_c_sum_sum=45)
-        @test transform(df, AsTable(:) => sum ∘ sum) ==
-              DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_sum_sum=45)
-    else
-        @test select(df, AsTable(:) => sum ∘ sum) ==
-              repeat(DataFrame(a_b_c_function=45), nrow(df))
-        @test combine(df, AsTable(:) => sum ∘ sum) ==
-              DataFrame(a_b_c_function=45)
-        @test transform(df, AsTable(:) => sum ∘ sum) ==
-              DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_function=45)
-    end
+    @test select(df, AsTable(:) => sum ∘ sum) ==
+          repeat(DataFrame(a_b_c_sum_sum=45), nrow(df))
+    @test combine(df, AsTable(:) => sum ∘ sum) ==
+          DataFrame(a_b_c_sum_sum=45)
+    @test transform(df, AsTable(:) => sum ∘ sum) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_sum_sum=45)
 
     @test select(df, AsTable(:) => ByRow(x -> [x])) ==
           DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
@@ -1184,17 +1175,10 @@ end
     @test df2[:, 1] == df.x
     @test df2[:, 1] !== df.x
 
-    if VERSION >= v"1.6.0-DEV.85"
-        @test combine(df, :x => sum, :y => collect ∘ extrema) ==
-              DataFrame(x_sum=[6, 6], y_collect_extrema = [4, 6])
-        @test combine(df, :y => collect ∘ extrema, :x => sum) ==
-              DataFrame(y_collect_extrema = [4, 6], x_sum=[6, 6])
-    else
-        @test combine(df, :x => sum, :y => collect ∘ extrema) ==
-              DataFrame(x_sum=[6, 6], y_function = [4, 6])
-        @test combine(df, :y => collect ∘ extrema, :x => sum) ==
-              DataFrame(y_function = [4, 6], x_sum=[6, 6])
-    end
+    @test combine(df, :x => sum, :y => collect ∘ extrema) ==
+          DataFrame(x_sum=[6, 6], y_collect_extrema = [4, 6])
+    @test combine(df, :y => collect ∘ extrema, :x => sum) ==
+          DataFrame(y_collect_extrema = [4, 6], x_sum=[6, 6])
     @test combine(df, :x => sum, :y => x -> []) ==
           DataFrame(x_sum=[], y_function = [])
     @test combine(df, :y => x -> [], :x => sum) ==
@@ -1211,17 +1195,10 @@ end
     @test df2[:, 1] == dfv.x
     @test df2[:, 1] !== dfv.x
 
-    if VERSION >= v"1.6.0-DEV.85"
-        @test combine(dfv, :x => sum, :y => collect ∘ extrema) ==
-              DataFrame(x_sum=[3, 3], y_collect_extrema = [4, 5])
-        @test combine(dfv, :y => collect ∘ extrema, :x => sum) ==
-              DataFrame(y_collect_extrema = [4, 5], x_sum=[3, 3])
-    else
-        @test combine(dfv, :x => sum, :y => collect ∘ extrema) ==
-              DataFrame(x_sum=[3, 3], y_function = [4, 5])
-        @test combine(dfv, :y => collect ∘ extrema, :x => sum) ==
-              DataFrame(y_function = [4, 5], x_sum=[3, 3])
-    end
+    @test combine(dfv, :x => sum, :y => collect ∘ extrema) ==
+          DataFrame(x_sum=[3, 3], y_collect_extrema = [4, 5])
+    @test combine(dfv, :y => collect ∘ extrema, :x => sum) ==
+          DataFrame(y_collect_extrema = [4, 5], x_sum=[3, 3])
 end
 
 @testset "select and transform AbstractDataFrame" begin
