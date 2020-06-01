@@ -89,4 +89,12 @@ end
     @test_throws MethodError repeat!(view(df, 1:2, :), inner = 2, outer = 3)
 end
 
+@testset "funname" begin
+    @test DataFrames.funname(sum ∘ skipmissing ∘ Base.div12) ==
+          (VERSION >= v"1.6.0-DEV.85" ? :sum_skipmissing_div12 : :function)
+
+end
+
+end
+
 end # module

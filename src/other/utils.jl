@@ -76,6 +76,6 @@ function funname(f)
     String(n)[1] == '#' ? :function : n
 end
 
-if isdefined(Base, :ComposedFunction)
+if VERSION >= v"1.6.0-DEV.85"
     funname(c::Base.ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
 end
