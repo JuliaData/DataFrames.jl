@@ -77,5 +77,5 @@ function funname(f)
 end
 
 if isdefined(Base, :ComposedFunction)
-    funname(::Base.ComposedFunction) = :function
+    funname(c::Base.ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
 end
