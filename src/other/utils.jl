@@ -76,6 +76,15 @@ function funname(f)
     String(n)[1] == '#' ? :function : n
 end
 
-if VERSION >= v"1.6.0-DEV.85"
-    funname(c::Base.ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
+if isdefined(Base, :ComposedFunction)
+    using Base: ComposedFunction
+else
+    const ComposedFunction = let h = identity ∘ convert
+        @assert h.f === identity
+        @assert h.g === convert
+        getfield(parentmodule(typeof(h)), nameof(typeof(h)))
+    end
+    @assert identity ∘ convert isa ComposedFunction
 end
+
+funname(c::ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
