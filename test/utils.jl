@@ -91,7 +91,7 @@ end
 
 @testset "funname" begin
     @test DataFrames.funname(sum ∘ skipmissing ∘ Base.div12) ==
-          :sum_skipmissing_div12 : :function
+          :sum_skipmissing_div12
 
 end
 
