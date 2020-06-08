@@ -76,7 +76,7 @@ function funname(f)
     String(n)[1] == '#' ? :function : n
 end
 
-if isdefined(Base, :ComposedFunction)
+if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
     using Base: ComposedFunction
 else
     const ComposedFunction = let h = identity ∘ convert
