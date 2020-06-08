@@ -2309,12 +2309,12 @@ end
           combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
     df = DataFrame(g=[1, 1], x=[missing, "a"])
     gdf = groupby_checked(df, :g)
-    @test Matrix(combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b)) ==
-          Matrix(combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b))
+    @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
+          combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
     df = DataFrame(g=[1, 1], x=Any[missing, "a"])
     gdf = groupby_checked(df, :g)
-    @test Matrix(combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b)) ==
-          Matrix(combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b))
+    @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
+          combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
 
     df = DataFrame(g=[1, 2], x=Any[nothing, "a"])
     gdf = groupby_checked(df, :g)
