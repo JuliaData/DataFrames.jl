@@ -2222,29 +2222,30 @@ end
     df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1.5,1.5,1.5])
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum) == DataFrame(g=1:2, x_sum=[3.0, 4.5])
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3.0, 4.5])
+
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_sum_skipmissing=[3.0, 4.5])
+    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.5])
+    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
     @test combine(gdf, :x => mean) == DataFrame(g=1:2, x_mean=[1.0, 1.5])
-    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.5])
     @test combine(gdf, :x => var) == DataFrame(g=1:2, x_var=[0.0, 0.0])
-    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
 
     df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1,1,missing])
     gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_sum_skipmissing=[3, 2])
+    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.0])
+    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
     @test combine(gdf, :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
     @test combine(gdf, :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
-    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
     @test combine(gdf, :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
-    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
 
     df = DataFrame(g=[1,1,1,2,2,2], x=Union{Real, Missing}[1,1,1,1,1,missing])
     gdf = groupby_checked(df, :g)
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_sum_skipmissing=[3, 2])
+    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.0])
+    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
     @test combine(gdf, :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_function=[3, 2])
     @test combine(gdf, :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
-    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_function=[1.0, 1.0])
     @test combine(gdf, :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
-    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_function=[0.0, 0.0])
 
     Random.seed!(1)
     df = DataFrame(g = rand(1:2, 1000), x1 = rand(Int, 1000))
@@ -2283,7 +2284,7 @@ end
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
     @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1, x_function=0)
+    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1, x_sum_skipmissing=0)
     @test eltype(combine(gdf, :x => sum∘skipmissing)[!, 2]) === Int
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Int, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)

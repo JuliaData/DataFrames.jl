@@ -75,3 +75,16 @@ function funname(f)
     n = nameof(f)
     String(n)[1] == '#' ? :function : n
 end
+
+if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
+    using Base: ComposedFunction
+else
+    const ComposedFunction = let h = identity ∘ convert
+        @assert h.f === identity
+        @assert h.g === convert
+        getfield(parentmodule(typeof(h)), nameof(typeof(h)))
+    end
+    @assert identity ∘ convert isa ComposedFunction
+end
+
+funname(c::ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
