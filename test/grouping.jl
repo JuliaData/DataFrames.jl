@@ -2343,41 +2343,40 @@ end
                          g2=[1, 3, 2, 1, 4, 1, 2, 5], x2=1:8),
                view(DataFrame(g1=[1, 3, 2, 1, 4, 1, 2, 5, 4, 5], x1=1:10,
                               g2=[1, 3, 2, 1, 4, 1, 2, 5, 4, 5], x2=1:10, y=1:10),
-                    1:8, Not(:y))),
-        gcols in (:g1, [:g1, :g2]),
-        cutoff in (1, 0, 10),
-        predicate in (x -> nrow(x) > cutoff,
-                      1 => x -> length(x) > cutoff,
-                      :x1 => x -> length(x) > cutoff,
-                      "x1" => x -> length(x) > cutoff,
-                      [1, 2] => (x1, x2) -> length(x1) > cutoff,
-                      [:x1, :x2] => (x1, x2) -> length(x1) > cutoff,
-                      ["x1", "x2"] => (x1, x2) -> length(x1) > cutoff,
-                      r"x" => (x1, x2) -> length(x1) > cutoff,
-                      AsTable(:x1) => x -> length(x.x1) > cutoff,
-                      AsTable(r"x") => x -> length(x.x1) > cutoff)
-        gdf1  = groupby(df, gcols)
-        gdf2 = filter(predicate, gdf1)
-        if cutoff == 1
-            @test getindex.(keys(gdf2), 1) == 1:2
-        elseif cutoff == 0
+                    1:8, Not(:y)))
+        for gcols in (:g1, [:g1, :g2]), cutoff in (1, 0, 10),
+            predicate in (x -> nrow(x) > cutoff,
+                          1 => x -> length(x) > cutoff,
+                          :x1 => x -> length(x) > cutoff,
+                          "x1" => x -> length(x) > cutoff,
+                          [1, 2] => (x1, x2) -> length(x1) > cutoff,
+                          [:x1, :x2] => (x1, x2) -> length(x1) > cutoff,
+                          ["x1", "x2"] => (x1, x2) -> length(x1) > cutoff,
+                          r"x" => (x1, x2) -> length(x1) > cutoff,
+                          AsTable(:x1) => x -> length(x.x1) > cutoff,
+                          AsTable(r"x") => x -> length(x.x1) > cutoff)
+            gdf1  = groupby(df, gcols)
+            gdf2 = filter(predicate, gdf1)
+            if cutoff == 1
+                @test getindex.(keys(gdf2), 1) == 1:2
+            elseif cutoff == 0
+                @test gdf1 == gdf2
+            elseif cutoff == 10
+                @test isempty(gdf2)
+            end
+            filter!(predicate, gdf1)
             @test gdf1 == gdf2
-        elseif cutoff == 10
-            @test isempty(gdf2)
         end
-        filter!(predicate, gdf1)
-        @test gdf1 == gdf2
-    end
+        for fun in (filter, filter!)
+            @test_throws TypeError fun(x -> 1, groupby(df, :g1))
+            @test_throws TypeError fun(r"x" => (x...) -> 1, groupby(df, :g1))
+            @test_throws TypeError fun(AsTable(r"x") => (x...) -> 1, groupby(df, :g1))
 
-    for fun in (filter, filter!)
-        @test_throws TypeError fun(x -> 1, groupby(df, :g1))
-        @test_throws TypeError fun(r"x" => (x...) -> 1, groupby(df, :g1))
-        @test_throws TypeError fun(AsTable(r"x") => (x...) -> 1, groupby(df, :g1))
-
-        @test_throws ArgumentError fun(r"y" => (x...) -> true, groupby(df, :g1))
-        @test_throws ArgumentError fun([] => (x...) -> true, groupby(df, :g1))
-        @test_throws ArgumentError fun(AsTable(r"y") => (x...) -> true, groupby(df, :g1))
-        @test_throws ArgumentError fun(AsTable([]) => (x...) -> true, groupby(df, :g1))
+            @test_throws ArgumentError fun(r"y" => (x...) -> true, groupby(df, :g1))
+            @test_throws ArgumentError fun([] => (x...) -> true, groupby(df, :g1))
+            @test_throws ArgumentError fun(AsTable(r"y") => (x...) -> true, groupby(df, :g1))
+            @test_throws ArgumentError fun(AsTable([]) => (x...) -> true, groupby(df, :g1))
+        end
     end
 end
 
