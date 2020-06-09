@@ -21,28 +21,29 @@ Tables.getcolumn(dfr::DataFrameRow, nm::Symbol) = dfr[nm]
 getvector(x::AbstractVector) = x
 getvector(x) = [x[i] for i = 1:length(x)]
 # note that copycols is ignored in this definition (Tables.CopiedColumns implies copies have already been made)
-fromcolumns(x::Tables.CopiedColumns, names; copycols::Bool=true) =
+fromcolumns(x::Tables.CopiedColumns, names; makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
-              Index(names),
+              Index(names, makeunique=makeunique),
               copycols=false)
-fromcolumns(x, names; copycols::Bool=true) =
+fromcolumns(x, names; makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
-              Index(names),
+              Index(names, makeunique=makeunique),
               copycols=copycols)
 
-function DataFrame(x::T; copycols::Bool=true) where {T}
+function DataFrame(x::T; makeunique::Bool=false, copycols::Bool=true) where {T}
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
-        return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
+        return DataFrame(Vector{AbstractVector}(x), makeunique=makeunique, copycols=copycols)
     end
     if x isa AbstractVector || x isa Tuple
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
+                             makeunique=makeunique,
                              copycols=copycols)
         end
     end
     cols = Tables.columns(x)
     names = collect(Symbol, Tables.columnnames(cols))
-    return fromcolumns(cols, names, copycols=copycols)
+    return fromcolumns(cols, names, makeunique=makeunique, copycols=copycols)
 end
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
