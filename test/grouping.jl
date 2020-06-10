@@ -1337,6 +1337,7 @@ end
 @testset "GroupedDataFrame dictionary interface" begin
     df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
+    
     @test map(NamedTuple, keys(gd)) ≅
         [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
 

@@ -323,8 +323,8 @@ function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return Base.to_index(gd, Tuple(key))
 end
 
-function Base.to_index(gd::GroupedDataFrame, key::Union{Tuple{Vararg{Pair{Symbol}}}), Tuple{Vararg{Pair{<:AbstractString}}})}
-    if length(key) != length(gd.cols) || any(Symbol(first(k)) != _names(gd)[c] for (n, c) in zip(key, gd.cols))
+function Base.to_index(gd::GroupedDataFrame, key::Union{Tuple{Vararg{Pair{Symbol}}}, Tuple{Vararg{Pair{<:AbstractString}}}})
+    if length(key) != length(gd.cols) || any(Symbol(first(n)) != _names(gd)[c] for (n, c) in zip(key, gd.cols))
         throw(KeyError(key))
     end
     return Base.to_index(gd, last.(key))
