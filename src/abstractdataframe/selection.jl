@@ -278,7 +278,8 @@ SELECT_ARG_RULES =
     select!(df::DataFrame, args...)
 
 Mutate `df` in place to retain only columns specified by `args...` and return it.
-The result is guaranteed to have the same number of rows as `df`.
+The result is guaranteed to have the same number of rows as `df`, except when no
+columns are selected.
 
 $SELECT_ARG_RULES
 
@@ -373,7 +374,8 @@ transform!(df::DataFrame, args...) = select!(df, :, args...)
     select(df::AbstractDataFrame, args...; copycols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `args` and
-return it. The result is guaranteed to have the same number of rows as `df`.
+return it. The result is guaranteed to have the same number of rows as `df`,
+except when no columns are selected.
 
 If `df` is a `DataFrame` or `copycols=true` then column renaming and transformations
 are supported.

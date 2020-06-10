@@ -245,6 +245,8 @@ const KWARG_PROCESSING_RULES =
     in addition to those generated. In this case if the returned
     value contains columns with the same names as the grouping columns, they are
     required to be equal.
+    If `keepkeys=false` if generated columns have the same name as grouping columns
+    they are kept and are not required to be equal to grouping columns.
 
     If `ungroup=true` (the default) a `DataFrame` is returned.
     If `ungroup=false` a `GroupedDataFrame` grouped using `keycols(gdf)` is returned.
@@ -548,10 +550,6 @@ function _combine_prepare(gd::GroupedDataFrame,
 end
 
 function combine(gd::GroupedDataFrame; f...)
-    if length(f) == 0
-        throw(ArgumentError("combine(gd) is not allowed, use DataFrame(gd) " *
-                            "to combine a GroupedDataFrame into a DataFrame"))
-    end
     Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated" *
                  ", use `combine(gd, source_cols => fun => :target_col, ...)` instead",
                  :combine)
@@ -1483,10 +1481,13 @@ end
            copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true)
 
 Apply `args` to `gd` following the rules described in [`combine`](@ref) and return the
-result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`.
+result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`
+(in this case the returned value retains the order of groups of `gd`).
 
-The `parent` of the returned value has as many rows as `parent(gd)`. If an operation
-in `args` returns a single value it is always broadcasted to have this number of rows.
+The `parent` of the returned value has as many rows as `parent(gd)`, except when
+`gd` has no grouping columns or `keepkeys=false` and no columns are selected.
+Also order of rows in the parent is preserved. If an operation in `args` returns
+a single value it is always broadcasted to have this number of rows.
 
 If `copycols=false` then do not perform copying of columns that are not transformed.
 
