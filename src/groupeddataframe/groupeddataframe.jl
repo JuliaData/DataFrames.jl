@@ -570,21 +570,21 @@ function Base.get(gd::GroupedDataFrame, key::Union{Tuple, NamedTuple}, default)
 end
 
 """
-    filter(function, gdf::GroupedDataFrame)
-    filter(cols => function, gdf::GroupedDataFrame)
+    filter(fun, gdf::GroupedDataFrame)
+    filter(cols => fun, gdf::GroupedDataFrame)
 
-Return a new `GroupedDataFrame` containing only groups for which `function`
+Return a new `GroupedDataFrame` containing only groups for which `fun`
 returns `true`.
 
-If `cols` is not specified then the function is called with a `SubDataFrame`
-for each group.
+If `cols` is not specified then the predicate `fun` is called with a
+`SubDataFrame` for each group.
 
-If `cols` is specified then the function is called for each group with views of the corresponding
-columns as separate positional arguments, unless `cols` is an `AsTable` selector,
-in which case a `NamedTuple` of these arguments is passed.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
-and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
-is passed.
+If `cols` is specified then the predicate `fun` is called for each group with
+views of the corresponding columns as separate positional arguments, unless
+`cols` is an `AsTable` selector, in which case a `NamedTuple` of these arguments
+is passed. `cols` can be any column selector ($COLUMNINDEX_STR;
+$MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
+`Symbol`s, strings, or integers is passed.
 
 See also: [`filter!`](@ref)
 
@@ -624,7 +624,7 @@ First Group (1 row): g = 1
 
 ```
 """
-Base.filter(f::Base.Callable, gdf::GroupedDataFrame) =
+Base.filter(f, gdf::GroupedDataFrame) =
     gdf[[f(sdf)::Bool for sdf in gdf]]
 Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame) =
     _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends, parent(gdf)[!, col])
@@ -671,26 +671,27 @@ function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
 end
 
 """
-    filter!(function, gdf::GroupedDataFrame)
-    filter!(cols => function, gdf::GroupedDataFrame)
+    filter!(fun, gdf::GroupedDataFrame)
+    filter!(cols => fun, gdf::GroupedDataFrame)
 
-Update a `GroupedDataFrame` in-place to contain only groups for which `function`
+Update a `GroupedDataFrame` in-place to contain only groups for which `fun`
 returns `true`.
 
-If `cols` is not specified then the function is passed `SubDataFrame`s.
+If `cols` is not specified then the predicate `fun` is called with a
+`SubDataFrame` for each group.
 
-If `cols` is specified then the function is passed views of the corresponding
-columns as separate positional arguments, unless `cols` is an `AsTable` selector,
-in which case a `NamedTuple` of these arguments is passed.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
-and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
-is passed.
+If `cols` is specified then the predicate `fun` is called for each group with
+views of the corresponding columns as separate positional arguments, unless
+`cols` is an `AsTable` selector, in which case a `NamedTuple` of these arguments
+is passed. `cols` can be any column selector ($COLUMNINDEX_STR;
+$MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
+`Symbol`s, strings, or integers is passed.
 
 See also: [`filter`](@ref)
 
 # Examples
 ```
-julia> df = DataFrame(g=1:2, x='a':'b');
+julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
 
 julia> gd = groupby(df, :g)
 GroupedDataFrame with 2 groups based on key: g
