@@ -576,9 +576,10 @@ end
 Return a new `GroupedDataFrame` containing only groups for which `function`
 returns `true`.
 
-If `cols` is not specified then the function is passed `SubDataFrame`s.
+If `cols` is not specified then the function is called with a `SubDataFrame`
+for each group.
 
-If `cols` is specified then the function is passed views of the corresponding
+If `cols` is specified then the function is called for each group with views of the corresponding
 columns as separate positional arguments, unless `cols` is an `AsTable` selector,
 in which case a `NamedTuple` of these arguments is passed.
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
@@ -589,7 +590,7 @@ See also: [`filter!`](@ref)
 
 # Examples
 ```
-julia> df = DataFrame(g=1:2, x='a':'b');
+julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
 
 julia> gd = groupby(df, :g)
 GroupedDataFrame with 2 groups based on key: g
@@ -638,7 +639,7 @@ Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame) =
 
 function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
                         starts::Vector{Int}, ends::Vector{Int}, cols...)
-    function mapper(i)
+    function mapper(i::Integer)
         idxs = idx[starts[i]:ends[i]]
         return map(x -> view(x, idxs), cols)
     end
@@ -661,7 +662,7 @@ end
 
 function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
                                 idx::Vector{Int}, starts::Vector{Int}, ends::Vector{Int})
-    function mapper(i)
+    function mapper(i::Integer)
         idxs = idx[starts[i]:ends[i]]
         return map(x -> view(x, idxs), nt)
     end

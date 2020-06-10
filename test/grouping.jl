@@ -2364,7 +2364,7 @@ end
             elseif cutoff == 10
                 @test isempty(gdf2)
             end
-            filter!(predicate, gdf1)
+            @test filter!(predicate, gdf1) === gdf1
             @test gdf1 == gdf2
         end
         for fun in (filter, filter!)
