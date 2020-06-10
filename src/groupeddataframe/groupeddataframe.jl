@@ -731,11 +731,11 @@ function Base.filter!(f, gdf::GroupedDataFrame)
 
     if length(gdf_new) != gdf
         gdf.groups = gdf_new.groups
-        gdf.idx = gdf_new.idx
-        gdf.starts = gdf_new.starts
-        gdf.ends = gdf_new.ends
+        gdf.idx = getfield(gdf_new, :idx)
+        gdf.starts = getfield(gdf_new, :starts)
+        gdf.ends = getfield(gdf_new, :ends)
         gdf.ngroups = gdf_new.ngroups
-        gdf.keymap = nothing
+        gdf.keymap = getfield(gdf_new, :keymap)
     else
         # this check is relatively cheap so we add it
         # to make sure we do not have a bug in the code
