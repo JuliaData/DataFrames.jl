@@ -1320,12 +1320,16 @@ end
 
     df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
     gd = groupby_checked(df, :a)
-    @test_throws ArgumentError combine(gd)
+    @test size(combine(gd)) == (0, 1)
+    @test names(combine(gd)) == ["a"]
 end
 
 @testset "GroupedDataFrame dictionary interface" begin
     df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat(1:2, inner=6), c = 1:12)
     gd = groupby_checked(df, [:a, :b])
+
+    @test gd[1] == DataFrame(a=[:A, :A], b=[1, 1], c=[1, 4])
+    @test_throws ArgumentError gd[1, 1]
 
     @test map(NamedTuple, keys(gd)) ≅
         [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
@@ -2144,7 +2148,7 @@ end
                DataFrame(g=categorical(rand(1:20, 1000)), x=rand(1000), id=1:1000)),
         dosort in (true, false)
 
-        gdf = groupby(df, :g, sort=dosort)
+        gdf = groupby_checked(df, :g, sort=dosort)
 
         res1 = select(gdf, :x => mean, :x => x -> x .- mean(x), :id)
         @test res1.g == df.g
@@ -2216,6 +2220,144 @@ end
         @test_throws ArgumentError transform!(gdf, :x => sum, ungroup=false)
         @test dfc ≅ df
     end
+end
+
+@testset "group ordering after select/transform" begin
+    df = DataFrame(g=[3, 1, 1, 2, 3], x=1:5)
+    gdf1 = groupby_checked(df, :g)
+    gdf2 = gdf1[[2, 3, 1]]
+    @test select(gdf1, :x) == select(gdf2, :x) == df
+    @test select(gdf1, :x, ungroup=false) == gdf1
+    @test select(gdf2, :x, ungroup=false) == gdf2
+    @test select(gdf1, ungroup=false) ==
+          groupby_checked(DataFrame(g=[3, 1, 1, 2, 3]), :g)
+    @test select(gdf2, ungroup=false) ==
+          groupby_checked(DataFrame(g=[3, 1, 1, 2, 3]), :g)[[2, 3, 1]]
+
+    gdf1′ = deepcopy(gdf1)
+    df1′ = parent(gdf1′)
+    gdf2′ = deepcopy(gdf2)
+    df2′ = parent(gdf2′)
+    @test select!(gdf1, :x, ungroup=false) == gdf1′
+    @test select!(gdf2, :x, ungroup=false) == gdf2′
+    @test select!(gdf1′, ungroup=false) ==
+          groupby_checked(DataFrame(g=[3, 1, 1, 2, 3]), :g)
+    @test select!(gdf2′, ungroup=false) ==
+          groupby_checked(DataFrame(g=[3, 1, 1, 2, 3]), :g)[[2, 3, 1]]
+    @test df1′ == DataFrame(g=[3, 1, 1, 2, 3])
+    @test df2′ == DataFrame(g=[3, 1, 1, 2, 3])
+end
+
+@testset "handling empty data frame / selectors / groupcols" begin
+    df = DataFrame(x=[], g=[])
+    gdf = groupby_checked(df, :g)
+
+    @test size(combine(gdf)) == (0, 1)
+    @test names(combine(gdf)) == ["g"]
+    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test size(select(gdf)) == (0, 1)
+    @test names(select(gdf)) == ["g"]
+    @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
+    @test size(parent(select(gdf, ungroup=false))) == (0, 1)
+    @test names(parent(select(gdf, ungroup=false))) == ["g"]
+    @test parent(select(gdf, ungroup=false)).g !== df.g
+    @test parent(select(gdf, ungroup=false, copycols=false)).g === df.g
+    @test select(gdf, keepkeys=false) == DataFrame()
+    @test size(transform(gdf)) == (0, 1)
+    @test names(transform(gdf)) == ["g"]
+    @test transform(gdf, keepkeys=false) == DataFrame()
+    @test groupcols(validate_gdf(transform(gdf, ungroup=false))) == [:g]
+    @test size(parent(transform(gdf, ungroup=false))) == (0, 1)
+    @test names(parent(transform(gdf, ungroup=false))) == ["g"]
+    @test parent(transform(gdf, ungroup=false)).g !== df.g
+    @test parent(transform(gdf, ungroup=false, copycols=false)).g === df.g
+
+    @test size(combine(x -> DataFrame(col=1), gdf)) == (0, 1)
+    @test names(combine(x -> DataFrame(col=1), gdf)) == ["g"]
+    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test size(select(gdf, :x => :y)) == (0, 1)
+    @test names(select(gdf, :x => :y)) == ["g"]
+    @test groupcols(validate_gdf(select(gdf, :x => :y, ungroup=false))) == [:g]
+    @test size(parent(select(gdf, :x => :y, ungroup=false))) == (0, 1)
+    @test names(parent(select(gdf, :x => :y, ungroup=false))) == ["g"]
+    @test parent(select(gdf, :x => :y, ungroup=false)).g !== df.g
+    @test parent(select(gdf, :x => :y, ungroup=false, copycols=false)).g === df.g
+    @test select(gdf, :x => :y, keepkeys=false) == DataFrame()
+    @test size(transform(gdf, :x => :y)) == (0, 1)
+    @test names(transform(gdf, :x => :y)) == ["g"]
+    @test transform(gdf, :x => :y, keepkeys=false) == DataFrame()
+    @test groupcols(validate_gdf(transform(gdf, :x => :y, ungroup=false))) == [:g]
+    @test size(parent(transform(gdf, :x => :y, ungroup=false))) == (0, 1)
+    @test names(parent(transform(gdf, :x => :y, ungroup=false))) == ["g"]
+    @test parent(transform(gdf, :x => :y, ungroup=false)).g !== df.g
+    @test parent(transform(gdf, :x => :y, ungroup=false, copycols=false)).g === df.g
+
+    df = DataFrame(x=[1], g=[1])
+    gdf = groupby_checked(df, :g)
+
+    @test size(combine(gdf)) == (0, 1)
+    @test names(combine(gdf)) == ["g"]
+    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test size(select(gdf)) == (1, 1)
+    @test names(select(gdf)) == ["g"]
+    @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
+    @test size(parent(select(gdf, ungroup=false))) == (1, 1)
+    @test names(parent(select(gdf, ungroup=false))) == ["g"]
+    @test parent(select(gdf, ungroup=false)).g !== df.g
+    @test parent(select(gdf, ungroup=false, copycols=false)).g === df.g
+    @test select(gdf, keepkeys=false) == DataFrame()
+    @test size(transform(gdf)) == (1, 2)
+    @test names(transform(gdf)) == ["g", "x"]
+    @test transform(gdf, keepkeys=false) == df
+    @test groupcols(validate_gdf(transform(gdf, ungroup=false))) == [:g]
+    @test size(parent(transform(gdf, ungroup=false))) == (1, 2)
+    @test names(parent(transform(gdf, ungroup=false))) == ["g", "x"]
+    @test parent(transform(gdf, ungroup=false)).g !== df.g
+    @test parent(transform(gdf, ungroup=false, copycols=false)).g === df.g
+    @test parent(transform(gdf, ungroup=false)).x !== df.x
+    @test parent(transform(gdf, ungroup=false, copycols=false)).x === df.x
+
+    @test size(combine(gdf, r"z")) == (0, 1)
+    @test names(combine(gdf, r"z")) == ["g"]
+    @test size(select(gdf, r"z")) == (1, 1)
+    @test names(select(gdf, r"z")) == ["g"]
+    @test select(gdf, r"z", keepkeys=false) == DataFrame()
+    @test names(select(gdf, r"z")) == ["g"]
+    @test select(gdf, :x => (x -> 10x) => :g, keepkeys=false) == DataFrame(g=10)
+
+    gdf = gdf[1:0]
+    @test size(combine(gdf)) == (0, 1)
+    @test names(combine(gdf)) == ["g"]
+    @test size(combine(x -> DataFrame(z=1), gdf)) == (0, 1)
+    @test names(combine(x -> DataFrame(z=1), gdf)) == ["g"]
+    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test_throws ArgumentError select(gdf)
+    @test_throws ArgumentError transform(gdf)
+
+    @test select(groupby_checked(df, []), r"zzz") == DataFrame()
+    @test select(groupby_checked(df, [])) == DataFrame()
+    @test transform(groupby_checked(df, [])) == df
+    @test select(groupby_checked(df, []), r"zzz", keepkeys=false) == DataFrame()
+    @test select(groupby_checked(df, []), keepkeys=false) == DataFrame()
+    @test transform(groupby_checked(df, []), keepkeys=false) == df
+
+    gdf_tmp = validate_gdf(select(groupby_checked(df, []), ungroup=false))
+    @test length(gdf_tmp) == 0
+    @test isempty(gdf_tmp.cols)
+end
+
+@testset "groupcols order after select/transform" begin
+    df = DataFrame(x=1:2, g=3:4)
+    gdf = groupby_checked(df, :g)
+    gdf2 = validate_gdf(transform(gdf, ungroup=false))
+    @test groupcols(gdf2) == [:g]
+    @test parent(gdf2) == select(df, :g, :x)
+
+    df = DataFrame(g2=1:2, x=3:4, g1=5:6)
+    gdf = groupby_checked(df, [:g1, :g2])
+    gdf2 = validate_gdf(transform(gdf, ungroup=false))
+    @test groupcols(gdf2) == [:g1, :g2]
+    @test parent(gdf2) == select(df, :g1, :g2, :x)
 end
 
 @testset "corner cases of group_reduce" begin

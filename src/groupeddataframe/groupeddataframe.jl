@@ -299,8 +299,10 @@ end
 # The full version (to_indices) is required rather than to_index even though
 # GroupedDataFrame behaves as a 1D array due to the behavior of Colon and Not.
 # Note that this behavior would be the default if it was <:AbstractArray
-Base.getindex(gd::GroupedDataFrame, idx...) =
-    getindex(gd, Base.to_indices(gd, idx)...)
+function Base.getindex(gd::GroupedDataFrame, idx...)
+    length(idx) == 1 || throw(ArgumentError("GroupedDataFrame requires a single index"))
+    return getindex(gd, Base.to_indices(gd, idx)...)
+end
 
 # The allowed key types for dictionary-like indexing
 const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}

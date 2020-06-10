@@ -237,6 +237,8 @@ const F_ARGUMENT_RULES =
     If the first or last argument is a function `fun`, it is passed a [`SubDataFrame`](@ref)
     view for each group and can return any return value defined below.
     Note that this form is slower than `pair` or `args` due to type instability.
+
+    If grouped data frame has zero groups then no transformations are applied.
     """
 
 const KWARG_PROCESSING_RULES =
@@ -250,6 +252,8 @@ const KWARG_PROCESSING_RULES =
 
     If `ungroup=true` (the default) a `DataFrame` is returned.
     If `ungroup=false` a `GroupedDataFrame` grouped using `keycols(gdf)` is returned.
+
+    If `gd` has zero groups then no additional columns are computed.
     """
 
 """
@@ -473,7 +477,6 @@ function _combine_prepare(gd::GroupedDataFrame,
                           @nospecialize(cs::Union{Pair, typeof(nrow),
                                                   ColumnIndex, MultiColumnIndex}...);
                  keepkeys::Bool, ungroup::Bool, copycols::Bool, keeprows::Bool)
-    @assert !isempty(cs)
     cs_vec = []
     for p in cs
         if p === nrow
@@ -550,9 +553,12 @@ function _combine_prepare(gd::GroupedDataFrame,
 end
 
 function combine(gd::GroupedDataFrame; f...)
-    Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated" *
-                 ", use `combine(gd, source_cols => fun => :target_col, ...)` instead",
-                 :combine)
+    if length(f) > 0
+        Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated" *
+                     ", use `combine(gd, source_cols => fun => :target_col, ...)` instead",
+                     :combine)
+    end
+    # in the future handle keepkeys and ungroup
     return combine(gd, [source_cols => fun => out_col for (out_col, (source_cols, fun)) in f])
 end
 
@@ -574,6 +580,9 @@ function combine_helper(f, gd::GroupedDataFrame,
                         nms::Union{AbstractVector{Symbol},Nothing}=nothing;
                         keepkeys::Bool, ungroup::Bool,
                         copycols::Bool, keeprows::Bool)
+    # helper function for creating a new GroupedDataFrame
+    maybe_copy(x) = isnothing(x) ? x : copy(x)
+
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
@@ -595,33 +604,52 @@ function combine_helper(f, gd::GroupedDataFrame,
         else
             newparent = parent(gd)[idx, gd.cols]
         end
-        hcat!(newparent, select(valscat, Not(intersect(keys, _names(valscat))), copycols=false),
+        hcat!(newparent,
+              select(valscat, Not(intersect(keys, _names(valscat))), copycols=false),
               copycols=false)
         ungroup && return newparent
 
-        if length(idx) == 0
+        if length(idx) == 0 && !(keeprows && length(keys) > 0)
             @assert nrow(newparent) == 0
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), Int[],
-                                    Int[], Int[], Int[], 0, Dict{Any,Int}())
+                                        Int[], Int[], Int[], 0, Dict{Any,Int}())
         end
         if keeprows
+            @assert length(keys) > 0 || idx == gd.idx
+            @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
             # in this case we are sure that the result GroupedDataFrame has the
-            # same structure as the source
-            # we do not copy data as it should be safe - we never mutate fields of gd
-            return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
-                                    gd.starts, gd.ends, gd.ngroups, getfield(gd, :keymap))
+            # same structure as the source except that grouping columns are at the start
+            return GroupedDataFrame(newparent, collect(1:length(gd.cols)), copy(gd.groups),
+                                    maybe_copy(getfield(gd, :idx)),
+                                    maybe_copy(getfield(gd, :starts)),
+                                    maybe_copy(getfield(gd, :ends)),
+                                    gd.ngroups,
+                                    maybe_copy(getfield(gd, :keymap)))
         else
             groups = gen_groups(idx)
             @assert groups[end] <= length(gd)
+            @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), groups,
                                     nothing, nothing, nothing, groups[end], nothing)
         end
     else
-        if ungroup
-            return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
+        if keeprows
+            if nrow(parent(gd)) > 0
+                 throw(ArgumentError("select and transform do not support " *
+                                    "`GroupedDataFrame`s from which some groups have "*
+                                    "been dropped (including skipmissing=true)"))
+            end
+            if ungroup
+                return keepkeys ? select(parent(gd), gd.cols, copycols=copycols) : DataFrame()
+            else
+                return groupby(select(parent(gd), gd.cols, copycols=copycols), 1:length(gd.cols))
+            end
         else
-            return GroupedDataFrame(parent(gd)[1:0, gd.cols], collect(1:length(gd.cols)),
-                                    Int[], Int[], Int[], Int[], 0, Dict{Any,Int}())
+            if ungroup
+                return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
+            else
+                return groupby(parent(gd)[1:0, gd.cols], 1:length(gd.cols))
+            end
         end
     end
 end
@@ -1084,6 +1112,7 @@ function _combine(f::AbstractVector{<:Pair},
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
     @assert all(x -> last(x) isa Base.Callable, f)
 
+    isempty(f) && return Int[], DataFrame()
     if keeprows
         if minimum(gd.groups) == 0
             throw(ArgumentError("select and transform do not support " *
