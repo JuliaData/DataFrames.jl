@@ -1331,7 +1331,7 @@ end
 function tuple_pair_string(key)
     k = keys(key)
     v = values(key)
-    ntuple(i -> k[i] => v[i], length(k))
+    ntuple(i -> String(k[i]) => v[i], length(k))
 end
 
 @testset "GroupedDataFrame dictionary interface" begin
@@ -1349,9 +1349,9 @@ end
         @test gd[NamedTuple(key)] ≅ gd[i]
         # Plain tuple
         @test gd[Tuple(key)] ≅ gd[i]
-        # Tuple Pair
+        # Tuple of Pairs
         @test gd[tuple_pair(key)] ≅ gd[i]
-        # Tuple Pair with string
+        # Tuple of Pairs with string
         @test gd[tuple_pair_string(key)] ≅ gd[i]
     end
 
