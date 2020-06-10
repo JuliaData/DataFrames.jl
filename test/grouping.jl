@@ -2355,7 +2355,7 @@ end
                           r"x" => (x1, x2) -> length(x1) > cutoff,
                           AsTable(:x1) => x -> length(x.x1) > cutoff,
                           AsTable(r"x") => x -> length(x.x1) > cutoff)
-            gdf1  = groupby(df, gcols)
+            gdf1  = groupby_checked(df, gcols)
             gdf2 = filter(predicate, gdf1)
             if cutoff == 1
                 @test getindex.(keys(gdf2), 1) == 1:2
@@ -2368,14 +2368,14 @@ end
             @test gdf1 == gdf2
         end
         for fun in (filter, filter!)
-            @test_throws TypeError fun(x -> 1, groupby(df, :g1))
-            @test_throws TypeError fun(r"x" => (x...) -> 1, groupby(df, :g1))
-            @test_throws TypeError fun(AsTable(r"x") => (x...) -> 1, groupby(df, :g1))
+            @test_throws TypeError fun(x -> 1, groupby_checked(df, :g1))
+            @test_throws TypeError fun(r"x" => (x...) -> 1, groupby_checked(df, :g1))
+            @test_throws TypeError fun(AsTable(r"x") => (x...) -> 1, groupby_checked(df, :g1))
 
-            @test_throws ArgumentError fun(r"y" => (x...) -> true, groupby(df, :g1))
-            @test_throws ArgumentError fun([] => (x...) -> true, groupby(df, :g1))
-            @test_throws ArgumentError fun(AsTable(r"y") => (x...) -> true, groupby(df, :g1))
-            @test_throws ArgumentError fun(AsTable([]) => (x...) -> true, groupby(df, :g1))
+            @test_throws ArgumentError fun(r"y" => (x...) -> true, groupby_checked(df, :g1))
+            @test_throws ArgumentError fun([] => (x...) -> true, groupby_checked(df, :g1))
+            @test_throws ArgumentError fun(AsTable(r"y") => (x...) -> true, groupby_checked(df, :g1))
+            @test_throws ArgumentError fun(AsTable([]) => (x...) -> true, groupby_checked(df, :g1))
         end
     end
 end

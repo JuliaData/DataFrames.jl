@@ -577,7 +577,7 @@ function combine_helper(f, gd::GroupedDataFrame,
                         keepkeys::Bool, ungroup::Bool,
                         copycols::Bool, keeprows::Bool)
     # helper function for creating a new GroupedDataFrame
-    _maybe_copy(x) = isnothing(x) ? x : copy(x)
+    maybe_copy(x) = isnothing(x) ? x : copy(x)
 
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
