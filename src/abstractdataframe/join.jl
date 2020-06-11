@@ -268,20 +268,77 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
     right_invalid = validate[2] ? any(nonunique(joiner.dfr, joiner.right_on)) : false
 
+    if validate[1]
+        non_unique_left = nonunique(joiner.dfl, joiner.left_on)
+        if any(non_unique_left)
+            left_invalid = true
+            non_unique_left_df = unique(joiner.dfl[non_unique_left, joiner.left_on])
+            nrow_nul_df = nrow(non_unique_left_df)
+            @assert nrow_nul_df > 0
+            if nrow_nul_df == 1
+                left_invalid_msg = "df1 contains 1 duplicate key: " *
+                                   "$(NamedTuple(non_unique_left_df[1, :])). "
+            elseif nrow_nul_df == 2
+                left_invalid_msg = "df1 contains 2 duplicate keys: " *
+                                   "$(NamedTuple(non_unique_left_df[1, :])) and " *
+                                   "$(NamedTuple(non_unique_left_df[2, :])). "
+            else
+                left_invalid_msg = "df1 contains $(nrow_nul_df) duplicate keys: " *
+                                   "$(NamedTuple(non_unique_left_df[1, :])), ..., " *
+                                   "$(NamedTuple(non_unique_left_df[end, :])). "
+            end
+
+        else
+            left_invalid = false
+            left_invalid_msg = ""
+        end
+    else
+        left_invalid = false
+        left_invalid_msg = ""
+    end
+
+    if validate[2]
+        non_unique_right = nonunique(joiner.dfr, joiner.right_on)
+        if any(non_unique_right)
+            right_invalid = true
+            non_unique_right_df = unique(joiner.dfr[non_unique_right, joiner.left_on])
+            nrow_nur_df = nrow(non_unique_right_df)
+            @assert nrow_nur_df > 0
+            if nrow_nur_df == 1
+                right_invalid_msg = "df2 contains 1 duplicate key: " *
+                                    "$(NamedTuple(non_unique_right_df[1, :]))."
+            elseif nrow_nur_df == 2
+                right_invalid_msg = "df2 contains 2 duplicate keys: " *
+                                    "$(NamedTuple(non_unique_right_df[1, :])) and " *
+                                    "$(NamedTuple(non_unique_right_df[2, :]))."
+            else
+                right_invalid_msg = "df2 contains $(nrow_nur_df) duplicate keys: " *
+                                    "$(NamedTuple(non_unique_right_df[1, :])), ..., " *
+                                    "$(NamedTuple(non_unique_right_df[end, :]))."
+            end
+
+        else
+            right_invalid = false
+            right_invalid_msg = ""
+        end
+    else
+        right_invalid = false
+        right_invalid_msg = ""
+    end
+
     if left_invalid && right_invalid
         first_error_df1 = findfirst(nonunique(joiner.dfl, joiner.left_on))
         first_error_df2 = findfirst(nonunique(joiner.dfr, joiner.right_on))
         throw(ArgumentError("Merge key(s) are not unique in both df1 and df2. " *
-                            "First duplicate in df1 at $first_error_df1. " *
-                            "First duplicate in df2 at $first_error_df2"))
+                            left_invalid_msg * right_invalid_msg))
     elseif left_invalid
         first_error = findfirst(nonunique(joiner.dfl, joiner.left_on))
         throw(ArgumentError("Merge key(s) in df1 are not unique. " *
-                            "First duplicate at row $first_error"))
+                            left_invalid_msg))
     elseif right_invalid
         first_error = findfirst(nonunique(joiner.dfr, joiner.right_on))
         throw(ArgumentError("Merge key(s) in df2 are not unique. " *
-                            "First duplicate at row $first_error"))
+                            right_invalid_msg))
     end
 
     if kind == :inner

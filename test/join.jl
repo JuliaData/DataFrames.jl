@@ -670,4 +670,13 @@ end
                                                                       x=[1,2], y=[1,2])
 end
 
+@testset "validate error message composition" begin
+    for validate in ((true, false), (false, true), (true, true)),
+        a in ([1; 1], [1:2; 1:2], [1:3; 1:3]),
+        on in ([:a], [:a, :b])
+        df = DataFrame(a=a, b=1, c=1)
+        @test_throws ArgumentError outerjoin(df, df, on=on, validate=validate)
+    end
+end
+
 end # module
