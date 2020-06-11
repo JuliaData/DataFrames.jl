@@ -394,7 +394,7 @@ function _dict_to_tuple(key::Union{Dict{Symbol},Dict{<:AbstractString}} , gd)
     end
 end
 
-function Base.to_index(gd::GroupedDataFrame, key::Dict{T, S}) where {T<:Union{Symbol, <:AbstractString}, S}
+function Base.to_index(gd::GroupedDataFrame, key::Union{Dict{Symbol},Dict{<:AbstractString}})
     if length(key) != length(gd.cols) || any(Symbol(n) ∉ _names(gd) for n in keys(key))
         throw(KeyError(key))
     end
