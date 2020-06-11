@@ -684,6 +684,23 @@ end
         df2 = DataFrame(d=a, b=1, c=1)
         @test_throws ArgumentError outerjoin(df1, df2, on=on, validate=validate)
     end
+
+    # make sure we do not error when we should not
+    for validate in ((false, false), (true, false), (false, true), (true, true))
+        df1 = DataFrame(a=1, b=1)
+        df2 = DataFrame(d=1, b=1)
+        @test outerjoin(df1, df1, on=[:a, :b], validate=validate) == df1
+        @test outerjoin(df1, df2, on=[:a => :d, :b], validate=validate) == df1
+    end
+    df1 = DataFrame(a=[1, 1], b=1)
+    df2 = DataFrame(d=1, b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, true)) == df1
+    df2 = DataFrame(a=[1,1], b=1)
+    df1 = DataFrame(d=1, b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(true, false)) == df2
+    df1 = DataFrame(a=[1, 1], b=1)
+    df2 = DataFrame(d=[1, 1], b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, false)) == df1
 end
 
 end # module
