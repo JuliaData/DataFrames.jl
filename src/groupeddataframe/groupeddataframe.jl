@@ -387,7 +387,8 @@ function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return Base.to_index(gd, Tuple(key))
 end
 
-function _dict_to_tuple(key::Dict{T, S}, gd) where {T, S}
+function _dict_to_tuple(key::Union{Dict{Symbol},Dict{<:AbstractString}} , gd)
+    T = keytype(d)
     t = ntuple(length(gd.cols)) do i 
         key[T(_names(gd)[i])]
     end
