@@ -537,9 +537,9 @@ end
     pre_join_job = copy(job)
     @test outerjoin(name, job, on = :ID, indicator=:_merge,
                makeunique=true) ≅ 
-          outerjoin(name, job, on = :ID, indicator=:"_merge",
+          outerjoin(name, job, on = :ID, indicator="_merge",
                makeunique=true) ≅ outer_indicator
-          
+
     @test name ≅ pre_join_name
     @test job ≅ pre_join_job
 
