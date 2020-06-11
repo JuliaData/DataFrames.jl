@@ -236,7 +236,7 @@ end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                on::Union{<:OnType, AbstractVector}, kind::Symbol, makeunique::Bool,
-               indicator::Union{Nothing, Symbol},
+               indicator::Union{Nothing, Symbol, <:AbstractString},
                validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}})
     _check_consistency(df1)
     _check_consistency(df2)
@@ -489,7 +489,7 @@ the result. A left join includes all rows from `df1`.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
@@ -566,7 +566,7 @@ julia> leftjoin(name, job2, on = [:ID => :identifier])
 """
 leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+         makeunique::Bool=false, indicator::Union{Nothing, Symbol, <:AbstractString} = nothing,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
           validate=validate)
@@ -592,7 +592,7 @@ the result. A right join includes all rows from `df2`.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
@@ -669,7 +669,7 @@ julia> rightjoin(name, job2, on = [:ID => :identifier])
 """
 rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+          makeunique::Bool=false, indicator::Union{Nothing, Symbol, <:AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
                  validate=validate)
@@ -700,7 +700,7 @@ of the passed data frames.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
    This argument is only supported when joining exactly two data frames.
@@ -786,7 +786,7 @@ julia> outerjoin(name, job2, on = [:ID => :identifier])
 """
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol} = nothing,
+          makeunique::Bool=false, indicator::Union{Nothing, Symbol, <:AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
           validate=validate)
@@ -818,7 +818,7 @@ match with the keys in `df2`.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
-   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
