@@ -682,7 +682,7 @@ end
         on in ([:a=>:d], [:a => :d, :b])
         df1 = DataFrame(a=a, b=1, c=1)
         df2 = DataFrame(d=a, b=1, c=1)
-        @test_throws ArgumentError outerjoin(df, df, on=on, validate=validate)
+        @test_throws ArgumentError outerjoin(df1, df2, on=on, validate=validate)
     end
 end
 
