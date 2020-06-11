@@ -695,12 +695,12 @@ end
     df1 = DataFrame(a=[1, 1], b=1)
     df2 = DataFrame(d=1, b=1)
     @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, true)) == df1
-    df2 = DataFrame(a=[1,1], b=1)
-    df1 = DataFrame(d=1, b=1)
-    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(true, false)) == df2
+    df1 = DataFrame(a=1, b=1)
+    df2 = DataFrame(d=[1,1], b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(true, false)) == [df1; df1]
     df1 = DataFrame(a=[1, 1], b=1)
     df2 = DataFrame(d=[1, 1], b=1)
-    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, false)) == df1
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, false)) == [df1; df1]
 end
 
 end # module
