@@ -301,7 +301,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         non_unique_right = nonunique(joiner.dfr, joiner.right_on)
         if any(non_unique_right)
             right_invalid = true
-            non_unique_right_df = unique(joiner.dfr[non_unique_right, joiner.left_on])
+            non_unique_right_df = unique(joiner.dfr[non_unique_right, joiner.right_on])
             nrow_nur_df = nrow(non_unique_right_df)
             @assert nrow_nur_df > 0
             if nrow_nur_df == 1

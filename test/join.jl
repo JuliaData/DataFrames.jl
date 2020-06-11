@@ -677,6 +677,13 @@ end
         df = DataFrame(a=a, b=1, c=1)
         @test_throws ArgumentError outerjoin(df, df, on=on, validate=validate)
     end
+    for validate in ((true, false), (false, true), (true, true)),
+        a in ([1; 1], [1:2; 1:2], [1:3; 1:3]),
+        on in ([:a=>:d], [:a => :d, :b])
+        df1 = DataFrame(a=a, b=1, c=1)
+        df2 = DataFrame(d=a, b=1, c=1)
+        @test_throws ArgumentError outerjoin(df, df, on=on, validate=validate)
+    end
 end
 
 end # module
