@@ -37,7 +37,8 @@ and combines the result into a data frame).
 which can also be used to get the values of the grouping columns for each group.
 `Tuples` and `NamedTuple`s containing the values of the grouping columns (in the
 same order as the `cols` argument) are also accepted as indices, but this will
-be slower than using the equivalent `GroupKey`.
+be slower than using the equivalent `GroupKey`. Finally, a `Dict` can be used to index
+into a grouped data frame where the keys are column names of the data frame in any order. 
 
 # See also
 
@@ -82,6 +83,14 @@ julia> last(gd)
 │ 2   │ 4     │ 1     │ 8     │
 
 julia> gd[(a=3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> gd[Dict("a" => 3)]
 2×3 SubDataFrame
 │ Row │ a     │ b     │ c     │
 │     │ Int64 │ Int64 │ Int64 │
