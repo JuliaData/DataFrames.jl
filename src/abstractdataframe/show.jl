@@ -611,7 +611,8 @@ end
          allgroups::Bool = !get(io, :limit, false),
          splitcols::Bool = get(io, :limit, false),
          rowlabel::Symbol = :Row,
-         summary::Bool = true)
+         summary::Bool = true,
+         eltypes::Boool = true)
 
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
