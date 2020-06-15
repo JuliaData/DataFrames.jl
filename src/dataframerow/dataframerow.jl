@@ -111,8 +111,10 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
         end
 
         if v isa AbstractDict
-            if all(x -> x isa AbstractString, keys(v))
-                v = (;(Symbol.(keys(v)) .=> values(v))...)
+            if !(keytype(v) <: Symbol)
+                if keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(v))
+                    v = (;(Symbol.(keys(v)) .=> values(v))...)
+                end
             end
             for n in view(_names(df), idxs)
                 if !haskey(v, n)
