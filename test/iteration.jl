@@ -25,10 +25,10 @@ using Test, DataFrames
     @test size(eachcol(df)) == (size(df, 2),)
     @test parent(eachcol(df)) === df
     @test names(eachcol(df)) == names(df)
-    @test IndexStyle(eachcol(df)) == IndexLinear()
-    @test Base.IndexStyle(eachcol(df)) == IndexLinear()
     @test length(eachcol(df)) == size(df, 2)
     @test eachcol(df)[1] == df[:, 1]
+    @test eachcol(df)[:A] == df[:, :A]
+    @test eachcol(df).A == df[:, :A]
     @test collect(eachcol(df)) isa Vector{AbstractVector}
     @test collect(eachcol(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == AbstractVector
@@ -127,7 +127,7 @@ end
     end
 end
 
-@testset "keys and pairs for eachcol" begin
+@testset "keys, values and pairs for eachcol" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
 
     cols = eachcol(df)
@@ -141,6 +141,27 @@ end
         @test cols[i] === cols[n]
     end
     @test_throws ArgumentError cols[:non_existent]
+
+    @test values(cols) == collect(cols)
+end
+
+@testset "findfirst, findnext, findlast, findprev, findall" begin
+    df = DataFrame(a=[1, 2, 1, 2], b=["1", "2", "1", "2"],
+                   c=[1, 2, 1, 2], d=["1", "2", "1", "2"])
+
+    rows = eachrow(df)
+    @test findfirst(row -> row.a == 1, rows) == 1
+    @test findnext(row -> row.a == 1, rows, 2) == 3
+    @test findlast(row -> row.a == 1, rows) == 3
+    @test findprev(row -> row.a == 1, rows, 2) == 1
+    @test findall(row -> row.a == 1, rows) == [1, 3]
+
+    cols = eachcol(df)
+    @test findfirst(col -> eltype(col) <: Int, cols) == 1
+    @test findnext(col -> eltype(col) <: Int, cols, 2) == 3
+    @test findlast(col -> eltype(col) <: Int, cols) == 3
+    @test findprev(col -> eltype(col) <: Int, cols, 2) == 1
+    @test findall(col -> eltype(col) <: Int, cols) == [1, 3]
 end
 
 end # module
