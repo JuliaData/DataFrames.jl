@@ -123,7 +123,24 @@ end
     df = DataFrame(a=Union{Int, Missing}[2, 3],
                    b=Union{DataFrame, Missing}[DataFrame(c = 1), DataFrame(d = 2)])
     dfc = copy(df)
+    dfcc = copy(df, copycols=false)
     dfdc = deepcopy(df)
+
+    @test dfc == df
+    @test dfc.a !== df.a
+    @test dfc.b !== df.b
+    @test DataFrames._columns(dfc) == DataFrames._columns(df)
+    @test DataFrames._columns(dfc) !== DataFrames._columns(df)
+    @test dfcc == df
+    @test dfcc.a === df.a
+    @test dfcc.b === df.b
+    @test DataFrames._columns(dfcc) == DataFrames._columns(df)
+    @test DataFrames._columns(dfcc) !== DataFrames._columns(df)
+    @test dfdc == df
+    @test dfdc.a !== df.a
+    @test dfdc.b !== df.b
+    @test DataFrames._columns(dfdc) == DataFrames._columns(df)
+    @test DataFrames._columns(dfdc) !== DataFrames._columns(df)
 
     df[1, :a] = 4
     df[1, :b][!, :e] .= 5

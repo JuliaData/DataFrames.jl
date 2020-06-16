@@ -313,7 +313,7 @@ function Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame,
     end
 end
 
-@deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : eachcol(df)
+@deprecate eachcol(df::AbstractDataFrame, names::Bool) names ? collect(pairs(eachcol(df))) : collect(eachcol(df))
 
 @deprecate groupvars(gd::GroupedDataFrame) groupcols(gd)
 
