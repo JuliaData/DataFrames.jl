@@ -112,7 +112,7 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
 
         if v isa AbstractDict
             if !(keytype(v) <: Symbol)
-                if keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(v))
+                if keytype(v) <: AbstractString || all(x -> x isa AbstractString, keys(v))
                     v = (;(Symbol.(keys(v)) .=> values(v))...)
                 end
             end
