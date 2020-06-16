@@ -37,8 +37,6 @@ using Test, DataFrames
     @test eachcol(df).A == df[:, :A]
     @test eachcol(df)["A"] == df[:, "A"]
     @test eachcol(df)."A" == df[:, "A"]
-    @test eachcol(df)[begin] == df[!, 1]
-    @test eachcol(df)[end] == df[!, end]
     @test collect(eachcol(df)) isa Vector{AbstractVector}
     @test collect(eachcol(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == AbstractVector
