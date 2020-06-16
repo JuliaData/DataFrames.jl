@@ -120,5 +120,11 @@ disallowmissing!
 ```@docs
 eachcol
 eachrow
+values
 pairs
+findnext
+findprev
+findfirst
+findlast
+findall
 ```

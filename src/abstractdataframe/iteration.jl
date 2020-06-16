@@ -30,9 +30,9 @@ Base.iterate(::AbstractDataFrame) =
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
-Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain 
-a named tuple, which supports iteration and property access like a `DataFrameRow`, 
-but also passes information on the `eltypes` of the columns of `df`. 
+Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain
+a named tuple, which supports iteration and property access like a `DataFrameRow`,
+but also passes information on the `eltypes` of the columns of `df`.
 
 # Examples
 ```jldoctest
@@ -107,9 +107,9 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 # Iteration by columns
 
 """
-    DataFrameColumns{<:AbstractDataFrame} <: AbstractVector{AbstractVector}
+    DataFrameColumns{<:AbstractDataFrame}
 
-An `AbstractVector` that allows iteration over columns of an `AbstractDataFrame`.
+A generator that allows iteration over columns of an `AbstractDataFrame`.
 Indexing into `DataFrameColumns` objects using integer or symbol indices
 returns the corresponding column (without copying).
 """
@@ -125,7 +125,8 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 
 Return a `DataFrameColumns` that is an `AbstractVector`
 that allows iterating an `AbstractDataFrame` column by column.
-Additionally it is allowed to index `DataFrameColumns` using column names.
+Additionally it is allowed to index `DataFrameColumns` using column names,
+and convenience functions: `keys`, `values`, `pairs` are defined for it.
 
 # Examples
 ```jldoctest
@@ -160,7 +161,6 @@ julia> sum.(eachcol(df))
 eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
 
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
-Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
 @inline function Base.getindex(itr::DataFrameColumns, j::Int)
     @boundscheck checkbounds(itr, j)
@@ -191,6 +191,13 @@ Get a vector of column names of `dfc` as `Symbol`s.
 Base.keys(itr::DataFrameColumns) = propertynames(itr)
 
 """
+    values(dfc::DataFrameColumns)
+
+Get a vector of columns of `dfc`.
+"""
+Base.values(itr::DataFrameColumns) = collect(itr)
+
+"""
     pairs(dfc::DataFrameColumns)
 
 Return an iterator of pairs associating the name of each column of `dfc`
@@ -198,6 +205,55 @@ with the corresponding column vector, i.e. `name => col`
 where `name` is the column name of the column `col`.
 """
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
+
+"""
+findnext(f::Function, itr::DataFrameColumns, i::Integer)
+
+  Find the next integer index after or including an integer `i` of an
+  element of `itr` for which `f` returns `true`, or `nothing` if not found.
+
+"""
+Base.findnext(f::Function, itr::DataFrameColumns, i::Integer) =
+    findnext(f, values(itr), i)
+
+"""
+findprev(f::Function, itr::DataFrameColumns, i::Integer)
+
+  Find the previous integer index before or including an integer `i` of an
+  element of `itr` for which `f` returns `true`, or `nothing` if not found.
+
+"""
+Base.findprev(f::Function, itr::DataFrameColumns, i::Integer) =
+    findprev(f, values(itr), i)
+
+"""
+findfirst(f::Function, itr::DataFrameColumns)
+
+  Return the integer index of the first element of `itr` for which `f` returns
+  `true`. Return `nothing` if there is no such element.
+
+"""
+Base.findfirst(f::Function, itr::DataFrameColumns) =
+    findfirst(f, values(itr))
+
+"""
+findlast(f::Function, itr::DataFrameColumns)
+
+  Return the integer index of the last element of `itr` for which `f` returns
+  `true`. Return `nothing` if there is no such element.
+
+"""
+Base.findlast(f::Function, itr::DataFrameColumns) =
+    findlast(f, values(itr))
+
+"""
+findall(f::Function, itr::DataFrameColumns)
+
+  Return a vector of the integer indices `i` of `itr` where `f(itr[i])` returns
+  true. If there are no such elements of `itr`, return an empty array.
+"""
+Base.findall(f::Function, itr::DataFrameColumns) =
+    findall(f, values(itr))
 
 Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
 Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))
