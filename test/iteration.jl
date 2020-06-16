@@ -22,13 +22,16 @@ using Test, DataFrames
         @test collect(pairs(row)) isa Vector{Pair{Symbol, Int}}
     end
 
-    @test size(eachcol(df)) == (size(df, 2),)
     @test parent(eachcol(df)) === df
     @test names(eachcol(df)) == names(df)
     @test length(eachcol(df)) == size(df, 2)
     @test eachcol(df)[1] == df[:, 1]
     @test eachcol(df)[:A] == df[:, :A]
+    @test eachcol(df)[All()] == eachcol(df)
+    @test isequal(eachcol(df)[[1]], eachcol(df[!, [1]]))
     @test eachcol(df).A == df[:, :A]
+    @test eachcol(df)["A"] == df[:, "A"]
+    @test eachcol(df)."A" == df[:, "A"]
     @test collect(eachcol(df)) isa Vector{AbstractVector}
     @test collect(eachcol(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == AbstractVector
@@ -90,7 +93,7 @@ end
     @test eachrow(sdf) == eachrow(df[[3,1,4], [3,1,4]])
     @test size(eachrow(sdf)) == (3,)
     @test eachcol(sdf) == eachcol(df[[3,1,4], [3,1,4]])
-    @test size(eachcol(sdf)) == (3,)
+    @test length(eachcol(sdf)) == 3
 end
 
 @testset "parent mutation" begin

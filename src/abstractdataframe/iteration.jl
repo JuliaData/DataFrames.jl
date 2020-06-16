@@ -113,7 +113,7 @@ A generator that allows iteration over columns of an `AbstractDataFrame`.
 Indexing into `DataFrameColumns` objects using integer or symbol indices
 returns the corresponding column (without copying).
 """
-struct DataFrameColumns{T<:AbstractDataFrame} <: AbstractVector{AbstractVector}
+struct DataFrameColumns{T<:AbstractDataFrame}
     df::T
 end
 
@@ -160,14 +160,17 @@ julia> sum.(eachcol(df))
 """
 eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
 
-Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
-
-@inline function Base.getindex(itr::DataFrameColumns, j::Int)
-    @boundscheck checkbounds(itr, j)
-    @inbounds parent(itr)[!, j]
-end
-
-Base.getindex(itr::DataFrameColumns, j::Symbol) = parent(itr)[!, j]
+Base.length(itr::DataFrameColumns) = size(parent(itr), 2)
+Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
+Base.iterate(itr::DataFrameColumns, i=1) =
+    i <= length(itr) ? (itr[i], i + 1) : nothing
+Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) = parent(itr)[!, idx]
+Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
+    eachcol(parent(itr)[!, idx])
+Base.:(==)(itr1::DataFrameColumns, itr2::DataFrameColumns) =
+    parent(itr1) == parent(itr2)
+Base.isequal(itr1::DataFrameColumns, itr2::DataFrameColumns) =
+    isequal(parent(itr1), parent(itr2))
 
 # separate methods are needed due to dispatch ambiguity
 Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) =
