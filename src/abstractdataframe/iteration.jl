@@ -125,8 +125,9 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 
 Return a `DataFrameColumns` that is an `AbstractVector`
 that allows iterating an `AbstractDataFrame` column by column.
-Additionally it is allowed to index `DataFrameColumns` using column names,
-and convenience functions: `keys`, `values`, `pairs` are defined for it.
+It supports most of `AbstractVector` API. The key differences are that it
+read-only and is that the `keys` function returns a vector of `Symbols` (and not
+integers as for normal vectors).
 
 # Examples
 ```jldoctest
@@ -160,8 +161,18 @@ julia> sum.(eachcol(df))
 """
 eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
 
-Base.length(itr::DataFrameColumns) = size(parent(itr), 2)
+Base.IteratorSize(::Type{<:DataFrameColumns}) = Base.HasShape{1}()
+Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
+
+function Base.size(itr::DataFrameColumns, d::Integer)
+    d < 1 && throw(ArgumentError("dimension out of range"))
+    return d == 1 ? size(itr)[1] : 1
+end
+
+Base.length(itr::DataFrameColumns) = size(itr)[1]
 Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
+Base.firstindex(itr::DataFrameColumns) = 1
+Base.lastindex(itr::DataFrameColumns) = length(itr)
 Base.iterate(itr::DataFrameColumns, i=1) =
     i <= length(itr) ? (itr[i], i + 1) : nothing
 Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) = parent(itr)[!, idx]
@@ -208,53 +219,14 @@ with the corresponding column vector, i.e. `name => col`
 where `name` is the column name of the column `col`.
 """
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
-
-"""
-findnext(f::Function, itr::DataFrameColumns, i::Integer)
-
-  Find the next integer index after or including an integer `i` of an
-  element of `itr` for which `f` returns `true`, or `nothing` if not found.
-
-"""
 Base.findnext(f::Function, itr::DataFrameColumns, i::Integer) =
     findnext(f, values(itr), i)
-
-"""
-findprev(f::Function, itr::DataFrameColumns, i::Integer)
-
-  Find the previous integer index before or including an integer `i` of an
-  element of `itr` for which `f` returns `true`, or `nothing` if not found.
-
-"""
 Base.findprev(f::Function, itr::DataFrameColumns, i::Integer) =
     findprev(f, values(itr), i)
-
-"""
-findfirst(f::Function, itr::DataFrameColumns)
-
-  Return the integer index of the first element of `itr` for which `f` returns
-  `true`. Return `nothing` if there is no such element.
-
-"""
 Base.findfirst(f::Function, itr::DataFrameColumns) =
     findfirst(f, values(itr))
-
-"""
-findlast(f::Function, itr::DataFrameColumns)
-
-  Return the integer index of the last element of `itr` for which `f` returns
-  `true`. Return `nothing` if there is no such element.
-
-"""
 Base.findlast(f::Function, itr::DataFrameColumns) =
     findlast(f, values(itr))
-
-"""
-findall(f::Function, itr::DataFrameColumns)
-
-  Return a vector of the integer indices `i` of `itr` where `f(itr[i])` returns
-  true. If there are no such elements of `itr`, return an empty array.
-"""
 Base.findall(f::Function, itr::DataFrameColumns) =
     findall(f, values(itr))
 

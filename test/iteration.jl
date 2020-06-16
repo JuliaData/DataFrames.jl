@@ -22,9 +22,14 @@ using Test, DataFrames
         @test collect(pairs(row)) isa Vector{Pair{Symbol, Int}}
     end
 
+    @test Base.IteratorSize(eachcol(df)) == Base.HasShape{1}()
     @test parent(eachcol(df)) === df
     @test names(eachcol(df)) == names(df)
     @test length(eachcol(df)) == size(df, 2)
+    @test size(eachcol(df)) == (size(df, 2),)
+    @test size(eachcol(df), 1) == size(df, 2)
+    @test size(eachcol(df), 2) == 1
+    @test_throws ArgumentError size(eachcol(df), 0)
     @test eachcol(df)[1] == df[:, 1]
     @test eachcol(df)[:A] == df[:, :A]
     @test eachcol(df)[All()] == eachcol(df)
@@ -32,6 +37,8 @@ using Test, DataFrames
     @test eachcol(df).A == df[:, :A]
     @test eachcol(df)["A"] == df[:, "A"]
     @test eachcol(df)."A" == df[:, "A"]
+    @test eachcol(df)[begin] == df[!, 1]
+    @test eachcol(df)[end] == df[!, end]
     @test collect(eachcol(df)) isa Vector{AbstractVector}
     @test collect(eachcol(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == AbstractVector

@@ -41,9 +41,8 @@ The `DataFrameRows` isa a subtype of `AbstractVector` and supports its interface
 with the exception that it is read only.
 
 Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type, which
-serves as an iterator over columns of an `AbstractDataFrame` that additionally supports
-indexing, `getproperty`, `hasproperty`, `keys`, `values`, `pairs`,
-`findfirst`, `findnext`, `findlast`, `findprev`, `findall`, `==`, and `isequal` functions.
+is not an `AbstractVector`, but supports most of its API. The key differences are that it is read-only and
+that the `keys` function returns a vector of `Symbols` (and not integers as for normal vectors).
 
 Note that `DataFrameRows` and `DataFrameColumns` are not exported and should not be constructed directly,
 but using the `eachrow` and `eachcol` functions.
