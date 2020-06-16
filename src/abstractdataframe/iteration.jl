@@ -126,7 +126,7 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 Return a `DataFrameColumns` that is an `AbstractVector`
 that allows iterating an `AbstractDataFrame` column by column.
 It supports most of `AbstractVector` API. The key differences are that it
-read-only and is that the `keys` function returns a vector of `Symbols` (and not
+read-only and is that the `keys` function returns a vector of `Symbol`s (and not
 integers as for normal vectors).
 
 # Examples

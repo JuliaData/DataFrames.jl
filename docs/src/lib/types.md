@@ -42,7 +42,7 @@ with the exception that it is read only.
 
 Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type, which
 is not an `AbstractVector`, but supports most of its API. The key differences are that it is read-only and
-that the `keys` function returns a vector of `Symbols` (and not integers as for normal vectors).
+that the `keys` function returns a vector of `Symbol`s (and not integers as for normal vectors).
 
 Note that `DataFrameRows` and `DataFrameColumns` are not exported and should not be constructed directly,
 but using the `eachrow` and `eachcol` functions.
