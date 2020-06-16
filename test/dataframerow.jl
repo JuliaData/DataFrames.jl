@@ -162,6 +162,9 @@ end
     @test !isless(DataFrameRow(df, 5, :), DataFrameRow(df, 6, :))
     @test isless(DataFrameRow(df, 7, :), DataFrameRow(df, 8, :))
     @test !isless(DataFrameRow(df, 8, :), DataFrameRow(df, 7, :))
+
+    @test_throws ArgumentError df[1, 1:2] < df[1, 1:3]
+    @test_throws ArgumentError df[1, 1:2] < df[1, 2:3]
 end
 
 @testset "hashing" begin

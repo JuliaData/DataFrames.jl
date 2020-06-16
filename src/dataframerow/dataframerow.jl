@@ -334,7 +334,7 @@ end
 
 # lexicographic ordering on DataFrame rows, missing > !missing
 function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
-    length(r1) == length(r2) ||
+    (length(r1) == length(r2) && _names(r1) == _names(r2)) ||
         throw(ArgumentError("compared DataFrameRows must have the same number " *
                             "of columns (got $(length(r1)) and $(length(r2)))"))
     for (a,b) in zip(r1, r2)
