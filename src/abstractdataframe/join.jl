@@ -236,7 +236,7 @@ end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                on::Union{<:OnType, AbstractVector}, kind::Symbol, makeunique::Bool,
-               indicator::Union{Nothing, Symbol, <:AbstractString},
+               indicator::Union{Nothing, Symbol, AbstractString},
                validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}})
     _check_consistency(df1)
     _check_consistency(df2)
@@ -566,7 +566,7 @@ julia> leftjoin(name, job2, on = [:ID => :identifier])
 """
 leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol, <:AbstractString} = nothing,
+         makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
           validate=validate)
@@ -669,7 +669,7 @@ julia> rightjoin(name, job2, on = [:ID => :identifier])
 """
 rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol, <:AbstractString} = nothing,
+          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
                  validate=validate)
@@ -786,7 +786,7 @@ julia> outerjoin(name, job2, on = [:ID => :identifier])
 """
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol, <:AbstractString} = nothing,
+          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
           validate=validate)
