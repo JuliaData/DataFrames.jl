@@ -15,6 +15,8 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     ends::Union{Vector{Int},Nothing}     # ends of groups after permutation by idx
     ngroups::Int                         # number of groups
     keymap::Union{Dict{Any,Int},Nothing} # mapping of key tuples to group indices
+    lazy_lock::Threads.ReentrantLock     # lock is needed to make lazy operations
+                                         # thread safe
 end
 
 function genkeymap(gd, cols)
@@ -34,16 +36,20 @@ end
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
     if f in (:idx, :starts, :ends)
         # Group indices are computed lazily the first time they are accessed
+        Threads.lock(gd.lazy_lock)
         if getfield(gd, f) === nothing
             gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
         end
+        Threads.unlock(gd.lazy_lock)
         return getfield(gd, f)::Vector{Int}
     elseif f === :keymap
         # Keymap is computed lazily the first time it is accessed
+        Threads.lock(gd.lazy_lock)
         if getfield(gd, f) === nothing
             gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
         end
         return getfield(gd, f)::Dict{Any,Int}
+        Threads.unlock(gd.lazy_lock)
     else
         return getfield(gd, f)
     end
@@ -190,14 +196,21 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
         end
     end
     GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx,
-                     new_starts, new_ends, length(new_starts), nothing)
+                     new_starts, new_ends, length(new_starts), nothing,
+                     Threads.ReentrantLock())
 end
 
 # Index with colon (creates copy)
-Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
-                     getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
-                     getfield(gd, :keymap))
+function Base.getindex(gd::GroupedDataFrame, idxs::Colon)
+    maybe_copy(x) = isnothing(x) ? x : copy(x)
+    return GroupedDataFrame(gd.parent, copy(gd.cols), copy(gd.groups),
+                            maybe_copy(getfield(gd, :idx)),
+                            maybe_copy(getfield(gd, :starts)),
+                            maybe_copy(getfield(gd, :ends)),
+                            gd.ngroups,
+                            maybe_copy(getfield(gd, :keymap)),
+                            Threads.ReentrantLock())
+end
 
 
 #

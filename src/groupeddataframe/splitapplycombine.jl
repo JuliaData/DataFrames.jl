@@ -140,7 +140,8 @@ function groupby(df::AbstractDataFrame, cols;
     intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
     if isempty(intcols)
         return GroupedDataFrame(df, intcols, ones(Int, nrow(df)),
-                                collect(axes(df, 1)), [1], [nrow(df)], 1, nothing)
+                                collect(axes(df, 1)), [1], [nrow(df)], 1, nothing,
+                                Threads.ReentrantLock())
     end
     sdf = df[!, intcols]
 
@@ -148,7 +149,8 @@ function groupby(df::AbstractDataFrame, cols;
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false), groups, skipmissing)
 
-    gd = GroupedDataFrame(df, intcols, groups, nothing, nothing, nothing, ngroups, nothing)
+    gd = GroupedDataFrame(df, intcols, groups, nothing, nothing, nothing, ngroups, nothing,
+                          Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
     if sort && !sorted
@@ -612,7 +614,8 @@ function combine_helper(f, gd::GroupedDataFrame,
         if length(idx) == 0 && !(keeprows && length(keys) > 0)
             @assert nrow(newparent) == 0
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), Int[],
-                                        Int[], Int[], Int[], 0, Dict{Any,Int}())
+                                    Int[], Int[], Int[], 0, Dict{Any,Int}(),
+                                    Threads.ReentrantLock())
         end
         if keeprows
             @assert length(keys) > 0 || idx == gd.idx
@@ -624,13 +627,15 @@ function combine_helper(f, gd::GroupedDataFrame,
                                     maybe_copy(getfield(gd, :starts)),
                                     maybe_copy(getfield(gd, :ends)),
                                     gd.ngroups,
-                                    maybe_copy(getfield(gd, :keymap)))
+                                    maybe_copy(getfield(gd, :keymap)),
+                                    Threads.ReentrantLock())
         else
             groups = gen_groups(idx)
             @assert groups[end] <= length(gd)
             @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), groups,
-                                    nothing, nothing, nothing, groups[end], nothing)
+                                    nothing, nothing, nothing, groups[end], nothing,
+                                    Threads.ReentrantLock())
         end
     else
         if keeprows
