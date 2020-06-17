@@ -48,8 +48,8 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
         if getfield(gd, f) === nothing
             gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
         end
-        return getfield(gd, f)::Dict{Any,Int}
         Threads.unlock(gd.lazy_lock)
+        return getfield(gd, f)::Dict{Any,Int}
     else
         return getfield(gd, f)
     end
