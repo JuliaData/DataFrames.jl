@@ -488,7 +488,7 @@ the result. A left join includes all rows from `df1`.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or `String`, adds categorical indicator
+- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
    column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
    the column name will be modified if `makeunique=true`.
@@ -591,7 +591,7 @@ the result. A right join includes all rows from `df2`.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or `String`, adds categorical indicator
+- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
    column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
    the column name will be modified if `makeunique=true`.
@@ -699,7 +699,7 @@ of the passed data frames.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or `String`, adds categorical indicator
+- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
    column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
    the column name will be modified if `makeunique=true`.
@@ -817,7 +817,7 @@ match with the keys in `df2`.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or `String`, adds categorical indicator
+- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
    column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
    the column name will be modified if `makeunique=true`.
