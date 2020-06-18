@@ -242,12 +242,10 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     _check_consistency(df2)
 
     if indicator !== nothing
-        indicator = Symbol(indicator)
         indicator_cols = ["_left", "_right"]
         for i in 1:2
-            while (hasproperty(df1, Symbol(indicator_cols[i])) ||
-                   hasproperty(df2, Symbol(indicator_cols[i])) ||
-                   Symbol(indicator_cols[i]) == indicator)
+            while (hasproperty(df1, indicator_cols[i]) ||
+                   hasproperty(df2, indicator_cols[i]))
                  indicator_cols[i] *= 'X'
             end
         end
@@ -346,14 +344,24 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                       2 .* coalesce.(joined[!, df2_ind], false))
         pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
         indicatorcol = CategoricalArray{String,1}(refs, pool)
+
+        select!(joined, Not([df1_ind, df2_ind]))
+
         unique_indicator = indicator
-        try_idx = 0
-        while hasproperty(joined, unique_indicator)
-            try_idx += 1
-            unique_indicator = Symbol(string(indicator, "_", try_idx))
+        if makeunique
+            try_idx = 0
+            while hasproperty(joined, unique_indicator)
+                try_idx += 1
+                unique_indicator = Symbol(string(indicator, "_", try_idx))
+            end
+        end
+
+        if hasproperty(joined, unique_indicator)
+            throw(ArgumentError("joined data frame already has column " *
+                                ":$unique_indicator. Pass makeunique=true to" *
+                                " make it unique using a suffix automatically."))
         end
         joined[!, unique_indicator] = indicatorcol
-        select!(joined, Not([df1_ind, df2_ind]))
     end
 
     return joined
