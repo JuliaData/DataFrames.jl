@@ -242,6 +242,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     _check_consistency(df2)
 
     if indicator !== nothing
+        indicator = Symbol(indicator)
         indicator_cols = ["_left", "_right"]
         for i in 1:2
             while (hasproperty(df1, Symbol(indicator_cols[i])) ||
