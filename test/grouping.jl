@@ -953,6 +953,7 @@ end
     @test_throws ArgumentError gd[true]
     @test_throws ArgumentError gd[[1, 2, 1]]  # Duplicate
     @test_throws ArgumentError gd["a"]
+    @test_throws ArgumentError gd[1, 1]
 
     # Single integer
     @test gd[1] isa SubDataFrame
@@ -1008,6 +1009,7 @@ end
 
     # Out-of-bounds
     @test_throws BoundsError gd[1:5]
+    @test_throws BoundsError gd[0]
 end
 
 @testset "== and isequal" begin
@@ -1329,7 +1331,6 @@ end
     gd = groupby_checked(df, [:a, :b])
 
     @test gd[1] == DataFrame(a=[:A, :A], b=[1, 1], c=[1, 4])
-    @test_throws ArgumentError gd[1, 1]
 
     @test map(NamedTuple, keys(gd)) ≅
         [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
@@ -2254,7 +2255,9 @@ end
 
     @test size(combine(gdf)) == (0, 1)
     @test names(combine(gdf)) == ["g"]
-    # TODO: add tests for keepkeys and ungroup after deprecation
+    # TODO: uncomment tests for keepkeys and ungroup after deprecation
+    # @test combine(gdf, keepkeys=false) == DataFrame()
+    # @test combine(gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
     @test size(select(gdf)) == (0, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
@@ -2274,7 +2277,8 @@ end
 
     @test size(combine(x -> DataFrame(col=1), gdf)) == (0, 1)
     @test names(combine(x -> DataFrame(col=1), gdf)) == ["g"]
-    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test combine(x -> DataFrame(col=1), gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
+    @test combine(x -> DataFrame(col=1), gdf, keepkeys=false) == DataFrame()
     @test size(select(gdf, :x => :y)) == (0, 1)
     @test names(select(gdf, :x => :y)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, :x => :y, ungroup=false))) == [:g]

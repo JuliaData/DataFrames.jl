@@ -621,13 +621,16 @@ function combine_helper(f, gd::GroupedDataFrame,
             @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
             # in this case we are sure that the result GroupedDataFrame has the
             # same structure as the source except that grouping columns are at the start
-            return GroupedDataFrame(newparent, collect(1:length(gd.cols)), copy(gd.groups),
-                                    maybe_copy(getfield(gd, :idx)),
-                                    maybe_copy(getfield(gd, :starts)),
-                                    maybe_copy(getfield(gd, :ends)),
-                                    gd.ngroups,
-                                    maybe_copy(getfield(gd, :keymap)),
-                                    Threads.ReentrantLock())
+            Threads.lock(gd.lazy_lock)
+            new_gd = GroupedDataFrame(newparent, collect(1:length(gd.cols)), copy(gd.groups),
+                                      maybe_copy(getfield(gd, :idx)),
+                                      maybe_copy(getfield(gd, :starts)),
+                                      maybe_copy(getfield(gd, :ends)),
+                                      gd.ngroups,
+                                      maybe_copy(getfield(gd, :keymap)),
+                                      Threads.ReentrantLock())
+            Threads.lock(gd.lazy_lock)
+            return new_gd
         else
             groups = gen_groups(idx)
             @assert groups[end] <= length(gd)
@@ -646,13 +649,18 @@ function combine_helper(f, gd::GroupedDataFrame,
             if ungroup
                 return keepkeys ? select(parent(gd), gd.cols, copycols=copycols) : DataFrame()
             else
-                return groupby(select(parent(gd), gd.cols, copycols=copycols), 1:length(gd.cols))
+                return GroupedDataFrame(select(parent(gd), gd.cols, copycols=copycols),
+                                        collect(1:length(gd.cols)),
+                                        Int[], Int[], Int[], Int[], 0, Dict{Any,Int}(),
+                                        Threads.ReentrantLock())
             end
         else
             if ungroup
                 return keepkeys ? parent(gd)[1:0, gd.cols] : DataFrame()
             else
-                return groupby(parent(gd)[1:0, gd.cols], 1:length(gd.cols))
+                return GroupedDataFrame(parent(gd)[1:0, gd.cols], collect(1:length(gd.cols)),
+                                        Int[], Int[], Int[], Int[], 0, Dict{Any,Int}(),
+                                        Threads.ReentrantLock())
             end
         end
     end
@@ -1513,8 +1521,10 @@ end
     select(gd::GroupedDataFrame, args...;
            copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true)
 
-Apply `args` to `gd` following the rules described in [`combine`](@ref) and return the
-result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`
+Apply `args` to `gd` following the rules described in [`combine`](@ref).
+
+If `ungroup=true` the result is a `DataFrame`.
+If  `ungroup=false` thee result is a `GroupedDataFrame`
 (in this case the returned value retains the order of groups of `gd`).
 
 The `parent` of the returned value has as many rows as `parent(gd)` and

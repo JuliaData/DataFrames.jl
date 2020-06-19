@@ -203,13 +203,16 @@ end
 # Index with colon (creates copy)
 function Base.getindex(gd::GroupedDataFrame, idxs::Colon)
     maybe_copy(x) = isnothing(x) ? x : copy(x)
-    return GroupedDataFrame(gd.parent, copy(gd.cols), copy(gd.groups),
-                            maybe_copy(getfield(gd, :idx)),
-                            maybe_copy(getfield(gd, :starts)),
-                            maybe_copy(getfield(gd, :ends)),
-                            gd.ngroups,
-                            maybe_copy(getfield(gd, :keymap)),
-                            Threads.ReentrantLock())
+    Threads.lock(gd.lazy_lock)
+    new_gd = GroupedDataFrame(gd.parent, copy(gd.cols), copy(gd.groups),
+                              maybe_copy(getfield(gd, :idx)),
+                              maybe_copy(getfield(gd, :starts)),
+                              maybe_copy(getfield(gd, :ends)),
+                              gd.ngroups,
+                              maybe_copy(getfield(gd, :keymap)),
+                              Threads.ReentrantLock())
+    Threads.unlock(gd.lazy_lock)
+    return new_gd
 end
 
 
