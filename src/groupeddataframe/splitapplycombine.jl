@@ -1524,7 +1524,7 @@ end
 Apply `args` to `gd` following the rules described in [`combine`](@ref).
 
 If `ungroup=true` the result is a `DataFrame`.
-If  `ungroup=false` thee result is a `GroupedDataFrame`
+If  `ungroup=false` the result is a `GroupedDataFrame`
 (in this case the returned value retains the order of groups of `gd`).
 
 The `parent` of the returned value has as many rows as `parent(gd)` and
