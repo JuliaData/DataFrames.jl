@@ -198,7 +198,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
     keys = html_escape(join(string.(groupcols(gd)), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
-    write(io, "<p><b>$(typeof(gd).name) with $N $groupstr based on $keystr: $keys</b></p>")
+    write(io, "<p><b>$(typeof(gd).name.name) with $N $groupstr based on $keystr: $keys</b></p>")
     if N > 0
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
@@ -346,7 +346,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     keys = join(latex_escape.(string.(groupcols(gd))), ", ")
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
-    write(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys\n\n")
+    write(io, "$(typeof(gd).name.name) with $N $groupstr based on $keystr: $keys\n\n")
     if N > 0
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
