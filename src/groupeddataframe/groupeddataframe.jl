@@ -1,3 +1,17 @@
+# Implementation note
+# There are two important design  features of GroupedDataFrame
+# 1. idx, starts, ends and keymap are by default left uninitiated;
+#    they get populated only on demand; this means that every GroupedDataFrame
+#    has lazy_lock field which is used to make sure that two threads concurrently
+#    do not try to create them. The lock should be used in every function hat
+#    does a direct access to these fields via getfield.
+# 2. Except for point 1 above currently fields of GroupedDataFrame are never
+#    mutated after it is created. This means that internally when copying
+#    a GroupedDataFrame they are not copied for efficiency. If in the future
+#    operations that mutate GroupedDataFrame are introduced all non-copying
+#    passing of the internal fields to a new GroupedDataFrame should be
+#    updated. Currently this applies to `getindex` and `combine_helper` functions
+
 """
     GroupedDataFrame
 
@@ -202,15 +216,10 @@ end
 
 # Index with colon (creates copy)
 function Base.getindex(gd::GroupedDataFrame, idxs::Colon)
-    maybe_copy(x) = isnothing(x) ? x : copy(x)
     Threads.lock(gd.lazy_lock)
-    new_gd = GroupedDataFrame(gd.parent, copy(gd.cols), copy(gd.groups),
-                              maybe_copy(getfield(gd, :idx)),
-                              maybe_copy(getfield(gd, :starts)),
-                              maybe_copy(getfield(gd, :ends)),
-                              gd.ngroups,
-                              maybe_copy(getfield(gd, :keymap)),
-                              Threads.ReentrantLock())
+    new_gd = GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
+                              getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
+                              getfield(gd, :keymap), Threads.ReentrantLock())
     Threads.unlock(gd.lazy_lock)
     return new_gd
 end

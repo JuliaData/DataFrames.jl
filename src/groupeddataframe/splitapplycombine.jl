@@ -582,9 +582,6 @@ function combine_helper(f, gd::GroupedDataFrame,
                         nms::Union{AbstractVector{Symbol},Nothing}=nothing;
                         keepkeys::Bool, ungroup::Bool,
                         copycols::Bool, keeprows::Bool)
-    # helper function for creating a new GroupedDataFrame
-    maybe_copy(x) = isnothing(x) ? x : copy(x)
-
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
@@ -622,13 +619,10 @@ function combine_helper(f, gd::GroupedDataFrame,
             # in this case we are sure that the result GroupedDataFrame has the
             # same structure as the source except that grouping columns are at the start
             Threads.lock(gd.lazy_lock)
-            new_gd = GroupedDataFrame(newparent, collect(1:length(gd.cols)), copy(gd.groups),
-                                      maybe_copy(getfield(gd, :idx)),
-                                      maybe_copy(getfield(gd, :starts)),
-                                      maybe_copy(getfield(gd, :ends)),
-                                      gd.ngroups,
-                                      maybe_copy(getfield(gd, :keymap)),
-                                      Threads.ReentrantLock())
+            new_gd = GroupedDataFrame(newparent, collect(1:length(gd.cols)), gd.groups,
+                                      getfield(gd, :idx), getfield(gd, :starts),
+                                      getfield(gd, :ends), gd.ngroups,
+                                      getfield(gd, :keymap), Threads.ReentrantLock())
             Threads.lock(gd.lazy_lock)
             return new_gd
         else
