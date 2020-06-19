@@ -586,8 +586,6 @@ is passed. `cols` can be any column selector ($COLUMNINDEX_STR;
 $MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
 `Symbol`s, strings, or integers is passed.
 
-See also: [`filter!`](@ref)
-
 # Examples
 ```
 julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
@@ -668,79 +666,4 @@ function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
     end
 
     return gdf[[f(mapper(i))::Bool for i in 1:length(gdf)]]
-end
-
-"""
-    filter!(fun, gdf::GroupedDataFrame)
-    filter!(cols => fun, gdf::GroupedDataFrame)
-
-Update a `GroupedDataFrame` in-place to contain only groups for which `fun`
-returns `true`.
-
-If `cols` is not specified then the predicate `fun` is called with a
-`SubDataFrame` for each group.
-
-If `cols` is specified then the predicate `fun` is called for each group with
-views of the corresponding columns as separate positional arguments, unless
-`cols` is an `AsTable` selector, in which case a `NamedTuple` of these arguments
-is passed. `cols` can be any column selector ($COLUMNINDEX_STR;
-$MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
-`Symbol`s, strings, or integers is passed.
-
-See also: [`filter`](@ref)
-
-# Examples
-```
-julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
-
-julia> gd = groupby(df, :g)
-GroupedDataFrame with 2 groups based on key: g
-First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
-⋮
-Last Group (1 row): g = 2
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 2     │ 'b'  │
-
-julia> filter!(x -> x.x[1] == 'a', gd); gd
-GroupedDataFrame with 1 group based on key: g
-First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
-
-julia> filter!(:x => x -> x[1] == 'a', gd); gd
-GroupedDataFrame with 1 group based on key: g
-First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
-```
-"""
-function Base.filter!(f, gdf::GroupedDataFrame)
-    gdf_new = filter(f, gdf)
-    @assert gdf.parent === gdf_new.parent
-    @assert gdf.cols == gdf_new.cols
-
-    if length(gdf_new) != gdf
-        gdf.groups = gdf_new.groups
-        gdf.idx = getfield(gdf_new, :idx)
-        gdf.starts = getfield(gdf_new, :starts)
-        gdf.ends = getfield(gdf_new, :ends)
-        gdf.ngroups = gdf_new.ngroups
-        gdf.keymap = getfield(gdf_new, :keymap)
-    else
-        # this check is relatively cheap so we add it
-        # to make sure we do not have a bug in the code
-        @assert gdf.groups == gdf_new.groups
-    end
-
-    return gdf
 end

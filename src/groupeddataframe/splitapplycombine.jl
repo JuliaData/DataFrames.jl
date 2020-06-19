@@ -576,9 +576,6 @@ function combine_helper(f, gd::GroupedDataFrame,
                         nms::Union{AbstractVector{Symbol},Nothing}=nothing;
                         keepkeys::Bool, ungroup::Bool,
                         copycols::Bool, keeprows::Bool)
-    # helper function for creating a new GroupedDataFrame
-    maybe_copy(x) = isnothing(x) ? x : copy(x)
-
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
@@ -612,12 +609,9 @@ function combine_helper(f, gd::GroupedDataFrame,
         if keeprows
             # in this case we are sure that the result GroupedDataFrame has the
             # same structure as the source
-            return GroupedDataFrame(newparent, copy(gd.cols), copy(gd.groups),
-                                    maybe_copy(getfield(gd, :idx)),
-                                    maybe_copy(getfield(gd, :starts)),
-                                    maybe_copy(getfield(gd, :ends)),
-                                    gd.ngroups,
-                                    maybe_copy(getfield(gd, :keymap)))
+            # we do not copy data as it should be safe - we never mutate fields of gd
+            return GroupedDataFrame(newparent, gd.cols, gd.groups, gd.idx,
+                                    gd.starts, gd.ends, gd.ngroups, getfield(gd, :keymap))
         else
             groups = gen_groups(idx)
             @assert groups[end] <= length(gd)

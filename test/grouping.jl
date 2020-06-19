@@ -2338,7 +2338,7 @@ end
     @test eltype(df2.a) === eltype(df2.b) === Union{UInt, Missing}
 end
 
-@testset "filter and filter!" begin
+@testset "filter" begin
     for df in (DataFrame(g1=[1, 3, 2, 1, 4, 1, 2, 5], x1=1:8,
                          g2=[1, 3, 2, 1, 4, 1, 2, 5], x2=1:8),
                view(DataFrame(g1=[1, 3, 2, 1, 4, 1, 2, 5, 4, 5], x1=1:10,
@@ -2364,19 +2364,16 @@ end
             elseif cutoff == 10
                 @test isempty(gdf2)
             end
-            @test filter!(predicate, gdf1) === gdf1
-            @test gdf1 == gdf2
         end
-        for fun in (filter, filter!)
-            @test_throws TypeError fun(x -> 1, groupby_checked(df, :g1))
-            @test_throws TypeError fun(r"x" => (x...) -> 1, groupby_checked(df, :g1))
-            @test_throws TypeError fun(AsTable(r"x") => (x...) -> 1, groupby_checked(df, :g1))
 
-            @test_throws ArgumentError fun(r"y" => (x...) -> true, groupby_checked(df, :g1))
-            @test_throws ArgumentError fun([] => (x...) -> true, groupby_checked(df, :g1))
-            @test_throws ArgumentError fun(AsTable(r"y") => (x...) -> true, groupby_checked(df, :g1))
-            @test_throws ArgumentError fun(AsTable([]) => (x...) -> true, groupby_checked(df, :g1))
-        end
+        @test_throws TypeError filter(x -> 1, groupby_checked(df, :g1))
+        @test_throws TypeError filter(r"x" => (x...) -> 1, groupby_checked(df, :g1))
+        @test_throws TypeError filter(AsTable(r"x") => (x...) -> 1, groupby_checked(df, :g1))
+
+        @test_throws ArgumentError filter(r"y" => (x...) -> true, groupby_checked(df, :g1))
+        @test_throws ArgumentError filter([] => (x...) -> true, groupby_checked(df, :g1))
+        @test_throws ArgumentError filter(AsTable(r"y") => (x...) -> true, groupby_checked(df, :g1))
+        @test_throws ArgumentError filter(AsTable([]) => (x...) -> true, groupby_checked(df, :g1))
     end
 end
 
