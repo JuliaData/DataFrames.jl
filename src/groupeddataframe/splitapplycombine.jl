@@ -240,7 +240,7 @@ const F_ARGUMENT_RULES =
     view for each group and can return any return value defined below.
     Note that this form is slower than `pair` or `args` due to type instability.
 
-    If grouped data frame has zero groups then no transformations are applied.
+    If `gd` has zero groups then no transformations are applied.
     """
 
 const KWARG_PROCESSING_RULES =
@@ -249,13 +249,13 @@ const KWARG_PROCESSING_RULES =
     in addition to those generated. In this case if the returned
     value contains columns with the same names as the grouping columns, they are
     required to be equal.
-    If `keepkeys=false` if generated columns have the same name as grouping columns
+    If `keepkeys=false` and some generated columns have the same name as grouping columns,
     they are kept and are not required to be equal to grouping columns.
 
     If `ungroup=true` (the default) a `DataFrame` is returned.
     If `ungroup=false` a `GroupedDataFrame` grouped using `keycols(gdf)` is returned.
 
-    If `gd` has zero groups then no additional columns are computed.
+    If `gd` has zero groups then no transformations are applied.
     """
 
 """
@@ -616,8 +616,7 @@ function combine_helper(f, gd::GroupedDataFrame,
             return GroupedDataFrame(newparent, collect(1:length(gd.cols)), Int[],
                                     Int[], Int[], Int[], 0, Dict{Any,Int}(),
                                     Threads.ReentrantLock())
-        end
-        if keeprows
+        elseif keeprows
             @assert length(keys) > 0 || idx == gd.idx
             @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
             # in this case we are sure that the result GroupedDataFrame has the
@@ -641,8 +640,8 @@ function combine_helper(f, gd::GroupedDataFrame,
         if keeprows
             if nrow(parent(gd)) > 0
                  throw(ArgumentError("select and transform do not support " *
-                                    "`GroupedDataFrame`s from which some groups have "*
-                                    "been dropped (including skipmissing=true)"))
+                                     "`GroupedDataFrame`s from which some groups have "*
+                                     "been dropped (including skipmissing=true)"))
             end
             if ungroup
                 return keepkeys ? select(parent(gd), gd.cols, copycols=copycols) : DataFrame()
@@ -1518,9 +1517,9 @@ Apply `args` to `gd` following the rules described in [`combine`](@ref) and retu
 result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`
 (in this case the returned value retains the order of groups of `gd`).
 
-The `parent` of the returned value has as many rows as `parent(gd)`, except when
-`gd` has no grouping columns or `keepkeys=false` and no columns are selected.
-Also order of rows in the parent is preserved. If an operation in `args` returns
+The `parent` of the returned value has as many rows as `parent(gd)` and
+in the same order, except when the returned value has no columns
+(in which case it has zero rows). If an operation in `args` returns
 a single value it is always broadcasted to have this number of rows.
 
 If `copycols=false` then do not perform copying of columns that are not transformed.
