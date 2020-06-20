@@ -612,7 +612,7 @@ end
          splitcols::Bool = get(io, :limit, false),
          rowlabel::Symbol = :Row,
          summary::Bool = true,
-         eltypes::Boool = true)
+         eltypes::Bool = true)
 
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
