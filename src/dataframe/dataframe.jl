@@ -1344,12 +1344,9 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     end
 
     old_row_type = typeof(row)
-    if row isa AbstractDict
-        if !(keytype(row) <: Symbol)
-            if keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(row))
-                row = (;(Symbol.(keys(row)) .=> values(row))...)
-            end
-        end
+    if row isa AbstractDict && keytype(row) !== Symbol &&
+        (keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(row)))
+        row = (;(Symbol.(keys(row)) .=> values(row))...)
     end
 
     # in the code below we use a direct access to _columns because
@@ -1357,7 +1354,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     # inconsistent and normal data frame indexing would error.
     if cols == :union
         if row isa AbstractDict
-            if !(keytype(row) <: Symbol) && !all(x -> x isa Symbol, keys(row))
+            if keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
                 throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
             end
         end
