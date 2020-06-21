@@ -109,7 +109,7 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 """
     DataFrameColumns{<:AbstractDataFrame}
 
-A generator that allows iteration over columns of an `AbstractDataFrame`.
+A vector-like object that allows iteration over columns of an `AbstractDataFrame`.
 Indexing into `DataFrameColumns` objects using integer or symbol indices
 returns the corresponding column (without copying).
 """
@@ -123,9 +123,9 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 """
     eachcol(df::AbstractDataFrame)
 
-Return a `DataFrameColumns` that is an `AbstractVector`
+Return a `DataFrameColumns` object that is a vector-like
 that allows iterating an `AbstractDataFrame` column by column.
-It supports most of `AbstractVector` API. The key differences are that it is
+It supports most of the `AbstractVector` API. The key differences are that it is
 read-only and is that the `keys` function returns a vector of `Symbol`s (and not
 integers as for normal vectors).
 
@@ -173,10 +173,11 @@ Base.length(itr::DataFrameColumns) = size(itr)[1]
 Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
 Base.firstindex(itr::DataFrameColumns) = 1
 Base.lastindex(itr::DataFrameColumns) = length(itr)
-Base.iterate(itr::DataFrameColumns, i=1) =
+Base.iterate(itr::DataFrameColumns, i::Integer=1) =
     i <= length(itr) ? (itr[i], i + 1) : nothing
-Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) = parent(itr)[!, idx]
-Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
+Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =
+    parent(itr)[!, idx]
+Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
     eachcol(parent(itr)[!, idx])
 Base.:(==)(itr1::DataFrameColumns, itr2::DataFrameColumns) =
     parent(itr1) == parent(itr2)

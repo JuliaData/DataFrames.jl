@@ -37,8 +37,8 @@ or when accessing a single row of a `DataFrame` or `SubDataFrame` via `getindex`
 
 The `eachrow` function returns a value of the `DataFrameRows` type, which
 serves as an iterator over rows of an `AbstractDataFrame`, returning `DataFrameRow` objects.
-The `DataFrameRows` isa a subtype of `AbstractVector` and supports its interface
-with the exception that it is read only.
+The `DataFrameRows` is a subtype of `AbstractVector` and supports its interface
+with the exception that it is read-only.
 
 Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type, which
 is not an `AbstractVector`, but supports most of its API. The key differences are that it is read-only and
