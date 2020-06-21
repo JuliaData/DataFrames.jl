@@ -1,5 +1,5 @@
 Base.summary(df::AbstractDataFrame) =
-    @sprintf("%d×%d %s", size(df)..., typeof(df).name.name)
+    @sprintf("%d×%d %s", size(df)..., nameof(typeof(df)))
 Base.summary(io::IO, df::AbstractDataFrame) = print(io, summary(df))
 
 """
