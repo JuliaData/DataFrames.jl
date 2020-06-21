@@ -110,8 +110,16 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
     DataFrameColumns{<:AbstractDataFrame}
 
 A vector-like object that allows iteration over columns of an `AbstractDataFrame`.
-Indexing into `DataFrameColumns` objects using integer or symbol indices
+
+Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
 returns the corresponding column (without copying).
+Indexing into `DataFrameColumns` objects using multiple column selector
+returns a subsetted `DataFrameColumns` object with parent being a view of the
+original containg only the selected columns.
+
+It supports most of the `AbstractVector` API. The key differences are that it is
+read-only and is that the `keys` function returns a vector of `Symbol`s (and not
+integers as for normal vectors).
 """
 struct DataFrameColumns{T<:AbstractDataFrame}
     df::T
@@ -125,6 +133,13 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 
 Return a `DataFrameColumns` object that is a vector-like
 that allows iterating an `AbstractDataFrame` column by column.
+
+Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
+returns the corresponding column (without copying).
+Indexing into `DataFrameColumns` objects using multiple column selector
+returns a subsetted `DataFrameColumns` object with parent being a view of the
+original containg only the selected columns.
+
 It supports most of the `AbstractVector` API. The key differences are that it is
 read-only and is that the `keys` function returns a vector of `Symbol`s (and not
 integers as for normal vectors).
@@ -178,7 +193,7 @@ Base.iterate(itr::DataFrameColumns, i::Integer=1) =
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =
     parent(itr)[!, idx]
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
-    eachcol(parent(itr)[!, idx])
+    eachcol(view(parent(itr), !, idx))
 Base.:(==)(itr1::DataFrameColumns, itr2::DataFrameColumns) =
     parent(itr1) == parent(itr2)
 Base.isequal(itr1::DataFrameColumns, itr2::DataFrameColumns) =
