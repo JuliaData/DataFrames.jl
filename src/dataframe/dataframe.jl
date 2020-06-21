@@ -1353,10 +1353,8 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     # we resize the columns so temporarily the `DataFrame` is internally
     # inconsistent and normal data frame indexing would error.
     if cols == :union
-        if row isa AbstractDict
-            if keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
+        if row isa AbstractDict && keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
                 throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
-            end
         end
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
