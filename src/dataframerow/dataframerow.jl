@@ -111,7 +111,8 @@ for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
         end
 
         if v isa AbstractDict
-            if all(x -> x isa AbstractString, keys(v))
+            if keytype(v) !== Symbol &&
+                (keytype(v) <: AbstractString || all(x -> x isa AbstractString, keys(v)))
                 v = (;(Symbol.(keys(v)) .=> values(v))...)
             end
             for n in view(_names(df), idxs)
