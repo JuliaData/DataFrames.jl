@@ -1203,6 +1203,9 @@ end
 
 @testset "select and transform AbstractDataFrame" begin
     df = DataFrame(x=1:3, y=4:6)
+
+    @test select(df) == DataFrame()
+
     @test select(df, :x => first) == DataFrame(x_first=fill(1,3))
     df2 = select(df, :x, :x => first, copycols=true)
     @test df2 == DataFrame(x=df.x, x_first=fill(1,3))

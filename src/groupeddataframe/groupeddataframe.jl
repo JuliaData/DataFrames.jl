@@ -1,3 +1,17 @@
+# Implementation note
+# There are two important design features of GroupedDataFrame
+# 1. idx, starts, ends and keymap are by default left uninitialized;
+#    they get populated only on demand; this means that every GroupedDataFrame
+#    has lazy_lock field which is used to make sure that two threads concurrently
+#    do not try to create them. The lock should be used in every function that
+#    does a direct access to these fields via getfield.
+# 2. Except for point 1 above currently fields of GroupedDataFrame are never
+#    mutated after it is created. This means that internally when copying
+#    a GroupedDataFrame they are not copied for efficiency. If in the future
+#    operations that mutate GroupedDataFrame are introduced all non-copying
+#    passing of the internal fields to a new GroupedDataFrame should be
+#    updated. Currently this applies to `getindex` and `combine_helper` functions
+
 """
     GroupedDataFrame
 
@@ -15,6 +29,8 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     ends::Union{Vector{Int},Nothing}     # ends of groups after permutation by idx
     ngroups::Int                         # number of groups
     keymap::Union{Dict{Any,Int},Nothing} # mapping of key tuples to group indices
+    lazy_lock::Threads.ReentrantLock     # lock is needed to make lazy operations
+                                         # thread safe
 end
 
 function genkeymap(gd, cols)
@@ -34,15 +50,19 @@ end
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
     if f in (:idx, :starts, :ends)
         # Group indices are computed lazily the first time they are accessed
+        Threads.lock(gd.lazy_lock)
         if getfield(gd, f) === nothing
             gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
         end
+        Threads.unlock(gd.lazy_lock)
         return getfield(gd, f)::Vector{Int}
     elseif f === :keymap
         # Keymap is computed lazily the first time it is accessed
+        Threads.lock(gd.lazy_lock)
         if getfield(gd, f) === nothing
             gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
         end
+        Threads.unlock(gd.lazy_lock)
         return getfield(gd, f)::Dict{Any,Int}
     else
         return getfield(gd, f)
@@ -190,14 +210,19 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
         end
     end
     GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx,
-                     new_starts, new_ends, length(new_starts), nothing)
+                     new_starts, new_ends, length(new_starts), nothing,
+                     Threads.ReentrantLock())
 end
 
 # Index with colon (creates copy)
-Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
-                     getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
-                     getfield(gd, :keymap))
+function Base.getindex(gd::GroupedDataFrame, idxs::Colon)
+    Threads.lock(gd.lazy_lock)
+    new_gd = GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
+                              getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
+                              getfield(gd, :keymap), Threads.ReentrantLock())
+    Threads.unlock(gd.lazy_lock)
+    return new_gd
+end
 
 
 #
@@ -299,8 +324,10 @@ end
 # The full version (to_indices) is required rather than to_index even though
 # GroupedDataFrame behaves as a 1D array due to the behavior of Colon and Not.
 # Note that this behavior would be the default if it was <:AbstractArray
-Base.getindex(gd::GroupedDataFrame, idx...) =
-    getindex(gd, Base.to_indices(gd, idx)...)
+function Base.getindex(gd::GroupedDataFrame, idx...)
+    length(idx) == 1 || throw(ArgumentError("GroupedDataFrame requires a single index"))
+    return getindex(gd, Base.to_indices(gd, idx)...)
+end
 
 # The allowed key types for dictionary-like indexing
 const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple}
