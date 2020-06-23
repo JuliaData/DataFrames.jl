@@ -1,5 +1,5 @@
 Base.summary(df::AbstractDataFrame) =
-    @sprintf("%d×%d %s", size(df)..., typeof(df).name)
+    @sprintf("%d×%d %s", size(df)..., nameof(typeof(df)))
 Base.summary(io::IO, df::AbstractDataFrame) = print(io, summary(df))
 
 """
@@ -88,7 +88,7 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     maxwidth -= 1 # we will add "…" at the end
 
     if T <: CategoricalValue
-        sT = string(T.name)
+        sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix
         else
@@ -96,11 +96,9 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
         end
     elseif T isa Union
         return "Union…" * suffix
-    elseif T isa UnionAll
-        sT = string(Base.unwrap_unionall(T).name)
     else
         T::DataType
-        sT = string(T.name)
+        sT = string(nameof(T))
     end
 
     cumwidth = 0
