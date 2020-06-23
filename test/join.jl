@@ -686,4 +686,37 @@ end
     @test outerjoin(df, df, on=:_right, indicator="_rightX") == DataFrame(_right=1, _rightX="both")
 end
 
+@testset "validate error message composition" begin
+    for validate in ((true, false), (false, true), (true, true)),
+        a in ([1; 1], [1:2; 1:2], [1:3; 1:3]),
+        on in ([:a], [:a, :b])
+        df = DataFrame(a=a, b=1, c=1)
+        @test_throws ArgumentError outerjoin(df, df, on=on, validate=validate)
+    end
+    for validate in ((true, false), (false, true), (true, true)),
+        a in ([1; 1], [1:2; 1:2], [1:3; 1:3]),
+        on in ([:a=>:d], [:a => :d, :b])
+        df1 = DataFrame(a=a, b=1, c=1)
+        df2 = DataFrame(d=a, b=1, c=1)
+        @test_throws ArgumentError outerjoin(df1, df2, on=on, validate=validate)
+    end
+
+    # make sure we do not error when we should not
+    for validate in ((false, false), (true, false), (false, true), (true, true))
+        df1 = DataFrame(a=1, b=1)
+        df2 = DataFrame(d=1, b=1)
+        @test outerjoin(df1, df1, on=[:a, :b], validate=validate) == df1
+        @test outerjoin(df1, df2, on=[:a => :d, :b], validate=validate) == df1
+    end
+    df1 = DataFrame(a=[1, 1], b=1)
+    df2 = DataFrame(d=1, b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, true)) == df1
+    df1 = DataFrame(a=1, b=1)
+    df2 = DataFrame(d=[1,1], b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(true, false)) == [df1; df1]
+    df1 = DataFrame(a=[1, 1], b=1)
+    df2 = DataFrame(d=[1, 1], b=1)
+    @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, false)) == [df1; df1]
+end
+
 end # module
