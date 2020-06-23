@@ -338,6 +338,13 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     length(r1) == length(r2) ||
         throw(ArgumentError("compared DataFrameRows must have the same number " *
                             "of columns (got $(length(r1)) and $(length(r2)))"))
+    if _names(r1) != _names(r2)
+        mismatch = findfirst(i -> _names(r1)[i] != _names(r2)[i], 1:length(r1))
+        throw(ArgumentError("compared DataFrameRows must have the same colum " *
+                            "names but they differ in column number $mismatch" *
+                            " where the names are :$(names(r1)[mismatch]) and " *
+                            ":$(_names(r2)[mismatch]) respectively"))
+    end
     for (a,b) in zip(r1, r2)
         isequal(a, b) || return isless(a, b)
     end
