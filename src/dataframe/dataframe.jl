@@ -1354,7 +1354,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     # inconsistent and normal data frame indexing would error.
     if cols == :union
         if row isa AbstractDict && keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
-                throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
+            throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
         end
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
