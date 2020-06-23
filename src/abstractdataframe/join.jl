@@ -244,8 +244,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
         for i in 1:2
-            while (hasproperty(df1, indicator_cols[i]) ||
-                   hasproperty(df2, indicator_cols[i]))
+            while hasproperty(df1, indicator_cols[i]) ||
+                   hasproperty(df2, indicator_cols[i])
                  indicator_cols[i] *= 'X'
             end
         end
