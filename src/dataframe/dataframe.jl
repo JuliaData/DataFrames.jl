@@ -225,7 +225,7 @@ end
 
 function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
                    makeunique::Bool=false, copycols::Bool=true)::DataFrame
-    if !all(col -> isa(col, AbstractVector), columns)
+    if !(eltype(columns) <: AbstractVector) && !all(col -> isa(col, AbstractVector), columns)
         throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
     end
     return DataFrame(collect(AbstractVector, columns),
@@ -1334,7 +1334,8 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     end
 
     old_row_type = typeof(row)
-    if row isa AbstractDict && all(x -> x isa AbstractString, keys(row))
+    if row isa AbstractDict && keytype(row) !== Symbol &&
+        (keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(row)))
         row = (;(Symbol.(keys(row)) .=> values(row))...)
     end
 
@@ -1342,7 +1343,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     # we resize the columns so temporarily the `DataFrame` is internally
     # inconsistent and normal data frame indexing would error.
     if cols == :union
-        if row isa AbstractDict && !all(x -> x isa Symbol, keys(row))
+        if row isa AbstractDict && keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
             throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
         end
         for (i, colname) in enumerate(_names(df))
