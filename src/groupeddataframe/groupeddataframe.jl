@@ -1,9 +1,9 @@
 # Implementation note
-# There are two important design  features of GroupedDataFrame
-# 1. idx, starts, ends and keymap are by default left uninitiated;
+# There are two important design features of GroupedDataFrame
+# 1. idx, starts, ends and keymap are by default left uninitialized;
 #    they get populated only on demand; this means that every GroupedDataFrame
 #    has lazy_lock field which is used to make sure that two threads concurrently
-#    do not try to create them. The lock should be used in every function hat
+#    do not try to create them. The lock should be used in every function that
 #    does a direct access to these fields via getfield.
 # 2. Except for point 1 above currently fields of GroupedDataFrame are never
 #    mutated after it is created. This means that internally when copying
