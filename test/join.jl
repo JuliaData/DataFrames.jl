@@ -536,7 +536,7 @@ end
     pre_join_name = copy(name)
     pre_join_job = copy(job)
     @test outerjoin(name, job, on = :ID, indicator=:_merge,
-               makeunique=true) ≅ 
+               makeunique=true) ≅
           outerjoin(name, job, on = :ID, indicator="_merge",
                makeunique=true) ≅ outer_indicator
 
@@ -671,6 +671,19 @@ end
                                                                       x=[1,2], y=[1,2])
     @test innerjoin(df1, df2, on=[:id2=>:ID2, :id=>:id]) == DataFrame(id=[1,2], id2=[11, 12],
                                                                       x=[1,2], y=[1,2])
+end
+
+@testset "check naming of indicator" begin
+    df = DataFrame(a=1)
+    @test_throws ArgumentError outerjoin(df, df, on=:a, indicator=:a)
+    @test outerjoin(df, df, on=:a, indicator=:a, makeunique=true) == DataFrame(a=1, a_1="both")
+    @test outerjoin(df, df, on=:a, indicator="_left") == DataFrame(a=1, _left="both")
+    @test outerjoin(df, df, on=:a, indicator="_right") == DataFrame(a=1, _right="both")
+
+    df = DataFrame(_left=1)
+    @test outerjoin(df, df, on=:_left, indicator="_leftX") == DataFrame(_left=1, _leftX="both")
+    df = DataFrame(_right=1)
+    @test outerjoin(df, df, on=:_right, indicator="_rightX") == DataFrame(_right=1, _rightX="both")
 end
 
 @testset "validate error message composition" begin
