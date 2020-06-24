@@ -50,19 +50,24 @@ end
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
     if f in (:idx, :starts, :ends)
         # Group indices are computed lazily the first time they are accessed
-        Threads.lock(gd.lazy_lock)
+        # Do not lock when field is already initialized
         if getfield(gd, f) === nothing
-            gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
+            Threads.lock(gd.lazy_lock)
+            if getfield(gd, f) === nothing # Do not lock when field is already initialized
+                gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
+            end
+            Threads.unlock(gd.lazy_lock)
         end
-        Threads.unlock(gd.lazy_lock)
         return getfield(gd, f)::Vector{Int}
     elseif f === :keymap
         # Keymap is computed lazily the first time it is accessed
-        Threads.lock(gd.lazy_lock)
-        if getfield(gd, f) === nothing
-            gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
+        if getfield(gd, f) === nothing # Do not lock when field is already initialized
+            Threads.lock(gd.lazy_lock)
+            if getfield(gd, f) === nothing
+                gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
+            end
+            Threads.unlock(gd.lazy_lock)
         end
-        Threads.unlock(gd.lazy_lock)
         return getfield(gd, f)::Dict{Any,Int}
     else
         return getfield(gd, f)
