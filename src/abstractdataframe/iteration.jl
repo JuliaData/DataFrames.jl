@@ -113,12 +113,12 @@ A vector-like object that allows iteration over columns of an `AbstractDataFrame
 
 Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
 returns the corresponding column (without copying).
-Indexing into `DataFrameColumns` objects using multiple column selector
-returns a subsetted `DataFrameColumns` object with parent being a view of the
-original containg only the selected columns.
+Indexing into `DataFrameColumns` objects using a multiple column selector
+returns a subsetted `DataFrameColumns` object with parent being a `SubDataFrame` view of the
+original containing only the selected columns.
 
-It supports most of the `AbstractVector` API. The key differences are that it is
-read-only and is that the `keys` function returns a vector of `Symbol`s (and not
+`DataFrameColumns` supports most of the `AbstractVector` API. The key differences are that it is
+read-only and that the `keys` function returns a vector of `Symbol`s (and not
 integers as for normal vectors).
 """
 struct DataFrameColumns{T<:AbstractDataFrame}
@@ -136,8 +136,8 @@ that allows iterating an `AbstractDataFrame` column by column.
 
 Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
 returns the corresponding column (without copying).
-Indexing into `DataFrameColumns` objects using multiple column selector
-returns a subsetted `DataFrameColumns` object with parent being a view of the
+Indexing into `DataFrameColumns` objects using a multiple column selector
+returns a subsetted `DataFrameColumns` object with parent being a `SubDataFrame` view of the
 original containg only the selected columns.
 
 It supports most of the `AbstractVector` API. The key differences are that it is
