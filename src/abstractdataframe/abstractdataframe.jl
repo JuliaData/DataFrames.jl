@@ -887,20 +887,20 @@ function dropmissing!(df::AbstractDataFrame,
 end
 
 """
-    filter(function, df::AbstractDataFrame)
-    filter(cols => function, df::AbstractDataFrame)
+    filter(fun, df::AbstractDataFrame)
+    filter(cols => fun, df::AbstractDataFrame)
 
-Return a copy of data frame `df` containing only rows for which `function`
+Return a copy of data frame `df` containing only rows for which `fun`
 returns `true`.
 
-If `cols` is not specified then the function is passed `DataFrameRow`s.
+If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
-If `cols` is specified then the function is passed elements of the corresponding
-columns as separate positional arguments, unless `cols` is an `AsTable` selector,
-in which case a `NamedTuple` of these arguments is passed.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
-and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
-is passed.
+If `cols` is specified then the predicate `fun` is passed elements of the
+corresponding columns as separate positional arguments, unless `cols` is an
+`AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR), and
+column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
+passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -960,7 +960,6 @@ Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
     filter([index(df)[col] for col in cols] => f, df)
 Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDataFrame) =
     filter([index(df)[col] for col in cols] => f, df)
-
 Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
     filter(index(df)[cols] => f, df)
 
@@ -977,29 +976,30 @@ function _filter_helper(df::AbstractDataFrame, f, cols...)
 end
 
 function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
-    dff = select(df, cols.cols, copycols=false)
-    if ncol(dff) == 0
+    df_tmp = select(df, cols.cols, copycols=false)
+    if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    return _filter_helper_astable(df, Tables.namedtupleiterator(dff), f)
+    return _filter_helper_astable(df, Tables.namedtupleiterator(df_tmp), f)
 end
 
 _filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
     df[(x -> f(x)::Bool).(nti), :]
 
 """
-    filter!(function, df::AbstractDataFrame)
-    filter!(cols => function, df::AbstractDataFrame)
+    filter!(fun, df::AbstractDataFrame)
+    filter!(cols => fun, df::AbstractDataFrame)
 
-Remove rows from data frame `df` for which `function` returns `false`.
+Remove rows from data frame `df` for which `fun` returns `false`.
 
-If `cols` is not specified then the function is passed `DataFrameRow`s.
-If `cols` is specified then the function is passed elements of the corresponding
-columns as separate positional arguments, unless `cols` is an `AsTable` selector,
-in which case a `NamedTuple` of these arguments is passed.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR),
-and column duplicates are allowed if a vector of `Symbol`s, strings, or integers
-is passed.
+If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
+
+If `cols` is specified then the predicate `fun` is passed elements of the
+corresponding columns as separate positional arguments, unless `cols` is an
+`AsTable` selector, in which case a `NamedTuple` of these arguments is passed.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR), and
+column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
+passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
