@@ -31,15 +31,17 @@ using Test, DataFrames
     @test size(eachcol(df), 2) == 1
     @test_throws ArgumentError size(eachcol(df), 0)
     @test eachcol(df)[1] == df[:, 1]
-    @test eachcol(df)[:A] == df[:, :A]
+    @test eachcol(df)[:A] === df[!, :A]
     @test eachcol(df)[All()] == eachcol(df)
     @test isequal(eachcol(df)[[1]], eachcol(df[!, [1]]))
-    @test eachcol(df).A == df[:, :A]
-    @test eachcol(df)["A"] == df[:, "A"]
-    @test eachcol(df)."A" == df[:, "A"]
+    @test eachcol(df).A === df[!, :A]
+    @test eachcol(df)["A"] === df[!, "A"]
+    @test eachcol(df)."A" === df[!, "A"]
     @test collect(eachcol(df)) isa Vector{AbstractVector}
     @test collect(eachcol(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == AbstractVector
+    @test_throws ArgumentError eachcol(df)[[1,1]]
+    @test eachcol(df)[[1]][1] === df.A
     for col in eachcol(df)
         @test isa(col, AbstractVector)
     end
@@ -167,8 +169,20 @@ end
     cols = eachcol(df)
     @test findfirst(col -> eltype(col) <: Int, cols) == 1
     @test findnext(col -> eltype(col) <: Int, cols, 2) == 3
+    @test findnext(col -> eltype(col) <: Int, cols, 10) === nothing
+    @test_throws BoundsError findnext(col -> eltype(col) <: Int, cols, -1)
+    @test_throws ArgumentError findnext(col -> eltype(col) <: Int, cols, :x1)
+    @test_throws ArgumentError findnext(col -> eltype(col) <: Int, cols, "x1")
+    @test findnext(col -> eltype(col) <: Int, cols, :b) == 3
+    @test findnext(col -> eltype(col) <: Int, cols, "b") == 3
     @test findlast(col -> eltype(col) <: Int, cols) == 3
     @test findprev(col -> eltype(col) <: Int, cols, 2) == 1
+    @test findprev(col -> eltype(col) <: Int, cols, :b) == 1
+    @test findprev(col -> eltype(col) <: Int, cols, "b") == 1
+    @test findprev(col -> eltype(col) <: Int, cols, -1) === nothing
+    @test_throws BoundsError findprev(col -> eltype(col) <: Int, cols, 10)
+    @test_throws ArgumentError findprev(col -> eltype(col) <: Int, cols, :x1)
+    @test_throws ArgumentError findprev(col -> eltype(col) <: Int, cols, "x1")
     @test findall(col -> eltype(col) <: Int, cols) == [1, 3]
 end
 

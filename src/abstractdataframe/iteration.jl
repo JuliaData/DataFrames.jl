@@ -106,20 +106,28 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 
 # Iteration by columns
 
+const DATAFRAMECOLUMNS_DOCSTR = """
+Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
+returns the corresponding column (without copying).
+Indexing into `DataFrameColumns` objects using a multiple column selector
+returns a subsetted `DataFrameColumns` object with parent containing only the
+selected columns (without copying).
+
+`DataFrameColumns` supports most of the `AbstractVector` API. The key
+differences are that it is read-only and that the `keys` function returns a
+vector of `Symbol`s (and not integers as for normal vectors).
+
+In particular `findnext`, `findprev`, `findfirst`, `findlast`, and `findall`
+functions are supported, and in `findnext`, `findprev` functions it is allowed
+to pass integer, string, or `Symbol` as a reference index.
+"""
+
 """
     DataFrameColumns{<:AbstractDataFrame}
 
 A vector-like object that allows iteration over columns of an `AbstractDataFrame`.
 
-Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
-returns the corresponding column (without copying).
-Indexing into `DataFrameColumns` objects using a multiple column selector
-returns a subsetted `DataFrameColumns` object with parent being a `SubDataFrame` view of the
-original containing only the selected columns.
-
-`DataFrameColumns` supports most of the `AbstractVector` API. The key differences are that it is
-read-only and that the `keys` function returns a vector of `Symbol`s (and not
-integers as for normal vectors).
+$DATAFRAMECOLUMNS_DOCSTR
 """
 struct DataFrameColumns{T<:AbstractDataFrame}
     df::T
@@ -131,18 +139,10 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 """
     eachcol(df::AbstractDataFrame)
 
-Return a `DataFrameColumns` object that is a vector-like
-that allows iterating an `AbstractDataFrame` column by column.
+Return a `DataFrameColumns` object that is a vector-like that allows iterating
+an `AbstractDataFrame` column by column.
 
-Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
-returns the corresponding column (without copying).
-Indexing into `DataFrameColumns` objects using a multiple column selector
-returns a subsetted `DataFrameColumns` object with parent being a `SubDataFrame` view of the
-original containg only the selected columns.
-
-It supports most of the `AbstractVector` API. The key differences are that it is
-read-only and is that the `keys` function returns a vector of `Symbol`s (and not
-integers as for normal vectors).
+$DATAFRAMECOLUMNS_DOCSTR
 
 # Examples
 ```jldoctest
@@ -193,7 +193,7 @@ Base.iterate(itr::DataFrameColumns, i::Integer=1) =
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =
     parent(itr)[!, idx]
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
-    eachcol(view(parent(itr), !, idx))
+    eachcol(parent(itr)[!, idx])
 Base.:(==)(itr1::DataFrameColumns, itr2::DataFrameColumns) =
     parent(itr1) == parent(itr2)
 Base.isequal(itr1::DataFrameColumns, itr2::DataFrameColumns) =
@@ -237,8 +237,12 @@ where `name` is the column name of the column `col`.
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
 Base.findnext(f::Function, itr::DataFrameColumns, i::Integer) =
     findnext(f, values(itr), i)
+Base.findnext(f::Function, itr::DataFrameColumns, i::Union{Symbol, AbstractString}) =
+    findnext(f, values(itr), index(parent(itr))[i])
 Base.findprev(f::Function, itr::DataFrameColumns, i::Integer) =
     findprev(f, values(itr), i)
+Base.findprev(f::Function, itr::DataFrameColumns, i::Union{Symbol, AbstractString}) =
+    findprev(f, values(itr), index(parent(itr))[i])
 Base.findfirst(f::Function, itr::DataFrameColumns) =
     findfirst(f, values(itr))
 Base.findlast(f::Function, itr::DataFrameColumns) =
