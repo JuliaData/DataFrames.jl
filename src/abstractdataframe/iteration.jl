@@ -30,9 +30,9 @@ Base.iterate(::AbstractDataFrame) =
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
-Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain 
-a named tuple, which supports iteration and property access like a `DataFrameRow`, 
-but also passes information on the `eltypes` of the columns of `df`. 
+Because `DataFrameRow`s have an `eltype` of `Any`, use `copy(dfr::DataFrameRow)` to obtain
+a named tuple, which supports iteration and property access like a `DataFrameRow`,
+but also passes information on the `eltypes` of the columns of `df`.
 
 # Examples
 ```jldoctest
@@ -106,14 +106,30 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 
 # Iteration by columns
 
-"""
-    DataFrameColumns{<:AbstractDataFrame} <: AbstractVector{AbstractVector}
-
-An `AbstractVector` that allows iteration over columns of an `AbstractDataFrame`.
-Indexing into `DataFrameColumns` objects using integer or symbol indices
+const DATAFRAMECOLUMNS_DOCSTR = """
+Indexing into `DataFrameColumns` objects using integer, `Symbol` or string
 returns the corresponding column (without copying).
+Indexing into `DataFrameColumns` objects using a multiple column selector
+returns a subsetted `DataFrameColumns` object with a new parent containing
+only the selected columns (without copying).
+
+`DataFrameColumns` supports most of the `AbstractVector` API. The key
+differences are that it is read-only and that the `keys` function returns a
+vector of `Symbol`s (and not integers as for normal vectors).
+
+In particular `findnext`, `findprev`, `findfirst`, `findlast`, and `findall`
+functions are supported, and in `findnext` and `findprev` functions it is allowed
+to pass an integer, string, or `Symbol` as a reference index.
 """
-struct DataFrameColumns{T<:AbstractDataFrame} <: AbstractVector{AbstractVector}
+
+"""
+    DataFrameColumns{<:AbstractDataFrame}
+
+A vector-like object that allows iteration over columns of an `AbstractDataFrame`.
+
+$DATAFRAMECOLUMNS_DOCSTR
+"""
+struct DataFrameColumns{T<:AbstractDataFrame}
     df::T
 end
 
@@ -123,9 +139,10 @@ Base.summary(io::IO, dfcs::DataFrameColumns) = print(io, summary(dfcs))
 """
     eachcol(df::AbstractDataFrame)
 
-Return a `DataFrameColumns` that is an `AbstractVector`
-that allows iterating an `AbstractDataFrame` column by column.
-Additionally it is allowed to index `DataFrameColumns` using column names.
+Return a `DataFrameColumns` object that is a vector-like that allows iterating
+an `AbstractDataFrame` column by column.
+
+$DATAFRAMECOLUMNS_DOCSTR
 
 # Examples
 ```jldoctest
@@ -159,15 +176,28 @@ julia> sum.(eachcol(df))
 """
 eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
 
+Base.IteratorSize(::Type{<:DataFrameColumns}) = Base.HasShape{1}()
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
-Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
-@inline function Base.getindex(itr::DataFrameColumns, j::Int)
-    @boundscheck checkbounds(itr, j)
-    @inbounds parent(itr)[!, j]
+function Base.size(itr::DataFrameColumns, d::Integer)
+    d < 1 && throw(ArgumentError("dimension out of range"))
+    return d == 1 ? size(itr)[1] : 1
 end
 
-Base.getindex(itr::DataFrameColumns, j::Symbol) = parent(itr)[!, j]
+Base.length(itr::DataFrameColumns) = size(itr)[1]
+Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
+Base.firstindex(itr::DataFrameColumns) = 1
+Base.lastindex(itr::DataFrameColumns) = length(itr)
+Base.iterate(itr::DataFrameColumns, i::Integer=1) =
+    i <= length(itr) ? (itr[i], i + 1) : nothing
+Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =
+    parent(itr)[!, idx]
+Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
+    eachcol(parent(itr)[!, idx])
+Base.:(==)(itr1::DataFrameColumns, itr2::DataFrameColumns) =
+    parent(itr1) == parent(itr2)
+Base.isequal(itr1::DataFrameColumns, itr2::DataFrameColumns) =
+    isequal(parent(itr1), parent(itr2))
 
 # separate methods are needed due to dispatch ambiguity
 Base.getproperty(itr::DataFrameColumns, col_ind::Symbol) =
@@ -191,6 +221,13 @@ Get a vector of column names of `dfc` as `Symbol`s.
 Base.keys(itr::DataFrameColumns) = propertynames(itr)
 
 """
+    values(dfc::DataFrameColumns)
+
+Get a vector of columns from `dfc`.
+"""
+Base.values(itr::DataFrameColumns) = collect(itr)
+
+"""
     pairs(dfc::DataFrameColumns)
 
 Return an iterator of pairs associating the name of each column of `dfc`
@@ -198,6 +235,20 @@ with the corresponding column vector, i.e. `name => col`
 where `name` is the column name of the column `col`.
 """
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
+Base.findnext(f::Function, itr::DataFrameColumns, i::Integer) =
+    findnext(f, values(itr), i)
+Base.findnext(f::Function, itr::DataFrameColumns, i::Union{Symbol, AbstractString}) =
+    findnext(f, values(itr), index(parent(itr))[i])
+Base.findprev(f::Function, itr::DataFrameColumns, i::Integer) =
+    findprev(f, values(itr), i)
+Base.findprev(f::Function, itr::DataFrameColumns, i::Union{Symbol, AbstractString}) =
+    findprev(f, values(itr), index(parent(itr))[i])
+Base.findfirst(f::Function, itr::DataFrameColumns) =
+    findfirst(f, values(itr))
+Base.findlast(f::Function, itr::DataFrameColumns) =
+    findlast(f, values(itr))
+Base.findall(f::Function, itr::DataFrameColumns) =
+    findall(f, values(itr))
 
 Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
 Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))

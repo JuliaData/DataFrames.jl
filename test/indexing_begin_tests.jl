@@ -30,4 +30,7 @@
     @test df[[begin, end], [begin, end]] == df[[1,3], [1,4]]
     df[[begin, end], [begin, end]] .= 1000
     @test df.x1 == df.x4 == [1000, 222, 1000]
+
+    @test eachcol(df)[begin] == df[!, begin]
+    @test eachcol(df)[end] == df[!, end]
 end

@@ -209,12 +209,12 @@ end
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
-    @test propertynames(df2) == [:x1, :x2, :x3, :x4]
+    @test df == df2
     @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
-    @test propertynames(df2) == [:x1, :x2, :x3, :x4]
+    @test df == df2
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
