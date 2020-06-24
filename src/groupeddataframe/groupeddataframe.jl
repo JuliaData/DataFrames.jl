@@ -60,9 +60,9 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
         return getfield(gd, f)::Vector{Int}
     elseif f === :keymap
         # Keymap is computed lazily the first time it is accessed
-        if getfield(gd, :keymap) === nothing
+        if getfield(gd, f) === nothing
             Threads.lock(gd.lazy_lock)
-            if getfield(gd, :keymap) === nothing
+            if getfield(gd, f) === nothing
                 gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
             end
             Threads.unlock(gd.lazy_lock)
