@@ -245,6 +245,10 @@ equivalent `Tuple` or `NamedTuple`.
 Instances of this type are returned by `keys(::GroupedDataFrame)` and are not
 meant to be constructed directly.
 
+Indexing is one-dimensional like specifying a column of a `DataFrame`.
+You can also access the data in a `GroupKey` using the `getproperty`
+function and convert it to a `Tuple`, `NamedTuple`, or `Vector`.
+
 See [`keys(::GroupedDataFrame)`](@ref) for more information.
 """
 struct GroupKey{T<:GroupedDataFrame}
@@ -267,6 +271,7 @@ Base.haskey(key::GroupKey, idx::Symbol) = idx in groupcols(parent(key))
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
 Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
+Base.IteratorEltype(::Type{<:GroupKey}) = Base.EltypeUnknown()
 Base.iterate(key::GroupKey, i::Integer=1) =
     i <= length(key) ? (key[i], i + 1) : nothing
 Base.getindex(key::GroupKey, i::Integer) =
@@ -296,8 +301,29 @@ function Base.NamedTuple(key::GroupKey)
     N = NamedTuple{Tuple(groupcols(parent(key)))}
     N(_groupvalues(parent(key), getfield(key, :idx)))
 end
-Base.Tuple(key::GroupKey) = values(key)
 
+"""
+    copy(key::GroupKey)
+
+Construct a `NamedTuple` with the same contents as the [`GroupKey`](@ref).
+"""
+Base.copy(key::GroupKey) = NamedTuple(key)
+
+Base.convert(::Type{NamedTuple}, key::GroupKey) = NamedTuple(key)
+Base.convert(::Type{Tuple}, key::GroupKey) = Tuple(key)
+
+Base.convert(::Type{Vector}, key::GroupKey) = [v for v in key]
+Base.convert(::Type{Vector{T}}, key::GroupKey) where T = T[v for v in key]
+Base.Vector(key::GroupKey) = convert(Vector, key)
+Base.Vector{T}(key::GroupKey) where T = convert(Vector{T}, key)
+
+Base.convert(::Type{Array}, key::GroupKey) = Vector(key)
+Base.convert(::Type{Array{T}}, key::GroupKey) where {T} = Vector{T}(key)
+Base.Array(key::GroupKey) = Vector(key)
+Base.Array{T}(key::GroupKey) where {T} = Vector{T}(key)
+
+Base.broadcastable(::GroupKey) =
+    throw(ArgumentError("broadcasting over `GroupKey`s is reserved"))
 
 """
     GroupKeys{T<:GroupedDataFrame} <: AbstractVector{GroupKey{T}}
