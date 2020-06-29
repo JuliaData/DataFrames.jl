@@ -65,15 +65,15 @@ DataFrameRow
 julia> Tuple(df[1, :])
 (1, "a", 1)
 
+julia> NamedTuple(df[1, :])
+(a = 1, b = "a", c = 1)
+
 julia> Vector(df[1, :])
 3-element Array{Any,1}:
  1
   "a"
  1
-
-julia> NamedTuple(df[1, :])
-(a = 1, b = "a", c = 1)
-```
+ ```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
