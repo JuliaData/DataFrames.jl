@@ -18,7 +18,8 @@ functions that expect a collection as an argument. Its element type is always `A
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
 You can also access the data in a `DataFrameRow` using the `getproperty` and
-`setproperty!` functions and convert it to a `Tuple`, `NamedTuple`, or `Vector`.
+`setproperty!` functions and convert it to a `Tuple`, `NamedTuple`, or `Vector`
+using the corresponding functions.
 
 It is possible to create a `DataFrameRow` with duplicate columns.
 All such columns will have a reference to the same entry in the parent `DataFrame`.
