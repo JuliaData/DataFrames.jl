@@ -18,7 +18,8 @@ functions that expect a collection as an argument. Its element type is always `A
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
 You can also access the data in a `DataFrameRow` using the `getproperty` and
-`setproperty!` functions and convert it to a `NamedTuple` using the `copy` function.
+`setproperty!` functions and convert it to a `Tuple`, `NamedTuple`, or `Vector`
+using the corresponding functions.
 
 It is possible to create a `DataFrameRow` with duplicate columns.
 All such columns will have a reference to the same entry in the parent `DataFrame`.
@@ -29,15 +30,51 @@ even if they are added or removed after its creation.
 
 # Examples
 ```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-sdf1 = view(df, 2, :)
-sdf2 = @view df[end, [:a]]
-sdf3 = eachrow(df)[1]
-sdf4 = DataFrameRow(df, 2, 1:2)
-sdf5 = DataFrameRow(df, 1)
-```
+julia> df = DataFrame(a = repeat([1, 2], outer=[2]),
+                      b = repeat(["a", "b"], inner=[2]),
+                      c = 1:4)
+4×3 DataFrame
+│ Row │ a     │ b      │ c     │
+│     │ Int64 │ String │ Int64 │
+├─────┼───────┼────────┼───────┤
+│ 1   │ 1     │ a      │ 1     │
+│ 2   │ 2     │ a      │ 2     │
+│ 3   │ 1     │ b      │ 3     │
+│ 4   │ 2     │ b      │ 4     │
+
+julia> df[1, :]
+DataFrameRow
+│ Row │ a     │ b      │ c     │
+│     │ Int64 │ String │ Int64 │
+├─────┼───────┼────────┼───────┤
+│ 1   │ 1     │ a      │ 1     │
+
+julia> @view df[end, [:a]]
+DataFrameRow
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 4   │ 2     │
+
+julia> eachrow(df)[1]
+DataFrameRow
+│ Row │ a     │ b      │ c     │
+│     │ Int64 │ String │ Int64 │
+├─────┼───────┼────────┼───────┤
+│ 1   │ 1     │ a      │ 1     │
+
+julia> Tuple(df[1, :])
+(1, "a", 1)
+
+julia> NamedTuple(df[1, :])
+(a = 1, b = "a", c = 1)
+
+julia> Vector(df[1, :])
+3-element Array{Any,1}:
+ 1
+  "a"
+ 1
+ ```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
