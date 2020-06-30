@@ -1431,7 +1431,7 @@ end
         @test collect(key) ≅ collect(nt)
         @test eltype(collect(key)) == eltype([v for v in key])
 
-        @test_throws ArgumentError identity.(kk)
+        @test_throws ArgumentError identity.(key)
 
         # Integer/symbol indexing, getproperty of key
         for (j, n) in enumerate(cols)
