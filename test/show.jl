@@ -486,4 +486,18 @@ end
     │ 3   │ 3 │ z │"""
 end
 
+@testset "UnionAll" begin
+    df = DataFrame(x=AbstractVector[1:2])
+
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x        │
+    │     │ Abstrac… │
+    ├─────┼──────────┤
+    │ 1   │ 1:2      │"""
+end
+
 end # module
