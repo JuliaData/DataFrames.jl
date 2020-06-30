@@ -97,7 +97,6 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     elseif T isa Union
         return "Union…" * suffix
     else
-        T::DataType
         sT = string(nameof(T))
     end
 
