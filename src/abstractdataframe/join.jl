@@ -64,10 +64,19 @@ Base.length(x::RowIndexMap) = length(x.orig)
 # composes the joined data table using the maps between the left and right
 # table rows and the indices of rows in the result
 
+_rename_cols(old_names::AbstractVector{Symbol},
+             rename::Union{Function, AbstractString},
+             exclude::AbstractVector{Symbol} = Symbol[]) =
+    Symbol[n in exclude ? n :
+           (rename isa AbstractString ? Symbol(n, rename) : Symbol(rename(string(n))))
+           for n in old_names]
+
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
-                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap;
-                              makeunique::Bool=false)
+                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap,
+                              makeunique::Bool,
+                              left_rename::Union{Function, AbstractString},
+                              right_rename::Union{Function, AbstractString})
     @assert length(left_ixs) == length(right_ixs)
     # compose left half of the result taking all left columns
     all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
@@ -116,8 +125,10 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
-    res = DataFrame(cols, vcat(_names(joiner.dfl), _names(dfr_noon)),
-                    makeunique=makeunique, copycols=false)
+
+    new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
+                     _rename_cols(_names(dfr_noon), right_rename))
+    res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
     if length(rightonly_ixs.join) > 0
         # some left rows are missing, so the values of the "on" columns
@@ -237,7 +248,9 @@ end
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                on::Union{<:OnType, AbstractVector}, kind::Symbol, makeunique::Bool,
                indicator::Union{Nothing, Symbol, AbstractString},
-               validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}})
+               validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}},
+               left_rename::Union{Function, AbstractString},
+               right_rename::Union{Function, AbstractString})
     _check_consistency(df1)
     _check_consistency(df2)
 
@@ -345,25 +358,25 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                                       update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                        group_rows(joiner.dfr_on),
                                                        true, false, true, false)...,
-                                      makeunique=makeunique)
+                                      makeunique, left_rename, right_rename)
     elseif kind == :left
         joined = compose_joined_table(joiner, kind,
                                       update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                        group_rows(joiner.dfr_on),
                                                        true, true, true, false)...,
-                                      makeunique=makeunique)
+                                      makeunique, left_rename, right_rename)
     elseif kind == :right
         joined = compose_joined_table(joiner, kind,
                                       update_row_maps!(joiner.dfr_on, joiner.dfl_on,
                                                        group_rows(joiner.dfl_on),
                                                        true, true, true, false)[[3, 4, 1, 2]]...,
-                                      makeunique=makeunique)
+                                      makeunique, left_rename, right_rename)
     elseif kind == :outer
         joined = compose_joined_table(joiner, kind,
                                       update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                        group_rows(joiner.dfr_on),
                                                        true, true, true, true)...,
-                                      makeunique=makeunique)
+                                      makeunique, left_rename, right_rename)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -520,19 +533,37 @@ julia> innerjoin(name, job2, on = [:ID => :identifier])
 │ 2   │ 2     │ Jane Doe │ Doctor │
 ```
 """
-innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
-          indicator=nothing, validate=validate)
+function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   on::Union{<:OnType, AbstractVector} = Symbol[],
+                   makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                   rename::Union{AbstractVector, Nothing}=nothing)
+    if isnothing(rename)
+        rename = [identity, identity]
+    elseif length(rename) != 2 || !all(x -> x isa Union{Function, AbstractString}, rename)
+        throw(ArgumentError("rename keyword argument must be a 2 element vector" *
+                            " containing functions or strings"))
+    end
+    return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=nothing,
+                 validate=validate, left_rename=rename[1], right_rename=rename[2])
+end
 
-innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          rename::Union{AbstractVector, Nothing}=nothing)
+    if isnothing(rename)
+        rename = fill(identity, 2 + length(dfs))
+    elseif length(rename) != 2 + length(dfs) || !all(x -> x isa Union{Function, AbstractString}, rename)
+        throw(ArgumentError("rename keyword argument must be a $(2+length(dfs)) " *
+                            "element vector containing functions or strings"))
+    end
+    return innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique,
+                               validate=validate, rename=rename[1:2]),
+                     dfs..., on=on, makeunique=makeunique, validate=validate,
+                     rename=[identity; rename[3:end]])
+end
 
 """
     leftjoin(df1, df2; on, makeunique = false,
