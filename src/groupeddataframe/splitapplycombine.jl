@@ -1655,15 +1655,29 @@ select(gd::GroupedDataFrame, args...;
 
 An equivalent of
 `select(gd, :, args..., copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)`
+but keeps the columns of `parent(gd)` in their original order.
 
 # See also
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform!`](@ref)
 """
-transform(gd::GroupedDataFrame, args...;
-          copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true) =
-    select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
-           ungroup=ungroup)
+function transform(gd::GroupedDataFrame, args...;
+                   copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true)
+    if ungroup
+        res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
+                     ungroup=ungroup)
+        select!(res, propertynames(parent(gd)), :)
+    else
+        gc_idx = copy(gd.cols)
+        gc = groupcols(gd)
+        res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
+                     ungroup=ungroup)
+        select!(parent(res), propertynames(parent(gd)), :)
+        res.cols .= gc_idx
+        @assert gc == groupcols(res)
+    end
+    return res
+end
 
 """
     select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
@@ -1672,14 +1686,23 @@ An equivalent of
 `select(gd, args..., copycols=false, keepkeys=true, ungroup=ungroup)`
 but updates `parent(gd)` in place.
 
+`gd` is updated to reflect the new rows of its updated parent.
+However, if there are independent `GroupedDataFrame` objects constructed
+using the same parent data frame they might get invalidated.
+
 # See also
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`transform`](@ref), [`transform!`](@ref)
 """
 function select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
+    gc = groupcols(gd)
     newdf = select(gd, args..., copycols=false)
     df = parent(gd)
     _replace_columns!(df, newdf)
+    gc_idx = index(df)[gc]
+    gd.cols .= gc_idx
+    @assert gd.cols == axes(gc, 1)
+    @assert gc == groupcols(gd)
     return ungroup ? df : gd
 end
 
@@ -1688,12 +1711,20 @@ end
 
 An equivalent of
 `transform(gd, args..., copycols=false, keepkeys=true, ungroup=ungroup)`
-but updates `parent(gd)` in place.
-
+but updates `parent(gd)` in place
+and keeps the columns of `parent(gd)` in their original order.
 
 # See also
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
 """
-transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true) =
-    select!(gd, :, args..., ungroup=ungroup)
+function transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
+    gc = groupcols(gd)
+    newdf = select(gd, :, args..., copycols=false)
+    df = parent(gd)
+    select!(newdf, propertynames(df), :)
+    _replace_columns!(df, newdf)
+    gc_idx = index(df)[gc]
+    @assert gd.cols == gc_idx
+    return ungroup ? df : gd
+end

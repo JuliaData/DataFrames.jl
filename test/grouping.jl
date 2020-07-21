@@ -2523,4 +2523,47 @@ end
     end
 end
 
+@testset "select/transform column order" begin
+    df = DataFrame(c=1, b=2, d=3, a=4)
+    gdf = groupby_checked(df, [:a, :b])
+    dc_gdf = deepcopy(gdf)
+    @test select(gdf) == DataFrame(a=4, b=2)
+    @test gdf == dc_gdf
+    @test select(gdf, ungroup=false) == groupby_checked(DataFrame(a=4, b=2), [:a, :b])
+    @test gdf == dc_gdf
+
+    df = DataFrame(c=1, b=2, d=3, a=4)
+    gdf = groupby_checked(df, [:a, :b])
+    @test select!(gdf) === df
+    @test df == DataFrame(a=4, b=2)
+    @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=1, b=2, d=3, a=4)
+    gdf = groupby_checked(df, [:a, :b])
+    @test select!(gdf, ungroup=false) === gdf
+    @test df == DataFrame(a=4, b=2)
+    @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=1, b=2, d=3, a=4)
+    gdf = groupby_checked(df, [:a, :b])
+    dc_gdf = deepcopy(gdf)
+    @test transform(gdf, :c => :e) == DataFrame(c=1, b=2, d=3, a=4, e=1)
+    @test gdf == dc_gdf
+    @test transform(gdf, :c => :e, ungroup=false) ==
+          groupby_checked(DataFrame(c=1, b=2, d=3, a=4, e=1), [:a, :b])
+    @test gdf == dc_gdf
+
+    df = DataFrame(c=1, b=2, d=3, a=4)
+    gdf = groupby_checked(df, [:a, :b])
+    @test transform!(gdf, :c => :e) === df
+    @test df == DataFrame(c=1, b=2, d=3, a=4, e=1)
+    @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=1, b=2, d=3, a=4)
+    gdf = groupby_checked(df, [:a, :b])
+    @test transform!(gdf, :c => :e, ungroup=false) === gdf
+    @test df == DataFrame(c=1, b=2, d=3, a=4, e=1)
+    @test gdf == groupby_checked(df, [:a, :b])
+end
+
 end # module
