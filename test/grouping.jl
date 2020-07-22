@@ -32,11 +32,8 @@ function validate_gdf(ogd::GroupedDataFrame)
     # To return original object to test when indices have not been computed
     gd = deepcopy(ogd)
 
-    if !isempty(gd.cols)
-        @assert allunique(gd.cols)
-        @assert minimum(gd.cols) >= 1
-        @assert maximum(gd.cols) <= ncol(parent(gd))
-    end
+    @assert allunique(gd.cols)
+    @assert issubset(gd.cols, parent(gd))
 
     g = sort!(unique(gd.groups))
     if length(gd) > 0
@@ -163,7 +160,7 @@ end
 
         # groupby_checked() without groups sorting
         gd = groupby_checked(df, cols)
-        @test names(parent(gd))[gd.cols] == string.(colssym)
+        @test names(parent(gd), gd.cols) == string.(colssym)
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         @test sort(combine(df -> df[1, :], gd), colssym) ==
@@ -182,7 +179,7 @@ end
 
         # groupby_checked() with groups sorting
         gd = groupby_checked(df, cols, sort=true)
-        @test names(parent(gd))[gd.cols] == string.(colssym)
+        @test names(parent(gd), gd.cols) == string.(colssym)
         for i in 1:length(gd)
             @test all(gd[i][!, colssym[1]] .== sres[i, colssym[1]])
             @test all(gd[i][!, colssym[2]] .== sres[i, colssym[2]])
@@ -210,7 +207,7 @@ end
             @test v[1] == gd[1][:, nms]
             @test v[1] == gd[1][:, nms] && v[2] == gd[2][:, nms] &&
                 v[3] == gd[3][:, nms] && v[4] == gd[4][:, nms]
-            @test names(parent(v))[v.cols] == string.(colssym)
+            @test names(parent(v), v.cols) == string.(colssym)
             v = validate_gdf(combine(f1, gd, ungroup=false))
             @test extrema(v.groups) == extrema(gd.groups)
             @test vcat(v[1], v[2], v[3], v[4]) == combine(f1, gd)
@@ -447,7 +444,7 @@ end
     gd = groupby_checked(df, :A)
     gd2 = validate_gdf(combine(d -> DataFrame(), gd, ungroup=false))
     @test length(gd2) == 0
-    @test gd.cols == [1]
+    @test gd.cols == [:A]
     @test isempty(gd2.groups)
     @test isempty(gd2.idx)
     @test isempty(gd2.starts)
@@ -457,7 +454,7 @@ end
 
     gd2 = validate_gdf(combine(d -> DataFrame(X=Int[]), gd, ungroup=false))
     @test length(gd2) == 0
-    @test gd.cols == [1]
+    @test gd.cols == [:A]
     @test isempty(gd2.groups)
     @test isempty(gd2.idx)
     @test isempty(gd2.starts)

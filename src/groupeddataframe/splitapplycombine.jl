@@ -139,7 +139,7 @@ function groupby(df::AbstractDataFrame, cols;
     idxcols = index(df)[cols]
     intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
     if isempty(intcols)
-        return GroupedDataFrame(df, intcols, ones(Int, nrow(df)),
+        return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
                                 collect(axes(df, 1)), [1], [nrow(df)], 1, nothing,
                                 Threads.ReentrantLock())
     end
@@ -149,7 +149,7 @@ function groupby(df::AbstractDataFrame, cols;
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false), groups, skipmissing)
 
-    gd = GroupedDataFrame(df, intcols, groups, nothing, nothing, nothing, ngroups, nothing,
+    gd = GroupedDataFrame(df, _names(df)[intcols], groups, nothing, nothing, nothing, ngroups, nothing,
                           Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
@@ -587,8 +587,6 @@ function combine_helper(f, gd::GroupedDataFrame,
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
     idx, valscat = _combine(f, gd, nms, copycols, keeprows)
-    @show idx
-    @show valscat
     !keepkeys && ungroup && return valscat
     keys = groupcols(gd)
     for key in keys
@@ -611,16 +609,15 @@ function combine_helper(f, gd::GroupedDataFrame,
 
     if length(idx) == 0 && !(keeprows && length(keys) > 0)
         @assert nrow(newparent) == 0
-        return GroupedDataFrame(newparent, collect(1:length(gd.cols)), Int[],
+        return GroupedDataFrame(newparent, copy(gd.cols), Int[],
                                 Int[], Int[], Int[], 0, Dict{Any,Int}(),
                                 Threads.ReentrantLock())
     elseif keeprows
         @assert length(keys) > 0 || idx == gd.idx
-        @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
         # in this case we are sure that the result GroupedDataFrame has the
         # same structure as the source except that grouping columns are at the start
         Threads.lock(gd.lazy_lock)
-        new_gd = GroupedDataFrame(newparent, collect(1:length(gd.cols)), gd.groups,
+        new_gd = GroupedDataFrame(newparent, copy(gd.cols), gd.groups,
                                   getfield(gd, :idx), getfield(gd, :starts),
                                   getfield(gd, :ends), gd.ngroups,
                                   getfield(gd, :keymap), Threads.ReentrantLock())
@@ -629,8 +626,7 @@ function combine_helper(f, gd::GroupedDataFrame,
     else
         groups = gen_groups(idx)
         @assert groups[end] <= length(gd)
-        @assert names(newparent, 1:length(gd.cols)) == names(parent(gd), gd.cols)
-        return GroupedDataFrame(newparent, collect(1:length(gd.cols)), groups,
+        return GroupedDataFrame(newparent, copy(gd.cols), groups,
                                 nothing, nothing, nothing, groups[end], nothing,
                                 Threads.ReentrantLock())
     end
@@ -1663,19 +1659,11 @@ but keeps the columns of `parent(gd)` in their original order.
 """
 function transform(gd::GroupedDataFrame, args...;
                    copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true)
-    if ungroup
-        res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
-                     ungroup=ungroup)
-        select!(res, propertynames(parent(gd)), :)
-    else
-        gc_idx = copy(gd.cols)
-        gc = groupcols(gd)
-        res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
-                     ungroup=ungroup)
-        select!(parent(res), propertynames(parent(gd)), :)
-        res.cols .= gc_idx
-        @assert gc == groupcols(res)
-    end
+    res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
+                 ungroup=ungroup)
+    # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
+    # so parent always gives a data frame
+    select!(parent(res), propertynames(parent(gd)), :)
     return res
 end
 
@@ -1695,14 +1683,9 @@ using the same parent data frame they might get invalidated.
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`transform`](@ref), [`transform!`](@ref)
 """
 function select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
-    gc = groupcols(gd)
     newdf = select(gd, args..., copycols=false)
     df = parent(gd)
     _replace_columns!(df, newdf)
-    gc_idx = index(df)[gc]
-    gd.cols .= gc_idx
-    @assert gd.cols == axes(gc, 1)
-    @assert gc == groupcols(gd)
     return ungroup ? df : gd
 end
 
@@ -1719,12 +1702,9 @@ and keeps the columns of `parent(gd)` in their original order.
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
 """
 function transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
-    gc = groupcols(gd)
     newdf = select(gd, :, args..., copycols=false)
     df = parent(gd)
     select!(newdf, propertynames(df), :)
     _replace_columns!(df, newdf)
-    gc_idx = index(df)[gc]
-    @assert gd.cols == gc_idx
     return ungroup ? df : gd
 end

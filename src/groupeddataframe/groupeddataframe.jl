@@ -22,7 +22,7 @@ Not meant to be constructed directly, see `groupby`.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
-    cols::Vector{Int}                    # columns used for grouping
+    cols::Vector{Symbol}                 # column names used for grouping
     groups::Vector{Int}                  # group indices for each row in 0:ngroups, 0 skipped
     idx::Union{Vector{Int},Nothing}      # indexing vector sorting rows into groups
     starts::Union{Vector{Int},Nothing}   # starts of groups after permutation by idx
@@ -144,14 +144,14 @@ groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
 Return a vector of `Symbol` column names in `parent(gd)` used for grouping.
 """
-groupcols(gd::GroupedDataFrame) = _names(gd)[gd.cols]
+groupcols(gd::GroupedDataFrame) = copy(gd.cols)
 
 """
     valuecols(gd::GroupedDataFrame)
 
 Return a vector of `Symbol` column names in `parent(gd)` not used for grouping.
 """
-valuecols(gd::GroupedDataFrame) = _names(gd)[Not(gd.cols)]
+valuecols(gd::GroupedDataFrame) = setdiff(_names(gd), gd.cols)
 
 
 # Get grouping variable index by its name
@@ -214,7 +214,7 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
             new_groups[idx[j]] = i
         end
     end
-    GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx,
+    GroupedDataFrame(gd.parent, copy(gd.cols), new_groups, gd.idx,
                      new_starts, new_ends, length(new_starts), nothing,
                      Threads.ReentrantLock())
 end
@@ -222,7 +222,7 @@ end
 # Index with colon (creates copy)
 function Base.getindex(gd::GroupedDataFrame, idxs::Colon)
     Threads.lock(gd.lazy_lock)
-    new_gd = GroupedDataFrame(gd.parent, gd.cols, gd.groups, getfield(gd, :idx),
+    new_gd = GroupedDataFrame(gd.parent, copy(gd.cols), gd.groups, getfield(gd, :idx),
                               getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
                               getfield(gd, :keymap), Threads.ReentrantLock())
     Threads.unlock(gd.lazy_lock)
@@ -533,7 +533,7 @@ function Base.haskey(gd::GroupedDataFrame, key::Tuple)
 end
 
 function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
-    if any(n != _names(gd)[c] for (n, c) in zip(N, gd.cols))
+    if length(key) != length(gd.cols) || any(((n, c),) -> n != c in zip(N, gd.cols))
         return throw(ArgumentError("The column names of key do not match " *
                                    "the names of grouping columns"))
     end
