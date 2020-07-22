@@ -1370,7 +1370,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     starts = gd.starts
     ends = gd.ends
     # Handle first group
-    j = fill_row!(first, outcols, rowstart, colstart, colnames)
+    j = len == 0 ? nothing : fill_row!(first, outcols, rowstart, colstart, colnames)
     @assert j === nothing # eltype is guaranteed to match
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
