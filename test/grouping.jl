@@ -33,7 +33,7 @@ function validate_gdf(ogd::GroupedDataFrame)
     gd = deepcopy(ogd)
 
     @assert allunique(gd.cols)
-    @assert issubset(gd.cols, parent(gd))
+    @assert issubset(gd.cols, propertynames(parent(gd)))
 
     g = sort!(unique(gd.groups))
     if length(gd) > 0
@@ -110,9 +110,13 @@ end
 @testset "accepted columns" begin
     df = DataFrame(A=[1,1,1,2,2,2], B=[1,2,1,2,1,2], C=1:6)
     @test groupby_checked(df, [1,2]) == groupby_checked(df, 1:2) ==
-          groupby_checked(df, [:A, :B])
+          groupby_checked(df, [:A, :B]) == groupby_checked(df, ["A", "B"])
     @test groupby_checked(df, [2,1]) == groupby_checked(df, 2:-1:1) ==
-          groupby_checked(df, [:B, :A])
+          groupby_checked(df, [:B, :A]) == groupby_checked(df, ["B", "A"])
+    @test_throws BoundsError groupby_checked(df, 0)
+    @test_throws BoundsError groupby_checked(df, 10)
+    @test_throws ArgumentError groupby_checked(df, :Z)
+    @test_throws ArgumentError groupby_checked(df, "Z")
 end
 
 @testset "groupby and combine(::Function, ::GroupedDataFrame)" begin
@@ -257,9 +261,29 @@ end
     df = DataFrame(v1=x, v2=x)
     groupby_checked(df, [:v1, :v2])
 
-    df2 = combine(e->1, groupby_checked(DataFrame(x=Int64[]), :x))
-    @test size(df2) == (0, 1)
-    @test sum(df2.x) == 0
+    df2 = combine(e -> "a", groupby_checked(DataFrame(x=Int64[]), :x))
+    @test size(df2) == (0, 2)
+    @test names(df2) == ["x", "x1"]
+    @test eltype.(eachcol(df2)) == [Int64, String]
+    @test combine(e -> "a", groupby_checked(DataFrame(x=Int64[]), :x), ungroup=false) ==
+          groupby_checked(df2, :x)
+
+    df2 = combine(groupby_checked(DataFrame(x=Int64[]), :x), :x => (e -> "a") => :x1)
+    @test size(df2) == (0, 2)
+    @test names(df2) == ["x", "x1"]
+    @test eltype.(eachcol(df2)) == [Int64, String]
+    @test combine(groupby_checked(DataFrame(x=Int64[]), :x), ungroup=false, :x => (e -> "a") => :x1) ==
+          groupby_checked(df2, :x)
+
+    df2 = combine(e -> "a", groupby_checked(DataFrame(x=[1, 2]), :x))
+    @test df2 == DataFrame(x=[1,2], x1=["a", "a"])
+    @test combine(e -> "a", groupby_checked(DataFrame(x=[1, 2]), :x), ungroup=false) ==
+          groupby_checked(df2, :x)
+
+    df2 = combine(groupby_checked(DataFrame(x=[1, 2]), :x), :x => (e -> "a") => :x1)
+    @test df2 == DataFrame(x=[1,2], x1=["a", "a"])
+    @test combine(groupby_checked(DataFrame(x=[1, 2]), :x), ungroup=false, :x => (e -> "a") => :x1) ==
+          groupby_checked(df2, :x)
 
     # Check that reordering levels does not confuse groupby
     for df in (DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B", "B", "A"]),
@@ -428,16 +452,17 @@ end
     # Test that columns names and types are respected for empty input
     df = DataFrame(x=Int[], y=String[])
     res = combine(d -> 1, groupby_checked(df, :x))
-    @test size(res) == (0, 1)
+    @test size(res) == (0, 2)
     @test res.x isa Vector{Int}
+    @test res.x1 isa Vector{Int}
 
     # Test with empty data frame
-    df = DataFrame(x=[], y=[])
+    df = DataFrame(x=Int[], y=Int[])
     gd = groupby_checked(df, :x)
-    @test combine(df -> sum(df.x), gd) == DataFrame(x=[])
+    @test combine(df -> sum(df.x), gd) == DataFrame(x=Int[], x1=Int[])
     res = validate_gdf(combine(df -> sum(df.x), gd, ungroup=false))
     @test length(res) == 0
-    @test res.parent == DataFrame(x=[])
+    @test res.parent == DataFrame(x=Int[], x1=Int)
 
     # Test with zero groups in output
     df = DataFrame(A = [1, 2])
@@ -1582,15 +1607,8 @@ end
     rename!(df, [:d, :e, :f])
 
     @test names(gd) == names(df)
-    @test groupcols(gd) == [:d, :e]
-    @test valuecols(gd) == [:f]
-    @test map(NamedTuple, keys(gd)) ≅
-        [(d=:A, e=:X), (d=:B, e=:X), (d=missing, e=:X), (d=:A, e=:Y), (d=:B, e=:Y), (d=missing, e=:Y)]
-    @test gd[(d=:A, e=:X)] ≅ gd[1]
-    @test gd[keys(gd)[1]] ≅ gd[1]
-    @test NamedTuple(keys(gd)[1]) == (d=:A, e=:X)
-    @test keys(gd)[1].d == :A
-    @test_throws KeyError gd[(a=:A, b=:X)]
+    @test_throws ErrorException groupcols(gd)
+    @test_throws ErrorException valuecols(gd)
 end
 
 @testset "haskey for GroupKey" begin
@@ -2263,33 +2281,33 @@ end
     @test parent(select(gdf, ungroup=false)).g !== df.g
     @test parent(select(gdf, ungroup=false, copycols=false)).g === df.g
     @test select(gdf, keepkeys=false) == DataFrame()
-    @test size(transform(gdf)) == (0, 1)
-    @test names(transform(gdf)) == ["g"]
-    @test transform(gdf, keepkeys=false) == DataFrame()
+    @test size(transform(gdf)) == (0, 2)
+    @test names(transform(gdf)) == ["x", "g"]
+    @test transform(gdf, keepkeys=false) == df
     @test groupcols(validate_gdf(transform(gdf, ungroup=false))) == [:g]
-    @test size(parent(transform(gdf, ungroup=false))) == (0, 1)
-    @test names(parent(transform(gdf, ungroup=false))) == ["g"]
+    @test size(parent(transform(gdf, ungroup=false))) == (0, 2)
+    @test names(parent(transform(gdf, ungroup=false))) == ["x", "g"]
     @test parent(transform(gdf, ungroup=false)).g !== df.g
     @test parent(transform(gdf, ungroup=false, copycols=false)).g === df.g
 
-    @test size(combine(x -> DataFrame(col=1), gdf)) == (0, 1)
-    @test names(combine(x -> DataFrame(col=1), gdf)) == ["g"]
-    @test combine(x -> DataFrame(col=1), gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
-    @test combine(x -> DataFrame(col=1), gdf, keepkeys=false) == DataFrame()
-    @test size(select(gdf, :x => :y)) == (0, 1)
-    @test names(select(gdf, :x => :y)) == ["g"]
+    @test size(combine(x -> DataFrame(col=1), gdf)) == (0, 2)
+    @test names(combine(x -> DataFrame(col=1), gdf)) == ["g", "col"]
+    @test combine(x -> DataFrame(col=1), gdf, ungroup=false) == groupby(DataFrame(g=[], col=[]), :g)
+    @test combine(x -> DataFrame(col=1), gdf, keepkeys=false) == DataFrame(col=[])
+    @test size(select(gdf, :x => :y)) == (0, 2)
+    @test names(select(gdf, :x => :y)) == ["g", "y"]
     @test groupcols(validate_gdf(select(gdf, :x => :y, ungroup=false))) == [:g]
-    @test size(parent(select(gdf, :x => :y, ungroup=false))) == (0, 1)
-    @test names(parent(select(gdf, :x => :y, ungroup=false))) == ["g"]
+    @test size(parent(select(gdf, :x => :y, ungroup=false))) == (0, 2)
+    @test names(parent(select(gdf, :x => :y, ungroup=false))) == ["g", "y"]
     @test parent(select(gdf, :x => :y, ungroup=false)).g !== df.g
     @test parent(select(gdf, :x => :y, ungroup=false, copycols=false)).g === df.g
-    @test select(gdf, :x => :y, keepkeys=false) == DataFrame()
-    @test size(transform(gdf, :x => :y)) == (0, 1)
-    @test names(transform(gdf, :x => :y)) == ["g"]
-    @test transform(gdf, :x => :y, keepkeys=false) == DataFrame()
+    @test select(gdf, :x => :y, keepkeys=false) == DataFrame(y=[])
+    @test size(transform(gdf, :x => :y)) == (0, 3)
+    @test names(transform(gdf, :x => :y)) == ["x", "g", "y"]
+    @test transform(gdf, :x => :y, keepkeys=false) == DataFrame(x=[], g=[], y=[])
     @test groupcols(validate_gdf(transform(gdf, :x => :y, ungroup=false))) == [:g]
-    @test size(parent(transform(gdf, :x => :y, ungroup=false))) == (0, 1)
-    @test names(parent(transform(gdf, :x => :y, ungroup=false))) == ["g"]
+    @test size(parent(transform(gdf, :x => :y, ungroup=false))) == (0, 3)
+    @test names(parent(transform(gdf, :x => :y, ungroup=false))) == ["x", "g", "y"]
     @test parent(transform(gdf, :x => :y, ungroup=false)).g !== df.g
     @test parent(transform(gdf, :x => :y, ungroup=false, copycols=false)).g === df.g
 
@@ -2308,11 +2326,11 @@ end
     @test parent(select(gdf, ungroup=false, copycols=false)).g === df.g
     @test select(gdf, keepkeys=false) == DataFrame()
     @test size(transform(gdf)) == (1, 2)
-    @test names(transform(gdf)) == ["g", "x"]
+    @test names(transform(gdf)) == ["x", "g"]
     @test transform(gdf, keepkeys=false) == df
     @test groupcols(validate_gdf(transform(gdf, ungroup=false))) == [:g]
     @test size(parent(transform(gdf, ungroup=false))) == (1, 2)
-    @test names(parent(transform(gdf, ungroup=false))) == ["g", "x"]
+    @test names(parent(transform(gdf, ungroup=false))) == ["x", "g"]
     @test parent(transform(gdf, ungroup=false)).g !== df.g
     @test parent(transform(gdf, ungroup=false, copycols=false)).g === df.g
     @test parent(transform(gdf, ungroup=false)).x !== df.x
@@ -2329,8 +2347,8 @@ end
     gdf = gdf[1:0]
     @test size(combine(gdf)) == (0, 1)
     @test names(combine(gdf)) == ["g"]
-    @test size(combine(x -> DataFrame(z=1), gdf)) == (0, 1)
-    @test names(combine(x -> DataFrame(z=1), gdf)) == ["g"]
+    @test size(combine(x -> DataFrame(z=1), gdf)) == (0, 2)
+    @test names(combine(x -> DataFrame(z=1), gdf)) == ["g", "z"]
     # TODO: add tests for keepkeys and ungroup after deprecation
     @test_throws ArgumentError select(gdf)
     @test_throws ArgumentError transform(gdf)
@@ -2352,13 +2370,13 @@ end
     gdf = groupby_checked(df, :g)
     gdf2 = validate_gdf(transform(gdf, ungroup=false))
     @test groupcols(gdf2) == [:g]
-    @test parent(gdf2) == select(df, :g, :x)
+    @test parent(gdf2) == select(df, :x, :g)
 
     df = DataFrame(g2=1:2, x=3:4, g1=5:6)
     gdf = groupby_checked(df, [:g1, :g2])
     gdf2 = validate_gdf(transform(gdf, ungroup=false))
     @test groupcols(gdf2) == [:g1, :g2]
-    @test parent(gdf2) == select(df, :g1, :g2, :x)
+    @test parent(gdf2) == select(df, :g2, :x, :g1)
 end
 
 @testset "corner cases of group_reduce" begin
@@ -2527,6 +2545,7 @@ end
     @test select(gdf) == DataFrame(a=4, b=2)
     @test gdf == dc_gdf
     @test select(gdf, ungroup=false) == groupby_checked(DataFrame(a=4, b=2), [:a, :b])
+    @test select(gdf, keepkeys=false) == DataFrame()
     @test gdf == dc_gdf
 
     df = DataFrame(c=1, b=2, d=3, a=4)
@@ -2548,6 +2567,7 @@ end
     @test gdf == dc_gdf
     @test transform(gdf, :c => :e, ungroup=false) ==
           groupby_checked(DataFrame(c=1, b=2, d=3, a=4, e=1), [:a, :b])
+    @test transform(gdf, :c => :e, keepkeys=false) == DataFrame(c=1, b=2, d=3, a=4, e=1)
     @test gdf == dc_gdf
 
     df = DataFrame(c=1, b=2, d=3, a=4)
@@ -2561,6 +2581,71 @@ end
     @test transform!(gdf, :c => :e, ungroup=false) === gdf
     @test df == DataFrame(c=1, b=2, d=3, a=4, e=1)
     @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[])
+    gdf = groupby_checked(df, [:a, :b])
+    dc_gdf = deepcopy(gdf)
+    df_res = select(gdf, :c => :e)
+    @test df_res == DataFrame(a=Char[], b=Float64[], e=String[])
+    @test eltype.(eachcol(df_res)) == [Char, Float64, String]
+    @test gdf == dc_gdf
+    @test select(gdf, :c => :e, ungroup=false) ==
+          groupby_checked(DataFrame(a=Char[], b=Float64[], e=String[]), [:a, :b])
+    @test select(gdf, keepkeys=false) == DataFrame()
+    df_res = select(gdf, :c => :e, keepkeys=false)
+    @test df_res == DataFrame(e=String[])
+    @test eltype(df_res.e) == String
+    @test gdf == dc_gdf
+
+    df = DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[])
+    gdf = groupby_checked(df, [:a, :b])
+    @test select!(gdf, :c => :e) === df
+    @test df == DataFrame(a=Char[], b=Float64[], e=String[])
+    @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[])
+    gdf = groupby_checked(df, [:a, :b])
+    @test select!(gdf, :c => :e, ungroup=false) === gdf
+    @test df == DataFrame(a=Char[], b=Float64[], e=String[])
+    @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[])
+    gdf = groupby_checked(df, [:a, :b])
+    dc_gdf = deepcopy(gdf)
+    @test transform(gdf, :c => :e) ==
+          DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[], e=String[])
+    @test gdf == dc_gdf
+    @test transform(gdf, :c => :e, ungroup=false) ==
+          groupby_checked(DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[], e=String[]), [:a, :b])
+    @test transform(gdf, :c => :e, keepkeys=false) ==
+          DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[], e=String[])
+    @test gdf == dc_gdf
+
+    df = DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[])
+    gdf = groupby_checked(df, [:a, :b])
+    @test transform!(gdf, :c => :e) === df
+    @test df == DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[], e=String[])
+    @test gdf == groupby_checked(df, [:a, :b])
+
+    df = DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[])
+    gdf = groupby_checked(df, [:a, :b])
+    @test transform!(gdf, :c => :e, ungroup=false) === gdf
+    @test df == DataFrame(c=String[], b=Float64[], d=Bool[], a=Char[], e=String[])
+    @test gdf == groupby_checked(df, [:a, :b])
+end
+
+@testset "combine on empty data frame" begin
+    df = DataFrame(x=Int[])
+    @test combine(df, nrow) == DataFrame(nrow=0)
+    @test combine(df, nrow => :z) == DataFrame(z=0)
+    @test combine(df, [nrow => :z]) == DataFrame(z=0)
+    @test combine(df, :x => (x -> 1:2) => :y) == DataFrame(y=1:2)
+
+    # in the future this should be DataFrame(nrow=0)
+    @test_throws ArgumentError combine(nrow, df)
+
+    # in the future this should be DataFrame(a=1,b=2)
+    @test_throws ArgumentError combine(sdf -> DataFrame(a=1,b=2), df)
 end
 
 end # module

@@ -508,12 +508,16 @@ transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
 
 """
     combine(df::AbstractDataFrame, args...)
+    combine(arg, df::AbstractDataFrame)
 
 Create a new data frame that contains columns from `df` specified by `args` and
 return it. The result can have any number of rows that is determined by the
 values returned by passed transformations.
 
-See [`select`](@ref) for detailed rules regarding accepted values for `args`.
+See [`select`](@ref) for detailed rules regarding accepted values for `args` in
+`combine(df, args...)` form. For `combine(arg, df)` the same rules as for
+`combine` on `GroupedDataFrame` apply except that a `df` with zero rows is
+currently not allowed.
 
 # Examples
 ```jldoctest
@@ -537,7 +541,14 @@ julia> combine(df, :a => sum, nrow)
 combine(df::AbstractDataFrame, args...) =
     manipulate(df, args..., copycols=true, keeprows=false)
 
-combine(arg, df::AbstractDataFrame) = combine(arg, groupby(df, []))
+function combine(arg, df::AbstractDataFrame)
+    if nrow(df) == 0
+        throw(ArgumentError("calling combine on a data frame with zero rows" *
+                            " with transformation as a first argument is " *
+                            "currently not supported"))
+    end
+    return combine(arg, groupby(df, []))
+end
 
 manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),

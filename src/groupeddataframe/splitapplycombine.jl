@@ -140,8 +140,8 @@ function groupby(df::AbstractDataFrame, cols;
     intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
     if isempty(intcols)
         return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
-                                collect(axes(df, 1)), [1], [nrow(df)], 1, nothing,
-                                Threads.ReentrantLock())
+                                nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
+                                nothing, Threads.ReentrantLock())
     end
     sdf = df[!, intcols]
 
@@ -263,8 +263,6 @@ const KWARG_PROCESSING_RULES =
     combine(fun::Union{Function, Type}, gd::GroupedDataFrame;
             keepkeys::Bool=true, ungroup::Bool=true)
     combine(pair::Pair, gd::GroupedDataFrame; keepkeys::Bool=true, ungroup::Bool=true)
-    combine(fun::Union{Function, Type}, df::AbstractDataFrame, ungroup::Bool=true)
-    combine(pair::Pair, df::AbstractDataFrame, ungroup::Bool=true)
 
 Apply operations to each group in a [`GroupedDataFrame`](@ref) and return the combined
 result as a `DataFrame` if `ungroup=true` or `GroupedDataFrame` if `ungroup=false`.
@@ -1093,7 +1091,15 @@ function _combine(f::AbstractVector{<:Pair},
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
     @assert all(x -> last(x) isa Base.Callable, f)
 
-    isempty(f) && return Int[], DataFrame()
+    if isempty(f)
+        if keeprows && nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
+            throw(ArgumentError("select and transform do not support " *
+                                "`GroupedDataFrame`s from which some groups have "*
+                                "been dropped (including skipmissing=true)"))
+        end
+        return Int[], DataFrame()
+    end
+
     if keeprows
         if nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
             throw(ArgumentError("select and transform do not support " *
@@ -1448,7 +1454,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     # Handle first group
 
     @assert _ncol(first) == N
-    if !isempty(colnames)
+    if !isempty(colnames) && length(gd) > 0
         j = append_rows!(first, outcols, colstart, colnames)
         @assert j === nothing # eltype is guaranteed to match
         append!(idx, Iterators.repeated(gdidx[starts[rowstart]], _nrow(first)))
