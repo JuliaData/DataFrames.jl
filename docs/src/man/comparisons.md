@@ -24,7 +24,7 @@ Operations| DataFrames       | dplyr| Stata|
 |Several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
 ||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|`collapse (mean) x*`|
-|Multivariate function|`combine(df, [:x, :y] => cov)`|`summarize(df, cov(x, y))`||
-|Row-wise|`transform(df, AsTable([:x, :y]) => ByRow(sum))`|`mutate(rowwise(df), sum(x, y))`|egen z = rowtotal(x y)|
+|Multivariate function|`transform(df, [:x, :y] => cov)`|`mutate(df, cov(x, y))`|`egen z = cov(x, y)`|
+|Row-wise|`transform(df, AsTable([:x, :y]) => ByRow(sum))`|`mutate(rowwise(df), sum(x, y))`|`egen z = rowtotal(x y)`|
 |DataFrame as output|`combine(:x => x -> (name = ["minimum", "maximum"], value = [minimum(x), maximum(x)]), df)`|`summarize(df, tibble(name = c("minimum", "maximum"), value = range(x)))`||
 |DataFrame as input|`combine(d -> first(d, 2), df)`|`summarize(df, head(across(), 2))`||
