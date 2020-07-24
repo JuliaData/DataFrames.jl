@@ -1,11 +1,13 @@
-The table compares the main functions of DataFrames with R dplyr and Stata
+The table compares the main functions of DataFrames.jl with the R package dplyr (v1) and Stata (>=8)
 | DataFrames       | dplyr | Stata|
 |:------------|:------------|:------------|
-|`combine(df, :x => mean)`  | `summarize(mean(x))`    | `collapse (mean) x `|
-|`transform(df, :x => mean)`   | `mutate(mean(x))`    | `egen x_mean = mean(x)`|
+|`combine(df, :x => mean)`  | `summarize(df, mean(x))`    | `collapse (mean) x `|
+|`transform(df, :x => mean)`   | `mutate(df, mean(x))`    | `egen x_mean = mean(x)`|
 |`select(df, :x, :y)`   | `select(df, x, y)`  | `keep x y` |
 |`sort(df, :x)`   | `arrange(df, x)`    | `sort x`|
 |`filter(:x => x -> x >= 1, df)`   | `filter(df, x >= 1)`  | `keep if x >= 1` |
+
+By default, these functions create a new dataframe (like in dplyr). Append the command by `!`  to mutate the dataframe in place (like in Stata)
 
 Here are more complicated examples for `combine`/`transform`/`select`:
 | DataFrames       | dplyr | Stata|
@@ -15,13 +17,16 @@ Here are more complicated examples for `combine`/`transform`/`select`:
 |`combine(df, [:x, :y] => cov)`   | `summarize(df, cov(x, y))`    | |
 |`combine(df, :x => maximum,  :y => minimum)`   | `summarize(df, max(x), min(y))`    | `collapse (max) x (min) y` |
 |`combine(df, [:x, :y] .=> mean)`   | `summarize(df, across(c(x, y), mean))`    | `collapse (mean) x y` |
-|`combine(df, names(df, r"^x.*") .=> mean)`   | `summarize(df, across(starts_with("x"), mean))`    | `collapse (mean) x*` |
+|`combine(df, names(df, r"^x") .=> mean)`   | `summarize(df, across(starts_with("x"), mean))`    | `collapse (mean) x*` |
 
-As in dplyr and, the functions `select`, `transform`, `combine` can also be used on grouped dataframes:
+
+As in dplyr, the functions `select`, `transform`, `combine` can also be used on grouped dataframes:
 | DataFrames       | dplyr | Stata|
 |:------------|:------------|:------------|
-|`transform(groupby(df, :id), :x => mean)`   | `mutate(group_by(df, id), mean(x))`    | `egen x_mean = mean(x), by(id)`|
 |`combine(groupby(df, :id), :x => mean)`  | `summarize(group_by(df, id), mean(x))`    | `collapse (mean) x, by(id)`|
+|`transform(groupby(df, :id), :x => mean)`   | `mutate(group_by(df, id), mean(x))`    | `egen x_mean = mean(x), by(id)`|
 |`select(groupby(df, :id), :x => mean)`   | `transmute(group_by(df, id), mean(x))`    | |
+
+Finally, in DataFrames, `combine` `transform` `select`, `o
 
 
