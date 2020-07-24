@@ -229,6 +229,27 @@ Note that constructing a `DataFrame` row by row is significantly less performant
 constructing it all at once, or column by column. For many use-cases this will not matter,
 but for very large `DataFrame`s  this may be a consideration.
 
+If we wanted to add several rows at once, one solution is to [`append!`](@ref) one `DataFrame` to another. For example:
+
+```jldoctest dataframe
+julia> df1 = DataFrame(A=1:3, B=1:3);
+
+julia> df2 = DataFrame(A=4.0:6.0, B=4:6);
+
+julia> append!(df1, df2)
+
+6×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 4     │ 4     │
+│ 5   │ 5     │ 5     │
+│ 6   │ 6     │ 6     │
+```
+
 ### Constructing from another table type
 
 DataFrames supports the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface for
@@ -572,6 +593,40 @@ a function object that tests whether each value belongs to the subset
 
     More details on copies, views, and references can be found
     [here.](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/#getindex-and-view-1)
+
+#### Selecting Rows with `filter`
+
+We have seen above how to subset a `DataFrame` to several criteria, involving multiple columns, by supplying a logical vector to the first dimension. For instance, in the following we want to subset to all rows where `x > 2` and where `a == 'c'`:
+
+```jldoctest dataframe
+julia> df = DataFrame(:x => 1:4, :y => "a", :a => 'a':'d', :b => exp(1))
+4×4 DataFrame
+│ Row │ x     │ y      │ a    │ b       │
+│     │ Int64 │ String │ Char │ Float64 │
+├─────┼───────┼────────┼──────┼─────────┤
+│ 1   │ 1     │ a      │ 'a'  │ 2.71828 │
+│ 2   │ 2     │ a      │ 'b'  │ 2.71828 │
+│ 3   │ 3     │ a      │ 'c'  │ 2.71828 │
+│ 4   │ 4     │ a      │ 'd'  │ 2.71828 │
+
+julia> df[ (df.x .> 2) .& (df.a .== 'c'), : ]
+1×4 DataFrame
+│ Row │ x     │ y      │ a    │ b       │
+│     │ Int64 │ String │ Char │ Float64 │
+├─────┼───────┼────────┼──────┼─────────┤
+│ 1   │ 3     │ a      │ 'c'  │ 2.71828 │
+```
+
+An alternative formulation, which notably saves on the need to use broadcasting syntax via `.` prefixes, uses [`filter`](@ref) or [`filter!`](@ref):
+
+```jldoctest dataframe
+julia> filter([:x, :a] => ((x1,x2) -> (x1 > 2) && (x2 == 'c')), df)
+1×4 DataFrame
+│ Row │ x     │ y      │ a    │ b       │
+│     │ Int64 │ String │ Char │ Float64 │
+├─────┼───────┼────────┼──────┼─────────┤
+│ 1   │ 3     │ a      │ 'c'  │ 2.71828 │
+```
 
 #### Column selection using `select` and `select!`, `transform` and `transform!`
 
