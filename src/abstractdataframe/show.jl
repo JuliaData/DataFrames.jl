@@ -250,6 +250,8 @@ function getchunkbounds(maxwidths::Vector{Int},
                         availablewidth::Int)
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
+    # Artificially make the display one column smaller because some terminals are bad
+    availablewidth -= 1
     if splitcols
         chunkbounds = [0]
         # Include 2 spaces + 2 | characters for row/col label
