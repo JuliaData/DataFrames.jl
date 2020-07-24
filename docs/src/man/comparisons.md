@@ -28,5 +28,3 @@ Here are more complicated examples to work with multiple functions / multiple co
 |`combine(df, names(df, r"^x") .=> mean)`   | `summarize(df, across(starts_with("x"), mean))`    | `collapse (mean) x*` |
 |`combine(:x => x -> (name = ["minimum", "maximum"], value = [minimum(x), maximum(x)]), df)`   | `summarize(df, tibble(name = c("minimum", "maximum"), value = range(x)))`    | |
 |`combine(d -> head(d, 1), df)` | `summarize(df, head(across(), 1))`||
-
-
