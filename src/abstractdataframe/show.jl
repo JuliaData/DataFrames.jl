@@ -257,7 +257,8 @@ function getchunkbounds(maxwidths::Vector{Int},
         for j in 1:ncols
             # Include 2 spaces + | character in per-column character count
             totalwidth += maxwidths[j] + 3
-            if totalwidth > availablewidth
+            # Ensure there'd also be enough space to print the " ⋯" ellipses if needed
+            if totalwidth + (j < ncols ? 2 : 0) > availablewidth
                 push!(chunkbounds, j - 1)
                 totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
             end
@@ -452,7 +453,8 @@ function showrows(io::IO,
     nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
     header = displaysummary ? summary(df) : ""
-    if !allcols && length(chunkbounds) > 2
+    omittedcols = !allcols && length(chunkbounds) > 2
+    if omittedcols
         header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
     end
     println(io, header)
@@ -476,7 +478,9 @@ function showrows(io::IO,
                 write(io, ' ')
             end
             if j == rightcol
-                print(io, " │\n")
+                print(io, " │")
+                omittedcols && print(io, " ⋯") 
+                println(io)
             else
                 print(io, " │ ")
             end
@@ -517,6 +521,8 @@ function showrows(io::IO,
             end
             if j < rightcol
                 write(io, '┼')
+            elseif omittedcols
+                print(io, "┼ ⋯")
             else
                 write(io, '┤')
             end
@@ -533,7 +539,9 @@ function showrows(io::IO,
                        rowid, buffer)
 
         if !isempty(rowindices2)
-            print(io, "\n⋮\n")
+            print(io, "\n⋮", repeat(' ', rowmaxwidth + 2 + sum(x->x+3, maxwidths[leftcol:rightcol])), "⋮")
+            omitted_cols && print(io, " ⋯")
+            println(io)
             showrowindices(io,
                            df,
                            rowindices2,
