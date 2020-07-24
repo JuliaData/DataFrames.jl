@@ -11,11 +11,11 @@ Here are more complicated examples for `combine`/`transform`/`select`:
 | DataFrames       | dplyr | Stata|
 |:------------|:------------|:------------|
 |`combine(df, :x => mean => :x_mean)`   | `summarize(df, x_mean = mean(x))`    | `collapse (mean) x_mean = x`|
-|`combine(df, :x => x -> maximum(x) - minimum(x)`   | `summarize(df, max(x) - min(x))`    | |
+|`combine(df, :x => x -> maximum(x) - minimum(x))`   | `summarize(df, max(x) - min(x))`    | |
 |`combine(df, [:x, :y] => cov)`   | `summarize(df, cov(x, y))`    | |
-|`combine(df, :x => mean,  :y => sd)`   | `summarize(df, mean(x), sd(y))`    | `collapse (mean) x (sd) y` |
+|`combine(df, :x => maximum,  :y => minimum)`   | `summarize(df, max(x), min(y))`    | `collapse (max) x (min) y` |
 |`combine(df, [:x, :y] .=> mean)`   | `summarize(df, across(c(x, y), mean))`    | `collapse (mean) x y` |
-|`combine(df, names(df, r"^x.*) .=> mean)`   | `summarize(df, across(starts_with("x"), mean))`    | `collapse (mean) x*` |
+|`combine(df, names(df, r"^x.*") .=> mean)`   | `summarize(df, across(starts_with("x"), mean))`    | `collapse (mean) x*` |
 
 As in dplyr and, the functions `select`, `transform`, `combine` can also be used on grouped dataframes:
 | DataFrames       | dplyr | Stata|
