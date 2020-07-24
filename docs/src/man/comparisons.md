@@ -25,7 +25,7 @@ Operations| DataFrames       | dplyr| Stata|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
 ||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|`collapse (mean) x*`|
 |Multivariate function|`transform(df, [:x, :y] => cov)`|`mutate(df, cov(x, y))`|`egen z = corr(x y)`|
-|Row-wise|`transform(df, [:x, :y] => ByRow(min)`|`mutate(rowwise(df), min(x, y))`|`egen z = rowmin(x y)`|
+|Row-wise|`transform(df, [:x, :y] => ByRow(min))`|`mutate(rowwise(df), min(x, y))`|`egen z = rowmin(x y)`|
 ||`transform(df, AsTable(names(df, r"^x")) => ByRow(sum))`|`mutate(rowwise(df), sum(c_across(starts_with("x"))))`|`egen z = rowtotal(x*)`|
 |DataFrame as output|`combine(:x => x -> (name = ["minimum", "maximum"], value = [minimum(x), maximum(x)]), df)`|`summarize(df, tibble(name = c("minimum", "maximum"), value = range(x)))`||
 |DataFrame as input|`combine(d -> first(d, 2), df)`|`summarize(df, head(across(), 2))`||
