@@ -540,7 +540,7 @@ function showrows(io::IO,
 
         if !isempty(rowindices2)
             print(io, "\n⋮", repeat(' ', rowmaxwidth + 2 + sum(x->x+3, maxwidths[leftcol:rightcol])), "⋮")
-            omitted_cols && print(io, " ⋯")
+            omittedcols && print(io, " ⋯")
             println(io)
             showrowindices(io,
                            df,
