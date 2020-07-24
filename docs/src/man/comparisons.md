@@ -6,6 +6,7 @@ The table compares the main functions of DataFrames.jl with the R package dplyr 
 |Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
 |Pick rows |`filter(:x => x -> x >= 1, df)`|`filter(df, x >= 1)`|`keep if x >= 1`|
 |Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
+|Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
 
 These functions create new dataframes (like in dplyr). To mutate dataframes in place (like in Stata), use the suffix `!` (e.g. `transform!`, `select!`, etc)
 
@@ -24,5 +25,6 @@ Operations| DataFrames       | dplyr| Stata|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
 ||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|`collapse (mean) x*`|
 |Multivariate function|`combine(df, [:x, :y] => cov)`|`summarize(df, cov(x, y))`||
+|Row-wise|`transform(df, AsTable([:x, :y]) => ByRow(sum))`|`mutate(rowwise(df), sum(x, y))`|egen z = rowtotal(x y)|
 |DataFrame as output|`combine(:x => x -> (name = ["minimum", "maximum"], value = [minimum(x), maximum(x)]), df)`|`summarize(df, tibble(name = c("minimum", "maximum"), value = range(x)))`||
 |DataFrame as input|`combine(d -> first(d, 2), df)`|`summarize(df, head(across(), 2))`||
