@@ -61,18 +61,31 @@ end
 @testset "displaysize test" begin
     df_big = DataFrame(reshape(Int64(10000001):Int64(10000000+25*5), 25, 5))
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,42), :limit=>true)
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrame. Omitted printing of 2 columns
-    │ Row │ x1       │ x2       │ x3       │
+    │ Row │ x1       │ x2       │ x3       │ ⋯
     │     │ Int64    │ Int64    │ Int64    │
-    ├─────┼──────────┼──────────┼──────────┤
+    ├─────┼──────────┼──────────┼──────────┼ ⋯
     │ 1   │ 10000001 │ 10000026 │ 10000051 │
-    ⋮
+    ⋮                                      ⋮ ⋯
     │ 24  │ 10000024 │ 10000049 │ 10000074 │
     │ 25  │ 10000025 │ 10000050 │ 10000075 │"""
+
+    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    show(io, df_big)
+    str = String(take!(io.io))
+    @test str == """
+    25×5 DataFrame. Omitted printing of 3 columns
+    │ Row │ x1       │ x2       │ ⋯
+    │     │ Int64    │ Int64    │
+    ├─────┼──────────┼──────────┼ ⋯
+    │ 1   │ 10000001 │ 10000026 │
+    ⋮                           ⋮ ⋯
+    │ 24  │ 10000024 │ 10000049 │
+    │ 25  │ 10000025 │ 10000050 │"""
 
     io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big, allcols=true)
@@ -83,7 +96,7 @@ end
     │     │ Int64    │ Int64    │ Int64    │
     ├─────┼──────────┼──────────┼──────────┤
     │ 1   │ 10000001 │ 10000026 │ 10000051 │
-    ⋮
+    ⋮                                      ⋮
     │ 24  │ 10000024 │ 10000049 │ 10000074 │
     │ 25  │ 10000025 │ 10000050 │ 10000075 │
 
@@ -91,7 +104,7 @@ end
     │     │ Int64    │ Int64    │
     ├─────┼──────────┼──────────┤
     │ 1   │ 10000076 │ 10000101 │
-    ⋮
+    ⋮                           ⋮
     │ 24  │ 10000099 │ 10000124 │
     │ 25  │ 10000100 │ 10000125 │"""
 
@@ -163,9 +176,9 @@ end
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrame. Omitted printing of 2 columns
-    │ Row │ x1       │ x2       │ x3       │
+    │ Row │ x1       │ x2       │ x3       │ ⋯
     │     │ Int64    │ Int64    │ Int64    │
-    ├─────┼──────────┼──────────┼──────────┤
+    ├─────┼──────────┼──────────┼──────────┼ ⋯
     │ 1   │ 10000001 │ 10000026 │ 10000051 │
     │ 2   │ 10000002 │ 10000027 │ 10000052 │
     │ 3   │ 10000003 │ 10000028 │ 10000053 │
