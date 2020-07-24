@@ -61,7 +61,7 @@ end
 @testset "displaysize test" begin
     df_big = DataFrame(reshape(Int64(10000001):Int64(10000000+25*5), 25, 5))
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,42), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,43), :limit=>true)
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
@@ -74,7 +74,7 @@ end
     │ 24  │ 10000024 │ 10000049 │ 10000074 │
     │ 25  │ 10000025 │ 10000050 │ 10000075 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,41), :limit=>true)
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
@@ -87,7 +87,7 @@ end
     │ 24  │ 10000024 │ 10000049 │
     │ 25  │ 10000025 │ 10000050 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,41), :limit=>true)
     show(io, df_big, allcols=true)
     str = String(take!(io.io))
     @test str == """
@@ -108,7 +108,7 @@ end
     │ 24  │ 10000099 │ 10000124 │
     │ 25  │ 10000100 │ 10000125 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,43), :limit=>true)
     show(io, df_big, allrows=true, allcols=true)
     str = String(take!(io.io))
     @test str == """
@@ -171,7 +171,7 @@ end
     │ 24  │ 10000099 │ 10000124 │
     │ 25  │ 10000100 │ 10000125 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,41), :limit=>true)
     show(io, df_big, allrows=true, allcols=false)
     str = String(take!(io.io))
     @test str == """
