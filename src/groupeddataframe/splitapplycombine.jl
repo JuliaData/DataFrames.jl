@@ -137,19 +137,18 @@ function groupby(df::AbstractDataFrame, cols;
                  sort::Bool=false, skipmissing::Bool=false)
     _check_consistency(df)
     idxcols = index(df)[cols]
-    intcols = idxcols isa Int ? [idxcols] : convert(Vector{Int}, idxcols)
-    if isempty(intcols)
+    if isempty(idxcols)
         return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
                                 nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
                                 nothing, Threads.ReentrantLock())
     end
-    sdf = df[!, intcols]
+    sdf = select(df, idxcols, copycols=false)
 
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false), groups, skipmissing)
 
-    gd = GroupedDataFrame(df, _names(df)[intcols], groups, nothing, nothing, nothing, ngroups, nothing,
+    gd = GroupedDataFrame(df, _names(sdf), groups, nothing, nothing, nothing, ngroups, nothing,
                           Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
