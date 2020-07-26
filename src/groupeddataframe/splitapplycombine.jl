@@ -1685,8 +1685,8 @@ An equivalent of
 but updates `parent(gd)` in place.
 
 `gd` is updated to reflect the new rows of its updated parent.
-However, if there are independent `GroupedDataFrame` objects constructed
-using the same parent data frame they might get invalidated.
+If there are independent `GroupedDataFrame` objects constructed
+using the same parent data frame they might get corrupt.
 
 # See also
 
