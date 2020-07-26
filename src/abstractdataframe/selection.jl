@@ -547,7 +547,7 @@ function combine(arg, df::AbstractDataFrame)
                             " with transformation as a first argument is " *
                             "currently not supported"))
     end
-    return combine(arg, groupby(df, []))
+    return combine(arg, groupby(df, Symbol[]))
 end
 
 manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =

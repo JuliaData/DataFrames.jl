@@ -145,8 +145,9 @@ groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 Return a vector of `Symbol` column names in `parent(gd)` used for grouping.
 """
 function groupcols(gd::GroupedDataFrame)
-    issubset(gd.cols, _names(parent(gd))) && return copy(gd.cols)
-    throw(ErrorException("grouping column names not found in data frame column names"))
+    issubset(gd.cols, _names(parent(gd))) ||
+        throw(ErrorException("grouping column names not found in data frame column names"))
+    return copy(gd.cols)
 end
 
 """
