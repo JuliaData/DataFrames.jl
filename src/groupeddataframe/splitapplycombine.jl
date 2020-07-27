@@ -962,7 +962,7 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
+function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
                       incol::AbstractVector{T}, gd::GroupedDataFrame) where {T}
     n = length(gd)
     if adjust !== nothing || checkempty
