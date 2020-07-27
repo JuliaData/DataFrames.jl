@@ -572,7 +572,7 @@ for T in MULTICOLUMNINDEX_TUPLE
             throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
                                     " collection contains $(length(v)) elements"))
         end
-        for (i, x) in enumerate(v)
+        for (i, x) in zip(idxs, v)
             df[row_ind, i] = x
         end
         return df
