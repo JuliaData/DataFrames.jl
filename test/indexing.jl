@@ -1698,6 +1698,28 @@ end
     end
 end
 
+@testset "setindex! for DataFrameRow" begin
+    for selector in ([:y2, :y1], [4, 2])
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] = [100, 200]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] .= [100, 200]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+    end
+
+    for selector in ([:y1, :y2], [2, 4], r"y", Not([:x, :z]))
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] = [200, 100]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] .= [200, 100]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+    end
+end
+
 if VERSION >= v"1.4"
     include("indexing_begin_tests.jl")
 end
