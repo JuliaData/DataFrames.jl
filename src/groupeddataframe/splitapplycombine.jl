@@ -962,8 +962,8 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res::AbstractVector{U}, f, op, condf, adjust, checkempty::Bool,
-                      incol::AbstractVector{T}, gd::GroupedDataFrame) where {U,T}
+function groupreduce!(res, f, op, condf, adjust, checkempty::Bool,
+                      incol::AbstractVector{T}, gd::GroupedDataFrame) where {T}
     n = length(gd)
     if adjust !== nothing || checkempty
         counts = zeros(Int, n)
@@ -974,7 +974,7 @@ function groupreduce!(res::AbstractVector{U}, f, op, condf, adjust, checkempty::
         x = incol[i]
         if gix > 0 && (condf === nothing || condf(x))
             # this check should be optimized out if U is not Any
-            if U === Any && !isassigned(res, gix)
+            if eltype(res) === Any && !isassigned(res, gix)
                 res[gix] = f(x, gix)
             else
                 res[gix] = op(res[gix], f(x, gix))
@@ -985,7 +985,7 @@ function groupreduce!(res::AbstractVector{U}, f, op, condf, adjust, checkempty::
         end
     end
     # handle the case of an unitialized reduction
-    if U === Any
+    if eltype(res) === Any
         if op === Base.add_sum
             initf = zero
         elseif op === Base.mul_prod
