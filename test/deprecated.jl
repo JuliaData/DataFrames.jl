@@ -527,7 +527,7 @@ end
     df = DataFrame(rand(3,4), [:a, :b, :c, :d])
     df2 = DataFrame(eachcol(df, true))
     @test df == df2
-    df2 = DataFrame!(eachcol(df, true))
+    df2 = DataFrame(eachcol(df, true), copycols=false)
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 

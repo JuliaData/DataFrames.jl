@@ -57,10 +57,6 @@ end
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 DataFrame(x::AbstractVector{NamedTuple{names, T}}; copycols::Bool=true) where {names, T} =
     fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), collect(names), copycols=false)
-DataFrame!(x::AbstractVector{<:NamedTuple}) =
-    throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
-                        "`$(typeof(x))` without allocating new columns: use " *
-                        "`DataFrame(x)` instead"))
 
 Tables.istable(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
 Tables.columnaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true

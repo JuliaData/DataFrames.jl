@@ -60,8 +60,7 @@ selector should be passed as a `NamedTuple` to the function.
 ## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
 
 When a `DataFrame` is constructed columns are copied by default. You can disable
-this behavior by setting `copycols` keyword argument to `false` or by using the
-[`DataFrame!`](@ref) function.
+this behavior by setting `copycols` keyword argument to `false`.
 The exception is if an `AbstractRange` is passed as a column, then it is always collected to a `Vector`.
 
 Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
@@ -114,7 +113,6 @@ AbstractDataFrame
 AsTable
 ByRow
 DataFrame
-DataFrame!
 DataFrameRow
 GroupedDataFrame
 GroupKey

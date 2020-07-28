@@ -1239,7 +1239,7 @@ function _combine(f::AbstractVector{<:Pair},
     # this check is redundant given we check idx above
     # but it is safer to double check and it is cheap
     @assert all(x -> length(x) == length(outcols[1]), outcols)
-    return idx, DataFrame!(collect(AbstractVector, outcols), nms)
+    return idx, DataFrame(collect(AbstractVector, outcols), nms, copycols=false)
 end
 
 function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
