@@ -710,7 +710,8 @@ end
 @testset "DataFrame!" begin
     x = [1,2,3]
     y = [4,5,6]
-    @test_throws ArgumentError DataFrame!(x=x, y=y, copycols=true)
+    # we allow this to make deprecation message simpler
+    @test DataFrame!(x=x, y=y, copycols=true) == DataFrame(x=x,y=y)
     df1 = DataFrame(x=x, y=y)
     df2 = DataFrame!(df1)
     @test df1 == df2
@@ -749,7 +750,7 @@ end
     @test df."x1" === x
     @test df."x2" === y
 
-    @test_throws ArgumentError DataFrame!([1 2; 3 4], copycols=false)
+    @test_throws MethodError DataFrame!([1 2; 3 4], copycols=false)
     @test_throws MethodError DataFrame!([1 2; 3 4])
     @test_throws MethodError DataFrame!([Union{Int, Missing}, Union{Float64, Missing}],
                                         [:x1, :x2], 2)

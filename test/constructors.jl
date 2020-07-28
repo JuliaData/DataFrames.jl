@@ -29,19 +29,19 @@ const ≅ = isequal
     @test df2.x1 === vecvec[1]
     @test df2.x2 === vecvec[2]
 
-    for fun in (DataFrame, (args...; kwargs...) -> DataFrame(args...; kwargs..., copycols=false))
-        @test df == fun(vecvec)
-        @test df == fun(collect(Any, vecvec))
-        @test df == fun(collect(AbstractVector, vecvec))
-        @test df == fun(Tuple(vecvec))
-        @test df == fun(x1 = vecvec[1], x2 = vecvec[2])
+    for copycolsarg in (true, false)
+        @test df == DataFrame(vecvec, copycols=copycolsarg)
+        @test df == DataFrame(collect(Any, vecvec), copycols=copycolsarg)
+        @test df == DataFrame(collect(AbstractVector, vecvec), copycols=copycolsarg)
+        @test df == DataFrame(Tuple(vecvec), copycols=copycolsarg)
+        @test df == DataFrame(x1 = vecvec[1], x2 = vecvec[2], copycols=copycolsarg)
 
         for cols in ([:x1, :x2], ["x1", "x2"])
-            @test df == fun(vecvec, cols)
-            @test df == fun(collect(Any, vecvec), cols)
-            @test df == fun(collect(AbstractVector, vecvec), cols)
-            @test df == fun(Tuple(vecvec), Tuple(cols))
-            @test df == fun([col=>vect for (col, vect) in zip(cols, vecvec)])
+            @test df == DataFrame(vecvec, cols, copycols=copycolsarg)
+            @test df == DataFrame(collect(Any, vecvec), cols, copycols=copycolsarg)
+            @test df == DataFrame(collect(AbstractVector, vecvec), cols, copycols=copycolsarg)
+            @test df == DataFrame(Tuple(vecvec), Tuple(cols), copycols=copycolsarg)
+            @test df == DataFrame([col=>vect for (col, vect) in zip(cols, vecvec)], copycols=copycolsarg)
         end
     end
 
@@ -413,15 +413,15 @@ end
 end
 
 @testset "constructor thrown exceptions" begin
-    for f in (DataFrame, (args...; kwargs...) -> DataFrame(args...; kwargs..., copycols=false))
-        @test_throws DimensionMismatch f(Any[collect(1:10)], DataFrames.Index([:A, :B]))
-        @test_throws ArgumentError f(A = rand(2,2))
-        @test_throws ArgumentError f(A = rand(2,1))
-        @test_throws ArgumentError f([1, 2, 3])
-        @test_throws DimensionMismatch f(AbstractVector[1:3, [1,2]])
-        @test_throws ArgumentError f([1:3, 1], [:x1, :x2])
-        @test_throws ArgumentError f([1:3, 1], ["x1", "x2"])
-        @test_throws ErrorException f([1:3, 1])
+    for copycolsarg in (true, false)
+        @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame(A = rand(2,2), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame(A = rand(2,1), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame([1, 2, 3], copycols=copycolsarg)
+        @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1,2]], copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
+        @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
 
     @test_throws MethodError DataFrame([1 2; 3 4], copycols=false)
