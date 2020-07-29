@@ -245,8 +245,8 @@ equivalent `Tuple` or `NamedTuple`.
 Instances of this type are returned by `keys(::GroupedDataFrame)` and are not
 meant to be constructed directly.
 
-Indexing is one-dimensional like specifying a column of a `DataFrame`.
-You can also access the data in a `GroupKey` using the `getproperty`
+Indexing fields of `GroupKey` is allowed using an integer, a `Symbol`, or a string.
+It is also possible to access the data in a `GroupKey` using the `getproperty`
 function and convert it to a `Tuple`, `NamedTuple`, or `Vector`.
 
 See [`keys(::GroupedDataFrame)`](@ref) for more information.
