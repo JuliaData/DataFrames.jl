@@ -1911,7 +1911,7 @@ end
     @test eltype(df.d) === Union{Int, Missing}
 
     a = [1]
-    df = DataFrame!(a=a)
+    df = DataFrame(a=a, copycols=false)
     push!(df, (a=1,), cols=:union)
     @test df.a === a
     push!(df, (a=1.0,), cols=:union)
@@ -1919,16 +1919,16 @@ end
     @test eltype(df.a) === Float64
 
     x = [1]
-    df = DataFrame!(a=x, b=x)
+    df = DataFrame(a=x, b=x, copycols=false)
     @test_throws AssertionError push!(df, (a=1, b=2, c=3), cols=:union)
-    @test df == DataFrame!(a=x, b=x)
+    @test df == DataFrame(a=x, b=x, copycols=false)
     @test df.a === df.b === x
 
     # note that this is correct although we have a problem with aliasing
     # as we eventually reallocate column :b to a correct length
     # and aliasing does not affect rows that already existed in df
     push!(df, (a=1, b=2.0, c=3), cols=:union)
-    @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
+    @test df ≅ DataFrame(a=[1,1], b=[1.0, 2.0], c=[missing, 3], copycols=false)
     @test df.a === x
     @test eltype(df.b) === Float64
 
@@ -1972,7 +1972,7 @@ end
     @test eltype(df.d) === Union{Int, Missing}
 
     a = [1]
-    df = DataFrame!(a=a)
+    df = DataFrame(a=a, copycols=false)
     push!(df, DataFrame(a=1)[1, :], cols=:union)
     @test df.a === a
     push!(df, DataFrame(a=1.0)[1, :], cols=:union)
@@ -1980,16 +1980,16 @@ end
     @test eltype(df.a) === Float64
 
     x = [1]
-    df = DataFrame!(a=x, b=x)
+    df = DataFrame(a=x, b=x, copycols=false)
     @test_throws AssertionError push!(df, DataFrame(a=1, b=2, c=3)[1, :], cols=:union)
-    @test df == DataFrame!(a=x, b=x)
+    @test df == DataFrame(a=x, b=x, copycols=false)
     @test df.a === df.b === x
 
     # note that this is correct although we have a problem with aliasing
     # as we eventually reallocate column :b to a correct length
     # and aliasing does not affect rows that already existed in df
     push!(df, DataFrame(a=1, b=2.0, c=3)[1, :], cols=:union)
-    @test df ≅ DataFrame!(a=[1,1], b=[1.0, 2.0], c=[missing, 3])
+    @test df ≅ DataFrame(a=[1,1], b=[1.0, 2.0], c=[missing, 3], copycols=false)
     @test df.a === x
     @test eltype(df.b) === Float64
 end

@@ -162,10 +162,10 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
     end
 end
 
-@testset "DataFrame!" begin
+@testset "DataFrame without copying cols" begin
     nt = (a=Int64[1, 2, 3], b=[:a, :b, :c])
-    df1 = DataFrame!(nt)
-    df2 = DataFrame!(df1)
+    df1 = DataFrame(nt, copycols=false)
+    df2 = DataFrame(df1, copycols=false)
     df3 = DataFrame(nt)
     @test Tables.columntable(df1) === nt
     @test Tables.columntable(df2) === nt
@@ -178,7 +178,6 @@ end
     @test df.a == [1, 3]
     @test df.b == [2, 4]
     @test DataFrame(v, copycols=false) == DataFrame(v, copycols=true) == df
-    @test_throws ArgumentError DataFrame!(v)
 end
 
 @testset "columnindex" begin
@@ -196,7 +195,7 @@ end
     @test df == df2
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-    df2 = DataFrame!(eachrow(df))
+    df2 = DataFrame(eachrow(df), copycols=false)
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
@@ -204,7 +203,7 @@ end
     @test df == df2
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-    df2 = DataFrame!(pairs(eachcol(df)))
+    df2 = DataFrame(pairs(eachcol(df)), copycols=false)
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 

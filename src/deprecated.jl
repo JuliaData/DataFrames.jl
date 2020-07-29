@@ -439,3 +439,5 @@ import Base: map
 @deprecate map(f::Base.Callable, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
 @deprecate map(f::Pair{<:ColumnIndex}, gd::GroupedDataFrame) combine(f, gd, ungroup=false)
 @deprecate map(f::Pair, gd::GroupedDataFrame) combine(AsTable(first(f)) => last(f), gd, ungroup=false)
+
+@deprecate DataFrame!(args...; kwargs...) DataFrame(args...; copycols=false, kwargs...)
