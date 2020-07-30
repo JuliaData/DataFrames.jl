@@ -23,7 +23,7 @@ Operations| DataFrames       | dplyr| Stata|
 |:------------|:------------|:------------|:------------|
 |Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
-||`combine(df, [:x, :y] => [maximum minimum])`|`summarize(df, across(c(x, y), list(max, min)))`|`collapse (max) x y (min) x y`|
+||`combine(df, ([:x, :y] .=> [maximum minimum])...)`|`summarize(df, across(c(x, y), list(max, min)))`|`collapse (max) x y (min) x y`|
 ||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|`collapse (mean) x*`|
 |Multivariate function|`transform(df, [:x, :y] => cov)`|`mutate(df, cov(x, y))`|`egen z = corr(x y)`|
 |Row-wise|`transform(df, [:x, :y] => ByRow(min))`|`mutate(rowwise(df), min(x, y))`|`egen z = rowmin(x y)`|
