@@ -4,7 +4,7 @@ The table compares the main functions of DataFrames.jl with the R package dplyr 
 |Reduce multiple values|`combine(df, :x => mean)`|`summarize(df, mean(x))`|`collapse (mean) x =`|
 |Add new columns|`transform(df, :x => mean => :x_mean)`|`mutate(df, x_mean = mean(x))`|`egen x_mean = mean(x)`|
 |Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
-|Pick rows |`filter(:x => x -> x >= 1, df)`|`filter(df, x >= 1)`|`keep if x >= 1`|
+|Pick rows |`filter(:x => ismissing, df)`|`filter(df, is.na(x))`|`keep if missing(x)`|
 |Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
 |Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
 
@@ -23,6 +23,7 @@ Operations| DataFrames       | dplyr| Stata|
 |:------------|:------------|:------------|:------------|
 |Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
+||`combine(df, [:x, :y] => [maximum minimum])`|`summarize(df, across(c(x, y), list(max, min)))`|`collapse (max) x y (min) x y`|
 ||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|`collapse (mean) x*`|
 |Multivariate function|`transform(df, [:x, :y] => cov)`|`mutate(df, cov(x, y))`|`egen z = corr(x y)`|
 |Row-wise|`transform(df, [:x, :y] => ByRow(min))`|`mutate(rowwise(df), min(x, y))`|`egen z = rowmin(x y)`|
