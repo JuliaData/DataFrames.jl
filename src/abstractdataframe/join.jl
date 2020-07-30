@@ -121,6 +121,12 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         left_indicator = nothing
         right_indicator = nothing
     else
+        # this code heavily depends on how currently rows are ordered in
+        # leftjoin, rightjoin and outerjoin
+        # in particular it takes advantage of the fact that we do not care
+        # about the permutation of left data frame in rightjoin as we always
+        # assign 0x1 to it anyway and these rows are guaranteed to come first
+        # (even if they are permuted)
         left_indicator = zeros(UInt8, nrow)
         left_indicator[axes(all_orig_left_ixs, 1)] .= 0x1
         right_indicator = zeros(UInt8, nrow)
@@ -441,7 +447,7 @@ end
 
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
-passed data frames.
+passed data frames. The order of rows in the result follows `df1`.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -560,7 +566,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
              validate = (false, false), rename = identity => identity)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
-the result. A left join includes all rows from `df1`.
+the result. A left join includes all rows from `df1`. The order of rows in the
+result follows `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -675,7 +682,10 @@ end
               validate = (false, false), rename = identity => identity)
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
-the result. A right join includes all rows from `df2`.
+the result. A right join includes all rows from `df2`. The result is composed
+of two groups of rows. The first group has the order of rows in `df2` for which
+there are matching rows in `df1`. The second group also has the order of rows
+in `df2` but contains these rows that do not have matching rows in `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -793,7 +803,10 @@ end
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
-of the passed data frames.
+of the passed data frames. The result is composed of two groups of rows.
+The first group has the order of rows in `df1` for which
+there are matching rows in `df1`. The second group has the order of rows
+in `df2` but contains these rows that do not have matching rows in `df1`.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -923,7 +936,7 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 
 Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
-match with the keys in `df2`.
+match with the keys in `df2`. The order of rows in the result follows `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1021,7 +1034,7 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
 Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
-not match with the keys in `df2`.
+not match with the keys in `df2`. The order of rows in the result follows `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1112,7 +1125,9 @@ antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
 Perform a cross join of two or more data frame objects and return a `DataFrame`
 containing the result. A cross join returns the cartesian product of rows from
-all passed data frames.
+all passed data frames, where the first passed data frame is assigned to the
+dimension that changes the slowest and the last data frame is assigned to the
+dimension that changes the fastest.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined

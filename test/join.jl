@@ -1,6 +1,6 @@
 module TestJoin
 
-using Test, DataFrames
+using Test, DataFrames, Random
 using DataFrames: similar_missing
 const ≅ = isequal
 
@@ -841,6 +841,24 @@ end
                     rename = "_left" => "_right", indicator=:ind) ≅
           DataFrame(id1=[1,2,3,4], id2=[1,2,3,4], x_left=[1,2,3,missing],
                     x_right=[1,2,missing,3], ind=["both", "both", "left_only", "right_only"])
+end
+
+@testset "careful indicator test" begin
+    Random.seed!(1234)
+    for i in 5:15, j in 5:15
+        df1 = DataFrame(id=rand(1:10, i), x=1:i)
+        df2 = DataFrame(id=rand(1:10, j), y=1:j)
+        dfl = leftjoin(df1, df2, on=:id, indicator=:ind)
+        dfr = rightjoin(df1, df2, on=:id, indicator=:ind)
+        dfo = outerjoin(df1, df2, on=:id, indicator=:ind)
+        @test issorted(dfl.x)
+        @test issorted(string.(dfr.ind)) # use the fact that "both" < "right_only"
+        @test issorted(dfr.y[dfr.ind .== "both"])
+        @test issorted(dfr.y[dfr.ind .== "right_only"])
+        @test dfl ≅ dfo[1:nrow(dfl), :]
+        @test issorted(dfo[nrow(dfl)+1:end, :y])
+        @test all(==("right_only"), dfo[nrow(dfl)+1:end, :ind])
+    end
 end
 
 end # module
