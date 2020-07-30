@@ -121,13 +121,11 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         left_indicator = nothing
         right_indicator = nothing
     else
-        left_indicator = _similar_left(joiner.dfl[!, end], nrow)
-        copyto!(left_indicator, view(joiner.dfl[!, end], all_orig_left_ixs))
-        select!(joiner.dfl, 1:ncol(joiner.dfl)-1)
-        right_indicator = _similar_right(dfr_noon[!, end], nrow)
-        copyto!(right_indicator, view(dfr_noon[!, end], all_orig_right_ixs))
+        left_indicator = zeros(UInt8, nrow)
+        left_indicator[axes(all_orig_left_ixs, 1)] .= 0x1
+        right_indicator = zeros(UInt8, nrow)
+        right_indicator[axes(all_orig_right_ixs, 1)] .= 0x2
         permute!(right_indicator, right_perm)
-        select!(dfr_noon, 1:ncol(dfr_noon)-1)
     end
 
     ncleft = ncol(joiner.dfl)
@@ -271,22 +269,6 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     _check_consistency(df1)
     _check_consistency(df2)
 
-    if indicator !== nothing
-        indicator_cols = ["_left", "_right"]
-        for i in 1:2
-            while hasproperty(df1, indicator_cols[i]) ||
-                   hasproperty(df2, indicator_cols[i])
-                 indicator_cols[i] *= 'X'
-            end
-        end
-        df1 = copy(df1, copycols=false)
-        df1_ind = Symbol(indicator_cols[1])
-        df1[!, df1_ind] = trues(nrow(df1))
-        df2 = copy(df2, copycols=false)
-        df2_ind = Symbol(indicator_cols[2])
-        df2[!, df2_ind] = trues(nrow(df2))
-    end
-
     if on == []
         throw(ArgumentError("Missing join argument 'on'."))
     end
@@ -424,8 +406,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        refs = UInt8.(coalesce.(left_indicator, false) .+
-                      2 .* coalesce.(right_indicator, false))
+        refs = left_indicator + right_indicator
         pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
         indicatorcol = CategoricalArray{String,1}(refs, pool)
 
