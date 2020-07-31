@@ -18,7 +18,7 @@ The functions `select`, `transform`, `combine` can be applied on grouped datafra
 |`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
 
 
-The table compares more complicated syntaxes 
+Finally, the table below compares more complicated syntaxes:
 Operations| DataFrames       | dplyr| Stata|
 |:------------|:------------|:------------|:------------|
 |Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
