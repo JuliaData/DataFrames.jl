@@ -457,7 +457,7 @@ where each row represents a variable and each column a summary statistic.
   Arguments can be:
     - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
-      `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`
+      `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `name => function` pair where `name` is a `Symbol` or string. This will
