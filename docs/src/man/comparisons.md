@@ -8,7 +8,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
 |Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
 
-These functions create new dataframes (like in dplyr). To mutate dataframes in place (like in Stata), use the suffix `!` (e.g. `transform!`, `select!`, etc)
+These functions create new data frames (like in dplyr). To mutate data frames in place (like in Stata), use the suffix `!` (e.g. `transform!`, `select!`, etc)
 
 The functions `select`, `transform` and `combine` can be applied on grouped data frames, in which case they operate by group:
 | DataFrames.jl       | dplyr | Stata|
