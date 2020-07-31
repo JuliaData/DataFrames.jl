@@ -1,3 +1,5 @@
+# Comparisons with other languages
+
 The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1) and Stata (version 8 and above)
 |Operations| DataFrames.jl       | dplyr | Stata|
 |:------------|:------------|:------------|:------------|
