@@ -457,7 +457,7 @@ where each row represents a variable and each column a summary statistic.
   Arguments can be:
     - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
-      `:nmissing`. The default statistics used are `:mean`, `:min`,
+      `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`
       `:max`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `name => function` pair where `name` is a `Symbol` or string. This will
@@ -492,13 +492,13 @@ access missing values.
 julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 
 julia> describe(df)
-3×6 DataFrame
-│ Row │ variable │ mean   │ min │ max │ nmissing │ eltype   │
-│     │ Symbol   │ Union… │ Any │ Any │ Nothing  │ DataType │
-├─────┼──────────┼────────┼─────┼─────┼──────────┼──────────┤
-│ 1   │ i        │ 5.5    │ 1   │ 10  │          │ Int64    │
-│ 2   │ x        │ 0.55   │ 0.1 │ 1.0 │          │ Float64  │
-│ 3   │ y        │        │ 'a' │ 'j' │          │ Char     │
+3×7 DataFrame
+│ Row │ variable │ mean   │ min │ median │ max │ nmissing │ eltype   │
+│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Nothing  │ DataType │
+├─────┼──────────┼────────┼─────┼────────┼─────┼──────────┼──────────┤
+│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │          │ Int64    │
+│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │          │ Float64  │
+│ 3   │ y        │        │ 'a' │        │ 'j' │          │ Char     │
 
 julia> describe(df, :min, :max)
 3×3 DataFrame
@@ -533,7 +533,7 @@ DataAPI.describe(df::AbstractDataFrame,
 
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
-              [:mean, :min, :max, :nmissing, :eltype])
+              [:mean, :min, :median, :max, :nmissing, :eltype])
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
