@@ -641,7 +641,7 @@ end
                                 eltype = [Int, Union{Missing, Int}, String,
                                           Union{Missing, String}, Date, CategoricalValue{Int, UInt32}])
 
-    default_fields = [:mean, :min, :median, :max, :nunique, :nmissing, :eltype]
+    default_fields = [:mean, :min, :max, :nmissing, :eltype]
 
     # Test that it works as a whole, without keyword arguments
     @test describe_output[:, [:variable; default_fields]] == describe(df)
