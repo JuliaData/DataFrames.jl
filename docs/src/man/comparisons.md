@@ -10,7 +10,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 
 These functions create new dataframes (like in dplyr). To mutate dataframes in place (like in Stata), use the suffix `!` (e.g. `transform!`, `select!`, etc)
 
-The functions `select`, `transform`, `combine` can be applied on grouped dataframes:
+The functions `select`, `transform` and `combine` can be applied on grouped data frames, in which case they operate by group:
 | DataFrames.jl       | dplyr | Stata|
 |:------------|:------------|:------------|
 |`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
