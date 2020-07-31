@@ -247,7 +247,7 @@ meant to be constructed directly.
 
 Indexing fields of `GroupKey` is allowed using an integer, a `Symbol`, or a string.
 It is also possible to access the data in a `GroupKey` using the `getproperty`
-function and convert it to a `Tuple`, `NamedTuple`, or `Vector`.
+function. A `GroupKey` can be converted to a `Tuple`, `NamedTuple`, or `Vector`.
 
 See [`keys(::GroupedDataFrame)`](@ref) for more information.
 """
