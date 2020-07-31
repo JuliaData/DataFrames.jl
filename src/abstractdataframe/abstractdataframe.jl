@@ -641,7 +641,7 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
         if eltype(col) <: Real
             d[:nunique] = nothing
         else
-            d[:nunique] = try length(unique(col)) catch end
+            d[:nunique] = try length(Set(col)) catch end
         end
     end
 
