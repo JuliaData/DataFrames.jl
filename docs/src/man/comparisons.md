@@ -3,19 +3,20 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |:------------|:------------|:------------|:------------|
 |Reduce multiple values|`combine(df, :x => mean)`|`summarize(df, mean(x))`|`collapse (mean) x =`|
 |Add new columns|`transform(df, :x => mean => :x_mean)`|`mutate(df, x_mean = mean(x))`|`egen x_mean = mean(x)`|
-|Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
-|Pick rows |`filter(:x => ismissing, df)`|`filter(df, is.na(x))`|`keep if missing(x)`|
-|Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
 |Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
+|Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
+|Pick & transform columns|`select(df, :x => mean)`|`transmute(df, mean(x), y)`||
+|Pick rows |`filter(:x => >=(1), df)`|`filter(df, x >= 1)`|`keep if x >= 1`|
+|Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
 
 These functions create new data frames (like in dplyr). To mutate data frames in place (like in Stata), use the suffix `!` (e.g. `transform!`, `select!`, etc)
 
 The functions `select`, `transform` and `combine` can be applied on grouped data frames, in which case they operate by group:
-| DataFrames.jl       | dplyr | Stata|
-|:------------|:------------|:------------|
-|`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
-|`transform(groupby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|`egen x_mean = mean(x), by(id)`|
-|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
+|Operations| DataFrames.jl       | dplyr | Stata|
+|:------------|:------------|:------------|:------------|
+|Reduce multiple values|`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
+|Add new columns|`transform(groupby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|`egen x_mean = mean(x), by(id)`|
+|Pick columns|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
 
 
 Finally, the table below compares more complicated syntaxes:
