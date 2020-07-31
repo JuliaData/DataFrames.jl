@@ -1611,6 +1611,7 @@ end
     @test names(gd) == names(df)
     @test_throws ErrorException groupcols(gd)
     @test_throws ErrorException valuecols(gd)
+    @test_throws ArgumentError map(NamedTuple, keys(gd))
 end
 
 @testset "haskey for GroupKey" begin
