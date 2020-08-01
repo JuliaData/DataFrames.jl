@@ -57,7 +57,7 @@ struct EmptyTableWithNames <: AbstractVector{Any}
 end
 Tables.isrowtable(::Type{EmptyTableWithNames}) = true
 Tables.rows(x::EmptyTableWithNames) = x
-Tables.schema(x::EmptyTableWithNames) = Tables.Schema((:a, :b, :c), Tuple{Float64, Float64, Float64})
+Tables.schema(x::EmptyTableWithNames) = Tables.Schema((:a, :b, :c), Tuple{Float64, String, Float64})
 Base.size(x::EmptyTableWithNames) = (0,)
 Base.eltype(x::EmptyTableWithNames) = NamedTuple
 Base.iterate(x::EmptyTableWithNames, st=1) = nothing
@@ -171,7 +171,9 @@ Base.iterate(x::EmptyTableWithNames, st=1) = nothing
 
         # https://github.com/JuliaData/CSV.jl/issues/702
         df = DataFrame(EmptyTableWithNames())
+        @test size(df) = (0, 3)
         @test names(df) == ["a", "b", "c"]
+        @test eltype.(eachcol(df)) == [Float64, String, Float64]
     end
 end
 
