@@ -171,7 +171,7 @@ Base.iterate(x::EmptyTableWithNames, st=1) = nothing
 
         # https://github.com/JuliaData/CSV.jl/issues/702
         df = DataFrame(EmptyTableWithNames())
-        @test size(df) = (0, 3)
+        @test size(df) == (0, 3)
         @test names(df) == ["a", "b", "c"]
         @test eltype.(eachcol(df)) == [Float64, String, Float64]
     end
