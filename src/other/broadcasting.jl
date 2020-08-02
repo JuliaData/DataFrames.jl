@@ -49,7 +49,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         throw(DimensionMismatch("cannot broadcast a data frame into $ndim dimensions"))
     end
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique!([_names(df) for df in bcf.args if df isa AbstractDataFrame])
+    colnames = unique!(Any[_names(df) for df in bcf.args if df isa AbstractDataFrame])
     if length(colnames) != 1
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
         if isempty(wrongnames)
@@ -215,7 +215,7 @@ end
 
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+    colnames = unique!(Any[_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 || (length(colnames) == 1 && _names(df) != colnames[1])
         push!(colnames, _names(df))
         wrongnames = setdiff(union(colnames...), intersect(colnames...))
@@ -254,7 +254,7 @@ create_bc_tmp(bcf′_col::Base.Broadcast.Broadcasted{T}) where {T} =
 
 function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
     bcf = Base.Broadcast.flatten(bc)
-    colnames = unique!([_names(x) for x in bcf.args if x isa AbstractDataFrame])
+    colnames = unique!(Any[_names(x) for x in bcf.args if x isa AbstractDataFrame])
     if length(colnames) > 1 ||
         (length(colnames) == 1 && view(_names(crdf.df), crdf.cols) != colnames[1])
         push!(colnames, view(_names(crdf.df), crdf.cols))
