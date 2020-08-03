@@ -1,6 +1,6 @@
 module TestIO
 
-using Test, DataFrames, CategoricalArrays, Dates
+using Test, DataFrames, CategoricalArrays, Dates, Markdown
 
 # Test LaTeX export
 @testset "LaTeX export" begin
@@ -9,20 +9,21 @@ using Test, DataFrames, CategoricalArrays, Dates
                 C = ["A", "B", "C", "S"],
                 D = [1.0, 2.0, missing, 3.0],
                 E = CategoricalArray(["a", missing, "c", "d"]),
-                F = Vector{String}(undef, 4)
+                F = Vector{String}(undef, 4),
+                G = [ md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)", md"###A", md"``\frac{A}{B}``", md"*A*b**A**"]
                 )
-    str = """
-        \\begin{tabular}{r|cccccc}
-        \t& A & B & C & D & E & F\\\\
-        \t\\hline
-        \t& $(Int) & String & String & Float64? & Cat…? & String\\\\
-        \t\\hline
-        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} \\\\
-        \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} \\\\
-        \t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} \\\\
-        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} \\\\
-        \\end{tabular}
-        """
+    str =
+        "\\begin{tabular}{r|ccccccc}\n" *
+        "\t& A & B & C & D & E & F & G\\\\\n" *
+        "\t\\hline\n\t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\\n" *
+        "\t\\hline\n" *
+        "\t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl}\n\n \\\\\n" *
+        "\t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A\n\n \\\\\n" *
+        "\t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} & \$\\frac{A}{B}\$\n\n \\\\\n" *
+        "\t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} & \\emph{A}b\\textbf{A}\n\n \\\\\n" *
+        "\\end{tabular}\n"
+
+
     @test repr(MIME("text/latex"), df) == str
     @test repr(MIME("text/latex"), eachcol(df)) == str
     @test repr(MIME("text/latex"), eachrow(df)) == str
@@ -130,6 +131,27 @@ end
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2)), rowid=10)
+
+    df = DataFrame(
+        A=[1,4,9,16],
+        B = [
+            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"###A",
+            md"``\frac{A}{B}``",
+            md"*A*b**A**" ]
+    )
+
+    @test repr(MIME("text/html"), df) ==
+        "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
+        "<th>Int64</th><th>MD…</th></tr></thead><tbody><p>4 rows × 2 columns</p><tr><th>1</th>" *
+        "<td>1</td><td><div class=\"markdown\">" *
+        "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a>" *
+        "</p>\n</div></td></tr><tr><th>2</th><td>4</td><td><div class=\"markdown\">" *
+        "<p>###A</p>\n</div></td></tr><tr><th>3</th><td>9</td><td><div class=\"markdown\">" *
+        "<p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>\n</div></td></tr><tr><th>4</th>" *
+        "<td>16</td><td><div class=\"markdown\"><p><em>A</em>b<strong>A</strong></p>"*
+        "\n</div></td></tr></tbody></table>"
+
 end
 
 # test limit attribute of IOContext is used

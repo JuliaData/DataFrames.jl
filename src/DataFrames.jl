@@ -5,6 +5,7 @@ using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
+using Markdown
 
 import DataAPI,
        DataAPI.All,
