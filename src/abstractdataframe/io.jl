@@ -142,6 +142,10 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                 cell_val = df[row, column_name]
                 if ismissing(cell_val)
                     write(io, "<td><em>missing</em></td>")
+                elseif cell_val isa Markdown.MD
+                    write(io, "<td>")
+                    show(io, "text/html", cell_val)
+                    write(io, "</td>")
                 elseif cell_val isa SHOW_TABULAR_TYPES
                     write(io, "<td><em>")
                     cell = sprint(ourshow, cell_val)
@@ -302,6 +306,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                 cell = df[row,col]
                 if ismissing(cell)
                     print(io, "\\emph{missing}")
+                elseif cell isa Markdown.MD
+                    show(io, "text/latex", cell)
                 elseif cell isa SHOW_TABULAR_TYPES
                     print(io, "\\emph{")
                     print(io, latex_escape(sprint(ourshow, cell, context=io)))
@@ -415,7 +421,9 @@ function printtable(io::IO,
             elseif isnothing(df[i, j])
                 print(io, nothingstring)
             else
-                if ! (etypes[j] <: Real)
+                if etypes[j] isa Markdown.MD
+                    show(io, "text/plain", df[i,j])
+                elseif ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], quotestr)
                     print(io, quotemark)
