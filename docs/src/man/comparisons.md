@@ -7,7 +7,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Add new columns|`transform(df, :x => mean => :x_mean)`|`mutate(df, x_mean = mean(x))`|`egen x_mean = mean(x)`|
 |Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
 |Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
-|Pick & transform columns|`select(df, :x => mean)`|`transmute(df, mean(x), y)`||
+|Pick & transform columns|`select(df, :x => mean, :y)`|`transmute(df, mean(x), y)`||
 |Pick rows |`filter(:x => >=(1), df)`|`filter(df, x >= 1)`|`keep if x >= 1`|
 |Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
 
