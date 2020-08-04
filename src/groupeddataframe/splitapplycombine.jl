@@ -613,13 +613,12 @@ function combine_helper(f, gd::GroupedDataFrame,
         @assert length(keys) > 0 || idx == gd.idx
         # in this case we are sure that the result GroupedDataFrame has the
         # same structure as the source except that grouping columns are at the start
-        Threads.lock(gd.lazy_lock)
-        new_gd = GroupedDataFrame(newparent, copy(gd.cols), gd.groups,
-                                  getfield(gd, :idx), getfield(gd, :starts),
-                                  getfield(gd, :ends), gd.ngroups,
-                                  getfield(gd, :keymap), Threads.ReentrantLock())
-        Threads.lock(gd.lazy_lock)
-        return new_gd
+        return Threads.lock(gd.lazy_lock) do
+            return GroupedDataFrame(newparent, copy(gd.cols), gd.groups,
+                                    getfield(gd, :idx), getfield(gd, :starts),
+                                    getfield(gd, :ends), gd.ngroups,
+                                    getfield(gd, :keymap), Threads.ReentrantLock())
+        end
     else
         groups = gen_groups(idx)
         @assert groups[end] <= length(gd)
