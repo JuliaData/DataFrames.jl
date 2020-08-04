@@ -447,7 +447,8 @@ end
 
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
-passed data frames. The order of rows in the result follows `df1`.
+passed data frames.
+The order of rows in the result undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -566,8 +567,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
              validate = (false, false), rename = identity => identity)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
-the result. A left join includes all rows from `df1`. The order of rows in the
-result follows `df1`.
+the result. A left join includes all rows from `df1`.
+The order of rows in the result undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -593,10 +594,10 @@ result follows `df1`.
   By default no check is performed.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
-  function in which case it is applied to the column name which is passed to it
+  function in which case it is applied to each column name, which is passed to it
   as a `String`; alternatively a string or a `Symbol` can be passed in which case
   it is appended to the original column name. Note that `rename` does not affect
-  `on` columns, whose are always taken from the left data frame and left unchanged.
+  `on` columns, whose names are always taken from the left data frame and left unchanged.
 
 All columns of the returned data table will support missing values.
 
@@ -682,10 +683,8 @@ end
               validate = (false, false), rename = identity => identity)
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
-the result. A right join includes all rows from `df2`. The result is composed
-of two groups of rows. The first group has the order of rows in `df2` for which
-there are matching rows in `df1`. The second group also has the order of rows
-in `df2` but contains these rows that do not have matching rows in `df1`.
+the result. A right join includes all rows from `df2`.
+The order of rows in the result undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -711,10 +710,10 @@ in `df2` but contains these rows that do not have matching rows in `df1`.
   By default no check is performed.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
-  function in which case it is applied to the column name which is passed to it
+  function in which case it is applied to each column name, which is passed to it
   as a `String`; alternatively a string or a `Symbol` can be passed in which case
   it is appended to the original column name. Note that `rename` does not affect
-  `on` columns, whose are always taken from the left data frame and left unchanged.
+  `on` columns, whose names are always taken from the left data frame and left unchanged.
 
 All columns of the returned data table will support missing values.
 
@@ -803,10 +802,8 @@ end
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
-of the passed data frames. The result is composed of two groups of rows.
-The first group has the order of rows in `df1` for which
-there are matching rows in `df1`. The second group has the order of rows
-in `df2` but contains these rows that do not have matching rows in `df1`.
+of the passed data frames.
+The order of rows in the result undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -835,10 +832,10 @@ in `df2` but contains these rows that do not have matching rows in `df1`.
   By default no check is performed.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
-  function in which case it is applied to the column name which is passed to it
+  function in which case it is applied to each column name, which is passed to it
   as a `String`; alternatively a string or a `Symbol` can be passed in which case
   it is appended to the original column name. Note that `rename` does not affect
-  `on` columns, whose are always taken from the left data frame and left unchanged.
+  `on` columns, whose names are always taken from the left data frame and left unchanged.
 
 All columns of the returned data table will support missing values.
 
@@ -936,7 +933,8 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 
 Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
-match with the keys in `df2`. The order of rows in the result follows `df1`.
+match with the keys in `df2`.
+The order of rows in the result undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1034,7 +1032,8 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
 Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
-not match with the keys in `df2`. The order of rows in the result follows `df1`.
+not match with the keys in `df2`.
+The order of rows in the result undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
