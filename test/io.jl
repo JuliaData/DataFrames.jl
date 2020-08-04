@@ -133,7 +133,7 @@ end
                                                 DataFrame(ones(2,2)), rowid=10)
 
     df = DataFrame(
-        A=[1,4,9,16],
+        A=Int64[1,4,9,16],
         B = [
             md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
             md"###A",
