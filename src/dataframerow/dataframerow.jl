@@ -21,9 +21,6 @@ You can also access the data in a `DataFrameRow` using the `getproperty` and
 `setproperty!` functions and convert it to a `Tuple`, `NamedTuple`, or `Vector`
 using the corresponding functions.
 
-It is possible to create a `DataFrameRow` with duplicate columns.
-All such columns will have a reference to the same entry in the parent `DataFrame`.
-
 If the selection of columns in a parent data frame is passed as `:` (a colon)
 then `DataFrameRow` will always have all columns from the parent,
 even if they are added or removed after its creation.
