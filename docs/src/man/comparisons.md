@@ -24,6 +24,7 @@ The functions `select`, `transform` and `combine` can be applied on grouped data
 Finally, the table below compares more complicated syntaxes:
 Operations| DataFrames       | dplyr| Stata|
 |:------------|:------------|:------------|:------------|
+|Anonymous Function |`combine(:x => x -> mean(skipmissing(x))`|`summarize(df, mean(x, na.rm = T)))`|`collapse (mean) x`|
 |Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
 ||`combine(df, ([:x, :y] .=> [maximum minimum])...)`|`summarize(df, across(c(x, y), list(max, min)))`|`collapse (max) x y (min) x y`|
