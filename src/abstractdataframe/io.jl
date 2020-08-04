@@ -423,8 +423,11 @@ function printtable(io::IO,
             elseif isnothing(df[i, j])
                 print(io, nothingstring)
             else
-                if etypes[j] isa Markdown.MD
-                    show(io, "text/plain", df[i,j])
+                if df[i,j] isa Markdown.MD
+                    print(io, quotemark)
+                    r=repr(df[i,j])
+                    escapedprint(io, first(r,max(0,length(r)-1)), quotestr)
+                    print(io, quotemark)
                 elseif ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], quotestr)

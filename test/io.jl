@@ -15,7 +15,7 @@ using Test, DataFrames, CategoricalArrays, Dates, Markdown
     str =
         "\\begin{tabular}{r|ccccccc}\n" *
         "\t& A & B & C & D & E & F & G\\\\\n" *
-        "\t\\hline\n\t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\\n" *
+        "\t\\hline\n\t& "*repr(Int)*" & String & String & Float64? & Cat…? & String & MD…\\\\\n" *
         "\t\\hline\n" *
         "\t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl}\n\n \\\\\n" *
         "\t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A\n\n \\\\\n" *
@@ -200,6 +200,68 @@ end
         2\t2.0
         """
     end
+end
+
+@testset "Markdown as text/plain and as text/csv" begin
+    df = DataFrame(
+        A=Int64[1,4,9,16,25],
+        B = [
+            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"``\frac{x^2}{x^2+y^2}``",
+            md"# Header",
+            md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
+            md""]
+    )
+    @test sprint(show, "text/plain", df) ==
+    "5×2 DataFrame\n" *
+    "│ Row │ A     │ B                                                   │\n" *
+    "│     │ Int64 │ Markdown.MD                                         │\n" *
+    "├─────┼───────┼─────────────────────────────────────────────────────┤\n" *
+    "│ 1   │ 1     │ [DataFrames.jl](http://juliadata.github.io/DataFra… │\n" *
+    "│ 2   │ 4     │ \$\\frac{x^2}{x^2+y^2}\$                               │\n" *
+    "│ 3   │ 9     │ # Header                                            │\n" *
+    "│ 4   │ 16    │ This is *very*, **very**, very, very, very, very, … │\n" *
+    "│ 5   │ 25    │                                                     │"
+    @test sprint(show, "text/csv", df) ==
+        "\"A\",\"B\"\n"*
+        "1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"\n"*
+        "4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"\n"*
+        "9,\"# Header\"\n"*
+        "16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"\n"*
+        "25,\"\"\n"
+end
+
+@testset "Markdown as HTML" begin
+    df = DataFrame(
+            A=Int64[1,4,9,16,25],
+            B = [
+                md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+                md"``\frac{x^2}{x^2+y^2}``",
+                Markdown.parse("# Multi-line\nThis is a multi-line\n\n**Markdown**"),
+                md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
+                md""
+            ]
+    )
+    @test sprint(show,"text/html",df) ==
+        "<table class=\"data-frame\"><thead>"*
+        "<tr><th></th><th>A</th><th>B</th></tr>" *
+        "<tr><th></th><th>Int64</th><th>MD…</th></tr></thead>" *
+        "<tbody><p>5 rows × 2 columns</p>" *
+        "<tr><th>1</th><td>1</td><td>" *
+            "<div class=\"markdown\"><p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div>" *
+            "</td></tr>" *
+        "<tr><th>2</th><td>4</td><td>" *
+            "<div class=\"markdown\"><p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>\n</div>" *
+            "</td></tr>" *
+        "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><h1>Multi-line</h1>\n" *
+            "<p>This is a multi-line</p>\n" *
+            "<p><strong>Markdown</strong></p>\n" *
+            "</div></td></tr>" *
+        "<tr><th>4</th><td>16</td><td>" *
+            "<div class=\"markdown\"><p>This is <em>very</em>, <strong>very</strong>, very, very, very," *
+                " very, very, very, very long line</p>\n" *
+            "</div></td></tr>" *
+        "<tr><th>5</th><td>25</td><td><div class=\"markdown\"></div></td></tr></tbody></table>"
 end
 
 @testset "empty data frame and DataFrameRow" begin
