@@ -471,10 +471,10 @@ passed data frames. The order of rows in the result follows `df1`.
   By default no check is performed.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
-  function in which case it is applied to the column name which is passed to it
+  function in which case it is applied to each column name, which is passed to it
   as a `String`; alternatively a string or a `Symbol` can be passed in which case
   it is appended to the original column name. Note that `rename` does not affect
-  `on` columns, whose are always taken from the left data frame and left unchanged.
+  `on` columns, whose names are always taken from the left data frame and left unchanged.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
