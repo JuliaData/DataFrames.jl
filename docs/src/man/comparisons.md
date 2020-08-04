@@ -1,38 +1,75 @@
-# Comparisons with other languages
+# Comparisons
 
-The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1) and Stata (version 8 and above)
+This section compares DataFrames.jl with other data manipulation frameworks
 
-|Operations| DataFrames.jl       | dplyr | Stata|
-|:------------|:------------|:------------|:------------|
-|Reduce multiple values|`combine(df, :x => mean)`|`summarize(df, mean(x))`|`collapse (mean) x =`|
-|Add new columns|`transform(df, :x => mean => :x_mean)`|`mutate(df, x_mean = mean(x))`|`egen x_mean = mean(x)`|
-|Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
-|Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
-|Pick & transform columns|`select(df, :x => mean, :y)`|`transmute(df, mean(x), y)`||
-|Pick rows |`filter(:x => >=(1), df)`|`filter(df, x >= 1)`|`keep if x >= 1`|
-|Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
+## Comparison with the R package dplyr
 
-These functions create new data frames (like in dplyr). To mutate data frames in place (like in Stata), use the suffix `!` (e.g. `transform!`, `select!`, etc)
+The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1)
 
-The functions `select`, `transform` and `combine` can be applied on grouped data frames, in which case they operate by group:
-|Operations| DataFrames.jl       | dplyr | Stata|
-|:------------|:------------|:------------|:------------|
-|Reduce multiple values|`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
-|Add new columns|`transform(groupby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|`egen x_mean = mean(x), by(id)`|
-|Pick & transform columns|`select(groupby(df, :id), :x => mean, :y)`|`transmute(group_by(df, id), mean(x), y)`||
+|Operations| DataFrames.jl       | dplyr |
+|:------------|:------------|:------------|
+|Reduce multiple values|`combine(df, :x => mean)`|`summarize(df, mean(x))`|
+|Add new columns|`transform(df, :x => mean => :x_mean)`|`mutate(df, x_mean = mean(x))`|
+|Rename columns|`rename(df, :x => :x_new)`|`rename(df, x_new = x)`|
+|Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|
+|Pick & transform columns|`select(df, :x => mean, :y)`|`transmute(df, mean(x), y)`|
+|Pick rows |`filter(:x => >=(1), df)`|`filter(df, x >= 1)`|
+|Sort rows|`sort(df, :x)`|`arrange(df, x)`|
+
+As in dplyr, some of these functions can be applied to grouped data frames, in which case they operate by group:
+|Operations| DataFrames.jl       | dplyr |
+|:------------|:------------|:------------|
+|Reduce multiple values|`combine(grouby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`
+|Add new columns|`transform(grouby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`
+|Pick & transform columns|`select(grouby(df, :id), :x => mean, :y)`|`transmute(group_by(df, id), mean(x), y)`|
 
 
-Finally, the table below compares more complicated syntaxes:
+The table below compares more complicated syntaxes:
 
-Operations| DataFrames       | dplyr| Stata|
-|:------------|:------------|:------------|:------------|
-|Anonymous Function |`combine(df, :x => x -> mean(skipmissing(x)))`|`summarize(df, mean(x, na.rm = T))`|`collapse (mean) x`|
-|Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
-||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
-||`combine(df, ([:x, :y] .=> [maximum minimum])...)`|`summarize(df, across(c(x, y), list(max, min)))`|`collapse (max) x y (min) x y`|
-||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|`collapse (mean) x*`|
-|Multivariate function|`transform(df, [:x, :y] => cor)`|`mutate(df, cor(x, y))`|`egen z = corr(x y)`|
-|Row-wise|`transform(df, [:x, :y] => ByRow(min))`|`mutate(rowwise(df), min(x, y))`|`egen z = rowmin(x y)`|
-||`transform(df, AsTable(r"^x") => ByRow(argmax))`|`mutate(rowwise(df), which.max(c_across(starts_with("x"))))`||
-|DataFrame as input|`combine(d -> first(d, 2), df)`|`summarize(df, head(across(), 2))`||
-|DataFrame as output|`combine(:x => x -> (value = [minimum(x), maximum(x)]), df)`|`summarize(df, tibble(value = min(x), max(x)))`||
+Operations| DataFrames.jl       | dplyr|
+|:------------|:------------|:------------|
+|Complex Function |`combine(df, :x => x -> mean(skipmissing(x)))`|`summarize(df, mean(x, na.rm = T))`|
+|Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|
+||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|
+||`combine(df, names(df, r"^x") .=> mean)`|`summarize(df, across(starts_with("x"), mean))`|
+||`combine(df, ([:x, :y] .=> [maximum minimum])...)`|`summarize(df, across(c(x, y), list(max, min)))`|
+|Multivariate function|`transform(df, [:x, :y] => cor)`|`mutate(df, cor(x, y))`|
+|Row-wise|`transform(df, [:x, :y] => ByRow(min))`|`mutate(rowwise(df), min(x, y))`|
+||`transform(df, AsTable(r"^x") => ByRow(argmax))`|`mutate(rowwise(df), which.max(c_across(matches("^x"))))`|
+|DataFrame as input|`combine(d -> first(d, 2), df)`|`summarize(df, head(across(), 2))`|
+|DataFrame as output|`combine(:x => x -> (value = [minimum(x), maximum(x)]), df)`|`summarize(df, tibble(value = min(x), max(x)))`|
+
+
+## Comparison with Stata (version 8 and above)
+
+The following table compares the main functions of DataFrames.jl with Stata 
+
+|Operations| DataFrames.jl | Stata|
+|:------------|:------------|:------------|
+|Reduce multiple values|`combine(df, :x => mean)`|`collapse (mean) x`|
+|Add new columns|`transform!(df, :x => mean => :x_mean)`|`egen x_mean = mean(x)`|
+|Rename columns|`rename!(df, :x => :x_new)`|`rename x x_new`|
+|Pick columns|`select!(df, :x, :y)`|`keep x y`|
+|Pick rows |`filter!(:x => >=(1), df)`|`keep if x >= 1`|
+|Sort rows|`sort!(df, :x)`|`sort x`|
+
+Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
+
+Some of these functions can be applied to grouped data frames, in which case they operate by group:
+|Operations| DataFrames.jl     | Stata|
+|:------------|:------------|:------------|
+|Add new columns|`transform!(groupby(df, :id), :x => mean)`|`egen x_mean = mean(x), by(id)`|
+|Reduce multiple values|`combine(groupby(df, :id), :x => mean)`|`collapse (mean) x, by(id)`|
+
+
+The table below compares more complicated syntaxes:
+
+Operations| DataFrames.jl | Stata|
+|:------------|:------------|:------------|
+|Transform certain rows |`transform(df, [:x, :y] => ((x, y)-> ifelse.(y .>= 1, 1, x)) => :x)`|`replace x = 1 if y >= 1`|
+|Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`collapse (max) x (min) y`|
+||`combine(df, [:x, :y] .=> mean)`|`collapse (mean) x y`|
+||`combine(df, names(df, r"^x") .=> mean)`|`collapse (mean) x*`|
+||`combine(df, ([:x, :y] .=> [maximum minimum])...)`|`collapse (max) x y (min) x y`|
+|Multivariate function|`transform!(df, [:x, :y] => cor => :z)`|`egen z = corr(x y)`|
+|Row-wise|`transform!(df, [:x, :y] => ByRow(min) => :z)`|`egen z = rowmin(x y)`|
