@@ -2294,9 +2294,8 @@ end
 
     @test size(combine(gdf)) == (0, 1)
     @test names(combine(gdf)) == ["g"]
-    # TODO: uncomment tests for keepkeys and ungroup after deprecation
-    # @test combine(gdf, keepkeys=false) == DataFrame()
-    # @test combine(gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
+    @test combine(gdf, keepkeys=false) == DataFrame()
+    @test combine(gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
     @test size(select(gdf)) == (0, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
@@ -2671,6 +2670,13 @@ end
 
     # in the future this should be DataFrame(a=1,b=2)
     @test_throws ArgumentError combine(sdf -> DataFrame(a=1,b=2), df)
+end
+
+@testset "disallowed tuple column selector" begin
+    df = DataFrame(g=1:3)
+    gdf = groupby(df, :g)
+    @test_throws ArgumentError combine((:g, :g) => identity, gdf)
+    @test_throws ArgumentError combine(gdf, (:g, :g) => identity)
 end
 
 end # module

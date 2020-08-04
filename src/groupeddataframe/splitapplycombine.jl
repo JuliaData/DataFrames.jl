@@ -458,8 +458,8 @@ function combine(p::Pair, gd::GroupedDataFrame;
 
     if p_from isa Tuple
         cs = collect(p_from)
-        Base.depwarn("passing a Tuple $p_from as column selector is deprecated" *
-                     ", use a vector $cs instead", :combine)
+        throw(ArgumentError("passing a Tuple $p_from as column selector is not supported" *
+                            ", use a vector $cs instead"))
     else
         cs = p_from
     end
@@ -489,8 +489,8 @@ function _combine_prepare(gd::GroupedDataFrame,
     end
     if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
         x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
-        Base.depwarn("passing a Tuple $(first(x)) as column selector is deprecated" *
-                     ", use a vector $(collect(first(x))) instead", :combine)
+        throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not supported" *
+                            ", use a vector $(collect(first(x))) instead"))
         for (i, v) in enumerate(cs_vec)
             if first(v) isa Tuple
                 cs_vec[i] = collect(first(v)) => last(v)
@@ -538,7 +538,6 @@ function _combine_prepare(gd::GroupedDataFrame,
                         else
                             push!(cs_norm, col_idx => identity => col_name)
                         end
-
                     end
                 end
             end
@@ -550,16 +549,6 @@ function _combine_prepare(gd::GroupedDataFrame,
     nms = Symbol[last(last(x)) for x in cs_norm]
     return combine_helper(f, gd, nms, keepkeys=keepkeys, ungroup=ungroup,
                           copycols=copycols, keeprows=keeprows)
-end
-
-function combine(gd::GroupedDataFrame; f...)
-    if length(f) > 0
-        Base.depwarn("`combine(gd; target_col = source_cols => fun, ...)` is deprecated" *
-                     ", use `combine(gd, source_cols => fun => :target_col, ...)` instead",
-                     :combine)
-    end
-    # in the future handle keepkeys and ungroup
-    return combine(gd, [source_cols => fun => out_col for (out_col, (source_cols, fun)) in f])
 end
 
 function gen_groups(idx::Vector{Int})

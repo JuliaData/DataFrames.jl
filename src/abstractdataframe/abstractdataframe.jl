@@ -1395,8 +1395,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         end
     elseif cols === :setequal || cols === :equal
         if cols === :equal
-            Base.depwarn("`cols=:equal` is deprecated." *
-                         "Use `:setequal` instead.", :vcat)
+            throw(ArgumentError("`cols=:equal` is not supported. " *
+                                "Use `:setequal` instead."))
         end
 
         header = unionunique

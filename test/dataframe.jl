@@ -1815,6 +1815,7 @@ end
 
     @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
                cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30), cols=:equal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
                                     cols=:orderequal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, d=30),
@@ -2017,6 +2018,12 @@ end
             @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1,missing])
         end
     end
+end
+
+@testset "push! with :setequal and wrong number of entries" begin
+    df = DataFrame(a=1:3)
+    @test_throws ArgumentError push!(df, (a=10, b=20))
+    @test_throws ArgumentError push!(df, "a")
 end
 
 end # module

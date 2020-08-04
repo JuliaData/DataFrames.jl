@@ -1720,6 +1720,15 @@ end
     end
 end
 
+@testset "setindex! for ncols(df)+1" begin
+    df = DataFrame()
+    @test_throws ArgumentError df[:, 1] = 1:3
+
+    df = DataFrame(a = 1:3)
+    @test_throws DimensionMismatch df[1:2, 1] = 1:2
+    @test_throws ArgumentError df[1:2, 1:1] = DataFrame(b = 1:2)
+end
+
 if VERSION >= v"1.4"
     include("indexing_begin_tests.jl")
 end
