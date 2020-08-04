@@ -19,13 +19,14 @@ The functions `select`, `transform` and `combine` can be applied on grouped data
 |:------------|:------------|:------------|:------------|
 |Reduce multiple values|`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
 |Add new columns|`transform(groupby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|`egen x_mean = mean(x), by(id)`|
-|Pick & transform columns|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
+|Pick & transform columns|`select(groupby(df, :id), :x => mean, :y)`|`transmute(group_by(df, id), mean(x), y)`||
 
 
 Finally, the table below compares more complicated syntaxes:
 
 Operations| DataFrames       | dplyr| Stata|
 |:------------|:------------|:------------|:------------|
+|Anonymous Function |`combine(df, :x => x -> mean(skipmissing(x)))`|`summarize(df, mean(x, na.rm = T))`|`collapse (mean) x`|
 |Transform several columns |`combine(df, :x => maximum,  :y => minimum)`|`summarize(df, max(x), min(y))`|`collapse (max) x (min) y`|
 ||`combine(df, [:x, :y] .=> mean)`|`summarize(df, across(c(x, y), mean))`|`collapse (mean) x y`|
 ||`combine(df, ([:x, :y] .=> [maximum minimum])...)`|`summarize(df, across(c(x, y), list(max, min)))`|`collapse (max) x y (min) x y`|
