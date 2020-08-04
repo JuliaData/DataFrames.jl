@@ -1,6 +1,7 @@
 # Comparisons with other languages
 
 The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1) and Stata (version 8 and above)
+
 |Operations| DataFrames.jl       | dplyr | Stata|
 |:------------|:------------|:------------|:------------|
 |Reduce multiple values|`combine(df, :x => mean)`|`summarize(df, mean(x))`|`collapse (mean) x =`|
