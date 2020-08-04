@@ -360,25 +360,30 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     left_indicator, right_indicator = nothing, nothing
     if kind == :inner
+        inner_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                          group_rows(joiner.dfr_on),
+                                          true, false, true, false)
         joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            update_row_maps!(joiner.dfl_on, joiner.dfr_on, group_rows(joiner.dfr_on),
-                             true, false, true, false)...,
-            makeunique, left_rename, right_rename, nothing)
+            inner_row_maps..., makeunique, left_rename, right_rename, nothing)
     elseif kind == :left
+        left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                         group_rows(joiner.dfr_on),
+                                         true, true, true, false)
         joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            update_row_maps!(joiner.dfl_on, joiner.dfr_on, group_rows(joiner.dfr_on),
-                             true, true, true, false)...,
-            makeunique, left_rename, right_rename, indicator)
+            left_row_maps..., makeunique, left_rename, right_rename, indicator)
     elseif kind == :right
+        right_row_maps = update_row_maps!(joiner.dfr_on, joiner.dfl_on,
+                                          group_rows(joiner.dfl_on),
+                                          true, true, true, false)[[3, 4, 1, 2]]
         joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            update_row_maps!(joiner.dfr_on, joiner.dfl_on, group_rows(joiner.dfl_on),
-                             true, true, true, false)[[3, 4, 1, 2]]...,
+            right_row_maps...,
             makeunique, left_rename, right_rename, indicator)
     elseif kind == :outer
+        outer_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                          group_rows(joiner.dfr_on),
+                                          true, true, true, true)
         joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            update_row_maps!(joiner.dfl_on, joiner.dfr_on, group_rows(joiner.dfr_on),
-                             true, true, true, true)...,
-            makeunique, left_rename, right_rename, indicator)
+            outer_row_maps..., makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)

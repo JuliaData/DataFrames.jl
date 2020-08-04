@@ -841,6 +841,22 @@ end
                     rename = "_left" => "_right", indicator=:ind) ≅
           DataFrame(id1=[1,2,3,4], id2=[1,2,3,4], x_left=[1,2,3,missing],
                     x_right=[1,2,missing,3], ind=["both", "both", "left_only", "right_only"])
+
+    df1.x .+= 10
+    df2.x .+= 100
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = (x -> :id1) => "_right")
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = (x -> :id1) => "_right", makeunique=true) ==
+          DataFrame(id1=1:2, id2=1:2, id1_1=11:12, x_right=101:102)
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :id2))
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :id2), makeunique=true) ==
+          DataFrame(id1=1:2, id2=1:2, x_left=11:12, id2_1=101:102)
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => "_left")
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => "_left", makeunique=true) ==
+          DataFrame(id1=1:2, id2=1:2, x_left=11:12, x_left_1=101:102)
+    df2.y = df2.x .+ 1
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :newcol))
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :newcol), makeunique=true) ==
+          DataFrame(id1=1:2, id2=1:2, x_left=11:12, newcol=101:102, newcol_1=102:103)
 end
 
 @testset "careful indicator test" begin
