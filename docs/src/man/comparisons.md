@@ -7,7 +7,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Add new columns|`transform(df, :x => mean => :x_mean)`|`mutate(df, x_mean = mean(x))`|`egen x_mean = mean(x)`|
 |Rename columns|`rename(df, :x => :v)`|`rename(df, v = x)`|`rename x v`|
 |Pick columns|`select(df, :x, :y)`|`select(df, x, y)`|`keep x y`|
-|Pick & transform columns|`select(df, :x => mean)`|`transmute(df, mean(x), y)`||
+|Pick & transform columns|`select(df, :x => mean, :y)`|`transmute(df, mean(x), y)`||
 |Pick rows |`filter(:x => >=(1), df)`|`filter(df, x >= 1)`|`keep if x >= 1`|
 |Sort rows|`sort(df, :x)`|`arrange(df, x)`|`sort x`|
 
@@ -18,7 +18,7 @@ The functions `select`, `transform` and `combine` can be applied on grouped data
 |:------------|:------------|:------------|:------------|
 |Reduce multiple values|`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
 |Add new columns|`transform(groupby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|`egen x_mean = mean(x), by(id)`|
-|Pick columns|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
+|Pick & transform columns|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
 
 
 Finally, the table below compares more complicated syntaxes:
