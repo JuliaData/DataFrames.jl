@@ -8,10 +8,6 @@ A `SubDataFrame` is an `AbstractDataFrame`, so expect that most
 DataFrame functions should work. Such methods include `describe`,
 `summary`, `nrow`, `size`, `by`, `stack`, and `join`.
 
-Indexing is just like a `DataFrame` except that it is possible to create a
-`SubDataFrame` with duplicate columns. All such columns will have a reference
-to the same entry in the parent `DataFrame`.
-
 If the selection of columns in a parent data frame is passed as `:` (a colon)
 then `SubDataFrame` will always have all columns from the parent,
 even if they are added or removed after its creation.
