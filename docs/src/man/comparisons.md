@@ -18,7 +18,7 @@ The functions `select`, `transform` and `combine` can be applied on grouped data
 |:------------|:------------|:------------|:------------|
 |Reduce multiple values|`combine(groupby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|`collapse (mean) x, by(id)`|
 |Add new columns|`transform(groupby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|`egen x_mean = mean(x), by(id)`|
-|Pick columns|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
+|Pick & transform columns|`select(groupby(df, :id), :x => mean)`|`transmute(group_by(df, id), mean(x))`||
 
 
 Finally, the table below compares more complicated syntaxes:
