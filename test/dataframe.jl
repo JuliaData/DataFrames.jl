@@ -247,9 +247,9 @@ end
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
     @test_throws ArgumentError insertcols!(df, 10, :a => [11,12], makeunique=true)
 
-    # TODO: re-enable this test after the deprecation; this should be no-op
-    # (it only should check if `2` is in range)
-    # @test_throws ArgumentError insertcols!(df, 2)
+    dfc = copy(df)
+    @test insertcols!(df, 2) == dfc
+    @test_throws ArgumentError insertcols!(df, 10)
     @test_throws ArgumentError insertcols!(df, 2, a=1, b=2)
 
     df = DataFrame()

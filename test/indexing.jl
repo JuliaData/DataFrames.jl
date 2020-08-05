@@ -1025,9 +1025,8 @@ end
     @test df == DataFrame(a=10:12, b=4:6, c=7:9)
     @test df.a === x
     @test_throws MethodError df[1:3, 1] = ["a", "b", "c"]
-    # TODO: enable these tests after deprecation period
-    # @test_throws ArgumentError df[1:3, 1] = [1]
-    # @test_throws ArgumentError df[1:3, 1] = 1
+    @test_throws DimensionMismatch df[1:3, 1] = [1]
+    @test_throws MethodError df[1:3, 1] = 1
     @test_throws ArgumentError df[1:3, :z] = ["a", "b", "c"]
     @test_throws ArgumentError df[1:3, "z"] = ["a", "b", "c"]
     @test_throws BoundsError df[1:3, 4] = ["a", "b", "c"]
@@ -1061,10 +1060,9 @@ end
     @test df."y" !== y
 
     @test_throws MethodError df[:, 1] = ["a", "b", "c"]
-    # TODO: enable these tests after deprecation period
-    # @test_throws ArgumentError df[:, 1] = [1]
-    # @test_throws ArgumentError df[:, 1] = 1
-    # @test_throws BoundsError df[:, 5] = ["a", "b", "c"]
+    @test_throws DimensionMismatch df[:, 1] = [1]
+    @test_throws MethodError df[:, 1] = 1
+    @test_throws MethodError df[:, 2] = ["a", "b", "c"]
     @test_throws ArgumentError df[:, 10] = ["a", "b", "c"]
 
     # `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;

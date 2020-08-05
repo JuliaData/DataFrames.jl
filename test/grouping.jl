@@ -2339,7 +2339,10 @@ end
 
     @test size(combine(gdf)) == (0, 1)
     @test names(combine(gdf)) == ["g"]
-    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test combine(gdf, ungroup=false) isa GroupedDataFrame
+    @test length(combine(gdf, ungroup=false)) == 0
+    @test parent(combine(gdf, ungroup=false)) == DataFrame(g=[])
+    @test combine(gdf, keepkeys=false) == DataFrame()
     @test size(select(gdf)) == (1, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
