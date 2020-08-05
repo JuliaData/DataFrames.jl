@@ -332,6 +332,11 @@ end
     @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
 end
 
+@testset "unsupported insertcols!" begin
+    df = DataFrame(x = 1:2)
+    @test_throws ArgumentError insertcols!(df, 2, y=2:3)
+end
+
 @testset "DataFrame constructors" begin
     df = convert(DataFrame, zeros(10, 5))
     @test size(df, 1) == 10

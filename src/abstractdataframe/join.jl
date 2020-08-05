@@ -1117,3 +1117,11 @@ end
 crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           makeunique::Bool=false) =
     crossjoin(crossjoin(df1, df2, makeunique=makeunique), dfs..., makeunique=makeunique)
+
+Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          kind::Symbol = :inner, makeunique::Bool=false,
+          indicator::Union{Nothing, Symbol} = nothing,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    throw(ArgumentError("join function for data frames is not supported. Use innerjoin, " *
+                        "leftjoin, rightjoin, outerjoin, semijoin, antijoin, or crossjoin"))

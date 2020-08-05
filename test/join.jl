@@ -723,4 +723,12 @@ end
     @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, false)) == [df1; df1]
 end
 
+@testset "removed join function" begin
+    df1 = DataFrame(id=[1,2,3], x=[1,2,3])
+    df2 = DataFrame(id=[1,2,4], y=[1,2,4])
+    df3 = DataFrame(id=[1,3,4], z=[1,3,4])
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:left)
+    @test_throws ArgumentError join(df1, df2, on=:id, kind=:inner)
+end
+
 end # module

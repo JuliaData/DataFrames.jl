@@ -2679,4 +2679,10 @@ end
     @test_throws ArgumentError combine(gdf, (:g, :g) => identity)
 end
 
+@testset "new map behavior" begin
+    df = DataFrame(g=[1,2,3])
+    gdf = groupby(df, :g)
+    @test map(nrow, gdf) == [1, 1, 1]
+end
+
 end # module

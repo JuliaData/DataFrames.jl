@@ -758,6 +758,10 @@ insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString,<:Any}...;
     insertcols!(df, (Symbol(n) => v for (n,v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
+insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...) =
+    throw(ArgumentError("inserting colums using a keyword argument is not supported," *
+                        " pass a Pair as a positional argument instead"))
+
 """
     copy(df::DataFrame; copycols::Bool=true)
 

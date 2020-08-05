@@ -1733,4 +1733,90 @@ if VERSION >= v"1.4"
     include("indexing_begin_tests.jl")
 end
 
+@testset "unsupported df[col] and df[col] for getindex, view, and setindex!" begin
+    @testset "getindex DataFrame" begin
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        @test_throws MethodError df[1]
+        @test_throws MethodError df[end]
+        @test_throws MethodError df[1:2]
+        @test_throws MethodError df[r"[ab]"]
+        @test_throws MethodError df[Not(3)]
+        @test_throws MethodError df[:]
+        @test_throws MethodError df[:a]
+        @test_throws MethodError df["a"]
+    end
+    @testset "view DataFrame" begin
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        @test_throws MethodError view(df, 1)
+        @test_throws MethodError view(df, :a)
+        @test_throws MethodError view(df, "a")
+        @test_throws MethodError view(df, 1:2)
+        @test_throws MethodError view(df, r"[ab]")
+        @test_throws MethodError view(df, Not(Not(r"[ab]")))
+        @test_throws MethodError view(df, :)
+    end
+    @testset "getindex SubDataFrame" begin
+        df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
+        sdf = view(df, 2:4, 2:4)
+        @test_throws MethodError sdf[1]
+        @test_throws MethodError sdf[end]
+        @test_throws MethodError sdf["x"]
+        @test_throws MethodError sdf[:x]
+        @test_throws MethodError sdf[1:2]
+        @test_throws MethodError sdf[r"[ab]"]
+        @test_throws MethodError sdf[Not(Not(r"[ab]"))]
+        @test_throws MethodError sdf[:]
+    end
+    @testset "view SubDataFrame" begin
+        df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
+        sdf = view(df, 2:4, 2:4)
+        @test_throws MethodError view(sdf, 1)
+        @test_throws MethodError view(sdf, :a)
+        @test_throws MethodError view(sdf, "a")
+        @test_throws MethodError view(sdf, 1:2)
+        @test_throws MethodError view(sdf, r"[ab]")
+        @test_throws MethodError view(sdf, Not(Not(r"[ab]")))
+        @test_throws MethodError view(sdf, :)
+    end
+
+    @testset "old setindex! tests" begin
+        df = DataFrame(reshape(1:12, 4, :))
+        @test_throws MethodError df[1, :] = df[1:1, :]
+
+        df = DataFrame(reshape(1:12, 4, :))
+
+        # Scalar broadcasting assignment of rows
+        @test_throws MethodError df[1:2, :] = 1
+        @test_throws MethodError df[[true,false,false,true], :] = 3
+
+        # Vector broadcasting assignment of rows
+        @test_throws MethodError df[1:2, :] = [2,3]
+        @test_throws MethodError df[[true,false,false,true], :] = [2,3]
+
+        # Broadcasting assignment of columns
+        @test_throws MethodError df[:, 1] = 1
+        @test_throws MethodError df[:x3] = 2
+
+        # assignment of subtables
+        @test_throws MethodError df[1, 1:2] = df[2:2, 2:3]
+        @test_throws MethodError df[[true,false,false,true], 2:3] = df[1:2,1:2]
+
+        # this is a different case - column names do not match
+        @test_throws ArgumentError df[1:2, 1:2] = df[2:3, 2:3]
+
+        # scalar broadcasting assignment of subtables
+        @test_throws MethodError df[1:2, 1:2] = 3
+        @test_throws MethodError df[[true,false,false,true], 2:3] = 3
+
+        # vector broadcasting assignment of subtables
+        @test_throws MethodError df[1:2, 1:2] = [3,2]
+        @test_throws MethodError df[[true,false,false,true], 2:3] = [2,3]
+
+        # test of 1-row DataFrame assignment
+        df = DataFrame([1 2 3])
+        @test_throws MethodError df[1, 2:3] = DataFrame([11 12])
+        df[1, [false, true, true]] = DataFrame([11 12])
+    end
+end
+
 end # module
