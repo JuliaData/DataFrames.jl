@@ -71,7 +71,7 @@ julia> Vector(df[1, :])
  1
   "a"
  1
- ```
+```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
