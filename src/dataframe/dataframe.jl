@@ -455,7 +455,7 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
         _columns(df)[j] = dv
     else
         if col_ind isa SymbolOrString
-            push!(index(df), Symbol(col_ind))
+            safe_push!(index(df), Symbol(col_ind))
             push!(_columns(df), dv)
         else
             throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
@@ -549,11 +549,11 @@ for T1 in (:AbstractVector, :Not, :Colon),
                                   row_inds::$T1,
                                   col_inds::$T2)
         idxs = index(df)[col_inds]
-        for (j, col) in enumerate(idxs)
-            df[row_inds, col] = new_df[!, j]
-        end
         if view(_names(df), idxs) != _names(new_df)
             throw(ArgumentError("column names in source and target do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            df[row_inds, col] = new_df[!, j]
         end
         return df
     end

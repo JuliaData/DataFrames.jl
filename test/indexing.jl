@@ -1086,10 +1086,17 @@ end
     @test df.a == x
     @test_throws DimensionMismatch df[1:2, 1:2] = m
 
-    # TODO: add these tests after deprecation period
-    # 1. tests for LHS requiring broadcasting
-    # 2. tests for LHS data frame with right size but wrong columns
-    # 3. tests with : for rows and/or columns
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    df2 = df[!, :]
+    @test_throws MethodError df[1:2, 1:2] = 1
+    @test_throws MethodError df[1:2, 1:2] = DataFrame(ones(2,2))
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9)
+    df[:, :] = DataFrame(a=11:13, b=14:16, c=17:19)
+    @test df2 == DataFrame(a=11:13, b=14:16, c=17:19)
+    df[:, [1,3]] = DataFrame(a=111:113, c=117:119)
+    @test df2 == DataFrame(a=111:113, b=14:16, c=117:119)
+    df[:, 2] = 1114:1116
+    @test df2 == DataFrame(a=111:113, b=1114:1116, c=117:119)
 
     # `df[!, col] = v` -> replaces `col` with `v` without copying
     #                     (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
@@ -1109,9 +1116,12 @@ end
     df.z = 11:13
     @test df == DataFrame(a=["aaa", "bbb", 1], b=4:6, c=7:9, z=11:13)
 
-    # TODO: add the following tests after deprecation
-    # 1. if `df[:, col] = v` an error is thrown if such operation is attempted).
-    # 2. it is not allowed to add a column with column index `ncol(df)+1`
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    @test_throws MethodError df[:, :a] = 1
+    @test_throws ArgumentError df[:, 4] = 1:3
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9)
+    df[:, :x] = 10:12
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, x=10:12)
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df[!, "a"] = ["a", "b", "c"]
@@ -1262,9 +1272,8 @@ end
         @test sdf == DataFrame(a=10:12, b=4:6, c=7:9)
         @test df.a === x
         @test_throws MethodError sdf[1:3, 1] = ["a", "b", "c"]
-        # TODO: enable these tests after deprecation period
-        # @test_throws ArgumentError sdf[1:3, 1] = [1]
-        # @test_throws ArgumentError sdf[1:3, 1] = 1
+        @test_throws DimensionMismatch sdf[1:3, 1] = [1]
+        @test_throws MethodError sdf[1:3, 1] = 1
         @test_throws ArgumentError sdf[1:3, :z] = ["a", "b", "c"]
         @test_throws BoundsError sdf[1:3, 4] = ["a", "b", "c"]
     end
@@ -1291,9 +1300,8 @@ end
         @test_throws MethodError sdf[:, 1] = ["a", "b", "c"]
         @test_throws ArgumentError sdf[:, :z] = ["a", "b", "c"]
         @test_throws BoundsError sdf[:, 4] = ["a", "b", "c"]
-        # TODO: enable these tests after deprecation period
-        # @test_throws ArgumentError sdf[:, 1] = [1]
-        # @test_throws ArgumentError sdf[:, 1] = 1
+        @test_throws DimensionMismatch sdf[:, 1] = [1]
+        @test_throws MethodError sdf[:, 1] = 1
     end
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -1331,10 +1339,10 @@ end
         @test sdf.a == x
         @test_throws DimensionMismatch df[1:2, 1:2] = m
 
-        # TODO: add these tests after deprecation period
-        # 1. tests for LHS requiring broadcasting
-        # 2. tests for LHS data frame with right size but wrong columns
-        # 3. tests with : for rows and/or columns
+        @test_throws MethodError sdf[row_sel, col_sel] = 1
+        @test_throws ArgumentError sdf[row_sel, col_sel] = DataFrame(ones(3, 3))
+        @test (sdf[row_sel, col_sel] = df2) == df2
+        @test df == df2
     end
 
     # Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
@@ -1344,8 +1352,7 @@ end
         @test_throws ArgumentError sdf[!, 1] = [1,2,3]
         @test_throws ArgumentError sdf[!, "a"] = [1,2,3]
         @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
-        # TODO: add this test after deprecation period
-        # @test_throw ArgumentError sdf[!, 1] = [1,2,3]
+        @test_throws ArgumentError sdf[!, 1] = [1,2,3]
     end
 end
 

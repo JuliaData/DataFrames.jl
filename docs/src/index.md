@@ -42,21 +42,22 @@ Depth = 2
 
 ## API
 
-Only exported (i.e. available for use without `DataFrames.` qualifier after loading
-the DataFrames.jl package with `using DataFrames`) types and functions are considered
-a part of the public API of the DataFrames.jl package. In general all such objects
-are documented in this manual (in case some documentation is missing
-please kindly report an issue [here](https://github.com/JuliaData/DataFrames.jl/issues/new)).
+Only exported (i.e. available for use without `DataFrames.` qualifier after
+loading the DataFrames.jl package with `using DataFrames`) types and functions
+are considered a part of the public API of the DataFrames.jl package. In general
+all such objects are documented in this manual (in case some documentation is
+missing please kindly report an issue
+[here](https://github.com/JuliaData/DataFrames.jl/issues/new)).
 
-All types and functions that are part of public API are guaranteed to go through a deprecation
-period before being changed or removed.
+All types and functions that are part of public API are guaranteed to go through
+a deprecation period before being changed or removed.
 
-Please be warned that while Julia allows you to access internal functions or types of DataFrames.jl
-these can change without warning between versions of DataFrames.jl. In particular
-it is not safe to directly access fields of types that are a part of public API
-of the DataFrames.jl package using e.g. the `getfield` function. Whenever some
-operation on fields of defined types is considered allowed an appropriate exported
-function should be used instead.
+Please be warned that while Julia allows you to access internal functions or
+types of DataFrames.jl these can change without warning between versions of
+DataFrames.jl. In particular it is not safe to directly access fields of types
+that are a part of public API of the DataFrames.jl package using e.g. the
+`getfield` function. Whenever some operation on fields of defined types is
+considered allowed an appropriate exported function should be used instead.
 
 ```@contents
 Pages = ["lib/types.md", "lib/functions.md", "lib/indexing.md"]

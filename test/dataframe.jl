@@ -1780,9 +1780,8 @@ end
     @view dfv[!, All()]
     @view dfv[!, Between(1,2)]
 
-# TODO: enable after setindex! rules update
-#    dfv[1, All()] = (a=1, b=2, c=3)
-#    dfv[1, Between(1,2)] = (a=1, b=2)
+    dfv[1, All()] = (a=1, b=2, c=3)
+    dfv[1, Between(1,2)] = (a=1, b=2)
     dfv[1:1, All()] = df
     dfv[1:1, Between(1,2)] = df[!, 1:2]
     dfv[:, All()] = df

@@ -2375,7 +2375,10 @@ end
     @test names(combine(gdf)) == ["g"]
     @test size(combine(x -> DataFrame(z=1), gdf)) == (0, 2)
     @test names(combine(x -> DataFrame(z=1), gdf)) == ["g", "z"]
-    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test combine(x -> DataFrame(z=1), gdf, keepkeys=false) == DataFrame(z=[])
+    @test combine(x -> DataFrame(z=1), gdf, ungroup=false) isa GroupedDataFrame
+    @test isempty(combine(x -> DataFrame(z=1), gdf, ungroup=false))
+    @test parent(combine(x -> DataFrame(z=1), gdf, ungroup=false)) == DataFrame(g=[], z=[])
     @test_throws ArgumentError select(gdf)
     @test_throws ArgumentError transform(gdf)
 

@@ -5,7 +5,6 @@ using Test, DataFrames
 @testset "DataFrame!" begin
     x = [1,2,3]
     y = [4,5,6]
-    # we allow this to make deprecation message simpler
     @test DataFrame!(x=x, y=y, copycols=true) == DataFrame(x=x,y=y)
     df1 = DataFrame(x=x, y=y)
     df2 = DataFrame!(df1)
