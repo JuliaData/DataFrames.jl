@@ -1075,7 +1075,7 @@ end
     df[1:3, 1:3] = df2
     @test df == df2
     @test df.a == x
-    @test_throws DimensionMismatch df[1:2, 1:2] = df2
+    @test_throws ArgumentError df[1:2, 1:2] = df2
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df2 = DataFrame(a=11:13, b=14:16, c=17:19)
@@ -1089,7 +1089,7 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df2 = df[!, :]
     @test_throws MethodError df[1:2, 1:2] = 1
-    @test_throws MethodError df[1:2, 1:2] = DataFrame(ones(2,2))
+    @test_throws ArgumentError df[1:2, 1:2] = DataFrame(ones(2,2))
     @test df == DataFrame(a=1:3, b=4:6, c=7:9)
     df[:, :] = DataFrame(a=11:13, b=14:16, c=17:19)
     @test df2 == DataFrame(a=11:13, b=14:16, c=17:19)
@@ -1327,7 +1327,7 @@ end
         sdf[1:3, 1:3] = df2
         @test sdf == df2
         @test df.a == x
-        @test_throws DimensionMismatch sdf[1:2, 1:2] = df2
+        @test_throws ArgumentError sdf[1:2, 1:2] = df2
 
         df = DataFrame(a=1:3, b=4:6, c=7:9)
         sdf = view(df, row_sel, col_sel)
@@ -1725,12 +1725,12 @@ end
     end
 end
 
-@testset "setindex! for ncols(df)+1" begin
+@testset "setindex! for ncols(df)+1 and old tests" begin
     df = DataFrame()
     @test_throws ArgumentError df[:, 1] = 1:3
 
     df = DataFrame(a = 1:3)
-    @test_throws DimensionMismatch df[1:2, 1] = 1:2
+    @test_throws DimensionMismatch df[1:2, 1] = 1:3
     @test_throws ArgumentError df[1:2, 1:1] = DataFrame(b = 1:2)
 end
 
@@ -1804,7 +1804,7 @@ end
 
         # assignment of subtables
         @test_throws MethodError df[1, 1:2] = df[2:2, 2:3]
-        @test_throws MethodError df[[true,false,false,true], 2:3] = df[1:2,1:2]
+        @test_throws ArgumentError df[[true,false,false,true], 2:3] = df[1:2,1:2]
 
         # this is a different case - column names do not match
         @test_throws ArgumentError df[1:2, 1:2] = df[2:3, 2:3]
@@ -1820,7 +1820,7 @@ end
         # test of 1-row DataFrame assignment
         df = DataFrame([1 2 3])
         @test_throws MethodError df[1, 2:3] = DataFrame([11 12])
-        df[1, [false, true, true]] = DataFrame([11 12])
+        @test_throws MethodError df[1, [false, true, true]] = DataFrame([11 12])
     end
 end
 

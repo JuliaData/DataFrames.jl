@@ -559,7 +559,7 @@ end
     push!(df, (1, 2))
     @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
 
-    @test_logs (:warn, r"In the future `push!` will not allow passing collections of type") push!(df, "ab")
+    @test_throws ArgumentError push!(df, "ab")
 end
 
 @testset "delete!" begin
