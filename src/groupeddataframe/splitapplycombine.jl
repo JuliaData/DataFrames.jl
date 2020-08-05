@@ -1048,7 +1048,7 @@ function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedData
 end
 
 isagg(p::Pair) =
-    check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
+    check_aggregate(last(p)) isa AbstractAggregate && (first(p) isa Union{Missing, Number} || (first(p) == maximum(p) || first(p) == minimum(p)) && first(p) isa Union{Missing, Real})   
 
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
