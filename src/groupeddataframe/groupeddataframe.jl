@@ -52,21 +52,21 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
         # Group indices are computed lazily the first time they are accessed
         # Do not lock when field is already initialized
         if getfield(gd, f) === nothing
-            Threads.lock(gd.lazy_lock)
-            if getfield(gd, f) === nothing # Do not lock when field is already initialized
-                gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
+            Threads.lock(gd.lazy_lock) do
+                if getfield(gd, f) === nothing # Do not lock when field is already initialized
+                    gd.idx, gd.starts, gd.ends = compute_indices(gd.groups, gd.ngroups)
+                end
             end
-            Threads.unlock(gd.lazy_lock)
         end
         return getfield(gd, f)::Vector{Int}
     elseif f === :keymap
         # Keymap is computed lazily the first time it is accessed
         if getfield(gd, f) === nothing # Do not lock when field is already initialized
-            Threads.lock(gd.lazy_lock)
-            if getfield(gd, f) === nothing
-                gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
+            Threads.lock(gd.lazy_lock) do
+                if getfield(gd, f) === nothing
+                    gd.keymap = genkeymap(gd, ntuple(i -> parent(gd)[!, gd.cols[i]], length(gd.cols)))
+                end
             end
-            Threads.unlock(gd.lazy_lock)
         end
         return getfield(gd, f)::Dict{Any,Int}
     else
@@ -228,14 +228,12 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
 end
 
 # Index with colon (creates copy)
-function Base.getindex(gd::GroupedDataFrame, idxs::Colon)
-    Threads.lock(gd.lazy_lock)
-    new_gd = GroupedDataFrame(gd.parent, copy(gd.cols), gd.groups, getfield(gd, :idx),
-                              getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
-                              getfield(gd, :keymap), Threads.ReentrantLock())
-    Threads.unlock(gd.lazy_lock)
-    return new_gd
-end
+Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
+    Threads.lock(gd.lazy_lock) do
+        return GroupedDataFrame(gd.parent, copy(gd.cols), gd.groups, getfield(gd, :idx),
+                                getfield(gd, :starts), getfield(gd, :ends), gd.ngroups,
+                                getfield(gd, :keymap), Threads.ReentrantLock())
+    end
 
 
 #
