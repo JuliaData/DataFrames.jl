@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Split-apply-combine · DataFrames.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">DataFrames.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li class="is-active"><a class="tocitem" href>Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Split-apply-combine</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Split-apply-combine</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/split_apply_combine.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="The-Split-Apply-Combine-Strategy"><a class="docs-heading-anchor" href="#The-Split-Apply-Combine-Strategy">The Split-Apply-Combine Strategy</a><a id="The-Split-Apply-Combine-Strategy-1"></a><a class="docs-heading-anchor-permalink" href="#The-Split-Apply-Combine-Strategy" title="Permalink"></a></h1><p>Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper &quot;<a href="http://www.jstatsoft.org/v40/i01">The Split-Apply-Combine Strategy for Data Analysis</a>&quot;, written by Hadley Wickham.</p><p>The DataFrames package supports the split-apply-combine strategy through the <code>groupby</code> function followed by <code>combine</code>, <code>select</code>/<code>select!</code> or <code>transform</code>/<code>transform!</code>.</p><p>In order to perform operations by groups you first need to create a <code>GroupedDataFrame</code> object from your data frame using the <code>groupby</code> function that takes two arguments: (1) a data frame to be grouped, and (2) a set of columns to group by.</p><p>Operations can then be applied on each group using one of the following functions:</p><ul><li><code>combine</code>: does not put restrictions on number of rows returned, the order of rows is specified by the order of groups in <code>GroupedDataFrame</code>; it is typically used to compute summary statistics by group;</li><li><code>select</code>: return a data frame with the number and order of rows exactly the same as the source data frame, including only new calculated columns; <code>select!</code> is an in-place version of <code>select</code>;</li><li><code>transform</code>: return a data frame with the number and order of rows exactly the same as the source data frame, including all columns from the source and new calculated columns; <code>transform!</code> is an in-place version of <code>transform</code>.</li></ul><p>All these functions take a specification of one or more functions to apply to each subset of the <code>DataFrame</code>. This specification can be of the following forms:</p><ol><li>standard column selectors (integers, symbols, vectors of integers, vectors of symbols, <code>All</code>, <code>:</code>, <code>Between</code>, <code>Not</code> and regular expressions)</li><li>a <code>cols =&gt; function</code> pair indicating that <code>function</code> should be called with positional arguments holding columns <code>cols</code>, which can be a any valid column selector</li><li>a <code>cols =&gt; function =&gt; target_col</code> form additionally specifying the name of the target column (this assumes that <code>function</code> returns a single value or a vector)</li><li>a <code>col =&gt; target_col</code> pair, which renames the column <code>col</code> to <code>target_col</code></li><li>a <code>nrow</code> or <code>nrow =&gt; target_col</code> form which efficiently computes the number of rows in a group (without <code>target_col</code> the new column is called <code>:nrow</code>)</li><li>several arguments of the forms given above, or vectors thereof</li><li>a function which will be called with a <code>SubDataFrame</code> corresponding to each group; this form should be avoided due to its poor performance unless a very large number of columns are processed (in which case <code>SubDataFrame</code> avoids excessive compilation)</li></ol><p>As a special rule that applies to <code>cols =&gt; function</code> syntax, if <code>cols</code> is wrapped in an <code>AsTable</code> object then a <code>NamedTuple</code> containing columns selected by <code>cols</code> is passed to <code>function</code>.</p><p>In all of these cases, <code>function</code> can return either a single row or multiple rows. <code>function</code> can always generate a single column by returning a single value or a vector. Additionally, if <code>combine</code> is passed exactly one <code>function</code>, <code>cols =&gt; function</code>, or <code>cols =&gt; function =&gt; outcol</code> as a first argument and <code>target_col</code> is not specified, <code>function</code> can return multiple columns in the form of an <code>AbstractDataFrame</code>, <code>AbstractMatrix</code>, <code>NamedTuple</code> or <code>DataFrameRow</code>.</p><p><code>select</code>/<code>select!</code> and <code>transform</code>/<code>transform!</code> always return a <code>DataFrame</code> with the same number of rows as the source. For <code>combine</code>, the shape of the resulting <code>DataFrame</code> is determined according to the following rules:</p><ul><li>a single value produces a single row and column per group</li><li>a named tuple or <code>DataFrameRow</code> produces a single row and one column per field</li><li>a vector produces a single column with one row per entry</li><li>a named tuple of vectors produces one column per field with one row per entry in the vectors</li><li>a <code>DataFrame</code> or a matrix produces as many rows and columns as it contains; note that this option should be avoided due to its poor performance when the number of groups is large</li></ul><p>The kind of return value and the number and names of columns must be the same for all groups.</p><p>It is allowed to mix single values and vectors if multiple transformations are requested. In this case single value will be broadcasted to match the length of columns specified by returned vectors. As a particular rule, values wrapped in a <code>Ref</code> or a <code>0</code>-dimensional <code>AbstractArray</code> are unwrapped and then broadcasted.</p><p>If a single value or a vector is returned by the <code>function</code> and <code>target_col</code> is not provided, it is generated automatically, by concatenating source column name and <code>function</code> name where possible (see examples below).</p><p>We show several examples of the <code>by</code> function applied to the <code>iris</code> dataset below:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames, CSV, Statistics
+
+julia&gt; iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), &quot;../docs/src/assets/iris.csv&quot;)))
+150×5 DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa    │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa    │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa    │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa    │
+│ 7   │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ Iris-setosa    │
+⋮
+│ 143 │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 144 │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ Iris-virginica │
+│ 145 │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │
+│ 146 │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │
+│ 147 │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 148 │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 149 │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 150 │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
+
+julia&gt; gdf = groupby(iris, :Species)
+GroupedDataFrame with 3 groups based on key: Species
+First Group (50 rows): Species = &quot;Iris-setosa&quot;
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String      │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ Iris-setosa │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ Iris-setosa │
+│ 7   │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ Iris-setosa │
+⋮
+│ 43  │ 4.4         │ 3.2        │ 1.3         │ 0.2        │ Iris-setosa │
+│ 44  │ 5.0         │ 3.5        │ 1.6         │ 0.6        │ Iris-setosa │
+│ 45  │ 5.1         │ 3.8        │ 1.9         │ 0.4        │ Iris-setosa │
+│ 46  │ 4.8         │ 3.0        │ 1.4         │ 0.3        │ Iris-setosa │
+│ 47  │ 5.1         │ 3.8        │ 1.6         │ 0.2        │ Iris-setosa │
+│ 48  │ 4.6         │ 3.2        │ 1.4         │ 0.2        │ Iris-setosa │
+│ 49  │ 5.3         │ 3.7        │ 1.5         │ 0.2        │ Iris-setosa │
+│ 50  │ 5.0         │ 3.3        │ 1.4         │ 0.2        │ Iris-setosa │
+⋮
+Last Group (50 rows): Species = &quot;Iris-virginica&quot;
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │
+│     │ Float64     │ Float64    │ Float64     │ Float64    │ String         │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────────┤
+│ 1   │ 6.3         │ 3.3        │ 6.0         │ 2.5        │ Iris-virginica │
+│ 2   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 3   │ 7.1         │ 3.0        │ 5.9         │ 2.1        │ Iris-virginica │
+│ 4   │ 6.3         │ 2.9        │ 5.6         │ 1.8        │ Iris-virginica │
+│ 5   │ 6.5         │ 3.0        │ 5.8         │ 2.2        │ Iris-virginica │
+│ 6   │ 7.6         │ 3.0        │ 6.6         │ 2.1        │ Iris-virginica │
+│ 7   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ Iris-virginica │
+⋮
+│ 43  │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ Iris-virginica │
+│ 44  │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ Iris-virginica │
+│ 45  │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ Iris-virginica │
+│ 46  │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ Iris-virginica │
+│ 47  │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ Iris-virginica │
+│ 48  │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ Iris-virginica │
+│ 49  │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ Iris-virginica │
+│ 50  │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ Iris-virginica │
+
+julia&gt; combine(gdf, :PetalLength =&gt; mean)
+3×2 DataFrame
+│ Row │ Species         │ PetalLength_mean │
+│     │ String          │ Float64          │
+├─────┼─────────────────┼──────────────────┤
+│ 1   │ Iris-setosa     │ 1.464            │
+│ 2   │ Iris-versicolor │ 4.26             │
+│ 3   │ Iris-virginica  │ 5.552            │
+
+julia&gt; combine(gdf, nrow)
+3×2 DataFrame
+│ Row │ Species         │ nrow  │
+│     │ String          │ Int64 │
+├─────┼─────────────────┼───────┤
+│ 1   │ Iris-setosa     │ 50    │
+│ 2   │ Iris-versicolor │ 50    │
+│ 3   │ Iris-virginica  │ 50    │
+
+julia&gt; combine(gdf, nrow, :PetalLength =&gt; mean =&gt; :mean)
+3×3 DataFrame
+│ Row │ Species         │ nrow  │ mean    │
+│     │ String          │ Int64 │ Float64 │
+├─────┼─────────────────┼───────┼─────────┤
+│ 1   │ Iris-setosa     │ 50    │ 1.464   │
+│ 2   │ Iris-versicolor │ 50    │ 4.26    │
+│ 3   │ Iris-virginica  │ 50    │ 5.552   │
+
+julia&gt; combine([:PetalLength, :SepalLength] =&gt; (p, s) -&gt; (a=mean(p)/mean(s), b=sum(p)),
+               gdf) # multiple columns are passed as arguments
+3×3 DataFrame
+│ Row │ Species         │ a        │ b       │
+│     │ String          │ Float64  │ Float64 │
+├─────┼─────────────────┼──────────┼─────────┤
+│ 1   │ Iris-setosa     │ 0.292449 │ 73.2    │
+│ 2   │ Iris-versicolor │ 0.717655 │ 213.0   │
+│ 3   │ Iris-virginica  │ 0.842744 │ 277.6   │
+
+julia&gt; combine(gdf,
+               AsTable([:PetalLength, :SepalLength]) =&gt;
+               x -&gt; std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
+3×2 DataFrame
+│ Row │ Species         │ PetalLength_SepalLength_function │
+│     │ String          │ Float64                          │
+├─────┼─────────────────┼──────────────────────────────────┤
+│ 1   │ Iris-setosa     │ 0.492245                         │
+│ 2   │ Iris-versicolor │ 0.910378                         │
+│ 3   │ Iris-virginica  │ 0.867923                         │
+
+julia&gt; combine(x -&gt; std(x.PetalLength) / std(x.SepalLength), gdf) # passing a SubDataFrame
+3×2 DataFrame
+│ Row │ Species         │ PetalLength_SepalLength_function │
+│     │ String          │ Float64                          │
+├─────┼─────────────────┼──────────────────────────────────┤
+│ 1   │ Iris-setosa     │ 0.492245                         │
+│ 2   │ Iris-versicolor │ 0.910378                         │
+│ 3   │ Iris-virginica  │ 0.867923                         │
+
+julia&gt; combine(gdf, 1:2 =&gt; cor, nrow)
+3×3 DataFrame
+│ Row │ Species         │ SepalLength_SepalWidth_cor │ nrow  │
+│     │ String          │ Float64                    │ Int64 │
+├─────┼─────────────────┼────────────────────────────┼───────┤
+│ 1   │ Iris-setosa     │ 0.74678                    │ 50    │
+│ 2   │ Iris-versicolor │ 0.525911                   │ 50    │
+│ 3   │ Iris-virginica  │ 0.457228                   │ 50    │
+</code></pre><p>Contrary to <code>combine</code>, the <code>select</code> and <code>transform</code> functions always return a data frame with the same number and order of rows as the source. In the example below the return values in columns <code>:SepalLength_SepalWidth_cor</code> and <code>:nrow</code> are broadcasted to match the number of elements in each group:</p><pre><code class="language-none">julia&gt; select(gdf, 1:2 =&gt; cor)
+150×2 DataFrame
+│ Row │ Species        │ SepalLength_SepalWidth_cor │
+│     │ String         │ Float64                    │
+├─────┼────────────────┼────────────────────────────┤
+│ 1   │ Iris-setosa    │ 0.74678                    │
+│ 2   │ Iris-setosa    │ 0.74678                    │
+│ 3   │ Iris-setosa    │ 0.74678                    │
+│ 4   │ Iris-setosa    │ 0.74678                    │
+│ 5   │ Iris-setosa    │ 0.74678                    │
+│ 6   │ Iris-setosa    │ 0.74678                    │
+│ 7   │ Iris-setosa    │ 0.74678                    │
+⋮
+│ 143 │ Iris-virginica │ 0.457228                   │
+│ 144 │ Iris-virginica │ 0.457228                   │
+│ 145 │ Iris-virginica │ 0.457228                   │
+│ 146 │ Iris-virginica │ 0.457228                   │
+│ 147 │ Iris-virginica │ 0.457228                   │
+│ 148 │ Iris-virginica │ 0.457228                   │
+│ 149 │ Iris-virginica │ 0.457228                   │
+│ 150 │ Iris-virginica │ 0.457228                   │
+
+julia&gt; transform(gdf, :Species =&gt; x -&gt; chop.(x, head=5, tail=0))
+150×6 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species_function │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │ SubString…       │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┼──────────────────┤
+│ 1   │ Iris-setosa    │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa           │
+│ 2   │ Iris-setosa    │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa           │
+│ 3   │ Iris-setosa    │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ setosa           │
+│ 4   │ Iris-setosa    │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa           │
+│ 5   │ Iris-setosa    │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa           │
+│ 6   │ Iris-setosa    │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa           │
+│ 7   │ Iris-setosa    │ 4.6         │ 3.4        │ 1.4         │ 0.3        │ setosa           │
+⋮
+│ 143 │ Iris-virginica │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica        │
+│ 144 │ Iris-virginica │ 6.8         │ 3.2        │ 5.9         │ 2.3        │ virginica        │
+│ 145 │ Iris-virginica │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica        │
+│ 146 │ Iris-virginica │ 6.7         │ 3.0        │ 5.2         │ 2.3        │ virginica        │
+│ 147 │ Iris-virginica │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ virginica        │
+│ 148 │ Iris-virginica │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ virginica        │
+│ 149 │ Iris-virginica │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ virginica        │
+│ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ virginica        │</code></pre><p>The <code>combine</code> function also supports the <code>do</code> block form. However, as noted above, this form is slow and should therefore be avoided when performance matters.</p><pre><code class="language-julia-repl">julia&gt; combine(gdf) do df
+           (m = mean(df.PetalLength), s² = var(df.PetalLength))
+       end
+3×3 DataFrame
+│ Row │ Species         │ m       │ s²        │
+│     │ String          │ Float64 │ Float64   │
+├─────┼─────────────────┼─────────┼───────────┤
+│ 1   │ Iris-setosa     │ 1.464   │ 0.0301061 │
+│ 2   │ Iris-versicolor │ 4.26    │ 0.220816  │
+│ 3   │ Iris-virginica  │ 5.552   │ 0.304588  │</code></pre><p>If you only want to split the data set into subsets, use the <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a> function:</p><pre><code class="language-julia-repl">julia&gt; for subdf in groupby(iris, :Species)
+           println(size(subdf, 1))
+       end
+50
+50
+50</code></pre><p>To also get the values of the grouping columns along with each group, use the <code>pairs</code> function:</p><pre><code class="language-julia-repl">julia&gt; for (key, subdf) in pairs(groupby(iris, :Species))
+           println(&quot;Number of data points for $(key.Species): $(nrow(subdf))&quot;)
+       end
+Number of data points for Iris-setosa: 50
+Number of data points for Iris-versicolor: 50
+Number of data points for Iris-virginica: 50</code></pre><p>The value of <code>key</code> in the previous example is a <a href="../../lib/types/#DataFrames.GroupKey"><code>DataFrames.GroupKey</code></a> object, which can be used in a similar fashion to a <code>NamedTuple</code>.</p><p>Grouping a data frame using the <code>groupby</code> function can be seen as adding a lookup key to it. Such lookups can be performed efficiently by indexing the resulting <code>GroupedDataFrame</code> with a <code>Tuple</code> or <code>NamedTuple</code>:</p><pre><code class="language-none">julia&gt; df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000);
+
+julia&gt; gdf = groupby(df, :g)
+GroupedDataFrame with 1000 groups based on key: g
+First Group (5 rows): g = 1
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 1     │ 2     │
+│ 3   │ 1     │ 3     │
+│ 4   │ 1     │ 4     │
+│ 5   │ 1     │ 5     │
+⋮
+Last Group (5 rows): g = 1000
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1000  │ 4996  │
+│ 2   │ 1000  │ 4997  │
+│ 3   │ 1000  │ 4998  │
+│ 4   │ 1000  │ 4999  │
+│ 5   │ 1000  │ 5000  │
+
+julia&gt; gdf[(g=500,)]
+5×2 SubDataFrame
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 500   │ 2496  │
+│ 2   │ 500   │ 2497  │
+│ 3   │ 500   │ 2498  │
+│ 4   │ 500   │ 2499  │
+│ 5   │ 500   │ 2500  │
+
+julia&gt; gdf[[(500,), (501,)]]
+GroupedDataFrame with 2 groups based on key: g
+First Group (5 rows): g = 500
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 500   │ 2496  │
+│ 2   │ 500   │ 2497  │
+│ 3   │ 500   │ 2498  │
+│ 4   │ 500   │ 2499  │
+│ 5   │ 500   │ 2500  │
+⋮
+Last Group (5 rows): g = 501
+│ Row │ g     │ x     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 501   │ 2501  │
+│ 2   │ 501   │ 2502  │
+│ 3   │ 501   │ 2503  │
+│ 4   │ 501   │ 2504  │
+│ 5   │ 501   │ 2505  │</code></pre><p>In order to apply a function to each non-grouping column of a <code>GroupedDataFrame</code> you can write:</p><pre><code class="language-julia-repl">julia&gt; gd = groupby(iris, :Species);
+
+julia&gt; combine(gd, valuecols(gd) .=&gt; mean)
+3×5 DataFrame
+│ Row │ Species         │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
+│     │ String          │ Float64          │ Float64         │ Float64          │ Float64         │
+├─────┼─────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤
+│ 1   │ Iris-setosa     │ 5.006            │ 3.418           │ 1.464            │ 0.244           │
+│ 2   │ Iris-versicolor │ 5.936            │ 2.77            │ 4.26             │ 1.326           │
+│ 3   │ Iris-virginica  │ 6.588            │ 2.974           │ 5.552            │ 2.026           │
+
+julia&gt; combine(gd, valuecols(gd) .=&gt; (x -&gt; (x .- mean(x)) ./ std(x)) .=&gt; valuecols(gd))
+150×5 DataFrame
+│ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
+│     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │
+├─────┼────────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ Iris-setosa    │ 0.266674    │ 0.215209   │ -0.368852   │ -0.410411  │
+│ 2   │ Iris-setosa    │ -0.300718   │ -1.09704   │ -0.368852   │ -0.410411  │
+│ 3   │ Iris-setosa    │ -0.868111   │ -0.572142  │ -0.945184   │ -0.410411  │
+│ 4   │ Iris-setosa    │ -1.15181    │ -0.834592  │ 0.207479    │ -0.410411  │
+│ 5   │ Iris-setosa    │ -0.0170218  │ 0.47766    │ -0.368852   │ -0.410411  │
+│ 6   │ Iris-setosa    │ 1.11776     │ 1.26501    │ 1.36014     │ 1.45509    │
+│ 7   │ Iris-setosa    │ -1.15181    │ -0.0472411 │ -0.368852   │ 0.522342   │
+⋮
+│ 143 │ Iris-virginica │ -1.23923    │ -0.849621  │ -0.818997   │ -0.458766  │
+│ 144 │ Iris-virginica │ 0.333396    │ 0.700782   │ 0.630555    │ 0.997633   │
+│ 145 │ Iris-virginica │ 0.176134    │ 1.01086    │ 0.268167    │ 1.72583    │
+│ 146 │ Iris-virginica │ 0.176134    │ 0.080621   │ -0.637803   │ 0.997633   │
+│ 147 │ Iris-virginica │ -0.452916   │ -1.46978   │ -1.00019    │ -0.458766  │
+│ 148 │ Iris-virginica │ -0.138391   │ 0.080621   │ -0.637803   │ -0.0946659 │
+│ 149 │ Iris-virginica │ -0.610178   │ 1.32094    │ -0.275415   │ 0.997633   │
+│ 150 │ Iris-virginica │ -1.08197    │ 0.080621   │ -0.818997   │ -0.822865  │</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../joins/">« Joins</a><a class="docs-footer-nextpage" href="../reshaping_and_pivoting/">Reshaping »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 5 August 2020 21:04">Wednesday 5 August 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
