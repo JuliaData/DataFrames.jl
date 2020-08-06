@@ -363,27 +363,30 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         inner_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                           group_rows(joiner.dfr_on),
                                           true, false, true, false)
-        joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            inner_row_maps..., makeunique, left_rename, right_rename, nothing)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, inner_row_maps...,
+                                 makeunique, left_rename, right_rename, nothing)
     elseif kind == :left
         left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                          group_rows(joiner.dfr_on),
                                          true, true, true, false)
-        joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            left_row_maps..., makeunique, left_rename, right_rename, indicator)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, left_row_maps...,
+                                 makeunique, left_rename, right_rename, indicator)
     elseif kind == :right
         right_row_maps = update_row_maps!(joiner.dfr_on, joiner.dfl_on,
                                           group_rows(joiner.dfl_on),
                                           true, true, true, false)[[3, 4, 1, 2]]
-        joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            right_row_maps...,
-            makeunique, left_rename, right_rename, indicator)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, right_row_maps...,
+                                 makeunique, left_rename, right_rename, indicator)
     elseif kind == :outer
         outer_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                           group_rows(joiner.dfr_on),
                                           true, true, true, true)
-        joined, left_indicator, right_indicator = compose_joined_table(joiner, kind,
-            outer_row_maps..., makeunique, left_rename, right_rename, indicator)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, outer_row_maps...,
+                                 makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -575,7 +578,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
-The order of rows in the result undefined and may change in the future releases.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -602,7 +606,7 @@ The order of rows in the result undefined and may change in the future releases.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
-  column name; alternatively a function can be used  in which case it is applied
+  column name; alternatively a function can be passed in which case it is applied
   to each column name, which is passed to it as a `String`.; Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
@@ -692,7 +696,8 @@ end
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
-The order of rows in the result undefined and may change in the future releases.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -719,7 +724,7 @@ The order of rows in the result undefined and may change in the future releases.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
-  column name; alternatively a function can be used  in which case it is applied
+  column name; alternatively a function can be passed in which case it is applied
   to each column name, which is passed to it as a `String`.; Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
@@ -812,7 +817,8 @@ end
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
 of the passed data frames.
-The order of rows in the result undefined and may change in the future releases.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -842,7 +848,7 @@ The order of rows in the result undefined and may change in the future releases.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
-  column name; alternatively a function can be used  in which case it is applied
+  column name; alternatively a function can be passed in which case it is applied
   to each column name, which is passed to it as a `String`.; Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
@@ -945,7 +951,8 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
 match with the keys in `df2`.
-The order of rows in the result undefined and may change in the future releases.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1044,7 +1051,8 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
 not match with the keys in `df2`.
-The order of rows in the result undefined and may change in the future releases.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
