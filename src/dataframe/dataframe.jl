@@ -1367,7 +1367,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
         if length(row) != ncols
             throw(ArgumentError("`push!` with `cols` equal to `:setequal`" *
                                 "requires `row` to have the same number of elements " *
-                                "as is the number of columns in `df`."))
+                                "as the number of columns in `df`."))
         end
     end
     current_col = 0
