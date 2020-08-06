@@ -204,64 +204,97 @@ end
 
 @testset "Markdown as text/plain and as text/csv" begin
     df = DataFrame(
-        A=Int64[1,4,9,16,25],
+        A=Int64[1,4,9,16,25,36,49,64],
         B = [
             md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
             md"``\frac{x^2}{x^2+y^2}``",
             md"# Header",
             md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
-            md""]
+            md"",
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0" *
+                "∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ\n"*
+                            "  * ∞7∫αγ\n"*
+                            "  * ∞8∫αγ\n"*
+                            "  * ∞9∫αγ∞0∫α\nγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\n"*
+                            "  * γ∞1∫α\n"*
+                            "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+        ]
     )
-    @test sprint(show, "text/plain", df) ==
-    "5×2 DataFrame\n" *
-    "│ Row │ A     │ B                                                   │\n" *
-    "│     │ Int64 │ Markdown.MD                                         │\n" *
-    "├─────┼───────┼─────────────────────────────────────────────────────┤\n" *
-    "│ 1   │ 1     │ [DataFrames.jl](http://juliadata.github.io/DataFra… │\n" *
-    "│ 2   │ 4     │ \$\\frac{x^2}{x^2+y^2}\$                               │\n" *
-    "│ 3   │ 9     │ # Header                                            │\n" *
-    "│ 4   │ 16    │ This is *very*, **very**, very, very, very, very, … │\n" *
-    "│ 5   │ 25    │                                                     │"
-    @test sprint(show, "text/csv", df) ==
-        "\"A\",\"B\"\n"*
-        "1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"\n"*
-        "4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"\n"*
-        "9,\"# Header\"\n"*
-        "16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"\n"*
-        "25,\"\"\n"
+    @test sprint(show, "text/plain", df) == """
+8×2 DataFrame
+│ Row │ A     │ B                                                   │
+│     │ Int64 │ Markdown.MD                                         │
+├─────┼───────┼─────────────────────────────────────────────────────┤
+│ 1   │ 1     │ [DataFrames.jl](http://juliadata.github.io/DataFra… │
+│ 2   │ 4     │ \$\\frac{x^2}{x^2+y^2}\$                               │
+│ 3   │ 9     │ # Header                                            │
+│ 4   │ 16    │ This is *very*, **very**, very, very, very, very, … │
+│ 5   │ 25    │                                                     │
+│ 6   │ 36    │ ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0… │
+│ 7   │ 49    │ ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ…                  │
+│ 8   │ 64    │ ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0… │"""
+
+    @test sprint(show, "text/csv", df) == """
+\"A\",\"B\"
+1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
+4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
+9,\"# Header\"
+16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"
+25,\"\"
+36,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+49,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ\\n\\n  * ∞7∫αγ\\n  * ∞8∫αγ\\n  * ∞9∫αγ∞0∫α\\n\\nγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+64,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\\n\\n  * γ∞1∫α\\n  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+"""
 end
 
 @testset "Markdown as HTML" begin
     df = DataFrame(
-            A=Int64[1,4,9,16,25],
-            B = [
-                md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
-                md"``\frac{x^2}{x^2+y^2}``",
-                Markdown.parse("# Multi-line\nThis is a multi-line\n\n**Markdown**"),
-                md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
-                md""
-            ]
+        A=Int64[1,4,9,16,25,36,49,64],
+        B = [
+            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"``\frac{x^2}{x^2+y^2}``",
+            md"# Header",
+            md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
+            md"",
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0" *
+                "∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ\n"*
+                            "  * ∞7∫αγ\n"*
+                            "  * ∞8∫αγ\n"*
+                            "  * ∞9∫αγ∞0∫α\nγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\n"*
+                            "  * γ∞1∫α\n"*
+                            "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+        ]
     )
     @test sprint(show,"text/html",df) ==
-        "<table class=\"data-frame\"><thead>"*
-        "<tr><th></th><th>A</th><th>B</th></tr>" *
-        "<tr><th></th><th>Int64</th><th>MD…</th></tr></thead>" *
-        "<tbody><p>5 rows × 2 columns</p>" *
-        "<tr><th>1</th><td>1</td><td>" *
-            "<div class=\"markdown\"><p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div>" *
-            "</td></tr>" *
-        "<tr><th>2</th><td>4</td><td>" *
-            "<div class=\"markdown\"><p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>\n</div>" *
-            "</td></tr>" *
-        "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><h1>Multi-line</h1>\n" *
-            "<p>This is a multi-line</p>\n" *
-            "<p><strong>Markdown</strong></p>\n" *
-            "</div></td></tr>" *
-        "<tr><th>4</th><td>16</td><td>" *
-            "<div class=\"markdown\"><p>This is <em>very</em>, <strong>very</strong>, very, very, very," *
-                " very, very, very, very long line</p>\n" *
-            "</div></td></tr>" *
-        "<tr><th>5</th><td>25</td><td><div class=\"markdown\"></div></td></tr></tbody></table>"
+        "<table class=\"data-frame\"><thead>" *
+            "<tr><th></th><th>A</th><th>B</th></tr>" *
+            "<tr><th></th><th>Int64</th><th>MD…</th></tr>" *
+        "</thead>" *
+        "<tbody>" * "<p>8 rows × 2 columns</p>" *
+        "<tr><th>1</th><td>1</td><td><div class=\"markdown\">" *
+            "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
+        "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>\n</div></td></tr>" *
+        "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><h1>Header</h1>\n</div></td></tr>" *
+        "<tr><th>4</th><td>16</td><td><div class=\"markdown\">" *
+            "<p>This is <em>very</em>, <strong>very</strong>, very, very, very, very, very, very, very long line</p>\n" *
+        "</div></td></tr>" *
+        "<tr><th>5</th><td>25</td><td><div class=\"markdown\"></div></td></tr>" *
+        "<tr><th>6</th><td>36</td><td><div class=\"markdown\">" *
+            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n" *
+        "</div></td></tr>" *
+        "<tr><th>7</th><td>49</td><td><div class=\"markdown\">" *
+            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ</p>\n<ul>\n<li><p>∞7∫αγ</p>\n</li>\n<li><p>∞8∫αγ</p>\n</li>\n<li><p>∞9∫αγ∞0∫α</p>\n</li>\n</ul>\n<p>γ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n" *
+        "</div></td></tr>" *
+        "<tr><th>8</th><td>64</td><td><div class=\"markdown\">" *
+            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α</p>" *
+            "\n<ul>\n" *
+                "<li><p>γ∞1∫α</p>\n</li>\n" *
+                "<li><p>γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n</li>\n" *
+        "</ul>\n" * "</div></td></tr></tbody></table>"
 end
 
 @testset "empty data frame and DataFrameRow" begin
