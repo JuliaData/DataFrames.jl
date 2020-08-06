@@ -5,9 +5,9 @@ using DataFrames: Index, SubIndex, fuzzymatch
 
 @testset "Index indexing" begin
     i = Index()
-    DataFrames.safe_push!(i, :A)
-    DataFrames.safe_push!(i, :B)
-    @test_throws ArgumentError DataFrames.safe_push!(i, :A)
+    push!(i, :A)
+    push!(i, :B)
+    @test_throws ArgumentError push!(i, :A)
 
     inds = Any[1, big(1), :A, "A",
                [true, false],
@@ -86,9 +86,9 @@ end
     @test rename!(lowercase, copy(i)) == Index([:a,:b])
 
     @test delete!(i, :a) == Index([:b])
-    DataFrames.safe_push!(i, :C)
+    push!(i, :C)
     @test delete!(i, 1) == Index([:C])
-    DataFrames.safe_push!(i, :D)
+    push!(i, :D)
     @test delete!(i, "C") == Index([:D])
     insert!(i, 1, :x2)
     insert!(i, 1, "x1")
@@ -234,11 +234,11 @@ end
 
 @testset "fuzzy matching" begin
     i = Index()
-    DataFrames.safe_push!(i, :x1)
-    DataFrames.safe_push!(i, :x12)
-    DataFrames.safe_push!(i, :x131)
-    DataFrames.safe_push!(i, :y13)
-    DataFrames.safe_push!(i, :yy13)
+    push!(i, :x1)
+    push!(i, :x12)
+    push!(i, :x131)
+    push!(i, :y13)
+    push!(i, :yy13)
     @test_throws ArgumentError i[:x13]
     @test_throws ArgumentError i[:xx13]
     @test_throws ArgumentError i[:yy14]
@@ -255,11 +255,11 @@ end
 
 @testset "Regex indexing" begin
     i = Index()
-    DataFrames.safe_push!(i, :x1)
-    DataFrames.safe_push!(i, :x12)
-    DataFrames.safe_push!(i, :x131)
-    DataFrames.safe_push!(i, :y13)
-    DataFrames.safe_push!(i, :yy13)
+    push!(i, :x1)
+    push!(i, :x12)
+    push!(i, :x131)
+    push!(i, :y13)
+    push!(i, :yy13)
     @test i[r"x1."] == [2, 3]
     @test isempty(i[r"xx"])
     @test i[r""] == 1:5
@@ -314,11 +314,11 @@ end
 
 @testset "Not indexing" begin
     i = Index()
-    DataFrames.safe_push!(i, :x1)
-    DataFrames.safe_push!(i, :x12)
-    DataFrames.safe_push!(i, :x131)
-    DataFrames.safe_push!(i, :y13)
-    DataFrames.safe_push!(i, :yy13)
+    push!(i, :x1)
+    push!(i, :x12)
+    push!(i, :x131)
+    push!(i, :y13)
+    push!(i, :yy13)
     @test i[Not(Not(r"x1."))] == [2, 3]
     @test isempty(i[Not(Not(r"xx"))])
     @test i[Not(Not(r""))] == 1:5

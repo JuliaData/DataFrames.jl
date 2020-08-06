@@ -455,7 +455,7 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
         _columns(df)[j] = dv
     else
         if col_ind isa SymbolOrString
-            safe_push!(index(df), Symbol(col_ind))
+            push!(index(df), Symbol(col_ind))
             push!(_columns(df), dv)
         else
             throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))

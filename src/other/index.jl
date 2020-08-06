@@ -114,7 +114,7 @@ Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
 Base.haskey(x::Index, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 
-function safe_push!(x::Index, nm::Symbol)
+function Base.push!(x::Index, nm::Symbol)
     haskey(x.lookup, nm) && throw(ArgumentError(":$nm already exists in Index"))
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
