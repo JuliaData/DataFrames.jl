@@ -56,7 +56,7 @@ ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
     ourshow(io, summary(x), styled=styled)
 function ourshow(io::IO, x::Markdown.MD)
     r = repr(x)
-    len = min(something(findfirst(c->c=='\n', r), length(r) + 1) - 1, 50)
+    len = min(length(r, 1, something(findfirst(c->c=='\n', r), lastindex(r)+1)-1), 50)
     return print(io, len < length(r) - 1 ? first(r, len)*"…" : first(r, len))
 end
 
