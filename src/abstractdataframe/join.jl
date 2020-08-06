@@ -453,7 +453,8 @@ end
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
 passed data frames.
-The order of rows in the result undefined and may change in the future releases.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -478,8 +479,8 @@ The order of rows in the result undefined and may change in the future releases.
 - `rename` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
-  column name; alternatively a function can be used  in which case it is applied
-  to each column name, which is passed to it as a `String`.; Note that `rename`
+  column name; alternatively a function can be passed in which case it is applied
+  to each column name, which is passed to it as a `String`. Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 
