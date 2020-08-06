@@ -607,7 +607,7 @@ The order of rows in the result is undefined and may change in the future releas
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
   column name; alternatively a function can be passed in which case it is applied
-  to each column name, which is passed to it as a `String`.; Note that `rename`
+  to each column name, which is passed to it as a `String`. Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 
@@ -725,7 +725,7 @@ The order of rows in the result is undefined and may change in the future releas
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
   column name; alternatively a function can be passed in which case it is applied
-  to each column name, which is passed to it as a `String`.; Note that `rename`
+  to each column name, which is passed to it as a `String`. Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 
@@ -849,7 +849,7 @@ The order of rows in the result is undefined and may change in the future releas
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
   column name; alternatively a function can be passed in which case it is applied
-  to each column name, which is passed to it as a `String`.; Note that `rename`
+  to each column name, which is passed to it as a `String`. Note that `rename`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 
