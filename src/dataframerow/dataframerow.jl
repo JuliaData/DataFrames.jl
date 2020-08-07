@@ -21,9 +21,6 @@ You can also access the data in a `DataFrameRow` using the `getproperty` and
 `setproperty!` functions and convert it to a `Tuple`, `NamedTuple`, or `Vector`
 using the corresponding functions.
 
-It is possible to create a `DataFrameRow` with duplicate columns.
-All such columns will have a reference to the same entry in the parent `DataFrame`.
-
 If the selection of columns in a parent data frame is passed as `:` (a colon)
 then `DataFrameRow` will always have all columns from the parent,
 even if they are added or removed after its creation.
@@ -74,7 +71,7 @@ julia> Vector(df[1, :])
  1
   "a"
  1
- ```
+```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
@@ -396,14 +393,7 @@ end
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
 function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
-                    columns::Union{Nothing,Symbol}=nothing,
                     promote::Bool=(cols in [:union, :subset]))
-    if columns !== nothing
-        cols = columns
-        Base.depwarn("`columns` keyword argument is deprecated. " *
-                     "Use `cols` instead.", :push!)
-    end
-
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -498,11 +488,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                       "column names and in the same order as the target data frame"
                 throw(ArgumentError(msg))
             end
-        elseif cols === :setequal || cols === :equal
-            if cols === :equal
-                Base.depwarn("`cols == :equal` is deprecated." *
-                             "Use `:setequal` instead.", :push!)
-            end
+        elseif cols === :setequal
             msg = "Number of columns of `DataFrameRow` does not match that of " *
                   "target data frame (got $(length(dfr)) and $ncols)."
             ncols == length(dfr) || throw(ArgumentError(msg))

@@ -265,13 +265,10 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt, by, rev, orde
              to_array(order, dims))
 end
 
-#### Convert cols from tuple to Array, if necessary
-function ordering(df::AbstractDataFrame, cols::Tuple, args...)
-    Base.depwarn("Passing a tuple $cols of column selectors when sorting data " *
-                 "frame is deprecated. Pass a vector $([cols...]) instead.", :ordering)
-    return ordering(df, [cols...], args...)
-end
-
+# an explicit error is thrown as Tuple was supported in the past
+ordering(df::AbstractDataFrame, cols::Tuple, args...) =
+    throw(ArgumentError("Passing a tuple $cols of column selectors when sorting data " *
+                        "frame is not supported. Pass a vector $([cols...]) instead."))
 
 ###########################
 # Default sorting algorithm

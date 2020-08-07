@@ -8,6 +8,7 @@ name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
                 Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"])
 job = DataFrame(ID = Union{Int, Missing}[1, 2, 2, 4],
                 Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"])
+
 # Test output of various join types
 outer = DataFrame(ID = [1, 2, 2, 3, 4],
                   Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
@@ -373,8 +374,9 @@ end
 end
 
 @testset "join on columns with different left/right names" begin
-    global left = DataFrame(id = 1:7, sid = string.(1:7))
-    global right = DataFrame(ID = 3:10, SID = string.(3:10))
+    left = DataFrame(id = 1:7, sid = string.(1:7))
+    right = DataFrame(ID = 3:10, SID = string.(3:10))
+
     @test innerjoin(left, right, on = :id => :ID) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
     @test innerjoin(left, right, on = [:id => :ID]) ==
@@ -422,6 +424,8 @@ end
         DataFrame(id = 1:2, sid = string.(1:2))
     @test antijoin(left, right, on = [:id => :ID, :sid => :SID]) ==
         DataFrame(id = 1:2, sid = string.(1:2))
+
+    @test_throws ArgumentError innerjoin(left, right, on = (:id, :ID))
 end
 
 @testset "join with a column of type Any" begin
@@ -567,14 +571,14 @@ end
     @test_throws ArgumentError innerjoin(job, name, on=:ID, validate=(true, true))
     @test_throws ArgumentError innerjoin(job, job, on=:ID, validate=(true, true))
 
-    @test innerjoin(name, job, on=:ID, validate=(true, false)) ==  inner
+    @test innerjoin(name, job, on=:ID, validate=(true, false)) == inner
     @test innerjoin(name, job, on=:ID, validate=(false, false)) == inner
 
     # Make sure ok with various special values
     for special in [missing, NaN, 0.0, -0.0]
         name_w_special = DataFrame(ID = [1, 2, 3, special],
                                    Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
-        @test innerjoin(name_w_special, job, on=:ID, validate=(true, false)) ==  inner
+        @test innerjoin(name_w_special, job, on=:ID, validate=(true, false)) == inner
 
         # Make sure duplicated special values still an exception
         name_w_special_dups = DataFrame(ID = [1, 2, 3, special, special],
@@ -875,6 +879,14 @@ end
         @test issorted(dfo[nrow(dfl)+1:end, :y])
         @test all(==("right_only"), dfo[nrow(dfl)+1:end, :ind])
     end
+end
+
+@testset "removed join function" begin
+    df1 = DataFrame(id=[1,2,3], x=[1,2,3])
+    df2 = DataFrame(id=[1,2,4], y=[1,2,4])
+    df3 = DataFrame(id=[1,3,4], z=[1,3,4])
+    @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:left)
+    @test_throws ArgumentError join(df1, df2, on=:id, kind=:inner)
 end
 
 end # module

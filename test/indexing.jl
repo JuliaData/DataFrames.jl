@@ -1025,9 +1025,8 @@ end
     @test df == DataFrame(a=10:12, b=4:6, c=7:9)
     @test df.a === x
     @test_throws MethodError df[1:3, 1] = ["a", "b", "c"]
-    # TODO: enable these tests after deprecation period
-    # @test_throws ArgumentError df[1:3, 1] = [1]
-    # @test_throws ArgumentError df[1:3, 1] = 1
+    @test_throws DimensionMismatch df[1:3, 1] = [1]
+    @test_throws MethodError df[1:3, 1] = 1
     @test_throws ArgumentError df[1:3, :z] = ["a", "b", "c"]
     @test_throws ArgumentError df[1:3, "z"] = ["a", "b", "c"]
     @test_throws BoundsError df[1:3, 4] = ["a", "b", "c"]
@@ -1061,10 +1060,9 @@ end
     @test df."y" !== y
 
     @test_throws MethodError df[:, 1] = ["a", "b", "c"]
-    # TODO: enable these tests after deprecation period
-    # @test_throws ArgumentError df[:, 1] = [1]
-    # @test_throws ArgumentError df[:, 1] = 1
-    # @test_throws BoundsError df[:, 5] = ["a", "b", "c"]
+    @test_throws DimensionMismatch df[:, 1] = [1]
+    @test_throws MethodError df[:, 1] = 1
+    @test_throws MethodError df[:, 2] = ["a", "b", "c"]
     @test_throws ArgumentError df[:, 10] = ["a", "b", "c"]
 
     # `df[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
@@ -1077,7 +1075,7 @@ end
     df[1:3, 1:3] = df2
     @test df == df2
     @test df.a == x
-    @test_throws DimensionMismatch df[1:2, 1:2] = df2
+    @test_throws ArgumentError df[1:2, 1:2] = df2
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df2 = DataFrame(a=11:13, b=14:16, c=17:19)
@@ -1088,10 +1086,17 @@ end
     @test df.a == x
     @test_throws DimensionMismatch df[1:2, 1:2] = m
 
-    # TODO: add these tests after deprecation period
-    # 1. tests for LHS requiring broadcasting
-    # 2. tests for LHS data frame with right size but wrong columns
-    # 3. tests with : for rows and/or columns
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    df2 = df[!, :]
+    @test_throws MethodError df[1:2, 1:2] = 1
+    @test_throws ArgumentError df[1:2, 1:2] = DataFrame(ones(2,2))
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9)
+    df[:, :] = DataFrame(a=11:13, b=14:16, c=17:19)
+    @test df2 == DataFrame(a=11:13, b=14:16, c=17:19)
+    df[:, [1,3]] = DataFrame(a=111:113, c=117:119)
+    @test df2 == DataFrame(a=111:113, b=14:16, c=117:119)
+    df[:, 2] = 1114:1116
+    @test df2 == DataFrame(a=111:113, b=1114:1116, c=117:119)
 
     # `df[!, col] = v` -> replaces `col` with `v` without copying
     #                     (with the exception that if `v` is an `AbstractRange` it gets converted to a `Vector`);
@@ -1111,9 +1116,12 @@ end
     df.z = 11:13
     @test df == DataFrame(a=["aaa", "bbb", 1], b=4:6, c=7:9, z=11:13)
 
-    # TODO: add the following tests after deprecation
-    # 1. if `df[:, col] = v` an error is thrown if such operation is attempted).
-    # 2. it is not allowed to add a column with column index `ncol(df)+1`
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    @test_throws MethodError df[:, :a] = 1
+    @test_throws ArgumentError df[:, 4] = 1:3
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9)
+    df[:, :x] = 10:12
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, x=10:12)
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df[!, "a"] = ["a", "b", "c"]
@@ -1264,9 +1272,8 @@ end
         @test sdf == DataFrame(a=10:12, b=4:6, c=7:9)
         @test df.a === x
         @test_throws MethodError sdf[1:3, 1] = ["a", "b", "c"]
-        # TODO: enable these tests after deprecation period
-        # @test_throws ArgumentError sdf[1:3, 1] = [1]
-        # @test_throws ArgumentError sdf[1:3, 1] = 1
+        @test_throws DimensionMismatch sdf[1:3, 1] = [1]
+        @test_throws MethodError sdf[1:3, 1] = 1
         @test_throws ArgumentError sdf[1:3, :z] = ["a", "b", "c"]
         @test_throws BoundsError sdf[1:3, 4] = ["a", "b", "c"]
     end
@@ -1293,9 +1300,8 @@ end
         @test_throws MethodError sdf[:, 1] = ["a", "b", "c"]
         @test_throws ArgumentError sdf[:, :z] = ["a", "b", "c"]
         @test_throws BoundsError sdf[:, 4] = ["a", "b", "c"]
-        # TODO: enable these tests after deprecation period
-        # @test_throws ArgumentError sdf[:, 1] = [1]
-        # @test_throws ArgumentError sdf[:, 1] = 1
+        @test_throws DimensionMismatch sdf[:, 1] = [1]
+        @test_throws MethodError sdf[:, 1] = 1
     end
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -1321,7 +1327,7 @@ end
         sdf[1:3, 1:3] = df2
         @test sdf == df2
         @test df.a == x
-        @test_throws DimensionMismatch sdf[1:2, 1:2] = df2
+        @test_throws ArgumentError sdf[1:2, 1:2] = df2
 
         df = DataFrame(a=1:3, b=4:6, c=7:9)
         sdf = view(df, row_sel, col_sel)
@@ -1333,10 +1339,10 @@ end
         @test sdf.a == x
         @test_throws DimensionMismatch df[1:2, 1:2] = m
 
-        # TODO: add these tests after deprecation period
-        # 1. tests for LHS requiring broadcasting
-        # 2. tests for LHS data frame with right size but wrong columns
-        # 3. tests with : for rows and/or columns
+        @test_throws MethodError sdf[row_sel, col_sel] = 1
+        @test_throws ArgumentError sdf[row_sel, col_sel] = DataFrame(ones(3, 3))
+        @test (sdf[row_sel, col_sel] = df2) == df2
+        @test df == df2
     end
 
     # Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
@@ -1346,8 +1352,7 @@ end
         @test_throws ArgumentError sdf[!, 1] = [1,2,3]
         @test_throws ArgumentError sdf[!, "a"] = [1,2,3]
         @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
-        # TODO: add this test after deprecation period
-        # @test_throw ArgumentError sdf[!, 1] = [1,2,3]
+        @test_throws ArgumentError sdf[!, 1] = [1,2,3]
     end
 end
 
@@ -1698,8 +1703,125 @@ end
     end
 end
 
+@testset "setindex! for DataFrameRow" begin
+    for selector in ([:y2, :y1], [4, 2])
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] = [100, 200]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] .= [100, 200]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+    end
+
+    for selector in ([:y1, :y2], [2, 4], r"y", Not([:x, :z]))
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] = [200, 100]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+
+        df = DataFrame(x=1:2, y1=3:4, z=5:6, y2=7:8)
+        df[1, selector] .= [200, 100]
+        @test df == DataFrame(x=1:2, y1=[200, 4], z=5:6, y2=[100, 8])
+    end
+end
+
+@testset "setindex! for ncols(df)+1 and old tests" begin
+    df = DataFrame()
+    @test_throws ArgumentError df[:, 1] = 1:3
+
+    df = DataFrame(a = 1:3)
+    @test_throws DimensionMismatch df[1:2, 1] = 1:3
+    @test_throws ArgumentError df[1:2, 1:1] = DataFrame(b = 1:2)
+end
+
 if VERSION >= v"1.4"
     include("indexing_begin_tests.jl")
+end
+
+@testset "unsupported df[col] and df[col] for getindex, view, and setindex!" begin
+    @testset "getindex DataFrame" begin
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        @test_throws MethodError df[1]
+        @test_throws MethodError df[end]
+        @test_throws MethodError df[1:2]
+        @test_throws MethodError df[r"[ab]"]
+        @test_throws MethodError df[Not(3)]
+        @test_throws MethodError df[:]
+        @test_throws MethodError df[:a]
+        @test_throws MethodError df["a"]
+    end
+    @testset "view DataFrame" begin
+        df = DataFrame(a=1:3, b=4:6, c=7:9)
+        @test_throws MethodError view(df, 1)
+        @test_throws MethodError view(df, :a)
+        @test_throws MethodError view(df, "a")
+        @test_throws MethodError view(df, 1:2)
+        @test_throws MethodError view(df, r"[ab]")
+        @test_throws MethodError view(df, Not(Not(r"[ab]")))
+        @test_throws MethodError view(df, :)
+    end
+    @testset "getindex SubDataFrame" begin
+        df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
+        sdf = view(df, 2:4, 2:4)
+        @test_throws MethodError sdf[1]
+        @test_throws MethodError sdf[end]
+        @test_throws MethodError sdf["x"]
+        @test_throws MethodError sdf[:x]
+        @test_throws MethodError sdf[1:2]
+        @test_throws MethodError sdf[r"[ab]"]
+        @test_throws MethodError sdf[Not(Not(r"[ab]"))]
+        @test_throws MethodError sdf[:]
+    end
+    @testset "view SubDataFrame" begin
+        df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
+        sdf = view(df, 2:4, 2:4)
+        @test_throws MethodError view(sdf, 1)
+        @test_throws MethodError view(sdf, :a)
+        @test_throws MethodError view(sdf, "a")
+        @test_throws MethodError view(sdf, 1:2)
+        @test_throws MethodError view(sdf, r"[ab]")
+        @test_throws MethodError view(sdf, Not(Not(r"[ab]")))
+        @test_throws MethodError view(sdf, :)
+    end
+
+    @testset "old setindex! tests" begin
+        df = DataFrame(reshape(1:12, 4, :))
+        @test_throws MethodError df[1, :] = df[1:1, :]
+
+        df = DataFrame(reshape(1:12, 4, :))
+
+        # Scalar broadcasting assignment of rows
+        @test_throws MethodError df[1:2, :] = 1
+        @test_throws MethodError df[[true,false,false,true], :] = 3
+
+        # Vector broadcasting assignment of rows
+        @test_throws MethodError df[1:2, :] = [2,3]
+        @test_throws MethodError df[[true,false,false,true], :] = [2,3]
+
+        # Broadcasting assignment of columns
+        @test_throws MethodError df[:, 1] = 1
+        @test_throws MethodError df[:x3] = 2
+
+        # assignment of subtables
+        @test_throws MethodError df[1, 1:2] = df[2:2, 2:3]
+        @test_throws ArgumentError df[[true,false,false,true], 2:3] = df[1:2,1:2]
+
+        # this is a different case - column names do not match
+        @test_throws ArgumentError df[1:2, 1:2] = df[2:3, 2:3]
+
+        # scalar broadcasting assignment of subtables
+        @test_throws MethodError df[1:2, 1:2] = 3
+        @test_throws MethodError df[[true,false,false,true], 2:3] = 3
+
+        # vector broadcasting assignment of subtables
+        @test_throws MethodError df[1:2, 1:2] = [3,2]
+        @test_throws MethodError df[[true,false,false,true], 2:3] = [2,3]
+
+        # test of 1-row DataFrame assignment
+        df = DataFrame([1 2 3])
+        @test_throws MethodError df[1, 2:3] = DataFrame([11 12])
+        @test_throws MethodError df[1, [false, true, true]] = DataFrame([11 12])
+    end
 end
 
 end # module

@@ -53,6 +53,15 @@ Tables.schema(x::DuplicateNamesColumnTable) = Tables.Schema((:a, :a, :b), Tuple{
 Base.getproperty(d::DuplicateNamesColumnTable, nm::Symbol) = [1.0, 2.0, 3.0]
 Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
 
+struct EmptyTableWithNames <: AbstractVector{Any}
+end
+Tables.isrowtable(::Type{EmptyTableWithNames}) = true
+Tables.rows(x::EmptyTableWithNames) = x
+Tables.schema(x::EmptyTableWithNames) = Tables.Schema((:a, :b, :c), Tuple{Float64, String, Float64})
+Base.size(x::EmptyTableWithNames) = (0,)
+Base.eltype(x::EmptyTableWithNames) = NamedTuple
+Base.iterate(x::EmptyTableWithNames, st=1) = nothing
+
 @testset "Tables" begin
     df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
@@ -159,13 +168,19 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test ct.b !== cat2
         @test ct.a == cat
         @test ct.b == cat == cat2
+
+        # https://github.com/JuliaData/CSV.jl/issues/702
+        df = DataFrame(EmptyTableWithNames())
+        @test size(df) == (0, 3)
+        @test names(df) == ["a", "b", "c"]
+        @test eltype.(eachcol(df)) == [Float64, String, Float64]
     end
 end
 
-@testset "DataFrame!" begin
+@testset "DataFrame without copying cols" begin
     nt = (a=Int64[1, 2, 3], b=[:a, :b, :c])
-    df1 = DataFrame!(nt)
-    df2 = DataFrame!(df1)
+    df1 = DataFrame(nt, copycols=false)
+    df2 = DataFrame(df1, copycols=false)
     df3 = DataFrame(nt)
     @test Tables.columntable(df1) === nt
     @test Tables.columntable(df2) === nt
@@ -178,7 +193,6 @@ end
     @test df.a == [1, 3]
     @test df.b == [2, 4]
     @test DataFrame(v, copycols=false) == DataFrame(v, copycols=true) == df
-    @test_throws ArgumentError DataFrame!(v)
 end
 
 @testset "columnindex" begin
@@ -196,7 +210,7 @@ end
     @test df == df2
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-    df2 = DataFrame!(eachrow(df))
+    df2 = DataFrame(eachrow(df), copycols=false)
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
@@ -204,7 +218,7 @@ end
     @test df == df2
     @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
-    df2 = DataFrame!(pairs(eachcol(df)))
+    df2 = DataFrame(pairs(eachcol(df)), copycols=false)
     @test df == df2
     @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 

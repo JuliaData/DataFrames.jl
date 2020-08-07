@@ -28,16 +28,14 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
             elseif v isa Union{Pair{Symbol,Symbol},
-                               Pair{<:AbstractString, <:AbstractString},
-                               NTuple{2,Symbol}}
+                               Pair{<:AbstractString, <:AbstractString}}
                 push!(left_on, Symbol(first(v)))
                 push!(right_on, Symbol(last(v)))
-                if v isa NTuple{2,Symbol}
-                    Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
-                                 "such tuples as a value of `on` keyword argument is " *
-                                 "deprecated: use `Pair{Symbol,Symbol}` instead.", :join)
-
-                end
+            elseif v isa NTuple{2,Symbol}
+                # an explicit error is thrown as Tuple{Symbol, Symbol} was supported in the past
+                throw(ArgumentError("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
+                                    "such tuples as a value of `on` keyword argument is " *
+                                    "not supported: use `Pair{Symbol,Symbol}` instead."))
             else
                 throw(ArgumentError("All elements of `on` argument to `join` must be " *
                                     "Symbol or Pair{Symbol,Symbol}."))
@@ -1207,3 +1205,12 @@ end
 crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           makeunique::Bool=false) =
     crossjoin(crossjoin(df1, df2, makeunique=makeunique), dfs..., makeunique=makeunique)
+
+# an explicit error is thrown as join was supported in the past
+Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          kind::Symbol = :inner, makeunique::Bool=false,
+          indicator::Union{Nothing, Symbol} = nothing,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    throw(ArgumentError("join function for data frames is not supported. Use innerjoin, " *
+                        "leftjoin, rightjoin, outerjoin, semijoin, antijoin, or crossjoin"))

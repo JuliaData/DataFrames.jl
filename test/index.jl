@@ -7,6 +7,7 @@ using DataFrames: Index, SubIndex, fuzzymatch
     i = Index()
     push!(i, :A)
     push!(i, :B)
+    @test_throws ArgumentError push!(i, :A)
 
     inds = Any[1, big(1), :A, "A",
                [true, false],

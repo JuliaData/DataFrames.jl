@@ -187,7 +187,7 @@ julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "N
 │ 4   │ New York  │ Doctor │ d      │
 │ 5   │ New York  │ Doctor │ e      │
 
-julia> innerjoin(a, b, on = [(:City, :Location), (:Job, :Work)])
+julia> innerjoin(a, b, on = [:City => :Location, :Job => :Work])
 9×4 DataFrame
 │ Row │ City      │ Job    │ Category │ Name   │
 │     │ String    │ String │ Int64    │ String │
