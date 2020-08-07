@@ -424,7 +424,7 @@ function printtable(io::IO,
                 if df[i,j] isa Markdown.MD
                     print(io, quotemark)
                     r=repr(df[i,j])
-                    escapedprint(io, first(r,max(0,length(r)-1)), quotestr)
+                    escapedprint(io, chomp(r), quotestr)
                     print(io, quotemark)
                 elseif ! (etypes[j] <: Real)
                     print(io, quotemark)
