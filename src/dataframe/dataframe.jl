@@ -764,6 +764,7 @@ function insertcols!(df::DataFrame, col_ind::Int=ncol(df)+1; makeunique::Bool=fa
                             "$(ncol(df)) columns at index $col_ind"))
     end
     if !isempty(name_cols)
+        # an explicit error is thrown as keyword argument was supported in the past
         throw(ArgumentError("inserting colums using a keyword argument is not supported," *
                             " pass a Pair as a positional argument instead"))
     end
@@ -1365,6 +1366,7 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
         # Only check for equal lengths if :setequal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
+            # an explicit error is thrown as this was allowed in the past
             throw(ArgumentError("`push!` with `cols` equal to `:setequal`" *
                                 "requires `row` to have the same number of elements " *
                                 "as the number of columns in `df`."))
@@ -1518,6 +1520,7 @@ julia> push!(df, NamedTuple(), cols=:subset)
 """
 function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
     if !(row isa Union{Tuple, AbstractArray})
+        # an explicit error is thrown as this was allowed in the past
         throw(ArgumentError("`push!` does not allow passing collections of type" *
                             " $(typeof(row)) to be pushed into a DataFrame. Only" *
                             " `Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow`" *

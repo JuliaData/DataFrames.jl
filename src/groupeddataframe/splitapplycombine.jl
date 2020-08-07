@@ -458,6 +458,7 @@ function combine(p::Pair, gd::GroupedDataFrame;
 
     if p_from isa Tuple
         cs = collect(p_from)
+        # an explicit error is thrown as this was allowed in the past
         throw(ArgumentError("passing a Tuple $p_from as column selector is not supported" *
                             ", use a vector $cs instead"))
     else
@@ -489,6 +490,7 @@ function _combine_prepare(gd::GroupedDataFrame,
     end
     if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
         x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
+        # an explicit error is thrown as this was allowed in the past
         throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not supported" *
                             ", use a vector $(collect(first(x))) instead"))
         for (i, v) in enumerate(cs_vec)
