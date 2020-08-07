@@ -33,7 +33,7 @@
 
 * `DataFrame!` is now deprecated ([#2338](https://github.com/JuliaData/DataFrames.jl/pull/2338))
 * all old deprecations now throw an error
-  (NOT MERGED YET [#2350](https://github.com/JuliaData/DataFrames.jl/pull/2350))
+  ([#2350](https://github.com/JuliaData/DataFrames.jl/pull/2350))
 
 ## Dependency changes
 
