@@ -1,5 +1,8 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
+We follow the ColPrac guide for collaborative practices. New contributor should make sure to read that guide.
+Following here are some additional clarifications and practices we follow.
+
 Thanks for taking the plunge!
 
 ## Reporting Issues
