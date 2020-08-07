@@ -29,6 +29,8 @@ Thanks for taking the plunge!
 * The style guidelines outlined below are not the personal style of most contributors,
   but for consistency throughout the project, we've adopted them
 * It is recommended to disable GitHub Actions on your fork; check Settings > Actions
+* If a PR adds a new exported name then make sure to add a docstring for it and
+  add a reference to it in the documentation
 * A PR with breaking changes should have `[BREAKING]` as a first part of its name
 * If a PR changes or adds functionality please update NEWS.md file accordingly as
   a part of the PR (along with the link to the PR); please do not add entries
