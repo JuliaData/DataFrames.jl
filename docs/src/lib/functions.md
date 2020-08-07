@@ -33,6 +33,11 @@ rename
 rename!
 ```
 
+## Working with views
+```@docs
+    rownumber
+```
+
 ## Mutating and transforming data frames and grouped data frames
 ```@docs
 append!

@@ -76,17 +76,19 @@ julia> Vector(df[1, :])
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
     colindex::S
-    row::Int
+    row::Int # row number in true parent DataFrame
+    rownumber::Int # row number in the direct source
 
-    @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where
-        {D<:AbstractDataFrame,S<:AbstractIndex} = new{D,S}(df, colindex, row)
+    @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned},
+                         rownumber::Union{Signed, Unsigned}) where
+        {D<:AbstractDataFrame,S<:AbstractIndex} = new{D,S}(df, colindex, row, rownumber)
 end
 
 Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
         throw(BoundsError(df, (row, cols)))
     end
-    DataFrameRow(df, SubIndex(index(df), cols), row)
+    DataFrameRow(df, SubIndex(index(df), cols), row, row)
 end
 
 Base.@propagate_inbounds DataFrameRow(df::DataFrame, row::Bool, cols) =
@@ -101,7 +103,7 @@ Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, 
     else
         colindex = SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
     end
-    @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
+    @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row], row)
 end
 
 Base.@propagate_inbounds DataFrameRow(df::SubDataFrame, row::Bool, cols) =
@@ -111,6 +113,82 @@ Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
     DataFrameRow(df, row, :)
 
 row(r::DataFrameRow) = getfield(r, :row)
+
+"""
+    rownumber(dfr::DataFrameRow)
+
+Return a row number in the `AbstractDataFrame` that `dfr` was created from.
+
+Note that this differs from the fist element in a tuple retuned by
+`parentindices` which gives a row number in the `parent(dfr)` which is
+a source `DataFrame` where data that `dfr` gives access to is stored.
+
+# Examples
+```julia
+julia> df = DataFrame(reshape(1:12, 3, 4))
+3×4 DataFrame
+│ Row │ x1    │ x2    │ x3    │ x4    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 7     │ 10    │
+│ 2   │ 2     │ 5     │ 8     │ 11    │
+│ 3   │ 3     │ 6     │ 9     │ 12    │
+
+julia> dfr = df[2, :]
+DataFrameRow
+│ Row │ x1    │ x2    │ x3    │ x4    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 2   │ 2     │ 5     │ 8     │ 11    │
+
+julia> rownumber(dfr)
+2
+
+julia> parentindices(dfr)
+(2, Base.OneTo(4))
+
+julia> parent(dfr)
+3×4 DataFrame
+│ Row │ x1    │ x2    │ x3    │ x4    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 7     │ 10    │
+│ 2   │ 2     │ 5     │ 8     │ 11    │
+│ 3   │ 3     │ 6     │ 9     │ 12    │
+
+julia> dfv = @view df[2:3, 1:3]
+2×3 SubDataFrame
+│ Row │ x1    │ x2    │ x3    │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 5     │ 8     │
+│ 2   │ 3     │ 6     │ 9     │
+
+julia> dfrv = dfv[2, :]
+DataFrameRow
+│ Row │ x1    │ x2    │ x3    │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 3   │ 3     │ 6     │ 9     │
+
+julia> rownumber(dfrv)
+2
+
+julia> parentindices(dfrv)
+(3, 1:3)
+
+julia> parent(dfrv)
+3×4 DataFrame
+│ Row │ x1    │ x2    │ x3    │ x4    │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 7     │ 10    │
+│ 2   │ 2     │ 5     │ 8     │ 11    │
+│ 3   │ 3     │ 6     │ 9     │ 12    │
+```
+"""
+rownumber(r::DataFrameRow) = getfield(r, :rownumber)
+
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
@@ -129,8 +207,12 @@ Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, :
     DataFrameRow(df, rowind, :)
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
-Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::MultiColumnIndex) =
-    DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
+
+Base.@propagate_inbounds function Base.getindex(r::DataFrameRow, idxs::MultiColumnIndex)
+    dfr_tmp = DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
+    return DataFrameRow(parent(dfr_tmp), index(dfr_tmp), row(r), rownumber(r))
+end
+
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
 for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
@@ -213,8 +295,12 @@ Base.propertynames(r::DataFrameRow, private::Bool=false) = copy(_names(r))
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::MultiColumnIndex) =
-    DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
+
+function Base.view(r::DataFrameRow, cols::MultiColumnIndex)
+    dfr_tmp = DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
+    return DataFrameRow(parent(dfr_tmp), index(dfr_tmp), row(r), rownumber(r))
+end
+
 Base.view(r::DataFrameRow, ::Colon) = r
 
 """
