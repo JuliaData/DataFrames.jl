@@ -1,19 +1,36 @@
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+
 Thanks for taking the plunge!
 
 ## Reporting Issues
 
-* It's always good to start with a quick search for an existing issue to post on, or related issues for context, before opening a new issue
-* Including minimal examples is greatly appeciated
-* If it's a bug, or unexpected behaviour, reproducing on the latest development version (`Pkg.checkout("DataFrames")`) is a good gut check and can streamline the process, along with including the first two lines of output from `versioninfo()`
+* It's always good to start with a quick search for an existing issue to post on,
+  or related issues for context, before opening a new issue
+* Including minimal examples is greatly appreciated
+* If it's a bug, or unexpected behaviour, reproducing on the latest development version
+  (`Pkg.checkout("DataFrames")`) is a good gut check and can streamline the process,
+  along with including the first two lines of output from `versioninfo()`
 
 ## Contributing
 
-* Feel free to open, or comment on, an issue and solicit feedback early on, especially if you're unsure about aligning with design goals and direction, or if relevant historical comments are ambiguous
-* Pair new functionality with tests, and bug fixes with tests that fail pre-fix. Increasing test coverage as you go is always nice
-* Aim for atomic commits, if possible, e.g. `change 'foo' behavior like so` & `'bar' handles such and such corner case`, rather than `update 'foo' and 'bar'` & `fix typo` & `fix 'bar' better`
-* Pull requests are tested against release and development branches of Julia, so using `Pkg.test("DataFrames")` as you develop can be helpful
-* The style guidelines outlined below are not the personal style of most contributors, but for consistency throughout the project, we've adopted them
+* Feel free to open, or comment on, an issue and solicit feedback early on,
+  especially if you're unsure about aligning with design goals and direction,
+  or if relevant historical comments are ambiguous
+* Pair new functionality with tests, and bug fixes with tests that fail pre-fix.
+  Increasing test coverage as you go is always nice
+* Aim for atomic commits, if possible, e.g. `change 'foo' behavior like so` &
+  `'bar' handles such and such corner case`,
+  rather than `update 'foo' and 'bar'` & `fix typo` & `fix 'bar' better`
+* Pull requests are tested against release and development branches of Julia,
+  so using `Pkg.test("DataFrames")` as you develop can be helpful
+* The style guidelines outlined below are not the personal style of most contributors,
+  but for consistency throughout the project, we've adopted them
 * It is recommended to disable GitHub Actions on your fork; check Settings > Actions
+* A PR with breaking changes should have `[BREAKING]` as a first part of its name
+* If a PR changes or adds functionality please update NEWS.md file accordingly as
+  a part of the PR (along with the link to the PR); please do not add entries
+  to NEWS.md for changes that are bug fixes or are not user visible, such as
+  adding tests, updating documentation or improving code layout
 
 ## Style Guidelines
 

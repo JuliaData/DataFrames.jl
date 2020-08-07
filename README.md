@@ -12,6 +12,8 @@ Tools for working with tabular data in Julia.
 
 **Reporting Issues and Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+
 **Maintenance**: DataFrames is maintained collectively by the [JuliaData collaborators](https://github.com/orgs/JuliaData/people).
 Responsiveness to pull requests and issues can vary, depending on the availability of key collaborators.
 
