@@ -513,4 +513,13 @@ end
     end
 end
 
+@testset "removed constructors" begin
+    @test_throws MethodError DataFrame(Union{Int, Missing}, 10, 3)
+    @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
+    @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                                       [:A, :B, :C], [false, false, true], 100)
+    @test_throws MethodError DataFrame([Int, String], [:a, :b], [false, true], 3)
+    @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
+end
+
 end # module

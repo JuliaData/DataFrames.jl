@@ -458,15 +458,7 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
             push!(index(df), Symbol(col_ind))
             push!(_columns(df), dv)
         else
-            if ncol(df) + 1 == Int(col_ind)
-                Base.depwarn("In the future setindex! will disallow adding columns" *
-                             " to a DataFrame using integer index. " *
-                             "Use a Symbol to specify a column name instead.", :setindex!)
-                push!(index(df), nextcolname(df))
-                push!(_columns(df), dv)
-            else
-                throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
-            end
+            throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
         end
     end
     return dv
@@ -544,13 +536,7 @@ for T in (:AbstractVector, :Not, :Colon)
             return df
         end
         x = df[!, col_ind]
-        try
-            x[row_inds] = v
-        catch
-            insert_multiple_entries!(df, v, axes(df, 1)[row_inds], col_ind)
-            Base.depwarn("implicit vector broadcasting in setindex! is deprecated; " *
-                         "write `df[row_inds, col_ind] .= v` instead", :setindex!)
-        end
+        x[row_inds] = v
         return df
     end
 end
@@ -563,12 +549,11 @@ for T1 in (:AbstractVector, :Not, :Colon),
                                   row_inds::$T1,
                                   col_inds::$T2)
         idxs = index(df)[col_inds]
+        if view(_names(df), idxs) != _names(new_df)
+            throw(ArgumentError("column names in source and target do not match"))
+        end
         for (j, col) in enumerate(idxs)
             df[row_inds, col] = new_df[!, j]
-        end
-        if view(_names(df), idxs) != _names(new_df)
-            Base.depwarn("in the future column names in source and target will " *
-                         "have to match", :setindex!)
         end
         return df
     end
@@ -772,6 +757,19 @@ insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString,<:Any}...;
             makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, (Symbol(n) => v for (n,v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
+
+function insertcols!(df::DataFrame, col_ind::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
+    if !(0 < col_ind <= ncol(df) + 1)
+        throw(ArgumentError("attempt to insert a column to a data frame with " *
+                            "$(ncol(df)) columns at index $col_ind"))
+    end
+    if !isempty(name_cols)
+        # an explicit error is thrown as keyword argument was supported in the past
+        throw(ArgumentError("inserting colums using a keyword argument is not supported," *
+                            " pass a Pair as a positional argument instead"))
+    end
+    return df
+end
 
 """
     copy(df::DataFrame; copycols::Bool=true)
@@ -1274,13 +1272,7 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                     cols::Symbol=:setequal,
-                    columns::Union{Nothing,Symbol}=nothing,
                     promote::Bool=(cols in [:union, :subset]))
-    if columns !== nothing
-        cols = columns
-        Base.depwarn("`columns` keyword argument is deprecated. " *
-                     "Use `cols` instead. ", :push!)
-    end
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -1370,17 +1362,14 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                                 "have the same column names and in the" *
                                 " same order as the target data frame"))
         end
-    elseif cols == :setequal || cols === :equal
-        if cols == :equal
-            Base.depwarn("`cols == :equal` is deprecated." *
-                         "Use `:setequal` instead.", :push!)
-        end
+    elseif cols === :setequal
         # Only check for equal lengths if :setequal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
-            Base.depwarn("In the future `push!` with `cols` equal to `:setequal`" *
-                         "will require `row` to have the same number of elements " *
-                         "as is the number of columns in `df`.", :push!)
+            # an explicit error is thrown as this was allowed in the past
+            throw(ArgumentError("`push!` with `cols` equal to `:setequal`" *
+                                "requires `row` to have the same number of elements " *
+                                "as the number of columns in `df`."))
         end
     end
     current_col = 0
@@ -1531,10 +1520,11 @@ julia> push!(df, NamedTuple(), cols=:subset)
 """
 function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
     if !(row isa Union{Tuple, AbstractArray})
-        Base.depwarn("In the future `push!` will not allow passing collections " *
-                     "of type $(typeof(row)) to be pushed into a DataFrame. " *
-                     "Only `Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow`" *
-                     " and `NamedTuple` will be allowed.", :push!)
+        # an explicit error is thrown as this was allowed in the past
+        throw(ArgumentError("`push!` does not allow passing collections of type" *
+                            " $(typeof(row)) to be pushed into a DataFrame. Only" *
+                            " `Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow`" *
+                            " and `NamedTuple` are allowed."))
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1

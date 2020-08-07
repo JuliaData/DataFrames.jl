@@ -1394,9 +1394,10 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                                 "have the same column names and be in the same order"))
         end
     elseif cols === :setequal || cols === :equal
+        # an explicit error is thrown as :equal was supported in the past
         if cols === :equal
-            Base.depwarn("`cols=:equal` is deprecated." *
-                         "Use `:setequal` instead.", :vcat)
+            throw(ArgumentError("`cols=:equal` is not supported. " *
+                                "Use `:setequal` instead."))
         end
 
         header = unionunique

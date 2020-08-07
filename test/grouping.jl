@@ -2294,9 +2294,8 @@ end
 
     @test size(combine(gdf)) == (0, 1)
     @test names(combine(gdf)) == ["g"]
-    # TODO: uncomment tests for keepkeys and ungroup after deprecation
-    # @test combine(gdf, keepkeys=false) == DataFrame()
-    # @test combine(gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
+    @test combine(gdf, keepkeys=false) == DataFrame()
+    @test combine(gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
     @test size(select(gdf)) == (0, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
@@ -2340,7 +2339,10 @@ end
 
     @test size(combine(gdf)) == (0, 1)
     @test names(combine(gdf)) == ["g"]
-    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test combine(gdf, ungroup=false) isa GroupedDataFrame
+    @test length(combine(gdf, ungroup=false)) == 0
+    @test parent(combine(gdf, ungroup=false)) == DataFrame(g=[])
+    @test combine(gdf, keepkeys=false) == DataFrame()
     @test size(select(gdf)) == (1, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
@@ -2373,7 +2375,10 @@ end
     @test names(combine(gdf)) == ["g"]
     @test size(combine(x -> DataFrame(z=1), gdf)) == (0, 2)
     @test names(combine(x -> DataFrame(z=1), gdf)) == ["g", "z"]
-    # TODO: add tests for keepkeys and ungroup after deprecation
+    @test combine(x -> DataFrame(z=1), gdf, keepkeys=false) == DataFrame(z=[])
+    @test combine(x -> DataFrame(z=1), gdf, ungroup=false) isa GroupedDataFrame
+    @test isempty(combine(x -> DataFrame(z=1), gdf, ungroup=false))
+    @test parent(combine(x -> DataFrame(z=1), gdf, ungroup=false)) == DataFrame(g=[], z=[])
     @test_throws ArgumentError select(gdf)
     @test_throws ArgumentError transform(gdf)
 
@@ -2671,6 +2676,19 @@ end
 
     # in the future this should be DataFrame(a=1,b=2)
     @test_throws ArgumentError combine(sdf -> DataFrame(a=1,b=2), df)
+end
+
+@testset "disallowed tuple column selector" begin
+    df = DataFrame(g=1:3)
+    gdf = groupby(df, :g)
+    @test_throws ArgumentError combine((:g, :g) => identity, gdf)
+    @test_throws ArgumentError combine(gdf, (:g, :g) => identity)
+end
+
+@testset "new map behavior" begin
+    df = DataFrame(g=[1,2,3])
+    gdf = groupby(df, :g)
+    @test map(nrow, gdf) == [1, 1, 1]
 end
 
 end # module

@@ -1,5 +1,5 @@
 # TODO:
-# * add select/select!/transform/transform! for GroupedDataFrame
+# * add combine(fun, df) for DataFrame with 0 rows
 
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms

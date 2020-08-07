@@ -247,9 +247,9 @@ end
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
     @test_throws ArgumentError insertcols!(df, 10, :a => [11,12], makeunique=true)
 
-    # TODO: re-enable this test after the deprecation; this should be no-op
-    # (it only should check if `2` is in range)
-    # @test_throws ArgumentError insertcols!(df, 2)
+    dfc = copy(df)
+    @test insertcols!(df, 2) == dfc
+    @test_throws ArgumentError insertcols!(df, 10)
     @test_throws ArgumentError insertcols!(df, 2, a=1, b=2)
 
     df = DataFrame()
@@ -330,6 +330,11 @@ end
     df = DataFrame(c=1:3)
     insertcols!(df, 1, :a => Ref(1), :b => fill(1))
     @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+end
+
+@testset "unsupported insertcols!" begin
+    df = DataFrame(x = 1:2)
+    @test_throws ArgumentError insertcols!(df, 2, y=2:3)
 end
 
 @testset "DataFrame constructors" begin
@@ -554,7 +559,7 @@ end
     push!(df, (1, 2))
     @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
 
-    @test_logs (:warn, r"In the future `push!` will not allow passing collections of type") push!(df, "ab")
+    @test_throws ArgumentError push!(df, "ab")
 end
 
 @testset "delete!" begin
@@ -1775,9 +1780,8 @@ end
     @view dfv[!, All()]
     @view dfv[!, Between(1,2)]
 
-# TODO: enable after setindex! rules update
-#    dfv[1, All()] = (a=1, b=2, c=3)
-#    dfv[1, Between(1,2)] = (a=1, b=2)
+    dfv[1, All()] = (a=1, b=2, c=3)
+    dfv[1, Between(1,2)] = (a=1, b=2)
     dfv[1:1, All()] = df
     dfv[1:1, Between(1,2)] = df[!, 1:2]
     dfv[:, All()] = df
@@ -1815,6 +1819,8 @@ end
 
     @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
                cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
+                                    cols=:equal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
                                     cols=:orderequal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, d=30),
@@ -2017,6 +2023,12 @@ end
             @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1,missing])
         end
     end
+end
+
+@testset "push! with :setequal and wrong number of entries" begin
+    df = DataFrame(a=1:3)
+    @test_throws ArgumentError push!(df, (a=10, b=20))
+    @test_throws ArgumentError push!(df, "a")
 end
 
 end # module
