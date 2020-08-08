@@ -21,6 +21,7 @@ length
 ncol
 ndims
 nrow
+rownumber
 show
 size
 ```
@@ -31,11 +32,6 @@ names
 propertynames
 rename
 rename!
-```
-
-## Working with views
-```@docs
-rownumber
 ```
 
 ## Mutating and transforming data frames and grouped data frames
