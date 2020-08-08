@@ -35,7 +35,7 @@ rename!
 
 ## Working with views
 ```@docs
-    rownumber
+rownumber
 ```
 
 ## Mutating and transforming data frames and grouped data frames

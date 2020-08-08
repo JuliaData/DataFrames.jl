@@ -119,9 +119,9 @@ row(r::DataFrameRow) = getfield(r, :row)
 
 Return a row number in the `AbstractDataFrame` that `dfr` was created from.
 
-Note that this differs from the fist element in a tuple retuned by
-`parentindices` which gives a row number in the `parent(dfr)` which is
-a source `DataFrame` where data that `dfr` gives access to is stored.
+Note that this differs from the first element in the tuple returned by
+[`parentindices`](@ref). The latter gives the row number in the `parent(dfr)`, which is
+the source `DataFrame` where data that `dfr` gives access to is stored.
 
 # Examples
 ```julia
