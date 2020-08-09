@@ -27,7 +27,7 @@
 * add new functions to `GroupKey` API to make it more consistent with `DataFrameRow`
   ([#2308](https://github.com/JuliaData/DataFrames.jl/pull/2308))
 * allow column renaming in joins
-  (NOT MERGED YET [#2313](https://github.com/JuliaData/DataFrames.jl/pull/2313)
+  ([#2313](https://github.com/JuliaData/DataFrames.jl/pull/2313)
 
 ## Deprecated
 
