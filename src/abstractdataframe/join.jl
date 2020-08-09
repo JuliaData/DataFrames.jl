@@ -69,6 +69,45 @@ _rename_cols(old_names::AbstractVector{Symbol},
            (rename isa Function ? Symbol(rename(string(n))) : Symbol(n, rename))
            for n in old_names]
 
+@inline getrow_tuple(r::Int, v::AbstractVector) = @inbounds (v[r],)
+@inline getrow_tuple(r::Int, v::AbstractVector, vs::AbstractVector...) =
+    @inbounds (v[r], getrow_tuple(r, vs...)...)
+
+function innerjoin_rows(left, right)
+    res = SplitApplyCombine.innerjoin(x->getrow_tuple(x, left...), x->getrow_tuple(x, right...),
+                                tuple, 1:length(left[1]), 1:length(right[1]))
+    return getindex.(res, 1), getindex.(res, 2)
+end
+
+function compose_inner_table(joiner::DataFrameJoiner,
+                             left_ixs::Vector{Int},
+                             right_ixs::Vector{Int},
+                             makeunique::Bool,
+                             left_rename::Union{Function, AbstractString, Symbol},
+                             right_rename::Union{Function, AbstractString, Symbol})
+    @assert length(left_ixs) == length(right_ixs)
+
+    dfl = joiner.dfl[left_ixs, :]
+    dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+
+    ncleft = ncol(dfl)
+    cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
+
+    for (i, col) in enumerate(eachcol(dfl))
+        cols[i] = col
+    end
+    for (i, col) in enumerate(eachcol(dfr_noon))
+        cols[i+ncleft] = col
+    end
+
+    new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
+                     _rename_cols(_names(dfr_noon), right_rename))
+    res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
+
+    return res, nothing, nothing
+end
+
+
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
                               right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap,
@@ -358,12 +397,11 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     left_indicator, right_indicator = nothing, nothing
     if kind == :inner
-        inner_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                          group_rows(joiner.dfr_on),
-                                          true, false, true, false)
+        inner_row_maps = innerjoin_rows(Tuple(eachcol(joiner.dfl_on)),
+                                        Tuple(eachcol(joiner.dfr_on)))
         joined, left_indicator, right_indicator =
-            compose_joined_table(joiner, kind, inner_row_maps...,
-                                 makeunique, left_rename, right_rename, nothing)
+            compose_inner_table(joiner, inner_row_maps...,
+                                makeunique, left_rename, right_rename)
     elseif kind == :left
         left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                          group_rows(joiner.dfr_on),
