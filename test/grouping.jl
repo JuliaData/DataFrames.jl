@@ -2730,7 +2730,7 @@ end
                 Union{Missing,Real}[1, 1.5, missing],
                 Union{Missing,Number}[1, 1.5, missing], Any[1, 1.5, missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
-        if fun isa typeof(last∘skipmissing)
+        if fun === last∘skipmissing
             # corner case - it fails in slow path, but works in fast path
             if eltype(col) === Any
                 @test_throws MethodError combine(gdf, :x => fun => :y)
@@ -2798,11 +2798,11 @@ end
                 [DataFrame(ones(2,2)), DataFrame(zeros(2,2)), missing],
                 [(a=1, b=2), (a=3, b=4), (a=5, b=6)], [(a=1, b=2), (a=3, b=4), missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
-        if fun isa typeof(length)
+        if fun === length
             @test isequal_coltyped(combine(gdf, :x => fun => :y), DataFrame(g=1, y=3))
             @test isequal_coltyped(combine(gdf, :x => (x -> fun(x)) => :y), DataFrame(g=1, y=3))
-        elseif (fun isa typeof(last) && ismissing(last(col))) ||
-               (fun isa Union{typeof(maximum), typeof(minimum)} && col ≅ [(a=1, b=2), (a=3, b=4), missing])
+        elseif (fun === last && ismissing(last(col))) ||
+               (fun in (maximum, minimum) && col ≅ [(a=1, b=2), (a=3, b=4), missing])
             # this case is a situation when the vector type would not be accepted in
             # general as it contains entries that we do not allow but accidentally
             # its last element is accepted because it is missing
