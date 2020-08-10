@@ -764,34 +764,34 @@ struct Reduce{O, C, A} <: AbstractAggregate
 end
 Reduce(f, condf=nothing, adjust=nothing) = Reduce(f, condf, adjust, false)
 
-check_aggregate(f::Any, col::AbstractVector) = f
-check_aggregate(::typeof(sum), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::Any, ::AbstractVector) = f
+check_aggregate(f::typeof(sum), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.add_sum)
-check_aggregate(::typeof(sum∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(sum∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.add_sum, !ismissing)
-check_aggregate(::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.mul_prod)
-check_aggregate(::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.mul_prod, !ismissing)
 check_aggregate(f::typeof(maximum),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(maximum), v::AbstractVector{<:Union{Missing, Real}}) =
+check_aggregate(f::typeof(maximum), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(max)
 check_aggregate(f::typeof(maximum∘skipmissing),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(maximum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
+check_aggregate(f::typeof(maximum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(max, !ismissing, nothing, true)
 check_aggregate(f::typeof(minimum),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(minimum), v::AbstractVector{<:Union{Missing, Real}}) =
+check_aggregate(f::typeof(minimum), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(min)
 check_aggregate(f::typeof(minimum∘skipmissing),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(minimum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
+check_aggregate(f::typeof(minimum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(min, !ismissing, nothing, true)
-check_aggregate(::typeof(mean), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(mean), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.add_sum, nothing, /)
-check_aggregate(::typeof(mean∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(mean∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.add_sum, !ismissing, /)
 
 # Other aggregate functions which are not strictly reductions
@@ -801,31 +801,31 @@ struct Aggregate{F, C} <: AbstractAggregate
 end
 Aggregate(f) = Aggregate(f, nothing)
 
-check_aggregate(::typeof(var), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(var), ::AbstractVector{<:Union{Missing, Number}}) =
     Aggregate(var)
-check_aggregate(::typeof(var∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(var∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Aggregate(var, !ismissing)
-check_aggregate(::typeof(std), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(std), ::AbstractVector{<:Union{Missing, Number}}) =
     Aggregate(std)
-check_aggregate(::typeof(std∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+check_aggregate(f::typeof(std∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Aggregate(std, !ismissing)
-check_aggregate(::typeof(first), v::AbstractVector) =
+check_aggregate(f::typeof(first), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(first)
 check_aggregate(f::typeof(first),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(first∘skipmissing), v::AbstractVector) =
+check_aggregate(f::typeof(first∘skipmissing), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(first, !ismissing)
 check_aggregate(f::typeof(first∘skipmissing),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(last), v::AbstractVector) =
+check_aggregate(f::typeof(last), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(last)
 check_aggregate(f::typeof(last),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(last∘skipmissing), v::AbstractVector) =
+check_aggregate(f::typeof(last∘skipmissing), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(last, !ismissing)
 check_aggregate(f::typeof(last∘skipmissing),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
-check_aggregate(::typeof(length), ::AbstractVector) = Aggregate(length)
+check_aggregate(f::typeof(length), ::AbstractVector) = Aggregate(length)
 
 # SkipMissing does not support length
 
@@ -1047,14 +1047,18 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
         T = real(eltype(means))
     end
     res = zeros(T, length(gd))
-    groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
-                 (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
-                 false, incol, gd)
+    return groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
+                        (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
+                        false, incol, gd)
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
     outcol = Aggregate(var, agg.condf)(incol, gd)
-    map!(sqrt, outcol, outcol)
+    if eltype(outcol) <: Union{Missing, Rational}
+        return sqrt.(outcol)
+    else
+        return map!(sqrt, outcol, outcol)
+    end
 end
 
 for f in (first, last)
