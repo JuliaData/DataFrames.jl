@@ -1038,6 +1038,12 @@ groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd)
 
+# this definition is missing in Julia 1.0 LTS and is required by aggregation for var
+# TODO: remove this when 1,0 is no longer LTS
+if VERSION < v"1.1"
+    Base.zero(::Type{Missing}) = missing
+end
+
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
     # !ismissing check is purely an optimization to avoid a copy later
