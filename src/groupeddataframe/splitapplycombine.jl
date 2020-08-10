@@ -773,19 +773,19 @@ check_aggregate(::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.mul_prod)
 check_aggregate(::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.mul_prod, !ismissing)
-check_aggregate(::typeof(maximum),
+check_aggregate(f::typeof(maximum),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(maximum), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(max)
-check_aggregate(::typeof(maximum∘skipmissing),
+check_aggregate(f::typeof(maximum∘skipmissing),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(maximum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(max, !ismissing, nothing, true)
-check_aggregate(::typeof(minimum),
+check_aggregate(f::typeof(minimum),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(minimum), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(min)
-check_aggregate(::typeof(minimum∘skipmissing),
+check_aggregate(f::typeof(minimum∘skipmissing),
                 ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(minimum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
     eltype(v) === Any ? f : Reduce(min, !ismissing, nothing, true)
@@ -811,20 +811,20 @@ check_aggregate(::typeof(std∘skipmissing), ::AbstractVector{<:Union{Missing, N
     Aggregate(std, !ismissing)
 check_aggregate(::typeof(first), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(first)
-check_aggregate(::typeof(first),
-                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(first),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(first∘skipmissing), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(first, !ismissing)
-check_aggregate(::typeof(first∘skipmissing),
-                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(first∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(last), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(last)
-check_aggregate(::typeof(last),
-                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(last),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(last∘skipmissing), v::AbstractVector) =
     eltype(v) === Any ? f : Aggregate(last, !ismissing)
-check_aggregate(::typeof(last∘skipmissing),
-                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(last∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
 check_aggregate(::typeof(length), ::AbstractVector) = Aggregate(length)
 
 # SkipMissing does not support length
