@@ -764,38 +764,35 @@ struct Reduce{O, C, A} <: AbstractAggregate
 end
 Reduce(f, condf=nothing, adjust=nothing) = Reduce(f, condf, adjust, false)
 
-check_aggregate(f::Any) = f
-validate_aggregate(f::Any, col::AbstractVector) = false
-
-check_aggregate(::typeof(sum)) = Reduce(Base.add_sum)
-validate_aggregate(::typeof(sum), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
-validate_aggregate(::typeof(sum∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(prod)) = Reduce(Base.mul_prod)
-validate_aggregate(::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
-validate_aggregate(::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(maximum)) = Reduce(max)
-validate_aggregate(::typeof(maximum), ::AbstractVector{<:Union{Missing, Real}}) = true
-
-check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing, nothing, true)
-validate_aggregate(::typeof(maximum∘skipmissing), ::AbstractVector{<:Union{Missing, Real}}) = true
-
-check_aggregate(::typeof(minimum)) = Reduce(min)
-validate_aggregate(::typeof(minimum), ::AbstractVector{<:Union{Missing, Real}}) = true
-
-check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing, nothing, true)
-validate_aggregate(::typeof(minimum∘skipmissing), ::AbstractVector{<:Union{Missing, Real}}) = true
-
-check_aggregate(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
-validate_aggregate(::typeof(mean), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
-validate_aggregate(::typeof(mean∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) = true
+check_aggregate(f::Any, col::AbstractVector) = f
+check_aggregate(::typeof(sum), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum)
+check_aggregate(::typeof(sum∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum, !ismissing)
+check_aggregate(::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.mul_prod)
+check_aggregate(::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.mul_prod, !ismissing)
+check_aggregate(::typeof(maximum),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(maximum), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(max)
+check_aggregate(::typeof(maximum∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(maximum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(max, !ismissing, nothing, true)
+check_aggregate(::typeof(minimum),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(minimum), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(min)
+check_aggregate(::typeof(minimum∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(minimum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(min, !ismissing, nothing, true)
+check_aggregate(::typeof(mean), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum, nothing, /)
+check_aggregate(::typeof(mean∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum, !ismissing, /)
 
 # Other aggregate functions which are not strictly reductions
 struct Aggregate{F, C} <: AbstractAggregate
@@ -804,36 +801,31 @@ struct Aggregate{F, C} <: AbstractAggregate
 end
 Aggregate(f) = Aggregate(f, nothing)
 
-check_aggregate(::typeof(var)) = Aggregate(var)
-validate_aggregate(::typeof(var), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(var∘skipmissing)) = Aggregate(var, !ismissing)
-validate_aggregate(::typeof(var∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(std)) = Aggregate(std)
-validate_aggregate(::typeof(std), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(std∘skipmissing)) = Aggregate(std, !ismissing)
-validate_aggregate(::typeof(std∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) = true
-
-check_aggregate(::typeof(first)) = Aggregate(first)
-validate_aggregate(::typeof(first), v::AbstractVector) = eltype(v) === Any ? false : true
-validate_aggregate(::typeof(first), ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = false
-
-check_aggregate(::typeof(first∘skipmissing)) = Aggregate(first, !ismissing)
-validate_aggregate(::typeof(first∘skipmissing), v::AbstractVector) = eltype(v) === Any ? false : true
-validate_aggregate(::typeof(first∘skipmissing), ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = false
-
-check_aggregate(::typeof(last)) = Aggregate(last)
-validate_aggregate(::typeof(last), v::AbstractVector) = eltype(v) === Any ? false : true
-validate_aggregate(::typeof(last), ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = false
-
-check_aggregate(::typeof(last∘skipmissing)) = Aggregate(last, !ismissing)
-validate_aggregate(::typeof(last∘skipmissing), v::AbstractVector) = eltype(v) === Any ? false : true
-validate_aggregate(::typeof(last∘skipmissing), ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = false
-
-check_aggregate(::typeof(length)) = Aggregate(length)
-validate_aggregate(::typeof(length), ::AbstractVector) = true
+check_aggregate(::typeof(var), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(var)
+check_aggregate(::typeof(var∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(var, !ismissing)
+check_aggregate(::typeof(std), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(std)
+check_aggregate(::typeof(std∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(std, !ismissing)
+check_aggregate(::typeof(first), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(first)
+check_aggregate(::typeof(first),
+                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(first∘skipmissing), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(first, !ismissing)
+check_aggregate(::typeof(first∘skipmissing),
+                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(last), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(last)
+check_aggregate(::typeof(last),
+                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(last∘skipmissing), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(last, !ismissing)
+check_aggregate(::typeof(last∘skipmissing),
+                   ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(::typeof(length), ::AbstractVector) = Aggregate(length)
 
 # SkipMissing does not support length
 
@@ -1091,7 +1083,7 @@ function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedData
 end
 
 isagg((col, fun)::Pair, gdf::GroupedDataFrame) =
-    col isa ColumnIndex && validate_aggregate(fun, parent(gdf)[!, col])
+    col isa ColumnIndex && check_aggregate(fun, parent(gdf)[!, col]) isa AbstractAggregate
 
 function _agg2idx_map_helper(idx, idx_agg)
     agg2idx_map = fill(-1, length(idx))
@@ -1166,7 +1158,7 @@ function _combine(f::AbstractVector{<:Pair},
         source_cols, fun = p
         if length(gd) > 0 && isagg(p, gd)
             incol = parentdf[!, source_cols]
-            agg = check_aggregate(last(p))
+            agg = check_aggregate(last(p), incol)
             outcol = agg(incol, gd)
             res[i] = idx_agg, outcol
         elseif keeprows && fun === identity && !(source_cols isa AsTable)

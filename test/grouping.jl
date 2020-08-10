@@ -7,6 +7,10 @@ const ≅ = isequal
 isequal_typed(df1::AbstractDataFrame, df2::AbstractDataFrame) =
     isequal(df1, df2) && eltype.(eachcol(df1)) == eltype.(eachcol(df2))
 
+"""Check if passed data frames are `isequal` and have the same types of columns"""
+isequal_coltyped(df1::AbstractDataFrame, df2::AbstractDataFrame) =
+    isequal(df1, df2) && typeof.(eachcol(df1)) == typeof.(eachcol(df2))
+
 """Check that groups in gd are equal to provided data frames, ignoring order"""
 function isequal_unordered(gd::GroupedDataFrame,
                             dfs::AbstractVector{<:AbstractDataFrame})
@@ -2691,7 +2695,7 @@ end
     @test map(nrow, gdf) == [1, 1, 1]
 end
 
-@testset "isagg fix" begin
+@testset "check isagg correctly uses fast path only when it should" begin
     for fun in (sum, prod, mean, var, std, sum∘skipmissing, prod∘skipmissing,
                 mean∘skipmissing, var∘skipmissing, std∘skipmissing),
         col in ([1, 2, 3], [big(1.5), big(2.5), big(3.5)], [1 + 0.5im, 2 + 0.5im, 3 + 0.5im],
@@ -2702,7 +2706,7 @@ end
                 Union{Missing,Real}[1, 1.5, missing],
                 Union{Missing,Number}[1, 1.5, missing], Any[1, 1.5, missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
-        @test combine(gdf, :x => fun => :y) ≅ combine(gdf, :x => (x -> fun(x)) => :y)
+        @test isequal_coltyped(combine(gdf, :x => fun => :y), combine(gdf, :x => (x -> fun(x)) => :y))
     end
 
     for fun in (maximum, minimum, maximum∘skipmissing, minimum∘skipmissing),
@@ -2714,7 +2718,7 @@ end
                 Union{Missing,Real}[1, 1.5, missing],
                 Union{Missing,Number}[1, 1.5, missing], Any[1, 1.5, missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
-        @test combine(gdf, :x => fun => :y) ≅ combine(gdf, :x => (x -> fun(x)) => :y)
+        @test isequal_coltyped(combine(gdf, :x => fun => :y), combine(gdf, :x => (x -> fun(x)) => :y))
     end
 
     for fun in (first, last, length, first∘skipmissing, last∘skipmissing),
@@ -2727,16 +2731,16 @@ end
                 Union{Missing,Number}[1, 1.5, missing], Any[1, 1.5, missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
         if fun isa typeof(last∘skipmissing)
-            # this is another hard corner case
+            # corner case - it fails in slow path, but works in fast path
             if eltype(col) === Any
                 @test_throws MethodError combine(gdf, :x => fun => :y)
             else
-                @test combine(gdf, :x => fun => :y) ==
-                      combine(groupby_checked(dropmissing(parent(gdf)), :g), :x => fun => :y)
+                @test isequal_coltyped(combine(gdf, :x => fun => :y),
+                                       combine(groupby_checked(dropmissing(parent(gdf)), :g), :x => fun => :y))
             end
             @test_throws MethodError combine(gdf, :x => (x -> fun(x)) => :y)
         else
-            @test combine(gdf, :x => fun => :y) ≅ combine(gdf, :x => (x -> fun(x)) => :y)
+            @test isequal_coltyped(combine(gdf, :x => fun => :y), combine(gdf, :x => (x -> fun(x)) => :y))
         end
     end
 
@@ -2747,17 +2751,17 @@ end
             @test_throws MethodError combine(gdf, :x => fun => :y)
             @test_throws MethodError combine(gdf, :x => (x -> fun(x)) => :y)
         else
-            @test combine(gdf, :x => fun => :y) ≅ combine(gdf, :x => (x -> fun(x)) => :y)
+            @test isequal_coltyped(combine(gdf, :x => fun => :y), combine(gdf, :x => (x -> fun(x)) => :y))
         end
     end
 
     for fun in (sum∘skipmissing, mean∘skipmissing),
         col in ([1:3, 4:6, 7:9], [1:3, 4:6, missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
-        @test combine(gdf, :x => fun => :y) ≅ combine(gdf, :x => (x -> fun(x)) => :y)
+        @test isequal_coltyped(combine(gdf, :x => fun => :y), combine(gdf, :x => (x -> fun(x)) => :y))
     end
 
-    # workaround https://github.com/JuliaLang/julia/issues/36979
+    # see https://github.com/JuliaLang/julia/issues/36979
     for fun in (var∘skipmissing, std∘skipmissing),
         col in ([1:3, 4:6, 7:9], [1:3, 4:6, missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
@@ -2773,7 +2777,7 @@ end
             @test_throws MethodError combine(gdf, :x => fun => :y)
             @test_throws MethodError combine(gdf, :x => (x -> fun(x)) => :y)
         else
-            @test combine(gdf, :x => fun => :y) ≅ combine(gdf, :x => (x -> fun(x)) => :y)
+            @test isequal_coltyped(combine(gdf, :x => fun => :y), combine(gdf, :x => (x -> fun(x)) => :y))
         end
     end
 
@@ -2795,13 +2799,15 @@ end
                 [(a=1, b=2), (a=3, b=4), (a=5, b=6)], [(a=1, b=2), (a=3, b=4), missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
         if fun isa typeof(length)
-            @test combine(gdf, :x => fun => :y) ≅ DataFrame(g=1, y=3)
-            @test combine(gdf, :x => (x -> fun(x)) => :y) ≅ DataFrame(g=1, y=3)
+            @test isequal_coltyped(combine(gdf, :x => fun => :y), DataFrame(g=1, y=3))
+            @test isequal_coltyped(combine(gdf, :x => (x -> fun(x)) => :y), DataFrame(g=1, y=3))
         elseif (fun isa typeof(last) && ismissing(last(col))) ||
                (fun isa Union{typeof(maximum), typeof(minimum)} && col ≅ [(a=1, b=2), (a=3, b=4), missing])
-            # this case is a hard problem what to do and probably we have to leave it as is
-            @test combine(gdf, :x => fun => :y) ≅ DataFrame(g=1, y=missing)
-            @test combine(gdf, :x => (x -> fun(x)) => :y) ≅ DataFrame(g=1, y=missing)
+            # this case is a situation when the vector type would not be accepted in
+            # general as it contains entries that we do not allow but accidentally
+            # its last element is accepted because it is missing
+            @test isequal_coltyped(combine(gdf, :x => fun => :y), DataFrame(g=1, y=missing))
+            @test isequal_coltyped(combine(gdf, :x => (x -> fun(x)) => :y), DataFrame(g=1, y=missing))
         else
             @test_throws Union{ArgumentError, MethodError} combine(gdf, :x => fun => :y)
             @test_throws Union{ArgumentError, MethodError} combine(gdf, :x => (x -> fun(x)) => :y)
