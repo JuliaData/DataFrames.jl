@@ -1,4 +1,4 @@
-# this contstant defines which types of values returned by aggregation function
+# this constant defines which types of values returned by aggregation function
 # in combine are considered to produce multiple columns in the resulting data frame
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
@@ -1039,7 +1039,7 @@ groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
     groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd)
 
 # this definition is missing in Julia 1.0 LTS and is required by aggregation for var
-# TODO: remove this when 1,0 is no longer LTS
+# TODO: remove this when we drop 1.0 support
 if VERSION < v"1.1"
     Base.zero(::Type{Missing}) = missing
 end
