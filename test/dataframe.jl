@@ -640,7 +640,7 @@ end
                                 q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
                                 max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                 nunique = [nothing, nothing, 4, 3, 4, 2],
-                                nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                nmissing = [0, 1, 0, 1, 0, 0],
                                 first = [1, 1, "a", "a", Date(2000), 1],
                                 last = [4, missing, "d", missing, Date(2004), 2],
                                 eltype = [Int, Union{Missing, Int}, String,

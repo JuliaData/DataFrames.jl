@@ -580,7 +580,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         end
 
         if :nmissing in predefined_funs
-            d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
+            d[:nmissing] = count(ismissing, col)
         end
 
         if :first in predefined_funs
