@@ -476,10 +476,7 @@ number of unique values in a column. If a column's base type derives from `Real`
 `:nunique` will return `nothing`s.
 
 Missing values are filtered in the calculation of all statistics, however the
-column `:nmissing` will report the number of missing values of that variable. If
-the column does not allow missing values, `nothing` is returned. Consequently,
-`nmissing = 0` indicates that the column allows missing values, but does not
-currently contain any.
+column `:nmissing` will report the number of missing values of that variable.
 
 If custom functions are provided, they are called repeatedly with the vector
 corresponding to each column as the only argument. For columns allowing for
@@ -494,11 +491,11 @@ julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 julia> describe(df)
 3×7 DataFrame
 │ Row │ variable │ mean   │ min │ median │ max │ nmissing │ eltype   │
-│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Nothing  │ DataType │
+│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Int64    │ DataType │
 ├─────┼──────────┼────────┼─────┼────────┼─────┼──────────┼──────────┤
-│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │          │ Int64    │
-│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │          │ Float64  │
-│ 3   │ y        │        │ 'a' │        │ 'j' │          │ Char     │
+│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │ 0        │ Int64    │
+│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │ 0        │ Float64  │
+│ 3   │ y        │        │ 'a' │        │ 'j' │ 0        │ Char     │
 
 julia> describe(df, :min, :max)
 3×3 DataFrame
