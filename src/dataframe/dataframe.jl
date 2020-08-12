@@ -603,7 +603,7 @@ end
 ##############################################################################
 
 """
-    insertcols!(df::DataFrame, [ind::Int], (name=>col)::Pair...;
+    insertcols!(df::DataFrame, [ref::Int], (name=>col)::Pair...;
                 makeunique::Bool=false, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated `DataFrame`.
@@ -612,7 +612,8 @@ If `ind` is omitted it is set to `ncol(df)+1`
 
 # Arguments
 - `df` : the DataFrame to which we want to add columns
-- `ind` : a position at which we want to insert a column
+- `ref` : a position at which we want to insert a column, passed as an integer
+  or a column name (a string or a `Symbol`)
 - `name` : the name of the new column
 - `col` : an `AbstractVector` giving the contents of the new column or a value of any
   type other than `AbstractArray` which will be repeated to fill a new vector;
@@ -655,8 +656,9 @@ julia> insertcols!(d, 2, :c => 2:4, :c => 3:5, makeunique=true)
 │ 3   │ 'c'  │ 4     │ 5     │ 3     │
 ```
 """
-function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}...;
+function insertcols!(df::DataFrame, ref::ColumnIndex, name_cols::Pair{Symbol,<:Any}...;
                      makeunique::Bool=false, copycols::Bool=true)
+    col_ind = Int(ref isa SymbolOrString ? columnindex(df, ref) : ref)
     if !(0 < col_ind <= ncol(df) + 1)
         throw(ArgumentError("attempt to insert a column to a data frame with " *
                             "$(ncol(df)) columns at index $col_ind"))
@@ -744,9 +746,9 @@ function insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{Symbol,<:Any}.
     return df
 end
 
-insertcols!(df::DataFrame, col_ind::Int, name_cols::Pair{<:AbstractString,<:Any}...;
+insertcols!(df::DataFrame, ref::ColumnIndex, name_cols::Pair{<:AbstractString,<:Any}...;
                      makeunique::Bool=false, copycols::Bool=true) =
-    insertcols!(df, col_ind, (Symbol(n) => v for (n,v) in name_cols)...,
+    insertcols!(df, ref, (Symbol(n) => v for (n,v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
 insertcols!(df::DataFrame, name_cols::Pair{Symbol,<:Any}...;
@@ -758,10 +760,10 @@ insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString,<:Any}...;
     insertcols!(df, (Symbol(n) => v for (n,v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
-function insertcols!(df::DataFrame, col_ind::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
-    if !(0 < col_ind <= ncol(df) + 1)
+function insertcols!(df::DataFrame, ref::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
+    if !(0 < ref <= ncol(df) + 1)
         throw(ArgumentError("attempt to insert a column to a data frame with " *
-                            "$(ncol(df)) columns at index $col_ind"))
+                            "$(ncol(df)) columns at index $ref"))
     end
     if !isempty(name_cols)
         # an explicit error is thrown as keyword argument was supported in the past
