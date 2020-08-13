@@ -15,6 +15,9 @@
 * improve the rule for automatically generated column names in
   `combine`/`select(!)`/`transform(!)` with composed functions
   ([#2274](https://github.com/JuliaData/DataFrames.jl/pull/2274))
+* `:nmissing` in `describe` now produces `0` if the column does not allow
+   missing values; earlier `nothing` was produced in this case
+   ([#2360](https://github.com/JuliaData/DataFrames.jl/pull/2360))
 
 ## New functionalities
 
