@@ -17,7 +17,11 @@
   ([#2274](https://github.com/JuliaData/DataFrames.jl/pull/2274))
 * `:nmissing` in `describe` now produces `0` if the column does not allow
    missing values; earlier `nothing` was produced in this case
-   ([#2360](https://github.com/JuliaData/DataFrames.jl/pull/2360))
+  ([#2360](https://github.com/JuliaData/DataFrames.jl/pull/2360))
+* fast aggregation functions in for `GroupedDataFrame` now correctly
+  choose the fast path only when it is safe; this resolves inconsistencies
+  with what the same functions not using fast path produce
+  ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
 
 ## New functionalities
 
