@@ -607,7 +607,7 @@ end
                 makeunique::Bool=false, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated `DataFrame`.
-If `ind` is omitted it is set to `ncol(df)+1`
+If `ref` is omitted it is set to `ncol(df)+1`
 (the column is inserted as the last column).
 
 # Arguments
