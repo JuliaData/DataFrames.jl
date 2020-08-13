@@ -613,7 +613,8 @@ If `ind` is omitted it is set to `ncol(df)+1`
 # Arguments
 - `df` : the DataFrame to which we want to add columns
 - `ref` : a position at which we want to insert a column, passed as an integer
-  or a column name (a string or a `Symbol`)
+  or a column name (a string or a `Symbol`); the column selected with `ref`
+  and columns following it are shifted to the right in `df` after the operation
 - `name` : the name of the new column
 - `col` : an `AbstractVector` giving the contents of the new column or a value of any
   type other than `AbstractArray` which will be repeated to fill a new vector;
