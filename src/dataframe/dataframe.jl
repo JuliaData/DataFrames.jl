@@ -603,7 +603,7 @@ end
 ##############################################################################
 
 """
-    insertcols!(df::DataFrame, [ref::Int], (name=>col)::Pair...;
+    insertcols!(df::DataFrame, [ref], (name=>col)::Pair...;
                 makeunique::Bool=false, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated `DataFrame`.
