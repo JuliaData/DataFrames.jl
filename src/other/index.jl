@@ -442,3 +442,15 @@ function Base.getindex(x::SubIndex, idx::Union{AbstractVector{Symbol},
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     return [x[i] for i in idx]
 end
+
+rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
+    throw(ArgumentError("rename! is not supported for views other than created " *
+                        "with Colon as a column selector"))
+
+rename!(x::SubIndex, nms::AbstractVector{Pair{Symbol, Symbol}}) =
+    throw(ArgumentError("rename! is not supported for views other than created " *
+                        "with Colon as a column selector"))
+
+rename!(f::Function, x::SubIndex) =
+    throw(ArgumentError("rename! is not supported for views other than created " *
+                        "with Colon as a column selector"))
