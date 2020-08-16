@@ -213,7 +213,7 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
 
 Base.@propagate_inbounds function Base.getindex(r::DataFrameRow, idxs::MultiColumnIndex)
-    # we create a temporaty DataFrameRow object to compute the SubIndex
+    # we create a temporary DataFrameRow object to compute the SubIndex
     # in the parent(r), but this object has an incorrect rownumber
     # so we later copy rownumber from r
     # the Julia compiler should be able to optimize out this indirection
@@ -306,7 +306,7 @@ Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
 
 function Base.view(r::DataFrameRow, cols::MultiColumnIndex)
-    # we create a temporaty DataFrameRow object to compute the SubIndex
+    # we create a temporary DataFrameRow object to compute the SubIndex
     # in the parent(r), but this object has an incorrect rownumber
     # so we later copy rownumber from r
     # the Julia compiler should be able to optimize out this indirection
