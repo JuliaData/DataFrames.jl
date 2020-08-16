@@ -36,9 +36,9 @@ and combines the result into a data frame).
 [`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
 which can also be used to get the values of the grouping columns for each group.
 `Tuples` and `NamedTuple`s containing the values of the grouping columns (in the
-same order as the `cols` argument) are also accepted as indices, but this will
-be slower than using the equivalent `GroupKey`. Finally, a `Dict` can be used to index
-into a grouped data frame where the keys are column names of the data frame in any order. 
+same order as the `cols` argument) are also accepted as indices. Finally, a `Dict` can be used to index
+into a grouped data frame where the keys are column names of the data frame. The order
+of the keys does not matter in this case. 
 
 # See also
 
