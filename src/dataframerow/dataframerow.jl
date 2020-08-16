@@ -74,10 +74,14 @@ julia> Vector(df[1, :])
 ```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
+    # although we allow D to be AbstractDataFrame to support extensions
+    # in DataFrames.jl it will always be a DataFrame unless an inner constructor
+    # is used. In this way we have a fast access to the data frame that
+    # actually stores the data that DataFrameRow refers to
     df::D
     colindex::S
-    row::Int # row number in df
-    rownumber::Int # row number in the direct source
+    dfrow::Int # row number in df
+    rownumber::Int # row number in the direct source AbstractDataFrame from which DataFrameRow was created
 
     @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned},
                          rownumber::Union{Signed, Unsigned}) where
@@ -112,7 +116,7 @@ Base.@propagate_inbounds DataFrameRow(df::SubDataFrame, row::Bool, cols) =
 Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
     DataFrameRow(df, row, :)
 
-row(r::DataFrameRow) = getfield(r, :row)
+row(r::DataFrameRow) = getfield(r, :dfrow)
 
 """
     rownumber(dfr::DataFrameRow)
@@ -209,6 +213,11 @@ Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(index(r), idx)]
 
 Base.@propagate_inbounds function Base.getindex(r::DataFrameRow, idxs::MultiColumnIndex)
+    # we create a temporaty DataFrameRow object to compute the SubIndex
+    # in the parent(r), but this object has an incorrect rownumber
+    # so we later copy rownumber from r
+    # the Julia compiler should be able to optimize out this indirection
+    # and in this way we avoid duplicating the code that computes the correct SubIndex
     dfr_tmp = DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
     return DataFrameRow(parent(dfr_tmp), index(dfr_tmp), row(r), rownumber(r))
 end
@@ -297,6 +306,11 @@ Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[!, parentcols(index(r), col)], row(r))
 
 function Base.view(r::DataFrameRow, cols::MultiColumnIndex)
+    # we create a temporaty DataFrameRow object to compute the SubIndex
+    # in the parent(r), but this object has an incorrect rownumber
+    # so we later copy rownumber from r
+    # the Julia compiler should be able to optimize out this indirection
+    # and in this way we avoid duplicating the code that computes the correct SubIndex
     dfr_tmp = DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
     return DataFrameRow(parent(dfr_tmp), index(dfr_tmp), row(r), rownumber(r))
 end
