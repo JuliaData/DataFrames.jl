@@ -19,7 +19,7 @@ Responsiveness to pull requests and issues can vary, depending on the availabili
 [free Julia Academy course](https://juliaacademy.com/p/introduction-to-dataframes-jl)
 which will walk you through how to use DataFrames.jl.
 You can also check out
-[the DataFrames.jl tutorial](https://github.com/bkamins/Julia-DataFrames-Tutorial)
+[Bogumił Kamiński's DataFrames.jl tutorial](https://github.com/bkamins/Julia-DataFrames-Tutorial)
 that is available on GitHub.
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
