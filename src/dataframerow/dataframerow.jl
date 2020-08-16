@@ -76,7 +76,7 @@ julia> Vector(df[1, :])
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
     colindex::S
-    row::Int # row number in true parent DataFrame
+    row::Int # row number in df
     rownumber::Int # row number in the direct source
 
     @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned},
