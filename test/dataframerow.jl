@@ -521,4 +521,60 @@ end
     @test df[1, :A] == 101
 end
 
+@testset "rownumber" begin
+    df = DataFrame(reshape(1:12, 3, 4))
+    dfr = df[2, :]
+    @test rownumber(dfr) == 2
+    @test parentindices(dfr) == (2, 1:4)
+    @test parent(dfr) === df
+
+    dfr = @view df[2, :]
+    @test rownumber(dfr) == 2
+    @test parentindices(dfr) == (2, 1:4)
+    @test parent(dfr) === df
+
+    dfr = dfr[1:2]
+    @test rownumber(dfr) == 2
+    @test parentindices(dfr) == (2, 1:2)
+    @test parent(dfr) === df
+
+    dfr = @view dfr[1:2]
+    @test rownumber(dfr) == 2
+    @test parentindices(dfr) == (2, 1:2)
+    @test parent(dfr) === df
+
+    for (i, r) in enumerate(eachrow(df))
+        @test rownumber(r) == i
+        @test parentindices(r) == (i, 1:4)
+        @test parent(r) === df
+    end
+
+    dfv = @view df[2:3, 1:3]
+    dfrv = dfv[2, :]
+    @test rownumber(dfrv) == 2
+    @test parentindices(dfrv) == (3, 1:3)
+    @test parent(dfrv) == df
+
+    dfrv = @view dfv[2, :]
+    @test rownumber(dfrv) == 2
+    @test parentindices(dfrv) == (3, 1:3)
+    @test parent(dfrv) == df
+
+    dfrv = dfrv[1:2]
+    @test rownumber(dfrv) == 2
+    @test parentindices(dfrv) == (3, 1:2)
+    @test parent(dfrv) === df
+
+    dfrv = @view dfrv[1:2]
+    @test rownumber(dfrv) == 2
+    @test parentindices(dfrv) == (3, 1:2)
+    @test parent(dfrv) === df
+
+    for (i, r) in enumerate(eachrow(dfv))
+        @test rownumber(r) == i
+        @test parentindices(r) == (i + 1, 1:3)
+        @test parent(r) === df
+    end
+end
+
 end # module
