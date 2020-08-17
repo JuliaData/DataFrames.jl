@@ -184,7 +184,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
                           left_ixs::Union{Nothing, RowIndexMap},
                           leftonly_ixs::Union{Nothing, RowIndexMap},
                           right_ixs::Union{Nothing, RowIndexMap},
-                          rightonly_mask::Union{Nothing, Vector{Bool}})
+                          rightonly_mask::Union{Nothing, Vector{Bool}},
+                          right_dict_cols::Tuple{Vararg{AbstractVector}},
+                          left_table_cols::Tuple{Vararg{AbstractVector}})
     # helper functions
     @inline update!(ixs::Nothing, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
     @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
@@ -205,8 +207,6 @@ function update_row_maps!(left_table::AbstractDataFrame,
         (mask[orig_ixs] .= false)
 
     # iterate over left rows and compose the left<->right index map
-    right_dict_cols = ntuple(i -> right_dict.df[!, i], ncol(right_dict.df))
-    left_table_cols = ntuple(i -> left_table[!, i], ncol(left_table))
     next_join_ix = 1
     for l_ix in 1:nrow(left_table)
         r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
@@ -248,7 +248,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
     right_ixs = init_map(right_table, map_right)
     rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
     update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs,
-                     right_ixs, rightonly_mask)
+                     right_ixs, rightonly_mask,
+                     ntuple(i -> right_dict.df[!, i], ncol(right_dict.df)),
+                     ntuple(i -> left_table[!, i], ncol(left_table)))
     if map_rightonly
         rightonly_orig_ixs = findall(rightonly_mask)
         leftonly_ixs_len = leftonly_ixs === nothing ? 0 : length(leftonly_ixs)
