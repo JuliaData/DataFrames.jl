@@ -35,7 +35,9 @@
   ([#2308](https://github.com/JuliaData/DataFrames.jl/pull/2308))
 * allow column renaming in joins
   ([#2313](https://github.com/JuliaData/DataFrames.jl/pull/2313)
- * add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
+* add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
+* allow passing column name to specify the position where a new columns should be
+  inserted in `insertcols!` ([#2365](https://github.com/JuliaData/DataFrames.jl/pull/2365))
 
 ## Deprecated
 
