@@ -392,27 +392,23 @@ function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
 end
 
 function _dict_to_tuple(key::AbstractDict{<:AbstractString} , gd)
-    T = keytype(key)
-    return ntuple(length(gd.cols)) do i 
-        # Most `<: AbstractString` types do not support constructors from symbols
-        key[T(string(gd.cols[i]))]
-    end
-end
-
-function _dict_to_tuple(key::AbstractDict{Symbol}, gd)
-    T = keytype(key)
-    return ntuple(length(gd.cols)) do i 
-        key[T(gd.cols[i])]
-    end
-end
-
-function Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}})
     if length(key) != length(gd.cols)
         throw(KeyError(key))
     end
-    t = _dict_to_tuple(key, gd)
-    return Base.to_index(gd, t)
+
+    return ntuple(i ->  key[string(gd.cols[i])], length(gd.cols))        
 end
+
+function _dict_to_tuple(key::AbstractDict{Symbol}, gd)
+    if length(key) != length(gd.cols)
+        throw(KeyError(key))
+    end    
+
+    return ntuple(i ->  key[gd.cols[i]], length(gd.cols))        
+end
+
+Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}}) = 
+    Base.to_index(gd, _dict_to_tuple(key, gd))
 
 # Array of (possibly non-standard) indices
 function Base.to_index(gd::GroupedDataFrame, idxs::AbstractVector{T}) where {T}
@@ -603,13 +599,8 @@ function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return haskey(gd, Tuple(key))
 end
 
-function Base.haskey(gd::GroupedDataFrame, key::AbstractDict{T, S}) where {T<:Union{Symbol, <:AbstractString}, S}
-    if length(key) != length(gd.cols) || any(Symbol(n) ∉ _names(gd) for n in keys(key))
-        return throw(ArgumentError("The keys of the `AbstractDict` key do not match " *
-                                   "the names of grouping columns"))
-    end
-    return haskey(gd, _dict_to_tuple(key, gd))
-end
+Base.haskey(gd::GroupedDataFrame, key::AbstractDict{<:Union{Symbol, <:AbstractString}}) = 
+    haskey(gd, _dict_to_tuple(key, gd))
 
 Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
     1 <= key <= length(gd)
