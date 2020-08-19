@@ -1023,61 +1023,71 @@ end
 end
 
 @testset "rename" begin
-    df = DataFrame(A = 1:3, B = 'A':'C')
-    @test names(rename(df, :A => :A_1)) == ["A_1", "B"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(df, :A => :A_1, :B => :B_1)) == ["A_1", "B_1"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(df, [:A => :A_1, :B => :B_1])) == ["A_1", "B_1"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == ["A_1", "B_1"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(lowercase, df)) == ["a", "b"]
-    @test names(df) == ["A", "B"]
+    for asview in (false, true)
+        df = DataFrame(A = 1:3, B = 'A':'C')
+        asview && (df = view(df, :, :))
+        @test names(rename(df, :A => :A_1)) == ["A_1", "B"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(df, :A => :A_1, :B => :B_1)) == ["A_1", "B_1"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(df, [:A => :A_1, :B => :B_1])) == ["A_1", "B_1"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == ["A_1", "B_1"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(lowercase, df)) == ["a", "b"]
+        @test names(df) == ["A", "B"]
 
-    @test rename!(df, :A => :A_1) === df
-    @test propertynames(df) == [:A_1, :B]
-    @test rename!(df, :A_1 => :A_2, :B => :B_2) === df
-    @test propertynames(df) == [:A_2, :B_2]
-    @test rename!(df, [:A_2 => :A_3, :B_2 => :B_3]) === df
-    @test propertynames(df) == [:A_3, :B_3]
-    @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
-    @test propertynames(df) == [:A_4, :B_4]
-    @test rename!(lowercase, df) === df
-    @test propertynames(df) == [:a_4, :b_4]
+        @test rename!(df, :A => :A_1) === df
+        @test propertynames(df) == [:A_1, :B]
+        @test rename!(df, :A_1 => :A_2, :B => :B_2) === df
+        @test propertynames(df) == [:A_2, :B_2]
+        @test rename!(df, [:A_2 => :A_3, :B_2 => :B_3]) === df
+        @test propertynames(df) == [:A_3, :B_3]
+        @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
+        @test propertynames(df) == [:A_4, :B_4]
+        @test rename!(lowercase, df) === df
+        @test propertynames(df) == [:a_4, :b_4]
 
-    df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
-    @test rename!(df, :A => :B, :B => :A) === df
-    @test propertynames(df) == [:B, :A, :C]
-    @test rename!(df, :A => :B, :B => :A, :C => :D) === df
-    @test propertynames(df) == [:A, :B, :D]
-    @test rename!(df, :A => :B, :B => :C, :D => :A) === df
-    @test propertynames(df) == [:B, :C, :A]
-    @test rename!(df, :A => :C, :B => :A, :C => :B) === df
-    @test propertynames(df) == [:A, :B, :C]
-    @test rename!(df, :A => :A, :B => :B, :C => :C) === df
-    @test propertynames(df) == [:A, :B, :C]
+        df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
+        asview && (df = view(df, :, :))
+        @test rename!(df, :A => :B, :B => :A) === df
+        @test propertynames(df) == [:B, :A, :C]
+        @test rename!(df, :A => :B, :B => :A, :C => :D) === df
+        @test propertynames(df) == [:A, :B, :D]
+        @test rename!(df, :A => :B, :B => :C, :D => :A) === df
+        @test propertynames(df) == [:B, :C, :A]
+        @test rename!(df, :A => :C, :B => :A, :C => :B) === df
+        @test propertynames(df) == [:A, :B, :C]
+        @test rename!(df, :A => :A, :B => :B, :C => :C) === df
+        @test propertynames(df) == [:A, :B, :C]
 
-    cdf = copy(df)
-    @test_throws ArgumentError rename!(df, :X => :Y)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :B)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
-    @test df == cdf
+        cdf = copy(df)
+        @test_throws ArgumentError rename!(df, :X => :Y)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :B)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
+        @test df == cdf
 
-    df = DataFrame(A=1)
-    @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
+        df = DataFrame(A=1)
+        asview && (df = view(df, :, :))
+        @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
+    end
+
+    sdf = view(DataFrame(ones(2,3)), 1:2, 1:3)
+    @test_throws ArgumentError rename!(uppercase, sdf)
+    @test_throws ArgumentError rename!(sdf, :x1 => :y1)
+    @test_throws ArgumentError rename!(sdf, [:a, :b, :c])
 end
 
 @testset "flexible rename arguments" begin
