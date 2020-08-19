@@ -1,3 +1,7 @@
+# this constant defines which types of values returned by aggregation function
+# in combine are considered to produce multiple columns in the resulting data frame
+const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+
 """
     groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
 
@@ -452,7 +456,7 @@ function combine(p::Pair, gd::GroupedDataFrame;
     # verify if it is not better to use a fast path, which we achieve
     # by moving to combine(::GroupedDataFrame, ::AbstractVector) method
     # note that even if length(gd) == 0 we can do this step
-    if isagg(p_from => (p_to isa Pair ? first(p_to) : p_to)) || p_from === nrow
+    if isagg(p_from => (p_to isa Pair ? first(p_to) : p_to), gd) || p_from === nrow
         return combine(gd, [p], keepkeys=keepkeys, ungroup=ungroup)
     end
 
@@ -760,17 +764,35 @@ struct Reduce{O, C, A} <: AbstractAggregate
 end
 Reduce(f, condf=nothing, adjust=nothing) = Reduce(f, condf, adjust, false)
 
-check_aggregate(f::Any) = f
-check_aggregate(::typeof(sum)) = Reduce(Base.add_sum)
-check_aggregate(::typeof(prod)) = Reduce(Base.mul_prod)
-check_aggregate(::typeof(maximum)) = Reduce(max)
-check_aggregate(::typeof(minimum)) = Reduce(min)
-check_aggregate(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
-check_aggregate(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
-check_aggregate(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
-check_aggregate(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
-check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing, nothing, true)
-check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing, nothing, true)
+check_aggregate(f::Any, ::AbstractVector) = f
+check_aggregate(f::typeof(sum), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum)
+check_aggregate(f::typeof(sum∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum, !ismissing)
+check_aggregate(f::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.mul_prod)
+check_aggregate(f::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.mul_prod, !ismissing)
+check_aggregate(f::typeof(maximum),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(maximum), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(max)
+check_aggregate(f::typeof(maximum∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(maximum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(max, !ismissing, nothing, true)
+check_aggregate(f::typeof(minimum),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(minimum), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(min)
+check_aggregate(f::typeof(minimum∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(minimum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
+    eltype(v) === Any ? f : Reduce(min, !ismissing, nothing, true)
+check_aggregate(f::typeof(mean), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum, nothing, /)
+check_aggregate(f::typeof(mean∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Reduce(Base.add_sum, !ismissing, /)
 
 # Other aggregate functions which are not strictly reductions
 struct Aggregate{F, C} <: AbstractAggregate
@@ -779,15 +801,32 @@ struct Aggregate{F, C} <: AbstractAggregate
 end
 Aggregate(f) = Aggregate(f, nothing)
 
-check_aggregate(::typeof(var)) = Aggregate(var)
-check_aggregate(::typeof(var∘skipmissing)) = Aggregate(var, !ismissing)
-check_aggregate(::typeof(std)) = Aggregate(std)
-check_aggregate(::typeof(std∘skipmissing)) = Aggregate(std, !ismissing)
-check_aggregate(::typeof(first)) = Aggregate(first)
-check_aggregate(::typeof(first∘skipmissing)) = Aggregate(first, !ismissing)
-check_aggregate(::typeof(last)) = Aggregate(last)
-check_aggregate(::typeof(last∘skipmissing)) = Aggregate(last, !ismissing)
-check_aggregate(::typeof(length)) = Aggregate(length)
+check_aggregate(f::typeof(var), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(var)
+check_aggregate(f::typeof(var∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(var, !ismissing)
+check_aggregate(f::typeof(std), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(std)
+check_aggregate(f::typeof(std∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
+    Aggregate(std, !ismissing)
+check_aggregate(f::typeof(first), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(first)
+check_aggregate(f::typeof(first),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(first∘skipmissing), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(first, !ismissing)
+check_aggregate(f::typeof(first∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(last), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(last)
+check_aggregate(f::typeof(last),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(last∘skipmissing), v::AbstractVector) =
+    eltype(v) === Any ? f : Aggregate(last, !ismissing)
+check_aggregate(f::typeof(last∘skipmissing),
+                ::AbstractVector{<:Union{Missing, MULTI_COLS_TYPE, AbstractVector}}) = f
+check_aggregate(f::typeof(length), ::AbstractVector) = Aggregate(length)
+
 # SkipMissing does not support length
 
 # Find first value matching condition for each group
@@ -864,7 +903,11 @@ function groupreduce_init(op, condf, adjust,
     if isconcretetype(Tnm) && applicable(initf, Tnm)
         tmpv = initf(Tnm)
         initv = op(tmpv, tmpv)
-        x = adjust isa Nothing ? initv : adjust(initv, 1)
+        if adjust isa Nothing
+            x = Tnm <: AbstractIrrational ? float(initv) : initv
+        else
+            x = adjust(initv, 1)
+        end
         if condf === !ismissing
             V = typeof(x)
         else
@@ -900,7 +943,8 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             # It is safe to use a non-missing init value
             # since missing will poison the result if present
             # we assume here that groups are non-empty (current design assures this)
-            if isconcretetype(S) && hasmethod($initf, Tuple{S})
+            # + workaround for https://github.com/JuliaLang/julia/issues/36978
+            if isconcretetype(S) && hasmethod($initf, Tuple{S}) && !(S <: Irrational)
                 fill!(outcol, $initf(S))
             else
                 fillfirst!(condf, outcol, incol, gd)
@@ -994,6 +1038,12 @@ groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd)
 
+# this definition is missing in Julia 1.0 LTS and is required by aggregation for var
+# TODO: remove this when we drop 1.0 support
+if VERSION < v"1.1"
+    Base.zero(::Type{Missing}) = missing
+end
+
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
     # !ismissing check is purely an optimization to avoid a copy later
@@ -1003,14 +1053,18 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
         T = real(eltype(means))
     end
     res = zeros(T, length(gd))
-    groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
-                 (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
-                 false, incol, gd)
+    return groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
+                        (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
+                        false, incol, gd)
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
     outcol = Aggregate(var, agg.condf)(incol, gd)
-    map!(sqrt, outcol, outcol)
+    if eltype(outcol) <: Union{Missing, Rational}
+        return sqrt.(outcol)
+    else
+        return map!(sqrt, outcol, outcol)
+    end
 end
 
 for f in (first, last)
@@ -1038,10 +1092,8 @@ function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedData
     end
 end
 
-isagg(p::Pair) =
-    check_aggregate(last(p)) isa AbstractAggregate && first(p) isa ColumnIndex
-
-const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+isagg((col, fun)::Pair, gdf::GroupedDataFrame) =
+    col isa ColumnIndex && check_aggregate(fun, parent(gdf)[!, col]) isa AbstractAggregate
 
 function _agg2idx_map_helper(idx, idx_agg)
     agg2idx_map = fill(-1, length(idx))
@@ -1101,11 +1153,11 @@ function _combine(f::AbstractVector{<:Pair},
     end
 
     idx_agg = nothing
-    if length(gd) > 0 && any(isagg, f)
+    if length(gd) > 0 && any(x -> isagg(x, gd), f)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
-    elseif length(gd) == 0 || !all(isagg, f)
+    elseif length(gd) == 0 || !all(x -> isagg(x, gd), f)
         # Trigger computation of indices
         # This can speed up some aggregates that would not trigger this on their own
         @assert gd.idx !== nothing
@@ -1114,9 +1166,9 @@ function _combine(f::AbstractVector{<:Pair},
     parentdf = parent(gd)
     for (i, p) in enumerate(f)
         source_cols, fun = p
-        if length(gd) > 0 && isagg(p)
+        if length(gd) > 0 && isagg(p, gd)
             incol = parentdf[!, source_cols]
-            agg = check_aggregate(last(p))
+            agg = check_aggregate(last(p), incol)
             outcol = agg(incol, gd)
             res[i] = idx_agg, outcol
         elseif keeprows && fun === identity && !(source_cols isa AsTable)
