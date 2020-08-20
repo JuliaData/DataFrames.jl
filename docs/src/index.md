@@ -74,8 +74,12 @@ DataFrames.jl is a great general purpose tool for data manipulation and
 wrangling, but it's not ideal for all applications. For users with more
 specialized needs, consider using:
 
-- [`TypedTables.jl`](https://juliadata.github.io/TypedTables.jl/stable/): Type-stable heterogeneous tables. Useful for improved performance when the structure of your table is relatively stable.
-- [`JuliaDB.jl`](https://juliadata.github.io/JuliaDB.jl/stable/): For users working with data that is too large to fit in memory, we suggest JuliaDB, which offers better performance for large datasets, and can handle out-of-core data manipulations (Python users can think of JuliaDB as the Julia version of `dask`).
+- [TypedTables.jl](https://juliadata.github.io/TypedTables.jl/stable/):
+  Type-stable heterogeneous tables. Useful for improved performance when the structure of your table is relatively stable and does not feature thousands of columns.
+- [JuliaDB.jl](https://juliadata.github.io/JuliaDB.jl/stable/):
+  For users working with data that is too large to fit in memory, we suggest JuliaDB.jl,
+  which offers better performance for large datasets, and can handle out-of-core data manipulations
+  (Python users can think of JuliaDB.jl as the Julia version of [dask](https://dask.org/)).
 
 Note that most tabular data libraries in the Julia ecosystem (including DataFrames) support a common interface (called `Tables.jl`). As a result, some libraries are
 capable or working with a range of tabular data structures, making it easy to
