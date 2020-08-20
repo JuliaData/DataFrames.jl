@@ -66,7 +66,7 @@ DataFrames.jl.
 While not all of these libraries are tightly integrated with DataFrames, because
 DataFrames are essentially collections of aligned Julia vectors, so it is easy
 to (a) pull out a vector for use with a non-DataFrames-integrated library, or (b)
-use `statsmodels` to convert your table into a homogenously-typed matrix.
+convert your table into a homogenously-typed matrix using `Tables.matrix` or StatsModels.jl.
 
 ### Other Julia Tabular Libraries
 
