@@ -84,7 +84,7 @@ specialized needs, consider using:
 Note that most tabular data libraries in the Julia ecosystem (including DataFrames) support a common interface (called `Tables.jl`). As a result, some libraries are
 capable or working with a range of tabular data structures, making it easy to
 move between tabular libraries as your needs change. A user of
-[`Query.jl`](https://github.com/queryverse/Query.jl), for example, can use the
+[Query.jl](https://github.com/queryverse/Query.jl), for example, can use the
 same code to manipulate data in a `DataFrame`, a `TypedTable`, or a JuliaDB table.
 
 ## Questions?
