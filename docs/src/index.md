@@ -35,7 +35,7 @@ DataFrames.jl.
 
 
 - **Statistics**
-    - [Statistics](https://docs.julialang.org/en/v1/stdlib/Statistics/): The Julia standard library comes with a wide range of statistics functionality, but to gain access to these functions you must first load `Statistics`.
+    - [Statistics](https://docs.julialang.org/en/v1/stdlib/Statistics/): The Julia standard library comes with a wide range of statistics functionality, but to gain access to these functions you must call `using Statistics`.
     - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/): Like `Statistics`, many linear algebra functionality (factorizations, inversions, etc.) live in a library you have to load to use. Similarly, [SparseArrays](https://docs.julialang.org/en/v1/stdlib/SparseArrays/) are also in the standard library but must be loaded to be used. 
     - [FreqTables.jl](https://github.com/nalimilan/FreqTables.jl): Create frequency tables / cross-tabulations.
       Tightly integrated with DataFrames.jl.
