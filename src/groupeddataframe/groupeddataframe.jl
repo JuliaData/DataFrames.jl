@@ -330,7 +330,7 @@ Base.convert(::Type{Array{T}}, key::GroupKey) where {T} = Vector{T}(key)
 Base.Array(key::GroupKey) = Vector(key)
 Base.Array{T}(key::GroupKey) where {T} = Vector{T}(key)
 
-Base.Dict(key::GroupKey) = Dict(Symbol(first(ki)) => last(ki) for ki in pairs(key))
+Base.Dict(key::GroupKey) = Dict(pairs(key))
 
 Base.broadcastable(::GroupKey) =
     throw(ArgumentError("broadcasting over `GroupKey`s is reserved"))
