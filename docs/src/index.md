@@ -55,10 +55,11 @@ DataFrames.jl.
     - [Gadfly.jl](http://gadflyjl.org/stable/): High-level plotting library with a "grammar of graphics" syntax akin to that of [ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html) (in R).
     - [VegaLite.jl](https://www.queryverse.org/VegaLite.jl/stable/): High-level plotting library that uses a different "grammar of graphics" syntax and has an emphasis on interactive graphics.
 - **Data Wrangling**:
-    - [`DataFramesMeta.jl`](https://github.com/JuliaData/DataFramesMeta.jl): A range of convenience functions for DataFrames that augment `select` and `transform` to provide a user experience similar to that provided by `dplyr` in R.
-    - [`Query.jl`](https://github.com/queryverse/Query.jl): `Query.jl` provides a single framework for data wrangling that works with a range of libraries, including DataFrames, other tabular data libraries (more on those below), and even non-tabular data. Provides many convenience functions analogous to those in `dplyr` or `linq`.
+    - [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl): A range of convenience functions for DataFrames.jl that augment `select` and `transform` to provide a user experience similar to that provided by [dplyr](https://dplyr.tidyverse.org/) in R.
+    - [Query.jl](https://github.com/queryverse/Query.jl): Query.jl provides a single framework for data wrangling that works with a range of libraries, including DataFrames.jl, other tabular data libraries (more on those below), and even non-tabular data. Provides many convenience functions analogous to those in dplyr in R or
+      [linq](https://en.wikipedia.org/wiki/Language_Integrated_Query).
 - **And More!**
-    - [`LightGraphs.jl`](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia, high performance network analysis library. Edgelists in DataFrames can be easily converted into Graphs using the [`GraphDataFrameBridge.jl`](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl) package.
+    - [LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia, high performance network analysis library. Edgelists in `DataFrame`s can be easily converted into graphs using the [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl) package.
 - **IO**:
     - DataFrames work well with a range of formats, including CSVs (using [`CSV.jl`](https://github.com/JuliaData/CSV.jl)), Stata, SPSS, and SAS files (using [`StatFiles`](https://github.com/queryverse/StatFiles.jl)), and reading (though not writing) parquet files (using [`ParquetFiles`](https://github.com/queryverse/ParquetFiles.jl)).
 
