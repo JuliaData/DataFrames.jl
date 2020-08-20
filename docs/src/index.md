@@ -10,19 +10,19 @@ is a good complementary resource.
 
 ## What is DataFrames.jl?
 
-DataFrames.jl provides a lightweight set of tools for working with tabular data
+DataFrames.jl provides a set of tools for working with tabular data
 in Julia. Its design and functionality are similar to those of
 [pandas](https://pandas.pydata.org/)
 (in Python) and `data.frame` (in R), making it a great general purpose
 data science tool, especially for those coming to Julia from R or Python.
 
-DataFrames plays a central role in the Julia Data ecosystem, and has
-tight integrations with a range of different libraries. DataFrames isn't the
-best tool for everyone working with tabular data --- as noted below, there are
+DataFrames.jl plays a central role in the Julia Data ecosystem, and has
+tight integrations with a range of different libraries. DataFrames.jl isn't the
+only tool for working with tabular data in Julia --- as noted below, there are
 some other great libraries for certain use-cases --- but it provides great
 data wrangling functionality through a familiar interface.
 
-## DataFrames and the Julia Data Ecosystem
+## DataFrames.jl and the Julia Data Ecosystem
 
 The Julia data ecosystem can be a difficult space for new users to navigate,
 in part because the Julia ecosystem tends to distribute functionality across
@@ -31,7 +31,7 @@ Because many people coming to DataFrames.jl are just starting to explore the
 Julia data ecosystem, below is a list of well-supported libraries that
 provide different data science tools, along with a few notes about
 what makes each library special, and how well integrated they are with
-DataFrames.
+DataFrames.jl.
 
 
 - **Statistical Modelling**
