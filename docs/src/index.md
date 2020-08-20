@@ -8,7 +8,7 @@ For more illustrations of its usage in conjunction with other packages, the
 [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
 is a good complementary resource.
 
-## What is DataFrames?
+## What is DataFrames.jl?
 
 DataFrames.jl provides a lightweight set of tools for working with tabular data
 in Julia. Its design and functionality are similar to those of `pandas`
