@@ -61,7 +61,11 @@ DataFrames.jl.
 - **And More!**
     - [LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia, high performance network analysis library. Edgelists in `DataFrame`s can be easily converted into graphs using the [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl) package.
 - **IO**:
-    - DataFrames work well with a range of formats, including CSVs (using [`CSV.jl`](https://github.com/JuliaData/CSV.jl)), Stata, SPSS, and SAS files (using [`StatFiles`](https://github.com/queryverse/StatFiles.jl)), and reading (though not writing) parquet files (using [`ParquetFiles`](https://github.com/queryverse/ParquetFiles.jl)).
+    - DataFrames.jl work well with a range of formats, including
+      CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
+      Stata, SPSS, and SAS files (using [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
+      and reading (though not writing) parquet files
+      (using [ParquetFiles.jl](https://github.com/queryverse/ParquetFiles.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl, because
 `DataFrame`s are essentially collections of aligned Julia vectors, so it is easy
