@@ -1374,11 +1374,11 @@ end
         # Dict with `Symbol` keys
         @test gd[Dict(key)] ≅ gd[i]
         # Dict with string keys
-        @test gd[Dict(String(k) => v for (k, v) in pairs(key))] ≅ gd[i]
+        @test gd[Dict([String(k) => v for (k, v) in pairs(key)]...)] ≅ gd[i]
         # Dict with AbstractString keys
-        @test gd[Dict(Test.GenericString(String(k)) => v for (k, v)  in pairs(key))] ≅ gd[i]
+        @test gd[Dict([Test.GenericString(String(k)) => v for (k, v)  in pairs(key)]...)] ≅ gd[i]
         # Out of order Dict
-        @test gd[Dict(k => v for (k, v) in Iterators.reverse(pairs(key)))] ≅ gd[i]
+        @test gd[Dict([k => v for (k, v) in Iterators.reverse(pairs(key))]...)] ≅ gd[i]
         # AbstractDict 
         @test gd[Test.GenericDict(Dict(key))] ≅ gd[i]
     end
