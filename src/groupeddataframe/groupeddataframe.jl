@@ -610,7 +610,7 @@ Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
 
 Get a group based on the values of the grouping columns.
 
-`key` may be a `NamedTuple` or `Tuple` of grouping column values (in the same
+`key` may be a `GroupKey`, `NamedTuple` or `Tuple` of grouping column values (in the same
 order as the `cols` argument to `groupby`). It may also be an `AbstractDict`, in which case the 
 order of the arguments does not matter. 
 
