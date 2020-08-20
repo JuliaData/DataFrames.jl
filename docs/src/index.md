@@ -63,7 +63,7 @@ DataFrames.jl.
 - **IO**:
     - DataFrames work well with a range of formats, including CSVs (using [`CSV.jl`](https://github.com/JuliaData/CSV.jl)), Stata, SPSS, and SAS files (using [`StatFiles`](https://github.com/queryverse/StatFiles.jl)), and reading (though not writing) parquet files (using [`ParquetFiles`](https://github.com/queryverse/ParquetFiles.jl)).
 
-While not all of these libraries are tightly integrated with DataFrames, because
+While not all of these libraries are tightly integrated with DataFrames.jl, because
 `DataFrame`s are essentially collections of aligned Julia vectors, so it is easy
 to (a) pull out a vector for use with a non-DataFrames-integrated library, or (b)
 convert your table into a homogenously-typed matrix using `Tables.matrix` or StatsModels.jl.
