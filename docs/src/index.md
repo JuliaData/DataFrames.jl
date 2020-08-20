@@ -13,7 +13,7 @@ is a good complementary resource.
 DataFrames.jl provides a lightweight set of tools for working with tabular data
 in Julia. Its design and functionality are similar to those of
 [pandas](https://pandas.pydata.org/)
-(in Python) and `data.frames` (in R), making it a great general purpose
+(in Python) and `data.frame` (in R), making it a great general purpose
 data science tool, especially for those coming to Julia from R or Python.
 
 DataFrames plays a central role in the Julia Data ecosystem, and has
