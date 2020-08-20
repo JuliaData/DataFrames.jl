@@ -26,33 +26,25 @@ data wrangling functionality through a familiar interface.
 The Julia data ecosystem can be a difficult space for new users to navigate,
 in part because the Julia ecosystem tends to distribute functionality across
 different libraries more than some other languages.
-
-<<<<<<< HEAD
-<<<<<<< HEAD
 Because many people coming to DataFrames.jl are just starting to explore the
-=======
-Because may people coming to DataFrames.jl are just starting to explore the
->>>>>>> d5cc3900... update text extensively
-=======
-Because many people coming to DataFrames.jl are just starting to explore the
->>>>>>> 0bd8a6c8... add freqtables.jl
 Julia data ecosystem, below is a list of well-supported libraries that
 provide different data science tools, along with a few notes about
 what makes each library special, and how well integrated they are with
 DataFrames.
 
-- **Statistical Modelling / Machine Learning**
-    - [`Statistics`](https://docs.julialang.org/en/v1/stdlib/Statistics/): The Julia standard library comes with a wide range of statistics functionality, but to gain access to these functions you must first load `Statistics`.
-<<<<<<< HEAD
-<<<<<<< HEAD
-    - [`FreqTables.jl`](https://github.com/nalimilan/FreqTables.jl): Create frequency tables / cross-tabulations. Tightly integrated with DataFrames.
-    - [`HypothesisTests.jl`](https://juliastats.org/HypothesisTests.jl/stable/): A range of hypothesis testing tools.
-    - [`GLM.jl`](https://juliastats.org/GLM.jl/stable/manual/): Tools for estimating linear and generalized linear models. Tightly integrated with DataFrames.
-    - [`StatsModels.jl`](https://juliastats.org/StatsModels.jl/stable/): For converting heterogeneous DataFrames into homogenous matrices for use with linear algebra libraries or machine learning applications that don't directly support DataFrames. Will do things like convert categorical variables into indicators/one-hot-encodings, create interaction terms, etc.
-    - [`MultivariateStats.jl`](https://multivariatestatsjl.readthedocs.io/en/stable/index.html): linear regression, ridge regression, PCA, component analyses tools. Not well integrated with DataFrames, but easily used using `statsmodels.jl`.
-    - [`Clustering.jl`](https://juliastats.org/Clustering.jl/stable/): All forms of clustering algorithms and tools for cluster evaluation.
-    - [`Flux.jl`](https://fluxml.ai/Flux.jl/stable/): A pure-Julia package for building your own machine learning models (a little more low-level than `scikit-learn`). Not well integrated with DataFrames, but easily used using `statsmodels.jl`.
-    - [`ScikitLearn.jl`](https://scikitlearnjl.readthedocs.io/en/latest/): A Julia wrapper around the full Python `scikit-learn` machine learning library. Not well integrated with DataFrames, but easily used using `statsmodels.jl`.
+
+- **Statistical Modelling**
+    - [Statistics](https://docs.julialang.org/en/v1/stdlib/Statistics/): The Julia standard library comes with a wide range of statistics functionality, but to gain access to these functions you must first load `Statistics`.
+    - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/): Like `Statistics`, many linear algebra functionality (factorizations, inversions, etc.) live in a library you have to load to use. Similarly, [SparseArrays](https://docs.julialang.org/en/v1/stdlib/SparseArrays/) are also in the standard library but must be loaded to be used. 
+    - [FreqTables.jl](https://github.com/nalimilan/FreqTables.jl): Create frequency tables / cross-tabulations. Tightly integrated with DataFrames.
+    - [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/stable/): A range of hypothesis testing tools.
+    - [GLM.jl](https://juliastats.org/GLM.jl/stable/manual/): Tools for estimating linear and generalized linear models. Tightly integrated with DataFrames.
+    - [StatsModels.jl](https://juliastats.org/StatsModels.jl/stable/): For converting heterogeneous DataFrames into homogenous matrices for use with linear algebra libraries or machine learning applications that don't directly support DataFrames. Will do things like convert categorical variables into indicators/one-hot-encodings, create interaction terms, etc.
+    - [MultivariateStats.jl](https://multivariatestatsjl.readthedocs.io/en/stable/index.html): linear regression, ridge regression, PCA, component analyses tools. Not well integrated with DataFrames, but easily used using `StatsModels`.
+- **Machine Learning**
+    - [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl): if you're more of an applied user, there is a single package the pulls from all these different libraries and provides a single, `scikit-learn` inspired API: `MLJ.jl`. MLJ provides a common interface for a wide range of machine learning algorithms. You can find a list of all supported models (both supervised and unsupervised), as well as an evaluation of the maturity of each library, [here](https://github.com/alan-turing-institute/MLJ.jl#available-models), and [some great tutorials here](https://alan-turing-institute.github.io/MLJTutorials/).  For *most* applied users, MLJ is probably a good place to start, especially if you like / are familiar with `scikit-learn`.
+    - [ScikitLearn.jl](https://scikitlearnjl.readthedocs.io/en/latest/): A Julia wrapper around the full Python scikit-learn machine learning library. Not well integrated with DataFrames, but easily used using statsmodels.jl.
+    - Deep learning: [KNet.jl](https://denizyuret.github.io/Knet.jl/stable/tutorial/#Introduction-to-Knet-1) and [Flux.jl](https://github.com/FluxML/Flux.jl). 
 - **Plotting**
     - [`Plots.jl`](http://docs.juliaplots.org/latest/): Powerful, modern plotting library with a syntax akin to that of `matplotlib` (in Python) or `plot` (in R). [`StatsPlots`](http://docs.juliaplots.org/latest/tutorial/#Using-Plot-Recipes-1) provides `Plots.jl` with recipes for many standard statistical plots.
     - [`Gadfly.jl`](http://gadflyjl.org/stable/): High-level plotting library with a "grammar of graphics" syntax akin to that of `ggplot` (in R).
@@ -63,30 +55,7 @@ DataFrames.
 - **And More!**
     - [`LightGraphs.jl`](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia, high performance network analysis library. Edgelists in DataFrames can be easily converted into Graphs using the [`GraphDataFrameBridge.jl`](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl) package.
 - **IO**:
-    - DataFrames work well with a range of formats, including (but not limited to) CSVs (using [`CSV.jl`](https://github.com/JuliaData/CSV.jl)), Stata, SPSS, and SAS files (using [`StatFiles`](https://github.com/queryverse/StatFiles.jl)), JSON (using [`JSONTables.jl`](https://github.com/JuliaData/JSONTables.jl)), and reading (though not writing) parquet files (using [`ParquetFiles`](https://github.com/queryverse/ParquetFiles.jl)).
-=======
-=======
-    - [`FreqTables.jl`](https://github.com/nalimilan/FreqTables.jl): Create frequency tables / cross-tabulations. Tightly integrated with DataFrames.
->>>>>>> 0bd8a6c8... add freqtables.jl
-    - [`HypothesisTests.jl`](https://juliastats.org/HypothesisTests.jl/stable/): A range of hypothesis testing tools.
-    - [`GLM.jl`](https://juliastats.org/GLM.jl/stable/manual/): Tools for estimating linear and generalized linear models. Tightly integrated with DataFrames.
-    - [`statsmodels.jl`](https://juliastats.org/StatsModels.jl/stable/): For converting heterogeneous DataFrames into homogenous matrices for use with linear algebra libraries or machine learning applications that don't directly support DataFrames. Will do things like convert categorical variables into indicators/one-hot-encodings, create interaction terms, etc.
-    - [`MultivariateStats.jl`](https://multivariatestatsjl.readthedocs.io/en/stable/index.html): linear regression, ridge regression, PCA, component analyses tools. Not well integrated with DataFrames, but easily used using `statsmodels.jl`.
-    - [`Clustering.jl`](https://juliastats.org/Clustering.jl/stable/): All forms of clustering algorithms and tools for cluster evaluation.
-    - [`flux.jl`](https://fluxml.ai/Flux.jl/stable/): A pure-Julia package for building your own machine learning models (a little more low-level than `scikit-learn`). Not well integrated with DataFrames, but easily used using `statsmodels.jl`.
-    - [`scikitlearn.jl`](https://scikitlearnjl.readthedocs.io/en/latest/): A Julia wrapper around the full Python `scikit-learn` machine learning library. Not well integrated with DataFrames, but easily used using `statsmodels.jl`.
-- **Plotting**
-    - [`Plots.jl`](http://docs.juliaplots.org/latest/): Powerful, modern plotting library with a syntax akin to that of `matplotlib` (in Python) or `plot` (in R). [`StatsPlots`](http://docs.juliaplots.org/latest/tutorial/#Using-Plot-Recipes-1) provides `Plots.jl` with recipes for many standard statistical plots.
-    - [`gadfly.jl`]: High-level plotting library with a syntax akin to that of `ggplot` (in R).
-    - [`vega-lite.jl`]: High-level plotting library with a syntax akin to that of `altair` (in Python).
-- **Data Wrangling**:
-    - [`DataFramesMeta.jl`](https://github.com/JuliaData/DataFramesMeta.jl): A range of convenience functions for DataFrames that augment `select` and `transform` to provide a user experience similar to that provided by `dplyr` in R.
-    - [`Query.jl`](https://github.com/queryverse/Query.jl): Convenience functions with a similar goal to `DataFramesMeta.jl`, but built to work with any tabular library in Julia (more on other tabular libraries below).
-- **And More!**
-    - [`lightgraphs.jl`](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia, high performance network analysis library. Edgelists in DataFrames can be easily converted into Graphs using the [`GraphDataFrameBridge.jl`](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl) package.
-- **IO**:
     - DataFrames work well with a range of formats, including CSVs (using [`CSV.jl`](https://github.com/JuliaData/CSV.jl)), Stata, SPSS, and SAS files (using [`StatFiles`](https://github.com/queryverse/StatFiles.jl)), and reading (though not writing) parquet files (using [`ParquetFiles`](https://github.com/queryverse/ParquetFiles.jl)).
->>>>>>> d5cc3900... update text extensively
 
 While not all of these libraries are tightly integrated with DataFrames, because
 DataFrames are essentially collections of aligned Julia vectors, so it is easy
@@ -102,12 +71,7 @@ specialized needs, consider using:
 - [`TypedTables.jl`](https://juliadata.github.io/TypedTables.jl/stable/): Type-stable heterogeneous tables. Useful for improved performance when the structure of your table is relatively stable.
 - [`JuliaDB.jl`](https://juliadata.github.io/JuliaDB.jl/stable/): For users working with data that is too large to fit in memory, we suggest JuliaDB, which offers better performance for large datasets, and can handle out-of-core data manipulations (Python users can think of JuliaDB as the Julia version of `dask`).
 
-Note that most tabular data libraries in the Julia ecosystem (including DataFrames)
-<<<<<<< HEAD
-support a common interface. As a result, some libraries are
-=======
-support a common interface (called `Tables.jl`). As a result, some libraries are
->>>>>>> d5cc3900... update text extensively
+Note that most tabular data libraries in the Julia ecosystem (including DataFrames) support a common interface (called `Tables.jl`). As a result, some libraries are
 capable or working with a range of tabular data structures, making it easy to
 move between tabular libraries as your needs change. A user of
 [`Query.jl`](https://github.com/queryverse/Query.jl), for example, can use the
