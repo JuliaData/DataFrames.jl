@@ -70,7 +70,7 @@ convert your table into a homogenously-typed matrix using `Tables.matrix` or Sta
 
 ### Other Julia Tabular Libraries
 
-DataFrames is a great general purpose tool for data manipulation and
+DataFrames.jl is a great general purpose tool for data manipulation and
 wrangling, but it's not ideal for all applications. For users with more
 specialized needs, consider using:
 
