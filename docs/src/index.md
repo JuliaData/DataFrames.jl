@@ -36,16 +36,17 @@ DataFrames.jl.
 
 - **Statistics**
     - [Statistics](https://docs.julialang.org/en/v1/stdlib/Statistics/): The Julia standard library comes with a wide range of statistics functionality, but to gain access to these functions you must call `using Statistics`.
-    - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/): Like `Statistics`, many linear algebra functionality (factorizations, inversions, etc.) live in a library you have to load to use. Similarly, [SparseArrays](https://docs.julialang.org/en/v1/stdlib/SparseArrays/) are also in the standard library but must be loaded to be used. 
+    - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/): Like `Statistics`, many linear algebra features (factorizations, inversions, etc.) live in a library you have to load to use.
+    - [SparseArrays](https://docs.julialang.org/en/v1/stdlib/SparseArrays/) are also in the standard library but must be loaded to be used. 
     - [FreqTables.jl](https://github.com/nalimilan/FreqTables.jl): Create frequency tables / cross-tabulations.
       Tightly integrated with DataFrames.jl.
     - [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/stable/): A range of hypothesis testing tools.
     - [GLM.jl](https://juliastats.org/GLM.jl/stable/manual/): Tools for estimating linear and generalized linear models.
       Tightly integrated with DataFrames.jl.
-    - [StatsModels.jl](https://juliastats.org/StatsModels.jl/stable/): For converting heterogeneous DataFrames into homogenous matrices for use with linear algebra libraries or machine learning applications that don't directly support DataFrames. Will do things like convert categorical variables into indicators/one-hot-encodings, create interaction terms, etc.
+    - [StatsModels.jl](https://juliastats.org/StatsModels.jl/stable/): For converting heterogeneous `DataFrame` into homogenous matrices for use with linear algebra libraries or machine learning applications that don't directly support `DataFrame`s. Will do things like convert categorical variables into indicators/one-hot-encodings, create interaction terms, etc.
     - [MultivariateStats.jl](https://multivariatestatsjl.readthedocs.io/en/stable/index.html): linear regression, ridge regression, PCA, component analyses tools. Not well integrated with DataFrames.jl, but easily used in combination with `StatsModels`.
 - **Machine Learning**
-    - [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl): if you're more of an applied user, there is a single package the pulls from all these different libraries and provides a single, `scikit-learn` inspired API: `MLJ.jl`. MLJ provides a common interface for a wide range of machine learning algorithms. You can find a list of all supported models (both supervised and unsupervised), as well as an evaluation of the maturity of each library, [here](https://github.com/alan-turing-institute/MLJ.jl#available-models), and [some great tutorials here](https://alan-turing-institute.github.io/MLJTutorials/).  For *most* applied users, MLJ is probably a good place to start, especially if you like / are familiar with `scikit-learn`.
+    - [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl): if you're more of an applied user, there is a single package the pulls from all these different libraries and provides a single, `scikit-learn` inspired API: `MLJ.jl`. MLJ provides a common interface for a wide range of machine learning algorithms. 
     - [ScikitLearn.jl](https://cstjean.github.io/ScikitLearn.jl/stable/): A Julia wrapper around the full Python scikit-learn machine learning library. Not well integrated with DataFrames, but can be combined using StatsModels.jl.
     - Deep learning: [KNet.jl](https://denizyuret.github.io/Knet.jl/stable/tutorial/#Introduction-to-Knet-1) and [Flux.jl](https://github.com/FluxML/Flux.jl). 
 - **Plotting**
