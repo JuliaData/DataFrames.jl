@@ -81,7 +81,8 @@ specialized needs, consider using:
   which offers better performance for large datasets, and can handle out-of-core data manipulations
   (Python users can think of JuliaDB.jl as the Julia version of [dask](https://dask.org/)).
 
-Note that most tabular data libraries in the Julia ecosystem (including DataFrames) support a common interface (called `Tables.jl`). As a result, some libraries are
+Note that most tabular data libraries in the Julia ecosystem (including DataFrames.jl)
+support a common interface (defined in the Tables.jl package). As a result, some libraries are
 capable or working with a range of tabular data structures, making it easy to
 move between tabular libraries as your needs change. A user of
 [Query.jl](https://github.com/queryverse/Query.jl), for example, can use the
