@@ -38,7 +38,7 @@
 * add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
 * allow passing column name to specify the position where a new columns should be
   inserted in `insertcols!` ([#2365](https://github.com/JuliaData/DataFrames.jl/pull/2365))
-* allow `GroupedDataFrame`s to be indexed using `Dict`s, which can use `Symbol` or string keys and 
+* allow `GroupedDataFrame`s to be indexed using a dictionary, which can use `Symbol` or string keys and 
   are not dependent on the order of keys. ([#2281](https://github.com/JuliaData/DataFrames.jl/pull/2281))
 
 ## Deprecated
