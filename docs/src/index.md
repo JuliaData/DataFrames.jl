@@ -13,8 +13,9 @@ is a good complementary resource.
 DataFrames.jl provides a set of tools for working with tabular data
 in Julia. Its design and functionality are similar to those of
 [pandas](https://pandas.pydata.org/)
-(in Python) and `data.frame` (in R), making it a great general purpose
-data science tool, especially for those coming to Julia from R or Python.
+(in Python) and `data.frame`, `data.table` and dplyr (in R), making it 
+a great general purpose data science tool, especially for those 
+coming to Julia from R or Python.
 
 DataFrames.jl plays a central role in the Julia Data ecosystem, and has
 tight integrations with a range of different libraries. DataFrames.jl isn't the
@@ -61,8 +62,9 @@ DataFrames.jl.
     - [VegaLite.jl](https://www.queryverse.org/VegaLite.jl/stable/): High-level plotting library that uses a different "grammar of graphics" syntax and has an emphasis on interactive graphics.
 - **Data Wrangling**:
     - [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl): A range of convenience functions for DataFrames.jl that augment `select` and `transform` to provide a user experience similar to that provided by [dplyr](https://dplyr.tidyverse.org/) in R.
-    - [Query.jl](https://github.com/queryverse/Query.jl): Query.jl provides a single framework for data wrangling that works with a range of libraries, including DataFrames.jl, other tabular data libraries (more on those below), and even non-tabular data. Provides many convenience functions analogous to those in dplyr in R or
+    - [Query.jl](https://github.com/queryverse/Query.jl): Query.jl provides a single framework for data wrangling that works with a range of libraries, including DataFrames.jl, other tabular data libraries (more on those below), and even non-tabular 6data. Provides many convenience functions analogous to those in dplyr in R or
       [linq](https://en.wikipedia.org/wiki/Language_Integrated_Query).
+    - You can find more on both of these packages [here](http://juliadata.github.io/DataFrames.jl/latest/man/querying_frameworks/#Data-manipulation-frameworks).
 - **And More!**
     - [LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia, high performance network analysis library. Edgelists in `DataFrame`s can be easily converted into graphs using the [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl) package.
 - **IO**:
