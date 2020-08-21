@@ -409,7 +409,10 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     return true
 end
-
+"""
+Tests for approximate equality between two DataFrames 
+    `isapprox(::AbstractDataFrame,::AbstractDataFrame; kwargs...)`
+"""
 function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
                        atol::Real=0, rtol::Real=atol>0 ? 0 : √eps(),
                        nans::Bool=false, norm::Function=norm)
