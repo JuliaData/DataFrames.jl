@@ -409,6 +409,7 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     return true
 end
+
 """
     isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
              rtol::Real=atol>0 ? 0 : √eps, atol::Real=0, nans::Bool=false, norm::Function)
