@@ -1,6 +1,6 @@
 # Comparisons
 
-This section compares DataFrames.jl with other data manipulation frameworks
+This section compares DataFrames.jl with other data manipulation frameworks.
 
 ## Comparison with the R package dplyr
 
