@@ -46,12 +46,17 @@ DataFrames.jl.
     - [StatsModels.jl](https://juliastats.org/StatsModels.jl/stable/): For converting heterogeneous `DataFrame` into homogenous matrices for use with linear algebra libraries or machine learning applications that don't directly support `DataFrame`s. Will do things like convert categorical variables into indicators/one-hot-encodings, create interaction terms, etc.
     - [MultivariateStats.jl](https://multivariatestatsjl.readthedocs.io/en/stable/index.html): linear regression, ridge regression, PCA, component analyses tools. Not well integrated with DataFrames.jl, but easily used in combination with `StatsModels`.
 - **Machine Learning**
-    - [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl): if you're more of an applied user, there is a single package the pulls from all these different libraries and provides a single, `scikit-learn` inspired API: `MLJ.jl`. MLJ provides a common interface for a wide range of machine learning algorithms. 
-    - [ScikitLearn.jl](https://cstjean.github.io/ScikitLearn.jl/stable/): A Julia wrapper around the full Python scikit-learn machine learning library. Not well integrated with DataFrames, but can be combined using StatsModels.jl.
+    - [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl):
+      if you're more of an applied user, there is a single package the pulls
+      from all these different libraries and provides a single, scikit-learn inspired API: MLJ.jl.
+      MLJ.jl provides a common interface for a wide range of machine learning algorithms. 
+    - [ScikitLearn.jl](https://cstjean.github.io/ScikitLearn.jl/stable/):
+      A Julia wrapper around the full Python scikit-learn machine learning library.
+      Not well integrated with DataFrames.jl, but can be combined using StatsModels.jl.
     - Deep learning: [KNet.jl](https://denizyuret.github.io/Knet.jl/stable/tutorial/#Introduction-to-Knet-1) and [Flux.jl](https://github.com/FluxML/Flux.jl). 
 - **Plotting**
     - [Plots.jl](http://docs.juliaplots.org/latest/): Powerful, modern plotting library with a syntax akin to that of [matplotlib](https://matplotlib.org/) (in Python) or `plot` (in R).
-      [`StatsPlots`](http://docs.juliaplots.org/latest/tutorial/#Using-Plot-Recipes-1) provides Plots.jl with recipes for many standard statistical plots.
+      [StatsPlots.jl](http://docs.juliaplots.org/latest/tutorial/#Using-Plot-Recipes-1) provides Plots.jl with recipes for many standard statistical plots.
     - [Gadfly.jl](http://gadflyjl.org/stable/): High-level plotting library with a "grammar of graphics" syntax akin to that of [ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html) (in R).
     - [VegaLite.jl](https://www.queryverse.org/VegaLite.jl/stable/): High-level plotting library that uses a different "grammar of graphics" syntax and has an emphasis on interactive graphics.
 - **Data Wrangling**:
@@ -70,7 +75,7 @@ DataFrames.jl.
 While not all of these libraries are tightly integrated with DataFrames.jl, because
 `DataFrame`s are essentially collections of aligned Julia vectors, so it is easy
 to (a) pull out a vector for use with a non-DataFrames-integrated library, or (b)
-convert your table into a homogenously-typed matrix using `Tables.matrix` or StatsModels.jl.
+convert your table into a homogenously-typed matrix using the `Matrix` constructor or StatsModels.jl.
 
 ### Other Julia Tabular Libraries
 
@@ -86,11 +91,12 @@ specialized needs, consider using:
   (Python users can think of JuliaDB.jl as the Julia version of [dask](https://dask.org/)).
 
 Note that most tabular data libraries in the Julia ecosystem (including DataFrames.jl)
-support a common interface (defined in the Tables.jl package). As a result, some libraries are
+support a common interface (defined in the [Tables.jl](https://github.com/JuliaData/Tables.jl) package).
+As a result, some libraries are
 capable or working with a range of tabular data structures, making it easy to
 move between tabular libraries as your needs change. A user of
 [Query.jl](https://github.com/queryverse/Query.jl), for example, can use the
-same code to manipulate data in a `DataFrame`, a `TypedTable`, or a JuliaDB table.
+same code to manipulate data in a `DataFrame`, a `Table` (defined by TypedTables.jl), or a JuliaDB table.
 
 ## Questions?
 
