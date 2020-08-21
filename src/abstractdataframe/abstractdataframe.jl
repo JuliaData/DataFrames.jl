@@ -225,7 +225,8 @@ Create a new data frame that is a copy of `df` with changed column names.
 Each name is changed at most once. Permutation of names is allowed.
 
 # Arguments
-- `df` : the `AbstractDataFrame`
+- `df` : the `AbstractDataFrame`; if it is a `SubDataFrame` then renaming is
+  only allowed if it was created using `:` as a column selector.
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
 - `f` : a function which for each column takes the old name as a `String`

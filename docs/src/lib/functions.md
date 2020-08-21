@@ -21,6 +21,7 @@ length
 ncol
 ndims
 nrow
+rownumber
 show
 size
 ```
