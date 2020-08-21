@@ -187,8 +187,16 @@ end
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test_throws ArgumentError insertcols!(df, 5, :newcol => ["a", "b"])
     @test_throws ArgumentError insertcols!(df, 0, :newcol => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, :z, :newcol => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, "z", :newcol => ["a", "b"])
+    @test_throws MethodError insertcols!(df, true, :newcol => ["a", "b"])
     @test_throws DimensionMismatch insertcols!(df, 1, :newcol => ["a"])
+    @test_throws DimensionMismatch insertcols!(df, :a, :newcol => ["a"])
+    @test_throws DimensionMismatch insertcols!(df, "a", :newcol => ["a"])
+    ref1 = insertcols!(copy(df), :a, :newcol => ["a", "b"])
+    ref2 = insertcols!(copy(df), "a", :newcol => ["a", "b"])
     @test insertcols!(df, 1, :newcol => ["a", "b"]) == df
+    @test ref1 == ref2 == df
     @test names(df) == ["newcol", "a", "b"]
     @test df.a == [1, 2]
     @test df.b == [3.0, 4.0]

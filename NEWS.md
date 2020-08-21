@@ -35,9 +35,11 @@
   ([#2308](https://github.com/JuliaData/DataFrames.jl/pull/2308))
 * allow column renaming in joins
   ([#2313](https://github.com/JuliaData/DataFrames.jl/pull/2313)
- * add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
- * Allow `GroupedDataFrame`s to be indexed using `Dict`s, which can use `String` keys and 
- are not dependent on the order of keys. ([#2281](https://github.com/JuliaData/DataFrames.jl/pull/2281))
+* add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
+* allow passing column name to specify the position where a new columns should be
+  inserted in `insertcols!` ([#2365](https://github.com/JuliaData/DataFrames.jl/pull/2365))
+* allow `GroupedDataFrame`s to be indexed using `Dict`s, which can use `Symbol` or string keys and 
+  are not dependent on the order of keys. ([#2281](https://github.com/JuliaData/DataFrames.jl/pull/2281))
 
 ## Deprecated
 
