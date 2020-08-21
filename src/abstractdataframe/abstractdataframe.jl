@@ -410,6 +410,13 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
+function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                       atol::Real=0, rtol::Real=atol>0 ? 0 : √eps(),
+                       nans::Bool=false, norm::Function=norm)
+    size(df1) == size(df2) || throw(DimensionMismatch("dimensions must match: a has dims $(size(df1)), b has dims $(size(df2))"))
+    isequal(index(df1), index(df2)) || throw(ArgumentError("column names of passed data frames do not match"))
+    return all(isapprox.(eachcol(df1), eachcol(df2), atol=atol, rtol=rtol, nans=nans, norm=norm))
+end
 ##############################################################################
 ##
 ## Description

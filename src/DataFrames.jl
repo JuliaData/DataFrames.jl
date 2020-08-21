@@ -5,6 +5,7 @@ using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using CategoricalArrays, Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
+import LinearAlgebra: norm
 
 import DataAPI,
        DataAPI.All,
