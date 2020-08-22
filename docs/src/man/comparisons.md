@@ -17,10 +17,11 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Sort rows|`sort(df, :x)`|`arrange(df, x)`|
 
 As in dplyr, some of these functions can be applied to grouped data frames, in which case they operate by group:
+
 |Operations| DataFrames.jl       | dplyr |
 |:------------|:------------|:------------|
-|Reduce multiple values|`combine(grouby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`
-|Add new columns|`transform(grouby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`
+|Reduce multiple values|`combine(grouby(df, :id), :x => mean)`|`summarize(group_by(df, id), mean(x))`|
+|Add new columns|`transform(grouby(df, :id), :x => mean)`|`mutate(group_by(df, id), mean(x))`|
 |Pick & transform columns|`select(grouby(df, :id), :x => mean, :y)`|`transmute(group_by(df, id), mean(x), y)`|
 
 
@@ -56,6 +57,7 @@ The following table compares the main functions of DataFrames.jl with Stata
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
 
 Some of these functions can be applied to grouped data frames, in which case they operate by group:
+
 |Operations| DataFrames.jl     | Stata|
 |:------------|:------------|:------------|
 |Add new columns|`transform!(groupby(df, :id), :x => mean)`|`egen x_mean = mean(x), by(id)`|
