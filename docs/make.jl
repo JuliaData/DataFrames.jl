@@ -25,9 +25,8 @@ makedocs(
             "Sorting" => "man/sorting.md",
             "Categorical Data" => "man/categorical.md",
             "Missing Data" => "man/missing.md",
-            "Data manipulation frameworks" => "man/querying_frameworks.md"
+            "Data manipulation frameworks" => "man/querying_frameworks.md",
             "Comparison with Stata/R" => "man/comparison.md"
-
         ],
         "API" => Any[
             "Types" => "lib/types.md",
