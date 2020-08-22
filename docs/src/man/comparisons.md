@@ -4,7 +4,7 @@ This section compares DataFrames.jl with other data manipulation frameworks.
 
 ## Comparison with the R package dplyr
 
-The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1)
+The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1):
 
 |Operations     | dplyr | DataFrames.jl|  
 |:------------|:------------|:------------|
@@ -43,7 +43,7 @@ Operations|dplyr| DataFrames.jl       |
 
 ## Comparison with Stata (version 8 and above)
 
-The following table compares the main functions of DataFrames.jl with Stata 
+The following table compares the main functions of DataFrames.jl with Stata:
 
 |Operations | Stata| DataFrames.jl | 
 |:------------|:------------|:------------|
