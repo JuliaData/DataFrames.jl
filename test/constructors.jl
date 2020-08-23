@@ -223,6 +223,8 @@ end
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
 
     df = DataFrame(:type => [], :begin => [])
     @test propertynames(df) == [:type, :begin]
