@@ -124,3 +124,8 @@ eachrow
 values
 pairs
 ```
+
+## Equality
+```@docs
+isapprox
+```
