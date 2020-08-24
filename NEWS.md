@@ -40,7 +40,9 @@
   inserted in `insertcols!` ([#2365](https://github.com/JuliaData/DataFrames.jl/pull/2365))
 * add `isapprox` method to check for approximate equality between two dataframes
   ([#2373](https://github.com/JuliaData/DataFrames.jl/pull/2373))
-  
+* add `columnindex` for `DataFrameRow`
+  ([#2380](https://github.com/JuliaData/DataFrames.jl/pull/2380))
+
 ## Deprecated
 
 * `DataFrame!` is now deprecated ([#2338](https://github.com/JuliaData/DataFrames.jl/pull/2338))
