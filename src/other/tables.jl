@@ -6,6 +6,21 @@ Tables.rows(df::AbstractDataFrame) = eachrow(df)
 Tables.rowtable(df::AbstractDataFrame) = Tables.rowtable(Tables.columntable(df))
 Tables.namedtupleiterator(df::AbstractDataFrame) =
     Tables.namedtupleiterator(Tables.columntable(df))
+
+function Tables.columnindex(df::Union{AbstractDataFrame, DataFrameRow}, idx::Symbol)
+    ind = index(df)
+    if ind isa Index
+        return get(ind.lookup, idx, 0)
+    else
+        parent_ind = ind.parent
+        loc = get(parent_ind.lookup, idx, 0)
+        return loc == 0 || loc > length(ind.remap) ? 0 : max(0, ind.remap[loc])
+    end
+end
+
+Tables.columnindex(df::Union{AbstractDataFrame, DataFrameRow}, idx::AbstractString) =
+    columnindex(df, Symbol(idx))
+
 Tables.columnindex(df::AbstractDataFrame, idx::AbstractString) =
     columnindex(df, Symbol(idx))
 
