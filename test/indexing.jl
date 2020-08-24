@@ -1830,9 +1830,9 @@ end
             @test_throws ArgumentError dfr[idx]
         end
 
-        sdf = df[1:1, 3:2]
+        sdf = @view df[1:1, 3:2]
         for idx in [:x1, :x2, :x3, :x4]
-            @test_throws ArgumentError dfr[idx]
+            @test_throws ArgumentError sdf[idx]
         end
     end
 end
