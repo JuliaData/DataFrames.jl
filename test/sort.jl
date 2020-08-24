@@ -59,6 +59,8 @@ using DataFrames, Random, Test
 
     @test df == ds
 
+    @test_throws ArgumentError sort(df, (:rank, :chrom, :pos))
+
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test !issorted(df, :x)
     @test issorted(sort(df, :x), :x)

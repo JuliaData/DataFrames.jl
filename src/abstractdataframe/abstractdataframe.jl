@@ -225,7 +225,8 @@ Create a new data frame that is a copy of `df` with changed column names.
 Each name is changed at most once. Permutation of names is allowed.
 
 # Arguments
-- `df` : the `AbstractDataFrame`
+- `df` : the `AbstractDataFrame`; if it is a `SubDataFrame` then renaming is
+  only allowed if it was created using `:` as a column selector.
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
 - `f` : a function which for each column takes the old name as a `String`
@@ -409,6 +410,22 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
+"""
+    isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
+             rtol::Real=atol>0 ? 0 : √eps, atol::Real=0,
+             nans::Bool=false, norm::Function=norm)
+
+Inexact equality comparison. `df1` and `df2` must have the same size and column names.
+Return  `true` if `isapprox` with given keyword arguments
+applied to all pairs of columns stored in `df1` and `df2` returns `true`.
+"""
+function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                       atol::Real=0, rtol::Real=atol>0 ? 0 : √eps(),
+                       nans::Bool=false, norm::Function=norm)
+    size(df1) == size(df2) || throw(DimensionMismatch("dimensions must match: a has dims $(size(df1)), b has dims $(size(df2))"))
+    isequal(index(df1), index(df2)) || throw(ArgumentError("column names of passed data frames do not match"))
+    return all(isapprox.(eachcol(df1), eachcol(df2), atol=atol, rtol=rtol, nans=nans, norm=norm))
+end
 ##############################################################################
 ##
 ## Description
@@ -476,10 +493,7 @@ number of unique values in a column. If a column's base type derives from `Real`
 `:nunique` will return `nothing`s.
 
 Missing values are filtered in the calculation of all statistics, however the
-column `:nmissing` will report the number of missing values of that variable. If
-the column does not allow missing values, `nothing` is returned. Consequently,
-`nmissing = 0` indicates that the column allows missing values, but does not
-currently contain any.
+column `:nmissing` will report the number of missing values of that variable.
 
 If custom functions are provided, they are called repeatedly with the vector
 corresponding to each column as the only argument. For columns allowing for
@@ -494,11 +508,11 @@ julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 julia> describe(df)
 3×7 DataFrame
 │ Row │ variable │ mean   │ min │ median │ max │ nmissing │ eltype   │
-│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Nothing  │ DataType │
+│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Int64    │ DataType │
 ├─────┼──────────┼────────┼─────┼────────┼─────┼──────────┼──────────┤
-│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │          │ Int64    │
-│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │          │ Float64  │
-│ 3   │ y        │        │ 'a' │        │ 'j' │          │ Char     │
+│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │ 0        │ Int64    │
+│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │ 0        │ Float64  │
+│ 3   │ y        │        │ 'a' │        │ 'j' │ 0        │ Char     │
 
 julia> describe(df, :min, :max)
 3×3 DataFrame
@@ -580,7 +594,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         end
 
         if :nmissing in predefined_funs
-            d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
+            d[:nmissing] = count(ismissing, col)
         end
 
         if :first in predefined_funs
@@ -1394,9 +1408,10 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                                 "have the same column names and be in the same order"))
         end
     elseif cols === :setequal || cols === :equal
+        # an explicit error is thrown as :equal was supported in the past
         if cols === :equal
-            Base.depwarn("`cols=:equal` is deprecated." *
-                         "Use `:setequal` instead.", :vcat)
+            throw(ArgumentError("`cols=:equal` is not supported. " *
+                                "Use `:setequal` instead."))
         end
 
         header = unionunique

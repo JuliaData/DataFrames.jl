@@ -21,6 +21,7 @@ length
 ncol
 ndims
 nrow
+rownumber
 show
 size
 ```
@@ -122,4 +123,9 @@ eachcol
 eachrow
 values
 pairs
+```
+
+## Equality
+```@docs
+isapprox
 ```

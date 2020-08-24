@@ -83,15 +83,7 @@ eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
-Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows, i::Int)
-    df = parent(itr)
-    return DataFrameRow(df, index(df), i)
-end
-
-Base.@propagate_inbounds function Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int)
-    sdf = parent(itr)
-    return DataFrameRow(parent(sdf), index(sdf), rows(sdf)[i])
-end
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) = parent(itr)[i, :]
 
 # separate methods are needed due to dispatch ambiguity
 Base.getproperty(itr::DataFrameRows, col_ind::Symbol) =

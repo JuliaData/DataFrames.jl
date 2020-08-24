@@ -114,8 +114,8 @@ Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
 Base.haskey(x::Index, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 
-# TODO: If this should stay 'unsafe', perhaps make unexported
 function Base.push!(x::Index, nm::Symbol)
+    haskey(x.lookup, nm) && throw(ArgumentError(":$nm already exists in Index"))
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
     return x
@@ -364,7 +364,9 @@ Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     parentcol = ind.parent[idx]
     @boundscheck begin
         remap = ind.remap
-        remap[parentcol] == 0 && throw(ArgumentError("$idx not found"))
+        if parentcol > length(remap) || remap[parentcol] <= 0
+            throw(ArgumentError("$idx not found"))
+        end
     end
     return parentcol
 end
@@ -442,3 +444,15 @@ function Base.getindex(x::SubIndex, idx::Union{AbstractVector{Symbol},
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     return [x[i] for i in idx]
 end
+
+rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
+    throw(ArgumentError("rename! is not supported for views other than created " *
+                        "with Colon as a column selector"))
+
+rename!(x::SubIndex, nms::AbstractVector{Pair{Symbol, Symbol}}) =
+    throw(ArgumentError("rename! is not supported for views other than created " *
+                        "with Colon as a column selector"))
+
+rename!(f::Function, x::SubIndex) =
+    throw(ArgumentError("rename! is not supported for views other than created " *
+                        "with Colon as a column selector"))
