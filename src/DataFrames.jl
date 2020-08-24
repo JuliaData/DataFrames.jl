@@ -6,6 +6,7 @@ using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
 using Markdown
+import LinearAlgebra: norm
 
 import DataAPI,
        DataAPI.All,
