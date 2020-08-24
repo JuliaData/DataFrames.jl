@@ -197,10 +197,23 @@ end
 
 @testset "columnindex" begin
     df = DataFrame(rand(3,4))
-    @test columnindex.(Ref(df), names(df)) == 1:4
-    @test columnindex(df, :a) == 0
-    # @test_throws ErrorException columnindex(df, 1)
-    # @test_throws ErrorException columnindex(df, "x1")
+
+    for x in (df, view(df, 1, :), view(df, 1:1, :))
+        @test columnindex.(Ref(x), names(df)) == 1:4
+        @test columnindex.(Ref(x), propertynames(df)) == 1:4
+        @test columnindex(x, :a) == 0
+        @test columnindex(x, "a") == 0
+        @test_throws MethodError columnindex(x, 1)
+    end
+
+    for x in (view(df, 1, 4:3), view(df, 1:1, 4:3))
+        @test all(==(0), columnindex.(Ref(x), [names(df); "a"]))
+        @test all(==(0), columnindex.(Ref(x), [propertynames(df); :a]))
+    end
+    for x in (view(df, 1, [4, 3]), view(df, 1:1, [4, 3]))
+        @test columnindex.(Ref(x), [names(df); "a"]) == [0, 0, 2, 1, 0]
+        @test columnindex.(Ref(x), [propertynames(df); :a]) == [0, 0, 2, 1, 0]
+    end
 end
 
 @testset "eachrow and eachcol integration" begin

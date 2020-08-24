@@ -364,7 +364,9 @@ Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     parentcol = ind.parent[idx]
     @boundscheck begin
         remap = ind.remap
-        remap[parentcol] == 0 && throw(ArgumentError("$idx not found"))
+        if parentcol > length(remap) || remap[parentcol] <= 0
+            throw(ArgumentError("$idx not found"))
+        end
     end
     return parentcol
 end
