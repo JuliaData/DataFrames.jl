@@ -969,7 +969,7 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
 end
 
 function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
-                      incol::AbstractVector{T}, gd::GroupedDataFrame) where {T}
+                      incol::AbstractVector, gd::GroupedDataFrame)
     n = length(gd)
     if adjust !== nothing || checkempty
         counts = zeros(Int, n)
@@ -1001,7 +1001,7 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
         end
         @inbounds for gix in eachindex(res)
             if !isassigned(res, gix)
-                res[gix] = initf(nonmissingtype(T))
+                res[gix] = initf(nonmissingtype(eltype(incol)))
             end
         end
     end
