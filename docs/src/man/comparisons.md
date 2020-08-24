@@ -29,7 +29,7 @@ How to access data:
 | Column slicing by location | Column 2 and after          | `df.iloc[:, 1:]`       | `df[:, 2:end]`*                                            |
 | Row indexing by label      | Row 'c'                     | `df.loc['c']`          | `df[df.id .== 'c', :]`                                     |
 | Column indexing by label   | Column 'x'                  | `df.loc[:, 'x']`       | `df[:, :x]`                                                |
-| Column slicing by label    | Columns 'x' and 'z'         | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`  of `select(df, [:x, :y])`               |
+| Column slicing by label    | Columns 'x' and 'z'         | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`  or `select(df, [:x, :y])`               |
 |                            | Columns between 'x' and 'z' | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]`  of `select(df, Between(:x, :y))` |
 | Mixed indexing             | Cell at row 'c', column 2   | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`*                                    |
 
