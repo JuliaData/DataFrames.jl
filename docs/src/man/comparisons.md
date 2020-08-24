@@ -24,7 +24,7 @@ How to access data:
 
 | Operation                  | Example                     | pandas                 | DataFrames.jl                                              |
 |:---------------------------|:----------------------------|:-----------------------|:-----------------------------------------------------------|
-| Cell indexing by location  | Cell at row 2, column 2     | `df.iloc[1,1]`         | `df[2,2]` (1-based index)*                                 |
+| Cell indexing by location  | Cell at row 2, column 2     | `df.iloc[1, 1]`        | `df[2, 2]` (1-based index)*                                 |
 | Row slicing by location    | Rows 2 and 3                | `df.iloc[1:3]`         | `df[2:3, :]`                                               |
 | Column slicing by location | Column 2 and after          | `df.iloc[:, 1:]`       | `df[:, 2:end]`*                                            |
 | Row indexing by label      | Row 'c'                     | `df.loc['c']`          | `df[df.id .== 'c', :]`                                     |
