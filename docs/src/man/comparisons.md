@@ -49,9 +49,9 @@ The table below compares more advanced commands:
 | DataFrame as output       | `df[['x']].agg(['max','min'])`                                               | `combine(:x => x -> (value = [minimum(x), maximum(x)]), df)` |
 
 Notes:
-1. Pandas skips `NaN` values in analytic functions by default. DataFrames.jl respect general rules in Julia in propgating missing values.
+1. Pandas skips `NaN` values in analytic functions by default. DataFrames.jl respects general rules in Julia in propagating missing values.
 2. Pandas keeps original column name after performing aggregation. DataFrames.jl appends a suffix automatically.
-3. DataFrames.jl currently does not support row index.
+3. DataFrames.jl currently does not support row indices.
 
 ## Comparison with the R package dplyr
 
