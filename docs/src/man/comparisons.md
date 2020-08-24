@@ -15,15 +15,15 @@ The following table compares the main functions of DataFrames.jl with the Python
 df = pd.DataFrame({'id': [1,2,1,2,1,2], 'x': range(6,0,-1), 'y': range(4,10)})
 ```
 
-| Operations               | pandas                                             | DataFrames.jl                                 |
-|:-------------------------|:---------------------------------------------------|:----------------------------------------------|
-| Reduce multiple values   | `df.mean()['x']`                                   | `combine(df, :x => mean)`                     |
-| Add new columns          | `df.assign(x_mean = df.mean().x)`                  | `transform(df, :x => mean => :x_mean)`        |
-| Rename columns           | `df.rename(columns = {'x': 'x_new'})`              | `rename(df, :x => :x_new)`                    |
-| Pick columns             | `df[['x', 'y']]`                                   | `select(df, :x, :y)\n df[:, [:x, :y]]`        |
-| Pick & transform columns | `df.assign(x_mean = df.mean().x)[['x_mean', 'y']]` | `select(df, :x => mean, :y)`                  |
-| Pick rows                | `df[df.x >= 3]`                                    | `filter(:x => >=(3), df)\n df[df.x .>= 3, :]` |
-| Sort rows                | `df.sort_values(by = ['x'])`                       | `sort(df, :x)`                                |
+| Operations               | pandas                                             | DataFrames.jl                                    |
+|:-------------------------|:---------------------------------------------------|:-------------------------------------------------|
+| Reduce multiple values   | `df.mean()['x']`                                   | `combine(df, :x => mean)`                        |
+| Add new columns          | `df.assign(x_mean = df.mean().x)`                  | `transform(df, :x => mean => :x_mean)`           |
+| Rename columns           | `df.rename(columns = {'x': 'x_new'})`              | `rename(df, :x => :x_new)`                       |
+| Pick columns             | `df[['x', 'y']]`                                   | `select(df, :x, :y)` or `df[:, [:x, :y]]`        |
+| Pick & transform columns | `df.assign(x_mean = df.mean().x)[['x_mean', 'y']]` | `select(df, :x => mean, :y)`                     |
+| Pick rows                | `df[df.x >= 3]`                                    | `filter(:x => >=(3), df)` or `df[df.x .>= 3, :]` |
+| Sort rows                | `df.sort_values(by = ['x'])`                       | `sort(df, :x)`                                   |
 
 As in pandas, some of these functions can be applied to grouped data frames, in which case they operate by group:
 
