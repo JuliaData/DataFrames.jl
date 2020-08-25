@@ -57,7 +57,7 @@ ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
 function ourshow(io::IO, x::Markdown.MD)
     r = repr(x)
     len = min(length(r, 1, something(findfirst(==('\n'), r), lastindex(r)+1)-1), 32)
-    return print(io, len < length(r) - 1 ? first(r, len)*"…" : first(r, len))
+    return print(io, len < length(r) - 1 ? first(r, len)*'…' : first(r, len))
 end
 
 # AbstractChar: https://github.com/JuliaLang/julia/pull/34730 (1.5.0-DEV.261)
