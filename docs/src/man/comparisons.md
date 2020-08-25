@@ -13,8 +13,11 @@ df = DataFrame(id = 'a':'f', grp = [1,2,1,2,1,2], x = 6:-1:1, y = 4:9, z = vcat(
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
 
 ```python
+import pandas as pd
+import numpy as np
+
 df = pd.DataFrame(
-        {'grp': [1,2,1,2,1,2], 'x': range(6,0,-1), 'y': range(4,10), 'z': [3,4,5,6,7,None]},
+        {'grp': [1,2,1,2,1,2], 'x': range(6,0,-1), 'y': range(4,10), 'z': [3,4,5,6,7,np.nan]},
         index = list('abcdef'))
 ```
 
@@ -22,16 +25,16 @@ By comparison, this pandas data frame has `a` to `f` as row indices rather than 
 
 ### Accessing data
 
-| Operation                  | Example                     | pandas                 | DataFrames.jl            |
-|:---------------------------|:----------------------------|:-----------------------|:-------------------------|
-| Cell indexing by location  | Cell at row 2, column 2     | `df.iloc[1, 1]`        | `df[2, 2]`               |
-| Row slicing by location    | Rows 2 and 3                | `df.iloc[1:3]`         | `df[2:3, :]`             |
-| Column slicing by location | Column 2 and after          | `df.iloc[:, 1:]`       | `df[:, 2:end]`           |
-| Row indexing by label      | Row 'c'                     | `df.loc['c']`          | `df[df.id .== 'c', :]`   |
-| Column indexing by label   | Column 'x'                  | `df.loc[:, 'x']`       | `df[:, :x]`              |
-| Column slicing by label    | Columns 'x' and 'z'         | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`        |
-|                            | Columns between 'x' and 'z' | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]` |
-| Mixed indexing             | Cell at row 'c', column 2   | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`   |
+| Operation                  | pandas                 | DataFrames.jl            |
+|:---------------------------|:-----------------------|:-------------------------|
+| Cell indexing by location  | `df.iloc[1, 1]`        | `df[2, 2]`               |
+| Row slicing by location    | `df.iloc[1:3]`         | `df[2:3, :]`             |
+| Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`           |
+| Row indexing by label      | `df.loc['c']`          | `df[df.id .== 'c', :]`   |
+| Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`              |
+| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`        |
+|                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]` |
+| Mixed indexing             | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`   |
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index.
