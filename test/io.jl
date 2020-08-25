@@ -4,7 +4,7 @@ using Test, DataFrames, CategoricalArrays, Dates, Markdown
 
 # Test LaTeX export
 @testset "LaTeX export" begin
-    df = DataFrame(A = 1:4,
+    df = DataFrame(A = convert.( Int64, 1:4),
                 B = ["\$10.0", "M&F", "A~B", "\\alpha"],
                 C = ["A", "B", "C", "S"],
                 D = [1.0, 2.0, missing, 3.0],
@@ -12,17 +12,16 @@ using Test, DataFrames, CategoricalArrays, Dates, Markdown
                 F = Vector{String}(undef, 4),
                 G = [ md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)", md"###A", md"``\frac{A}{B}``", md"*A*b**A**"]
                 )
-    str =
-        "\\begin{tabular}{r|ccccccc}\n" *
-        "\t& A & B & C & D & E & F & G\\\\\n" *
-        "\t\\hline\n\t& "*repr(Int)*" & String & String & Float64? & Cat…? & String & MD…\\\\\n" *
-        "\t\\hline\n" *
-        "\t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl}\n\n \\\\\n" *
-        "\t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A\n\n \\\\\n" *
-        "\t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} & \$\\frac{A}{B}\$\n\n \\\\\n" *
-        "\t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} & \\emph{A}b\\textbf{A}\n\n \\\\\n" *
-        "\\end{tabular}\n"
-
+    str = """
+        \\begin{tabular}{r|ccccccc}
+        \t& A & B & C & D & E & F & G\\\\
+        \t\\hline\n\t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\
+        \t\\hline
+        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl}\n\n \\\\
+        \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A\n\n \\\\
+        \t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} & \$\\frac{A}{B}\$\n\n \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} & \\emph{A}b\\textbf{A}\n\n \\\\
+        \\end{tabular}\n"""
 
     @test repr(MIME("text/latex"), df) == str
     @test repr(MIME("text/latex"), eachcol(df)) == str
