@@ -13,12 +13,11 @@ df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
 
 ```python
-import pandas as pd
-import numpy as np
-
-df = pd.DataFrame(
-        {'grp': [1,2,1,2,1,2], 'x': range(6,0,-1), 'y': range(4,10), 'z': [3,4,5,6,7,np.nan]},
-        index = list('abcdef'))
+df = pandas.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
+                       'x': range(6, 0, -1),
+                       'y': range(4, 10),
+                       'z': [3, 4, 5, 6, 7, None]},
+                      index = list('abcdef'))
 ```
 
 By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
