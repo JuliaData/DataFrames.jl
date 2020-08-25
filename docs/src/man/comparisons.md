@@ -5,7 +5,7 @@ This section compares DataFrames.jl with other data manipulation frameworks in P
 A sample data set can be created using the following code:
 
 ```julia
-df = DataFrame(id = 'a':'f', grp = [1,2,1,2,1,2], x = 6:-1:1, y = 4:9, z = 3:8)
+df = DataFrame(id = 'a':'f', grp = [1,2,1,2,1,2], x = 6:-1:1, y = 4:9, z = vcat(3:7,missing))
 ```
 
 ## Comparison with the Python package pandas
@@ -14,11 +14,11 @@ The following table compares the main functions of DataFrames.jl with the Python
 
 ```python
 df = pd.DataFrame(
-        {'grp': [1,2,1,2,1,2], 'x': range(6,0,-1), 'y': range(4,10), 'z': range(3,9)},
+        {'grp': [1,2,1,2,1,2], 'x': range(6,0,-1), 'y': range(4,10), 'z': [3,4,5,6,7,None]},
         index = list('abcdef'))
 ```
 
-Note that pandas allows row indexing by labels. For DataFrames.jl, you can achieve the same result via row filtering as shown below.
+By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
 
 ### Accessing data
 
@@ -33,15 +33,22 @@ Note that pandas allows row indexing by labels. For DataFrames.jl, you can achie
 |                            | Columns between 'x' and 'z' | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]` |
 | Mixed indexing             | Cell at row 'c', column 2   | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`   |
 
+Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
+indicate the last index.
+
 ### Common operations
 
-| Operation                | pandas                                                | DataFrames.jl                          |
-|:-------------------------|:------------------------------------------------------|:---------------------------------------|
-| Reduce multiple values   | `df['x'].mean()`                                      | `combine(df, :x => mean)`              |
-| Add new columns          | `df.assign(x_mean = df['x'].mean()`                   | `transform(df, :x => mean => :x_mean)` |
-| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                 | `rename(df, :x => :x_new)`             |
-| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]` | `select(df, :x => mean, :y)`           |
-| Sort rows                | `df.sort_values(by = ['x'])`                          | `sort(df, :x)`                         |
+| Operation                | pandas                                                | DataFrames.jl                                                 |
+|:-------------------------|:------------------------------------------------------|:--------------------------------------------------------------|
+| Reduce multiple values   | `df['z'].mean(skipna = False)`                        | `combine(df, :z => mean)`                                     |
+|                          | `df['z'].mean()`                                      | `combine(df, :z => mean ∘ skipmissing => :z_mean)`            |
+| Add new columns          | `df.assign(x_mean = df['x'].mean())`                  | `transform(df, :x => mean => :x_mean)`                        |
+| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                 | `rename(df, :x => :x_new)`                                    |
+| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]` | `select(df, :x => mean, :y)`                                  |
+| Sort rows                | `df.sort_values(by = ['x'])`                          | `sort(df, :x)`                                                |
+
+Note that Julia propagates `missing` data by default for safety reasons. The `skipmissing` function
+can be used to remove missing data. See more details at the [Additional Differences](@ref) section below.
 
 ### Grouping data and aggregation
 
@@ -55,7 +62,8 @@ Note that pandas allows row indexing by labels. For DataFrames.jl, you can achie
 
 | Operation                 | pandas                                                                       | DataFrames.jl                                                 |
 |:--------------------------|:-----------------------------------------------------------------------------|:--------------------------------------------------------------|
-| Complex Function          | `df[['x']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :x => (x -> mean(cos, x)) => :x_mean)`           |
+| Complex Function          | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => (v -> mean(cos, skipmissing(v))))`         |
+|                           | `df['z'].mean()`                                                             | `combine(df, :z => (v -> mean(skipmissing(v))))` |
 | Transform several columns | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`                   |
 |                           | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                              |
 |                           | `df.filter(regex=("^x")).mean()`                                             | `combine(df, r"^x" .=> mean)`                                 |
@@ -79,9 +87,9 @@ Note that pandas allows row indexing by labels. For DataFrames.jl, you can achie
 
 ### Additional Differences
 
-1. Pandas skips `NaN` values in analytic functions by default.  In Julia `NaN` is just a normal floating point value, and instead a special `missing` value is used to indicate missing data. DataFrames.jl respects general rules in Julia in propagating `missing` values by default.
+1. Pandas skips `NaN` values in analytic functions by default. In Julia `NaN` is just a normal floating point value, and instead a special `missing` value is used to indicate missing data. DataFrames.jl respects general rules in Julia in propagating `missing` values by default.
 
-2. Pandas keeps original column name after performing aggregation. DataFrames.jl appends a suffix automatically.
+2. Pandas keeps original column name after performing an analytic function. DataFrames.jl appends a suffix to the column name by default.
 
 ## Comparison with the R package dplyr
 
@@ -89,10 +97,10 @@ The following table compares the main functions of DataFrames.jl with the R pack
 
 ```R
 df <- tibble(id = c('a','b','c','d','e','f'),
-        grp = c(1,2,1,2,1,2),
-        x = c(6,5,4,3,2,1),
-        y = c(4,5,6,7,8,9),
-        z = c(3,4,5,6,7,8))
+             grp = c(1, 2, 1, 2, 1, 2),
+             x = c(6, 5, 4, 3, 2, 1),
+             y = c(4, 5, 6, 7, 8, 9),
+             z = c(3, 4, 5, 6, 7, 8))
 ```
 
 | Operation                | dplyr                          | DataFrames.jl                          |
