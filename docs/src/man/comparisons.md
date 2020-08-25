@@ -1,6 +1,6 @@
 # Comparisons
 
-This section compares DataFrames.jl with other data manipulation frameworks.
+This section compares DataFrames.jl with other data manipulation frameworks in Python, R, and Stata.
 
 A sample data set can be created using the following code:
 
@@ -20,32 +20,30 @@ df = pd.DataFrame(
 
 Note that pandas allows row indexing by labels. For DataFrames.jl, you can achieve the same result via row filtering as shown below.
 
-How to access data:
+### Accessing data
 
-| Operation                  | Example                     | pandas                 | DataFrames.jl                                              |
-|:---------------------------|:----------------------------|:-----------------------|:-----------------------------------------------------------|
-| Cell indexing by location  | Cell at row 2, column 2     | `df.iloc[1, 1]`        | `df[2, 2]` (1-based index)*                                 |
-| Row slicing by location    | Rows 2 and 3                | `df.iloc[1:3]`         | `df[2:3, :]`                                               |
-| Column slicing by location | Column 2 and after          | `df.iloc[:, 1:]`       | `df[:, 2:end]`*                                            |
-| Row indexing by label      | Row 'c'                     | `df.loc['c']`          | `df[df.id .== 'c', :]`                                     |
-| Column indexing by label   | Column 'x'                  | `df.loc[:, 'x']`       | `df[:, :x]`                                                |
-| Column slicing by label    | Columns 'x' and 'z'         | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`  or `select(df, [:x, :y])`               |
-|                            | Columns between 'x' and 'z' | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]`  of `select(df, Between(:x, :y))` |
-| Mixed indexing             | Cell at row 'c', column 2   | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`*                                    |
+| Operation                  | Example                     | pandas                 | DataFrames.jl            |
+|:---------------------------|:----------------------------|:-----------------------|:-------------------------|
+| Cell indexing by location  | Cell at row 2, column 2     | `df.iloc[1, 1]`        | `df[2, 2]`               |
+| Row slicing by location    | Rows 2 and 3                | `df.iloc[1:3]`         | `df[2:3, :]`             |
+| Column slicing by location | Column 2 and after          | `df.iloc[:, 1:]`       | `df[:, 2:end]`           |
+| Row indexing by label      | Row 'c'                     | `df.loc['c']`          | `df[df.id .== 'c', :]`   |
+| Column indexing by label   | Column 'x'                  | `df.loc[:, 'x']`       | `df[:, :x]`              |
+| Column slicing by label    | Columns 'x' and 'z'         | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`        |
+|                            | Columns between 'x' and 'z' | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]` |
+| Mixed indexing             | Cell at row 'c', column 2   | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`   |
 
-Note: (*) The column index for DataFrames.jl are off by 1 due to an additional `id` column.
+### Common operations
 
-Common operations:
+| Operation                | pandas                                                | DataFrames.jl                          |
+|:-------------------------|:------------------------------------------------------|:---------------------------------------|
+| Reduce multiple values   | `df['x'].mean()`                                      | `combine(df, :x => mean)`              |
+| Add new columns          | `df.assign(x_mean = df['x'].mean()`                   | `transform(df, :x => mean => :x_mean)` |
+| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                 | `rename(df, :x => :x_new)`             |
+| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]` | `select(df, :x => mean, :y)`           |
+| Sort rows                | `df.sort_values(by = ['x'])`                          | `sort(df, :x)`                         |
 
-| Operation                | pandas                                             | DataFrames.jl                                    |
-|:-------------------------|:---------------------------------------------------|:-------------------------------------------------|
-| Reduce multiple values   | `df.mean()['x']`                                   | `combine(df, :x => mean)`                        |
-| Add new columns          | `df.assign(x_mean = df.mean().x)`                  | `transform(df, :x => mean => :x_mean)`           |
-| Rename columns           | `df.rename(columns = {'x': 'x_new'})`              | `rename(df, :x => :x_new)`                       |
-| Pick & transform columns | `df.assign(x_mean = df.mean().x)[['x_mean', 'y']]` | `select(df, :x => mean, :y)`                     |
-| Sort rows                | `df.sort_values(by = ['x'])`                       | `sort(df, :x)`                                   |
-
-Grouping data and aggregation:
+### Grouping data and aggregation
 
 | Operation                    | pandas                                                                                    | DataFrames.jl                               |
 |:-----------------------------|:------------------------------------------------------------------------------------------|:--------------------------------------------|
@@ -53,7 +51,7 @@ Grouping data and aggregation:
 | Aggregate and add columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                       | `transform(groupby(df, :grp), :x => mean)`  |
 | Aggregate and select columns | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean','y']]` | `select(groupby(df, :grp), :x => mean, :y)` |
 
-More advanced commands:
+### More advanced commands
 
 | Operation                 | pandas                                                                       | DataFrames.jl                                                 |
 |:--------------------------|:-----------------------------------------------------------------------------|:--------------------------------------------------------------|
@@ -68,7 +66,7 @@ More advanced commands:
 | DataFrame as input        | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`                |
 | DataFrame as output       | `df[['x']].agg(['max','min'])`                                               | `combine(:x => x -> (value = [minimum(x), maximum(x)],), df)` |
 
-Joining data frames:
+### Joining data frames
 
 | Operation             | pandas                                                  | DataFrames.jl                           |
 |:----------------------|:--------------------------------------------------------|:----------------------------------------|
@@ -79,8 +77,10 @@ Joining data frames:
 | Semi join (filtering) | `df1[df1.id.isin(df2.id)]`                              | `semijoin(df1, df2, on = :id)`          |
 | Anti join (filtering) | `df1[~df1.id.isin(df2.id)]`                             | `antijoin(df1, df2, on = :id)`          |
 
-Additional Differences
+### Additional Differences
+
 1. Pandas skips `NaN` values in analytic functions by default.  In Julia `NaN` is just a normal floating point value, and instead a special `missing` value is used to indicate missing data. DataFrames.jl respects general rules in Julia in propagating `missing` values by default.
+
 2. Pandas keeps original column name after performing aggregation. DataFrames.jl appends a suffix automatically.
 
 ## Comparison with the R package dplyr
