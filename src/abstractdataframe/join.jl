@@ -28,16 +28,14 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
             elseif v isa Union{Pair{Symbol,Symbol},
-                               Pair{<:AbstractString, <:AbstractString},
-                               NTuple{2,Symbol}}
+                               Pair{<:AbstractString, <:AbstractString}}
                 push!(left_on, Symbol(first(v)))
                 push!(right_on, Symbol(last(v)))
-                if v isa NTuple{2,Symbol}
-                    Base.depwarn("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
-                                 "such tuples as a value of `on` keyword argument is " *
-                                 "deprecated: use `Pair{Symbol,Symbol}` instead.", :join)
-
-                end
+            elseif v isa NTuple{2,Symbol}
+                # an explicit error is thrown as Tuple{Symbol, Symbol} was supported in the past
+                throw(ArgumentError("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
+                                    "such tuples as a value of `on` keyword argument is " *
+                                    "not supported: use `Pair{Symbol,Symbol}` instead."))
             else
                 throw(ArgumentError("All elements of `on` argument to `join` must be " *
                                     "Symbol or Pair{Symbol,Symbol}."))
@@ -64,10 +62,20 @@ Base.length(x::RowIndexMap) = length(x.orig)
 # composes the joined data table using the maps between the left and right
 # table rows and the indices of rows in the result
 
+_rename_cols(old_names::AbstractVector{Symbol},
+             rename::Union{Function, Symbol, AbstractString},
+             exclude::AbstractVector{Symbol} = Symbol[]) =
+    Symbol[n in exclude ? n :
+           (rename isa Function ? Symbol(rename(string(n))) : Symbol(n, rename))
+           for n in old_names]
+
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
-                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap;
-                              makeunique::Bool=false)
+                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap,
+                              makeunique::Bool,
+                              left_rename::Union{Function, AbstractString, Symbol},
+                              right_rename::Union{Function, AbstractString, Symbol},
+                              indicator::Union{Nothing, Symbol, AbstractString})
     @assert length(left_ixs) == length(right_ixs)
     # compose left half of the result taking all left columns
     all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
@@ -101,23 +109,45 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
 
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
-    ncleft = ncol(joiner.dfl)
-    cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
+
     # inner and left joins preserve non-missingness of the left frame
     _similar_left = kind == :inner || kind == :left ? similar : similar_missing
+    # inner and right joins preserve non-missingness of the right frame
+    _similar_right = kind == :inner || kind == :right ? similar : similar_missing
+
+    if isnothing(indicator)
+        left_indicator = nothing
+        right_indicator = nothing
+    else
+        # this code heavily depends on how currently rows are ordered in
+        # leftjoin, rightjoin and outerjoin
+        # in particular it takes advantage of the fact that we do not care
+        # about the permutation of left data frame in rightjoin as we always
+        # assign 0x1 to it anyway and these rows are guaranteed to come first
+        # (even if they are permuted)
+        left_indicator = zeros(UInt8, nrow)
+        left_indicator[axes(all_orig_left_ixs, 1)] .= 0x1
+        right_indicator = zeros(UInt8, nrow)
+        right_indicator[axes(all_orig_right_ixs, 1)] .= 0x2
+        permute!(right_indicator, right_perm)
+    end
+
+    ncleft = ncol(joiner.dfl)
+    cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
+
     for (i, col) in enumerate(eachcol(joiner.dfl))
         cols[i] = _similar_left(col, nrow)
         copyto!(cols[i], view(col, all_orig_left_ixs))
     end
-    # inner and right joins preserve non-missingness of the right frame
-    _similar_right = kind == :inner || kind == :right ? similar : similar_missing
     for (i, col) in enumerate(eachcol(dfr_noon))
         cols[i+ncleft] = _similar_right(col, nrow)
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
-    res = DataFrame(cols, vcat(_names(joiner.dfl), _names(dfr_noon)),
-                    makeunique=makeunique, copycols=false)
+
+    new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
+                     _rename_cols(_names(dfr_noon), right_rename))
+    res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
     if length(rightonly_ixs.join) > 0
         # some left rows are missing, so the values of the "on" columns
@@ -142,7 +172,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
             end
         end
     end
-    return res
+    return res, left_indicator, right_indicator
 end
 
 # map the indices of the left and right joined tables
@@ -154,7 +184,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
                           left_ixs::Union{Nothing, RowIndexMap},
                           leftonly_ixs::Union{Nothing, RowIndexMap},
                           right_ixs::Union{Nothing, RowIndexMap},
-                          rightonly_mask::Union{Nothing, Vector{Bool}})
+                          rightonly_mask::Union{Nothing, Vector{Bool}},
+                          right_dict_cols::Tuple{Vararg{AbstractVector}},
+                          left_table_cols::Tuple{Vararg{AbstractVector}})
     # helper functions
     @inline update!(ixs::Nothing, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
     @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
@@ -175,8 +207,6 @@ function update_row_maps!(left_table::AbstractDataFrame,
         (mask[orig_ixs] .= false)
 
     # iterate over left rows and compose the left<->right index map
-    right_dict_cols = ntuple(i -> right_dict.df[!, i], ncol(right_dict.df))
-    left_table_cols = ntuple(i -> left_table[!, i], ncol(left_table))
     next_join_ix = 1
     for l_ix in 1:nrow(left_table)
         r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
@@ -218,7 +248,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
     right_ixs = init_map(right_table, map_right)
     rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
     update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs,
-                     right_ixs, rightonly_mask)
+                     right_ixs, rightonly_mask,
+                     ntuple(i -> right_dict.df[!, i], ncol(right_dict.df)),
+                     ntuple(i -> left_table[!, i], ncol(left_table)))
     if map_rightonly
         rightonly_orig_ixs = findall(rightonly_mask)
         leftonly_ixs_len = leftonly_ixs === nothing ? 0 : length(leftonly_ixs)
@@ -237,25 +269,11 @@ end
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                on::Union{<:OnType, AbstractVector}, kind::Symbol, makeunique::Bool,
                indicator::Union{Nothing, Symbol, AbstractString},
-               validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}})
+               validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}},
+               left_rename::Union{Function, AbstractString, Symbol},
+               right_rename::Union{Function, AbstractString, Symbol})
     _check_consistency(df1)
     _check_consistency(df2)
-
-    if indicator !== nothing
-        indicator_cols = ["_left", "_right"]
-        for i in 1:2
-            while hasproperty(df1, indicator_cols[i]) ||
-                   hasproperty(df2, indicator_cols[i])
-                 indicator_cols[i] *= 'X'
-            end
-        end
-        df1 = copy(df1, copycols=false)
-        df1_ind = Symbol(indicator_cols[1])
-        df1[!, df1_ind] = trues(nrow(df1))
-        df2 = copy(df2, copycols=false)
-        df2_ind = Symbol(indicator_cols[2])
-        df2[!, df2_ind] = trues(nrow(df2))
-    end
 
     if on == []
         throw(ArgumentError("Missing join argument 'on'."))
@@ -340,30 +358,35 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                             right_invalid_msg))
     end
 
+    left_indicator, right_indicator = nothing, nothing
     if kind == :inner
-        joined = compose_joined_table(joiner, kind,
-                                      update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                       group_rows(joiner.dfr_on),
-                                                       true, false, true, false)...,
-                                      makeunique=makeunique)
+        inner_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                          group_rows(joiner.dfr_on),
+                                          true, false, true, false)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, inner_row_maps...,
+                                 makeunique, left_rename, right_rename, nothing)
     elseif kind == :left
-        joined = compose_joined_table(joiner, kind,
-                                      update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                       group_rows(joiner.dfr_on),
-                                                       true, true, true, false)...,
-                                      makeunique=makeunique)
+        left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                         group_rows(joiner.dfr_on),
+                                         true, true, true, false)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, left_row_maps...,
+                                 makeunique, left_rename, right_rename, indicator)
     elseif kind == :right
-        joined = compose_joined_table(joiner, kind,
-                                      update_row_maps!(joiner.dfr_on, joiner.dfl_on,
-                                                       group_rows(joiner.dfl_on),
-                                                       true, true, true, false)[[3, 4, 1, 2]]...,
-                                      makeunique=makeunique)
+        right_row_maps = update_row_maps!(joiner.dfr_on, joiner.dfl_on,
+                                          group_rows(joiner.dfl_on),
+                                          true, true, true, false)[[3, 4, 1, 2]]
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, right_row_maps...,
+                                 makeunique, left_rename, right_rename, indicator)
     elseif kind == :outer
-        joined = compose_joined_table(joiner, kind,
-                                      update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                       group_rows(joiner.dfr_on),
-                                                       true, true, true, true)...,
-                                      makeunique=makeunique)
+        outer_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                          group_rows(joiner.dfr_on),
+                                          true, true, true, true)
+        joined, left_indicator, right_indicator =
+            compose_joined_table(joiner, kind, outer_row_maps...,
+                                 makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -397,12 +420,9 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        refs = UInt8.(coalesce.(joined[!, df1_ind], false) .+
-                      2 .* coalesce.(joined[!, df2_ind], false))
+        refs = left_indicator + right_indicator
         pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
         indicatorcol = CategoricalArray{String,1}(refs, pool)
-
-        select!(joined, Not([df1_ind, df2_ind]))
 
         unique_indicator = indicator
         if makeunique
@@ -419,6 +439,9 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                                 " make it unique using a suffix automatically."))
         end
         joined[!, unique_indicator] = indicatorcol
+    else
+        @assert isnothing(left_indicator)
+        @assert isnothing(right_indicator)
     end
 
     return joined
@@ -426,13 +449,15 @@ end
 
 """
     innerjoin(df1, df2; on, makeunique = false,
-              validate = (false, false))
+              validate = (false, false), rename = identity => identity)
     innerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false))
 
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
 passed data frames.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -450,10 +475,17 @@ passed data frames.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to `isequal`).
-   Can be a tuple or a pair, with the first element indicating whether to
-   run check for `df1` and the second element for `df2`.
-   By default no check is performed.
+  define unique keys in each input data frame (according to `isequal`).
+  Can be a tuple or a pair, with the first element indicating whether to
+  run check for `df1` and the second element for `df2`.
+  By default no check is performed.
+- `rename` : a `Pair` specifying how columns of left and right data frames should
+  be renamed in the resulting data frame. Each element of the pair can be a
+  string or a `Symbol` can be passed in which case it is appended to the original
+  column name; alternatively a function can be passed in which case it is applied
+  to each column name, which is passed to it as a `String`. Note that `rename`
+  does not affect `on` columns, whose names are always taken from the left
+  data frame and left unchanged.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -503,29 +535,35 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
-julia> innerjoin(name, job2, on = :ID => :identifier)
+julia> innerjoin(name, job2, on = :ID => :identifier, rename = "_left" => "_right")
 2×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
-│     │ Int64 │ String   │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
+│ Row │ ID    │ Name_left │ Job_right │
+│     │ Int64 │ String    │ String    │
+├─────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer    │
+│ 2   │ 2     │ Jane Doe  │ Doctor    │
 
-julia> innerjoin(name, job2, on = [:ID => :identifier])
+julia> innerjoin(name, job2, on = [:ID => :identifier], rename = uppercase => lowercase)
 2×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
+│ Row │ ID    │ NAME     │ job    │
 │     │ Int64 │ String   │ String │
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 1     │ John Doe │ Lawyer │
 │ 2   │ 2     │ Jane Doe │ Doctor │
 ```
 """
-innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
-          indicator=nothing, validate=validate)
+function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   on::Union{<:OnType, AbstractVector} = Symbol[],
+                   makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                   rename::Pair=identity => identity)
+    if !all(x -> x isa Union{Function, AbstractString, Symbol}, rename)
+        throw(ArgumentError("rename keyword argument must be a `Pair`" *
+                            " containing functions, strings, or `Symbol`s"))
+    end
+    return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique, indicator=nothing,
+                 validate=validate, left_rename=first(rename), right_rename=last(rename))
+end
 
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[],
@@ -535,11 +573,13 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
               dfs..., on=on, makeunique=makeunique, validate=validate)
 
 """
-    leftjoin(df1, df2; on, makeunique = false,
-             indicator = nothing, validate = (false, false))
+    leftjoin(df1, df2; on, makeunique = false, indicator = nothing,
+             validate = (false, false), rename = identity => identity)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -555,14 +595,21 @@ the result. A left join includes all rows from `df1`.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
-   column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
-   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
-   the column name will be modified if `makeunique=true`.
+  column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
+  only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
+  the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to `isequal`).
-   Can be a tuple or a pair, with the first element indicating whether to
-   run check for `df1` and the second element for `df2`.
-   By default no check is performed.
+  define unique keys in each input data frame (according to `isequal`).
+  Can be a tuple or a pair, with the first element indicating whether to
+  run check for `df1` and the second element for `df2`.
+  By default no check is performed.
+- `rename` : a `Pair` specifying how columns of left and right data frames should
+  be renamed in the resulting data frame. Each element of the pair can be a
+  string or a `Symbol` can be passed in which case it is appended to the original
+  column name; alternatively a function can be passed in which case it is applied
+  to each column name, which is passed to it as a `String`. Note that `rename`
+  does not affect `on` columns, whose names are always taken from the left
+  data frame and left unchanged.
 
 All columns of the returned data table will support missing values.
 
@@ -611,18 +658,18 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
-julia> leftjoin(name, job2, on = :ID => :identifier)
+julia> leftjoin(name, job2, on = :ID => :identifier, rename = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String    │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
+│ Row │ ID    │ Name_left │ Job_right │
+│     │ Int64 │ String    │ String?   │
+├─────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer    │
+│ 2   │ 2     │ Jane Doe  │ Doctor    │
+│ 3   │ 3     │ Joe Blogs │ missing   │
 
-julia> leftjoin(name, job2, on = [:ID => :identifier])
+julia> leftjoin(name, job2, on = [:ID => :identifier], rename = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
+│ Row │ ID    │ NAME      │ job     │
 │     │ Int64 │ String    │ String? │
 ├─────┼───────┼───────────┼─────────┤
 │ 1   │ 1     │ John Doe  │ Lawyer  │
@@ -630,19 +677,27 @@ julia> leftjoin(name, job2, on = [:ID => :identifier])
 │ 3   │ 3     │ Joe Blogs │ missing │
 ```
 """
-leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[],
          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
-          validate=validate)
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+         rename::Pair=identity => identity)
+    if !all(x -> x isa Union{Function, AbstractString, Symbol}, rename)
+        throw(ArgumentError("rename keyword argument must be a `Pair`" *
+                            " containing functions, strings, or `Symbol`s"))
+    end
+    return _join(df1, df2, on=on, kind=:left, makeunique=makeunique, indicator=indicator,
+                 validate=validate, left_rename=first(rename), right_rename=last(rename))
+end
 
 """
-    rightjoin(df1, df2; on, makeunique = false,
-              indicator = nothing, validate = (false, false))
+    rightjoin(df1, df2; on, makeunique = false, indicator = nothing,
+              validate = (false, false), rename = identity => identity)
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -658,14 +713,21 @@ the result. A right join includes all rows from `df2`.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
-   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
-   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
-   the column name will be modified if `makeunique=true`.
+  column with the given name for whether a row appeared in only `df1` (`"left_only"`),
+  only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
+  the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to `isequal`).
-   Can be a tuple or a pair, with the first element indicating whether to
-   run check for `df1` and the second element for `df2`.
-   By default no check is performed.
+  define unique keys in each input data frame (according to `isequal`).
+  Can be a tuple or a pair, with the first element indicating whether to
+  run check for `df1` and the second element for `df2`.
+  By default no check is performed.
+- `rename` : a `Pair` specifying how columns of left and right data frames should
+  be renamed in the resulting data frame. Each element of the pair can be a
+  string or a `Symbol` can be passed in which case it is appended to the original
+  column name; alternatively a function can be passed in which case it is applied
+  to each column name, which is passed to it as a `String`. Note that `rename`
+  does not affect `on` columns, whose names are always taken from the left
+  data frame and left unchanged.
 
 All columns of the returned data table will support missing values.
 
@@ -714,18 +776,18 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
-julia> rightjoin(name, job2, on = :ID => :identifier)
+julia> rightjoin(name, job2, on = :ID => :identifier, rename = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+│ Row │ ID    │ Name_left │ Job_right │
+│     │ Int64 │ String?   │ String    │
+├─────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer    │
+│ 2   │ 2     │ Jane Doe  │ Doctor    │
+│ 3   │ 4     │ missing   │ Farmer    │
 
-julia> rightjoin(name, job2, on = [:ID => :identifier])
+julia> rightjoin(name, job2, on = [:ID => :identifier], rename = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
+│ Row │ ID    │ NAME     │ job    │
 │     │ Int64 │ String?  │ String │
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 1     │ John Doe │ Lawyer │
@@ -733,22 +795,30 @@ julia> rightjoin(name, job2, on = [:ID => :identifier])
 │ 3   │ 4     │ missing  │ Farmer │
 ```
 """
-rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
-                 validate=validate)
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          rename::Pair=identity => identity)
+    if !all(x -> x isa Union{Function, AbstractString, Symbol}, rename)
+        throw(ArgumentError("rename keyword argument must be a `Pair`" *
+                            " containing functions, strings, or `Symbol`s"))
+    end
+    return _join(df1, df2, on=on, kind=:right, makeunique=makeunique, indicator=indicator,
+                validate=validate, left_rename=first(rename), right_rename=last(rename))
+end
 
 """
-    outerjoin(df1, df2; on, kind = :inner, makeunique = false,
-              indicator = nothing, validate = (false, false))
+    outerjoin(df1, df2; on, kind = :inner, makeunique = false, indicator = nothing,
+              validate = (false, false), rename = identity => identity)
     outerjoin(df1, df2, dfs...; on, kind = :inner, makeunique = false,
               validate = (false, false))
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
 of the passed data frames.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -766,15 +836,23 @@ of the passed data frames.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
-   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
-   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
-   the column name will be modified if `makeunique=true`.
-   This argument is only supported when joining exactly two data frames.
+  column with the given name for whether a row appeared in only `df1` (`"left_only"`),
+  only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
+  the column name will be modified if `makeunique=true`.
+  This argument is only supported when joining exactly two data frames.
 - `validate` : whether to check that columns passed as the `on` argument
-   define unique keys in each input data frame (according to `isequal`).
-   Can be a tuple or a pair, with the first element indicating whether to
-   run check for `df1` and the second element for `df2`.
-   By default no check is performed.
+  define unique keys in each input data frame (according to `isequal`).
+  Can be a tuple or a pair, with the first element indicating whether to
+  run check for `df1` and the second element for `df2`.
+  By default no check is performed.
+- `rename` : a `Pair` specifying how columns of left and right data frames should
+  be renamed in the resulting data frame. Each element of the pair can be a
+  string or a `Symbol` can be passed in which case it is appended to the original
+  column name; alternatively a function can be passed in which case it is applied
+  to each column name, which is passed to it as a `String`. Note that `rename`
+  does not affect `on` columns, whose names are always taken from the left
+  data frame and left unchanged.
+
 
 All columns of the returned data table will support missing values.
 
@@ -829,33 +907,37 @@ julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farm
 │ 2   │ 2          │ Doctor │
 │ 3   │ 4          │ Farmer │
 
-julia> outerjoin(name, job2, on = :ID => :identifier)
-4×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String?   │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
-│ 4   │ 4     │ missing   │ Farmer  │
+julia> rightjoin(name, job2, on = :ID => :identifier, rename = "_left" => "_right")
+3×3 DataFrame
+│ Row │ ID    │ Name_left │ Job_right │
+│     │ Int64 │ String?   │ String    │
+├─────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ John Doe  │ Lawyer    │
+│ 2   │ 2     │ Jane Doe  │ Doctor    │
+│ 3   │ 4     │ missing   │ Farmer    │
 
-julia> outerjoin(name, job2, on = [:ID => :identifier])
-4×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String?   │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
-│ 4   │ 4     │ missing   │ Farmer  │
+julia> rightjoin(name, job2, on = [:ID => :identifier], rename = uppercase => lowercase)
+3×3 DataFrame
+│ Row │ ID    │ NAME     │ job    │
+│     │ Int64 │ String?  │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 1     │ John Doe │ Lawyer │
+│ 2   │ 2     │ Jane Doe │ Doctor │
+│ 3   │ 4     │ missing  │ Farmer │
 ```
 """
-outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
-    _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
-          validate=validate)
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          rename::Pair=identity => identity)
+    if !all(x -> x isa Union{Function, AbstractString, Symbol}, rename)
+        throw(ArgumentError("rename keyword argument must be a `Pair`" *
+                            " containing functions, strings, or `Symbol`s"))
+    end
+    return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique, indicator=indicator,
+                validate=validate, left_rename=first(rename), right_rename=last(rename))
+end
 
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
@@ -869,6 +951,8 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
 Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
 match with the keys in `df2`.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -958,7 +1042,8 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:semi, makeunique=makeunique,
-          indicator=nothing, validate=validate)
+          indicator=nothing, validate=validate,
+          left_rename=identity, right_rename=identity)
 
 """
     antijoin(df1, df2; on, makeunique = false, validate = (false, false))
@@ -966,6 +1051,8 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
 not match with the keys in `df2`.
+
+The order of rows in the result is undefined and may change in the future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1048,14 +1135,17 @@ antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
     _join(df1, df2, on=on, kind=:anti, makeunique=makeunique,
-          indicator=nothing, validate=validate)
+          indicator=nothing, validate=validate,
+          left_rename=identity, right_rename=identity)
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)
 
 Perform a cross join of two or more data frame objects and return a `DataFrame`
 containing the result. A cross join returns the cartesian product of rows from
-all passed data frames.
+all passed data frames, where the first passed data frame is assigned to the
+dimension that changes the slowest and the last data frame is assigned to the
+dimension that changes the fastest.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
@@ -1117,3 +1207,12 @@ end
 crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           makeunique::Bool=false) =
     crossjoin(crossjoin(df1, df2, makeunique=makeunique), dfs..., makeunique=makeunique)
+
+# an explicit error is thrown as join was supported in the past
+Base.join(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+          on::Union{<:OnType, AbstractVector} = Symbol[],
+          kind::Symbol = :inner, makeunique::Bool=false,
+          indicator::Union{Nothing, Symbol} = nothing,
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+    throw(ArgumentError("join function for data frames is not supported. Use innerjoin, " *
+                        "leftjoin, rightjoin, outerjoin, semijoin, antijoin, or crossjoin"))

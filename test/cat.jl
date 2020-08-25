@@ -352,12 +352,14 @@ end
     @test res[19:21,:] == df3[:, names(res)]
     @test res[22:24,:] == df3[:, names(res)]
     @test res[25:27,:] == df3[:, names(res)]
+
     df1 = DataFrame(A = 1, B = 2)
     df2 = DataFrame(B = 12, A = 11)
     df3 = DataFrame(A = [1, 11], B = [2, 12])
-    # this test should be rewritten after deprecation
     @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
     @test df3 == reduce(vcat, (df1, df2))
+    @test_throws ArgumentError vcat(df1, df2, cols=:orderequal)
+    @test_throws ArgumentError reduce(vcat, [df1, df2], cols=:orderequal)
 end
 
 @testset "vcat with cols=:union" begin

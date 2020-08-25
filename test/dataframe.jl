@@ -187,8 +187,16 @@ end
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
     @test_throws ArgumentError insertcols!(df, 5, :newcol => ["a", "b"])
     @test_throws ArgumentError insertcols!(df, 0, :newcol => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, :z, :newcol => ["a", "b"])
+    @test_throws ArgumentError insertcols!(df, "z", :newcol => ["a", "b"])
+    @test_throws MethodError insertcols!(df, true, :newcol => ["a", "b"])
     @test_throws DimensionMismatch insertcols!(df, 1, :newcol => ["a"])
+    @test_throws DimensionMismatch insertcols!(df, :a, :newcol => ["a"])
+    @test_throws DimensionMismatch insertcols!(df, "a", :newcol => ["a"])
+    ref1 = insertcols!(copy(df), :a, :newcol => ["a", "b"])
+    ref2 = insertcols!(copy(df), "a", :newcol => ["a", "b"])
     @test insertcols!(df, 1, :newcol => ["a", "b"]) == df
+    @test ref1 == ref2 == df
     @test names(df) == ["newcol", "a", "b"]
     @test df.a == [1, 2]
     @test df.b == [3.0, 4.0]
@@ -247,9 +255,9 @@ end
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
     @test_throws ArgumentError insertcols!(df, 10, :a => [11,12], makeunique=true)
 
-    # TODO: re-enable this test after the deprecation; this should be no-op
-    # (it only should check if `2` is in range)
-    # @test_throws ArgumentError insertcols!(df, 2)
+    dfc = copy(df)
+    @test insertcols!(df, 2) == dfc
+    @test_throws ArgumentError insertcols!(df, 10)
     @test_throws ArgumentError insertcols!(df, 2, a=1, b=2)
 
     df = DataFrame()
@@ -330,6 +338,11 @@ end
     df = DataFrame(c=1:3)
     insertcols!(df, 1, :a => Ref(1), :b => fill(1))
     @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+end
+
+@testset "unsupported insertcols!" begin
+    df = DataFrame(x = 1:2)
+    @test_throws ArgumentError insertcols!(df, 2, y=2:3)
 end
 
 @testset "DataFrame constructors" begin
@@ -554,7 +567,7 @@ end
     push!(df, (1, 2))
     @test df == DataFrame(a=[1, 1, 1], b=[2, 2, 2])
 
-    @test_logs (:warn, r"In the future `push!` will not allow passing collections of type") push!(df, "ab")
+    @test_throws ArgumentError push!(df, "ab")
 end
 
 @testset "delete!" begin
@@ -635,7 +648,7 @@ end
                                 q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
                                 max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                 nunique = [nothing, nothing, 4, 3, 4, 2],
-                                nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                nmissing = [0, 1, 0, 1, 0, 0],
                                 first = [1, 1, "a", "a", Date(2000), 1],
                                 last = [4, missing, "d", missing, Date(2004), 2],
                                 eltype = [Int, Union{Missing, Int}, String,
@@ -1018,61 +1031,71 @@ end
 end
 
 @testset "rename" begin
-    df = DataFrame(A = 1:3, B = 'A':'C')
-    @test names(rename(df, :A => :A_1)) == ["A_1", "B"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(df, :A => :A_1, :B => :B_1)) == ["A_1", "B_1"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(df, [:A => :A_1, :B => :B_1])) == ["A_1", "B_1"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == ["A_1", "B_1"]
-    @test names(df) == ["A", "B"]
-    @test names(rename(lowercase, df)) == ["a", "b"]
-    @test names(df) == ["A", "B"]
+    for asview in (false, true)
+        df = DataFrame(A = 1:3, B = 'A':'C')
+        asview && (df = view(df, :, :))
+        @test names(rename(df, :A => :A_1)) == ["A_1", "B"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(df, :A => :A_1, :B => :B_1)) == ["A_1", "B_1"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(df, [:A => :A_1, :B => :B_1])) == ["A_1", "B_1"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(df, Dict(:A => :A_1, :B => :B_1))) == ["A_1", "B_1"]
+        @test names(df) == ["A", "B"]
+        @test names(rename(lowercase, df)) == ["a", "b"]
+        @test names(df) == ["A", "B"]
 
-    @test rename!(df, :A => :A_1) === df
-    @test propertynames(df) == [:A_1, :B]
-    @test rename!(df, :A_1 => :A_2, :B => :B_2) === df
-    @test propertynames(df) == [:A_2, :B_2]
-    @test rename!(df, [:A_2 => :A_3, :B_2 => :B_3]) === df
-    @test propertynames(df) == [:A_3, :B_3]
-    @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
-    @test propertynames(df) == [:A_4, :B_4]
-    @test rename!(lowercase, df) === df
-    @test propertynames(df) == [:a_4, :b_4]
+        @test rename!(df, :A => :A_1) === df
+        @test propertynames(df) == [:A_1, :B]
+        @test rename!(df, :A_1 => :A_2, :B => :B_2) === df
+        @test propertynames(df) == [:A_2, :B_2]
+        @test rename!(df, [:A_2 => :A_3, :B_2 => :B_3]) === df
+        @test propertynames(df) == [:A_3, :B_3]
+        @test rename!(df, Dict(:A_3 => :A_4, :B_3 => :B_4)) === df
+        @test propertynames(df) == [:A_4, :B_4]
+        @test rename!(lowercase, df) === df
+        @test propertynames(df) == [:a_4, :b_4]
 
-    df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
-    @test rename!(df, :A => :B, :B => :A) === df
-    @test propertynames(df) == [:B, :A, :C]
-    @test rename!(df, :A => :B, :B => :A, :C => :D) === df
-    @test propertynames(df) == [:A, :B, :D]
-    @test rename!(df, :A => :B, :B => :C, :D => :A) === df
-    @test propertynames(df) == [:B, :C, :A]
-    @test rename!(df, :A => :C, :B => :A, :C => :B) === df
-    @test propertynames(df) == [:A, :B, :C]
-    @test rename!(df, :A => :A, :B => :B, :C => :C) === df
-    @test propertynames(df) == [:A, :B, :C]
+        df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
+        asview && (df = view(df, :, :))
+        @test rename!(df, :A => :B, :B => :A) === df
+        @test propertynames(df) == [:B, :A, :C]
+        @test rename!(df, :A => :B, :B => :A, :C => :D) === df
+        @test propertynames(df) == [:A, :B, :D]
+        @test rename!(df, :A => :B, :B => :C, :D => :A) === df
+        @test propertynames(df) == [:B, :C, :A]
+        @test rename!(df, :A => :C, :B => :A, :C => :B) === df
+        @test propertynames(df) == [:A, :B, :C]
+        @test rename!(df, :A => :A, :B => :B, :C => :C) === df
+        @test propertynames(df) == [:A, :B, :C]
 
-    cdf = copy(df)
-    @test_throws ArgumentError rename!(df, :X => :Y)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :B)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
-    @test df == cdf
-    @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
-    @test df == cdf
+        cdf = copy(df)
+        @test_throws ArgumentError rename!(df, :X => :Y)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :X => :Y)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :B)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :A => :X)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :A => :Y)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :X, :B => :X)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :C => :B)
+        @test df == cdf
+        @test_throws ArgumentError rename!(df, :A => :B, :B => :A, :A => :X)
+        @test df == cdf
 
-    df = DataFrame(A=1)
-    @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
+        df = DataFrame(A=1)
+        asview && (df = view(df, :, :))
+        @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
+    end
+
+    sdf = view(DataFrame(ones(2,3)), 1:2, 1:3)
+    @test_throws ArgumentError rename!(uppercase, sdf)
+    @test_throws ArgumentError rename!(sdf, :x1 => :y1)
+    @test_throws ArgumentError rename!(sdf, [:a, :b, :c])
 end
 
 @testset "flexible rename arguments" begin
@@ -1775,9 +1798,8 @@ end
     @view dfv[!, All()]
     @view dfv[!, Between(1,2)]
 
-# TODO: enable after setindex! rules update
-#    dfv[1, All()] = (a=1, b=2, c=3)
-#    dfv[1, Between(1,2)] = (a=1, b=2)
+    dfv[1, All()] = (a=1, b=2, c=3)
+    dfv[1, Between(1,2)] = (a=1, b=2)
     dfv[1:1, All()] = df
     dfv[1:1, Between(1,2)] = df[!, 1:2]
     dfv[:, All()] = df
@@ -1815,6 +1837,8 @@ end
 
     @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
                cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+    @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
+                                    cols=:equal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
                                     cols=:orderequal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, d=30),
@@ -2017,6 +2041,12 @@ end
             @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1,missing])
         end
     end
+end
+
+@testset "push! with :setequal and wrong number of entries" begin
+    df = DataFrame(a=1:3)
+    @test_throws ArgumentError push!(df, (a=10, b=20))
+    @test_throws ArgumentError push!(df, "a")
 end
 
 end # module

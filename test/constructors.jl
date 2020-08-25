@@ -223,6 +223,8 @@ end
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
 
     df = DataFrame(:type => [], :begin => [])
     @test propertynames(df) == [:type, :begin]
@@ -511,6 +513,15 @@ end
         @test df.x1 isa Vector{Int}
         @test df.x2 isa Vector{Int}
     end
+end
+
+@testset "removed constructors" begin
+    @test_throws MethodError DataFrame(Union{Int, Missing}, 10, 3)
+    @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
+    @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                                       [:A, :B, :C], [false, false, true], 100)
+    @test_throws MethodError DataFrame([Int, String], [:a, :b], [false, true], 3)
+    @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
 end
 
 end # module
