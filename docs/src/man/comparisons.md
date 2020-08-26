@@ -74,7 +74,7 @@ can be used to remove missing data. See more details at the [Additional Differen
 | Row-wise                  | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                       |
 |                           | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`            |
 | DataFrame as input        | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`                |
-| DataFrame as output       | `df[['x']].agg(['max','min'])`                                               | `combine(:x => x -> (value = [minimum(x), maximum(x)],), df)` |
+| DataFrame as output       | `df[['x']].agg(['min','max'])`                                               | `combine(:x => x -> (value = [minimum(x), maximum(x)],), df)` |
 
 ### Joining data frames
 
