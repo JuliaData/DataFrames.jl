@@ -64,8 +64,8 @@ can be used to remove missing data. See more details at the [Additional Differen
 
 | Operation                 | pandas                                                                       | DataFrames.jl                                                 |
 |:--------------------------|:-----------------------------------------------------------------------------|:--------------------------------------------------------------|
-| Complex Function          | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => (v -> mean(cos, skipmissing(v))))`         |
-|                           | `df['z'].mean()`                                                             | `combine(df, :z => (v -> mean(skipmissing(v))))` |
+| Complex Function          | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`         |
+|                           | `df['z'].mean()`                                                             | `combine(df, :z => v -> mean(skipmissing(v)))` |
 | Transform several columns | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`                   |
 |                           | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                              |
 |                           | `df.filter(regex=("^x")).mean()`                                             | `combine(df, r"^x" .=> mean)`                                 |
