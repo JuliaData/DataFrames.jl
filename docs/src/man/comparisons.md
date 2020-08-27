@@ -41,6 +41,46 @@ Operations|dplyr| DataFrames.jl       |
 |DataFrame as output|`summarize(df, tibble(value = min(x), max(x)))`|`combine(:x => x -> (value = [minimum(x), maximum(x)]), df)`|
 
 
+
+## Comparison with the R package data.table
+
+The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.13):
+
+|Operations              | data.table  | DataFrames.jl|  
+|:-----------------------|:------------|:-------------|
+|Reduce multiple values  |`df[, list(mean(x))]`       |`combine(df, :x => mean)`|
+|Add new columns         |`df[, x_mean := mean(x) ]`  |`transform(df, :x => mean => :x_mean)`|
+|Rename columns          |`setnames(df, "x", "x_new")`|`rename(df, :x => :x_new)`|
+|Pick columns            |`df[, list(x, y)]`          |`select(df, :x, :y)`|
+|Pick & transform columns|`df[, list(mean(x), y)]`    |`select(df, :x => mean, :y)`|
+|Pick rows               |`df[ x >= 1 ]`              |`filter(:x => >=(1), df)`|
+|Sort rows               |`setorder(df, x)`           |`sort(df, :x)`|
+
+As in data.table, some of these functions can be applied by groups:
+
+|Operations              | data.table                                      | DataFrames.jl     |
+|:-----------------------|:------------------------------------------------|:------------------|
+|Reduce multiple values  |`df[, list(mean(x)), by = list(id) ]`            |`combine(grouby(df, :id), :x => mean)`|
+|Add new columns         |`df[, x_mean := mean(x), by = list(id) ]`        |`transform(grouby(df, :id), :x => mean)`|
+|Pick & transform columns|`df[, list(x_mean = mean(x), y), by = list(id) ]`|`select(grouby(df, :id), :x => mean, :y)`|
+
+
+The table below compares more advanced commands:
+
+Operations        |data.table                                                   | DataFrames.jl       | 
+|:----------------|:------------------------------------------------------------|:--------------------|
+|Complex Function          |`df[, list(mean(x, na.rm = T)) ]`                   |`combine(df, :x => x -> mean(skipmissing(x)))`|
+|Transform several columns |`df[, list(max(x), min(y)) ]`                       |`combine(df, :x => maximum,  :y => minimum)`|
+|                          |`df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`   |`combine(df, [:x, :y] .=> mean)`|
+|                          |`df[, lapply(.SD, mean), .SDcols = patterns("x*") ]`|`combine(df, names(df, r"^x") .=> mean)`|
+|                          |`df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]`|`combine(df, ([:x, :y] .=> [maximum minimum])...)`|
+|Multivariate function     |`df[, list(cor(x,y)) ]`                             |`transform(df, [:x, :y] => cor)`|
+|Row-wise                  |`df[, min_xy := min(x, y), by = 1:nrow(df)]`            |`transform(df, [:x, :y] => ByRow(min))`|
+|                          |`df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`|`transform(df, AsTable(r"^x") => ByRow(argmax))`|
+|DataFrame as input        |`df[, head(.SD, 2) ]`                               |`combine(d -> first(d, 2), df)`|
+|DataFrame as output       |`df[, .SD[, .(value = min(x), max(x))] ]`           |`combine(:x => x -> (value = [minimum(x), maximum(x)]), df)`|
+
+
 ## Comparison with Stata (version 8 and above)
 
 The following table compares the main functions of DataFrames.jl with Stata:
