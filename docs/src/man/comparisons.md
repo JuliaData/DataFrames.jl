@@ -6,6 +6,7 @@ A sample data set can be created using the following code:
 
 ```julia
 df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing])
+df2 = DataFrame(grp = [1], w = [10])
 ```
 
 ## Comparison with the Python package pandas
@@ -13,11 +14,19 @@ df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
 
 ```python
-df = pandas.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
-                       'x': range(6, 0, -1),
-                       'y': range(4, 10),
-                       'z': [3, 4, 5, 6, 7, None]},
-                      index = list('abcdef'))
+>>> df = pandas.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
+...                        'x': range(6, 0, -1),
+...                        'y': range(4, 10),
+...                        'z': [3, 4, 5, 6, 7, None]},
+...                       index = list('abcdef'))
+>>> df
+   grp  x  y    z
+a    1  6  4  3.0
+b    2  5  5  4.0
+c    1  4  6  5.0
+d    2  3  7  6.0
+e    1  2  8  7.0
+f    2  1  9  NaN
 ```
 
 By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
@@ -78,14 +87,24 @@ can be used to remove missing data. See more details at the [Additional Differen
 
 ### Joining data frames
 
-| Operation             | pandas                                                  | DataFrames.jl                           |
-|:----------------------|:--------------------------------------------------------|:----------------------------------------|
-| Inner join            | `pd.merge(df1, df2, how = 'inner', on = ['id', 'grp'])` | `innerjoin(df1, df2, on = [:id, :grp])` |
-| Outer join            | `pd.merge(df1, df2, how = 'outer', on = ['id', 'grp'])` | `outerjoin(df1, df2, on = [:id, :grp])` |
-| Left join             | `pd.merge(df1, df2, how = 'left', on = ['id', 'grp'])`  | `leftjoin(df1, df2, on = [:id, :grp])`  |
-| Right join            | `pd.merge(df1, df2, how = 'right', on = ['id', 'grp'])` | `rightjoin(df1, df2, on = [:id, :grp])` |
-| Semi join (filtering) | `df1[df1.id.isin(df2.id)]`                              | `semijoin(df1, df2, on = :id)`          |
-| Anti join (filtering) | `df1[~df1.id.isin(df2.id)]`                             | `antijoin(df1, df2, on = :id)`          |
+Suppose that you have a second data frame as shown below:
+```
+>>> df2 = pandas.DataFrame({'grp': [1], 'w': [10]})
+>>> df2
+   grp   w
+0    1  10
+```
+
+Here is how to join the data frames:
+
+| Operation             | pandas                                         | DataFrames.jl                   |
+|:----------------------|:-----------------------------------------------|:--------------------------------|
+| Inner join            | `pd.merge(df, df2, how = 'inner', on = 'grp')` | `innerjoin(df, df2, on = :grp)` |
+| Outer join            | `pd.merge(df, df2, how = 'outer', on = 'grp')` | `outerjoin(df, df2, on = :grp)` |
+| Left join             | `pd.merge(df, df2, how = 'left', on = 'grp')`  | `leftjoin(df, df2, on = :grp)`  |
+| Right join            | `pd.merge(df, df2, how = 'right', on = 'grp')` | `rightjoin(df, df2, on = :grp)` |
+| Semi join (filtering) | `df[df.grp.isin(df2.grp)]`                     | `semijoin(df, df2, on = :grp)`  |
+| Anti join (filtering) | `df[~df.grp.isin(df2.grp)]`                    | `antijoin(df, df2, on = :grp)`  |
 
 ### Additional Differences
 
