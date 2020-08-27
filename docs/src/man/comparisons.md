@@ -49,14 +49,14 @@ indicate the last index.
 
 ### Common operations
 
-| Operation                | pandas                                                | DataFrames.jl                                                 |
-|:-------------------------|:------------------------------------------------------|:--------------------------------------------------------------|
-| Reduce multiple values   | `df['z'].mean(skipna = False)`                        | `combine(df, :z => mean)`                                     |
-|                          | `df['z'].mean()`                                      | `combine(df, :z => mean ∘ skipmissing => :z_mean)`            |
-| Add new columns          | `df.assign(x_mean = df['x'].mean())`                  | `transform(df, :x => mean => :x_mean)`                        |
-| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                 | `rename(df, :x => :x_new)`                                    |
-| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]` | `select(df, :x => mean, :y)`                                  |
-| Sort rows                | `df.sort_values(by = ['x'])`                          | `sort(df, :x)`                                                |
+| Operation                | pandas                                                | DataFrames.jl                                      |
+|:-------------------------|:------------------------------------------------------|:---------------------------------------------------|
+| Reduce multiple values   | `df[['z']].mean(skipna = False)`                      | `combine(df, :z => mean)`                          |
+|                          | `df[['z']].mean()`                                    | `combine(df, :z => mean ∘ skipmissing => :z_mean)` |
+| Add new columns          | `df.assign(x_mean = df['x'].mean())`                  | `transform(df, :x => mean => :x_mean)`             |
+| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                 | `rename(df, :x => :x_new)`                         |
+| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]` | `select(df, :x => mean, :y)`                       |
+| Sort rows                | `df.sort_values(by = ['x'])`                          | `sort(df, :x)`                                     |
 
 Note that Julia propagates `missing` data by default for safety reasons. The `skipmissing` function
 can be used to remove missing data. See more details at the [Additional Differences](@ref) section below.
