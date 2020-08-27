@@ -987,7 +987,7 @@ function _filter_helper(df::AbstractDataFrame, f, cols...; view::Bool)
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
     rowidxs = ((x...) -> f(x...)::Bool).(cols...)
-    return view ? Base.view(df, idxs, :) : df[idxs, :]
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
 function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame; view::Bool)
@@ -1000,7 +1000,7 @@ end
 
 function _filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f; view::Bool)
     rowidxs = (x -> f(x)::Bool).(nti)
-    return view ? Base.view(df, idxs, :) : df[rowidxs, :]
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
 """
