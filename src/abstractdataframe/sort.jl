@@ -357,9 +357,10 @@ end
 """
     sort(df::AbstractDataFrame, cols;
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
-         rev::Bool=false, order::Ordering=Forward)
+         rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
-Return a copy of data frame `df` sorted by column(s) `cols`.
+Return a copy of data frame `df` sorted by column(s) `cols` unless
+`view=true` in which case a view into `df` is returned instead.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
@@ -487,8 +488,11 @@ julia> sortperm(df, (:x, :y), rev=true)
 """
 sortperm(::AbstractDataFrame, ::Any)
 
-Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
-    df[sortperm(df, a, o),:]
+function Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering; view::Bool=false)
+    rowidxs = sortperm(df, a, o)
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
+
 Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) =
     sort!([1:size(df, 1);], a, o)
 Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
