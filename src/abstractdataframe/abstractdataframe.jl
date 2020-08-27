@@ -895,8 +895,8 @@ function dropmissing!(df::AbstractDataFrame,
 end
 
 """
-    filter(fun, df::AbstractDataFrame; view:Bool=false)
-    filter(cols => fun, df::AbstractDataFrame; view:Bool=false)
+    filter(fun, df::AbstractDataFrame; view::Bool=false)
+    filter(cols => fun, df::AbstractDataFrame; view::Bool=false)
 
 Return a copy of data frame `df` containing only rows for which `fun`
 returns `true`.
@@ -1192,7 +1192,7 @@ Base.unique!(df::AbstractDataFrame, cols) =
     delete!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-function Base.unique(df::AbstractDataFrame; view:Bool=false)
+function Base.unique(df::AbstractDataFrame; view::Bool=false)
     rowidxs = (!).(nonunique(df))
     return view ? view(df, rowidxs, :) : df[rowidxs, :]
 end
