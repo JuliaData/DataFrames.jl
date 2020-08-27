@@ -13,16 +13,25 @@ using Test, DataFrames, CategoricalArrays, Dates, Markdown
                 G = [ md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)", md"###A", md"``\frac{A}{B}``", md"*A*b**A**"]
                 )
     str = """
-\\begin{tabular}{r|ccccccc}
-\t& A & B & C & D & E & F & G\\\\
-\t\\hline\n\t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\
-\t\\hline
-\t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl}\n\n \\\\
-\t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A\n\n \\\\
-\t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} & \$\\frac{A}{B}\$\n\n \\\\
-\t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} & \\emph{A}b\\textbf{A}\n\n \\\\
-\\end{tabular}
-"""
+        \\begin{tabular}{r|ccccccc}
+        \t& A & B & C & D & E & F & G\\\\
+        \t\\hline
+        \t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\
+        \t\\hline
+        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl}
+
+         \\\\
+        \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A
+
+         \\\\
+        \t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} & \$\\frac{A}{B}\$
+
+         \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} & \\emph{A}b\\textbf{A}
+
+         \\\\
+        \\end{tabular}
+        """
 
     @test repr(MIME("text/latex"), df) == str
     @test repr(MIME("text/latex"), eachcol(df)) == str
@@ -235,18 +244,18 @@ end
         │ 7   │ 49    │ ∫αγ∞1∫αγ∞…                        │
         │ 8   │ 64    │ ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫α… │"""
 
-            @test sprint(show, "text/csv", df) ==
-                """
-                \"A\",\"B\"
-                1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
-                4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
-                9,\"# Header\"
-                16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"
-                25,\"\"
-                36,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3\"
-                49,\"∫αγ∞1∫αγ∞\\n\\n  * 2∫αγ∞3∫αγ∞4\\n  * ∫αγ∞5∫αγ\\n  * ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
-                64,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\\n\\n  * γ∞1∫α\\n  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
-                """
+    @test sprint(show, "text/csv", df) ==
+        """
+        \"A\",\"B\"
+        1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
+        4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
+        9,\"# Header\"
+        16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"
+        25,\"\"
+        36,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3\"
+        49,\"∫αγ∞1∫αγ∞\\n\\n  * 2∫αγ∞3∫αγ∞4\\n  * ∫αγ∞5∫αγ\\n  * ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+        64,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\\n\\n  * γ∞1∫α\\n  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+        """
 end
 
 @testset "Markdown as HTML" begin
