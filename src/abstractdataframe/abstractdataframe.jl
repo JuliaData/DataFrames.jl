@@ -990,7 +990,7 @@ function _filter_helper(df::AbstractDataFrame, f, cols...; view::Bool)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame; view::Bool)
+function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame; view::Bool=false)
     df_tmp = select(df, cols.cols, copycols=false)
     if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
