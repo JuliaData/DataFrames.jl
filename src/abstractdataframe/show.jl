@@ -54,6 +54,11 @@ ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
 ourshow(io::IO, x::Nothing; styled::Bool=false) = ourshow(io, "", styled=styled)
 ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
     ourshow(io, summary(x), styled=styled)
+function ourshow(io::IO, x::Markdown.MD)
+    r = repr(x)
+    len = min(length(r, 1, something(findfirst(==('\n'), r), lastindex(r)+1)-1), 32)
+    return print(io, len < length(r) - 1 ? first(r, len)*'…' : first(r, len))
+end
 
 # AbstractChar: https://github.com/JuliaLang/julia/pull/34730 (1.5.0-DEV.261)
 # Irrational: https://github.com/JuliaLang/julia/pull/34741 (1.5.0-DEV.266)
