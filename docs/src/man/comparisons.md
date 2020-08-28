@@ -6,7 +6,7 @@ A sample data set can be created using the following code:
 
 ```julia
 df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing])
-df2 = DataFrame(grp = [1], w = [10])
+df2 = DataFrame(grp = 1, w = 10)
 ```
 
 ## Comparison with the Python package pandas
