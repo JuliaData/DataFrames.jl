@@ -307,7 +307,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                 if ismissing(cell)
                     print(io, "\\emph{missing}")
                 elseif cell isa Markdown.MD
-                    show(io, "text/latex", cell)
+                    print(io, strip(repr(MIME("text/latex"), cell)))
                 elseif cell isa SHOW_TABULAR_TYPES
                     print(io, "\\emph{")
                     print(io, latex_escape(sprint(ourshow, cell, context=io)))
