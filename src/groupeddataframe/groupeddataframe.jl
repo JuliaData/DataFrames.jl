@@ -245,9 +245,9 @@ Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
 
 Key for one of the groups of a [`GroupedDataFrame`](@ref). Contains the values
 of the corresponding grouping columns and behaves similarly to a `NamedTuple`,
-but using it to index its `GroupedDataFrame` is more effecient than using the
+but using it to index its `GroupedDataFrame` is more efficient than using the
 equivalent `Tuple` and `NamedTuple`, and much more efficient than using
-the equivelent `AbstractDict`.
+the equivalent `AbstractDict`.
 
 Instances of this type are returned by `keys(::GroupedDataFrame)` and are not
 meant to be constructed directly.
@@ -391,20 +391,20 @@ function Base.to_index(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return Base.to_index(gd, Tuple(key))
 end
 
-function _dict_to_tuple(key::AbstractDict{<:AbstractString} , gd)
+function _dict_to_tuple(key::AbstractDict{<:AbstractString}, gd::GroupedDataFrame)
     if length(key) != length(gd.cols)
         throw(KeyError(key))
     end
 
-    return ntuple(i ->  key[string(gd.cols[i])], length(gd.cols))        
+    return ntuple(i -> key[String(gd.cols[i])], length(gd.cols))
 end
 
-function _dict_to_tuple(key::AbstractDict{Symbol}, gd)
+function _dict_to_tuple(key::AbstractDict{Symbol}, gd::GroupedDataFrame)
     if length(key) != length(gd.cols)
         throw(KeyError(key))
     end    
 
-    return ntuple(i ->  key[gd.cols[i]], length(gd.cols))        
+    return ntuple(i -> key[gd.cols[i]], length(gd.cols))
 end
 
 Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}}) = 
