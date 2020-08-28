@@ -42,8 +42,6 @@
   ([#2373](https://github.com/JuliaData/DataFrames.jl/pull/2373))
 * add `columnindex` for `DataFrameRow`
   ([#2380](https://github.com/JuliaData/DataFrames.jl/pull/2380))
-* add rich display support for Markdown cell entries in HTML, Markdown and LaTeX
-  ([#2346](https://github.com/JuliaData/DataFrames.jl/pull/2346))
 
 ## Deprecated
 
@@ -57,3 +55,5 @@
 
 * Documentation is now available also in *Dark* mode
   ([#2315](https://github.com/JuliaData/DataFrames.jl/pull/2315))
+* add rich display support for Markdown cell entries in HTML, Markdown and LaTeX
+  ([#2346](https://github.com/JuliaData/DataFrames.jl/pull/2346))
