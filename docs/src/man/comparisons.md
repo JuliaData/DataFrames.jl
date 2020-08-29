@@ -42,7 +42,7 @@ By comparison, this pandas data frame has `a` to `f` as row indices rather than 
 | Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`              |
 | Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`        |
 |                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]` |
-| Mixed indexing             | `df.loc['c'][1]`       | `df[df.id .== 'c', 2]`   |
+| Mixed indexing             | `df.loc['c'][1]`       | `df[findfirst(==('c'), df.id), 2]`   |
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index.
