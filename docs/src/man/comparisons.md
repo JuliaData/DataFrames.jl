@@ -30,6 +30,12 @@ f    2  1  9  NaN
 ```
 
 By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
+In the DataFrames.jl examples we use `findfirst` function as row index in pandas
+in general allows duplicates and in such case a row corresponding to the first
+occurrence of a value in the row index is returned.
+In DataFrames.jl in general a `groupby` function should be used to set a row index
+to a `DataFrame`; opposed to pandas it then returns all rows matching an index in
+case of duplicates.
 
 ### Accessing data
 
