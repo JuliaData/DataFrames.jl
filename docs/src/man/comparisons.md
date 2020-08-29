@@ -14,11 +14,12 @@ df2 = DataFrame(grp = 1, w = 10)
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
 
 ```python
->>> df = pandas.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
-...                        'x': range(6, 0, -1),
-...                        'y': range(4, 10),
-...                        'z': [3, 4, 5, 6, 7, None]},
-...                       index = list('abcdef'))
+df = pandas.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
+                       'x': range(6, 0, -1),
+                       'y': range(4, 10),
+                       'z': [3, 4, 5, 6, 7, None]},
+                      index = list('abcdef'))
+
 >>> df
    grp  x  y    z
 a    1  6  4  3.0
