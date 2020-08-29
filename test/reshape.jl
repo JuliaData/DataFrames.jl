@@ -424,8 +424,7 @@ end
     levels!(v, ["b", "c", "a"])
     rv = DataFrames.RepeatedVector(v, 1, 1)
     @test isordered(v)
-    # uncomment after CategoricalArrays.jl is fixed
-    # @test isordered(categorical(v))
+    @test isordered(categorical(v))
     @test levels(v) == ["b", "c", "a"]
     @test levels(categorical(v)) == ["b", "c", "a"]
 
@@ -433,8 +432,7 @@ end
     levels!(v, ["b", "c", "a"])
     rv = DataFrames.RepeatedVector(v, 1, 1)
     @test !isordered(v)
-    # uncomment after CategoricalArrays.jl is fixed
-    # @test !isordered(categorical(v))
+    @test !isordered(categorical(v))
     @test levels(v) == ["b", "c", "a"]
     @test levels(categorical(v)) == ["b", "c", "a"]
 end
@@ -447,30 +445,30 @@ end
                    d = randn(12),
                    e = map(string, 'a':'l'))
     d1s = stack(d1, [:d, :c])
+    @test d1s.variable isa PooledVector{String}
+    @test levels(d1s.variable) == ["c", "d"]
+    d1s = stack(d1, [:d, :c], view=true)
+    @test d1s.variable isa DataFrames.RepeatedVector{String}
+    @test levels(d1s.variable) == ["c", "d"]
+    @test d1s[:, 4] isa PooledVector{String}
+    @test levels(d1s[:, 4]) == ["c", "d"]
+
+    d1s = stack(d1, [:d, :c], variable_eltype=CategoricalValue{String})
     @test d1s.variable isa CategoricalVector{String}
     @test levels(d1s.variable) == ["d", "c"]
-    d1s = stack(d1, [:d, :c], view=true)
+    d1s = stack(d1, [:d, :c], view=true, variable_eltype=CategoricalValue{String})
     @test d1s.variable isa DataFrames.RepeatedVector{<:CategoricalValue{String}}
     @test levels(d1s.variable) == ["d", "c"]
     @test d1s[:, 4] isa CategoricalVector{String}
     @test levels(d1s[:, 4]) == ["d", "c"]
 
-    d1s = stack(d1, [:d, :c], variable_eltype=String)
-    @test d1s.variable isa PooledVector{String}
-    @test levels(d1s.variable) == ["c", "d"]
-    d1s = stack(d1, [:d, :c], view=true, variable_eltype=String)
-    @test d1s.variable isa DataFrames.RepeatedVector{String}
-    @test levels(d1s.variable) == ["c", "d"]
-    @test d1s[:, 4] isa Vector{String}
-    @test levels(d1s[:, 4]) == ["c", "d"]
-
     d1s = stack(d1, [:d, :c], variable_eltype=Symbol)
-    @test d1s.variable isa Vector{Symbol}
+    @test d1s.variable isa PooledVector{Symbol}
     @test levels(d1s.variable) == [:c, :d]
     d1s = stack(d1, [:d, :c], view=true, variable_eltype=Symbol)
     @test d1s.variable isa DataFrames.RepeatedVector{Symbol}
     @test levels(d1s.variable) == [:c, :d]
-    @test d1s[:, 4] isa Vector{Symbol}
+    @test d1s[:, 4] isa PooledVector{Symbol}
     @test levels(d1s[:, 4]) == [:c, :d]
 
     d2 = categorical(d1, :)
@@ -481,7 +479,7 @@ end
     ordered!(d2.c, true)
     levels!(d2.d, ref_levels)
     ordered!(d2.d, true)
-    d2s = stack(d2, [:d, :c])
+    d2s = stack(d2, [:d, :c], variable_eltype=CategoricalValue{String})
     for col in eachcol(d2s)
         @test col isa CategoricalVector
     end
@@ -498,13 +496,13 @@ end
 @testset "test stack eltype" begin
     df = DataFrame(rand(4,5))
     sdf = stack(df)
-    @test eltype(sdf.variable) <: CategoricalValue{String}
-    @test eltype(typeof(sdf.variable)) <: CategoricalValue{String}
+    @test eltype(sdf.variable) <: String
+    @test eltype(typeof(sdf.variable)) <: String
     @test eltype(sdf.value) <: Float64
     @test eltype(typeof(sdf.value)) <: Float64
     sdf2 = first(sdf, 3)
-    @test eltype(sdf2.variable) <: CategoricalValue{String}
-    @test eltype(typeof(sdf2.variable)) <: CategoricalValue{String}
+    @test eltype(sdf2.variable) <: String
+    @test eltype(typeof(sdf2.variable)) <: String
     @test eltype(sdf2.value) <: Float64
     @test eltype(typeof(sdf2.value)) <: Float64
 end
