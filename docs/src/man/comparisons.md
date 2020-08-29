@@ -38,7 +38,7 @@ By comparison, this pandas data frame has `a` to `f` as row indices rather than 
 | Cell indexing by location  | `df.iloc[1, 1]`        | `df[2, 2]`               |
 | Row slicing by location    | `df.iloc[1:3]`         | `df[2:3, :]`             |
 | Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`           |
-| Row indexing by label      | `df.loc['c']`          | `df[df.id .== 'c', :]`   |
+| Row indexing by label      | `df.loc['c']`          | `df[findfirst(==('c'), df.id), :]`   |
 | Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`              |
 | Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`        |
 |                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]` |
