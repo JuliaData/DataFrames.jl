@@ -1379,7 +1379,7 @@ end
         @test gd[Dict([Test.GenericString(String(k)) => v for (k, v)  in pairs(key)]...)] ≅ gd[i]
         # Out of order Dict
         @test gd[Dict([k => v for (k, v) in Iterators.reverse(pairs(key))]...)] ≅ gd[i]
-        # AbstractDict 
+        # AbstractDict
         @test gd[Test.GenericDict(Dict(key))] ≅ gd[i]
     end
 
@@ -1395,7 +1395,7 @@ end
     @test get(gd, Dict(:a => :A, :b => 1), nothing) ≅ gd[1]
     @test get(gd, Dict(:b => 1, :a => :A), nothing) ≅ gd[1]
     @test get(gd, Dict(:a => :A, :b => 3), nothing) == nothing
-    
+
     # Wrong values
     @test_throws KeyError gd[(a=:A, b=3)]
     @test_throws KeyError gd[(:A, 3)]
@@ -1524,7 +1524,8 @@ end
 
     gd = groupby_checked(df, [:a, :b])
 
-    @test map(repr, keys(gd)) == [
+    gk = keys(gd)
+    @test map(repr, gk) == [
         "GroupKey: (a = :foo, b = 1)",
         "GroupKey: (a = :bar, b = 2)",
         "GroupKey: (a = :baz, b = 1)",
@@ -1532,6 +1533,13 @@ end
         "GroupKey: (a = :bar, b = 1)",
         "GroupKey: (a = :baz, b = 2)",
     ]
+
+
+    @test (:foo, 1) in gk
+    @test (a=:foo, b=1) in gk
+    @test gk[1] in gk
+    @test !(1 in gk) # although haskey(gd, 1)
+    @test_throws ArgumentError keys(groupby(DataFrame(x=1), :x))[1] in gk
 end
 
 @testset "GroupedDataFrame indexing with array of keys" begin
