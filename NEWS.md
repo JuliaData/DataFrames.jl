@@ -23,7 +23,7 @@
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
 * `GroupKeys` now supports `in` for `GroupKey`, `Tuple`, `NamedTuple` and dictionaries
-  ([XXXX])
+  ([2392](https://github.com/JuliaData/DataFrames.jl/pull/2392))
 
 ## New functionalities
 
