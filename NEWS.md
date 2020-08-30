@@ -22,6 +22,9 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* the `categorical` and `categorical!` functions have been deprecated in favor of
+  `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
+  [#2394]((https://github.com/JuliaData/DataFrames.jl/pull/2394))
 
 ## New functionalities
 

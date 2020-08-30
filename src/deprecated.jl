@@ -48,12 +48,12 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
     end
     if cols === nothing
         cols = Union{AbstractString, Missing}
-        Base.depwarn("`categorical(df, cols)` is deprecated. " *
+        Base.depwarn("`categorical(df)` is deprecated. " *
                      "Use `cols = names(df)[map(c -> eltype(c) <: $cols, eachcol(df))]; transform(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical)
     else
-        Base.depwarn("`categorical(df, cols)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]; transform(df, cols .=> $categoricalstr .=> cols)` instead.",
+        Base.depwarn("`categorical(df, T)` is deprecated. " *
+                     "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical)
     end
     cols = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
@@ -96,12 +96,12 @@ function categorical!(df::DataFrame, cols::Union{Type, Nothing}=nothing;
     end
     if cols === nothing
         cols = Union{AbstractString, Missing}
-        Base.depwarn("`categorical!(df, cols)` is deprecated. " *
+        Base.depwarn("`categorical!(df)` is deprecated. " *
                      "Use `cols = names(df)[map(c -> eltype(c) <: $cols, eachcol(df))]; transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical!)
     else
-        Base.depwarn("`categorical!(df, cols)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]; transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
+        Base.depwarn("`categorical!(df, T)` is deprecated. " *
+                     "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical!)
     end
     cols = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
