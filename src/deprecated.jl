@@ -56,8 +56,8 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
                      "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical)
     end
-    cols = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
-    return transform(df, cols .=> (x -> categorical(x, compress=compress)) .=> cols)
+    colsstr = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
+    return transform(df, colsstr .=> (x -> categorical(x, compress=compress)) .=> colsstr)
 end
 
 function categorical!(df::DataFrame, cols::Union{ColumnIndex, MultiColumnIndex};
@@ -104,6 +104,6 @@ function categorical!(df::DataFrame, cols::Union{Type, Nothing}=nothing;
                      "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical!)
     end
-    cols = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
-    return transform!(df, cols .=> (x -> categorical(x, compress=compress)) .=> cols)
+    colsstr = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
+    return transform!(df, colsstr .=> (x -> categorical(x, compress=compress)) .=> colsstr)
 end
