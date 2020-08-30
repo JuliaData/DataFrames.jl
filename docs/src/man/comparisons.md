@@ -80,11 +80,12 @@ can be used to remove missing data. See more details at the [Additional Differen
 
 ### Grouping data and aggregation
 
-| Operation                    | pandas                                                                                    | DataFrames.jl                               |
-| :--------------------------- | :---------------------------------------------------------------------------------------- | :------------------------------------------ |
-| Aggregate by groups          | `df.groupby('grp')['x'].mean().reset_index()`                                             | `combine(groupby(df, :grp), :x => mean)`    |
-| Aggregate and add columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                       | `transform(groupby(df, :grp), :x => mean)`  |
-| Aggregate and select columns | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean','y']]` | `select(groupby(df, :grp), :x => mean, :y)` |
+| Operation                       | pandas                                                                                    | DataFrames.jl                                       |
+| :------------------------------ | :---------------------------------------------------------------------------------------- | :-------------------------------------------------- |
+| Aggregate by groups             | `df.groupby('grp')['x'].mean().reset_index()`                                             | `combine(groupby(df, :grp), :x => mean)`            |
+| Rename column after aggregation | `df.groupby('grp')['x'].mean().reset_index().rename(columns={'x': 'mean_x'})`             | `combine(groupby(df, :grp), :x => mean => :mean_x)` |
+| Aggregate and add columns       | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                       | `transform(groupby(df, :grp), :x => mean)`          |
+| Aggregate and select columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean','y']]` | `select(groupby(df, :grp), :x => mean, :y)`         |
 
 ### More advanced commands
 
