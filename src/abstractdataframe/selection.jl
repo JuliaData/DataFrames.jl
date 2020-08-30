@@ -156,7 +156,9 @@ function normalize_selection(idx::AbstractIndex,
             newcol = Symbol(prefix, "_etc")
         end
     elseif isempty(c)
-        newcol = renamecols ? Symbol(funname(fun)) : Symbol("")
+        renamecols || throw(ArgumentError("when renamecols=false target column name " *
+                                          "must be passed if there are no input columns"))
+        newcol = Symbol(funname(fun))
     else
         prefix = join(view(_names(idx), c), '_')
         if renamecols
@@ -278,6 +280,7 @@ SELECT_ARG_RULES =
     then the name consists of the first two names and `etc` suffix then, e.g.
     `[:a,:b,:c,:d] => fun` produces the new column name `:a_b_etc_fun` if
     `renamecols=true` and ``:a_b_etc` if `renamecols=false`.
+    It is not allowed to pass `renamecols=false` if `old_column` is empty.
 
     Column renaming and transformation operations can be passed wrapped in
     vectors (this is useful when combined with broadcasting).
@@ -565,7 +568,7 @@ julia> combine(df, :a => sum, nrow, renamecols=false)
 combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
     manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
-function combine(arg, df::AbstractDataFrame, renamecols::Bool=true)
+function combine(arg, df::AbstractDataFrame; renamecols::Bool=true)
     if nrow(df) == 0
         throw(ArgumentError("calling combine on a data frame with zero rows" *
                             " with transformation as a first argument is " *
