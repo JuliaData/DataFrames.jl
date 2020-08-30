@@ -31,12 +31,6 @@ f    2  1  9  NaN
 ```
 
 By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
-In the DataFrames.jl examples we use `findfirst` function as row index in pandas
-in general allows duplicates and in such case a row corresponding to the first
-occurrence of a value in the row index is returned.
-In DataFrames.jl in general a `groupby` function should be used to set a row index
-to a `DataFrame`; opposed to pandas it then returns all rows matching an index in
-case of duplicates.
 
 ### Accessing data
 
@@ -53,6 +47,16 @@ case of duplicates.
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index.
+
+In the DataFrames.jl examples, the `findfirst` function is used to find the first match and return the result
+as a single `DataFrameRow` object. In the case that `id` is not unique, you can use the `findall` function
+or boolean indexing instead. It would then return a `DataFrame` object containing all matched rows. The following
+two lines of code are functionally equivalent:
+
+```julia
+df[findfirst(==('c'), df.id), :]
+df[df.id .== 'c', :]
+```
 
 ### Common operations
 
