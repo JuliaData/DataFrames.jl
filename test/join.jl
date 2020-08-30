@@ -123,11 +123,9 @@ end
 end
 
 @testset "issue #960" begin
-    df1 = DataFrame(A = 1:50,
-                    B = 1:50,
+    df1 = DataFrame(A = categorical(1:50),
+                    B = categorical(1:50),
                     C = 1)
-    categorical!(df1, :A)
-    categorical!(df1, :B)
     @test innerjoin(df1, df1, on = [:A, :B], makeunique=true)[!, 1:3] == df1
     # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1088)
     df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],

@@ -92,10 +92,7 @@ valuecols
 
 ## Filtering rows
 ```@docs
-completecases
 delete!
-dropmissing
-dropmissing!
 empty
 empty!
 filter
@@ -107,14 +104,15 @@ unique
 unique!
 ```
 
-## Changing column types
+## Working with missing values
 ```@docs
 allowmissing
 allowmissing!
-categorical
-categorical!
+completecases
 disallowmissing
 disallowmissing!
+dropmissing
+dropmissing!
 ```
 
 ## Iteration
