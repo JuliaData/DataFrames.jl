@@ -723,7 +723,7 @@ end
     @test outerjoin(df1, df2, on=[:a => :d, :b], validate=(false, false)) == [df1; df1]
 end
 
-@testset "rename tests" begin
+@testset "renamecols tests" begin
     df1 = DataFrame(id1=[1,2,3], id2=[1,2,3], x=1:3)
     df2 = DataFrame(id1=[1,2,4], ID2=[1,2,4], x=1:3)
 
@@ -734,7 +734,7 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test innerjoin(df1, df2, on=:id1,
-                        makeunique = mu, validate = vl => vr, rename = l => r) ==
+                        makeunique = mu, validate = vl => vr, renamecols = l => r) ==
             DataFrame(id1=[1,2], id2_left=[1,2], x_left=[1,2], ID2_right=[1,2], x_right=[1,2])
     end
 
@@ -745,7 +745,7 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                        makeunique = mu, validate = vl => vr, rename = l => r) ==
+                        makeunique = mu, validate = vl => vr, renamecols = l => r) ==
             DataFrame(id1=[1,2], id2=[1,2], x_left=[1,2], x_right=[1,2])
     end
 
@@ -756,7 +756,7 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test leftjoin(df1, df2, on=:id1,
-                       makeunique = mu, validate = vl => vr, rename = l => r) ≅
+                       makeunique = mu, validate = vl => vr, renamecols = l => r) ≅
             DataFrame(id1=[1,2,3], id2_left=[1,2,3], x_left=[1,2,3],
                       ID2_right=[1,2,missing], x_right=[1,2,missing])
     end
@@ -768,16 +768,16 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                       makeunique = mu, validate = vl => vr, rename = l => r) ≅
+                       makeunique = mu, validate = vl => vr, renamecols = l => r) ≅
             DataFrame(id1=[1,2,3], id2=[1,2,3], x_left=[1,2,3], x_right=[1,2,missing])
     end
 
     @test_throws ArgumentError leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                        rename = "_left" => "_right", indicator=:id1)
+                                        renamecols = "_left" => "_right", indicator=:id1)
     @test_throws ArgumentError leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                        rename = "_left" => "_right", indicator=:x_left)
+                                        renamecols = "_left" => "_right", indicator=:x_left)
     @test leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                   rename = "_left" => "_right", indicator=:ind) ≅
+                   renamecols = "_left" => "_right", indicator=:ind) ≅
           DataFrame(id1=[1,2,3], id2=[1,2,3], x_left=[1,2,3],
                     x_right=[1,2,missing], ind=["both", "both", "left_only"])
 
@@ -788,7 +788,7 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test rightjoin(df1, df2, on=:id1,
-                       makeunique = mu, validate = vl => vr, rename = l => r) ≅
+                       makeunique = mu, validate = vl => vr, renamecols = l => r) ≅
             DataFrame(id1=[1,2,4], id2_left=[1,2,missing], x_left=[1,2,missing],
                       ID2_right=[1,2,4], x_right=[1,2,3])
     end
@@ -800,16 +800,16 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                       makeunique = mu, validate = vl => vr, rename = l => r) ≅
+                       makeunique = mu, validate = vl => vr, renamecols = l => r) ≅
             DataFrame(id1=[1,2,4], id2=[1,2,4], x_left=[1,2,missing], x_right=[1,2,3])
     end
 
     @test_throws ArgumentError rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         rename = "_left" => "_right", indicator=:id1)
+                                         renamecols = "_left" => "_right", indicator=:id1)
     @test_throws ArgumentError rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         rename = "_left" => "_right", indicator=:x_left)
+                                         renamecols = "_left" => "_right", indicator=:x_left)
     @test rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                    rename = "_left" => "_right", indicator=:ind) ≅
+                    renamecols = "_left" => "_right", indicator=:ind) ≅
           DataFrame(id1=[1,2,4], id2=[1,2,4], x_left=[1,2,missing],
                     x_right=[1,2,3], ind=["both", "both", "right_only"])
 
@@ -821,7 +821,7 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test outerjoin(df1, df2, on=:id1,
-                       makeunique = mu, validate = vl => vr, rename = l => r) ≅
+                       makeunique = mu, validate = vl => vr, renamecols = l => r) ≅
             DataFrame(id1=[1,2,3,4], id2_left=[1,2,3,missing], x_left=[1,2,3,missing],
                       ID2_right=[1,2,missing,4], x_right=[1,2,missing,3])
     end
@@ -833,33 +833,33 @@ end
         r in ["_right", :_right, x -> x * "_right"],
         mu in [true, false], vl in [true, false], vr in [true, false]
         @test outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                       makeunique = mu, validate = vl => vr, rename = l => r) ≅
+                       makeunique = mu, validate = vl => vr, renamecols = l => r) ≅
             DataFrame(id1=[1,2,3,4], id2=[1,2,3,4], x_left=[1,2,3,missing], x_right=[1,2,missing,3])
     end
 
     @test_throws ArgumentError outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         rename = "_left" => "_right", indicator=:id1)
+                                         renamecols = "_left" => "_right", indicator=:id1)
     @test_throws ArgumentError outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         rename = "_left" => "_right", indicator=:x_left)
+                                         renamecols = "_left" => "_right", indicator=:x_left)
     @test outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                    rename = "_left" => "_right", indicator=:ind) ≅
+                    renamecols = "_left" => "_right", indicator=:ind) ≅
           DataFrame(id1=[1,2,3,4], id2=[1,2,3,4], x_left=[1,2,3,missing],
                     x_right=[1,2,missing,3], ind=["both", "both", "left_only", "right_only"])
 
     df1.x .+= 10
     df2.x .+= 100
-    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = (x -> :id1) => "_right")
-    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = (x -> :id1) => "_right", makeunique=true) ==
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = (x -> :id1) => "_right")
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = (x -> :id1) => "_right", makeunique=true) ==
           DataFrame(id1=1:2, id2=1:2, id1_1=11:12, x_right=101:102)
-    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :id2))
-    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :id2), makeunique=true) ==
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = "_left" => (x -> :id2))
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = "_left" => (x -> :id2), makeunique=true) ==
           DataFrame(id1=1:2, id2=1:2, x_left=11:12, id2_1=101:102)
-    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => "_left")
-    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => "_left", makeunique=true) ==
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = "_left" => "_left")
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = "_left" => "_left", makeunique=true) ==
           DataFrame(id1=1:2, id2=1:2, x_left=11:12, x_left_1=101:102)
     df2.y = df2.x .+ 1
-    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :newcol))
-    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], rename = "_left" => (x -> :newcol), makeunique=true) ==
+    @test_throws ArgumentError innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = "_left" => (x -> :newcol))
+    @test innerjoin(df1, df2, on=[:id1, :id2 => :ID2], renamecols = "_left" => (x -> :newcol), makeunique=true) ==
           DataFrame(id1=1:2, id2=1:2, x_left=11:12, newcol=101:102, newcol_1=102:103)
 end
 
