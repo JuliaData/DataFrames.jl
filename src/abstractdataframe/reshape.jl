@@ -33,9 +33,11 @@ that return views into the original data frame.
   freshly allocated vectors.
 - `variable_eltype` : determines the element type of column `variable_name`.
   By default a `PooledArray{String}` is created.
-  If `variable_eltype=Symbol` it is a `PoolVector{Symbol}`,
+  If `variable_eltype=Symbol` a `PooledVector{Symbol}` is created,
   and if `variable_eltype=CategoricalValue{String}`
   a `CategoricalArray{String}` is produced.
+  Passing any other type `T` will produce a `PooledVector{T}` column
+  as long as it supports conversion from `String`.
 
 
 # Examples
@@ -81,10 +83,12 @@ function stack(df::AbstractDataFrame,
     elseif variable_eltype === String
         catnms = PooledArray(names(df, ints_measure_vars))
     else
-        # this covers CategoricalArray{String} in particular,
-        # as copyto! inserts levels in their order of appearance
+        # this covers CategoricalArray{String} in particular
+        # (note that copyto! inserts levels in their order of appearance)
         nms = names(df, ints_measure_vars)
-        catnms = copyto!(similar(nms, variable_eltype), nms)
+        simnms = similar(nms, variable_eltype)
+        catnms = simnms isa Vector ? PooledArray(catnms) : simnms
+        copyto!(catnms, nms)
     end
     return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
                                     repeat(catnms, inner=nrow(df)),                       # variable
