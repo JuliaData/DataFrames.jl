@@ -5,6 +5,7 @@ This section compares DataFrames.jl with other data manipulation frameworks in P
 A sample data set can be created using the following code:
 
 ```julia
+using DataFrames, Statistics
 df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing])
 df2 = DataFrame(grp = 1, x = 6, w = 10)
 ```
@@ -14,20 +15,14 @@ df2 = DataFrame(grp = 1, x = 6, w = 10)
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
 
 ```python
-df = pandas.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
-                       'x': range(6, 0, -1),
-                       'y': range(4, 10),
-                       'z': [3, 4, 5, 6, 7, None]},
-                      index = list('abcdef'))
+import pandas as pd
+import numpy as np
 
->>> df
-   grp  x  y    z
-a    1  6  4  3.0
-b    2  5  5  4.0
-c    1  4  6  5.0
-d    2  3  7  6.0
-e    1  2  8  7.0
-f    2  1  9  NaN
+df = pd.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
+                   'x': range(6, 0, -1),
+                   'y': range(4, 10),
+                   'z': [3, 4, 5, 6, 7, None]},
+                   index = list('abcdef'))
 ```
 
 By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
@@ -109,11 +104,7 @@ reorders the result according to the grouped keys.
 
 Suppose that you have a second data frame as shown below:
 ```
-df2 = pandas.DataFrame({'grp': [1], 'w': [10]})
-
->>> df2
-   grp   w
-0    1  10
+df2 = pd.DataFrame({'grp': [1], 'x': [6], 'w': [10]})
 ```
 
 Here is how to join the data frames:
