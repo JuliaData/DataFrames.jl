@@ -88,18 +88,21 @@ can be used to remove missing data. See more details at the [Additional Differen
 
 ### More advanced commands
 
-| Operation                 | pandas                                                                       | DataFrames.jl                                                 |
-| :------------------------ | :--------------------------------------------------------------------------- | :------------------------------------------------------------ |
-| Complex Function          | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`           |
-| Transform several columns | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`                   |
-|                           | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                              |
-|                           | `df.filter(regex=("^x")).mean()`                                             | `combine(df, r"^x" .=> mean)`                                 |
-|                           | `df[['x', 'y']].agg([max, min])`                                             | `combine(df, ([:x, :y] .=> [maximum minimum])...)`            |
-| Multivariate function     | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                              |
-| Row-wise                  | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                       |
-|                           | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`            |
-| DataFrame as input        | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`                |
-| DataFrame as output       | `df[['x']].agg(['min','max'])`                                               | `combine(:x => x -> (value = [minimum(x), maximum(x)],), df)` |
+| Operation                 | pandas                                                                       | DataFrames.jl                                             |
+| :------------------------ | :--------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| Complex Function          | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`       |
+| Transform several columns | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`               |
+|                           | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                          |
+|                           | `df.filter(regex=("^x")).mean()`                                             | `combine(df, r"^x" .=> mean)`                             |
+|                           | `df[['x', 'y']].agg([max, min])`                                             | `combine(df, ([:x, :y] .=> [maximum minimum])...)`        |
+| Multivariate function     | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                          |
+| Row-wise                  | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                   |
+|                           | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`        |
+| DataFrame as input        | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`            |
+| DataFrame as output       | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)` |
+
+Note that pandas preserves the same row order after `groupby` whereas DataFrames.jl
+reorders the result according to the grouped keys.
 
 ### Joining data frames
 
