@@ -70,7 +70,8 @@ Return a freshly allocated `Vector{String}` of names of columns contained in `df
 
 If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Not`, and `Between`).
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
+or a `Type`, in which case columns whose `eltype` is a subtype of `cols` are returned.
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 """
@@ -80,8 +81,11 @@ function Base.names(df::AbstractDataFrame, cols)
     nms = _names(index(df))
     idx = index(df)[cols]
     idxs = idx isa Int ? (idx:idx) : idx
-    return [string(nms[i]) for i in idxs]
+    return [String(nms[i]) for i in idxs]
 end
+
+Base.names(df::AbstractDataFrame, T::Type) =
+    [String(n) for (n, c) in pairs(eachcol(df)) if eltype(c) <: T]
 
 # _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))
