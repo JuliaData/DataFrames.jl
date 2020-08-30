@@ -39,7 +39,7 @@ which can also be used to get the values of the grouping columns for each group.
 same order as the `cols` argument) are also accepted as indices. Finally,
 an `AbstractDict` can be used to index into a grouped data frame where
 the keys are column names of the data frame. The order of the keys does
-not matter in this case. 
+not matter in this case.
 
 # See also
 
@@ -449,17 +449,17 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum)
 ```
 """
 function combine(f::Base.Callable, gd::GroupedDataFrame;
-                 keepkeys::Bool=true, ungroup::Bool=true)
+                 keepkeys::Bool=true, ungroup::Bool=true, suffix::Bool=true)
     return combine_helper(f, gd, keepkeys=keepkeys, ungroup=ungroup,
-                          copycols=true, keeprows=false)
+                          copycols=true, keeprows=false, suffix=suffix)
 end
 
 combine(f::typeof(nrow), gd::GroupedDataFrame;
-        keepkeys::Bool=true, ungroup::Bool=true) =
-    combine(gd, [nrow => :nrow], keepkeys=keepkeys, ungroup=ungroup)
+        keepkeys::Bool=true, ungroup::Bool=true, suffix::Bool=true) =
+    combine(gd, [nrow => :nrow], keepkeys=keepkeys, ungroup=ungroup, suffix=suffix)
 
 function combine(p::Pair, gd::GroupedDataFrame;
-                 keepkeys::Bool=true, ungroup::Bool=true)
+                 keepkeys::Bool=true, ungroup::Bool=true, suffix::Bool=true)
     # move handling of aggregate to specialized combine
     p_from, p_to = p
 
@@ -467,7 +467,7 @@ function combine(p::Pair, gd::GroupedDataFrame;
     # by moving to combine(::GroupedDataFrame, ::AbstractVector) method
     # note that even if length(gd) == 0 we can do this step
     if isagg(p_from => (p_to isa Pair ? first(p_to) : p_to), gd) || p_from === nrow
-        return combine(gd, [p], keepkeys=keepkeys, ungroup=ungroup)
+        return combine(gd, [p], keepkeys=keepkeys, ungroup=ungroup, suffix=suffix)
     end
 
     if p_from isa Tuple
@@ -479,19 +479,19 @@ function combine(p::Pair, gd::GroupedDataFrame;
         cs = p_from
     end
     return combine_helper(cs => p_to, gd, keepkeys=keepkeys, ungroup=ungroup,
-                          copycols=true, keeprows=false)
+                          copycols=true, keeprows=false, suffix=suffix)
 end
 
 combine(gd::GroupedDataFrame,
         cs::Union{Pair, typeof(nrow), ColumnIndex, MultiColumnIndex}...;
-        keepkeys::Bool=true, ungroup::Bool=true) =
+        keepkeys::Bool=true, ungroup::Bool=true, suffix::Bool=true) =
     _combine_prepare(gd, cs..., keepkeys=keepkeys, ungroup=ungroup,
-                     copycols=true, keeprows=false)
+                     copycols=true, keeprows=false, suffix=suffix)
 
 function _combine_prepare(gd::GroupedDataFrame,
                           @nospecialize(cs::Union{Pair, typeof(nrow),
                                                   ColumnIndex, MultiColumnIndex}...);
-                 keepkeys::Bool, ungroup::Bool, copycols::Bool, keeprows::Bool)
+                 keepkeys::Bool, ungroup::Bool, copycols::Bool, keeprows::Bool, suffix::Bool)
     cs_vec = []
     for p in cs
         if p === nrow
@@ -513,7 +513,7 @@ function _combine_prepare(gd::GroupedDataFrame,
             end
         end
     end
-    cs_norm_pre = [normalize_selection(index(parent(gd)), c) for c in cs_vec]
+    cs_norm_pre = [normalize_selection(index(parent(gd)), c, suffix) for c in cs_vec]
     seen_cols = Set{Symbol}()
     process_vectors = false
     for v in cs_norm_pre
@@ -564,7 +564,7 @@ function _combine_prepare(gd::GroupedDataFrame,
     f = Pair[first(x) => first(last(x)) for x in cs_norm]
     nms = Symbol[last(last(x)) for x in cs_norm]
     return combine_helper(f, gd, nms, keepkeys=keepkeys, ungroup=ungroup,
-                          copycols=copycols, keeprows=keeprows)
+                          copycols=copycols, keeprows=keeprows, suffix=suffix)
 end
 
 function gen_groups(idx::Vector{Int})
@@ -584,11 +584,11 @@ end
 function combine_helper(f, gd::GroupedDataFrame,
                         nms::Union{AbstractVector{Symbol},Nothing}=nothing;
                         keepkeys::Bool, ungroup::Bool,
-                        copycols::Bool, keeprows::Bool)
+                        copycols::Bool, keeprows::Bool, suffix::Bool)
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
-    idx, valscat = _combine(f, gd, nms, copycols, keeprows)
+    idx, valscat = _combine(f, gd, nms, copycols, keeprows, suffix)
     !keepkeys && ungroup && return valscat
     keys = groupcols(gd)
     for key in keys
@@ -1137,7 +1137,7 @@ end
 
 function _combine(f::AbstractVector{<:Pair},
                   gd::GroupedDataFrame, nms::AbstractVector{Symbol},
-                  copycols::Bool, keeprows::Bool)
+                  copycols::Bool, keeprows::Bool, suffix::Bool)
     # here f should be normalized and in a form of source_cols => fun
     @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
     @assert all(x -> last(x) isa Base.Callable, f)
@@ -1277,7 +1277,7 @@ function _combine(f::AbstractVector{<:Pair},
 end
 
 function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
-                  copycols::Bool, keeprows::Bool)
+                  copycols::Bool, keeprows::Bool, suffix::Bool)
     @assert copycols && !keeprows
     # use `similar` as `gd` might have been subsetted
     firstres = length(gd) > 0 ? fun(gd[1]) : fun(similar(parent(gd), 0))
@@ -1287,11 +1287,11 @@ function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
 end
 
 function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing,
-                  copycols::Bool, keeprows::Bool)
+                  copycols::Bool, keeprows::Bool, suffix::Bool)
     # here p should not be normalized as we allow tabular return value from fun
     # map and combine should not dispatch here if p is isagg
     @assert copycols && !keeprows
-    source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p)
+    source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p, suffix)
     parentdf = parent(gd)
     if source_cols isa Int
         incols = (parent(gd)[!, source_cols],)
@@ -1702,9 +1702,9 @@ julia> select(gd, :, AsTable(Not(:a)) => sum)
 ```
 """
 select(gd::GroupedDataFrame, args...;
-       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true) =
+       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, suffix::Bool=true) =
     _combine_prepare(gd, args..., copycols=copycols, keepkeys=keepkeys,
-                     ungroup=ungroup, keeprows=true)
+                     ungroup=ungroup, keeprows=true, suffix=suffix)
 
 """
     transform(gd::GroupedDataFrame, args...;
@@ -1719,9 +1719,9 @@ but keeps the columns of `parent(gd)` in their original order.
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform!`](@ref)
 """
 function transform(gd::GroupedDataFrame, args...;
-                   copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true)
+                   copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, suffix::Bool=true)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
-                 ungroup=ungroup)
+                 ungroup=ungroup, suffix=suffix)
     # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
     # so parent always gives a data frame
     select!(parent(res), propertynames(parent(gd)), :)
@@ -1743,8 +1743,8 @@ using the same parent data frame they might get corrupt.
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`transform`](@ref), [`transform!`](@ref)
 """
-function select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
-    newdf = select(gd, args..., copycols=false)
+function select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true, suffix::Bool=true)
+    newdf = select(gd, args..., copycols=false, suffix=suffix)
     df = parent(gd)
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
@@ -1762,8 +1762,8 @@ and keeps the columns of `parent(gd)` in their original order.
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
 """
-function transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true)
-    newdf = select(gd, :, args..., copycols=false)
+function transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true, suffix::Bool=true)
+    newdf = select(gd, :, args..., copycols=false, suffix=suffix)
     df = parent(gd)
     select!(newdf, propertynames(df), :)
     _replace_columns!(df, newdf)

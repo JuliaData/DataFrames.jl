@@ -34,7 +34,7 @@ _by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
 
-normalize_selection(idx::AbstractIndex, sel) =
+normalize_selection(idx::AbstractIndex, sel, suffix::Bool) =
     try
         idx[sel]
     catch e
@@ -45,28 +45,28 @@ normalize_selection(idx::AbstractIndex, sel) =
         end
     end
 
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}) =
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}, suffix::Bool) =
     length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString}) =
-    normalize_selection(idx, first(sel) => Symbol(last(sel)))
-normalize_selection(idx::AbstractIndex, sel::typeof(nrow)) =
-    normalize_selection(idx, nrow => :nrow)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString}, suffix::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), suffix)
+normalize_selection(idx::AbstractIndex, sel::typeof(nrow), suffix::Bool) =
+    normalize_selection(idx, nrow => :nrow, suffix)
 
-function normalize_selection(idx::AbstractIndex, sel::ColumnIndex)
+function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, suffix::Bool)
     c = idx[sel]
     return c => identity => _names(idx)[c]
 end
 
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol})
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol}, suffix::Bool)
     c = idx[first(sel)]
     return c => identity => last(sel)
 end
 
-normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractString}) =
-    normalize_selection(idx, first(sel) => Symbol(last(sel)))
+normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractString}, suffix::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), suffix::Bool)
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any,<:Pair{<:Base.Callable, Symbol}})
+                             sel::Pair{<:Any,<:Pair{<:Base.Callable, Symbol}}, suffix::Bool)
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -97,19 +97,23 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 normalize_selection(idx::AbstractIndex,
-                    sel::Pair{<:Any,<:Pair{<:Base.Callable,<:AbstractString}}) =
-    normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))))
+                    sel::Pair{<:Any,<:Pair{<:Base.Callable,<:AbstractString}}, suffix::Bool) =
+    normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))), suffix::Bool)
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:ColumnIndex,<:Base.Callable})
+                             sel::Pair{<:ColumnIndex,<:Base.Callable}, suffix::Bool)
     c = idx[first(sel)]
     fun = last(sel)
-    newcol = Symbol(_names(idx)[c], "_", funname(fun))
+    if suffix
+        newcol = Symbol(_names(idx)[c], "_", funname(fun))
+    else
+        newcol = _names(idx)[c]
+    end
     return c => fun => newcol
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any, <:Base.Callable})
+                             sel::Pair{<:Any, <:Base.Callable}, suffix::Bool)
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -138,11 +142,19 @@ function normalize_selection(idx::AbstractIndex,
     end
     fun = last(sel)
     if length(c) > 3
-        newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc_", funname(fun))
+        if suffix
+            newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc_", funname(fun))
+        else
+            newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc")
+        end
     elseif isempty(c)
-        newcol = Symbol(funname(fun))
+        newcol = suffix ? Symbol(funname(fun)) : Symbol("")
     else
-        newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
+        if suffix
+            newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
+        else
+            newcol = Symbol(join(view(_names(idx), c), '_'))
+        end
     end
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
@@ -356,8 +368,8 @@ julia> select!(df, AsTable(:) => ByRow(mean))
 ```
 
 """
-select!(df::DataFrame, args...) =
-    _replace_columns!(df, select(df, args..., copycols=false))
+select!(df::DataFrame, args...; suffix::Bool=true) =
+    _replace_columns!(df, select(df, args..., copycols=false, suffix=suffix))
 
 """
     transform!(df::DataFrame, args...)
@@ -368,7 +380,7 @@ Equivalent to `select!(df, :, args...)`.
 
 See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
 """
-transform!(df::DataFrame, args...) = select!(df, :, args...)
+transform!(df::DataFrame, args...; suffix::Bool=true) = select!(df, :, args..., suffix=suffix)
 
 """
     select(df::AbstractDataFrame, args...; copycols::Bool=true)
@@ -490,8 +502,8 @@ julia> select(df, AsTable(:) => ByRow(mean))
 ```
 
 """
-select(df::AbstractDataFrame, args...; copycols::Bool=true) =
-    manipulate(df, args..., copycols=copycols, keeprows=true)
+select(df::AbstractDataFrame, args...; copycols::Bool=true, suffix::Bool=true) =
+    manipulate(df, args..., copycols=copycols, keeprows=true, suffix=suffix)
 
 """
     transform(df::AbstractDataFrame, args...; copycols::Bool=true)
@@ -503,8 +515,8 @@ Equivalent to `select(df, :, args..., copycols=copycols)`.
 
 See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 """
-transform(df::AbstractDataFrame, args...; copycols::Bool=true) =
-    select(df, :, args..., copycols=copycols)
+transform(df::AbstractDataFrame, args...; copycols::Bool=true, suffix::Bool=true) =
+    select(df, :, args..., copycols=copycols, suffix=suffix)
 
 """
     combine(df::AbstractDataFrame, args...)
@@ -538,34 +550,34 @@ julia> combine(df, :a => sum, nrow)
 │ 1   │ 6     │ 3     │
 ```
 """
-combine(df::AbstractDataFrame, args...) =
-    manipulate(df, args..., copycols=true, keeprows=false)
+combine(df::AbstractDataFrame, args...; suffix::Bool=true) =
+    manipulate(df, args..., copycols=true, keeprows=false, suffix=suffix)
 
-function combine(arg, df::AbstractDataFrame)
+function combine(arg, df::AbstractDataFrame, suffix::Bool=true)
     if nrow(df) == 0
         throw(ArgumentError("calling combine on a data frame with zero rows" *
                             " with transformation as a first argument is " *
                             "currently not supported"))
     end
-    return combine(arg, groupby(df, Symbol[]))
+    return combine(arg, groupby(df, Symbol[]), suffix=suffix)
 end
 
-manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool) =
+manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool, suffix::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]),
               copycols=copycols)
 
-function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool)
+function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool, suffix::Bool)
     if c isa AbstractVector{<:Pair}
-        return manipulate(df, c..., copycols=copycols, keeprows=keeprows)
+        return manipulate(df, c..., copycols=copycols, keeprows=keeprows, suffix=suffix)
     else
-        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows)
+        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows, suffix=suffix)
     end
 end
 
-manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool) =
-    manipulate(df, [c], copycols=copycols, keeprows=keeprows)
+manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool, suffix::Bool) =
+    manipulate(df, [c], copycols=copycols, keeprows=keeprows, suffix=suffix)
 
-function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
+function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, suffix::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVector{<:Pair}
@@ -574,7 +586,7 @@ function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool)
             push!(cs_vec, v)
         end
     end
-    return _manipulate(df, [normalize_selection(index(df), c) for c in cs_vec],
+    return _manipulate(df, [normalize_selection(index(df), c, suffix) for c in cs_vec],
                     copycols, keeprows)
 end
 
@@ -679,19 +691,19 @@ function _manipulate(df::AbstractDataFrame, normalized_cs, copycols::Bool, keepr
     return newdf
 end
 
-manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool) =
-    manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows)
+manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool, suffix::Bool) =
+    manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows, suffix=suffix)
 
 function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
-                 copycols::Bool, keeprows::Bool)
+                 copycols::Bool, keeprows::Bool, suffix::Bool)
     if args isa AbstractVector{<:Pair}
-        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows)
+        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows, suffix=suffix)
     else
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
 
-function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
+function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool, suffix::Bool)
     if copycols
         cs_vec = []
         for v in args
@@ -701,7 +713,7 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
                 push!(cs_vec, v)
             end
         end
-        return _manipulate(dfv, [normalize_selection(index(dfv), c) for c in cs_vec],
+        return _manipulate(dfv, [normalize_selection(index(dfv), c, suffix) for c in cs_vec],
                         true, keeprows)
     else
         # we do not support transformations here
@@ -719,7 +731,7 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool)
                     push!(seen_single_column, ind_idx)
                 end
             else
-                newind = normalize_selection(index(dfv), ind)
+                newind = normalize_selection(index(dfv), ind, suffix)
                 if newind isa Pair
                     throw(ArgumentError("transforming and renaming columns of a " *
                                         "SubDataFrame is not allowed when `copycols=false`"))
