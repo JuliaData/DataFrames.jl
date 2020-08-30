@@ -496,15 +496,15 @@ end
 @testset "test stack eltype" begin
     df = DataFrame(rand(4,5))
     sdf = stack(df)
-    @test eltype(sdf.variable) <: String
-    @test eltype(typeof(sdf.variable)) <: String
-    @test eltype(sdf.value) <: Float64
-    @test eltype(typeof(sdf.value)) <: Float64
+    @test eltype(sdf.variable) === String
+    @test eltype(typeof(sdf.variable)) === String
+    @test eltype(sdf.value) === Float64
+    @test eltype(typeof(sdf.value)) === Float64
     sdf2 = first(sdf, 3)
-    @test eltype(sdf2.variable) <: String
-    @test eltype(typeof(sdf2.variable)) <: String
-    @test eltype(sdf2.value) <: Float64
-    @test eltype(typeof(sdf2.value)) <: Float64
+    @test eltype(sdf2.variable) === String
+    @test eltype(typeof(sdf2.variable)) === String
+    @test eltype(sdf2.value) === Float64
+    @test eltype(typeof(sdf2.value)) === Float64
 end
 
 end # module
