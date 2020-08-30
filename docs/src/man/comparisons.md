@@ -6,7 +6,7 @@ A sample data set can be created using the following code:
 
 ```julia
 df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing])
-df2 = DataFrame(grp = 1, w = 10)
+df2 = DataFrame(grp = 1, x = 6, w = 10)
 ```
 
 ## Comparison with the Python package pandas
@@ -126,6 +126,10 @@ Here is how to join the data frames:
 | Right join            | `pd.merge(df, df2, how = 'right', on = 'grp')` | `rightjoin(df, df2, on = :grp)` |
 | Semi join (filtering) | `df[df.grp.isin(df2.grp)]`                     | `semijoin(df, df2, on = :grp)`  |
 | Anti join (filtering) | `df[~df.grp.isin(df2.grp)]`                    | `antijoin(df, df2, on = :grp)`  |
+
+For multi-column joins, both pandas and DataFrames.jl accept an array for the `on` keyword argument.
+In case of semi joins and anti joins, pandas would require the join keys to be constructed
+as a tuple whereas DataFrames.jl just works as usual.
 
 ### Additional Differences
 
