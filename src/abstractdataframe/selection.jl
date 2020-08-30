@@ -34,7 +34,7 @@ _by_row_helper(x::Union{NamedTuple, DataFrameRow}) =
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
 
-normalize_selection(idx::AbstractIndex, sel, suffix::Bool) =
+normalize_selection(idx::AbstractIndex, sel, renamecols::Bool) =
     try
         idx[sel]
     catch e
@@ -45,28 +45,33 @@ normalize_selection(idx::AbstractIndex, sel, suffix::Bool) =
         end
     end
 
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol}, suffix::Bool) =
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol},
+                    renamecols::Bool) =
     length(idx) == 0 ? (Int[] => (() -> 0) => last(sel)) : (1 => length => last(sel))
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString}, suffix::Bool) =
-    normalize_selection(idx, first(sel) => Symbol(last(sel)), suffix)
-normalize_selection(idx::AbstractIndex, sel::typeof(nrow), suffix::Bool) =
-    normalize_selection(idx, nrow => :nrow, suffix)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(nrow), renamecols::Bool) =
+    normalize_selection(idx, nrow => :nrow, renamecols)
 
-function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, suffix::Bool)
+function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, renamecols::Bool)
     c = idx[sel]
     return c => identity => _names(idx)[c]
 end
 
-function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol}, suffix::Bool)
+function normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, Symbol},
+                             renamecols::Bool)
     c = idx[first(sel)]
     return c => identity => last(sel)
 end
 
-normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractString}, suffix::Bool) =
-    normalize_selection(idx, first(sel) => Symbol(last(sel)), suffix::Bool)
+normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols::Bool)
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any,<:Pair{<:Base.Callable, Symbol}}, suffix::Bool)
+                             sel::Pair{<:Any,<:Pair{<:Base.Callable, Symbol}},
+                             renamecols::Bool)
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -97,14 +102,16 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 normalize_selection(idx::AbstractIndex,
-                    sel::Pair{<:Any,<:Pair{<:Base.Callable,<:AbstractString}}, suffix::Bool) =
-    normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))), suffix::Bool)
+                    sel::Pair{<:Any,<:Pair{<:Base.Callable,<:AbstractString}},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => first(last(sel)) => Symbol(last(last(sel))),
+                        renamecols::Bool)
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:ColumnIndex,<:Base.Callable}, suffix::Bool)
+                             sel::Pair{<:ColumnIndex,<:Base.Callable}, renamecols::Bool)
     c = idx[first(sel)]
     fun = last(sel)
-    if suffix
+    if renamecols
         newcol = Symbol(_names(idx)[c], "_", funname(fun))
     else
         newcol = _names(idx)[c]
@@ -113,7 +120,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any, <:Base.Callable}, suffix::Bool)
+                             sel::Pair{<:Any, <:Base.Callable}, renamecols::Bool)
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -142,18 +149,20 @@ function normalize_selection(idx::AbstractIndex,
     end
     fun = last(sel)
     if length(c) > 3
-        if suffix
-            newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc_", funname(fun))
+        prefix = join(@views(_names(idx)[c[1:2]]), '_')
+        if renamecols
+            newcol = Symbol(prefix, "_etc_", funname(fun))
         else
-            newcol = Symbol(join(@views(_names(idx)[c[1:2]]), '_'), "_etc")
+            newcol = Symbol(prefix, "_etc")
         end
     elseif isempty(c)
-        newcol = suffix ? Symbol(funname(fun)) : Symbol("")
+        newcol = renamecols ? Symbol(funname(fun)) : Symbol("")
     else
-        if suffix
-            newcol = Symbol(join(view(_names(idx), c), '_'), '_', funname(fun))
+        prefix = join(view(_names(idx), c), '_')
+        if renamecols
+            newcol = Symbol(prefix, '_', funname(fun))
         else
-            newcol = Symbol(join(view(_names(idx), c), '_'))
+            newcol = Symbol(prefix)
         end
     end
     return (wanttable ? AsTable(c) : c) => fun => newcol
@@ -263,10 +272,12 @@ SELECT_ARG_RULES =
 
     Column transformation can also be specified using the short `old_column =>
     fun` form. In this case, `new_column_name` is automatically generated as
-    `\$(old_column)_\$(fun)`. Up to three column names are used for multiple
-    input columns and they are joined using `_`; if more than three columns are
-    passed then the name consists of the first two names and `etc` suffix then,
-    e.g. `[:a,:b,:c,:d] => fun` produces the new column name `:a_b_etc_fun`.
+    `\$(old_column)_\$(fun)` if `renamecols=true` and `\$(old_column)` if
+    `renamecols=false`. Up to three column names are used for multiple input
+    columns and they are joined using `_`; if more than three columns are passed
+    then the name consists of the first two names and `etc` suffix then, e.g.
+    `[:a,:b,:c,:d] => fun` produces the new column name `:a_b_etc_fun` if
+    `renamecols=true` and ``:a_b_etc` if `renamecols=false`.
 
     Column renaming and transformation operations can be passed wrapped in
     vectors (this is useful when combined with broadcasting).
@@ -287,7 +298,7 @@ SELECT_ARG_RULES =
     """
 
 """
-    select!(df::DataFrame, args...)
+    select!(df::DataFrame, args...; renamecols::Bool=true)
 
 Mutate `df` in place to retain only columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`, except when no
@@ -357,22 +368,22 @@ julia> df = DataFrame(a=1:3, b=4:6);
 
 julia> using Statistics
 
-julia> select!(df, AsTable(:) => ByRow(mean))
+julia> select!(df, AsTable(:) => ByRow(mean), renamecols=false)
 3×1 DataFrame
-│ Row │ a_b_mean │
-│     │ Float64  │
-├─────┼──────────┤
-│ 1   │ 2.5      │
-│ 2   │ 3.5      │
-│ 3   │ 4.5      │
+│ Row │ a_b     │
+│     │ Float64 │
+├─────┼─────────┤
+│ 1   │ 2.5     │
+│ 2   │ 3.5     │
+│ 3   │ 4.5     │
 ```
 
 """
-select!(df::DataFrame, args...; suffix::Bool=true) =
-    _replace_columns!(df, select(df, args..., copycols=false, suffix=suffix))
+select!(df::DataFrame, args...; renamecols::Bool=true) =
+    _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
 """
-    transform!(df::DataFrame, args...)
+    transform!(df::DataFrame, args...; renamecols::Bool=true)
 
 Mutate `df` in place to add columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`.
@@ -380,10 +391,11 @@ Equivalent to `select!(df, :, args...)`.
 
 See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
 """
-transform!(df::DataFrame, args...; suffix::Bool=true) = select!(df, :, args..., suffix=suffix)
+transform!(df::DataFrame, args...; renamecols::Bool=true) =
+    select!(df, :, args..., renamecols=renamecols)
 
 """
-    select(df::AbstractDataFrame, args...; copycols::Bool=true)
+    select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `args` and
 return it. The result is guaranteed to have the same number of rows as `df`,
@@ -491,22 +503,22 @@ julia> select(df, names(df) .=> sum .=> [:A, :B])
 │ 2   │ 6     │ 15    │
 │ 3   │ 6     │ 15    │
 
-julia> select(df, AsTable(:) => ByRow(mean))
+julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
 3×1 DataFrame
-│ Row │ a_b_mean │
-│     │ Float64  │
-├─────┼──────────┤
-│ 1   │ 2.5      │
-│ 2   │ 3.5      │
-│ 3   │ 4.5      │
+│ Row │ a_b     │
+│     │ Float64 │
+├─────┼─────────┤
+│ 1   │ 2.5     │
+│ 2   │ 3.5     │
+│ 3   │ 4.5     │
 ```
 
 """
-select(df::AbstractDataFrame, args...; copycols::Bool=true, suffix::Bool=true) =
-    manipulate(df, args..., copycols=copycols, keeprows=true, suffix=suffix)
+select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
+    manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
 
 """
-    transform(df::AbstractDataFrame, args...; copycols::Bool=true)
+    transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
 
 Create a new data frame that contains columns from `df` and adds columns
 specified by `args` and return it.
@@ -515,12 +527,12 @@ Equivalent to `select(df, :, args..., copycols=copycols)`.
 
 See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 """
-transform(df::AbstractDataFrame, args...; copycols::Bool=true, suffix::Bool=true) =
-    select(df, :, args..., copycols=copycols, suffix=suffix)
+transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
+    select(df, :, args..., copycols=copycols, renamecols=renamecols)
 
 """
-    combine(df::AbstractDataFrame, args...)
-    combine(arg, df::AbstractDataFrame)
+    combine(df::AbstractDataFrame, args...; renamecols::Bool=true)
+    combine(arg, df::AbstractDataFrame; renamecols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `args` and
 return it. The result can have any number of rows that is determined by the
@@ -542,42 +554,46 @@ julia> df = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> combine(df, :a => sum, nrow)
+julia> combine(df, :a => sum, nrow, renamecols=false)
 1×2 DataFrame
-│ Row │ a_sum │ nrow  │
+│ Row │ a     │ nrow  │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 3     │
 ```
 """
-combine(df::AbstractDataFrame, args...; suffix::Bool=true) =
-    manipulate(df, args..., copycols=true, keeprows=false, suffix=suffix)
+combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
+    manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
-function combine(arg, df::AbstractDataFrame, suffix::Bool=true)
+function combine(arg, df::AbstractDataFrame, renamecols::Bool=true)
     if nrow(df) == 0
         throw(ArgumentError("calling combine on a data frame with zero rows" *
                             " with transformation as a first argument is " *
                             "currently not supported"))
     end
-    return combine(arg, groupby(df, Symbol[]), suffix=suffix)
+    return combine(arg, groupby(df, Symbol[]), renamecols=renamecols)
 end
 
-manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool, suffix::Bool) =
-    DataFrame(_columns(df)[args], Index(_names(df)[args]),
-              copycols=copycols)
+manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
 
-function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool, suffix::Bool)
+function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool,
+                    renamecols::Bool)
     if c isa AbstractVector{<:Pair}
-        return manipulate(df, c..., copycols=copycols, keeprows=keeprows, suffix=suffix)
+        return manipulate(df, c..., copycols=copycols, keeprows=keeprows,
+                          renamecols=renamecols)
     else
-        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows, suffix=suffix)
+        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows,
+                          renamecols=renamecols)
     end
 end
 
-manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool, suffix::Bool) =
-    manipulate(df, [c], copycols=copycols, keeprows=keeprows, suffix=suffix)
+manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    manipulate(df, [c], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
 
-function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, suffix::Bool)
+function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVector{<:Pair}
@@ -586,7 +602,7 @@ function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, suffix
             push!(cs_vec, v)
         end
     end
-    return _manipulate(df, [normalize_selection(index(df), c, suffix) for c in cs_vec],
+    return _manipulate(df, [normalize_selection(index(df), c, renamecols) for c in cs_vec],
                     copycols, keeprows)
 end
 
@@ -691,19 +707,22 @@ function _manipulate(df::AbstractDataFrame, normalized_cs, copycols::Bool, keepr
     return newdf
 end
 
-manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool, suffix::Bool) =
-    manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows, suffix=suffix)
+manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
 
 function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
-                 copycols::Bool, keeprows::Bool, suffix::Bool)
+                 copycols::Bool, keeprows::Bool, renamecols::Bool)
     if args isa AbstractVector{<:Pair}
-        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows, suffix=suffix)
+        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows,
+                          renamecols=renamecols)
     else
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
 
-function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool, suffix::Bool)
+function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
+                    renamecols::Bool)
     if copycols
         cs_vec = []
         for v in args
@@ -713,8 +732,8 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool, 
                 push!(cs_vec, v)
             end
         end
-        return _manipulate(dfv, [normalize_selection(index(dfv), c, suffix) for c in cs_vec],
-                        true, keeprows)
+        return _manipulate(dfv, [normalize_selection(index(dfv), c, renamecols) for c in cs_vec],
+                           true, keeprows)
     else
         # we do not support transformations here
         # newinds contains only indexing; making it Vector{Any} avoids some compilation
@@ -731,7 +750,7 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool, 
                     push!(seen_single_column, ind_idx)
                 end
             else
-                newind = normalize_selection(index(dfv), ind, suffix)
+                newind = normalize_selection(index(dfv), ind, renamecols)
                 if newind isa Pair
                     throw(ArgumentError("transforming and renaming columns of a " *
                                         "SubDataFrame is not allowed when `copycols=false`"))
