@@ -54,9 +54,14 @@ or boolean indexing instead. It would then return a `DataFrame` object containin
 two lines of code are functionally equivalent:
 
 ```julia
-df[findfirst(==('c'), df.id), :]
+df[findall(==('c'), df.id), :]
 df[df.id .== 'c', :]
 ```
+
+Hence, DataFrames.jl's indexing always produces a consistent and predictable return type.
+By contrast, pandas' `loc` function returns a `Series` object when there is exactly
+one `'c'` value in the index, and it returns a `DataFrame` object when there are multiple
+occurrences of `'c'` in it.
 
 ### Common operations
 
