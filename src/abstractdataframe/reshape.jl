@@ -38,6 +38,7 @@ that return views into the original data frame.
   a `CategoricalArray{String}` is produced.
   Passing any other type `T` will produce a `PooledVector{T}` column
   as long as it supports conversion from `String`.
+  When `view=true`, a `RepeatedVector{T}` is produced.
 
 
 # Examples
@@ -104,9 +105,9 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
     push!(cnames, variable_name)
     push!(cnames, value_name)
     if variable_eltype === Symbol
-        catnms = PooledArray(_names(df)[measure_vars])
+        catnms = _names(df)[measure_vars]
     elseif variable_eltype === String
-        catnms = PooledArray(names(df, measure_vars))
+        catnms = names(df, measure_vars)
     else
         # this covers CategoricalArray{String} in particular,
         # as copyto! inserts levels in their order of appearance

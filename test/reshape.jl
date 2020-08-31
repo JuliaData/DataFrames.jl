@@ -450,7 +450,7 @@ end
     d1s = stack(d1, [:d, :c], view=true)
     @test d1s.variable isa DataFrames.RepeatedVector{String}
     @test levels(d1s.variable) == ["c", "d"]
-    @test d1s[:, 4] isa PooledVector{String}
+    @test d1s[:, 4] isa Vector{String}
     @test levels(d1s[:, 4]) == ["c", "d"]
 
     d1s = stack(d1, [:d, :c], variable_eltype=CategoricalValue{String})
@@ -468,7 +468,7 @@ end
     d1s = stack(d1, [:d, :c], view=true, variable_eltype=Symbol)
     @test d1s.variable isa DataFrames.RepeatedVector{Symbol}
     @test levels(d1s.variable) == [:c, :d]
-    @test d1s[:, 4] isa PooledVector{Symbol}
+    @test d1s[:, 4] isa Vector{Symbol}
     @test levels(d1s[:, 4]) == [:c, :d]
 
     d2 = mapcols(categorical, d1)
