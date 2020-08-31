@@ -39,7 +39,7 @@ which can also be used to get the values of the grouping columns for each group.
 same order as the `cols` argument) are also accepted as indices. Finally,
 an `AbstractDict` can be used to index into a grouped data frame where
 the keys are column names of the data frame. The order of the keys does
-not matter in this case. 
+not matter in this case.
 
 # See also
 
@@ -268,7 +268,7 @@ const KWARG_PROCESSING_RULES =
     If `ungroup=true` (the default) a `DataFrame` is returned.
     If `ungroup=false` a `GroupedDataFrame` grouped using `keycols(gdf)` is returned.
 
-    If `gd` has zero groups then no transformations are applied.
+    If `gd` has zero groups then transformations are applied to vectors of zero length.
     """
 
 """
