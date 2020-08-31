@@ -49,14 +49,14 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
     if cols === nothing
         cols = Union{AbstractString, Missing}
         Base.depwarn("`categorical(df)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: $cols, eachcol(df))]; transform(df, cols .=> $categoricalstr .=> cols)` instead.",
+                     "Use `cols = names(df, $cols); transform(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical)
     else
         Base.depwarn("`categorical(df, T)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform(df, cols .=> $categoricalstr .=> cols)` instead.",
+                     "Use `cols = names(df, T); transform(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical)
     end
-    colsstr = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
+    colsstr = names(df, cols)
     return transform(df, colsstr .=> (x -> categorical(x, compress=compress)) .=> colsstr)
 end
 
@@ -97,13 +97,13 @@ function categorical!(df::DataFrame, cols::Union{Type, Nothing}=nothing;
     if cols === nothing
         cols = Union{AbstractString, Missing}
         Base.depwarn("`categorical!(df)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: $cols, eachcol(df))]; transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
+                     "Use `cols = names(df, $cols); transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical!)
     else
         Base.depwarn("`categorical!(df, T)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
+                     "Use `cols = names(df, T); transform!(df, cols .=> $categoricalstr .=> cols)` instead.",
                      :categorical!)
     end
-    colsstr = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
+    colsstr = names(df, cols)
     return transform!(df, colsstr .=> (x -> categorical(x, compress=compress)) .=> colsstr)
 end
