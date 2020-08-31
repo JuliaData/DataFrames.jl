@@ -473,7 +473,7 @@ end
     @test d1s[:, 4] isa Vector{Symbol}
     @test levels(d1s[:, 4]) == [:c, :d]
 
-    d2 = categorical(d1, :)
+    d2 = mapcols(categorical, d1)
     levels!(d2.a, [2, 1, 3])
     ordered!(d2.a, true)
     ref_levels = shuffle!(unique([levels(d2.c); levels(d2.d)]))

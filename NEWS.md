@@ -22,6 +22,9 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* the `categorical` and `categorical!` functions have been deprecated in favor of
+  `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
+  [#2394]((https://github.com/JuliaData/DataFrames.jl/pull/2394))
 
 ## New functionalities
 
@@ -34,7 +37,8 @@
 * add new functions to `GroupKey` API to make it more consistent with `DataFrameRow`
   ([#2308](https://github.com/JuliaData/DataFrames.jl/pull/2308))
 * allow column renaming in joins
-  ([#2313](https://github.com/JuliaData/DataFrames.jl/pull/2313)
+  ([#2313](https://github.com/JuliaData/DataFrames.jl/pull/2313) and
+  ([#2398](https://github.com/JuliaData/DataFrames.jl/pull/2398))
 * add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
 * allow passing column name to specify the position where a new columns should be
   inserted in `insertcols!` ([#2365](https://github.com/JuliaData/DataFrames.jl/pull/2365))

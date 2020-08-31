@@ -33,8 +33,6 @@ The following are normally implemented for AbstractDataFrames:
 * [`disallowmissing!`](@ref) : drop support for missing values in columns in-place
 * [`allowmissing`](@ref) : add support for missing values in columns
 * [`allowmissing!`](@ref) : add support for missing values in columns in-place
-* [`categorical`](@ref) : change column types to categorical
-* [`categorical!`](@ref) : change column types to categorical in-place
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
 * `filter!` : remove rows in-place
@@ -1710,85 +1708,6 @@ function Missings.allowmissing(df::AbstractDataFrame,
         end
     end
     return DataFrame(newcols, _names(df), copycols=false)
-end
-
-"""
-    categorical(df::AbstractDataFrame, cols=Union{AbstractString, Missing};
-                compress::Bool=false)
-
-Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
-
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
-or a `Type`.
-
-If `categorical` is called with the `cols` argument being a `Type`, then
-all columns whose element type is a subtype of this type
-(by default `Union{AbstractString, Missing}`) will be converted to categorical.
-
-If the `compress` keyword argument is set to `true` then the created
-`CategoricalVector`s will be compressed.
-
-All created `CategoricalVector`s are unordered.
-
-**Examples**
-
-```jldoctest
-julia> df = DataFrame(a=[1,2], b=["a","b"])
-2×2 DataFrame
-│ Row │ a     │ b      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ a      │
-│ 2   │ 2     │ b      │
-
-julia> categorical(df)
-2×2 DataFrame
-│ Row │ a     │ b    │
-│     │ Int64 │ Cat… │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ a    │
-│ 2   │ 2     │ b    │
-
-julia> categorical(df, :)
-2×2 DataFrame
-│ Row │ a    │ b    │
-│     │ Cat… │ Cat… │
-├─────┼──────┼──────┤
-│ 1   │ 1    │ a    │
-│ 2   │ 2    │ b    │
-```
-"""
-function CategoricalArrays.categorical(df::AbstractDataFrame,
-                                       cols::Union{ColumnIndex, MultiColumnIndex};
-                                       compress::Bool=false)
-    idxcols = Set(index(df)[cols])
-    newcols = AbstractVector[]
-    for i in axes(df, 2)
-        x = df[!, i]
-        if i in idxcols
-            # categorical always copies
-            push!(newcols, categorical(x, compress=compress))
-        else
-            push!(newcols, copy(x))
-        end
-    end
-    DataFrame(newcols, _names(df), copycols=false)
-end
-
-function CategoricalArrays.categorical(df::AbstractDataFrame,
-                                       cols::Type=Union{AbstractString, Missing};
-                                       compress::Bool=false)
-    newcols = AbstractVector[]
-    for i in axes(df, 2)
-        x = df[!, i]
-        if eltype(x) <: cols
-            # categorical always copies
-            push!(newcols, categorical(x, compress=compress))
-        else
-            push!(newcols, copy(x))
-        end
-    end
-    DataFrame(newcols, _names(df), copycols=false)
 end
 
 """
