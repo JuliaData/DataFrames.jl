@@ -280,7 +280,8 @@ SELECT_ARG_RULES =
     then the name consists of the first two names and `etc` suffix then, e.g.
     `[:a,:b,:c,:d] => fun` produces the new column name `:a_b_etc_fun` if
     `renamecols=true` and ``:a_b_etc` if `renamecols=false`.
-    It is not allowed to pass `renamecols=false` if `old_column` is empty.
+    It is not allowed to pass `renamecols=false` if `old_column` is empty
+    as it would generate an empty column name.
 
     Column renaming and transformation operations can be passed wrapped in
     vectors (this is useful when combined with broadcasting).

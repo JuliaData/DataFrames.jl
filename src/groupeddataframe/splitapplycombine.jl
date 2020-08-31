@@ -233,7 +233,7 @@ const F_ARGUMENT_RULES =
     `SubArray` views as positional arguments for each column specified to be
     selected, or a `NamedTuple` containing these `SubArray`s if `source_cols` is
     an `AsTable` selector. It can return a vector or a single value (defined
-    precisely below). In particular if automatic generation of target column
+    precisely below). If automatic generation of target column
     name is required it respects the `renamecols` keyword argument following the
     rules described in [`select`](@ref).
 
