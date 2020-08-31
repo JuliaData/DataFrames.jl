@@ -38,13 +38,17 @@
 * add `rownumber` to `DataFrameRow` ([#2356](https://github.com/JuliaData/DataFrames.jl/pull/2356))
 * allow passing column name to specify the position where a new columns should be
   inserted in `insertcols!` ([#2365](https://github.com/JuliaData/DataFrames.jl/pull/2365))
-* allow `GroupedDataFrame`s to be indexed using a dictionary, which can use `Symbol` or string keys and 
+* allow `GroupedDataFrame`s to be indexed using a dictionary, which can use `Symbol` or string keys and
   are not dependent on the order of keys. ([#2281](https://github.com/JuliaData/DataFrames.jl/pull/2281))
 * add `isapprox` method to check for approximate equality between two dataframes
   ([#2373](https://github.com/JuliaData/DataFrames.jl/pull/2373))
 * add `columnindex` for `DataFrameRow`
   ([#2380](https://github.com/JuliaData/DataFrames.jl/pull/2380))
-  
+* `select`, `select!`, `transform`, `transform!` and `combine` now allow `renamecols`
+  keyword argument that makes it possible to avoid adding transformation function name
+  as a suffix in automatically generated column names
+  ([#2397](https://github.com/JuliaData/DataFrames.jl/pull/2397))
+
 ## Deprecated
 
 * `DataFrame!` is now deprecated ([#2338](https://github.com/JuliaData/DataFrames.jl/pull/2338))
