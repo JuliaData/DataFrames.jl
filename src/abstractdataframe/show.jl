@@ -13,6 +13,17 @@ function ourstrwidth(io::IO, x::Any, buffer::IOBuffer)
     return textwidth(String(take!(buffer)))
 end
 
+function trimstring32(s::AbstractString)
+    totalwidth = 0
+    for (i, c) in enumerate(s)
+        totalwidth += textwidth(c)
+        if totalwidth > 32
+            return first(s, i-1) * '…'
+        end
+    end
+    return s
+end
+
 """
     DataFrames.ourshow(io::IO, x::Any)
 
@@ -38,6 +49,8 @@ function ourshow(io::IO, x::Any; styled::Bool=false)
         sx = escape_string(chop(sx, head=1, tail=1), "")
     end
 
+    sx = trimstring32(sx)
+
     if styled
         printstyled(io_ctx, sx, color=:light_black)
     else
@@ -48,12 +61,13 @@ end
 const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
                                  DataFrameColumns, GroupedDataFrame}
 
-ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
-ourshow(io::IO, x::CategoricalValue{<:AbstractString}) = escape_string(io, get(x), "")
+ourshow(io::IO, x::AbstractString) = escape_string(io, trimstring32(x), "")
+ourshow(io::IO, x::CategoricalValue{<:AbstractString}) = ourshow(io, get(x))
 ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
 ourshow(io::IO, x::Nothing; styled::Bool=false) = ourshow(io, "", styled=styled)
 ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
     ourshow(io, summary(x), styled=styled)
+
 function ourshow(io::IO, x::Markdown.MD)
     r = repr(x)
     len = min(length(r, 1, something(findfirst(==('\n'), r), lastindex(r)+1)-1), 32)
@@ -457,9 +471,17 @@ function showrows(io::IO,
     nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
     header = displaysummary ? summary(df) : ""
+    cols_other_chunks = chunkbounds[end] - chunkbounds[2]
     if !allcols && length(chunkbounds) > 2
-        header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
+        # if we print only one chunk and it does not fit the screen give up
+        if cols_other_chunks == ncols
+            print(io, header * ". Omitted printing of all columns as they do " *
+                  "not fit the display size")
+            return
+        end
+        header *= ". Omitted printing of $cols_other_chunks columns"
     end
+
     println(io, header)
 
     for chunkindex in 1:nchunks
