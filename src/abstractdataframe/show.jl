@@ -488,6 +488,9 @@ function showrows(io::IO,
         leftcol = chunkbounds[chunkindex] + 1
         rightcol = chunkbounds[chunkindex + 1]
 
+        # nothing to print in this chunk
+        leftcol > rightcol && continue
+
         # Print column names
         @printf io "│ %s" rowlabel
         padding = rowmaxwidth - ourstrwidth(io, rowlabel, buffer)
