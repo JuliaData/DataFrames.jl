@@ -24,7 +24,10 @@
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
 * the `categorical` and `categorical!` functions have been deprecated in favor of
   `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
-  [#2394]((https://github.com/JuliaData/DataFrames.jl/pull/2394))
+  ([#2394](https://github.com/JuliaData/DataFrames.jl/pull/2394))
+* in `describe` the specification of custom aggregation is now `function => name`;
+  old `name => function` order is now deprecated
+  ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
 
 ## New functionalities
 
