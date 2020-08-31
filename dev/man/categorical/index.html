@@ -76,45 +76,4 @@ julia&gt; isordered(cv1)
 true
 
 julia&gt; cv1[1] &lt; cv1[2]
-true</code></pre><p>Often, you will have factors encoded inside a <code>DataFrame</code> with <code>Vector</code> columns instead of <code>CategoricalVector</code> columns. You can convert one or more columns of the <code>DataFrame</code> using the <code>categorical!</code> function, which modifies the input <code>DataFrame</code> in-place. Compression can be applied by setting the <code>compress</code> keyword argument to <code>true</code>.</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
-
-julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;D&quot;, &quot;A&quot;],
-                      B = [&quot;X&quot;, &quot;X&quot;, &quot;X&quot;, &quot;Y&quot;, &quot;Y&quot;, &quot;Y&quot;])
-6×2 DataFrame
-│ Row │ A      │ B      │
-│     │ String │ String │
-├─────┼────────┼────────┤
-│ 1   │ A      │ X      │
-│ 2   │ B      │ X      │
-│ 3   │ C      │ X      │
-│ 4   │ D      │ Y      │
-│ 5   │ D      │ Y      │
-│ 6   │ A      │ Y      │
-
-julia&gt; categorical!(df, :A) # change the column `:A` to be categorical
-6×2 DataFrame
-│ Row │ A    │ B      │
-│     │ Cat… │ String │
-├─────┼──────┼────────┤
-│ 1   │ A    │ X      │
-│ 2   │ B    │ X      │
-│ 3   │ C    │ X      │
-│ 4   │ D    │ Y      │
-│ 5   │ D    │ Y      │
-│ 6   │ A    │ Y      │</code></pre><p>If columns are not specified, all columns with an <code>AbstractString</code> element type are converted to be categorical. In the example below we also enable compression:</p><pre><code class="language-julia-repl">julia&gt; categorical!(df, compress=true)
-6×2 DataFrame
-│ Row │ A    │ B    │
-│     │ Cat… │ Cat… │
-├─────┼──────┼──────┤
-│ 1   │ A    │ X    │
-│ 2   │ B    │ X    │
-│ 3   │ C    │ X    │
-│ 4   │ D    │ Y    │
-│ 5   │ D    │ Y    │
-│ 6   │ A    │ Y    │
-
-julia&gt; eltype.(eachcol(df))
-2-element Array{DataType,1}:
- CategoricalValue{String,UInt8}
- CategoricalValue{String,UInt8}
-</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalVector</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalVector</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../sorting/">« Sorting</a><a class="docs-footer-nextpage" href="../missing/">Missing Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 29 August 2020 23:33">Saturday 29 August 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+true</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalVector</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalVector</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../sorting/">« Sorting</a><a class="docs-footer-nextpage" href="../missing/">Missing Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 31 August 2020 08:27">Monday 31 August 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
