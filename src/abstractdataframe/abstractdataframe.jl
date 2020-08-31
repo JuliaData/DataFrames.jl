@@ -538,16 +538,15 @@ julia> describe(df, cols=:x, :min, sum => :sum)
 │ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-function DataAPI.describe(df::AbstractDataFrame,
-                          stats::Union{Symbol,
-                                       Pair{<:Base.Callable,<:SymbolOrString},
-                                       Pair{<:SymbolOrString}}...; # TODO: remove after deprecation
+function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,
+                          Pair{<:Base.Callable,<:SymbolOrString},
+                          Pair{<:SymbolOrString}}...; # TODO: remove after deprecation
                  cols=:)
     if any(x -> x isa Pair{<:SymbolOrString}, stats)
         Base.depwarn("name => function order is deprecated; use function => name instead", :describe)
     end
     return _describe(select(df, cols, copycols=false),
-           [s isa Pair{<:SymbolOrString} ? last(s) => first(s) : s for s in stats])
+                     [s isa Pair{<:SymbolOrString} ? last(s) => first(s) : s for s in stats])
 end
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
