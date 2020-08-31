@@ -1,7 +1,7 @@
 """
     stack(df::AbstractDataFrame, [measure_vars], [id_vars];
           variable_name=:variable, value_name=:value,
-          view::Bool=false, variable_eltype::Type=CategoricalValue{String})
+          view::Bool=false, variable_eltype::Type=String)
 
 Stack a data frame `df`, i.e. convert it from wide to long format.
 
@@ -32,9 +32,13 @@ that return views into the original data frame.
 - `view` : whether the stacked data frame should be a view rather than contain
   freshly allocated vectors.
 - `variable_eltype` : determines the element type of column `variable_name`.
-  By default a categorical vector of strings is created.
-  If `variable_eltype=Symbol` it is a vector of `Symbol`,
-  and if `variable_eltype=String` a vector of `String` is produced.
+  By default a `PooledArray{String}` is created.
+  If `variable_eltype=Symbol` a `PooledVector{Symbol}` is created,
+  and if `variable_eltype=CategoricalValue{String}`
+  a `CategoricalArray{String}` is produced.
+  Passing any other type `T` will produce a `PooledVector{T}` column
+  as long as it supports conversion from `String`.
+  When `view=true`, a `RepeatedVector{T}` is produced.
 
 
 # Examples
@@ -57,7 +61,7 @@ function stack(df::AbstractDataFrame,
                id_vars = Not(measure_vars);
                variable_name::SymbolOrString=:variable,
                value_name::SymbolOrString=:value, view::Bool=false,
-               variable_eltype::Type=CategoricalValue{String})
+               variable_eltype::Type=String)
     variable_name_s = Symbol(variable_name)
     value_name_s = Symbol(value_name)
     # getindex from index returns either Int or AbstractVector{Int}
@@ -75,17 +79,17 @@ function stack(df::AbstractDataFrame,
     cnames = _names(df)[ints_id_vars]
     push!(cnames, variable_name_s)
     push!(cnames, value_name_s)
-    if variable_eltype <: CategoricalValue{String}
-        nms = names(df, ints_measure_vars)
-        catnms = categorical(nms)
-        levels!(catnms, nms)
-    elseif variable_eltype === Symbol
-        catnms = _names(df)[ints_measure_vars]
+    if variable_eltype === Symbol
+        catnms = PooledArray(_names(df)[ints_measure_vars])
     elseif variable_eltype === String
         catnms = PooledArray(names(df, ints_measure_vars))
     else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only " *
-                            "`CategoricalValue{String}`, `String` or `Symbol` as a value."))
+        # this covers CategoricalArray{String} in particular
+        # (note that copyto! inserts levels in their order of appearance)
+        nms = names(df, ints_measure_vars)
+        simnms = similar(nms, variable_eltype)
+        catnms = simnms isa Vector ? PooledArray(catnms) : simnms
+        copyto!(catnms, nms)
     end
     return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
                                     repeat(catnms, inner=nrow(df)),                       # variable
@@ -100,17 +104,15 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
     cnames = _names(df)[id_vars]
     push!(cnames, variable_name)
     push!(cnames, value_name)
-    if variable_eltype <: CategoricalValue{String}
-        nms = names(df, measure_vars)
-        catnms = categorical(nms)
-        levels!(catnms, nms)
-    elseif variable_eltype <: Symbol
+    if variable_eltype === Symbol
         catnms = _names(df)[measure_vars]
-    elseif variable_eltype <: String
+    elseif variable_eltype === String
         catnms = names(df, measure_vars)
     else
-        throw(ArgumentError("`variable_eltype` keyword argument accepts only " *
-                            "`CategoricalValue{String}`, `String` or `Symbol` as a value."))
+        # this covers CategoricalArray{String} in particular,
+        # as copyto! inserts levels in their order of appearance
+        nms = names(df, measure_vars)
+        catnms = copyto!(similar(nms, variable_eltype), nms)
     end
     return DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
                                     RepeatedVector(catnms, nrow(df), 1),                  # variable

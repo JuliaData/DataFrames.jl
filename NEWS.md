@@ -22,6 +22,10 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* `stack` now creates a `PooledVector{String}` variable column rather than
+  a `CategoricalVector{String}` column by default;
+  pass `variable_eltype=CategoricalValue{String}` to get the previous behavior
+  ([#2391](https://github.com/JuliaData/DataFrames.jl/pull/2391))
 * the `categorical` and `categorical!` functions have been deprecated in favor of
   `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
   [#2394]((https://github.com/JuliaData/DataFrames.jl/pull/2394))
