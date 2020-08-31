@@ -6,7 +6,7 @@
 Stack a data frame `df`, i.e. convert it from wide to long format.
 
 Return the long-format `DataFrame` with: columns for each of the `id_vars`,
-column `variable_name` (`:value` by default)
+column `value_name` (`:value` by default)
 holding the values of the stacked columns (`measure_vars`), and
 column `variable_name` (`:variable` by default) a vector holding
 the name of the corresponding `measure_vars` variable.
