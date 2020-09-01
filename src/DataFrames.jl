@@ -1,8 +1,8 @@
 module DataFrames
 
 using Statistics, Printf, REPL
-using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
-@reexport using CategoricalArrays, Missings, InvertedIndices
+using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, CategoricalArrays
+@reexport using Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm

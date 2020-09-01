@@ -1,6 +1,6 @@
 module TestReshape
 
-using Test, DataFrames, Random, Logging, PooledArrays
+using Test, DataFrames, Random, Logging, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 @testset "the output of unstack" begin
