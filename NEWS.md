@@ -2,8 +2,8 @@
 
 ## Breaking changes
 
-* CategoricalArrays is no longer reexported: call `using CategoricalArrays`
-  to use them [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
+* CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
+  to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
   In the same vein, the `categorical` and `categorical!` functions
   have been deprecated in favor of
   `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
