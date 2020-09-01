@@ -386,7 +386,10 @@ end
 #
 ##############################################################################
 
-escapedprint(io::IO, x::Any, escapes::AbstractString) = ourshow(io, x)
+escapedprint(io::IO, x::SHOW_TABULAR_TYPES, escapes::AbstractString) =
+    escapedprint(io, summary(x), escapes)
+escapedprint(io::IO, x::Any, escapes::AbstractString) =
+    escapedprint(io, repr(x), escapes)
 escapedprint(io::IO, x::AbstractString, escapes::AbstractString) =
     escape_string(io, x, escapes)
 
@@ -427,7 +430,7 @@ function printtable(io::IO,
                     r = repr(cell)
                     escapedprint(io, chomp(r), quotestr)
                     print(io, quotemark)
-                elseif ! (etypes[j] <: Real)
+                elseif !(etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, cell, quotestr)
                     print(io, quotemark)

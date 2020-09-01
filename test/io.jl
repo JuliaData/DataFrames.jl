@@ -530,19 +530,18 @@ end
     str = String(take!(io))
 
     @test str == """
-    9×2 DataFrame
-    │ Row │ A     │ B                                              │
-    │     │ Int64 │ Any                                            │
-    ├─────┼───────┼────────────────────────────────────────────────┤
-    │ 1   │ 1     │ 9×2 DataFrame                                  │
-    │ 2   │ 2     │ 2-element DataFrameRow                         │
-    │ 3   │ 3     │ 1×2 SubDataFrame                               │
-    │ 4   │ 4     │ 9-element DataFrameRows                        │
-    │ 5   │ 5     │ 2-element DataFrameColumns                     │
-    │ 6   │ 6     │ GroupedDataFrame with 9 groups based on key: A │
-    │ 7   │ 7     │ missing                                        │
-    │ 8   │ 8     │                                                │
-    │ 9   │ 9     │ #undef                                         │"""
+    │ Row │ A     │ B                                 │
+    │     │ Int64 │ Any                               │
+    ├─────┼───────┼───────────────────────────────────┤
+    │ 1   │ 1     │ 9×2 DataFrame                     │
+    │ 2   │ 2     │ 2-element DataFrameRow            │
+    │ 3   │ 3     │ 1×2 SubDataFrame                  │
+    │ 4   │ 4     │ 9-element DataFrameRows           │
+    │ 5   │ 5     │ 2-element DataFrameColumns        │
+    │ 6   │ 6     │ GroupedDataFrame with 9 groups b… │
+    │ 7   │ 7     │ missing                           │
+    │ 8   │ 8     │                                   │
+    │ 9   │ 9     │ #undef                            │"""
 
 
     io = IOBuffer()
@@ -550,18 +549,18 @@ end
     str = String(take!(io))
     @test str == """
     9×2 DataFrame
-    │ Row │ A     │ B                                              │
-    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                                            │
-    ├─────┼───────┼────────────────────────────────────────────────┤
-    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                                  │
-    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m                         │
-    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                               │
-    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m                        │
-    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m                     │
-    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups based on key: A\e[39m │
-    │ 7   │ 7     │ \e[90mmissing\e[39m                                        │
-    │ 8   │ 8     │                                                │
-    │ 9   │ 9     │ \e[90m#undef\e[39m                                         │"""
+    │ Row │ A     │ B                                 │
+    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                               │
+    ├─────┼───────┼───────────────────────────────────┤
+    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                     │
+    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m            │
+    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                  │
+    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m           │
+    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m        │
+    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups b…\e[39m │
+    │ 7   │ 7     │ \e[90mmissing\e[39m                           │
+    │ 8   │ 8     │                                   │
+    │ 9   │ 9     │ \e[90m#undef\e[39m                            │"""
 
 
     io = IOBuffer()
@@ -604,34 +603,43 @@ end
     @test_throws UndefRefError show(io, MIME("text/csv"), df)
     @test_throws UndefRefError show(io, MIME("text/tab-separated-values"), df)
 
+    df[end, 2] = "\""
+    push!(df, (10, Symbol("\"")))
+    push!(df, (11, '"'))
     io = IOBuffer()
-    show(io, MIME("text/csv"), df[1:end-1, :])
+    show(io, MIME("text/csv"), df)
     str = String(take!(io))
     @test str == """
     "A","B"
-    1,"9×2 DataFrame"
+    1,"11×2 DataFrame"
     2,"2-element DataFrameRow"
     3,"1×2 SubDataFrame"
-    4,"9-element DataFrameRows"
+    4,"11-element DataFrameRows"
     5,"2-element DataFrameColumns"
     6,"GroupedDataFrame with 9 groups based on key: A"
     7,missing
     8,nothing
+    9,"\\""
+    10,"Symbol(\\"\\\\\\"\\")"
+    11,"'\\"'"
     """
 
     io = IOBuffer()
-    show(io, MIME("text/tab-separated-values"), df[1:end-1, :])
+    show(io, MIME("text/tab-separated-values"), df)
     str = String(take!(io))
     @test str == """
     "A"\t"B"
-    1\t"9×2 DataFrame"
+    1\t"11×2 DataFrame"
     2\t"2-element DataFrameRow"
     3\t"1×2 SubDataFrame"
-    4\t"9-element DataFrameRows"
+    4\t"11-element DataFrameRows"
     5\t"2-element DataFrameColumns"
     6\t"GroupedDataFrame with 9 groups based on key: A"
     7\tmissing
     8\tnothing
+    9\t"\\""
+    10\t"Symbol(\\"\\\\\\"\\")"
+    11\t"'\\"'"
     """
 end
 
