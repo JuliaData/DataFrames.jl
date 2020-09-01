@@ -68,5 +68,5 @@
 * add rich display support for Markdown cell entries in HTML and LaTeX
   ([#2346](https://github.com/JuliaData/DataFrames.jl/pull/2346))
 * limit display width in `text/plain` to approximately 32 screen characters
-  per column and fix a corner case when no columns are printed as they are
-  too wide ([2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))
+  per column by default and fix a corner case when no columns are printed in situations
+  when they are too wide ([2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))

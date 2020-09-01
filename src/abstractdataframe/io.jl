@@ -98,7 +98,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer, 0) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -148,11 +148,11 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                     write(io, "</td>")
                 elseif cell_val isa SHOW_TABULAR_TYPES
                     write(io, "<td><em>")
-                    cell = sprint(ourshow, cell_val)
+                    cell = sprint(ourshow, cell_val, 0)
                     write(io, html_escape(cell))
                     write(io, "</em></td>")
                 else
-                    cell = sprint(ourshow, cell_val)
+                    cell = sprint(ourshow, cell_val, 0)
                     write(io, "<td>$(html_escape(cell))</td>")
                 end
             else
@@ -270,7 +270,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer, 0) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -310,13 +310,13 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                     print(io, strip(repr(MIME("text/latex"), cell)))
                 elseif cell isa SHOW_TABULAR_TYPES
                     print(io, "\\emph{")
-                    print(io, latex_escape(sprint(ourshow, cell, context=io)))
+                    print(io, latex_escape(sprint(ourshow, cell, 0, context=io)))
                     print(io, "}")
                 else
                     if showable(MIME("text/latex"), cell)
                         show(io, MIME("text/latex"), cell)
                     else
-                        print(io, latex_escape(sprint(ourshow, cell, context=io)))
+                        print(io, latex_escape(sprint(ourshow, cell, 0, context=io)))
                     end
                 end
             end
@@ -389,7 +389,7 @@ end
 escapedprint(io::IO, x::SHOW_TABULAR_TYPES, escapes::AbstractString) =
     escapedprint(io, summary(x), escapes)
 escapedprint(io::IO, x::Any, escapes::AbstractString) =
-    escapedprint(io, repr(x), escapes)
+    escapedprint(io, sprint(print, x), escapes)
 escapedprint(io::IO, x::AbstractString, escapes::AbstractString) =
     escape_string(io, x, escapes)
 

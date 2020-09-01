@@ -180,9 +180,9 @@ end
     @test sprint(DataFrames.printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
-        1,"'a'","A","a","A","1",missing,missing
-        2,"'b'","B","b","B","2",missing,missing
-        3,"'c'","C","c",missing,"3",missing,missing
+        1,"a","A","a","A","1",missing,missing
+        2,"b","B","b","B","2",missing,missing
+        3,"c","C","c",missing,"3",missing,missing
         """
 end
 
@@ -530,6 +530,7 @@ end
     str = String(take!(io))
 
     @test str == """
+    9×2 DataFrame
     │ Row │ A     │ B                                 │
     │     │ Int64 │ Any                               │
     ├─────┼───────┼───────────────────────────────────┤
@@ -620,8 +621,8 @@ end
     7,missing
     8,nothing
     9,"\\""
-    10,"Symbol(\\"\\\\\\"\\")"
-    11,"'\\"'"
+    10,"\\""
+    11,"\\""
     """
 
     io = IOBuffer()
@@ -638,9 +639,108 @@ end
     7\tmissing
     8\tnothing
     9\t"\\""
-    10\t"Symbol(\\"\\\\\\"\\")"
-    11\t"'\\"'"
+    10\t"\\""
+    11\t"\\""
     """
+end
+
+@testset "check truncate keyword argument" begin
+    df = DataFrame(x = "0123456789"^10)
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/html"), df)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
+                 "<tr><th></th><th>String</th></tr></thead>" *
+                 "<tbody><p>1 rows × 1 columns</p><tr><th>1</th>" *
+                 "<td>01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789</td>"*
+                 "</tr></tbody></table>"
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/latex"), df)
+    str = String(take!(io))
+    @test str == """
+    \\begin{tabular}{r|c}
+    \t& x\\\\
+    \t\\hline
+    \t& String\\\\
+    \t\\hline
+    \t1 & 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 \\\\
+    \\end{tabular}
+    """
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/csv"), df)
+    str = String(take!(io))
+    @test str == "\"x\"\n\"01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789\"\n"
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/tab-separated-values"), df)
+    str = String(take!(io))
+    @test str == "\"x\"\n\"01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789\"\n"
+
+    # default truncation
+    io = IOBuffer()
+    show(io, MIME("text/plain"), df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    # no truncation
+    io = IOBuffer()
+    show(io, df, truncate=0)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                                                                                    │
+    │     │ String                                                                                               │
+    ├─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 1   │ 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 │"""
+
+    # custom truncation
+    io = IOBuffer()
+    show(io, df, truncate=1)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x      │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ 0…     │"""
+
+
+    df = DataFrame(x12345678901234567890 = "0123456789"^10)
+    io = IOBuffer()
+    show(io, df, truncate=1, rowlabel=:r12345678901234567890)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ r12345678901234567890 │ x12345678901234567890 │
+    │                       │ String                │
+    ├───────────────────────┼───────────────────────┤
+    │ 1                     │ 0…                    │"""
+
 end
 
 end # module
