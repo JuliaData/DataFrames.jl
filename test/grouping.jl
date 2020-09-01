@@ -1,6 +1,6 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""

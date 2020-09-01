@@ -35,7 +35,7 @@ that return views into the original data frame.
   By default a `PooledArray{String}` is created.
   If `variable_eltype=Symbol` a `PooledVector{Symbol}` is created,
   and if `variable_eltype=CategoricalValue{String}`
-  a `CategoricalArray{String}` is produced.
+  a `CategoricalArray{String}` is produced (call `using CategoricalArrays` first if needed)
   Passing any other type `T` will produce a `PooledVector{T}` column
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
