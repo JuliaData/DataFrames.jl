@@ -570,7 +570,8 @@ true
 """
 Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
 
-Base.in(key::GroupKeyTypes, gk::GroupKeys) = haskey(parent(gk), key)
+Base.in(key::Union{GroupKeyTypes, Signed, Unsigned}, gk::GroupKeys) =
+    haskey(parent(gk), key)
 
 function Base.haskey(gd::GroupedDataFrame, key::GroupKey)
     if gd === parent(key)

@@ -1536,9 +1536,13 @@ end
 
 
     @test (:foo, 1) in gk
+    @test !((:foo, -1) in gk)
     @test (a=:foo, b=1) in gk
     @test gk[1] in gk
-    @test !(1 in gk) # although haskey(gd, 1)
+    @test 1 in gk
+    @test !(0 in gk)
+    @test big(1) in gk
+    @test !(true in gk)
     @test_throws ArgumentError keys(groupby(DataFrame(x=1), :x))[1] in gk
 end
 
