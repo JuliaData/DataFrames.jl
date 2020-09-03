@@ -816,10 +816,10 @@ julia> dropmissing(df, [:x, :y])
 function dropmissing(df::AbstractDataFrame,
                      cols::Union{ColumnIndex, MultiColumnIndex}=:;
                      view::Bool=false, disallowmissing::Bool=!view)
-    view && disallowmissing && throw(ArgumentError("it is not possible to disallow " *
-                                                   "missing when view=true"))
+    view && disallowmissing &&
+        throw(ArgumentError("disallowmissing=true is incompatible with view=true"))
     rowidxs = completecases(df, cols)
-    view && return Base.view(df, completecases(df, cols), :)
+    view && return Base.view(df, rowidxs, :)
     newdf = df[rowidxs, :]
     disallowmissing && disallowmissing!(newdf, cols)
     return newdf
@@ -1213,8 +1213,8 @@ When `cols` is specified, the returned `DataFrame` contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
-When `unique` is called a new data frame is returned unless `view=true` in which
-case a view into `df` is returned instead; `unique!` updates `df` in-place.
+`unique` returns a new data frame unless `view=true`, in which
+case it returns a `SubDataFrame` view into `df`. `unique!` updates `df` in-place.
 
 See also [`nonunique`](@ref).
 

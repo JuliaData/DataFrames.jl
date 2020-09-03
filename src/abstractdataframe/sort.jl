@@ -359,8 +359,8 @@ end
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
-Return a copy of data frame `df` sorted by column(s) `cols` unless
-`view=true` in which case a view into `df` is returned instead.
+Return a copy of data frame `df` sorted by column(s) `cols`.
+If `view=true` a `SubDataFrame` view into `df` is returned instead.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
