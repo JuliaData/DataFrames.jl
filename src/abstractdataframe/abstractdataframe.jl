@@ -814,7 +814,7 @@ julia> dropmissing(df, [:x, :y])
 │ 2   │ 5     │ 1     │ e      │
 ```
 """
-function dropmissing(df::AbstractDataFrame,
+@inline function dropmissing(df::AbstractDataFrame,
                      cols::Union{ColumnIndex, MultiColumnIndex}=:;
                      view::Bool=false, disallowmissing::Bool=!view)
     rowidxs = completecases(df, cols)
@@ -1198,14 +1198,14 @@ Base.unique!(df::AbstractDataFrame, cols) =
     delete!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-function Base.unique(df::AbstractDataFrame; view::Bool=false)
+@inline function Base.unique(df::AbstractDataFrame; view::Bool=false)
     rowidxs = (!).(nonunique(df))
-    return view ? view(df, rowidxs, :) : df[rowidxs, :]
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-function Base.unique(df::AbstractDataFrame, cols; view::Bool=false)
+@inline function Base.unique(df::AbstractDataFrame, cols; view::Bool=false)
     rowidxs = (!).(nonunique(df, cols))
-    return view ? view(df, rowidxs, :) : df[rowidxs, :]
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
 """
