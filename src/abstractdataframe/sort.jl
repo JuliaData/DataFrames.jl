@@ -337,7 +337,7 @@ end
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
-Return a data frame `df` sorted by column(s) `cols`.
+Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
@@ -348,7 +348,7 @@ If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
-If `view=false` a fresly allocated `DataFrame` is returned.
+If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a view into `df` is returned.
 
 See [`sort!`](@ref) for a description of other keyword arguments.
@@ -472,7 +472,7 @@ julia> sortperm(df, (:x, :y), rev=true)
 ```
 """
 function sortperm(df::AbstractDataFrame, cols=[];
-            alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
+                  alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
     if !(isa(by, Function) || eltype(by) <: Function)
         msg = "'by' must be a Function or a vector of Functions. " *
               " Perhaps you wanted 'cols'."
