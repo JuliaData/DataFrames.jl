@@ -180,6 +180,18 @@ end
     @test eltype(dropmissing!(df).b) == Int
 end
 
+@testset "dropmissing and unique view kwarg test" begin
+    df = DataFrame(rand(3,4))
+    for fun in (dropmissing, unique)
+        @test fun(df) isa DataFrame
+        @test fun(view(df, 1:2, 1:2)) isa DataFrame
+        @test fun(df, view=false) isa DataFrame
+        @test fun(view(df, 1:2, 1:2), view=false) isa DataFrame
+        @test fun(df, view=true) isa SubDataFrame
+        @test fun(view(df, 1:2, 1:2), view=true) isa SubDataFrame
+    end
+end
+
 @testset "merge" begin
     Random.seed!(1)
     df1 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:10)),
@@ -387,6 +399,30 @@ end
     @test_throws TypeError filter!(["x"] => x -> x > 1, df)
     @test_throws TypeError filter((:) => (r...) -> r[1] > 1, df)
     @test_throws TypeError filter!((:) => (r...) -> r[1] > 1, df)
+end
+
+@testset "filter view kwarg test" begin
+    df = DataFrame(rand(3,4))
+    for fun in (row -> row.x1 > 0, :x1 => >(0), "x1" => >(0),
+                [:x1] => >(0), ["x1"] => >(0),
+                r"1" => >(0), AsTable(:) => x -> x.x1 > 0)
+        @test filter(fun, df) isa DataFrame
+        @test filter(fun, view(df, 1:2, 1:2)) isa DataFrame
+        @test filter(fun, df, view=false) isa DataFrame
+        @test filter(fun, view(df, 1:2, 1:2), view=false) isa DataFrame
+        @test filter(fun, df, view=true) isa SubDataFrame
+        @test filter(fun, view(df, 1:2, 1:2), view=true) isa SubDataFrame
+    end
+end
+
+@testset "filter and filter! with SubDataFrame" begin
+    dfv = view(DataFrame(x = [0, 0, 3, 1, 3, 1], y = 1:6), 3:6, 1:1)
+
+    @test filter(:x => x -> x > 2, dfv) == DataFrame(x = [3, 3])
+    @test filter(:x => x -> x > 2, dfv, view=true) == DataFrame(x = [3, 3])
+    @test parent(filter(:x => x -> x > 2, dfv, view=true)) === parent(dfv)
+
+    @test_throws ArgumentError filter!(:x => x -> x > 2, dfv)
 end
 
 @testset "filter and filter! with AsTable" begin

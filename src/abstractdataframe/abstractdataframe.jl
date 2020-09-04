@@ -981,12 +981,9 @@ julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
     filter([index(df)[col] for col in cols] => f, df, view=view)
 @inline Base.filter((cols, f)::Pair, df::AbstractDataFrame; view::Bool=false) =
     filter(index(df)[cols] => f, df, view=view)
-
-@inline function Base.filter((cols, f)::Pair{<:AbstractVector{Int}},
-                             df::AbstractDataFrame; view::Bool=false)
-    cdf = _columns(df)
-    return _filter_helper(df, f, (cdf[i] for i in cols)...; view=view)
-end
+@inline Base.filter((cols, f)::Pair{<:AbstractVector{Int}},
+                    df::AbstractDataFrame; view::Bool=false) =
+    _filter_helper(df, f, (df[!, i] for i in cols)...; view=view)
 
 @inline function _filter_helper(df::AbstractDataFrame, f, cols...; view::Bool)
     if length(cols) == 0
@@ -1095,11 +1092,8 @@ Base.filter!((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDa
     filter!([index(df)[col] for col in cols] => f, df)
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
-
-function Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame)
-    cdf = _columns(df)
-    return _filter!_helper(df, f, (cdf[i] for i in cols)...)
-end
+Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
+    _filter!_helper(df, f, (df[!, i] for i in cols)...)
 
 function _filter!_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
