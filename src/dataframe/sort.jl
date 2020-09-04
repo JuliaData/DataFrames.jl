@@ -86,7 +86,7 @@ function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
 end
 
 function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-    p = sortperm(df, a, o)
+    p = _sortperm(df, a, o)
     pp = similar(p)
     c = _columns(df)
 

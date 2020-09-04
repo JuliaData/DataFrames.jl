@@ -406,7 +406,7 @@ julia> sort(df, [:x, order(:y, rev=true)])
 │ 4   │ 3     │ b      │
 ```
 """
-function sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
+@inline function Base.sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
               by=identity, rev=false, order=Forward, view::Bool=false)
     rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
@@ -471,7 +471,7 @@ julia> sortperm(df, (:x, :y), rev=true)
   1
 ```
 """
-function sortperm(df::AbstractDataFrame, cols=[];
+function Base.sortperm(df::AbstractDataFrame, cols=[];
                   alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
     if !(isa(by, Function) || eltype(by) <: Function)
         msg = "'by' must be a Function or a vector of Functions. " *
