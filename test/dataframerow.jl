@@ -1,6 +1,6 @@
 module TestDataFrameRow
 
-using Test, DataFrames, Random, Logging
+using Test, DataFrames, Random, Logging, CategoricalArrays
 const ≅ = isequal
 const ≇ = !isequal
 

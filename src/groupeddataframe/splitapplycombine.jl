@@ -270,7 +270,7 @@ const KWARG_PROCESSING_RULES =
     If `ungroup=true` (the default) a `DataFrame` is returned.
     If `ungroup=false` a `GroupedDataFrame` grouped using `keycols(gdf)` is returned.
 
-    If `gd` has zero groups then no transformations are applied.
+    If `gd` has zero groups then transformations are applied to vectors of zero length.
     """
 
 """
