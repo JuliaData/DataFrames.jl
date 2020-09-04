@@ -84,7 +84,7 @@ integrated they are with DataFrames.jl.
       an emphasis on interactive graphics.
 - **Data Wrangling**:
     - [Impute.jl](https://github.com/invenia/Impute.jl):
-      various methods for handling missing data in Vectors, Matrices and Tables.
+      various methods for handling missing data in vectors, matrices and tables.
     - [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl):
       A range of convenience functions for DataFrames.jl that augment `select` and
       `transform` to provide a user experience similar to that provided by
