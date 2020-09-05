@@ -1285,4 +1285,25 @@ end
     @test_throws MethodError transform!(dfv, 1)
 end
 
+@testset "renamecols=false tests" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    @test select(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test_throws ArgumentError select(df, [] => () -> 10, renamecols=false)
+    @test transform(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+    @test combine(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test combine([:a, :b] => +, df, renamecols=false) == DataFrame(a_b=5:2:9)
+    @test combine(identity, df, renamecols=false) == df
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    @test select!(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    @test transform!(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+end
+
 end # module
