@@ -2,6 +2,16 @@
 
 ## Breaking changes
 
+* CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
+  to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
+  In the same vein, the `categorical` and `categorical!` functions
+  have been deprecated in favor of
+  `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
+  [#2394]((https://github.com/JuliaData/DataFrames.jl/pull/2394)).
+  `stack` now creates a `PooledVector{String}` variable column rather than
+  a `CategoricalVector{String}` column by default;
+  pass `variable_eltype=CategoricalValue{String}` to get the previous behavior
+  ([#2391](https://github.com/JuliaData/DataFrames.jl/pull/2391))
 * `isless` for `DataFrameRow`s now checks column names
 ([#2292](https://github.com/JuliaData/DataFrames.jl/pull/2292))
 * `DataFrameColumns` is now not a subtype of `AbstractVector`
@@ -22,9 +32,6 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
-* the `categorical` and `categorical!` functions have been deprecated in favor of
-  `transform(df, cols .=> categorical .=> cols)` and similar syntaxes
-  [#2394]((https://github.com/JuliaData/DataFrames.jl/pull/2394))
 
 ## New functionalities
 
@@ -50,6 +57,10 @@
   ([#2380](https://github.com/JuliaData/DataFrames.jl/pull/2380))
 * `names` now accepts `Type` as a column selector
   ([#2400](https://github.com/JuliaData/DataFrames.jl/pull/2400))
+* `select`, `select!`, `transform`, `transform!` and `combine` now allow `renamecols`
+  keyword argument that makes it possible to avoid adding transformation function name
+  as a suffix in automatically generated column names
+  ([#2397](https://github.com/JuliaData/DataFrames.jl/pull/2397))
 
 ## Deprecated
 
@@ -63,3 +74,5 @@
 
 * Documentation is now available also in *Dark* mode
   ([#2315](https://github.com/JuliaData/DataFrames.jl/pull/2315))
+* add rich display support for Markdown cell entries in HTML and LaTeX
+  ([#2346](https://github.com/JuliaData/DataFrames.jl/pull/2346))

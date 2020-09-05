@@ -1,6 +1,6 @@
 module TestDeprecated
 
-using Test, DataFrames
+using Test, DataFrames, CategoricalArrays
 
 const ≅ = isequal
 
