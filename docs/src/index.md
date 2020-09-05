@@ -107,8 +107,8 @@ integrated they are with DataFrames.jl.
       CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
       Stata, SPSS, and SAS files (using
       [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
-      and reading (though not writing) parquet files
-      (using [ParquetFiles.jl](https://github.com/queryverse/ParquetFiles.jl)).
+      and reading and writing parquet files
+      (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
