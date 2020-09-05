@@ -94,7 +94,11 @@ integrated they are with DataFrames.jl.
       DataFrames.jl, other tabular data libraries (more on those below), and even
       non-tabular data. Provides many convenience functions analogous to those in
       dplyr in R or [linq](https://en.wikipedia.org/wiki/Language_Integrated_Query).
-    - You can find more on both of these packages in the
+    - [PairAsPipe.jl](https://github.com/xiaodaigh/PairAsPipe.jl): PairAsPipe.jl provides 
+      a convenience macro `@pap` that can translate `@pap output = fn(:input)` into 
+      pair-as-pipe syntax (`:input => fn => :output`). This make it easier and more 
+      intuitive to write certain type of code in DataFrames.jl.      
+    - You can find more on DataFramesMeta.jl and Query.jl in the
       [Data manipulation frameworks](@ref) section of this manual.
 - **And More!**
     - [LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia,
