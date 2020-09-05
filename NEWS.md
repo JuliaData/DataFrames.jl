@@ -55,6 +55,8 @@
   ([#2373](https://github.com/JuliaData/DataFrames.jl/pull/2373))
 * add `columnindex` for `DataFrameRow`
   ([#2380](https://github.com/JuliaData/DataFrames.jl/pull/2380))
+* `names` now accepts `Type` as a column selector
+  ([#2400](https://github.com/JuliaData/DataFrames.jl/pull/2400))
 * `select`, `select!`, `transform`, `transform!` and `combine` now allow `renamecols`
   keyword argument that makes it possible to avoid adding transformation function name
   as a suffix in automatically generated column names

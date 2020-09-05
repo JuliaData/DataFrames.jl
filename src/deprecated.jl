@@ -49,15 +49,14 @@ function CategoricalArrays.categorical(df::AbstractDataFrame,
     if cols === nothing
         cols = Union{AbstractString, Missing}
         Base.depwarn("`categorical(df)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: $cols, eachcol(df))]; transform(df, cols .=> $categoricalstr, renamecols=false)` instead.",
+                     "Use `transform(df, names(df, $cols) .=> $categoricalstr, renamecols=false)` instead.",
                      :categorical)
     else
         Base.depwarn("`categorical(df, T)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform(df, cols .=> $categoricalstr, renamecols=false)` instead.",
+                     "Use transform(df, names(df, T) .=> $categoricalstr, renamecols=false)` instead.",
                      :categorical)
     end
-    colsstr = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
-    return transform(df, colsstr .=> (x -> categorical(x, compress=compress)), renamecols=false)
+    return transform(df, names(df, cols) .=> (x -> categorical(x, compress=compress)), renamecols=false)
 end
 
 function categorical!(df::DataFrame, cols::Union{ColumnIndex, MultiColumnIndex};
@@ -97,13 +96,12 @@ function categorical!(df::DataFrame, cols::Union{Type, Nothing}=nothing;
     if cols === nothing
         cols = Union{AbstractString, Missing}
         Base.depwarn("`categorical!(df)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: $cols, eachcol(df))]; transform!(df, cols .=> $categoricalstr, renamecols=false)` instead.",
+                     "Use `transform!(df, names(df, $cols) .=> $categoricalstr, renamecols=false)` instead.",
                      :categorical!)
     else
         Base.depwarn("`categorical!(df, T)` is deprecated. " *
-                     "Use `cols = names(df)[map(c -> eltype(c) <: T, eachcol(df))]; transform!(df, cols .=> $categoricalstr, renamecols=false)` instead.",
+                     "Use `transform!(df, names(df, T) .=> $categoricalstr, renamecols=false)` instead.",
                      :categorical!)
     end
-    colsstr = names(df)[map(c -> eltype(c) <: cols, eachcol(df))]
-    return transform!(df, colsstr .=> (x -> categorical(x, compress=compress)), renamecols=false)
+    return transform!(df, names(df, cols) .=> (x -> categorical(x, compress=compress)), renamecols=false)
 end

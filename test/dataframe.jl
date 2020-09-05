@@ -1881,4 +1881,16 @@ end
     @test_throws ArgumentError push!(df, "a")
 end
 
+@testset "names for Type" begin
+    df = DataFrame(a1 = 1:3, a2 = [1, missing, 3],
+                   b1 = 1.0:3.0, b2 = [1.0, missing, 3.0],
+                   c1 = '1':'3', c2 = ['1', missing, '3'])
+    @test names(df, Int) == ["a1"]
+    @test names(df, Union{Missing, Int}) == ["a1", "a2"]
+    @test names(df, Real) == ["a1", "b1"]
+    @test names(df, Union{Missing, Real}) == ["a1", "a2", "b1", "b2"]
+    @test names(df, Any) == names(df)
+    @test names(df, Union{Char, Float64, Missing}) == ["b1", "b2", "c1", "c2"]
+end
+
 end # module
