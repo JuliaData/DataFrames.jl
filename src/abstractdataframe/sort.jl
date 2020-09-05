@@ -349,7 +349,7 @@ only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
 If `view=false` a freshly allocated `DataFrame` is returned.
-If `view=true` then a view into `df` is returned.
+If `view=true` then a `SubDataFrame` view into `df` is returned.
 
 See [`sort!`](@ref) for a description of other keyword arguments.
 
