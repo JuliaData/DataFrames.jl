@@ -815,8 +815,8 @@ julia> dropmissing(df, [:x, :y])
 ```
 """
 @inline function dropmissing(df::AbstractDataFrame,
-                     cols::Union{ColumnIndex, MultiColumnIndex}=:;
-                     view::Bool=false, disallowmissing::Bool=!view)
+                             cols::Union{ColumnIndex, MultiColumnIndex}=:;
+                             view::Bool=false, disallowmissing::Bool=!view)
     rowidxs = completecases(df, cols)
     if view
         if disallowmissing
@@ -970,7 +970,7 @@ julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 ```
 """
 @inline function Base.filter(f, df::AbstractDataFrame; view::Bool=false)
-    rowidxs = _filter_helper(f, eachrow(df))
+    rowidxs::BitVector = _filter_helper(f, eachrow(df))
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 

@@ -407,7 +407,7 @@ julia> sort(df, [:x, order(:y, rev=true)])
 ```
 """
 @inline function Base.sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
-              by=identity, rev=false, order=Forward, view::Bool=false)
+                           by=identity, rev=false, order=Forward, view::Bool=false)
     rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end

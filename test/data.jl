@@ -184,11 +184,14 @@ end
     df = DataFrame(rand(3,4))
     for fun in (dropmissing, unique)
         @test fun(df) isa DataFrame
+        @inferred fun(df)
         @test fun(view(df, 1:2, 1:2)) isa DataFrame
         @test fun(df, view=false) isa DataFrame
         @test fun(view(df, 1:2, 1:2), view=false) isa DataFrame
         @test fun(df, view=true) isa SubDataFrame
+        @test fun(df, view=true) == fun(df)
         @test fun(view(df, 1:2, 1:2), view=true) isa SubDataFrame
+        @test fun(view(df, 1:2, 1:2), view=true) == fun(view(df, 1:2, 1:2))
     end
 end
 
@@ -403,15 +406,18 @@ end
 
 @testset "filter view kwarg test" begin
     df = DataFrame(rand(3,4))
-    for fun in (row -> row.x1 > 0, :x1 => >(0), "x1" => >(0),
-                [:x1] => >(0), ["x1"] => >(0),
-                r"1" => >(0), AsTable(:) => x -> x.x1 > 0)
+    for fun in (row -> row.x1 > 0, :x1 => x -> x > 0, "x1" => x -> x > 0,
+                [:x1] => x -> x > 0, ["x1"] => x -> x > 0,
+                r"1" => x -> x > 0, AsTable(:) => x -> x.x1 > 0)
         @test filter(fun, df) isa DataFrame
+        @inferred filter(fun, df)
         @test filter(fun, view(df, 1:2, 1:2)) isa DataFrame
         @test filter(fun, df, view=false) isa DataFrame
         @test filter(fun, view(df, 1:2, 1:2), view=false) isa DataFrame
         @test filter(fun, df, view=true) isa SubDataFrame
+        @test filter(fun, df, view=true) == filter(fun, df)
         @test filter(fun, view(df, 1:2, 1:2), view=true) isa SubDataFrame
+        @test filter(fun, view(df, 1:2, 1:2), view=true) == filter(fun, view(df, 1:2, 1:2))
     end
 end
 
