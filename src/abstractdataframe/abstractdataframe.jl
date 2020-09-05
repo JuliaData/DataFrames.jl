@@ -755,7 +755,7 @@ If `cols` is provided, only missing values in the corresponding columns are cons
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `view=false` a freshly allocated `DataFrame` is returned.
-If `view=true` then a view into `df` is returned. In this case
+If `view=true` then a `SubDataFrame` view into `df` is returned. In this case
 `disallowmissing` must be `false`.
 
 If `disallowmissing` is `true` (the default when `view` is `false`)
@@ -916,7 +916,7 @@ column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
 passed.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
-If `view=true` then a view into `df` is returned.
+If `view=true` then a `SubDataFrame` view into `df` is returned.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -1206,7 +1206,7 @@ unique. `cols` can be any column selector ($COLUMNINDEX_STR;
 $MULTICOLUMNINDEX_STR).
 
 For `unique`, if `view=false` a freshly allocated `DataFrame` is returned,
-and if `view=true` then a view into `df` is returned.
+and if `view=true` then a `SubDataFrame` view into `df` is returned.
 
 `unique!` updates `df` in-place and does not support the `view` keyword argument.
 
