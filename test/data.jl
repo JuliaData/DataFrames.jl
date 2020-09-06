@@ -376,6 +376,10 @@ end
     @test filter!([:x, :x] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter(["x", "x"] => ==, df) == df
+    @test filter!(["x", "x"] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test filter([2, 2] => !=, df) == DataFrame(x=Int[], y=String[])
     @test filter!([2, 2] => !=, df) === df == DataFrame(x=Int[], y=String[])
 

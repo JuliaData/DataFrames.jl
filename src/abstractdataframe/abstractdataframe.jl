@@ -983,6 +983,18 @@ end
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
+# this method is needed to allow for passing duplicate columns
+@inline function Base.filter((cols, f)::Pair{<:Union{AbstractVector{<:Integer},
+                                                     AbstractVector{<:AbstractString},
+                                                     AbstractVector{<:Symbol}}},
+                             df::AbstractDataFrame; view::Bool=false)
+    if length(cols) == 0
+        throw(ArgumentError("At least one column must be passed to filter on"))
+    end
+    rowidxs::BitVector = _filter_helper(f, (df[!, i] for i in cols)...)
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
+
 _filter_helper(f, cols...) = ((x...) -> f(x...)::Bool).(cols...)
 
 @inline function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame;
