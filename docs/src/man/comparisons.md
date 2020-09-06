@@ -5,9 +5,11 @@ This section compares DataFrames.jl with other data manipulation frameworks in P
 A sample data set can be created using the following code:
 
 ```julia
-using DataFrames, Statistics
+using DataFrames
+using Statistics
+
 df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing])
-df2 = DataFrame(grp = 1, x = 6, w = 10)
+df2 = DataFrame(grp = [1, 3], w = [10, 11])
 ```
 
 ## Comparison with the Python package pandas
@@ -25,25 +27,29 @@ df = pd.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
                    index = list('abcdef'))
 ```
 
-By comparison, this pandas data frame has `a` to `f` as row indices rather than a separate `id` column.
+Because pandas supports multi-index, this example data frame is set up with `a` to `f`
+as row indices rather than a separate `id` column.
 
 ### Accessing data
 
 | Operation                  | pandas                 | DataFrames.jl                      |
-| :------------------------- | :--------------------- | :--------------------------------- |
+|----------------------------|------------------------|------------------------------------|
 | Cell indexing by location  | `df.iloc[1, 1]`        | `df[2, 2]`                         |
 | Row slicing by location    | `df.iloc[1:3]`         | `df[2:3, :]`                       |
 | Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`                     |
 | Row indexing by label      | `df.loc['c']`          | `df[findfirst(==('c'), df.id), :]` |
-| Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`                        |
-| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`                  |
-|                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]`           |
+| Column indexing by label   | `df.loc[:, 'x']`       | `df[:, [:id, :x]`                  |
+| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:id, :x, :z]]`             |
+|                            | `df.loc[:, 'x':'z']`   | `select(df, :id, Between(:x, :z))` |
 | Mixed indexing             | `df.loc['c'][1]`       | `df[findfirst(==('c'), df.id), 2]` |
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index.
 
-In the DataFrames.jl examples, the `findfirst` function is used to find the first match and return the result
+The DataFrames.jl examples for column indexing include the `id` column by design
+so that the result matches pandas' as they appear as row indices there.
+
+In addition, the `findfirst` function is used to find the first match and return the result
 as a single `DataFrameRow` object. In the case that `id` is not unique, you can use the `findall` function
 or boolean indexing instead. It would then return a `DataFrame` object containing all matched rows. The following
 two lines of code are functionally equivalent:
@@ -53,61 +59,116 @@ df[findall(==('c'), df.id), :]
 df[df.id .== 'c', :]
 ```
 
-Hence, DataFrames.jl's indexing always produces a consistent and predictable return type.
+DataFrames.jl's indexing always produces a consistent and predictable return type.
 By contrast, pandas' `loc` function returns a `Series` object when there is exactly
 one `'c'` value in the index, and it returns a `DataFrame` object when there are multiple
-occurrences of `'c'` in it.
+rows having the index value of `'c'`.
 
 ### Common operations
 
-| Operation                | pandas                                                | DataFrames.jl                           |
-| :----------------------- | :---------------------------------------------------- | :-------------------------------------- |
-| Reduce multiple values   | `df['z'].mean(skipna = False)`                        | `mean(df.z)`                            |
-|                          | `df['z'].mean()`                                      | `mean(skipmissing(df.z))`               |
-|                          | `df[['z']].agg(['mean'])`                             | `combine(df, :z => mean ∘ skipmissing)` |
-| Add new columns          | `df.assign(x_mean = df['x'].mean())`                  | `transform(df, :x => mean => :x_mean)`  |
-| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                 | `rename(df, :x => :x_new)`              |
-| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]` | `select(df, :x => mean, :y)`            |
-| Sort rows                | `df.sort_values(by = ['x'])`                          | `sort(df, :x)`                          |
+| Operation                | pandas                                                         | DataFrames.jl                               |
+|--------------------------|----------------------------------------------------------------|---------------------------------------------|
+| Reduce multiple values   | `df['z'].mean(skipna = False)`                                 | `mean(df.z)`                                |
+|                          | `df['z'].mean()`                                               | `mean(skipmissing(df.z))`                   |
+|                          | `df[['z']].agg(['mean'])`                                      | `combine(df, :z => mean ∘ skipmissing)`     |
+| Add new columns          | `df.assign(z1 = df['z'] + 1)`                                  | `transform(df, :z => (v -> v .+ 1) => :z1)` |
+| Rename columns           | `df.rename(columns = {'x': 'x_new'})`                          | `rename(df, :x => :x_new)`                  |
+| Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]`          | `select(df, :x => mean, :y)`                |
+| Sort rows                | `df.sort_values(by = 'x')`                                     | `sort(df, :x)`                              |
+|                          | `df.sort_values(by = ['grp', 'x'], ascending = [True, False])` | `sort(df, [:grp, order(:x, rev = true)])`   |
 
-Note that Julia propagates `missing` data by default for safety reasons. The `skipmissing` function
-can be used to remove missing data. See more details at the [Additional Differences](@ref) section below.
+Note that pandas skips `NaN` values in its analytic functions by default. By constrast,
+Julia functions do not skip `NaN`'s for safety reasons. If necessary, you can filter out
+the `NaN`'s before processing, for example, `mean(Iterators.filter(!isnan, x))`
+
+Pandas uses `NaN` for representing both missing data and the floating point "not a number" value.
+Julia defines a special value `missing` for representing missing data. DataFrames.jl respects
+general rules in Julia in propagating `missing` values by default. If necessary,
+the `skipmissing` function can be used to remove missing data.
+
+In addition, pandas keeps original column name after performing an analytic function.
+DataFrames.jl appends a suffix to the column name by default. To keep it simple, the
+examples above do not synchronize the column names between pandas and DataFrames.jl.
 
 ### Grouping data and aggregation
 
-| Operation                       | pandas                                                                                    | DataFrames.jl                                       |
-| :------------------------------ | :---------------------------------------------------------------------------------------- | :-------------------------------------------------- |
-| Aggregate by groups             | `df.groupby('grp')['x'].mean().reset_index()`                                             | `combine(groupby(df, :grp), :x => mean)`            |
-| Rename column after aggregation | `df.groupby('grp')['x'].mean().reset_index().rename(columns={'x': 'mean_x'})`             | `combine(groupby(df, :grp), :x => mean => :mean_x)` |
-| Aggregate and add columns       | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                       | `transform(groupby(df, :grp), :x => mean)`          |
-| Aggregate and select columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean','y']]` | `select(groupby(df, :grp), :x => mean, :y)`         |
+DataFrames.jl provides a `groupby` function such that one can perform analytic functions
+over each group independently. The result of `groupby` is a `GroupedDataFrame` object
+which may be processed using the `combine`, `transform`, or `select` functions.
+The following table illustrate some common grouping and aggregation usages.
+
+| Operation                       | pandas                                                                                | DataFrames.jl                                        |
+|---------------------------------|---------------------------------------------------------------------------------------|------------------------------------------------------|
+| Aggregate by groups             | `df.groupby('grp')['x'].mean()`                                                       | `combine(groupby(df, :grp), :x => mean)`             |
+| Rename column after aggregation | `df.groupby('grp')['x'].mean().rename("my_mean")`                                     | `combine(groupby(df, :grp), :x => mean => :my_mean)` |
+| Add aggregated data as column   | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                   | `transform(groupby(df, :grp), :x => mean)`           |
+| ...and select output columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean']]` | `select(groupby(df, :grp), :id, :x => mean)`         |
+
+Note that pandas returns a `Series` object for 1-dimensional result, so the corresponding
+DataFrames.jl examples are made to return an equivalent `DataFrame` object. Consider the
+first example:
+
+```python
+>>> df.groupby('grp')['x'].mean()
+grp
+1    4
+2    3
+Name: x, dtype: int64
+```
+
+For DataFrames.jl, it looks like this:
+
+```julia
+julia> combine(groupby(df, :grp), :x => mean)
+2×2 DataFrame
+│ Row │ grp   │ x_mean  │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+```
+
+Pandas supports hierarchical indexing. DataFrames.jl provides similar functionality with
+the `groupby` function. For example, if you want to drill down the data frame with `grp` equals
+`1` and then `x` equals `4`, then we can write the following code:
+
+```julia
+@pipe df |> groupby(_, :grp)[(1,)] |> groupby(_, :x)[(4,)]
+```
+
+Of course, you can also enumerate both levels of grouping with a regular for-loop:
+
+```julia
+for gdf1 in groupby(df, :grp)
+   for gdf2 in groupby(gdf1, :x)
+      # do something about each SubDataFrame here
+   end
+end
+```
 
 ### More advanced commands
 
-| Operation                 | pandas                                                                       | DataFrames.jl                                             |
-| :------------------------ | :--------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| Complex Function          | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`       |
-| Transform several columns | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`               |
-|                           | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                          |
-|                           | `df.filter(regex=("^x")).mean()`                                             | `combine(df, r"^x" .=> mean)`                             |
-|                           | `df[['x', 'y']].agg([max, min])`                                             | `combine(df, ([:x, :y] .=> [maximum minimum])...)`        |
-| Multivariate function     | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                          |
-| Row-wise                  | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                   |
-|                           | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`        |
-| DataFrame as input        | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`            |
-| DataFrame as output       | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)` |
+This section includes more complex examples.
+
+| Operation                                       | pandas                                                                       | DataFrames.jl                                                                     |
+|-------------------------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| Complex Function                                | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`                               |
+| Aggregate multiple columns                      | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`                                       |
+|                                                 | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                                                  |
+|                                                 | `df.filter(regex=("^x")).mean()`                                             | `combine(v -> mapcols(mean, v), select(df, r"[xy]"))`                             |
+| Multiple columns x multiple functions functions | `df[['x', 'y']].agg([max, min])`                                             | `DataFrame([(agg = "$f", x = f(df.x), y = f(df.y)) for f in [maximum, minimum]])` |
+| Apply function over multiple variables          | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                                                  |
+| Row-wise operation                              | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                                           |
+|                                                 | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`                                |
+| DataFrame as input                              | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`                                    |
+| DataFrame as output                             | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)`                         |
 
 Note that pandas preserves the same row order after `groupby` whereas DataFrames.jl
 reorders the result according to the grouped keys.
 
 ### Joining data frames
 
-Suppose that you have a second data frame as shown below:
-```
-df2 = pd.DataFrame({'grp': [1], 'x': [6], 'w': [10]})
-```
-
-Here is how to join the data frames:
+DataFrames.jl supports join operations similar to a relational database.
 
 | Operation             | pandas                                         | DataFrames.jl                   |
 | :-------------------- | :--------------------------------------------- | :------------------------------ |
@@ -119,14 +180,9 @@ Here is how to join the data frames:
 | Anti join (filtering) | `df[~df.grp.isin(df2.grp)]`                    | `antijoin(df, df2, on = :grp)`  |
 
 For multi-column joins, both pandas and DataFrames.jl accept an array for the `on` keyword argument.
+
 In case of semi joins and anti joins, pandas would require the join keys to be constructed
 as a tuple whereas DataFrames.jl just works as usual.
-
-### Additional Differences
-
-1. Pandas skips `NaN` values in analytic functions by default. In Julia `NaN` is just a normal floating point value, and instead a special `missing` value is used to indicate missing data. DataFrames.jl respects general rules in Julia in propagating `missing` values by default.
-
-2. Pandas keeps original column name after performing an analytic function. DataFrames.jl appends a suffix to the column name by default.
 
 ## Comparison with the R package dplyr
 
