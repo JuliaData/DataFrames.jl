@@ -272,6 +272,12 @@ function Base.names(r::DataFrameRow, cols)
     return [string(nms[i]) for i in idxs]
 end
 
+Base.names(r::DataFrameRow, T::Type) =
+    [String(n) for n in _names(index(r)) if eltype(parent(r)[!, n]) <: T]
+
+Base.names(r::DataFrameRow, fun::Function) =
+    [String(n) for n in _names(index(r)) if fun(String(n))]
+
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
 Base.haskey(r::DataFrameRow, key::Bool) =
