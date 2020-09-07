@@ -95,7 +95,7 @@ examples above do not synchronize the column names between pandas and DataFrames
 DataFrames.jl provides a `groupby` function such that one can perform analytic functions
 over each group independently. The result of `groupby` is a `GroupedDataFrame` object
 which may be processed using the `combine`, `transform`, or `select` functions.
-The following table illustrate some common grouping and aggregation usages.
+The following table illustrates some common grouping and aggregation usages.
 
 | Operation                       | pandas                                                                                | DataFrames.jl                                        |
 |---------------------------------|---------------------------------------------------------------------------------------|------------------------------------------------------|
