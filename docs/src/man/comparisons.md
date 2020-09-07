@@ -82,6 +82,7 @@ Pandas uses `NaN` for representing both missing data and the floating point "not
 Julia defines a special value `missing` for representing missing data. DataFrames.jl respects
 general rules in Julia in propagating `missing` values by default. If necessary,
 the `skipmissing` function can be used to remove missing data.
+See the [Missing Data](@ref) section for more information.
 
 In addition, pandas keeps the original column name after applying a function.
 DataFrames.jl appends a suffix to the column name by default. To keep it simple, the
@@ -147,7 +148,7 @@ This section includes more complex examples.
 | DataFrame as output                             | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)`                         |
 
 Note that pandas preserves the same row order after `groupby` whereas DataFrames.jl
-reorders the result according to the grouped keys.
+shows them grouped by the provided keys.
 
 ### Joining data frames
 
