@@ -86,7 +86,7 @@ Julia defines a special value `missing` for representing missing data. DataFrame
 general rules in Julia in propagating `missing` values by default. If necessary,
 the `skipmissing` function can be used to remove missing data.
 
-In addition, pandas keeps original column name after performing an analytic function.
+In addition, pandas keeps the original column name after applying a function.
 DataFrames.jl appends a suffix to the column name by default. To keep it simple, the
 examples above do not synchronize the column names between pandas and DataFrames.jl.
 
