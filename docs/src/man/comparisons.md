@@ -125,27 +125,9 @@ julia> combine(groupby(df, :grp), :x => mean)
 │ 2   │ 2     │ 3.0     │
 ```
 
-Pandas supports hierarchical indexing. DataFrames.jl provides similar functionality with
-the `groupby` function. For example, if you want to drill down the data frame with `grp` equals
-`1` and then `x` equals `4`, then we can write the following code:
-
-```julia
-gdf1 = groupby(df, :grp)[(1,)]   # look up with :grp key = 1
-gdf14 = groupby(gdf1, :x)[(4,)]  # look up with :x key = 4
-```
-
-Of course, you can also enumerate both levels of grouping with a regular for-loop:
-
-```julia
-for sdf1 in groupby(df, :grp)
-   for sdf2 in groupby(gdf1, :x)
-      # do something about each SubDataFrame here
-   end
-end
-```
-
-When a `GroupedDataFrame` is created, the group keys are indexed in a data structure.
-It is designed to perform well when you need to perform lookups repeatedly.
+In DataFrames.jl, the `groupby` function returns a `GroupedDataFrame` object that
+contains a dictionary for efficient key lookups. Hence, it performs well
+when you need to perform lookups repeatedly.
 
 ### More advanced commands
 
