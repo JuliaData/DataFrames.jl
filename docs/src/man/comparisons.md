@@ -139,8 +139,8 @@ the `groupby` function. For example, if you want to drill down the data frame wi
 Of course, you can also enumerate both levels of grouping with a regular for-loop:
 
 ```julia
-for gdf1 in groupby(df, :grp)
-   for gdf2 in groupby(gdf1, :x)
+for sdf1 in groupby(df, :grp)
+   for sdf2 in groupby(gdf1, :x)
       # do something about each SubDataFrame here
    end
 end
