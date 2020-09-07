@@ -92,7 +92,7 @@ examples above do not synchronize the column names between pandas and DataFrames
 
 ### Grouping data and aggregation
 
-DataFrames.jl provides a `groupby` function such that one can perform analytic functions
+DataFrames.jl provides a `groupby` function to apply operations
 over each group independently. The result of `groupby` is a `GroupedDataFrame` object
 which may be processed using the `combine`, `transform`, or `select` functions.
 The following table illustrates some common grouping and aggregation usages.
