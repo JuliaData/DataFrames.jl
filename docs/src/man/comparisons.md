@@ -38,16 +38,13 @@ as row indices rather than a separate `id` column.
 | Row slicing by location    | `df.iloc[1:3]`         | `df[2:3, :]`                       |
 | Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`                     |
 | Row indexing by label      | `df.loc['c']`          | `df[findfirst(==('c'), df.id), :]` |
-| Column indexing by label   | `df.loc[:, 'x']`       | `df[:, [:id, :x]`                  |
-| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:id, :x, :z]]`             |
-|                            | `df.loc[:, 'x':'z']`   | `select(df, :id, Between(:x, :z))` |
+| Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`                        |
+| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`                  |
+|                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]`           |
 | Mixed indexing             | `df.loc['c'][1]`       | `df[findfirst(==('c'), df.id), 2]` |
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index.
-
-The DataFrames.jl examples for column indexing include the `id` column
-so that the result matches pandas' as they appear as row indices there.
 
 In addition, the `findfirst` function is used to find the first match and return the result
 as a single `DataFrameRow` object. In the case that `id` is not unique, you can use the `findall` function
@@ -133,7 +130,8 @@ the `groupby` function. For example, if you want to drill down the data frame wi
 `1` and then `x` equals `4`, then we can write the following code:
 
 ```julia
-@pipe df |> groupby(_, :grp)[(1,)] |> groupby(_, :x)[(4,)]
+gdf1 = groupby(df, :grp)[(1,)]   # look up with :grp key = 1
+gdf14 = groupby(gdf1, :x)[(4,)]  # look up with :x key = 4
 ```
 
 Of course, you can also enumerate both levels of grouping with a regular for-loop:
@@ -145,6 +143,9 @@ for sdf1 in groupby(df, :grp)
    end
 end
 ```
+
+When a `GroupedDataFrame` is created, the group keys are indexed in a data structure.
+It is designed to perform well when you need to perform lookups repeatedly.
 
 ### More advanced commands
 
