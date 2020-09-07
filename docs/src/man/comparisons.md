@@ -46,7 +46,7 @@ as row indices rather than a separate `id` column.
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index.
 
-The DataFrames.jl examples for column indexing include the `id` column by design
+The DataFrames.jl examples for column indexing include the `id` column
 so that the result matches pandas' as they appear as row indices there.
 
 In addition, the `findfirst` function is used to find the first match and return the result
