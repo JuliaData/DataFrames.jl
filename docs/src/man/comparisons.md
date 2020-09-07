@@ -155,7 +155,7 @@ This section includes more complex examples.
 | Complex Function                                | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`                               |
 | Aggregate multiple columns                      | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`                                       |
 |                                                 | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                                                  |
-|                                                 | `df.filter(regex=("^x")).mean()`                                             | `combine(v -> mapcols(mean, v), select(df, r"[xy]"))`                             |
+|                                                 | `df.filter(regex=("^x")).mean()`                                             | `combine(df, names(df, r"^x") .=> mean)`                             |
 | Multiple columns x multiple functions functions | `df[['x', 'y']].agg([max, min])`                                             | `DataFrame([(agg = "$f", x = f(df.x), y = f(df.y)) for f in [maximum, minimum]])` |
 | Apply function over multiple variables          | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                                                  |
 | Row-wise operation                              | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                                           |
