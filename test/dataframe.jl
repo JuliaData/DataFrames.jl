@@ -1904,6 +1904,8 @@ end
         @test names(x, Any) == names(x)
         @test names(x, Union{Char, Float64, Missing}) == ["b1", "b2", "c1", "c2"]
         @test names(x, startswith("a")) == ["a1", "a2"]
+        @test names(x, :) == names(x)
+        @test names(x, <("a2")) == ["a1"]
     end
 end
 

@@ -263,7 +263,7 @@ Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
-Base.names(r::DataFrameRow) = names(index(r))
+Base.names(r::DataFrameRow, cols::Colon=:) = names(index(r))
 
 function Base.names(r::DataFrameRow, cols)
     nms = _names(index(r))

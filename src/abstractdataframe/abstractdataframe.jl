@@ -76,7 +76,7 @@ selector (this is useful in particular with regular expressions, `Not`, and `Bet
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 """
-Base.names(df::AbstractDataFrame) = names(index(df))
+Base.names(df::AbstractDataFrame, cols::Colon=:) = names(index(df))
 
 function Base.names(df::AbstractDataFrame, cols)
     nms = _names(index(df))
