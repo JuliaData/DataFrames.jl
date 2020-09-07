@@ -226,4 +226,9 @@ end
     categorical!(df, Between(1,2))
 end
 
+@testset "deprecated describe syntax" begin
+    @test describe(DataFrame(a=[1,2]), cols = :a, :min, :min2 => minimum, "max2" => maximum, :max) ==
+          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
+end
+
 end # module
