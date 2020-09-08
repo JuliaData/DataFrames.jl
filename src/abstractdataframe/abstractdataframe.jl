@@ -74,7 +74,7 @@ selector (this is useful in particular with regular expressions, `Not`, and `Bet
 * a `Type`, in which case names of columns whose `eltype` is a subtype of `T`
   are returned if `unionmissing=false` or if `unionmissing=true` then `eltype`
   must be subtype of `Union{T, Missing}` other than `Missing` except if `T` is `Missing`
-* a `Function` in which case names of columns for which a predicate, taking a
+* a `Function` predicate, in which case names of columns for which the predicate, taking a
   `String` containg column name, returns `true`
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
@@ -90,9 +90,7 @@ end
 
 Base.names(df::AbstractDataFrame, T::Type; unionmissing::Bool=true) =
     [String(n) for (n, c) in pairs(eachcol(df)) if testtype(T, eltype(c), unionmissing)]
-
-Base.names(df::AbstractDataFrame, fun::Function) =
-    [String(n) for (n, c) in pairs(eachcol(df)) if fun(String(n))]
+Base.names(df::AbstractDataFrame, fun::Function) = filter(fun, names(df))
 
 # _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))

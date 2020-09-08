@@ -273,10 +273,8 @@ function Base.names(r::DataFrameRow, cols)
 end
 
 Base.names(r::DataFrameRow, T::Type; unionmissing::Bool=true) =
-    [String(n) for n in _names(index(r)) if testtype(T, eltype(parent(r)[!, n]), unionmissing)]
-
-Base.names(r::DataFrameRow, fun::Function) =
-    [String(n) for n in _names(index(r)) if fun(String(n))]
+    [String(n) for n in _names(r) if testtype(T, eltype(parent(r)[!, n]), unionmissing)]
+Base.names(r::DataFrameRow, fun::Function) = filter(fun, names(r))
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
