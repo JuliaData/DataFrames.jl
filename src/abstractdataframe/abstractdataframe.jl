@@ -970,7 +970,7 @@ julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 ```
 """
 @inline function Base.filter(f, df::AbstractDataFrame; view::Bool=false)
-    rowidxs::BitVector = _filter_helper(f, eachrow(df))
+    rowidxs = _filter_helper(f, eachrow(df))
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -979,7 +979,7 @@ end
     if length(int_cols) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    rowidxs::BitVector = _filter_helper(f, (df[!, i] for i in int_cols)...)
+    rowidxs = _filter_helper(f, (df[!, i] for i in int_cols)...)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -991,11 +991,11 @@ end
     if length(cols) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    rowidxs::BitVector = _filter_helper(f, (df[!, i] for i in cols)...)
+    rowidxs = _filter_helper(f, (df[!, i] for i in cols)...)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-_filter_helper(f, cols...) = ((x...) -> f(x...)::Bool).(cols...)
+_filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
 
 @inline function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame;
                              view::Bool=false)
@@ -1003,11 +1003,11 @@ _filter_helper(f, cols...) = ((x...) -> f(x...)::Bool).(cols...)
     if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    rowidxs::BitVector = _filter_helper_astable(f, Tables.namedtupleiterator(df_tmp))
+    rowidxs = _filter_helper_astable(f, Tables.namedtupleiterator(df_tmp))
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-_filter_helper_astable(f, nti::Tables.NamedTupleIterator) = (x -> f(x)::Bool).(nti)
+_filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x)::Bool).(nti)
 
 """
     filter!(fun, df::AbstractDataFrame)
