@@ -670,9 +670,9 @@ end
     describe_output.test_std = describe_output.std
     # Test that describe works with a Pair and a symbol
     @test describe_output[:, [:variable, :mean, :test_std]] ≅
-          describe(df, :mean, :test_std => std)
+          describe(df, :mean, std => :test_std)
     @test describe_output[:, [:variable, :mean, :test_std]] ≅
-          describe(df, :mean, "test_std" => std)
+          describe(df, :mean, std => "test_std")
 
     # Test that describe works with a dataframe with no observations
     df = DataFrame(a = Int[], b = String[], c = [])
@@ -682,6 +682,9 @@ end
     @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
     @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
+
+    @test describe(DataFrame(a=[1,2]), cols = :a, :min, minimum => :min2, maximum => "max2", :max) ==
+          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
     @test_throws ArgumentError describe(df, :mean, :all)
 end

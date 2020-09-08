@@ -479,7 +479,7 @@ where each row represents a variable and each column a summary statistic.
       `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
-    - A `name => function` pair where `name` is a `Symbol` or string. This will
+    - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
   to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
@@ -525,7 +525,7 @@ julia> describe(df, :min, :max)
 │ 2   │ x        │ 0.1 │ 1.0 │
 │ 3   │ y        │ 'a' │ 'j' │
 
-julia> describe(df, :min, :sum => sum)
+julia> describe(df, :min, sum => :sum)
 3×3 DataFrame
 │ Row │ variable │ min │ sum │
 │     │ Symbol   │ Any │ Any │
@@ -534,7 +534,7 @@ julia> describe(df, :min, :sum => sum)
 │ 2   │ x        │ 0.1 │ 5.5 │
 │ 3   │ y        │ 'a' │     │
 
-julia> describe(df, :min, :sum => sum, cols=:x)
+julia> describe(df, :min, sum => :sum, cols=:x)
 1×3 DataFrame
 │ Row │ variable │ min     │ sum     │
 │     │ Symbol   │ Float64 │ Float64 │
@@ -542,11 +542,16 @@ julia> describe(df, :min, :sum => sum, cols=:x)
 │ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-DataAPI.describe(df::AbstractDataFrame,
-                 stats::Union{Symbol, Pair{<:SymbolOrString}}...;
-                 cols=:) =
-    _describe(select(df, cols, copycols=false), collect(stats))
-
+function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,
+                          Pair{<:Base.Callable,<:SymbolOrString},
+                          Pair{<:SymbolOrString}}...; # TODO: remove after deprecation
+                 cols=:)
+    if any(x -> x isa Pair{<:SymbolOrString}, stats)
+        Base.depwarn("name => function order is deprecated; use function => name instead", :describe)
+    end
+    return _describe(select(df, cols, copycols=false),
+                     Any[s isa Pair{<:SymbolOrString} ? last(s) => first(s) : s for s in stats])
+end
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
               [:mean, :min, :median, :max, :nmissing, :eltype])
@@ -569,9 +574,9 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
     end
 
-    custom_funs = Pair[Symbol(s[1]) => s[2] for s in stats if s isa Pair]
+    custom_funs = Pair[s[1] => Symbol(s[2]) for s in stats if s isa Pair]
 
-    ordered_names = [s isa Symbol ? s : Symbol(first(s)) for s in stats]
+    ordered_names = [s isa Symbol ? s : Symbol(last(s)) for s in stats]
 
     if !allunique(ordered_names)
         df_ord_names = DataFrame(ordered_names = ordered_names)
@@ -666,7 +671,7 @@ end
 
 function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
     for stat in stats
-        d[stat[1]] = try stat[2](col) catch end
+        d[stat[2]] = try stat[1](col) catch end
     end
 end
 

@@ -32,6 +32,9 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* in `describe` the specification of custom aggregation is now `function => name`;
+  old `name => function` order is now deprecated
+  ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
 
 ## New functionalities
 
