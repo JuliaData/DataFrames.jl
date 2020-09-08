@@ -669,9 +669,9 @@ while `splitcols` defaults to `true`.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 - `eltypes::Bool = true`: Whether to print the column types under column names.
-- `truncate::Int = 32`: The approximate number of text width characters to truncate
-  output in the rendered cell of a data frame. If `truncate` is non-positive
-  then no truncation is applied.
+- `truncate::Int = 32`: the maximal display width the output can use before
+  being truncated (in the `textwidth` sense, excluding `…`).
+  If `truncate` is 0 or less, no truncation is applied.
 
 # Examples
 ```jldoctest
