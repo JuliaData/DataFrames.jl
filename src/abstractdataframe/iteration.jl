@@ -245,6 +245,8 @@ Base.findall(f::Function, itr::DataFrameColumns) =
 Base.parent(itr::Union{DataFrameRows, DataFrameColumns}) = getfield(itr, :df)
 Base.names(itr::Union{DataFrameRows, DataFrameColumns}) = names(parent(itr))
 Base.names(itr::Union{DataFrameRows, DataFrameColumns}, cols) = names(parent(itr), cols)
+Base.names(itr::Union{DataFrameRows, DataFrameColumns}, cols::Type; unionmissing::Bool=true) =
+    names(parent(itr), cols, unionmissing=unionmissing)
 
 function Base.show(io::IO, dfrs::DataFrameRows;
                    allrows::Bool = !get(io, :limit, false),

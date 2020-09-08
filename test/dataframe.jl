@@ -1882,6 +1882,23 @@ end
 end
 
 @testset "names for Type, predicate + standard tests of cols" begin
+    @test DataFrames.testtype(Int, Int, true)
+    @test DataFrames.testtype(Int, Int, false)
+    @test DataFrames.testtype(Real, Int, true)
+    @test DataFrames.testtype(Real, Int, false)
+    @test !DataFrames.testtype(Union{}, Missing, false)
+    @test DataFrames.testtype(Union{}, Missing, true)
+    @test DataFrames.testtype(Int, Union{Missing, Int}, true)
+    @test !DataFrames.testtype(Int, Union{Missing, Int}, false)
+    @test DataFrames.testtype(Real, Union{Missing, Int}, true)
+    @test !DataFrames.testtype(Real, Union{Missing, Int}, false)
+    @test DataFrames.testtype(Missing, Missing, false)
+    @test DataFrames.testtype(Missing, Missing, true)
+    @test !DataFrames.testtype(Int, Missing, false)
+    @test !DataFrames.testtype(Int, Missing, true)
+    @test DataFrames.testtype(Union{Missing, Int}, Missing, false)
+    @test DataFrames.testtype(Union{Missing, Int}, Missing, true)
+
     df_long = DataFrame(a1 = 1:3, a2 = [1, missing, 3],
                         b1 = 1.0:3.0, b2 = [1.0, missing, 3.0],
                         c1 = '1':'3', c2 = ['1', missing, '3'], x=1:3)
@@ -1896,10 +1913,11 @@ end
         @test names(x, [2, 1]) == ["a2", "a1"]
         @test names(x, ["a2", "a1"]) == ["a2", "a1"]
         @test names(x, [:a2, :a1]) == ["a2", "a1"]
-        @test names(x, Int) == ["a1"]
-        @test names(x, Int) == ["a1"]
+        @test names(x, Int) == ["a1", "a2"]
+        @test names(x, Int, unionmissing=false) == ["a1"]
         @test names(x, Union{Missing, Int}) == ["a1", "a2"]
-        @test names(x, Real) == ["a1", "b1"]
+        @test names(x, Real) == ["a1", "a2", "b1", "b2"]
+        @test names(x, Real, unionmissing=false) == ["a1", "b1"]
         @test names(x, Union{Missing, Real}) == ["a1", "a2", "b1", "b2"]
         @test names(x, Any) == names(x)
         @test names(x, Union{Char, Float64, Missing}) == ["b1", "b2", "c1", "c2"]

@@ -96,9 +96,11 @@ function Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
         all(x -> isequal(x...), zip(gd1, gd2))
 end
 
-Base.names(gd::GroupedDataFrame) = names(gd.parent)
-Base.names(gd::GroupedDataFrame, cols) = names(gd.parent, cols)
-_names(gd::GroupedDataFrame) = _names(gd.parent)
+Base.names(gd::GroupedDataFrame) = names(parent(gd))
+Base.names(gd::GroupedDataFrame, cols) = names(parent(gd), cols)
+Base.names(gd::GroupedDataFrame, cols::Type; unionmissing::Bool=true) =
+    names(parent(gd), cols, unionmissing=unionmissing)
+_names(gd::GroupedDataFrame) = _names(parent(gd))
 
 function DataFrame(gd::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=true)
     if !copycols
@@ -254,7 +256,7 @@ meant to be constructed directly.
 
 Indexing fields of `GroupKey` is allowed using an integer, a `Symbol`, or a string.
 It is also possible to access the data in a `GroupKey` using the `getproperty`
-function. A `GroupKey` can be converted to a `Tuple`, `NamedTuple`, a `Vector`, or 
+function. A `GroupKey` can be converted to a `Tuple`, `NamedTuple`, a `Vector`, or
 a `Dict`. When converted to a `Dict`, the keys of the `Dict` are `Symbol`s.
 
 See [`keys(::GroupedDataFrame)`](@ref) for more information.
@@ -402,12 +404,12 @@ end
 function _dict_to_tuple(key::AbstractDict{Symbol}, gd::GroupedDataFrame)
     if length(key) != length(gd.cols)
         throw(KeyError(key))
-    end    
+    end
 
     return ntuple(i -> key[gd.cols[i]], length(gd.cols))
 end
 
-Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}}) = 
+Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}}) =
     Base.to_index(gd, _dict_to_tuple(key, gd))
 
 # Array of (possibly non-standard) indices
@@ -599,7 +601,7 @@ function Base.haskey(gd::GroupedDataFrame, key::NamedTuple{N}) where {N}
     return haskey(gd, Tuple(key))
 end
 
-Base.haskey(gd::GroupedDataFrame, key::AbstractDict{<:Union{Symbol, <:AbstractString}}) = 
+Base.haskey(gd::GroupedDataFrame, key::AbstractDict{<:Union{Symbol, <:AbstractString}}) =
     haskey(gd, _dict_to_tuple(key, gd))
 
 Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
@@ -611,8 +613,8 @@ Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
 Get a group based on the values of the grouping columns.
 
 `key` may be a `GroupKey`, `NamedTuple` or `Tuple` of grouping column values (in the same
-order as the `cols` argument to `groupby`). It may also be an `AbstractDict`, in which case the 
-order of the arguments does not matter. 
+order as the `cols` argument to `groupby`). It may also be an `AbstractDict`, in which case the
+order of the arguments does not matter.
 
 # Examples
 
