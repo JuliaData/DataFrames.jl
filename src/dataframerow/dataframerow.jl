@@ -273,10 +273,10 @@ function Base.names(r::DataFrameRow, cols)
 end
 
 Base.names(r::DataFrameRow, T::Type) =
-    [String(n) for n in _names(index(r)) if eltype(parent(r)[!, n]) <: T]
+    [String(n) for n in _names(r) if eltype(parent(r)[!, n]) <: T]
 
 Base.names(r::DataFrameRow, fun::Function) =
-    [String(n) for n in _names(index(r)) if fun(String(n))]
+    filter(fun, names(r))
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
