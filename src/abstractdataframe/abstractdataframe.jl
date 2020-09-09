@@ -33,8 +33,6 @@ The following are normally implemented for AbstractDataFrames:
 * [`disallowmissing!`](@ref) : drop support for missing values in columns in-place
 * [`allowmissing`](@ref) : add support for missing values in columns
 * [`allowmissing!`](@ref) : add support for missing values in columns in-place
-* [`categorical`](@ref) : change column types to categorical
-* [`categorical!`](@ref) : change column types to categorical in-place
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
 * `filter!` : remove rows in-place
@@ -70,7 +68,8 @@ Return a freshly allocated `Vector{String}` of names of columns contained in `df
 
 If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Not`, and `Between`).
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
+or a `Type`, in which case columns whose `eltype` is a subtype of `cols` are returned.
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 """
@@ -80,8 +79,11 @@ function Base.names(df::AbstractDataFrame, cols)
     nms = _names(index(df))
     idx = index(df)[cols]
     idxs = idx isa Int ? (idx:idx) : idx
-    return [string(nms[i]) for i in idxs]
+    return [String(nms[i]) for i in idxs]
 end
+
+Base.names(df::AbstractDataFrame, T::Type) =
+    [String(n) for (n, c) in pairs(eachcol(df)) if eltype(c) <: T]
 
 # _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))
@@ -477,7 +479,7 @@ where each row represents a variable and each column a summary statistic.
       `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
-    - A `name => function` pair where `name` is a `Symbol` or string. This will
+    - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
   to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
@@ -523,7 +525,7 @@ julia> describe(df, :min, :max)
 │ 2   │ x        │ 0.1 │ 1.0 │
 │ 3   │ y        │ 'a' │ 'j' │
 
-julia> describe(df, :min, :sum => sum)
+julia> describe(df, :min, sum => :sum)
 3×3 DataFrame
 │ Row │ variable │ min │ sum │
 │     │ Symbol   │ Any │ Any │
@@ -532,7 +534,7 @@ julia> describe(df, :min, :sum => sum)
 │ 2   │ x        │ 0.1 │ 5.5 │
 │ 3   │ y        │ 'a' │     │
 
-julia> describe(df, :min, :sum => sum, cols=:x)
+julia> describe(df, :min, sum => :sum, cols=:x)
 1×3 DataFrame
 │ Row │ variable │ min     │ sum     │
 │     │ Symbol   │ Float64 │ Float64 │
@@ -540,11 +542,16 @@ julia> describe(df, :min, :sum => sum, cols=:x)
 │ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-DataAPI.describe(df::AbstractDataFrame,
-                 stats::Union{Symbol, Pair{<:SymbolOrString}}...;
-                 cols=:) =
-    _describe(select(df, cols, copycols=false), collect(stats))
-
+function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,
+                          Pair{<:Base.Callable,<:SymbolOrString},
+                          Pair{<:SymbolOrString}}...; # TODO: remove after deprecation
+                 cols=:)
+    if any(x -> x isa Pair{<:SymbolOrString}, stats)
+        Base.depwarn("name => function order is deprecated; use function => name instead", :describe)
+    end
+    return _describe(select(df, cols, copycols=false),
+                     Any[s isa Pair{<:SymbolOrString} ? last(s) => first(s) : s for s in stats])
+end
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
               [:mean, :min, :median, :max, :nmissing, :eltype])
@@ -567,9 +574,9 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
     end
 
-    custom_funs = Pair[Symbol(s[1]) => s[2] for s in stats if s isa Pair]
+    custom_funs = Pair[s[1] => Symbol(s[2]) for s in stats if s isa Pair]
 
-    ordered_names = [s isa Symbol ? s : Symbol(first(s)) for s in stats]
+    ordered_names = [s isa Symbol ? s : Symbol(last(s)) for s in stats]
 
     if !allunique(ordered_names)
         df_ord_names = DataFrame(ordered_names = ordered_names)
@@ -664,7 +671,7 @@ end
 
 function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
     for stat in stats
-        d[stat[1]] = try stat[2](col) catch end
+        d[stat[2]] = try stat[1](col) catch end
     end
 end
 
@@ -1736,85 +1743,6 @@ function Missings.allowmissing(df::AbstractDataFrame,
         end
     end
     return DataFrame(newcols, _names(df), copycols=false)
-end
-
-"""
-    categorical(df::AbstractDataFrame, cols=Union{AbstractString, Missing};
-                compress::Bool=false)
-
-Return a copy of data frame `df` with columns `cols` converted to `CategoricalVector`.
-
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
-or a `Type`.
-
-If `categorical` is called with the `cols` argument being a `Type`, then
-all columns whose element type is a subtype of this type
-(by default `Union{AbstractString, Missing}`) will be converted to categorical.
-
-If the `compress` keyword argument is set to `true` then the created
-`CategoricalVector`s will be compressed.
-
-All created `CategoricalVector`s are unordered.
-
-**Examples**
-
-```jldoctest
-julia> df = DataFrame(a=[1,2], b=["a","b"])
-2×2 DataFrame
-│ Row │ a     │ b      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ a      │
-│ 2   │ 2     │ b      │
-
-julia> categorical(df)
-2×2 DataFrame
-│ Row │ a     │ b    │
-│     │ Int64 │ Cat… │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ a    │
-│ 2   │ 2     │ b    │
-
-julia> categorical(df, :)
-2×2 DataFrame
-│ Row │ a    │ b    │
-│     │ Cat… │ Cat… │
-├─────┼──────┼──────┤
-│ 1   │ 1    │ a    │
-│ 2   │ 2    │ b    │
-```
-"""
-function CategoricalArrays.categorical(df::AbstractDataFrame,
-                                       cols::Union{ColumnIndex, MultiColumnIndex};
-                                       compress::Bool=false)
-    idxcols = Set(index(df)[cols])
-    newcols = AbstractVector[]
-    for i in axes(df, 2)
-        x = df[!, i]
-        if i in idxcols
-            # categorical always copies
-            push!(newcols, categorical(x, compress=compress))
-        else
-            push!(newcols, copy(x))
-        end
-    end
-    DataFrame(newcols, _names(df), copycols=false)
-end
-
-function CategoricalArrays.categorical(df::AbstractDataFrame,
-                                       cols::Type=Union{AbstractString, Missing};
-                                       compress::Bool=false)
-    newcols = AbstractVector[]
-    for i in axes(df, 2)
-        x = df[!, i]
-        if eltype(x) <: cols
-            # categorical always copies
-            push!(newcols, categorical(x, compress=compress))
-        else
-            push!(newcols, copy(x))
-        end
-    end
-    DataFrame(newcols, _names(df), copycols=false)
 end
 
 """

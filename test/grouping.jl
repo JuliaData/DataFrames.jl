@@ -1,6 +1,6 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
@@ -1371,6 +1371,16 @@ end
         @test gd[NamedTuple(key)] ≅ gd[i]
         # Plain tuple
         @test gd[Tuple(key)] ≅ gd[i]
+        # Dict with `Symbol` keys
+        @test gd[Dict(key)] ≅ gd[i]
+        # Dict with string keys
+        @test gd[Dict([String(k) => v for (k, v) in pairs(key)]...)] ≅ gd[i]
+        # Dict with AbstractString keys
+        @test gd[Dict([Test.GenericString(String(k)) => v for (k, v)  in pairs(key)]...)] ≅ gd[i]
+        # Out of order Dict
+        @test gd[Dict([k => v for (k, v) in Iterators.reverse(pairs(key))]...)] ≅ gd[i]
+        # AbstractDict
+        @test gd[Test.GenericDict(Dict(key))] ≅ gd[i]
     end
 
     # Equivalent value of different type
@@ -1378,22 +1388,36 @@ end
 
     @test get(gd, (a=:A, b=1), nothing) ≅ gd[1]
     @test get(gd, (a=:A, b=3), nothing) == nothing
+    @test get(gd, (:A, 1), nothing) ≅ gd[1]
+    @test get(gd, (:A, 3), nothing) == nothing
+    @test get(gd, first(keys(gd)), gd) ≅ gd[1]
+    @test get(gd, Dict("a" => :A, "b" => 1), nothing) ≅ gd[1]
+    @test get(gd, Dict(:a => :A, :b => 1), nothing) ≅ gd[1]
+    @test get(gd, Dict(:b => 1, :a => :A), nothing) ≅ gd[1]
+    @test get(gd, Dict(:a => :A, :b => 3), nothing) == nothing
 
     # Wrong values
     @test_throws KeyError gd[(a=:A, b=3)]
     @test_throws KeyError gd[(:A, 3)]
     @test_throws KeyError gd[(a=:A, b="1")]
+    @test_throws KeyError gd[Dict(:a => :A, :b => "1")]
     # Wrong length
     @test_throws KeyError gd[(a=:A,)]
     @test_throws KeyError gd[(:A,)]
     @test_throws KeyError gd[(a=:A, b=1, c=1)]
     @test_throws KeyError gd[(:A, 1, 1)]
+    @test_throws KeyError gd[Dict(:a => :A, :b => 1, :c => 2)]
     # Out of order
     @test_throws KeyError gd[(b=1, a=:A)]
     @test_throws KeyError gd[(1, :A)]
     # Empty
     @test_throws KeyError gd[()]
     @test_throws KeyError gd[NamedTuple()]
+    @test_throws KeyError gd[Dict{String, Any}()]
+
+    # Bad Dict types
+    @test_throws ArgumentError gd[Dict()]
+    @test_throws ArgumentError gd[Dict(1 => :A, 2 => 1)]
 end
 
 @testset "GroupKey and GroupKeys" begin
@@ -1524,7 +1548,7 @@ end
         gkeys = keys(gd)[ints]
 
         # Test with GroupKeys, Tuples, and NamedTuples
-        for converter in [identity, Tuple, NamedTuple]
+        for converter in [identity, Tuple, NamedTuple, Dict]
             a = converter.(gkeys)
             @test gd[a] ≅ gd2
 
@@ -2813,6 +2837,31 @@ end
             @test_throws Union{ArgumentError, MethodError} combine(gdf, :x => (x -> fun(x)) => :y)
         end
     end
+end
+
+@testset "renamecols=false tests" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    gdf = groupby_checked(df, :a)
+
+    @test select(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test_throws ArgumentError select(gdf, [] => () -> 10, renamecols=false)
+    @test transform(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+    @test combine(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test combine([:a, :b] => +, gdf, renamecols=false) == DataFrame(a=1:3, a_b=5:2:9)
+    @test combine(identity, gdf, renamecols=false) == df
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    gdf = groupby_checked(df, :a)
+    @test select!(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    gdf = groupby_checked(df, :a)
+    @test transform!(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
 end
 
 end # module

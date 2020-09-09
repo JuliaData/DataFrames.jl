@@ -1,28 +1,30 @@
 module TestIO
 
-using Test, DataFrames, CategoricalArrays, Dates
+using Test, DataFrames, CategoricalArrays, Dates, Markdown
 
 # Test LaTeX export
 @testset "LaTeX export" begin
-    df = DataFrame(A = 1:4,
+    df = DataFrame(A = Int64.( 1:4 ),
                 B = ["\$10.0", "M&F", "A~B", "\\alpha"],
                 C = ["A", "B", "C", "S"],
                 D = [1.0, 2.0, missing, 3.0],
                 E = CategoricalArray(["a", missing, "c", "d"]),
-                F = Vector{String}(undef, 4)
+                F = Vector{String}(undef, 4),
+                G = [ md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)", md"###A", md"``\frac{A}{B}``", md"*A*b**A**"]
                 )
     str = """
-        \\begin{tabular}{r|cccccc}
-        \t& A & B & C & D & E & F\\\\
+        \\begin{tabular}{r|ccccccc}
+        \t& A & B & C & D & E & F & G\\\\
         \t\\hline
-        \t& $(Int) & String & String & Float64? & Cat…? & String\\\\
+        \t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\
         \t\\hline
-        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} \\\\
-        \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} \\\\
-        \t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} \\\\
-        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} \\\\
+        \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl} \\\\
+        \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A \\\\
+        \t3 & 3 & A\\textasciitilde{}B & C & \\emph{missing} & c & \\emph{\\#undef} & \$\\frac{A}{B}\$ \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & S & 3.0 & d & \\emph{\\#undef} & \\emph{A}b\\textbf{A} \\\\
         \\end{tabular}
         """
+
     @test repr(MIME("text/latex"), df) == str
     @test repr(MIME("text/latex"), eachcol(df)) == str
     @test repr(MIME("text/latex"), eachrow(df)) == str
@@ -130,6 +132,27 @@ end
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2)), rowid=10)
+
+    df = DataFrame(
+        A=Int64[1,4,9,16],
+        B = [
+            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"###A",
+            md"``\frac{A}{B}``",
+            md"*A*b**A**" ]
+    )
+
+    @test repr(MIME("text/html"), df) ==
+        "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
+        "<th>Int64</th><th>MD…</th></tr></thead><tbody><p>4 rows × 2 columns</p><tr><th>1</th>" *
+        "<td>1</td><td><div class=\"markdown\">" *
+        "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a>" *
+        "</p>\n</div></td></tr><tr><th>2</th><td>4</td><td><div class=\"markdown\">" *
+        "<p>###A</p>\n</div></td></tr><tr><th>3</th><td>9</td><td><div class=\"markdown\">" *
+        "<p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>\n</div></td></tr><tr><th>4</th>" *
+        "<td>16</td><td><div class=\"markdown\"><p><em>A</em>b<strong>A</strong></p>"*
+        "\n</div></td></tr></tbody></table>"
+
 end
 
 # test limit attribute of IOContext is used
@@ -157,9 +180,9 @@ end
     @test sprint(DataFrames.printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
-        1,"'a'","A","a","A","1",missing,missing
-        2,"'b'","B","b","B","2",missing,missing
-        3,"'c'","C","c",missing,"3",missing,missing
+        1,"a","A","a","A","1",missing,missing
+        2,"b","B","b","B","2",missing,missing
+        3,"c","C","c",missing,"3",missing,missing
         """
 end
 
@@ -178,6 +201,101 @@ end
         2\t2.0
         """
     end
+end
+
+@testset "Markdown as text/plain and as text/csv" begin
+    df = DataFrame(
+        A=Int64[1,4,9,16,25,36,49,64],
+        B = [
+            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"``\frac{x^2}{x^2+y^2}``",
+            md"# Header",
+            md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
+            md"",
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3"),
+            Markdown.parse("∫αγ∞1∫αγ∞\n"*
+                           "  * 2∫αγ∞3∫αγ∞4\n"*
+                           "  * ∫αγ∞5∫αγ\n"*
+                           "  * ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\n"*
+                           "  * γ∞1∫α\n"*
+                           "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+        ]
+    )
+    @test sprint(show, "text/plain", df) == """
+        8×2 DataFrame
+        │ Row │ A     │ B                                 │
+        │     │ Int64 │ Markdown.MD                       │
+        ├─────┼───────┼───────────────────────────────────┤
+        │ 1   │ 1     │ [DataFrames.jl](http://juliadata… │
+        │ 2   │ 4     │ \$\\frac{x^2}{x^2+y^2}\$             │
+        │ 3   │ 9     │ # Header                          │
+        │ 4   │ 16    │ This is *very*, **very**, very, … │
+        │ 5   │ 25    │                                   │
+        │ 6   │ 36    │ ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫α… │
+        │ 7   │ 49    │ ∫αγ∞1∫αγ∞…                        │
+        │ 8   │ 64    │ ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫α… │"""
+
+    @test sprint(show, "text/csv", df) ==
+        """
+        \"A\",\"B\"
+        1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
+        4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
+        9,\"# Header\"
+        16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"
+        25,\"\"
+        36,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3\"
+        49,\"∫αγ∞1∫αγ∞\\n\\n  * 2∫αγ∞3∫αγ∞4\\n  * ∫αγ∞5∫αγ\\n  * ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+        64,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\\n\\n  * γ∞1∫α\\n  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0\"
+        """
+end
+
+@testset "Markdown as HTML" begin
+    df = DataFrame(
+        A=Int64[1,4,9,16,25,36,49,64],
+        B = [
+            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"``\frac{x^2}{x^2+y^2}``",
+            md"# Header",
+            md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
+            md"",
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0" *
+                           "∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ\n"*
+                           "  * ∞7∫αγ\n"*
+                           "  * ∞8∫αγ\n"*
+                           "  * ∞9∫αγ∞0∫α\nγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+            Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α\n"*
+                           "  * γ∞1∫α\n"*
+                           "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
+        ]
+    )
+    @test sprint(show,"text/html",df) ==
+        "<table class=\"data-frame\"><thead>" *
+            "<tr><th></th><th>A</th><th>B</th></tr>" *
+            "<tr><th></th><th>Int64</th><th>MD…</th></tr>" *
+        "</thead>" *
+        "<tbody>" * "<p>8 rows × 2 columns</p>" *
+        "<tr><th>1</th><td>1</td><td><div class=\"markdown\">" *
+            "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
+        "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>\n</div></td></tr>" *
+        "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><h1>Header</h1>\n</div></td></tr>" *
+        "<tr><th>4</th><td>16</td><td><div class=\"markdown\">" *
+            "<p>This is <em>very</em>, <strong>very</strong>, very, very, very, very, very, very, very long line</p>\n" *
+        "</div></td></tr>" *
+        "<tr><th>5</th><td>25</td><td><div class=\"markdown\"></div></td></tr>" *
+        "<tr><th>6</th><td>36</td><td><div class=\"markdown\">" *
+            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n" *
+        "</div></td></tr>" *
+        "<tr><th>7</th><td>49</td><td><div class=\"markdown\">" *
+            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ</p>\n<ul>\n<li><p>∞7∫αγ</p>\n</li>\n<li><p>∞8∫αγ</p>\n</li>\n<li><p>∞9∫αγ∞0∫α</p>\n</li>\n</ul>\n<p>γ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n" *
+        "</div></td></tr>" *
+        "<tr><th>8</th><td>64</td><td><div class=\"markdown\">" *
+            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α</p>" *
+            "\n<ul>\n" *
+                "<li><p>γ∞1∫α</p>\n</li>\n" *
+                "<li><p>γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n</li>\n" *
+        "</ul>\n" * "</div></td></tr></tbody></table>"
 end
 
 @testset "empty data frame and DataFrameRow" begin
@@ -413,18 +531,18 @@ end
 
     @test str == """
     9×2 DataFrame
-    │ Row │ A     │ B                                              │
-    │     │ Int64 │ Any                                            │
-    ├─────┼───────┼────────────────────────────────────────────────┤
-    │ 1   │ 1     │ 9×2 DataFrame                                  │
-    │ 2   │ 2     │ 2-element DataFrameRow                         │
-    │ 3   │ 3     │ 1×2 SubDataFrame                               │
-    │ 4   │ 4     │ 9-element DataFrameRows                        │
-    │ 5   │ 5     │ 2-element DataFrameColumns                     │
-    │ 6   │ 6     │ GroupedDataFrame with 9 groups based on key: A │
-    │ 7   │ 7     │ missing                                        │
-    │ 8   │ 8     │                                                │
-    │ 9   │ 9     │ #undef                                         │"""
+    │ Row │ A     │ B                                 │
+    │     │ Int64 │ Any                               │
+    ├─────┼───────┼───────────────────────────────────┤
+    │ 1   │ 1     │ 9×2 DataFrame                     │
+    │ 2   │ 2     │ 2-element DataFrameRow            │
+    │ 3   │ 3     │ 1×2 SubDataFrame                  │
+    │ 4   │ 4     │ 9-element DataFrameRows           │
+    │ 5   │ 5     │ 2-element DataFrameColumns        │
+    │ 6   │ 6     │ GroupedDataFrame with 9 groups b… │
+    │ 7   │ 7     │ missing                           │
+    │ 8   │ 8     │                                   │
+    │ 9   │ 9     │ #undef                            │"""
 
 
     io = IOBuffer()
@@ -432,18 +550,18 @@ end
     str = String(take!(io))
     @test str == """
     9×2 DataFrame
-    │ Row │ A     │ B                                              │
-    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                                            │
-    ├─────┼───────┼────────────────────────────────────────────────┤
-    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                                  │
-    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m                         │
-    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                               │
-    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m                        │
-    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m                     │
-    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups based on key: A\e[39m │
-    │ 7   │ 7     │ \e[90mmissing\e[39m                                        │
-    │ 8   │ 8     │                                                │
-    │ 9   │ 9     │ \e[90m#undef\e[39m                                         │"""
+    │ Row │ A     │ B                                 │
+    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                               │
+    ├─────┼───────┼───────────────────────────────────┤
+    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                     │
+    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m            │
+    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                  │
+    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m           │
+    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m        │
+    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups b…\e[39m │
+    │ 7   │ 7     │ \e[90mmissing\e[39m                           │
+    │ 8   │ 8     │                                   │
+    │ 9   │ 9     │ \e[90m#undef\e[39m                            │"""
 
 
     io = IOBuffer()
@@ -486,35 +604,143 @@ end
     @test_throws UndefRefError show(io, MIME("text/csv"), df)
     @test_throws UndefRefError show(io, MIME("text/tab-separated-values"), df)
 
+    df[end, 2] = "\""
+    push!(df, (10, Symbol("\"")))
+    push!(df, (11, '"'))
     io = IOBuffer()
-    show(io, MIME("text/csv"), df[1:end-1, :])
+    show(io, MIME("text/csv"), df)
     str = String(take!(io))
     @test str == """
     "A","B"
-    1,"9×2 DataFrame"
+    1,"11×2 DataFrame"
     2,"2-element DataFrameRow"
     3,"1×2 SubDataFrame"
-    4,"9-element DataFrameRows"
+    4,"11-element DataFrameRows"
     5,"2-element DataFrameColumns"
     6,"GroupedDataFrame with 9 groups based on key: A"
     7,missing
     8,nothing
+    9,"\\""
+    10,"\\""
+    11,"\\""
     """
 
     io = IOBuffer()
-    show(io, MIME("text/tab-separated-values"), df[1:end-1, :])
+    show(io, MIME("text/tab-separated-values"), df)
     str = String(take!(io))
     @test str == """
     "A"\t"B"
-    1\t"9×2 DataFrame"
+    1\t"11×2 DataFrame"
     2\t"2-element DataFrameRow"
     3\t"1×2 SubDataFrame"
-    4\t"9-element DataFrameRows"
+    4\t"11-element DataFrameRows"
     5\t"2-element DataFrameColumns"
     6\t"GroupedDataFrame with 9 groups based on key: A"
     7\tmissing
     8\tnothing
+    9\t"\\""
+    10\t"\\""
+    11\t"\\""
     """
+end
+
+@testset "check truncate keyword argument" begin
+    df = DataFrame(x = "0123456789"^10)
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/html"), df)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
+                 "<tr><th></th><th>String</th></tr></thead>" *
+                 "<tbody><p>1 rows × 1 columns</p><tr><th>1</th>" *
+                 "<td>01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789</td>"*
+                 "</tr></tbody></table>"
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/latex"), df)
+    str = String(take!(io))
+    @test str == """
+    \\begin{tabular}{r|c}
+    \t& x\\\\
+    \t\\hline
+    \t& String\\\\
+    \t\\hline
+    \t1 & 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 \\\\
+    \\end{tabular}
+    """
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/csv"), df)
+    str = String(take!(io))
+    @test str == "\"x\"\n\"01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789\"\n"
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/tab-separated-values"), df)
+    str = String(take!(io))
+    @test str == "\"x\"\n\"01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789\"\n"
+
+    # default truncation
+    io = IOBuffer()
+    show(io, MIME("text/plain"), df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    # no truncation
+    io = IOBuffer()
+    show(io, df, truncate=0)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                                                                                    │
+    │     │ String                                                                                               │
+    ├─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 1   │ 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 │"""
+
+    # custom truncation
+    io = IOBuffer()
+    show(io, df, truncate=1)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x      │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ 0…     │"""
+
+
+    df = DataFrame(x12345678901234567890 = "0123456789"^10)
+    io = IOBuffer()
+    show(io, df, truncate=1, rowlabel=:r12345678901234567890)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ r12345678901234567890 │ x12345678901234567890 │
+    │                       │ String                │
+    ├───────────────────────┼───────────────────────┤
+    │ 1                     │ 0…                    │"""
+
 end
 
 end # module

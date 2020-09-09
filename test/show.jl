@@ -500,4 +500,49 @@ end
     │ 1   │ 1:2      │"""
 end
 
+@testset "wide output and column trimming" begin
+    df = DataFrame(x = "0123456789"^4)
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    io = IOContext(IOBuffer(), :displaysize=>(10,10), :limit=>true)
+    show(io, df)
+    str = String(take!(io.io))
+    @test str === "1×1 DataFrame. Omitted printing of all columns as they do not fit the display size"
+
+    df = DataFrame(x = "0123456789"^4, y = "0123456789"^4)
+    io = IOContext(IOBuffer(), :displaysize=>(10,10), :limit=>true)
+    show(io, df, splitcols=true, allcols=true)
+    str = String(take!(io.io))
+    @test str === """
+    1×2 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │
+
+    │ Row │ y                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    df = DataFrame(x = "😄"^20)
+        io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str === """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 😄😄😄😄😄😄😄😄😄😄😄😄😄😄😄😄… │"""
+end
+
 end # module

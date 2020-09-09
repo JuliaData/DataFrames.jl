@@ -1,6 +1,6 @@
 module TestData
 
-using Test, DataFrames, Random, Statistics
+using Test, DataFrames, Random, Statistics, CategoricalArrays
 const ≅ = isequal
 
 @testset "constructors" begin
