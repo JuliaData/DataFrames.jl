@@ -64,6 +64,9 @@
   keyword argument that makes it possible to avoid adding transformation function name
   as a suffix in automatically generated column names
   ([#2397](https://github.com/JuliaData/DataFrames.jl/pull/2397))
+* `filter`, `sort`, `dropmissing`, and `unique` now support a `view` keyword argument
+  which if set to `true` makes them retun a `SubDataFrame` view into the passed
+  data frame.
 
 ## Deprecated
 
