@@ -25,6 +25,7 @@ df = pd.DataFrame({'grp': [1, 2, 1, 2, 1, 2],
                    'y': range(4, 10),
                    'z': [3, 4, 5, 6, 7, None]},
                    index = list('abcdef'))
+df2 = pd.DataFrame({'grp': [1, 3], 'w': [10, 11]})
 ```
 
 Because pandas supports multi-index, this example data frame is set up with `a` to `f`
@@ -126,9 +127,8 @@ julia> combine(groupby(df, :grp), :x => mean)
 │ 2   │ 2     │ 3.0     │
 ```
 
-In DataFrames.jl, the `groupby` function returns a `GroupedDataFrame` object that
-contains a dictionary for efficient key lookups. Hence, it performs well
-when you need to perform lookups repeatedly.
+In DataFrames.jl, the `GroupedDataFrame` object that contains a dictionary for efficient key lookups.
+Hence, it performs well when you need to perform lookups repeatedly.
 
 ### More advanced commands
 
@@ -164,8 +164,9 @@ DataFrames.jl supports join operations similar to a relational database.
 
 For multi-column joins, both pandas and DataFrames.jl accept an array for the `on` keyword argument.
 
-In case of semi joins and anti joins, pandas would require the join keys to be constructed
-as a tuple whereas DataFrames.jl just works as usual.
+In the cases of semi joins and anti joins, pandas' `isin` function can still be used as long as
+the join keys are [combined in a tuple](https://stackoverflow.com/questions/63660610/how-to-perform-semi-join-with-multiple-columns-in-pandas).
+In DataFrames.jl, it just works normally with an array of join keys specified in the `on` keyword argument.
 
 ## Comparison with the R package dplyr
 
