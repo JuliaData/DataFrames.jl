@@ -67,6 +67,13 @@ integrated they are with DataFrames.jl.
     - [ScikitLearn.jl](https://cstjean.github.io/ScikitLearn.jl/stable/):
       A Julia wrapper around the full Python scikit-learn machine learning library.
       Not well integrated with DataFrames.jl, but can be combined using StatsModels.jl.
+    - [AutoMLPipeline](https://github.com/IBM/AutoMLPipeline.jl):
+      A package that makes it trivial to create complex ML 
+      pipeline structures using simple expressions. It leverages 
+      on the built-in macro programming features of Julia to 
+      symbolically process, manipulate pipeline expressions, 
+      and makes it easy to discover optimal structures for 
+      machine learning regression and classification.
     - Deep learning:
       [KNet.jl](https://denizyuret.github.io/Knet.jl/stable/tutorial/#Introduction-to-Knet-1)
       and [Flux.jl](https://github.com/FluxML/Flux.jl).
