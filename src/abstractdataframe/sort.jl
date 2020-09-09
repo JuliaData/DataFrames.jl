@@ -332,34 +332,12 @@ function Base.issorted(df::AbstractDataFrame, cols=[];
     end
 end
 
-# sort and sortperm functions
-
-for s in [:(Base.sort), :(Base.sortperm)]
-    @eval begin
-        function $s(df::AbstractDataFrame, cols=[];
-                    alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
-            if !(isa(by, Function) || eltype(by) <: Function)
-                msg = "'by' must be a Function or a vector of Functions. " *
-                      " Perhaps you wanted 'cols'."
-                throw(ArgumentError(msg))
-            end
-            # exclude AbstractVector as in that case cols can contain order(...) clauses
-            if cols isa MultiColumnIndex && !(cols isa AbstractVector)
-                cols = index(df)[cols]
-            end
-            ord = ordering(df, cols, lt, by, rev, order)
-            _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
-            return $s(df, _alg, ord)
-        end
-    end
-end
-
 """
     sort(df::AbstractDataFrame, cols;
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
-         rev::Bool=false, order::Ordering=Forward)
+         rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
-Return a copy of data frame `df` sorted by column(s) `cols`.
+Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
@@ -369,6 +347,10 @@ on the type of the sorting columns and on the number of rows in `df`.
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
+
+If `view=false` a freshly allocated `DataFrame` is returned.
+If `view=true` then a `SubDataFrame` view into `df` is returned.
+
 See [`sort!`](@ref) for a description of other keyword arguments.
 
 # Examples
@@ -424,7 +406,11 @@ julia> sort(df, [:x, order(:y, rev=true)])
 │ 4   │ 3     │ b      │
 ```
 """
-sort(::AbstractDataFrame, ::Any)
+@inline function Base.sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
+                           by=identity, rev=false, order=Forward, view::Bool=false)
+    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
 
 """
     sortperm(df::AbstractDataFrame, cols;
@@ -485,11 +471,23 @@ julia> sortperm(df, (:x, :y), rev=true)
   1
 ```
 """
-sortperm(::AbstractDataFrame, ::Any)
+function Base.sortperm(df::AbstractDataFrame, cols=[];
+                  alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
+    if !(isa(by, Function) || eltype(by) <: Function)
+        msg = "'by' must be a Function or a vector of Functions. " *
+              " Perhaps you wanted 'cols'."
+        throw(ArgumentError(msg))
+    end
+    # exclude AbstractVector as in that case cols can contain order(...) clauses
+    if cols isa MultiColumnIndex && !(cols isa AbstractVector)
+        cols = index(df)[cols]
+    end
+    ord = ordering(df, cols, lt, by, rev, order)
+    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
+    return _sortperm(df, _alg, ord)
+end
 
-Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
-    df[sortperm(df, a, o),:]
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) =
+_sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) =
     sort!([1:size(df, 1);], a, o)
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
+_sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
     sortperm(df, a, DFPerm(o,df))
