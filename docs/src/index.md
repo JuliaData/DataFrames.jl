@@ -19,8 +19,8 @@ especially for those  coming to Julia from R or Python.
 
 DataFrames.jl plays a central role in the Julia Data ecosystem, and has tight
 integrations with a range of different libraries. DataFrames.jl isn't the only
-tool for working with tabular data in Julia --- as noted below, there are some
-other great libraries for certain use-cases --- but it provides great data
+tool for working with tabular data in Julia -- as noted below, there are some
+other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
 ## DataFrames.jl and the Julia Data Ecosystem
