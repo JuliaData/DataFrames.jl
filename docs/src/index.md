@@ -68,7 +68,7 @@ integrated they are with DataFrames.jl.
       A Julia wrapper around the full Python scikit-learn machine learning library.
       Not well integrated with DataFrames.jl, but can be combined using StatsModels.jl.
     - [AutoMLPipeline](https://github.com/IBM/AutoMLPipeline.jl):
-      is a package that makes it trivial to create complex ML 
+      A package that makes it trivial to create complex ML 
       pipeline structures using simple expressions. It leverages 
       on the built-in macro programming features of Julia to 
       symbolically process, manipulate pipeline expressions, 
