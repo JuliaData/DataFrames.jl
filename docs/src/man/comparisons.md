@@ -8,7 +8,7 @@ A sample data set can be created using the following code:
 using DataFrames
 using Statistics
 
-df = DataFrame(id = 'a':'f', grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing])
+df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id = 'a':'f')
 df2 = DataFrame(grp = [1, 3], w = [10, 11])
 ```
 
