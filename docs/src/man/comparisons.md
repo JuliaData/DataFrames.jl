@@ -169,7 +169,7 @@ DataFrames.jl supports join operations similar to a relational database.
 
 For multi-column joins, both pandas and DataFrames.jl accept an array for the `on` keyword argument.
 
-In the cases of semi joins and anti joins, pandas' `isin` function can still be used as long as
+In the cases of semi joins and anti joins, the `isin` function in pandas can still be used as long as
 the join keys are [combined in a tuple](https://stackoverflow.com/questions/63660610/how-to-perform-semi-join-with-multiple-columns-in-pandas).
 In DataFrames.jl, it just works normally with an array of join keys specified in the `on` keyword argument.
 
