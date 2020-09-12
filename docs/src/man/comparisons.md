@@ -47,8 +47,8 @@ as row indices rather than a separate `id` column.
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index. Likewise, the `begin` keyword can be used to indicate the first index.
 
-In addition, the `findfirst` function is used to find the first match and return the result
-as a single `DataFrameRow` object. In the case that `id` is not unique, you can use the `findall` function
+In addition, when indexing a data frame with the `findfirst` function, a single
+`DataFrameRow` object is returned. In the case that `id` is not unique, you can use the `findall` function
 or boolean indexing instead. It would then return a `DataFrame` object containing all matched rows. The following
 two lines of code are functionally equivalent:
 
