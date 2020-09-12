@@ -45,7 +45,7 @@ as row indices rather than a separate `id` column.
 | Mixed indexing             | `df.loc['c'][1]`       | `df[findfirst(==('c'), df.id), 2]` |
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
-indicate the last index.
+indicate the last index. Likewise, the `begin` keyword can be used to indicate the first index.
 
 In addition, the `findfirst` function is used to find the first match and return the result
 as a single `DataFrameRow` object. In the case that `id` is not unique, you can use the `findall` function
