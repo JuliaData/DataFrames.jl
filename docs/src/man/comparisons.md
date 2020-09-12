@@ -78,8 +78,8 @@ rows having the index value of `'c'`.
 |                          | `df.sort_values(by = ['grp', 'x'], ascending = [True, False])` | `sort(df, [:grp, order(:x, rev = true)])`   |
 
 Note that pandas skips `NaN` values in its analytic functions by default. By contrast,
-Julia functions do not skip `NaN`'s for safety reasons. If necessary, you can filter out
-the `NaN`'s before processing, for example, `mean(Iterators.filter(!isnan, x))`
+Julia functions do not skip `NaN`'s. If necessary, you can filter out
+the `NaN`'s before processing, for example, `mean(Iterators.filter(!isnan, x))`.
 
 Pandas uses `NaN` for representing both missing data and the floating point "not a number" value.
 Julia defines a special value `missing` for representing missing data. DataFrames.jl respects
@@ -89,7 +89,9 @@ See the [Missing Data](@ref) section for more information.
 
 In addition, pandas keeps the original column name after applying a function.
 DataFrames.jl appends a suffix to the column name by default. To keep it simple, the
-examples above do not synchronize the column names between pandas and DataFrames.jl.
+examples above do not synchronize the column names between pandas and DataFrames.jl
+(you can pass `renamecols=false` keyword argument to `select`, `transform` and
+`combine` functions to retain old column names).
 
 ### Grouping data and aggregation
 
@@ -129,7 +131,7 @@ julia> combine(groupby(df, :grp), :x => mean)
 │ 2   │ 2     │ 3.0     │
 ```
 
-In DataFrames.jl, the `GroupedDataFrame` object that contains a dictionary for efficient key lookups.
+In DataFrames.jl, the `GroupedDataFrame` object supports an efficient key lookup.
 Hence, it performs well when you need to perform lookups repeatedly.
 
 ### More advanced commands
@@ -149,7 +151,8 @@ This section includes more complex examples.
 | DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)` |
 
 Note that pandas preserves the same row order after `groupby` whereas DataFrames.jl
-shows them grouped by the provided keys.
+shows them grouped by the provided keys after the `combine` operation,
+but `select` and `transform` retain an original row ordering.
 
 ### Joining data frames
 
