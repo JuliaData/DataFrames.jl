@@ -34,7 +34,7 @@ as row indices rather than a separate `id` column.
 ### Accessing data
 
 | Operation                  | pandas                 | DataFrames.jl                      |
-|----------------------------|------------------------|------------------------------------|
+|:---------------------------|:-----------------------|:-----------------------------------|
 | Cell indexing by location  | `df.iloc[1, 1]`        | `df[2, 2]`                         |
 | Row slicing by location    | `df.iloc[1:3]`         | `df[2:3, :]`                       |
 | Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`                     |
@@ -65,7 +65,7 @@ rows having the index value of `'c'`.
 ### Common operations
 
 | Operation                | pandas                                                         | DataFrames.jl                               |
-|--------------------------|----------------------------------------------------------------|---------------------------------------------|
+|:-------------------------|:---------------------------------------------------------------|:--------------------------------------------|
 | Reduce multiple values   | `df['z'].mean(skipna = False)`                                 | `mean(df.z)`                                |
 |                          | `df['z'].mean()`                                               | `mean(skipmissing(df.z))`                   |
 |                          | `df[['z']].agg(['mean'])`                                      | `combine(df, :z => mean ∘ skipmissing)`     |
@@ -101,7 +101,7 @@ which may be processed using the `combine`, `transform`, or `select` functions.
 The following table illustrates some common grouping and aggregation usages.
 
 | Operation                       | pandas                                                                                | DataFrames.jl                                        |
-|---------------------------------|---------------------------------------------------------------------------------------|------------------------------------------------------|
+|:--------------------------------|:--------------------------------------------------------------------------------------|:-----------------------------------------------------|
 | Aggregate by groups             | `df.groupby('grp')['x'].mean()`                                                       | `combine(groupby(df, :grp), :x => mean)`             |
 | Rename column after aggregation | `df.groupby('grp')['x'].mean().rename("my_mean")`                                     | `combine(groupby(df, :grp), :x => mean => :my_mean)` |
 | Add aggregated data as column   | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                   | `transform(groupby(df, :grp), :x => mean)`           |
@@ -139,7 +139,7 @@ Hence, it performs well when you need to perform lookups repeatedly.
 This section includes more complex examples.
 
 | Operation                              | pandas                                                                       | DataFrames.jl                                             |
-|----------------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------|
+|:---------------------------------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------|
 | Complex Function                       | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`       |
 | Aggregate multiple columns             | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`               |
 |                                        | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                          |
