@@ -34,7 +34,7 @@ Unlike `show`, render strings without surrounding quote marks.
 `truncstring` indicates the approximate number of text characters width to truncate
 the output (if it is a non-positive value then no truncation is applied).
 """
-function ourshow(io::IO, x::Any, truncstring::Int; styled::Bool=false)
+function ourshow(io::IO, x::T, truncstring::Int; styled::Bool=false) where T
     io_ctx = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
 
     # This mirrors the behavior of Base.print_matrix_row
@@ -47,7 +47,13 @@ function ourshow(io::IO, x::Any, truncstring::Int; styled::Bool=false)
     end
 
     # strings should have " stripped here
-    if x isa AbstractString
+    # assume that if module of T is CategoricalArrays its name is CategoricalValue
+    # and its first parameter is # a subtype of AbstractString then T is
+    # an instance of CategoricalValue from CategoricalArrays.jl wrapping a string
+    if x isa AbstractString || (hasproperty(T, :name) &&
+                                nameof(T.name.module) === :CategoricalArrays &&
+                                T.name.name === :CategoricalValue &&
+                                T.parameters[1] <: AbstractString)
         @assert sx[1] == sx[end] == '"'
         sx = escape_string(chop(sx, head=1, tail=1), "")
     end
@@ -66,8 +72,8 @@ const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
 
 ourshow(io::IO, x::AbstractString, truncstring::Int) =
     escape_string(io, truncatestring(x, truncstring), "")
-ourshow(io::IO, x::CategoricalValue{<:AbstractString}, truncstring::Int) =
-    ourshow(io, get(x), truncstring)
+# ourshow(io::IO, x::CategoricalValue{<:AbstractString}, truncstring::Int) =
+#     ourshow(io, get(x), truncstring)
 ourshow(io::IO, x::Symbol, truncstring::Int) = ourshow(io, string(x), truncstring)
 ourshow(io::IO, x::Nothing, truncstring::Int; styled::Bool=false) =
     ourshow(io, "", styled=styled, truncstring)
@@ -113,7 +119,11 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
 
     maxwidth -= 1 # we will add "…" at the end
 
-    if T <: CategoricalValue
+    # assume that if module of T is CategoricalArrays its name is CategoricalValue
+    # the T is an instance of CategoricalValue from CategoricalArrays.jl
+    if hasproperty(T, :name) &&
+        nameof(T.name.module) === :CategoricalArrays &&
+        T.name.name === :CategoricalValue
         sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix
