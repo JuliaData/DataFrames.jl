@@ -12,6 +12,7 @@
 function _pretty_table(io::IO, df::AbstractDataFrame;
                        allrows::Bool = !get(io, :limit, false),
                        allcols::Bool = !get(io, :limit, false),
+                       rowlabel::Symbol = :Row,
                        summary::Bool = true,
                        eltypes::Bool = true,
                        rowid=nothing,
@@ -54,6 +55,7 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
                      vcat(names,types);
                      crop = crop,
                      nosubheader = !eltypes,
+                     row_number_column_title = string(rowlabel),
                      nt...)
     catch
         @warn """An unsupported argument was passed to PrettyTables.jl.
@@ -68,6 +70,7 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
                      crop = crop,
                      maximum_columns_width = truncstring,
                      nosubheader = !eltypes,
+                     row_number_column_title = string(rowlabel),
                      nt_sc...)
     end
 end

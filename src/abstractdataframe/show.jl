@@ -587,6 +587,7 @@ function _show(io::IO,
         _pretty_table(io, df;
                       allrows     = allrows,
                       allcols     = allcols,
+                      rowlabel    = rowlabel,
                       summary     = summary,
                       eltypes     = eltypes,
                       truncstring = truncstring,
@@ -745,7 +746,7 @@ Use PrettyTables.jl backend to print tables.
 The default printing options can be passed to `kwargs...`. Any option supported
 by PrettyTables.jl can be configured here with the following exception:
 
-    crop, maximum_columns_width, nosubheader
+    crop, maximum_columns_width, nosubheader, row_number_column_title
 
 which are configured based on the options available in the function `show`.
 
