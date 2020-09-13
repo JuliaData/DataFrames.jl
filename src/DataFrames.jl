@@ -60,6 +60,8 @@ export AbstractDataFrame,
        rownumber,
        select!,
        select,
+       setdisplay_prettytables,
+       setdisplay_traditional,
        semijoin,
        stack,
        transform,
@@ -115,6 +117,7 @@ include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
 include("abstractdataframe/io.jl")
+include("abstractdataframe/prettytables.jl")
 
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")

@@ -53,9 +53,11 @@ Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame;
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          kwargs...) =
     show(io, df, allrows=allrows, allcols=allcols,
-         splitcols=splitcols, rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+         splitcols=splitcols, rowlabel=rowlabel, summary=summary,
+         eltypes=eltypes, kwargs...)
 
 ##############################################################################
 #

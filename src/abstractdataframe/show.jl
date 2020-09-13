@@ -578,8 +578,21 @@ function _show(io::IO,
                summary::Bool = true,
                eltypes::Bool = true,
                rowid=nothing,
-               truncstring::Int)
+               truncstring::Int,
+               kwargs...)
     _check_consistency(df)
+
+    # Check which backend must be used to print the DataFrame.
+    if _display_backend[1] == :pretty_tables
+        _pretty_table(io, df;
+                      allrows     = allrows,
+                      allcols     = allcols,
+                      summary     = summary,
+                      eltypes     = eltypes,
+                      truncstring = truncstring,
+                      kwargs...)
+        return
+    end
 
     # we will pass around this buffer to avoid its reallocation in ourstrwidth
     buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
@@ -677,9 +690,11 @@ Base.show(io::IO,
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncstring=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    _show(io, df; allrows=allrows, allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=summary, eltypes=eltypes,
+          truncstring=truncate, kwargs...)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
@@ -688,7 +703,89 @@ Base.show(df::AbstractDataFrame;
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, df,
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, df;
          allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate,
+         kwargs...)
+
+################################################################################
+#                              Backend selection
+################################################################################
+
+# This variable holds which backend must be used when printing tables.
+const _display_backend = [:traditional]
+
+# This dictionary stores the configuration of PrettyTables.jl parameters used to
+# print the tables.
+const _pretty_tables_conf = Dict{Symbol,Any}()
+
+# This dictionary stores the safe configuration of PrettyTables.jl that cannot
+# be modified by the user. It is used as a fallback if an unsupported argument
+# is passed to `pretty_table(...)` avoiding breaking the printing system.
+const _pretty_tables_safeconf = Dict{Symbol,Any}()
+
+"""
+    setdisplay_traditional()
+
+Use the traditional system to print tables.
+
+"""
+function setdisplay_traditional()
+    _display_backend[1] = :traditional
+    return nothing
+end
+
+"""
+    setdisplay_prettytables(kwargs...)
+
+Use PrettyTables.jl backend to print tables.
+
+The default printing options can be passed to `kwargs...`. Any option supported
+by PrettyTables.jl can be configured here with the following exception:
+
+    crop, maximum_columns_width, nosubheader
+
+which are configured based on the options available in the function `show`.
+
+"""
+function setdisplay_prettytables(;kwargs...)
+
+    # Here we load PrettyTables on-demand to avoid increasing the loading time
+    # of DataFrames.
+    @eval DataFrames begin
+        using PrettyTables
+
+        # NOTE: This default highlighter can only be defined here because it
+        # depends on Crayons.jl that is only loaded when this function is
+        # called.
+        _df_h = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
+    end
+
+    _display_backend[1] = :pretty_tables
+
+    # Set the default options.
+    empty!(_pretty_tables_safeconf)
+    _pretty_tables_safeconf[:alignment] = :l
+    _pretty_tables_safeconf[:continuation_row_alignment] = :l
+    _pretty_tables_safeconf[:crop_num_lines_at_beginning] = 2
+    _pretty_tables_safeconf[:formatters] = (_df_f,)
+    _pretty_tables_safeconf[:highlighters] = (_df_h,)
+    _pretty_tables_safeconf[:newline_at_end] = false
+    _pretty_tables_safeconf[:row_number_alignment] = :l
+    _pretty_tables_safeconf[:show_row_number] = true
+    _pretty_tables_safeconf[:vlines] = [1]
+    _pretty_tables_safeconf[:tf] = dataframe
+
+    empty!(_pretty_tables_conf)
+    copy!(_pretty_tables_conf, _pretty_tables_safeconf)
+
+    # Now override the default options and add the new configurations provided
+    # by the user.
+    for kw in kwargs
+        _pretty_tables_conf[kw[1]] = kw[2]
+    end
+
+    return nothing
+end
