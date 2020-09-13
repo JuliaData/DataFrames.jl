@@ -787,5 +787,11 @@ function setdisplay_prettytables(;kwargs...)
         _pretty_tables_conf[kw[1]] = kw[2]
     end
 
+    # Precompile so that the user does not wait a lot for the first print.
+    buf = IOBuffer()
+    io  = IOContext(buf, :color => true)
+    df = DataFrame(a = 1)
+    Base.invokelatest(_pretty_table,io,df)
+
     return nothing
 end
