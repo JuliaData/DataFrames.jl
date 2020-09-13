@@ -583,7 +583,7 @@ function _show(io::IO,
     _check_consistency(df)
 
     # Check which backend must be used to print the DataFrame.
-    if _DISPLAY_BACKEND[1] == :pretty_tables
+    if _DISPLAY_BACKEND.x == :pretty_tables
         _pretty_table(io, df;
                       allrows     = allrows,
                       allcols     = allcols,
@@ -716,7 +716,7 @@ Base.show(df::AbstractDataFrame;
 ################################################################################
 
 # This variable holds which backend must be used when printing tables.
-const _DISPLAY_BACKEND = [:traditional]
+const _DISPLAY_BACKEND = Ref(:traditional)
 
 # This dictionary stores the configuration of PrettyTables.jl parameters used to
 # print the tables.
@@ -734,7 +734,7 @@ Use the traditional system to print tables.
 
 """
 function setdisplay_traditional()
-    _DISPLAY_BACKEND[1] = :traditional
+    _DISPLAY_BACKEND.x = :traditional
     return nothing
 end
 
@@ -764,7 +764,7 @@ function setdisplay_prettytables(;kwargs...)
         _df_h = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
     end
 
-    _DISPLAY_BACKEND[1] = :pretty_tables
+    _DISPLAY_BACKEND.x = :pretty_tables
 
     # Set the default options.
     empty!(_PRETTY_TABLES_SAFECONF)
