@@ -767,16 +767,16 @@ function setdisplay_prettytables(;kwargs...)
 
     # Set the default options.
     empty!(_pretty_tables_safeconf)
-    _pretty_tables_safeconf[:alignment] = :l
-    _pretty_tables_safeconf[:continuation_row_alignment] = :l
+    _pretty_tables_safeconf[:alignment]                   = :l
+    _pretty_tables_safeconf[:continuation_row_alignment]  = :l
     _pretty_tables_safeconf[:crop_num_lines_at_beginning] = 2
-    _pretty_tables_safeconf[:formatters] = (_df_f,)
-    _pretty_tables_safeconf[:highlighters] = (_df_h,)
-    _pretty_tables_safeconf[:newline_at_end] = false
-    _pretty_tables_safeconf[:row_number_alignment] = :l
-    _pretty_tables_safeconf[:show_row_number] = true
-    _pretty_tables_safeconf[:vlines] = [1]
-    _pretty_tables_safeconf[:tf] = dataframe
+    _pretty_tables_safeconf[:formatters]                  = (_df_f,)
+    _pretty_tables_safeconf[:highlighters]                = (_df_h,)
+    _pretty_tables_safeconf[:newline_at_end]              = false
+    _pretty_tables_safeconf[:row_number_alignment]        = :l
+    _pretty_tables_safeconf[:show_row_number]             = true
+    _pretty_tables_safeconf[:vlines]                      = [1]
+    _pretty_tables_safeconf[:tf]                          = dataframe
 
     empty!(_pretty_tables_conf)
     copy!(_pretty_tables_conf, _pretty_tables_safeconf)

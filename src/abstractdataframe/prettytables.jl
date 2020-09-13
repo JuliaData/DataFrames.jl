@@ -36,7 +36,6 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
     _pretty_tables_conf[:maximum_columns_width]     = truncstring
     _pretty_tables_safeconf[:maximum_columns_width] = truncstring
 
-
     # Assemble the configurations for this print.
     _local_conf = deepcopy(_pretty_tables_conf)
 
