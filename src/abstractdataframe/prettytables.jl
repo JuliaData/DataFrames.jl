@@ -44,6 +44,11 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
         _local_conf[kw[1]] = kw[2]
     end
 
+    # Check if the user wants to display a summary about the DataFrame that is
+    # being printed. This will be shown using the `title` option of
+    # `pretty_table`.
+    title = summary ? Base.summary(df) : ""
+
     # Transform into a named tuple so that it can be passed to PrettyTables.jl.
     dictkeys = (collect(keys(_local_conf))...,)
     dictvals = (collect(values(_local_conf))...,)
@@ -56,6 +61,7 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
                      crop = crop,
                      nosubheader = !eltypes,
                      row_number_column_title = string(rowlabel),
+                     title = title,
                      nt...)
     catch
         @warn """An unsupported argument was passed to PrettyTables.jl.
@@ -71,6 +77,7 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
                      maximum_columns_width = truncstring,
                      nosubheader = !eltypes,
                      row_number_column_title = string(rowlabel),
+                     title = title,
                      nt_sc...)
     end
 end

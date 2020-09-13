@@ -746,7 +746,7 @@ Use PrettyTables.jl backend to print tables.
 The default printing options can be passed to `kwargs...`. Any option supported
 by PrettyTables.jl can be configured here with the following exception:
 
-    crop, maximum_columns_width, nosubheader, row_number_column_title
+    crop, maximum_columns_width, nosubheader, row_number_column_title, title
 
 which are configured based on the options available in the function `show`.
 
