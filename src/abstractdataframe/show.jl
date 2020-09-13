@@ -28,53 +28,21 @@ end
 """
     DataFrames.ourshow(io::IO, x::Any, truncstring::Int)
 
-Render a value to an `IO` object compactly and omitting type information, by
-calling 3-argument `show`, or 2-argument `show` if the former contains line breaks.
-Unlike `show`, render strings without surrounding quote marks.
+Render a value to an `IO` object compactly using print.
 `truncstring` indicates the approximate number of text characters width to truncate
 the output (if it is a non-positive value then no truncation is applied).
 """
 function ourshow(io::IO, x::T, truncstring::Int; styled::Bool=false) where T
     io_ctx = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
-
-    # This mirrors the behavior of Base.print_matrix_row
-    # First try 3-arg show
-    sx = sprint(show, "text/plain", x, context=io_ctx)
-
-    # If the output contains line breaks, try 2-arg show instead.
-    if occursin('\n', sx)
-        sx = sprint(show, x, context=io_ctx)
-    end
-
-    # strings should have " stripped here
-    # assume that if module of T is CategoricalArrays its name is CategoricalValue
-    # and its first parameter is # a subtype of AbstractString then T is
-    # an instance of CategoricalValue from CategoricalArrays.jl wrapping a string
-    if x isa AbstractString || (hasproperty(T, :name) &&
-                                nameof(T.name.module) === :CategoricalArrays &&
-                                T.name.name === :CategoricalValue &&
-                                T.parameters[1] <: AbstractString)
-        @assert sx[1] == sx[end] == '"'
-        sx = escape_string(chop(sx, head=1, tail=1), "")
-    end
-
+    sx = sprint(print, x, context=io_ctx)
+    sx = escape_string(sx, ()) # do not escape "
     sx = truncatestring(sx, truncstring)
-
-    if styled
-        printstyled(io_ctx, sx, color=:light_black)
-    else
-        print(io_ctx, sx)
-    end
+    styled ? printstyled(io_ctx, sx, color=:light_black) : print(io_ctx, sx)
 end
 
 const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
                                  DataFrameColumns, GroupedDataFrame}
 
-ourshow(io::IO, x::AbstractString, truncstring::Int) =
-    escape_string(io, truncatestring(x, truncstring), "")
-# ourshow(io::IO, x::CategoricalValue{<:AbstractString}, truncstring::Int) =
-#     ourshow(io, get(x), truncstring)
-ourshow(io::IO, x::Symbol, truncstring::Int) = ourshow(io, string(x), truncstring)
 ourshow(io::IO, x::Nothing, truncstring::Int; styled::Bool=false) =
     ourshow(io, "", styled=styled, truncstring)
 ourshow(io::IO, x::SHOW_TABULAR_TYPES, truncstring::Int; styled::Bool=false) =
@@ -119,11 +87,9 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
 
     maxwidth -= 1 # we will add "…" at the end
 
-    # assume that if module of T is CategoricalArrays its name is CategoricalValue
-    # the T is an instance of CategoricalValue from CategoricalArrays.jl
-    if hasproperty(T, :name) &&
-        nameof(T.name.module) === :CategoricalArrays &&
-        T.name.name === :CategoricalValue
+    # This is only type display shortening so we
+    # are OK with any T whose name starts with Categorical here
+    if startswith(sT, "Categorical")
         sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix
