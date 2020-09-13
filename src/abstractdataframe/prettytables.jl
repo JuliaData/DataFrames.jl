@@ -34,11 +34,11 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
 
     # Update the maximum column width. This is necessary because the default
     # formatter must have access to the option we are using.
-    _pretty_tables_conf[:maximum_columns_width]     = truncstring
-    _pretty_tables_safeconf[:maximum_columns_width] = truncstring
+    _PRETTY_TABLES_CONF[:maximum_columns_width]     = truncstring
+    _PRETTY_TABLES_SAFECONF[:maximum_columns_width] = truncstring
 
     # Assemble the configurations for this print.
-    _local_conf = deepcopy(_pretty_tables_conf)
+    _local_conf = deepcopy(_PRETTY_TABLES_CONF)
 
     for kw in kwargs
         _local_conf[kw[1]] = kw[2]
@@ -67,8 +67,8 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
         @warn """An unsupported argument was passed to PrettyTables.jl.
                  The default configuration will be used."""
 
-        dictkeys = (collect(keys(_pretty_tables_safeconf))...,)
-        dictvals = (collect(values(_pretty_tables_safeconf))...,)
+        dictkeys = (collect(keys(_PRETTY_TABLES_SAFECONF))...,)
+        dictvals = (collect(values(_PRETTY_TABLES_SAFECONF))...,)
         nt_sc = NamedTuple{dictkeys}(dictvals)
 
         pretty_table(io, df,
@@ -120,8 +120,8 @@ function _df_f(v,i,j)
                           DataFrames.DataFrameRow, DataFrames.DataFrameRows,
                           DataFrames.DataFrameColumns}
 
-        truncstring = haskey(_pretty_tables_conf, :maximum_columns_width) ?
-            _pretty_tables_conf[:maximum_columns_width] : 32
+        truncstring = haskey(_PRETTY_TABLES_CONF, :maximum_columns_width) ?
+            _PRETTY_TABLES_CONF[:maximum_columns_width] : 32
 
         # Here, we must not use `print` or `show`. Otherwise, we can call
         # `_pretty_table` to render the current table leading to a stack
