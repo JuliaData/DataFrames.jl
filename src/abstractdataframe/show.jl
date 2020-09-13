@@ -720,12 +720,12 @@ const _DISPLAY_BACKEND = Ref(:traditional)
 
 # This dictionary stores the configuration of PrettyTables.jl parameters used to
 # print the tables.
-const _PRETTY_TABLES_CONF = Dict{Symbol,Any}()
+const _PRETTY_TABLES_CONF = Dict{Symbol, Any}()
 
 # This dictionary stores the safe configuration of PrettyTables.jl that cannot
 # be modified by the user. It is used as a fallback if an unsupported argument
 # is passed to `pretty_table(...)` avoiding breaking the printing system.
-const _PRETTY_TABLES_SAFECONF = Dict{Symbol,Any}()
+const _PRETTY_TABLES_SAFECONF = Dict{Symbol, Any}()
 
 """
     setdisplay_traditional()
@@ -792,7 +792,7 @@ function setdisplay_prettytables(;kwargs...)
     buf = IOBuffer()
     io  = IOContext(buf, :color => true)
     df = DataFrame(a = 1)
-    Base.invokelatest(_pretty_table,io,df)
+    Base.invokelatest(_pretty_table, io, df)
 
     return nothing
 end

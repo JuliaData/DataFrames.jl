@@ -116,9 +116,8 @@ end
 #     - Cells with types related to DataFrames.jl.
 
 function _df_f(v,i,j)
-    if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame,
-                          DataFrames.DataFrameRow, DataFrames.DataFrameRows,
-                          DataFrames.DataFrameColumns}
+    if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
+                          DataFrameRows, DataFrameColumns}
 
         truncstring = haskey(_PRETTY_TABLES_CONF, :maximum_columns_width) ?
             _PRETTY_TABLES_CONF[:maximum_columns_width] : 32
