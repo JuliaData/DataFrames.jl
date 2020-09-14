@@ -772,11 +772,5 @@ function setdisplay_prettytables(;kwargs...)
         _PRETTY_TABLES_CONF[kw[1]] = kw[2]
     end
 
-    # Precompile so that the user does not wait a lot for the first print.
-    buf = IOBuffer()
-    io  = IOContext(buf, :color => true)
-    df = DataFrame(a = 1)
-    _pretty_table(io, df)
-
     return nothing
 end
