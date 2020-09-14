@@ -752,18 +752,6 @@ which are configured based on the options available in the function `show`.
 
 """
 function setdisplay_prettytables(;kwargs...)
-
-    # Here we load PrettyTables on-demand to avoid increasing the loading time
-    # of DataFrames.
-    @eval DataFrames begin
-        using PrettyTables
-
-        # NOTE: This default highlighter can only be defined here because it
-        # depends on Crayons.jl that is only loaded when this function is
-        # called.
-        _df_h = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
-    end
-
     _DISPLAY_BACKEND.x = :pretty_tables
 
     # Set the default options.
@@ -772,7 +760,7 @@ function setdisplay_prettytables(;kwargs...)
     _PRETTY_TABLES_SAFECONF[:continuation_row_alignment]  = :l
     _PRETTY_TABLES_SAFECONF[:crop_num_lines_at_beginning] = 2
     _PRETTY_TABLES_SAFECONF[:formatters]                  = (_df_f,)
-    _PRETTY_TABLES_SAFECONF[:highlighters]                = (_df_h,)
+    _PRETTY_TABLES_SAFECONF[:highlighters]                = (_DF_H,)
     _PRETTY_TABLES_SAFECONF[:newline_at_end]              = false
     _PRETTY_TABLES_SAFECONF[:row_number_alignment]        = :l
     _PRETTY_TABLES_SAFECONF[:show_row_number]             = true
@@ -792,7 +780,7 @@ function setdisplay_prettytables(;kwargs...)
     buf = IOBuffer()
     io  = IOContext(buf, :color => true)
     df = DataFrame(a = 1)
-    Base.invokelatest(_pretty_table, io, df)
+    _pretty_table(io, df)
 
     return nothing
 end

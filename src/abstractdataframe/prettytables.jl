@@ -8,6 +8,8 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+using PrettyTables
+
 # Internal function to print DataFrames using PrettyTables.jl.
 function _pretty_table(io::IO, df::AbstractDataFrame;
                        allrows::Bool = !get(io, :limit, false),
@@ -106,6 +108,8 @@ function _df_h_f(data,i,j)
         end
     end
 end
+
+const _DF_H = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
 
 # Default DataFrames formatter for text backend.
 #
