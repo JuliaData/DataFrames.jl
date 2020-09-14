@@ -113,11 +113,11 @@ include("groupeddataframe/callprocessing.jl")
 include("groupeddataframe/fastaggregates.jl")
 include("groupeddataframe/complextransforms.jl")
 
+include("abstractdataframe/prettytables.jl")
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
 include("abstractdataframe/io.jl")
-include("abstractdataframe/prettytables.jl")
 
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")

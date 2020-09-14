@@ -725,7 +725,17 @@ const _PRETTY_TABLES_CONF = Dict{Symbol, Any}()
 # This dictionary stores the safe configuration of PrettyTables.jl that cannot
 # be modified by the user. It is used as a fallback if an unsupported argument
 # is passed to `pretty_table(...)` avoiding breaking the printing system.
-const _PRETTY_TABLES_SAFECONF = Dict{Symbol, Any}()
+const _PRETTY_TABLES_SAFECONF = Dict{Symbol, Any}(
+    :alignment                   => :l,
+    :continuation_row_alignment  => :l,
+    :crop_num_lines_at_beginning => 2,
+    :formatters                  => (_df_f,),
+    :highlighters                => (_DF_H,),
+    :newline_at_end              => false,
+    :row_number_alignment        => :l,
+    :show_row_number             => true,
+    :vlines                      => [1],
+    :tf                          => dataframe)
 
 """
     setdisplay_traditional()
@@ -755,18 +765,6 @@ function setdisplay_prettytables(;kwargs...)
     _DISPLAY_BACKEND.x = :pretty_tables
 
     # Set the default options.
-    empty!(_PRETTY_TABLES_SAFECONF)
-    _PRETTY_TABLES_SAFECONF[:alignment]                   = :l
-    _PRETTY_TABLES_SAFECONF[:continuation_row_alignment]  = :l
-    _PRETTY_TABLES_SAFECONF[:crop_num_lines_at_beginning] = 2
-    _PRETTY_TABLES_SAFECONF[:formatters]                  = (_df_f,)
-    _PRETTY_TABLES_SAFECONF[:highlighters]                = (_DF_H,)
-    _PRETTY_TABLES_SAFECONF[:newline_at_end]              = false
-    _PRETTY_TABLES_SAFECONF[:row_number_alignment]        = :l
-    _PRETTY_TABLES_SAFECONF[:show_row_number]             = true
-    _PRETTY_TABLES_SAFECONF[:vlines]                      = [1]
-    _PRETTY_TABLES_SAFECONF[:tf]                          = dataframe
-
     empty!(_PRETTY_TABLES_CONF)
     copy!(_PRETTY_TABLES_CONF, _PRETTY_TABLES_SAFECONF)
 
