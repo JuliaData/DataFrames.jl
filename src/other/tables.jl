@@ -21,7 +21,7 @@ end
 Tables.columnindex(df::Union{AbstractDataFrame, DataFrameRow}, idx::AbstractString) =
     columnindex(df, Symbol(idx))
 
-Tables.schema(df::AbstractDataFrame) = Tables.Schema(propertynames(df), eltype.(eachcol(df)))
+Tables.schema(df::AbstractDataFrame) = Tables.Schema{Tuple(_names(df)), Tuple{[eltype(col) for col in eachcol(df)]...}}()
 Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 Tables.getcolumn(df::AbstractDataFrame, i::Int) = df[!, i]
