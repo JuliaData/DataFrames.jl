@@ -36,8 +36,7 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
 
     # Update the maximum column width. This is necessary because the default
     # formatter must have access to the option we are using.
-    _PRETTY_TABLES_CONF[:maximum_columns_width]     = truncstring
-    _PRETTY_TABLES_SAFECONF[:maximum_columns_width] = truncstring
+    _PRETTY_TABLES_CONF[:maximum_columns_width] = truncstring
 
     # Assemble the configurations for this print.
     _local_conf = deepcopy(_PRETTY_TABLES_CONF)
@@ -57,31 +56,12 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
     nt = NamedTuple{dictkeys}(dictvals)
 
     # Print the table with the selected options.
-    try
-        pretty_table(io, df,
-                     vcat(names,types);
-                     crop = crop,
-                     nosubheader = !eltypes,
-                     row_number_column_title = string(rowlabel),
-                     title = title,
-                     nt...)
-    catch
-        @warn """An unsupported argument was passed to PrettyTables.jl.
-                 The default configuration will be used."""
-
-        dictkeys = (collect(keys(_PRETTY_TABLES_SAFECONF))...,)
-        dictvals = (collect(values(_PRETTY_TABLES_SAFECONF))...,)
-        nt_sc = NamedTuple{dictkeys}(dictvals)
-
-        pretty_table(io, df,
-                     vcat(names,types);
-                     crop = crop,
-                     maximum_columns_width = truncstring,
-                     nosubheader = !eltypes,
-                     row_number_column_title = string(rowlabel),
-                     title = title,
-                     nt_sc...)
-    end
+    pretty_table(io, df, vcat(names,types);
+                 crop = crop,
+                 nosubheader = !eltypes,
+                 row_number_column_title = string(rowlabel),
+                 title = title,
+                 nt...)
 end
 
 ################################################################################

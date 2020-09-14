@@ -722,10 +722,8 @@ const _DISPLAY_BACKEND = Ref(:traditional)
 # print the tables.
 const _PRETTY_TABLES_CONF = Dict{Symbol, Any}()
 
-# This dictionary stores the safe configuration of PrettyTables.jl that cannot
-# be modified by the user. It is used as a fallback if an unsupported argument
-# is passed to `pretty_table(...)` avoiding breaking the printing system.
-const _PRETTY_TABLES_SAFECONF = Dict{Symbol, Any}(
+# This dictionary stores the default configuration of PrettyTables.jl.
+const _PRETTY_TABLES_DEFCONF = Dict{Symbol, Any}(
     :alignment                   => :l,
     :continuation_row_alignment  => :l,
     :crop_num_lines_at_beginning => 2,
@@ -766,7 +764,7 @@ function setdisplay_prettytables(;kwargs...)
 
     # Set the default options.
     empty!(_PRETTY_TABLES_CONF)
-    copy!(_PRETTY_TABLES_CONF, _PRETTY_TABLES_SAFECONF)
+    copy!(_PRETTY_TABLES_CONF, _PRETTY_TABLES_DEFCONF)
 
     # Now override the default options and add the new configurations provided
     # by the user.
