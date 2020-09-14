@@ -109,7 +109,7 @@ function _df_h_f(data,i,j)
     end
 end
 
-const _DF_H = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
+const _DF_HIGHLIGHTER = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
 
 # Default DataFrames formatter for text backend.
 #
@@ -119,7 +119,7 @@ const _DF_H = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
 #     - nothing;
 #     - Cells with types related to DataFrames.jl.
 
-function _df_f(v,i,j)
+function _df_formatter(v,i,j)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
