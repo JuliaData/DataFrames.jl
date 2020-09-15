@@ -64,9 +64,8 @@ function _df_h_f(data,i,j)
         return ismissing(data[i,j]) ||
             data[i,j] == nothing ||
             typeof(data[i,j]) <: Union{AbstractDataFrame, GroupedDataFrame,
-                                       DataFrames.DataFrameRow,
-                                       DataFrames.DataFrameRows,
-                                       DataFrames.DataFrameColumns}
+                                       DataFrameRow, DataFrameRows,
+                                       DataFrameColumns}
     catch e
         if isa(e, UndefRefError)
             return true
