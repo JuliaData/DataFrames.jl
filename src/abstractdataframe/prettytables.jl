@@ -98,6 +98,10 @@ function _df_formatter(v,i,j)
         str = sprint(ourshow, v, truncstring, context = :compact => true)
         str = split(str, '\n')[1]
         return str
+    elseif typeof(v) <: Unsigned
+        # In case of an `Unsigned` value, use `show` to obtain the
+        # representation instead of `print` that is used by PrettyTables.
+        return sprint(show, v, context = :compact => true)
     elseif ismissing(v)
         return "missing"
     elseif v == nothing
