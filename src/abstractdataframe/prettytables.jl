@@ -36,32 +36,19 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
 
     # Update the maximum column width. This is necessary because the default
     # formatter must have access to the option we are using.
-    _PRETTY_TABLES_CONF[:maximum_columns_width] = truncstring
-
-    # Assemble the configurations for this print.
-    _local_conf = deepcopy(_PRETTY_TABLES_CONF)
-
-    for kw in kwargs
-        _local_conf[kw[1]] = kw[2]
-    end
+    set_pt_conf!(_PRETTY_TABLES_CONF, maximum_columns_width = truncstring)
 
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
     # `pretty_table`.
     title = summary ? Base.summary(df) : ""
 
-    # Transform into a named tuple so that it can be passed to PrettyTables.jl.
-    dictkeys = (collect(keys(_local_conf))...,)
-    dictvals = (collect(values(_local_conf))...,)
-    nt = NamedTuple{dictkeys}(dictvals)
-
     # Print the table with the selected options.
-    pretty_table(io, df, vcat(names,types);
+    pretty_table(_PRETTY_TABLES_CONF, io, df, vcat(names,types);
                  crop = crop,
                  nosubheader = !eltypes,
                  row_number_column_title = string(rowlabel),
-                 title = title,
-                 nt...)
+                 title = title)
 end
 
 ################################################################################
@@ -103,8 +90,8 @@ function _df_formatter(v,i,j)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
-        truncstring = haskey(_PRETTY_TABLES_CONF, :maximum_columns_width) ?
-            _PRETTY_TABLES_CONF[:maximum_columns_width] : 32
+        truncstring = haskey(_PRETTY_TABLES_CONF.confs, :maximum_columns_width) ?
+            _PRETTY_TABLES_CONF.confs[:maximum_columns_width] : 32
 
         # Here, we must not use `print` or `show`. Otherwise, we can call
         # `_pretty_table` to render the current table leading to a stack

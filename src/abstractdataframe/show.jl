@@ -718,22 +718,8 @@ Base.show(df::AbstractDataFrame;
 # This variable holds which backend must be used when printing tables.
 const _DISPLAY_BACKEND = Ref(:traditional)
 
-# This dictionary stores the configuration of PrettyTables.jl parameters used to
-# print the tables.
-const _PRETTY_TABLES_CONF = Dict{Symbol, Any}()
-
-# This dictionary stores the default configuration of PrettyTables.jl.
-const _PRETTY_TABLES_DEFCONF = Dict{Symbol, Any}(
-    :alignment                   => :l,
-    :continuation_row_alignment  => :l,
-    :crop_num_lines_at_beginning => 2,
-    :formatters                  => (_df_formatter,),
-    :highlighters                => (_DF_HIGHLIGHTER,),
-    :newline_at_end              => false,
-    :row_number_alignment        => :l,
-    :show_row_number             => true,
-    :vlines                      => [1],
-    :tf                          => dataframe)
+# PrettyTables configuration object.
+const _PRETTY_TABLES_CONF = PrettyTablesConf()
 
 """
     setdisplay_traditional()
@@ -763,14 +749,21 @@ function setdisplay_prettytables(;kwargs...)
     _DISPLAY_BACKEND.x = :pretty_tables
 
     # Set the default options.
-    empty!(_PRETTY_TABLES_CONF)
-    copy!(_PRETTY_TABLES_CONF, _PRETTY_TABLES_DEFCONF)
+    clear_pt_conf!(_PRETTY_TABLES_CONF)
+    set_pt_conf!(_PRETTY_TABLES_CONF,
+                 alignment                   = :l,
+                 continuation_row_alignment  = :l,
+                 crop_num_lines_at_beginning = 2,
+                 formatters                  = (_df_formatter,),
+                 highlighters                = (_DF_HIGHLIGHTER,),
+                 newline_at_end              = false,
+                 row_number_alignment        = :l,
+                 show_row_number             = true,
+                 vlines                      = [1],
+                 tf                          = dataframe)
 
-    # Now override the default options and add the new configurations provided
-    # by the user.
-    for kw in kwargs
-        _PRETTY_TABLES_CONF[kw[1]] = kw[2]
-    end
+    # Apply the user configurations.
+    set_pt_conf!(_PRETTY_TABLES_CONF; kwargs...)
 
     return nothing
 end
