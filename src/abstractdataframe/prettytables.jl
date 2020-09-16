@@ -93,8 +93,7 @@ function _df_formatter(v,i,j)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
-        truncstring = haskey(_PRETTY_TABLES_CONF.confs, :maximum_columns_width) ?
-            _PRETTY_TABLES_CONF.confs[:maximum_columns_width] : 32
+        truncstring = get(_PRETTY_TABLES_CONF.confs, :maximum_columns_width, 32)
 
         # Here, we must not use `print` or `show`. Otherwise, we can call
         # `_pretty_table` to render the current table leading to a stack
