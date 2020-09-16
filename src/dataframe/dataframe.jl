@@ -264,14 +264,15 @@ DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
               copycols=copycols)
 
-DataFrame(columns::T) where {T <: AbstractMatrix} =
+function DataFrame(columns::T) where {T <: AbstractMatrix}
     if Tables.istable(T)
-        fromcolumns(Tables.columns(columns),
-                    collect(Symbol, Tables.columnnames(columns)),
-                    copycols=true)
+        return fromcolumns(Tables.columns(columns),
+                           collect(Symbol, Tables.columnnames(columns)),
+                           copycols=true)
     else
-        DataFrame(columns, gennames(size(columns, 2)))
+        return DataFrame(columns, gennames(size(columns, 2)))
     end
+end
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
           makeunique::Bool=false) =
