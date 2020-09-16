@@ -266,7 +266,8 @@ DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
 
 DataFrame(columns::T) where {T <: AbstractMatrix} =
     if Tables.istable(T)
-        fromcolumns(Tables.columns(x), collect(Symbol, Tables.columnnames(cols)),
+        fromcolumns(Tables.columns(columns),
+                    collect(Symbol, Tables.columnnames(columns)),
                     copycols=true)
     else
         DataFrame(columns, gennames(size(columns, 2)))
