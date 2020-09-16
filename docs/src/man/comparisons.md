@@ -69,9 +69,7 @@ rows having the index value of `'c'`.
 | Reduce multiple values   | `df['z'].mean(skipna = False)`                                 | `mean(df.z)`                                |
 |                          | `df['z'].mean()`                                               | `mean(skipmissing(df.z))`                   |
 |                          | `df[['z']].agg(['mean'])`                                      | `combine(df, :z => mean ∘ skipmissing)`     |
-| Add new columns          | `df.assign(z1 = df['z'] + 1)`                                  | `df.z1 = df.z .+ 1`                         |
-|                          |                                                                | `insertcols!(df, :z1 => df.z .+ 1)`         |
-|                          |                                                                | `transform(df, :z => (v -> v .+ 1) => :z1)` |
+| Add new columns          | `df.assign(z1 = df['z'] + 1)`                                  | `transform(df, :z => (v -> v .+ 1) => :z1)` |
 | Rename columns           | `df.rename(columns = {'x': 'x_new'})`                          | `rename(df, :x => :x_new)`                  |
 | Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]`          | `select(df, :x => mean, :y)`                |
 | Sort rows                | `df.sort_values(by = 'x')`                                     | `sort(df, :x)`                              |
