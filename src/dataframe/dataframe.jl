@@ -16,8 +16,10 @@ DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::Matrix, names::AbstractVector{Symbol}; makeunique::Bool=false)
-DataFrame(columns::Matrix, names::AbstractVector{<:AbstractString};
+DataFrame(columns::AbstractMatrix)
+DataFrame(columns::AbstractMatrix, names::AbstractVector{Symbol};
+          makeunique::Bool=false)
+DataFrame(columns::AbstractMatrix, names::AbstractVector{<:AbstractString};
           makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
@@ -35,7 +37,7 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
 
 # Arguments
-- `columns` : a Vector with each column as contents or a Matrix
+- `columns` : a vector with each column as contents or a matrix
 - `names` : the column names
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicates in `names` are found; if `true`, duplicate names will be suffixed
@@ -262,8 +264,15 @@ DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
               copycols=copycols)
 
-DataFrame(columns::AbstractMatrix,
-          cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+DataFrame(columns::T) where {T <: AbstractMatrix} =
+    if Tables.istable(T)
+        fromcolumns(Tables.columns(x), collect(Symbol, Tables.columnnames(cols)),
+                    copycols=true)
+    else
+        DataFrame(columns, gennames(size(columns, 2)))
+    end
+
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
           makeunique::Bool=false) =
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)

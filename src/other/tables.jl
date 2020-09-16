@@ -43,7 +43,7 @@ fromcolumns(x, names; copycols::Bool=true) =
               copycols=copycols)
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
-    if !Tables.istable(x)
+    if !Tables.istable(T)
         if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
             return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
         elseif (x isa AbstractVector || x isa Tuple) &&
