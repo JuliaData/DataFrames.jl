@@ -38,17 +38,21 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
     # formatter must have access to the option we are using.
     set_pt_conf!(_PRETTY_TABLES_CONF, maximum_columns_width = truncstring)
 
+    # Create the local configuration based on the user options.
+    _local_conf = deepcopy(_PRETTY_TABLES_CONF)
+    set_pt_conf!(_local_conf; kwargs...)
+
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
     # `pretty_table`.
     title = summary ? Base.summary(df) : ""
 
     # Print the table with the selected options.
-    pretty_table(_PRETTY_TABLES_CONF, io, df, vcat(names,types);
-                 crop = crop,
-                 nosubheader = !eltypes,
-                 row_number_column_title = string(rowlabel),
-                 title = title)
+    pretty_table_with_conf(_local_conf, io, df, vcat(names,types);
+                           crop = crop,
+                           nosubheader = !eltypes,
+                           row_number_column_title = string(rowlabel),
+                           title = title)
 end
 
 ################################################################################
