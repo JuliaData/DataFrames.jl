@@ -578,8 +578,7 @@ function _show(io::IO,
                summary::Bool = true,
                eltypes::Bool = true,
                rowid=nothing,
-               truncstring::Int,
-               kwargs...)
+               truncstring::Int)
     _check_consistency(df)
 
     # Check which backend must be used to print the DataFrame.
@@ -590,39 +589,36 @@ function _show(io::IO,
                       rowlabel    = rowlabel,
                       summary     = summary,
                       eltypes     = eltypes,
-                      truncstring = truncstring,
-                      kwargs...)
-        return
-    end
-
-    # we will pass around this buffer to avoid its reallocation in ourstrwidth
-    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
-
-    nrows = size(df, 1)
-    if rowid !== nothing
-        if size(df, 2) == 0
-            rowid = nothing
-        elseif nrows != 1
-            throw(ArgumentError("rowid may be passed only with a single row data frame"))
-        end
-    end
-    dsize = displaysize(io)
-    availableheight = dsize[1] - 7
-    nrowssubset = fld(availableheight, 2)
-    bound = min(nrowssubset - 1, nrows)
-    if allrows || nrows <= availableheight
-        rowindices1 = 1:nrows
-        rowindices2 = 1:0
+                      truncstring = truncstring)
     else
-        rowindices1 = 1:bound
-        rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
+        # we will pass around this buffer to avoid its reallocation in ourstrwidth
+        buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+
+        nrows = size(df, 1)
+        if rowid !== nothing
+            if size(df, 2) == 0
+                rowid = nothing
+            elseif nrows != 1
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+            end
+        end
+        dsize = displaysize(io)
+        availableheight = dsize[1] - 7
+        nrowssubset = fld(availableheight, 2)
+        bound = min(nrowssubset - 1, nrows)
+        if allrows || nrows <= availableheight
+            rowindices1 = 1:nrows
+            rowindices2 = 1:0
+        else
+            rowindices1 = 1:bound
+            rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
+        end
+        maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid,
+                                 eltypes, buffer, truncstring)
+        width = getprintedwidth(maxwidths)
+        showrows(io, df, rowindices1, rowindices2, maxwidths, splitcols, allcols,
+                 rowlabel, summary, eltypes, rowid, buffer, truncstring)
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid,
-                             eltypes, buffer, truncstring)
-    width = getprintedwidth(maxwidths)
-    showrows(io, df, rowindices1, rowindices2, maxwidths, splitcols, allcols,
-             rowlabel, summary, eltypes, rowid, buffer, truncstring)
-    return
 end
 
 """
@@ -691,11 +687,10 @@ Base.show(io::IO,
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32,
-          kwargs...) =
+          truncate::Int = 32) =
     _show(io, df; allrows=allrows, allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=summary, eltypes=eltypes,
-          truncstring=truncate, kwargs...)
+          truncstring=truncate)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
@@ -704,12 +699,10 @@ Base.show(df::AbstractDataFrame;
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32,
-          kwargs...) =
+          truncate::Int = 32) =
     show(stdout, df;
          allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate,
-         kwargs...)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
 
 ################################################################################
 #                              Backend selection
@@ -717,9 +710,6 @@ Base.show(df::AbstractDataFrame;
 
 # This variable holds which backend must be used when printing tables.
 const _DISPLAY_BACKEND = Ref(:traditional)
-
-# PrettyTables configuration object.
-const _PRETTY_TABLES_CONF = PrettyTablesConf()
 
 """
     setdisplay_traditional()
@@ -747,23 +737,5 @@ which are configured based on the options available in the function `show`.
 """
 function setdisplay_prettytables(;kwargs...)
     _DISPLAY_BACKEND.x = :pretty_tables
-
-    # Set the default options.
-    clear_pt_conf!(_PRETTY_TABLES_CONF)
-    set_pt_conf!(_PRETTY_TABLES_CONF,
-                 alignment                   = :l,
-                 continuation_row_alignment  = :l,
-                 crop_num_lines_at_beginning = 2,
-                 formatters                  = (_df_formatter,),
-                 highlighters                = (_DF_HIGHLIGHTER,),
-                 newline_at_end              = false,
-                 row_number_alignment        = :l,
-                 show_row_number             = true,
-                 vlines                      = [1],
-                 tf                          = dataframe)
-
-    # Apply the user configurations.
-    set_pt_conf!(_PRETTY_TABLES_CONF; kwargs...)
-
     return nothing
 end

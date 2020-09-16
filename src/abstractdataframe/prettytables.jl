@@ -21,8 +21,8 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
                        truncstring::Int = 32,
                        kwargs...)
 
-    names = reshape( propertynames(df), (1,:) )
-    types = DataFrames.compacttype.(reshape( eltype.(eachcol(df)), (1,:) ))
+    names = permutedims(propertynames(df))
+    types = permutedims(compacttype.(eltype.(eachcol(df))))
 
     crop = :both
 
@@ -34,25 +34,31 @@ function _pretty_table(io::IO, df::AbstractDataFrame;
         crop = :horizontal
     end
 
-    # Update the maximum column width. This is necessary because the default
-    # formatter must have access to the option we are using.
-    set_pt_conf!(_PRETTY_TABLES_CONF, maximum_columns_width = truncstring)
-
-    # Create the local configuration based on the user options.
-    _local_conf = deepcopy(_PRETTY_TABLES_CONF)
-    set_pt_conf!(_local_conf; kwargs...)
-
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
     # `pretty_table`.
     title = summary ? Base.summary(df) : ""
 
+    # Create the formatter considering the current maximum size of the strings.
+    _formatter = (v,i,j)->_df_formatter(v,i,j,truncstring)
+
     # Print the table with the selected options.
-    pretty_table_with_conf(_local_conf, io, df, vcat(names,types);
-                           crop = crop,
-                           nosubheader = !eltypes,
-                           row_number_column_title = string(rowlabel),
-                           title = title)
+    pretty_table(io, df, vcat(names,types);
+                 alignment                   = :l,
+                 continuation_row_alignment  = :l,
+                 crop                        = crop,
+                 crop_num_lines_at_beginning = 2,
+                 formatters                  = (_formatter,),
+                 highlighters                = (_DF_HIGHLIGHTER,),
+                 maximum_columns_width       = truncstring,
+                 newline_at_end              = false,
+                 nosubheader                 = !eltypes,
+                 row_number_alignment        = :l,
+                 row_number_column_title     = string(rowlabel),
+                 show_row_number             = true,
+                 tf                          = dataframe,
+                 title                       = title,
+                 vlines                      = [1])
 end
 
 ################################################################################
@@ -89,11 +95,9 @@ const _DF_HIGHLIGHTER = Highlighter(_df_h_f, Crayon(foreground = :dark_gray))
 #     - nothing;
 #     - Cells with types related to DataFrames.jl.
 
-function _df_formatter(v,i,j)
+function _df_formatter(v,i,j,truncstring = 32)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
-
-        truncstring = get(_PRETTY_TABLES_CONF.confs, :maximum_columns_width, 32)
 
         # Here, we must not use `print` or `show`. Otherwise, we can call
         # `_pretty_table` to render the current table leading to a stack
