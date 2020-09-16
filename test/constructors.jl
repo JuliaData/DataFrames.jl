@@ -97,9 +97,9 @@ const ≅ = isequal
     @test df[!, "x1"] == df2[!, "x1"]
     @test df[!, "x2"] == df2[!, "x2"]
 
-    @test_throws MethodError DataFrame([0.0 1.0;
-                                        0.0 1.0;
-                                        0.0 1.0], copycols=false)
+    @test_throws ArgumentError DataFrame([0.0 1.0;
+                                          0.0 1.0;
+                                          0.0 1.0], copycols=false)
 
     df2 = DataFrame([0.0 1.0;
                      0.0 1.0;
@@ -115,9 +115,9 @@ const ≅ = isequal
     @test df[!, :x1] == df2[!, :a]
     @test df[!, :x2] == df2[!, :b]
 
-    @test_throws MethodError DataFrame([0.0 1.0;
-                                        0.0 1.0;
-                                        0.0 1.0], [:a, :b], copycols=false)
+    @test_throws ArgumentError DataFrame([0.0 1.0;
+                                          0.0 1.0;
+                                          0.0 1.0], [:a, :b], copycols=false)
 
     df2 = DataFrame([0.0 1.0;
                      0.0 1.0;
@@ -126,9 +126,9 @@ const ≅ = isequal
     @test df[!, "x1"] == df2[!, "a"]
     @test df[!, "x2"] == df2[!, "b"]
 
-    @test_throws MethodError DataFrame([0.0 1.0;
-                                        0.0 1.0;
-                                        0.0 1.0], ["a", "b"], copycols=false)
+    @test_throws ArgumentError DataFrame([0.0 1.0;
+                                          0.0 1.0;
+                                          0.0 1.0], ["a", "b"], copycols=false)
 
     @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
@@ -426,7 +426,7 @@ end
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
 
-    @test_throws MethodError DataFrame([1 2; 3 4], copycols=false)
+    @test_throws ArgumentError DataFrame([1 2; 3 4], copycols=false)
 end
 
 @testset "column types" begin
@@ -446,7 +446,7 @@ end
     @test size(df) == (2, 2)
     @test df.x1 == [1, 3]
     @test df.x2 == [2, 4]
-    @test_throws MethodError DataFrame([1 2; 3 4], copycols=false)
+    @test_throws ArgumentError DataFrame([1 2; 3 4], copycols=false)
 
 end
 
@@ -522,6 +522,21 @@ end
                                        [:A, :B, :C], [false, false, true], 100)
     @test_throws MethodError DataFrame([Int, String], [:a, :b], [false, true], 3)
     @test_throws MethodError DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
+end
+
+@testset "AbstractMatrix being a table" begin
+    struct M <: AbstractMatrix{Any}
+        df::DataFrame
+    end
+
+    Tables.istable(::Type{M}) = true
+    Tables.columns(x::M) = x.df
+    Tables.columnnames(x::M) = propertynames(x.df)
+
+    df = DataFrame(a=1:2, b=3:4)
+    m = M(df)
+    @test DataFrame(m) == df
+    @test DataFrame(m).a !== df.a
 end
 
 end # module

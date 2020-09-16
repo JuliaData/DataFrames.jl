@@ -264,7 +264,9 @@ DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
               copycols=copycols)
 
-function DataFrame(columns::T) where {T <: AbstractMatrix}
+function DataFrame(columns::T; copycols::Bool=true) where {T <: AbstractMatrix}
+    copycols || throw(ArgumentError("copycols=false is not supported with source" *
+                                    "of type $T"))
     if Tables.istable(T)
         return fromcolumns(Tables.columns(columns),
                            collect(Symbol, Tables.columnnames(columns)),
@@ -274,14 +276,18 @@ function DataFrame(columns::T) where {T <: AbstractMatrix}
     end
 end
 
-DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
-          makeunique::Bool=false) =
+function DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
+          makeunique::Bool=false, copycols::Bool=true)
+    copycols || throw(ArgumentError("copycols=false is not supported with source" *
+                                    "of type $(typeof(columns))"))
+
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)
+end
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
-          makeunique::Bool=false) =
-    DataFrame(columns, Symbol.(cnames); makeunique=makeunique)
+          makeunique::Bool=false, copycols::Bool=true) =
+    DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
 
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
