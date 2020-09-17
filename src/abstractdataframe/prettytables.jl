@@ -10,7 +10,7 @@
 
 # Default DataFrames highlighter for text backend.
 #
-# This highlighter change the text color to gray in cells with `nothing`,
+# This highlighter changes the text color to gray in cells with `nothing`,
 # `missing`, `#undef`, and types related to DataFrames.jl.
 function _df_h_f(data,i,j)
     try
