@@ -577,7 +577,7 @@ function _show(io::IO,
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
-               truncstring::Int = 32,
+               truncate::Int = 32,
                kwargs...)
 
     _check_consistency(df)
@@ -601,7 +601,7 @@ function _show(io::IO,
     title = summary ? Base.summary(df) : ""
 
     # Create the formatter considering the current maximum size of the strings.
-    _formatter = (v,i,j)->_pretty_tables_formatter(v, i, j, truncstring)
+    _formatter = (v,i,j)->_pretty_tables_formatter(v, i, j, truncate)
 
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names,types);
@@ -611,7 +611,7 @@ function _show(io::IO,
                  crop_num_lines_at_beginning = 2,
                  formatters                  = (_formatter,),
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
-                 maximum_columns_width       = truncstring,
+                 maximum_columns_width       = truncate,
                  newline_at_end              = false,
                  nosubheader                 = !eltypes,
                  row_number_alignment        = :l,
