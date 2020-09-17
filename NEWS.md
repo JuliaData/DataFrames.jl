@@ -53,7 +53,7 @@
 * [PrettyTables.jl](https://github.com/ronisbr/PrettyTables.jl) is now the
   default back-end to print DataFrames to text/plain; the print option
   `splitcols` was removed and the output format was changed
-  ([#2429](https://github.com/JuliaData/DataFrames.jl/pull/2429)
+  ([#2429](https://github.com/JuliaData/DataFrames.jl/pull/2429))
 
 ## New functionalities
 
