@@ -3,67 +3,10 @@
 # Description
 # ==============================================================================
 #
-#     This file contains the functions that build the interface with
-#     PrettyTables.jl.
+#     This file contains the definitions related to the interface with
+#     PrettyTables.jl
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-using PrettyTables
-
-# Internal function to print DataFrames using PrettyTables.jl.
-function _pretty_table(io::IO, df::AbstractDataFrame;
-                       allrows::Bool = !get(io, :limit, false),
-                       allcols::Bool = !get(io, :limit, false),
-                       rowlabel::Symbol = :Row,
-                       summary::Bool = true,
-                       eltypes::Bool = true,
-                       rowid=nothing,
-                       truncstring::Int = 32,
-                       kwargs...)
-
-    names = permutedims(propertynames(df))
-    types = permutedims(compacttype.(eltype.(eachcol(df))))
-
-    crop = :both
-
-    if allcols && allrows
-        crop = :none
-    elseif allcols
-        crop = :vertical
-    elseif allrows
-        crop = :horizontal
-    end
-
-    # Check if the user wants to display a summary about the DataFrame that is
-    # being printed. This will be shown using the `title` option of
-    # `pretty_table`.
-    title = summary ? Base.summary(df) : ""
-
-    # Create the formatter considering the current maximum size of the strings.
-    _formatter = (v,i,j)->_df_formatter(v,i,j,truncstring)
-
-    # Print the table with the selected options.
-    pretty_table(io, df, vcat(names,types);
-                 alignment                   = :l,
-                 continuation_row_alignment  = :l,
-                 crop                        = crop,
-                 crop_num_lines_at_beginning = 2,
-                 formatters                  = (_formatter,),
-                 highlighters                = (_DF_HIGHLIGHTER,),
-                 maximum_columns_width       = truncstring,
-                 newline_at_end              = false,
-                 nosubheader                 = !eltypes,
-                 row_number_alignment        = :l,
-                 row_number_column_title     = string(rowlabel),
-                 show_row_number             = true,
-                 tf                          = dataframe,
-                 title                       = title,
-                 vlines                      = [1])
-end
-
-################################################################################
-#                             Auxiliary functions
-################################################################################
 
 # Default DataFrames highlighter for text backend.
 #

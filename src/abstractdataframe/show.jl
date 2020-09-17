@@ -577,48 +577,52 @@ function _show(io::IO,
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
-               rowid=nothing,
-               truncstring::Int)
+               truncstring::Int = 32,
+               kwargs...)
+
     _check_consistency(df)
 
-    # Check which backend must be used to print the DataFrame.
-    if _DISPLAY_BACKEND.x == :pretty_tables
-        _pretty_table(io, df;
-                      allrows     = allrows,
-                      allcols     = allcols,
-                      rowlabel    = rowlabel,
-                      summary     = summary,
-                      eltypes     = eltypes,
-                      truncstring = truncstring)
-    else
-        # we will pass around this buffer to avoid its reallocation in ourstrwidth
-        buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+    names = permutedims(propertynames(df))
+    types = permutedims(compacttype.(eltype.(eachcol(df))))
 
-        nrows = size(df, 1)
-        if rowid !== nothing
-            if size(df, 2) == 0
-                rowid = nothing
-            elseif nrows != 1
-                throw(ArgumentError("rowid may be passed only with a single row data frame"))
-            end
-        end
-        dsize = displaysize(io)
-        availableheight = dsize[1] - 7
-        nrowssubset = fld(availableheight, 2)
-        bound = min(nrowssubset - 1, nrows)
-        if allrows || nrows <= availableheight
-            rowindices1 = 1:nrows
-            rowindices2 = 1:0
-        else
-            rowindices1 = 1:bound
-            rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
-        end
-        maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid,
-                                 eltypes, buffer, truncstring)
-        width = getprintedwidth(maxwidths)
-        showrows(io, df, rowindices1, rowindices2, maxwidths, splitcols, allcols,
-                 rowlabel, summary, eltypes, rowid, buffer, truncstring)
+    crop = :both
+
+    if allcols && allrows
+        crop = :none
+    elseif allcols
+        crop = :vertical
+    elseif allrows
+        crop = :horizontal
     end
+
+    # Check if the user wants to display a summary about the DataFrame that is
+    # being printed. This will be shown using the `title` option of
+    # `pretty_table`.
+    title = summary ? Base.summary(df) : ""
+
+    # Create the formatter considering the current maximum size of the strings.
+    _formatter = (v,i,j)->_df_formatter(v, i, j, truncstring)
+
+    # Print the table with the selected options.
+    pretty_table(io, df, vcat(names,types);
+                 alignment                   = :l,
+                 continuation_row_alignment  = :l,
+                 crop                        = crop,
+                 crop_num_lines_at_beginning = 2,
+                 formatters                  = (_formatter,),
+                 highlighters                = (_DF_HIGHLIGHTER,),
+                 maximum_columns_width       = truncstring,
+                 newline_at_end              = false,
+                 nosubheader                 = !eltypes,
+                 row_number_alignment        = :l,
+                 row_number_column_title     = string(rowlabel),
+                 show_row_number             = true,
+                 tf                          = dataframe,
+                 title                       = title,
+                 vlines                      = [1],
+                 kwargs...)
+
+    return nothing
 end
 
 """
@@ -626,11 +630,11 @@ end
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
          allgroups::Bool = !get(io, :limit, false),
-         splitcols::Bool = get(io, :limit, false),
          rowlabel::Symbol = :Row,
          summary::Bool = true,
          eltypes::Bool = true,
-         truncate::Int = 32)
+         truncate::Int = 32,
+         kwargs...)
 
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
@@ -652,16 +656,14 @@ while `splitcols` defaults to `true`.
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` does not have the `IOContext` property
   `limit` set.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
-  screen width rather than printing all columns in the same block. Only applies
-  if `allcols` is `true`.
-  By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 - `eltypes::Bool = true`: Whether to print the column types under column names.
 - `truncate::Int = 32`: the maximal display width the output can use before
   being truncated (in the `textwidth` sense, excluding `…`).
   If `truncate` is 0 or less, no truncation is applied.
+- `kwargs...`: Any keyword argument supported by PrettyTables.jl can be passed
+  here to customize the output.
 
 # Examples
 ```jldoctest
@@ -679,63 +681,5 @@ julia> show(df, allcols=true)
 │ 3   │ 3     │ z      │
 ```
 """
-Base.show(io::IO,
-          df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
-          rowlabel::Symbol = :Row,
-          summary::Bool = true,
-          eltypes::Bool = true,
-          truncate::Int = 32) =
-    _show(io, df; allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary, eltypes=eltypes,
-          truncstring=truncate)
-
-Base.show(df::AbstractDataFrame;
-          allrows::Bool = !get(stdout, :limit, true),
-          allcols::Bool = !get(stdout, :limit, true),
-          splitcols = get(stdout, :limit, true),
-          rowlabel::Symbol = :Row,
-          summary::Bool = true,
-          eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, df;
-         allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
-
-################################################################################
-#                              Backend selection
-################################################################################
-
-# This variable holds which backend must be used when printing tables.
-const _DISPLAY_BACKEND = Ref(:traditional)
-
-"""
-    setdisplay_traditional()
-
-Use the traditional system to print tables.
-
-"""
-function setdisplay_traditional()
-    _DISPLAY_BACKEND.x = :traditional
-    return nothing
-end
-
-"""
-    setdisplay_prettytables(kwargs...)
-
-Use PrettyTables.jl backend to print tables.
-
-The default printing options can be passed to `kwargs...`. Any option supported
-by PrettyTables.jl can be configured here with the following exception:
-
-    crop, maximum_columns_width, nosubheader, row_number_column_title, title
-
-which are configured based on the options available in the function `show`.
-
-"""
-function setdisplay_prettytables(;kwargs...)
-    _DISPLAY_BACKEND.x = :pretty_tables
-    return nothing
-end
+Base.show(io::IO, df::AbstractDataFrame; kwargs...) = _show(io, df; kwargs...)
+Base.show(df::AbstractDataFrame; kwargs...) = show(stdout, df; kwargs...)

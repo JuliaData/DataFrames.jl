@@ -7,6 +7,7 @@ using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
 using Markdown
+using PrettyTables
 
 import DataAPI,
        DataAPI.All,
