@@ -573,10 +573,10 @@ function _show(io::IO,
                df::AbstractDataFrame;
                allrows::Bool = !get(io, :limit, false),
                allcols::Bool = !get(io, :limit, false),
-               splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
+               rowid = nothing,
                truncate::Int = 32,
                kwargs...)
 
@@ -603,6 +603,17 @@ function _show(io::IO,
     # Create the formatter considering the current maximum size of the strings.
     _formatter = (v,i,j)->_pretty_tables_formatter(v, i, j, truncate)
 
+    # If `rowid` is not `nothing`, then we are printing a data row. In this
+    # case, we will add this information using the row name column of
+    # PrettyTables.jl. Otherwise, we can just use the row number column.
+    if isnothing(rowid)
+        show_row_number = true
+        row_names = nothing
+    else
+        show_row_number = false
+        row_names = [string(rowid)]
+    end
+
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names,types);
                  alignment                   = :l,
@@ -614,9 +625,11 @@ function _show(io::IO,
                  maximum_columns_width       = truncate,
                  newline_at_end              = false,
                  nosubheader                 = !eltypes,
+                 row_name_column_title       = string(rowlabel),
+                 row_names                   = row_names,
                  row_number_alignment        = :l,
                  row_number_column_title     = string(rowlabel),
-                 show_row_number             = true,
+                 show_row_number             = show_row_number,
                  tf                          = dataframe,
                  title                       = title,
                  vlines                      = [1],
