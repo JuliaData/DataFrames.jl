@@ -15,7 +15,7 @@
 function _pretty_tables_highlighter_func(data,i,j)
     try
         return ismissing(data[i,j]) ||
-            data[i,j] == nothing ||
+            data[i,j] === nothing ||
             typeof(data[i,j]) <: Union{AbstractDataFrame, GroupedDataFrame,
                                        DataFrameRow, DataFrameRows,
                                        DataFrameColumns}
@@ -55,7 +55,7 @@ function _pretty_tables_formatter(v,i,j,truncstring = 32)
         return sprint(show, v, context = :compact => true)
     elseif ismissing(v)
         return "missing"
-    elseif v == nothing
+    elseif v === nothing
         return ""
     else
         return v
