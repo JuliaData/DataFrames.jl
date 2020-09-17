@@ -606,10 +606,12 @@ function _show(io::IO,
     # If `rowid` is not `nothing`, then we are printing a data row. In this
     # case, we will add this information using the row name column of
     # PrettyTables.jl. Otherwise, we can just use the row number column.
-    if rowid === nothing
+    if (rowid === nothing) || (size(df, 2) == 0)
         show_row_number = true
         row_names = nothing
     else
+        size(df, 1) != 1 &&
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
         show_row_number = false
         row_names = [string(rowid)]
     end
