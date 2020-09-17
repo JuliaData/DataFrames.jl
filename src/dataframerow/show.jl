@@ -6,7 +6,7 @@ function Base.show(io::IO, dfr::DataFrameRow;
     r, c = parentindices(dfr)
     _show(io, view(parent(dfr), [r], c), allcols=allcols, rowlabel=rowlabel,
           summary=false, rowid=r, eltypes=eltypes, truncate=truncate,
-          title = "DataFrameRow")
+          title="DataFrameRow")
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfr::DataFrameRow;

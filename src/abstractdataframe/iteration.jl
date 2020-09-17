@@ -256,7 +256,7 @@ function Base.show(io::IO, dfrs::DataFrameRows;
     df = parent(dfrs)
     title = summary ? "$(nrow(df))×$(ncol(df)) DataFrameRows" : ""
     _show(io, df, allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-          summary=false, eltypes=eltypes, truncate=truncate, title = title)
+          summary=false, eltypes=eltypes, truncate=truncate, title=title)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
@@ -289,7 +289,7 @@ function Base.show(io::IO, dfcs::DataFrameColumns;
     df = parent(dfcs)
     title = summary ? "$(nrow(df))×$(ncol(df)) DataFrameColumns" : ""
     _show(io, parent(dfcs), allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-          summary=false, eltypes=eltypes, truncate=truncate, title = title)
+          summary=false, eltypes=eltypes, truncate=truncate, title=title)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;

@@ -12,7 +12,7 @@
 #
 # This highlighter changes the text color to gray in cells with `nothing`,
 # `missing`, `#undef`, and types related to DataFrames.jl.
-function _pretty_tables_highlighter_func(data,i,j)
+function _pretty_tables_highlighter_func(data, i, j)
     try
         return ismissing(data[i,j]) ||
             data[i,j] === nothing ||
@@ -39,7 +39,7 @@ const _PRETTY_TABLES_HIGHLIGHTER = Highlighter(_pretty_tables_highlighter_func,
 #     - nothing;
 #     - Cells with types related to DataFrames.jl.
 
-function _pretty_tables_formatter(v,i,j,truncstring = 32)
+function _pretty_tables_formatter(v, i, j, truncstring = 32)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
