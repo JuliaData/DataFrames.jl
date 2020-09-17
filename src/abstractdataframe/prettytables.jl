@@ -42,7 +42,7 @@ function _df_formatter(v,i,j,truncstring = 32)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
-        # Here, we must not use `print` or `show`. Otherwise, we can call
+        # Here, we must not use `print` or `show`. Otherwise, we will call
         # `_pretty_table` to render the current table leading to a stack
         # overflow.
         str = sprint(ourshow, v, truncstring, context = :compact => true)
