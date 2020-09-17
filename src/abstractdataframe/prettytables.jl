@@ -46,8 +46,7 @@ function _pretty_tables_formatter(v,i,j,truncstring = 32)
         # Here, we must not use `print` or `show`. Otherwise, we will call
         # `_pretty_table` to render the current table leading to a stack
         # overflow.
-        str = sprint(ourshow, v, truncstring, context = :compact => true)
-        str = split(str, '\n')[1]
+        str = sprint(summary, v)
         return str
     elseif typeof(v) <: Unsigned
         # In case of an `Unsigned` value, use `show` to obtain the
