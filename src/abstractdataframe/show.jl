@@ -601,7 +601,7 @@ function _show(io::IO,
     title = summary ? Base.summary(df) : ""
 
     # Create the formatter considering the current maximum size of the strings.
-    _formatter = (v,i,j)->_df_formatter(v, i, j, truncstring)
+    _formatter = (v,i,j)->_pretty_tables_formatter(v, i, j, truncstring)
 
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names,types);
@@ -610,7 +610,7 @@ function _show(io::IO,
                  crop                        = crop,
                  crop_num_lines_at_beginning = 2,
                  formatters                  = (_formatter,),
-                 highlighters                = (_DF_HIGHLIGHTER,),
+                 highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
                  maximum_columns_width       = truncstring,
                  newline_at_end              = false,
                  nosubheader                 = !eltypes,
