@@ -606,7 +606,7 @@ function _show(io::IO,
     # If `rowid` is not `nothing`, then we are printing a data row. In this
     # case, we will add this information using the row name column of
     # PrettyTables.jl. Otherwise, we can just use the row number column.
-    if isnothing(rowid)
+    if rowid === nothing
         show_row_number = true
         row_names = nothing
     else
