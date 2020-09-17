@@ -653,8 +653,7 @@ Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
 
 If `io` is omitted, the result is printed to `stdout`,
-and `allrows`, `allcols` and `allgroups` default to `false`
-while `splitcols` defaults to `true`.
+and `allrows`, `allcols` and `allgroups` default to `false`.
 
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
