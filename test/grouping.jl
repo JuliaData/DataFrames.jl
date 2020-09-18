@@ -594,6 +594,106 @@ end
     end
 end
 
+@testset "grouping arrays that allow missing without missings" begin
+    xv = ["A", "B", "B", "B", "A", "B", "A", "A"]
+    yv = ["B", "A", "A", "B", "A", "B", "A", "A"]
+    xvars = (xv,
+             categorical(xv),
+             levels!(categorical(xv), ["A", "B", "X"]),
+             levels!(categorical(xv), ["X", "B", "A"]),
+             _levels!(PooledArray(xv), ["A", "B"]),
+             _levels!(PooledArray(xv), ["B", "A", "X"]),
+             _levels!(PooledArray(xv), ["X", "A", "B"]))
+    yvars = (yv,
+             categorical(yv),
+             levels!(categorical(yv), ["A", "B", "X"]),
+             levels!(categorical(yv), ["B", "X", "A"]),
+             _levels!(PooledArray(yv), ["A", "B"]),
+             _levels!(PooledArray(yv), ["A", "B", "X"]),
+             _levels!(PooledArray(yv), ["B", "A", "X"]))
+    for x in xvars, y in yvars,
+        fx in (identity, allowmissing),
+        fy in (identity, allowmissing)
+        df = DataFrame(Key1 = fx(x), Key2 = fy(y), Value = 1:8)
+
+        @testset "sort=false, skipmissing=false" begin
+            gd = groupby_checked(df, :Key1)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                    DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6]),
+                ])
+
+            gd = groupby_checked(df, [:Key1, :Key2])
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                    DataFrame(Key1="A", Key2="B", Value=1),
+                    DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                    DataFrame(Key1="B", Key2="B", Value=[4, 6])
+                ])
+        end
+
+        @testset "sort=false, skipmissing=true" begin
+            gd = groupby_checked(df, :Key1, skipmissing=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6])
+            ])
+
+            gd = groupby_checked(df, [:Key1, :Key2], skipmissing=true)
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                    DataFrame(Key1="A", Key2="B", Value=1),
+                    DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                    DataFrame(Key1="B", Key2="B", Value=[4, 6])
+                ])
+        end
+
+        @testset "sort=true, skipmissing=false" begin
+            gd = groupby_checked(df, :Key1, sort=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6]),
+            ])
+            @test issorted(vcat(gd...), :Key1)
+
+            gd = groupby_checked(df, [:Key1, :Key2], sort=true)
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                DataFrame(Key1="A", Key2="B", Value=1),
+                DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                DataFrame(Key1="B", Key2="B", Value=[4, 6]),
+            ])
+            @test issorted(vcat(gd...), [:Key1, :Key2])
+        end
+
+        @testset "sort=true, skipmissing=true" begin
+            gd = groupby_checked(df, :Key1, sort=true, skipmissing=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6])
+            ])
+            @test issorted(vcat(gd...), :Key1)
+
+            gd = groupby_checked(df, [:Key1, :Key2], sort=true, skipmissing=true)
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                DataFrame(Key1="A", Key2="B", Value=1),
+                DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                DataFrame(Key1="B", Key2="B", Value=[4, 6])
+            ])
+            @test issorted(vcat(gd...), [:Key1, :Key2])
+        end
+    end
+end
+
 @testset "grouping with three keys" begin
     # We need many rows so that optimized CategoricalArray method is used
     xv = rand(["A", "B", missing], 100)
@@ -632,17 +732,6 @@ end
         dfs = [groupby_checked(dfb, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)...]
         @test isequal_unordered(gd, dfs)
         @test issorted(vcat(gd...), [:Key1, :Key2, :Key3])
-
-        # This is an implementation detail but it allows checking
-        # that the optimized method is used
-        if df.Key1 isa CategoricalVector &&
-            df.Key2 isa CategoricalVector &&
-            df.Key3 isa CategoricalVector
-            @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true) ≅
-                groupby_checked(df, [:Key1, :Key2, :Key3], sort=false)
-            @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ≅
-                groupby_checked(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
-        end
     end
 end
 
