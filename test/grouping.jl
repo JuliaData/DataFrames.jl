@@ -694,6 +694,22 @@ end
     end
 end
 
+@testset "grouping refarray with fallback" begin
+    # The high number of categories compared to the number of rows triggers the use
+    # of the fallback grouping method
+    for x in ([3, 1, 2], [3, 1, missing])
+        df = DataFrame(x=categorical(x, levels=10000:-1:1),
+                       x2=categorical(x, levels=3:-1:1),
+                       y=[1, 2, 3])
+        for skipmissing in (true, false)
+            @test groupby(df, :x, sort=true, skipmissing=skipmissing) ≅
+                groupby(df, :x, sort=true, skipmissing=skipmissing)
+            @test isequal_unordered(groupby(df, :x, skipmissing=skipmissing),
+                                    collect(AbstractDataFrame, groupby(df, :x, skipmissing=skipmissing)))
+        end
+    end
+end
+
 @testset "grouping with three keys" begin
     # We need many rows so that optimized CategoricalArray method is used
     xv = rand(["A", "B", missing], 100)

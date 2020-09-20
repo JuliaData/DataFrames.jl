@@ -162,13 +162,17 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
     @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
 
     refpools = map(DataAPI.refpool, cols)
-    foreach(refpool -> @assert(allunique(refpool)), refpools)
+    refs = map(DataAPI.refarray, cols)
+    missinginds = map(refpools) do refpool
+        eltype(refpool) >: Missing ?
+            something(findfirst(ismissing, refpool), lastindex(refpool)+1) : lastindex(refpool)+1
+    end
 
     # If skipmissing=true, rows with missings all go to group 0,
     # which will be removed by functions down the stream
-    ngroupstup = map(refpools) do refpool
+    ngroupstup = map(refpools, missinginds) do refpool, missingind
         len = length(refpool)
-        if skipmissing && eltype(refpool) >: Missing && any(ismissing, refpool)
+        if skipmissing && missingind <= lastindex(refpool)
             return len - 1
         else
             return len
@@ -176,48 +180,62 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
     end
     ngroups = prod(ngroupstup)
 
-    # Fall back to hashing if there would be too many empty combinations.
+    # Fall back to hashing if there would be too many empty combinations
+    # or if the pool does not contain only unique values
     # The first check ensures the computation of ngroups did not overflow.
     # The rationale for the 2 threshold is that while the fallback method is always slower,
     # it allocates a hash table of size length(groups) instead of the remap vector
     # of size ngroups (i.e. the number of possible combinations) in this method:
     # so it makes sense to allocate more memory for better performance,
     # but it needs to remain reasonable compared with the size of the data frame.
-    if prod(Int128.(ngroupstup)) > typemax(Int) || ngroups > 2 * length(groups)
+    anydups = !all(allunique, refpools)
+    if prod(Int128.(ngroupstup)) > typemax(Int) ||
+       ngroups > 2 * length(groups) ||
+       anydups
+        # In the simplest case, we can work directly with the reference codes
+        newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
+                  sort ||
+                  anydups ? cols : refs
         return invoke(row_group_slots,
                       Tuple{Tuple{Vararg{AbstractVector}}, Any, Val,
                             Union{Vector{Int}, Nothing}, Bool, Bool},
-                      cols, refpools, hash, groups, skipmissing, sort)
+                      newcols, refpools, hash, groups, skipmissing, sort)
     end
 
     seen = fill(false, ngroups)
-    refs = map(DataAPI.refarray, cols)
     strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N,Int}
     firstinds = map(firstindex, refpools)
-    # TODO: when skipmissing=true, do not include missing values
-    # when checking whether pool is sorted
-    if sort && !all(issorted, refpools)
+    if sort
+        nminds = map(refpools, missinginds) do refpool, missingind
+            missingind > lastindex(refpool) ?
+                eachindex(refpool) : setdiff(eachindex(refpool), missingind)
+        end
+        if skipmissing
+            sorted = all(issorted(view(refpool, nmind))
+                         for (refpool, nmind) in zip(refpools, nminds))
+        else
+            sorted = all(issorted, refpools)
+        end
+    else
+        sorted = false
+    end
+    if sort && !sorted
         # Compute vector mapping missing to -1 if skipmissing=true
-        refmaps = map(cols, refpools) do col, refpool
+        refmaps = map(cols, refpools, missinginds, nminds) do col, refpool, missingind, nmind
             refmap = collect(0:length(refpool)-1)
             if skipmissing
                 fi = firstindex(refpool)
-                missingind = findfirst(ismissing, refpool)
-                if missingind !== nothing
-                    mi = something(missingind)
-                    refmap[mi-fi+1] = -1
-                    refmap[mi-fi+2:end] .-= 1
+                if missingind <= lastindex(refpool)
+                    refmap[missingind-fi+1] = -1
+                    refmap[missingind-fi+2:end] .-= 1
                 end
                 if sort
-                    nm = missingind === nothing ? eachindex(refpool) :
-                        setdiff(eachindex(refpool), missingind)
-                    perm = sortperm(view(refpool, nm))
-                    invpermute!(view(refmap, nm .- fi .+ 1), perm)
+                    perm = sortperm(view(refpool, nmind))
+                    invpermute!(view(refmap, nmind .- fi .+ 1), perm)
                 end
             elseif sort
-                # FIXME: collect is needed for CategoricalRefPool
-                perm = sortperm(collect(refpool))
-                invpermute!(refmap, perm)
+                # collect is needed for CategoricalRefPool
+                invpermute!(refmap, sortperm(collect(refpool)))
             end
             refmap
         end
@@ -237,9 +255,6 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
             groups[i] = j
         end
     else
-        missinginds = map(refpools) do refpool
-            something(findfirst(ismissing, refpool), lastindex(refpool)+1)
-        end
         @inbounds for i in eachindex(groups)
             local refs_i
             let i=i # Workaround for julia#15276
