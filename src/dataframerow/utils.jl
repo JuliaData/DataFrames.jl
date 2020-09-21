@@ -161,7 +161,6 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
     # and this method needs to allocate a groups vector anyway
     @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
 
-    refpools = map(DataAPI.refpool, cols)
     refs = map(DataAPI.refarray, cols)
     missinginds = map(refpools) do refpool
         eltype(refpool) >: Missing ?
@@ -189,7 +188,7 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
     # so it makes sense to allocate more memory for better performance,
     # but it needs to remain reasonable compared with the size of the data frame.
     anydups = !all(allunique, refpools)
-    if prod(Int128.(ngroupstup)) > typemax(Int) ||
+    if prod(big.(ngroupstup)) > typemax(Int) ||
        ngroups > 2 * length(groups) ||
        anydups
         # In the simplest case, we can work directly with the reference codes
