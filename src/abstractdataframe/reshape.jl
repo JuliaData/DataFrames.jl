@@ -399,3 +399,20 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
     res
 end
+
+
+transpose1(df::AbstractDataFrame, indexcol=1) = unstack(stack(df,Not(indexcol)), :variable, indexcol,:value)
+
+function transpose2(df::AbstractDataFrame, indexcol=1)
+    m = permutedims(Matrix(df[!, Not(indexcol)]))
+    df2 = DataFrame(variable=names(df[!, Not(indexcol)]))
+    hcat(df2, DataFrame(m, df[!, indexcol]))
+end
+
+function transpose3(df::AbstractDataFrame, indexcol=1)
+    df2 = DataFrame(variable=names(df[!, Not(indexcol)]))
+    for row in eachrow(df)
+        df2[!,row[indexcol]] = Vector(row[Not(indexcol)])
+    end
+    return df2
+end

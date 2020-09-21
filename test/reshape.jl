@@ -507,4 +507,8 @@ end
     @test eltype(typeof(sdf2.value)) === Float64
 end
 
+@testset "transpose" begin
+    # todo
+end
+
 end # module
