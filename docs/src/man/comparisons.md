@@ -178,11 +178,8 @@ In DataFrames.jl, it just works normally with an array of join keys specified in
 The following table compares the main functions of DataFrames.jl with the R package dplyr (version 1):
 
 ```R
-df <- tibble(id = c('a','b','c','d','e','f'),
-             grp = c(1, 2, 1, 2, 1, 2),
-             x = c(6, 5, 4, 3, 2, 1),
-             y = c(4, 5, 6, 7, 8, 9),
-             z = c(3, 4, 5, 6, 7, 8))
+df <- tibble(grp = rep(1:2, 3), x = 6:1, y = 4:9,
+             z = c(3:7, NA), id = letters[1:6])
 ```
 
 | Operation                | dplyr                          | DataFrames.jl                          |
