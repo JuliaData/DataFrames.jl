@@ -99,6 +99,7 @@ examples above do not synchronize the column names between pandas and DataFrames
 | :----------------- | :---------------------------------------------------- | :------------------------------------------- |
 | Add new columns    | `df['z1'] = df['z'] + 1`                              | `df.z1 = df.z .+ 1`                          |
 |                    |                                                       | `transform!(df, :z => (x -> x .+ 1) => :z1)` |
+|                    | `df.insert(1, 'const', 10)`                           | `insertcols!(df, 2, :const => 10)`           |
 | Rename columns     | `df.rename(columns = {'x': 'x_new'}, inplace = True)` | `rename!(df, :x => :x_new)`                  |
 | Sort rows          | `df.sort_values(by = 'x', inplace = True)`            | `sort!(df, :x)`                              |
 | Drop missing rows  | `df.dropna(inplace = True)`                           | `dropmissing!(df)`                           |
