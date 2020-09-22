@@ -69,13 +69,13 @@ rows having the index value of `'c'`.
 | Reduce multiple values   | `df['z'].mean(skipna = False)`                                 | `mean(df.z)`                                |
 |                          | `df['z'].mean()`                                               | `mean(skipmissing(df.z))`                   |
 |                          | `df[['z']].agg(['mean'])`                                      | `combine(df, :z => mean ∘ skipmissing)`     |
-| Add new columns          | `df.assign(z1 = df['z'] + 1)`                                  | `df.z1 = df.z .+ 1`                         |
-|                          |                                                                | `insertcols!(df, :z1 => df.z .+ 1)`         |
-|                          |                                                                | `transform(df, :z => (v -> v .+ 1) => :z1)` |
+| Add new columns          | `df.assign(z1 = df['z'] + 1)`                                  | `transform(df, :z => (v -> v .+ 1) => :z1)` |
 | Rename columns           | `df.rename(columns = {'x': 'x_new'})`                          | `rename(df, :x => :x_new)`                  |
 | Pick & transform columns | `df.assign(x_mean = df['x'].mean())[['x_mean', 'y']]`          | `select(df, :x => mean, :y)`                |
 | Sort rows                | `df.sort_values(by = 'x')`                                     | `sort(df, :x)`                              |
 |                          | `df.sort_values(by = ['grp', 'x'], ascending = [True, False])` | `sort(df, [:grp, order(:x, rev = true)])`   |
+| Drop missing rows        | `df.dropna()`                                                  | `dropmissing(df)`                           |
+| Select unique rows       | `df.drop_duplicates()`                                         | `unique(df)`                                |
 
 Note that pandas skips `NaN` values in its analytic functions by default. By contrast,
 Julia functions do not skip `NaN`'s. If necessary, you can filter out
@@ -92,6 +92,21 @@ DataFrames.jl appends a suffix to the column name by default. To keep it simple,
 examples above do not synchronize the column names between pandas and DataFrames.jl
 (you can pass `renamecols=false` keyword argument to `select`, `transform` and
 `combine` functions to retain old column names).
+
+### Mutating operations
+
+| Operation          | pandas                                                | DataFrames.jl                                |
+| :----------------- | :---------------------------------------------------- | :------------------------------------------- |
+| Add new columns    | `df['z1'] = df['z'] + 1`                              | `df.z1 = df.z .+ 1`                          |
+|                    |                                                       | `transform!(df, :z => (x -> x .+ 1) => :z1)` |
+|                    | `df.insert(1, 'const', 10)`                           | `insertcols!(df, 2, :const => 10)`           |
+| Rename columns     | `df.rename(columns = {'x': 'x_new'}, inplace = True)` | `rename!(df, :x => :x_new)`                  |
+| Sort rows          | `df.sort_values(by = 'x', inplace = True)`            | `sort!(df, :x)`                              |
+| Drop missing rows  | `df.dropna(inplace = True)`                           | `dropmissing!(df)`                           |
+| Select unique rows | `df.drop_duplicates(inplace = True)`                  | `unique!(df)`                                |
+
+Generally speaking, DataFrames.jl follows the Julia convention of using `!` in the
+function name to indicate mutation behavior.
 
 ### Grouping data and aggregation
 
