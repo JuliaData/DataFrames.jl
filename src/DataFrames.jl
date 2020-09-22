@@ -80,6 +80,13 @@ if VERSION < v"1.2"
     export hasproperty
 end
 
+if VERSION >= v"1.4"
+    import Base.only
+else
+    import Compact.only
+    export only
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 

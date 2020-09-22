@@ -435,6 +435,16 @@ end
 ##############################################################################
 
 """
+    only(df::AbstractDataFrame)
+
+If `df` has a single row return it as a `DataFrameRow`; otherwise throw `ArgumentError`.
+"""
+function only(df::AbstractDataFrame)
+    nrow(df) != 1 && throw(ArgumentError("data frame must contain exactly 1 row"))
+    return df[1, :]
+end
+
+"""
     first(df::AbstractDataFrame)
 
 Get the first row of `df` as a `DataFrameRow`.
