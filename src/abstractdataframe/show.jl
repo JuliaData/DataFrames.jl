@@ -697,5 +697,26 @@ julia> show(df, allcols=true)
 │ 3   │ 3     │ z      │
 ```
 """
-Base.show(io::IO, df::AbstractDataFrame; kwargs...) = _show(io, df; kwargs...)
-Base.show(df::AbstractDataFrame; kwargs...) = show(stdout, df; kwargs...)
+Base.show(io::IO,
+          df::AbstractDataFrame;
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true,
+          eltypes::Bool = true,
+          truncate::Int = 32,
+          kwargs...) =
+    _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
+
+Base.show(df::AbstractDataFrame;
+          allrows::Bool = !get(stdout, :limit, true),
+          allcols::Bool = !get(stdout, :limit, true),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true,
+          eltypes::Bool = true,
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, df;
+         allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary,
+         eltypes=eltypes, truncate=truncate, kwargs...)
