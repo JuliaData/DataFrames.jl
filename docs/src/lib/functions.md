@@ -99,6 +99,7 @@ filter
 filter!
 first
 last
+only
 nonunique
 unique
 unique!
