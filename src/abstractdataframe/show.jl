@@ -601,7 +601,7 @@ function _show(io::IO,
     title = summary ? Base.summary(df) : ""
 
     # Create the formatter considering the current maximum size of the strings.
-    _formatter = (v, i, j)->_pretty_tables_formatter(v, i, j, truncate)
+    _formatter = (v, i, j) -> _pretty_tables_formatter(v, i, j, truncate)
 
     # If `rowid` is not `nothing`, then we are printing a data row. In this
     # case, we will add this information using the row name column of
