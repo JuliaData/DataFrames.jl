@@ -678,8 +678,8 @@ and `allrows`, `allcols` and `allgroups` default to `false`.
 - `truncate::Int = 32`: the maximal display width the output can use before
   being truncated (in the `textwidth` sense, excluding `…`).
   If `truncate` is 0 or less, no truncation is applied.
-- `kwargs...`: Any keyword argument supported by PrettyTables.jl can be passed
-  here to customize the output.
+- `kwargs...`: Any keyword argument supported by the function `pretty_table` of
+  PrettyTables.jl can be passed here to customize the output.
 
 # Examples
 ```jldoctest
