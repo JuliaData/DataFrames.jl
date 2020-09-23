@@ -12,7 +12,7 @@
 #
 # This highlighter changes the text color to gray in cells with `nothing`,
 # `missing`, `#undef`, and types related to DataFrames.jl.
-function _pretty_tables_highlighter_func(data, i, j)
+function _pretty_tables_highlighter_func(data, i::Integer, j::Integer)
     try
         return ismissing(data[i,j]) ||
             data[i,j] === nothing ||
