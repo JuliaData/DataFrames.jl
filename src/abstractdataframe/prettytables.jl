@@ -1,12 +1,8 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-#
-# Description
-# ==============================================================================
-#
-#     This file contains the definitions related to the interface with
-#     PrettyTables.jl
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+##############################################################################
+##
+## Functions related to the interface with PrettyTables.jl.
+##
+##############################################################################
 
 # Default DataFrames highlighter for text backend.
 #
