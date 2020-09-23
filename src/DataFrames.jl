@@ -80,7 +80,7 @@ if VERSION < v"1.2"
     export hasproperty
 end
 
-if VERSION >= v"1.4"
+if isdefined(Base, :only)  # Introduced in 1.4.0
     import Base.only
 else
     import Compat.only
