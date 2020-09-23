@@ -83,7 +83,7 @@ end
 if VERSION >= v"1.4"
     import Base.only
 else
-    import Compact.only
+    import Compat.only
     export only
 end
 
