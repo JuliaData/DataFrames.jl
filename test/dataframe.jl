@@ -1051,7 +1051,7 @@ end
     @inferred ncol(df)
 end
 
-@testset "description" begin
+@testset "first, last and only" begin
     df = DataFrame(A = 1:10)
 
     @test first(df) == df[1, :]
@@ -1063,6 +1063,11 @@ end
     @test first(df, 1) == DataFrame(A = 1)
     @test last(df, 6) == DataFrame(A = 5:10)
     @test last(df, 1) == DataFrame(A = 10)
+
+    @test_throws ArgumentError only(df)
+    @test_throws ArgumentError only(DataFrame())
+    df = DataFrame(a=1, b=2)
+    @test only(df) === df[1, :]
 end
 
 @testset "column conversions" begin
