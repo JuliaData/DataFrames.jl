@@ -79,12 +79,7 @@ end
 if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
     using Base: ComposedFunction
 else
-    const ComposedFunction = let h = identity ∘ convert
-        @assert h.f === identity
-        @assert h.g === convert
-        getfield(parentmodule(typeof(h)), nameof(typeof(h)))
-    end
-    @assert identity ∘ convert isa ComposedFunction
+    using Compat: ComposedFunction
 end
 
-funname(c::ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
+funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
