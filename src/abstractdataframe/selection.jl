@@ -266,7 +266,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
             @assert length(colnames) == ncol(res)
             for (newname, v) in zip(colnames, eachcol(res))
                 vpar = parent(v)
-                parent_cols = col_idx isa AsTable ? col_idx.cols : col_idx
+                parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
                 if copycols && !(fun isa ByRow) &&
                     (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
                     newdf[!, newname] = copy(v)
@@ -318,7 +318,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
                 @assert length(colnames) == length(res)
                 for (newname, v) in zip(colnames, res)
                     vpar = parent(v)
-                    parent_cols = col_idx isa AsTable ? col_idx.cols : col_idx
+                    parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
                     if copycols && !(fun isa ByRow) &&
                         (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
                         newdf[!, newname] = copy(v)
@@ -379,7 +379,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
         end
         allow_resizing_newdf[] = false
         respar = parent(res)
-        parent_cols = col_idx isa AsTable ? col_idx.cols : col_idx
+        parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
         if copycols && !(fun isa ByRow) &&
             (res isa SubArray || any(i -> respar === parent(cdf[i]), parent_cols))
             newdf[!, newname] = copy(res)
@@ -738,13 +738,12 @@ julia> combine(df, :a => sum, nrow, renamecols=false)
 combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
     manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
-function combine(arg, df::AbstractDataFrame; renamecols::Bool=true)
-    if nrow(df) == 0
-        throw(ArgumentError("calling combine on a data frame with zero rows" *
-                            " with transformation as a first argument is " *
-                            "currently not supported"))
+function combine(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+    if arg isa Colon
+        throw(ArgumentError("Only transformations are allowed when function is a " *
+                            "frist argument to combine"))
     end
-    return combine(arg, groupby(df, Symbol[]), renamecols=renamecols)
+    return combine(df, arg)
 end
 
 manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool,
