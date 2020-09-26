@@ -70,8 +70,9 @@ function normalize_selection(idx::AbstractIndex,
                              <:Union{Symbol, AbstractString, DataType,
                                      AbstractVector{Symbol}, AbstractVector{<:AbstractString}}}},
                              renamecols::Bool)
-    if last(last(sel)) isa DataType
-        last(last(sel)) === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
+    lls = last(last(sel))
+    if lls isa DataType
+        lls === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
     if first(sel) isa AsTable
         rawc = first(sel).cols
@@ -99,15 +100,17 @@ function normalize_selection(idx::AbstractIndex,
         throw(ArgumentError("at least one column must be passed to a " *
                             "`ByRow` transformation function"))
     end
-    ls = last(sel)
-    if ls isa AbstractString
-        r = Symbol(ls)
-    elseif ls isa AbstractVector{<:AbstractString}
-        r = Symbol.(ls)
+    if lls isa AbstractString
+        r = Symbol(lls)
+    elseif lls isa AbstractVector{<:AbstractString}
+        r = Symbol.(lls)
     else
-        r = ls
+        r = lls
     end
-    return (wanttable ? AsTable(c) : c) => r
+    if r isa AbstractVector{Symbol}
+        allunique(r) || throw(ArgumentError("target column names must be unique"))
+    end
+    return (wanttable ? AsTable(c) : c) => first(last(sel)) => r
 end
 
 function normalize_selection(idx::AbstractIndex,
