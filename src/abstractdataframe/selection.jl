@@ -207,16 +207,15 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
     end
 
     if (newname === AsTable || newname isa AbstractVector{Symbol}) &&
-        !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
+        !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix, AbstractArray{<:Any, 0}, Ref})
         if res isa AbstractVector && !isempty(res)
-            p = pairs.(res)
-            ex = extrema(length, p)
-            ex[1] == ex[2] || throw(ArgumentError("returned elements must have the same length"))
-            kp1 = keys(p[1])
-            all(x -> keys(x) == kp1, p) || throw(ArgumentError("keys of the returned elements must be identical"))
+            kp1 = keys(res[1])
+            all(x -> keys(x) == kp1, res) || throw(ArgumentError("keys of the returned elements must be identical"))
+            true_res = res
             res = DataFrame()
-            for (i, n) in enumerate(kp1)
-                res[!, Symbol(n)] = [x[i] for x in p]
+            prepend = all(x -> x isa Integer, kp1)
+            for n in kp1
+                res[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in true_res]
             end
         else
             res = Tables.columntable(res)
@@ -300,7 +299,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
                 newdf[!, newname] = res[:, i]
             end
         elseif res isa NamedTuple
-            if all(v -> v isa AbstractVector, x)
+            if all(v -> v isa AbstractVector, res)
                 lr = length(res[1])
                 # allow shortening to 0 rows
                 if allow_resizing_newdf[] && nrow(newdf) == 1
@@ -390,6 +389,10 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
             newdf[!, newname] = res
         end
     else
+        if newname === AsTable
+            @assert res isa Union{AbstractArray{<:Any, 0}, Ref}
+            newname = :x1
+        end
         if newname in transformed_cols
             throw(ArgumentError("duplicate name of a transformed column"))
         else

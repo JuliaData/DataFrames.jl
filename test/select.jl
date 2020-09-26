@@ -720,20 +720,32 @@ end
         @test_throws ArgumentError select(df, :x => x -> retval)
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
+
+        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        cdf = copy(df)
+        select!(cdf, :x => ByRow(x -> retval))
+        @test cdf == DataFrame(x_function = [retval])
+
         if retval isa Union{NamedTuple, DataFrameRow}
-            @test_throws ArgumentError select(df, :x => ByRow(x -> retval))
-            @test_throws ArgumentError select!(df, :x => ByRow(x -> retval))
-        else
-            @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
-            cdf = copy(df)
-            select!(cdf, :x => ByRow(x -> retval))
-            @test cdf == DataFrame(x_function = [retval])
+            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
+        elseif retval isa DataFrame
+            @test_throws MethodError select(df, :x => ByRow(x -> retval) => AsTable)
+        else # Matrix; surprising but following the API
+            @test select(df, :x => ByRow(x -> retval) => AsTable) ==
+                  DataFrame(["CartesianIndex($i, $j)" => 1.0 for i in 1:2, j in 1:2]...)
+            @test select(df, :x => ByRow(x -> retval) => [:a, :b, :c, :d]) ==
+                  DataFrame(a=1.0, b=1.0, c=1.0, d=1.0)
         end
     end
 
     for retval in [(1, 2), ones(2,2,2)]
         @test select(df, :x => x -> retval) == DataFrame(x_function = [retval])
         @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        if retval isa Tuple
+            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(x1=1, x2=2)
+        else
+            @test select(df, :x => ByRow(x -> retval) => Symbol.("x", 1:8)) == DataFrame(ones(1, 8))
+        end
         cdf = copy(df)
         select!(cdf, :x => x -> retval)
         @test cdf == DataFrame(x_function = [retval])
@@ -1122,8 +1134,13 @@ end
           hcat(df, DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
                                              [(a = 2, b = 5, c = 8)],
                                              [(a = 3, b = 6, c = 9)]]))
-    @test_throws ArgumentError select(df, AsTable(:) => ByRow(identity))
-    @test_throws ArgumentError select(df, AsTable(:) => ByRow(x -> df[1, :]))
+    @test select(df, AsTable(:) => ByRow(identity)) ==
+          DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7), (a = 2, b = 5, c = 8), (a = 3, b = 6, c = 9)])
+    @test select(df, AsTable(:) => ByRow(identity) => AsTable) == df
+    @test select(df, AsTable(:) => ByRow(x -> df[1, :])) ==
+          DataFrame(a_b_c_function=fill(df[1,:], 3))
+    @test select(df, AsTable(:) => ByRow(x -> df[1, :]) => AsTable) ==
+          DataFrame(a=[1,1,1], b=4, c=7)
     @test_throws ArgumentError transform(df, AsTable(Not(:)) => ByRow(identity))
 
     @test select(df, AsTable(Not(:)) => Ref) == repeat(DataFrame(Ref = NamedTuple()), nrow(df))
@@ -1164,12 +1181,14 @@ end
 
     @test combine(x -> Matrix(x), df) == rename(df, [:x1, :x2])
     @test combine(x -> Ref(1:3), df) == DataFrame(x1=[1:3])
-    @test_throws ArgumentError combine(df, x -> Ref(1:3))
+    @test combine(df, x -> Ref(1:3)) == DataFrame(x1=[1:3])
 
-    @test combine(AsTable(:) => identity, df) == df
-    @test combine((:) => cor, df) == DataFrame(x_y_cor = 1.0)
-    @test combine(:x => x -> Ref(1:3), df) == DataFrame(x_function=[1:3])
+    @test_throws ArgumentError combine(df, AsTable(:) => identity)
+    @test combine(df, AsTable(:) => identity => AsTable) == df
+    @test combine(df, (:) => cor) == DataFrame(x_y_cor = 1.0)
+    @test combine(df, :x => x -> Ref(1:3)) == DataFrame(x_function=[1:3])
     @test_throws ArgumentError combine(df, :x => x -> ones(1,1))
+    @test combine(df, :x => (x -> ones(1,1)) => AsTable) == DataFrame(x1=1.0)
 
     df2 = combine(df, :x => identity)
     @test df2[:, 1] == df.x
@@ -1188,8 +1207,9 @@ end
 
     @test combine(x -> Matrix(x), dfv) == rename(dfv, [:x1, :x2])
 
-    @test combine(AsTable(:) => identity, dfv) == dfv
-    @test combine((:) => cor, dfv) == DataFrame(y_x_cor = 1.0)
+    @test_throws ArgumentError combine(dfv, AsTable(:) => identity)
+    @test combine(dfv, AsTable(:) => identity => AsTable) == dfv
+    @test combine(dfv, (:) => cor) == DataFrame(y_x_cor = 1.0)
 
     df2 = combine(dfv, :x => identity)
     @test df2[:, 1] == dfv.x
@@ -1294,7 +1314,7 @@ end
           DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
     @test combine(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
           DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
-    @test combine([:a, :b] => +, df, renamecols=false) == DataFrame(a_b=5:2:9)
+    @test combine(df, [:a, :b] => +, renamecols=false) == DataFrame(a_b=5:2:9)
     @test combine(identity, df, renamecols=false) == df
 
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
