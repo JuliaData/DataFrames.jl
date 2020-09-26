@@ -555,6 +555,14 @@ julia> select!(df, AsTable(:) => ByRow(mean), renamecols=false)
 select!(df::DataFrame, args...; renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
+function select!(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+    if arg isa Colon
+        throw(ArgumentError("Only transformations are allowed when function is a " *
+                            "frist argument to select!"))
+    end
+    return select!(df, arg)
+end
+
 """
     transform!(df::DataFrame, args...; renamecols::Bool=true)
 
@@ -566,6 +574,14 @@ See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
 """
 transform!(df::DataFrame, args...; renamecols::Bool=true) =
     select!(df, :, args..., renamecols=renamecols)
+
+function transform!(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+    if arg isa Colon
+        throw(ArgumentError("Only transformations are allowed when function is a " *
+                            "frist argument to transform!"))
+    end
+    return transform!(df, arg)
+end
 
 """
     select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
@@ -690,6 +706,14 @@ julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
 select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
     manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
 
+function select(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+    if arg isa Colon
+        throw(ArgumentError("Only transformations are allowed when function is a " *
+                            "frist argument to select"))
+    end
+    return select(df, arg)
+end
+
 """
     transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
 
@@ -702,6 +726,14 @@ See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 """
 transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
     select(df, :, args..., copycols=copycols, renamecols=renamecols)
+
+function transform(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+    if arg isa Colon
+        throw(ArgumentError("Only transformations are allowed when function is a " *
+                            "frist argument to transform"))
+    end
+    return transform(df, arg)
+end
 
 """
     combine(df::AbstractDataFrame, args...; renamecols::Bool=true)
