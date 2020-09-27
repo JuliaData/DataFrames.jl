@@ -67,6 +67,7 @@
 * `filter`, `sort`, `dropmissing`, and `unique` now support a `view` keyword argument
   which if set to `true` makes them retun a `SubDataFrame` view into the passed
   data frame.
+* add `only` method for `AbstractDataFrame` ([#2449](https://github.com/JuliaData/DataFrames.jl/pull/2449))
 
 ## Deprecated
 
