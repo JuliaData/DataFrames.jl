@@ -1,5 +1,6 @@
 # TODO:
-# * add combine(fun, df) for DataFrame with 0 rows
+# * add handling of empty ByRow to filter, and select/transform/combine for GroupedDataFrame
+# * add handling of multiple column return rules for select/transform/combine for GroupedDataFrame
 
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
@@ -7,7 +8,7 @@
 # 2) Pair{Int, <:Pair{<:Base.Callable, <:Union{Symbol, Vector{Symbol}, Type{AsTable}}}}
 # 3) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, <:Union{Symbol, AbstractVector{Symbol}, Type{AsTable}}}}
 # 4) Pair{AsTable, <:Pair{<:Base.Callable, <:Union{Symbol, Vector{Symbol}, Type{AsTable}}}}
-# 5) Function
+# 5) Callable
 
 """
     ByRow
@@ -38,7 +39,7 @@ normalize_selection(idx::AbstractIndex, sel, renamecols::Bool) =
         end
     end
 
-normalize_selection(idx::AbstractIndex, sel::Function, renamecols::Bool) = sel
+normalize_selection(idx::AbstractIndex, sel::Base.Callable, renamecols::Bool) = sel
 normalize_selection(idx::AbstractIndex, sel::Colon, renamecols::Bool) = idx[:]
 
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), Symbol},
@@ -96,10 +97,6 @@ function normalize_selection(idx::AbstractIndex,
                 end
             end
     end
-    if length(c) == 0 && first(last(sel)) isa ByRow
-        throw(ArgumentError("at least one column must be passed to a " *
-                            "`ByRow` transformation function"))
-    end
     if lls isa AbstractString
         r = Symbol(lls)
     elseif lls isa AbstractVector{<:AbstractString}
@@ -149,10 +146,6 @@ function normalize_selection(idx::AbstractIndex,
                 end
             end
     end
-    if length(c) == 0 && last(sel) isa ByRow
-        throw(ArgumentError("at least one column must be passed to a " *
-                            "`ByRow` transformation function"))
-    end
     fun = last(sel)
     if length(c) > 3
         prefix = join(@views(_names(idx)[c[1:2]]), '_')
@@ -176,14 +169,14 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{Int}, AsTable},
+function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                                                     <:Pair{<:Base.Callable,
                                                            <:Union{Symbol, AbstractVector{Symbol}, DataType}}}},
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
                            allow_resizing_newdf::Ref{Bool})
-    if nc isa Function
-        col_idx, fun, newname = nothing, nc, AsTable
+    if nc isa Base.Callable
+        col_idx, fun, newname = nothing, nc, nothing
     else
         col_idx, (fun, newname) = nc
     end
@@ -199,15 +192,34 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
     elseif col_idx isa Int
         res = fun(df[!, col_idx])
     elseif col_idx isa AsTable
-        res = fun(Tables.columntable(select(df, col_idx.cols, copycols=false)))
+        tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
+        if isempty(tbl) && fun isa ByRow
+            if isempty(df)
+                T = Base.return_types(fun.fun, ())[1]
+                res = T[]
+            else
+                res = [fun.fun() for _ in 1:nrow(df)]
+            end
+        else
+            res = fun(tbl)
+        end
     else
         # it should be fast enough here as we do not expect to do it millions of times
         @assert col_idx isa AbstractVector{Int}
-        res = fun(map(c -> cdf[c], col_idx)...)
+        if isempty(col_idx) && fun isa ByRow
+            if isempty(df)
+                T = Base.return_types(fun.fun, ())[1]
+                res = T[]
+            else
+                res = [fun.fun() for _ in 1:nrow(df)]
+            end
+        else
+            res = fun(map(c -> cdf[c], col_idx)...)
+        end
     end
 
     if (newname === AsTable || newname isa AbstractVector{Symbol}) &&
-        !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix, AbstractArray{<:Any, 0}, Ref})
+        !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
         if res isa AbstractVector && !isempty(res)
             kp1 = keys(res[1])
             all(x -> keys(x) == kp1, res) || throw(ArgumentError("keys of the returned elements must be identical"))
@@ -231,7 +243,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
         else
             colnames = propertynames(res)
         end
-        if !(newname === AsTable)
+        if !(newname === AsTable || newname === nothing)
             if length(colnames) != length(newname)
                 throw(ArgumentError("Number of returned columns does not match the " *
                                     "length of requested output"))
@@ -328,7 +340,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
                         newdf[!, newname] = v
                     end
                 end
-            elseif any(v -> v isa AbstractVector, x)
+            elseif any(v -> v isa AbstractVector, res)
                 throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
             else
                 if ncol(newdf) == 0
@@ -359,6 +371,9 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
             end
         end
     elseif res isa AbstractVector
+        if newname === nothing
+            newname = :x1
+        end
         if newname in transformed_cols
             throw(ArgumentError("duplicate name of a transformed column"))
         else
@@ -389,8 +404,7 @@ function select_transform!(nc::Union{Function, Pair{<:Union{Int, AbstractVector{
             newdf[!, newname] = res
         end
     else
-        if newname === AsTable
-            @assert res isa Union{AbstractArray{<:Any, 0}, Ref}
+        if newname === nothing
             newname = :x1
         end
         if newname in transformed_cols
@@ -806,7 +820,7 @@ manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
 function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
-        if v isa AbstractVector{<:Pair}
+        if v isa AbstractVecOrMat{<:Pair}
             append!(cs_vec, v)
         else
             push!(cs_vec, v)
