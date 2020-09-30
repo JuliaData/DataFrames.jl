@@ -766,16 +766,16 @@ end
     @test combine(df, r"z" => () -> y) == DataFrame(:function => y)
     @test select(df, r"z" => () -> x)[!, 1] === x # no copy even for copycols=true
     @test_throws MethodError select(df, r"z" => x -> 1)
-    @test_throws ArgumentError select(df, r"z" => ByRow(rand))
+    @test select(df, r"z" => ByRow(() -> 1)) == DataFrame(:function => fill(1, 10))
 
     @test select(df, r"z", copycols=false) == DataFrame()
     @test select(df, r"z" => () -> x, copycols=false) == DataFrame(:function => x)
     @test select(df, r"z" => () -> x, copycols=false)[!, 1] === x
     @test_throws MethodError select(df, r"z" => x -> 1, copycols=false)
-    @test_throws ArgumentError select(df, r"z" => ByRow(rand), copycols=false)
+    @test select(df, r"z" => ByRow(() -> 1)) == DataFrame(:function => fill(1, 10), copycols=false)
 
     @test_throws MethodError select!(df, r"z" => x -> 1)
-    @test_throws ArgumentError select!(df, r"z" => ByRow(rand))
+    @test select!(df, r"z" => ByRow(() -> 1)) == DataFrame(:function => fill(1, 10))
     @test_throws MethodError select!(df, r"z" => () -> x, copycols=false)
 
     select!(df, r"z" => () -> x)
@@ -1141,7 +1141,8 @@ end
           DataFrame(a_b_c_function=fill(df[1,:], 3))
     @test select(df, AsTable(:) => ByRow(x -> df[1, :]) => AsTable) ==
           DataFrame(a=[1,1,1], b=4, c=7)
-    @test_throws ArgumentError transform(df, AsTable(Not(:)) => ByRow(identity))
+    @test transform(df, AsTable(Not(:)) =>
+          ByRow(identity)) == [df DataFrame(:identity => fill(NamedTuple(), nrow(df)))]
 
     @test select(df, AsTable(Not(:)) => Ref) == repeat(DataFrame(Ref = NamedTuple()), nrow(df))
     @test combine(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
@@ -1432,36 +1433,65 @@ end
 end
 
 @testset "empty ByRow" begin
-    for sel in ([], AsTable([]))
-        df = DataFrame(a=1:3)
-        @test select(df, sel => ByRow(() -> 1)) == DataFrame("function" => [1, 1, 1])
-        @test combine(df, sel => ByRow(() -> 1)) == DataFrame("function" => [1, 1, 1])
-        @test transform(df, sel => ByRow(() -> 1)) == DataFrame("a" => 1:3, "function" => [1, 1, 1])
+    df = DataFrame(a=1:3)
 
-        for df in (DataFrame(), DataFrame(a=[]))
-            @test select(df, sel => ByRow(() -> 1)) == DataFrame("function" => [])
-            @test combine(df, sel => ByRow(() -> 1)) == DataFrame("function" => [])
-            if ncol(df) == 0
-                @test transform(df, sel => ByRow(() -> 1)) == DataFrame("function" => [])
-            else
-                @test transform(df, sel => ByRow(() -> 1)) == DataFrame("a" => [], "function" => [])
-            end
-            @test eltype(select(df, sel => ByRow(() -> 1)).function) == Int
-            @test eltype(combine(df, sel => ByRow(() -> 1)).function) == Int
-            @test eltype(transform(df, sel => ByRow(() -> 1)).function) == Int
+    @test select(df, [] => ByRow(() -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test combine(df, [] => ByRow(() -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test transform(df, [] => ByRow(() -> 1)) == DataFrame("a" => 1:3, "function" => [1, 1, 1])
 
-            df2 = select(df, sel => ByRow(() -> (a=1,b="1")) => AsTable)
-            @test names(df2) == ["a", "b"]
-            @test eltype.(eachcol(df2)) == [Int, String]
-            df2 = select(df, sel => ByRow(() -> (a=1,b="1")) => [:p, :q])
-            @test names(df2) == ["p", "q"]
-            @test eltype.(eachcol(df2)) == [Int, String]
+    for df in (DataFrame(), DataFrame(a=[]))
+        @test select(df, [] => ByRow(() -> 1)) == DataFrame("function" => [])
+        @test combine(df, [] => ByRow(() -> 1)) == DataFrame("function" => [])
+        if ncol(df) == 0
+            @test transform(df, [] => ByRow(() -> 1)) == DataFrame("function" => [])
+        else
+            @test transform(df, [] => ByRow(() -> 1)) == DataFrame("a" => [], "function" => [])
+        end
+        @test eltype(select(df, [] => ByRow(() -> 1)).function) == Int
+        @test eltype(combine(df, [] => ByRow(() -> 1)).function) == Int
+        @test eltype(transform(df, [] => ByRow(() -> 1)).function) == Int
 
-            # here this follows Tables.jl behavior
-            for res in ([1, "1"], (1, "1"))
-                @test select(df, sel => ByRow(() -> res) => AsTable) == DataFrame()
-                @test_throws ArgumentError select(df, sel => ByRow(() -> res) => [:p, :q])
-            end
+        df2 = select(df, [] => ByRow(() -> (a=1,b="1")) => AsTable)
+        @test names(df2) == ["a", "b"]
+        @test eltype.(eachcol(df2)) == [Int, String]
+        df2 = select(df, [] => ByRow(() -> (a=1,b="1")) => [:p, :q])
+        @test names(df2) == ["p", "q"]
+        @test eltype.(eachcol(df2)) == [Int, String]
+
+        # here this follows Tables.jl behavior
+        for res in ([1, "1"], (1, "1"))
+            @test select(df, [] => ByRow(() -> res) => AsTable) == DataFrame()
+            @test_throws ArgumentError select(df, [] => ByRow(() -> res) => [:p, :q])
+        end
+    end
+
+    @test select(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test combine(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test transform(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("a" => 1:3, "function" => [1, 1, 1])
+
+    for df in (DataFrame(), DataFrame(a=[]))
+        @test select(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [])
+        @test combine(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [])
+        if ncol(df) == 0
+            @test transform(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [])
+        else
+            @test transform(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("a" => [], "function" => [])
+        end
+        @test eltype(select(df, AsTable([]) => ByRow(x -> 1)).function) == Int
+        @test eltype(combine(df, AsTable([]) => ByRow(x -> 1)).function) == Int
+        @test eltype(transform(df, AsTable([]) => ByRow(x -> 1)).function) == Int
+
+        df2 = select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => AsTable)
+        @test names(df2) == ["a", "b"]
+        @test eltype.(eachcol(df2)) == [Int, String]
+        df2 = select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => [:p, :q])
+        @test names(df2) == ["p", "q"]
+        @test eltype.(eachcol(df2)) == [Int, String]
+
+        # here this follows Tables.jl behavior
+        for res in ([1, "1"], (1, "1"))
+            @test select(df, AsTable([]) => ByRow(x -> res) => AsTable) == DataFrame()
+            @test_throws ArgumentError select(df, AsTable([]) => ByRow(x -> res) => [:p, :q])
         end
     end
 end

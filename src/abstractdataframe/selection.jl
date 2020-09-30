@@ -195,10 +195,10 @@ function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVe
         tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
         if isempty(tbl) && fun isa ByRow
             if isempty(df)
-                T = Base.return_types(fun.fun, ())[1]
+                T = Base.return_types(fun.fun, (NamedTuple{(),Tuple{}},))[1]
                 res = T[]
             else
-                res = [fun.fun() for _ in 1:nrow(df)]
+                res = [fun.fun(NamedTuple()) for _ in 1:nrow(df)]
             end
         else
             res = fun(tbl)
