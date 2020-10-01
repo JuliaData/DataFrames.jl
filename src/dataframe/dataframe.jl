@@ -60,7 +60,7 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 
 All columns in `columns` must be `AbstractVector`s and have the same length. An
 exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`,
-DataFrame(pairs::AbstractVector{<:Pair}, and DataFrame(pairs::NTuple{N, Pair} form
+`DataFrame(pairs::AbstractVector{<:Pair})`, and `DataFrame(pairs::NTuple{N, Pair})` form
 constructors which additionally allow a column to be of any other type that is
 not an `AbstractArray`, in which case the passed value is automatically repeated
 to fill a new vector of the appropriate length. As a particular rule values
