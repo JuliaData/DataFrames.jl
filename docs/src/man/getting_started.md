@@ -620,7 +620,7 @@ julia> df[ (df.x .> 2) .& (df.a .== 'c'), : ]
 An alternative formulation, which notably saves on the need to use broadcasting syntax via `.` prefixes, uses [`filter`](@ref) or [`filter!`](@ref):
 
 ```jldoctest dataframe
-julia> filter([:x, :a] => ((x1,x2) -> (x1 > 2) && (x2 == 'c')), df)
+julia> filter([:x, :a] => (x1, x2) -> x1 > 2 && x2 == 'c', df)
 1×4 DataFrame
 │ Row │ x     │ y      │ a    │ b       │
 │     │ Int64 │ String │ Char │ Float64 │
