@@ -594,7 +594,7 @@ a function object that tests whether each value belongs to the subset
     More details on copies, views, and references can be found
     [here.](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/#getindex-and-view-1)
 
-#### Selecting Rows with `filter`
+#### Selecting rows with `filter`
 
 We have seen above how to subset a `DataFrame` to several criteria, involving multiple columns, by supplying a logical vector to the first dimension. For instance, in the following we want to subset to all rows where `x > 2` and where `a == 'c'`:
 
