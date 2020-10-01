@@ -2700,12 +2700,8 @@ end
     @test isequal_typed(combine(df, :x => (x -> 1:2) => :y), DataFrame(y=1:2))
     @test isequal_typed(combine(df, :x => (x -> x isa Vector{Int} ? "a" : 'a') => :y),
                         DataFrame(y="a"))
-
-    # in the future this should be DataFrame(nrow=0)
-    @test_throws ArgumentError combine(nrow, df)
-
-    # in the future this should be DataFrame(a=1,b=2)
-    @test_throws ArgumentError combine(sdf -> DataFrame(a=1,b=2), df)
+    @test combine(nrow, df) == DataFrame(nrow=0)
+    @test combine(sdf -> DataFrame(a=1,b=2), df) == DataFrame(a=1,b=2)
 end
 
 @testset "disallowed tuple column selector" begin
