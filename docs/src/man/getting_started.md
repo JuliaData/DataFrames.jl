@@ -232,9 +232,9 @@ but for very large `DataFrame`s  this may be a consideration.
 If we wanted to add several rows at once, one solution is to [`append!`](@ref) one `DataFrame` to another. For example:
 
 ```jldoctest dataframe
-julia> df1 = DataFrame(A=1:3, B=1:3);
+julia> df1 = DataFrame(A = 1:3, B = 1:3);
 
-julia> df2 = DataFrame(A=4.0:6.0, B=4:6);
+julia> df2 = DataFrame(A = 4.0:6.0, B = 4:6);
 
 julia> append!(df1, df2)
 
