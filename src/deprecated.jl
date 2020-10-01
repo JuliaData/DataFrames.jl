@@ -105,3 +105,40 @@ function categorical!(df::DataFrame, cols::Union{Type, Nothing}=nothing;
     end
     return transform!(df, names(df, cols) .=> (x -> categorical(x, compress=compress)), renamecols=false)
 end
+
+@deprecate DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false,
+          copycols::Bool=true) where {N} DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+@deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol}; makeunique::Bool=false,
+          copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames);
+              makeunique=makeunique, copycols=copycols)
+@deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString}; makeunique::Bool=false,
+                     copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns), [Symbol(c) for c in cnames];
+                                                              makeunique=makeunique, copycols=copycols)
+@deprecate DataFrame(columns::NTuple{N, AbstractVector};
+                     copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns),
+                                                              gennames(length(columns)), copycols=copycols)
+@deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+                     makeunique::Bool=false) DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)],
+                                                       cnames; makeunique=makeunique, copycols=false)
+
+@deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
+                     makeunique::Bool=false) DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)],
+                                                       Symbol.(cnames); makeunique=makeunique, copycols=false)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
+    Base.depwarn("`DataFrame` constructor with passed eltypes is deprecated. " *
+                 "Pass explicitly created columns to a `DataFrame` constructor instead.",
+                     :DataFrame)
+    columns = AbstractVector[elty >: Missing ?
+                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                             Tables.allocatecolumn(elty, nrows)
+                             for elty in column_eltypes]
+    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames),
+                     makeunique=makeunique), copycols=false)
+end
+
+DataFrame(column_eltypes::AbstractVector{<:Type},
+          cnames::AbstractVector{<:AbstractString},
+          nrows::Integer=0; makeunique::Bool=false) =
+    DataFrame(column_eltypes, Symbol.(cnames), nrows; makeunique=makeunique)

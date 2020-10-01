@@ -182,13 +182,9 @@ function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=fals
                      copycols=copycols)
 end
 
-# these two are needed as a workaround Tables.jl dispatch
+# this is needed as a workaround for Tables.jl dispatch
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
           copycols::Bool=true) =
-    DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
-
-DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false,
-          copycols::Bool=true) where {N} =
     DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
 
 function DataFrame(d::AbstractDict; copycols::Bool=true)
@@ -250,44 +246,6 @@ DataFrame(columns::AbstractVector{<:AbstractVector},
           cnames::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
-
-DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
-          makeunique::Bool=false, copycols::Bool=true) where {N} =
-    DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames),
-              makeunique=makeunique, copycols=copycols)
-
-DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString};
-          makeunique::Bool=false, copycols::Bool=true) where {N} =
-    DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
-
-DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
-    DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
-              copycols=copycols)
-
-DataFrame(columns::AbstractMatrix,
-          cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
-          makeunique::Bool=false) =
-    DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
-              makeunique=makeunique, copycols=false)
-
-DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
-          makeunique::Bool=false) =
-    DataFrame(columns, Symbol.(cnames); makeunique=makeunique)
-
-function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = AbstractVector[elty >: Missing ?
-                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
-                             Tables.allocatecolumn(elty, nrows)
-                             for elty in column_eltypes]
-    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames),
-                     makeunique=makeunique), copycols=false)
-end
-
-DataFrame(column_eltypes::AbstractVector{<:Type},
-          cnames::AbstractVector{<:AbstractString},
-          nrows::Integer=0; makeunique::Bool=false) =
-    DataFrame(column_eltypes, Symbol.(cnames), nrows; makeunique=makeunique)
 
 ##############################################################################
 ##
