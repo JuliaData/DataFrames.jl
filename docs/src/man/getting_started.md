@@ -609,7 +609,7 @@ julia> df = DataFrame(:x => 1:4, :y => "a", :a => 'a':'d', :b => exp(1))
 │ 3   │ 3     │ a      │ 'c'  │ 2.71828 │
 │ 4   │ 4     │ a      │ 'd'  │ 2.71828 │
 
-julia> df[ (df.x .> 2) .& (df.a .== 'c'), : ]
+julia> df[(df.x .> 2) .& (df.a .== 'c'), : ]
 1×4 DataFrame
 │ Row │ x     │ y      │ a    │ b       │
 │     │ Int64 │ String │ Char │ Float64 │
