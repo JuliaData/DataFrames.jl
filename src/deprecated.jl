@@ -112,17 +112,17 @@ end
           copycols::Bool=true) where {N} DataFrame(collect(columns), collect(cnames);
               makeunique=makeunique, copycols=copycols)
 @deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString}; makeunique::Bool=false,
-                     copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns), [Symbol(c) for c in cnames];
+                     copycols::Bool=true) where {N} DataFrame(collect(columns), [Symbol(c) for c in cnames];
                                                               makeunique=makeunique, copycols=copycols)
 @deprecate DataFrame(columns::NTuple{N, AbstractVector};
-                     copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns),
-                                                              gennames(length(columns)), copycols=copycols)
+                     copycols::Bool=true) where {N} DataFrame(collect(columns),
+                                                              Symbol.(:x, 1:length(columns)), copycols=copycols)
 @deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
-                     makeunique::Bool=false) DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)],
+                     makeunique::Bool=false) DataFrame([columns[:, i] for i in 1:size(columns, 2)],
                                                        cnames; makeunique=makeunique, copycols=false)
 
 @deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
-                     makeunique::Bool=false) DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)],
+                     makeunique::Bool=false) DataFrame([columns[:, i] for i in 1:size(columns, 2)],
                                                        Symbol.(cnames); makeunique=makeunique, copycols=false)
 
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
