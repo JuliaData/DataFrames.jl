@@ -1977,8 +1977,10 @@ end
           [df DataFrame(x_function=[(-1,), (-2,) ,(-3,) ,(-4,) ,(-5,)],
                         y_function=[(-6,), (-7,) ,(-8,) ,(-9,) ,(-10,)])]
 
-    @test_throws ArgumentError combine(gdf, AsTable([:x, :y]) => ByRow(identity))
-    @test_throws ArgumentError combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :]))
+    @test combine(gdf, AsTable([:x, :y]) => ByRow(identity)) ==
+          DataFrame(g=[1,1,1,2,2], x_y_identity=ByRow(identity)((x=1:5, y=6:10)))
+    @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :])) ==
+          DataFrame(g=[1,1,1,2,2], x_y_function=fill(df[1, :], 5))
 end
 
 @testset "test correctness of ungrouping" begin

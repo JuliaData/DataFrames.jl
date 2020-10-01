@@ -169,9 +169,121 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVector{Int}, AsTable},
+function _transformation_helper(df, col_idx, @nospecialize(fun))
+    if col_idx === nothing
+        return fun(df)
+    elseif col_idx isa Int
+        return fun(df[!, col_idx])
+    elseif col_idx isa AsTable
+        tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
+        if isempty(tbl) && fun isa ByRow
+            if isempty(df)
+                T = Base.return_types(fun.fun, (NamedTuple{(),Tuple{}},))[1]
+                return T[]
+            else
+                return [fun.fun(NamedTuple()) for _ in 1:nrow(df)]
+            end
+        else
+            return fun(tbl)
+        end
+    else
+        # it should be fast enough here as we do not expect to do it millions of times
+        @assert col_idx isa AbstractVector{Int}
+        if isempty(col_idx) && fun isa ByRow
+            if isempty(df)
+                T = Base.return_types(fun.fun, ())[1]
+                return T[]
+            else
+                return [fun.fun() for _ in 1:nrow(df)]
+            end
+        else
+            cdf = eachcol(df)
+            return fun(map(c -> cdf[c], col_idx)...)
+        end
+    end
+    throw(ErrorException("unreachable reached"))
+end
+
+function _gen_colnames(@nospecialize(res), newname)
+    if res isa AbstractMatrix
+        colnames = gennames(size(res, 2))
+    else
+        colnames = propertynames(res)
+    end
+
+    if !(newname === AsTable || newname === nothing)
+        if length(colnames) != length(newname)
+            throw(ArgumentError("Number of returned columns does not match the " *
+                                "length of requested output"))
+        end
+        colnames = newname
+    end
+
+    return colnames
+end
+
+function _expand_to_table(@nospecialize(res))
+    if res isa AbstractVector && !isempty(res)
+        kp1 = keys(res[1])
+        all(x -> keys(x) == kp1, res) || throw(ArgumentError("keys of the returned elements must be identical"))
+        newres = DataFrame()
+        prepend = all(x -> x isa Integer, kp1)
+        for n in kp1
+            newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
+        end
+        return newres
+    else
+        return Tables.columntable(res)
+    end
+end
+
+function _insert_row_multicolumn(df, newdf, allow_resizing_newdf, colnames, res)
+    if ncol(newdf) == 0
+        # if allow_resizing_newdf[] is false we know this is select or transform
+        rows = allow_resizing_newdf[] ? 1 : nrow(df)
+    else
+        # allow squashing a scalar to 0 rows
+        rows = nrow(newdf)
+    end
+    @assert length(colnames) == length(res)
+    for (newname, v) in zip(colnames, res)
+        # note that newdf potentially can contain c in general
+        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(v), rows), v)
+    end
+end
+
+function _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, @nospecialize(fun))
+    # allow shortening to 0 rows
+    if allow_resizing_newdf[] && nrow(newdf) == 1
+        newdfcols = _columns(newdf)
+        for (i, col) in enumerate(newdfcols)
+            newdfcols[i] = fill!(similar(col, lr), first(col))
+        end
+    end
+    # !allow_resizing_newdf[] && ncol(newdf) == 0
+    # means that we use `select` or `transform` not `combine`
+    if !allow_resizing_newdf[] && ncol(newdf) == 0 && lr != nrow(df)
+        throw(ArgumentError("length $(lr) of vector returned from " *
+                            "function $fun is different from number of rows " *
+                            "$(nrow(df)) of the source data frame."))
+    end
+    allow_resizing_newdf[] = false
+end
+
+function _add_col_check_copy(df, newdf, col_idx, copycols, @nospecialize(fun), newname, @nospecialize(v))
+    cdf = eachcol(df)
+    vpar = parent(v)
+    parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
+    if copycols && !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
+        newdf[!, newname] = copy(v)
+    else
+        newdf[!, newname] = v
+    end
+end
+
+function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                                                     <:Pair{<:Base.Callable,
-                                                           <:Union{Symbol, AbstractVector{Symbol}, DataType}}}},
+                                                           <:Union{Symbol, AbstractVector{Symbol}, DataType}}}}),
                            df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
                            allow_resizing_newdf::Ref{Bool})
@@ -186,70 +298,18 @@ function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVe
     # It is allowed to request a tranformation operation into a newname column
     # only once. This is ensured by the logic related to transformed_cols dictionaly
     # in _manipulate, therefore in select_transform! such a duplicate should not happen
-    cdf = eachcol(df)
-    if col_idx === nothing
-        res = fun(df)
-    elseif col_idx isa Int
-        res = fun(df[!, col_idx])
-    elseif col_idx isa AsTable
-        tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
-        if isempty(tbl) && fun isa ByRow
-            if isempty(df)
-                T = Base.return_types(fun.fun, (NamedTuple{(),Tuple{}},))[1]
-                res = T[]
-            else
-                res = [fun.fun(NamedTuple()) for _ in 1:nrow(df)]
-            end
-        else
-            res = fun(tbl)
-        end
-    else
-        # it should be fast enough here as we do not expect to do it millions of times
-        @assert col_idx isa AbstractVector{Int}
-        if isempty(col_idx) && fun isa ByRow
-            if isempty(df)
-                T = Base.return_types(fun.fun, ())[1]
-                res = T[]
-            else
-                res = [fun.fun() for _ in 1:nrow(df)]
-            end
-        else
-            res = fun(map(c -> cdf[c], col_idx)...)
-        end
-    end
+    res = _transformation_helper(df, col_idx, fun)
 
     if (newname === AsTable || newname isa AbstractVector{Symbol}) &&
         !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
-        if res isa AbstractVector && !isempty(res)
-            kp1 = keys(res[1])
-            all(x -> keys(x) == kp1, res) || throw(ArgumentError("keys of the returned elements must be identical"))
-            true_res = res
-            res = DataFrame()
-            prepend = all(x -> x isa Integer, kp1)
-            for n in kp1
-                res[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in true_res]
-            end
-        else
-            res = Tables.columntable(res)
-        end
+        res = _expand_to_table(res)
     end
 
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
         if newname isa Symbol
             throw(ArgumentError("Table returned while a single column return value was requested"))
         end
-        if res isa AbstractMatrix
-            colnames = gennames(size(res, 2))
-        else
-            colnames = propertynames(res)
-        end
-        if !(newname === AsTable || newname === nothing)
-            if length(colnames) != length(newname)
-                throw(ArgumentError("Number of returned columns does not match the " *
-                                    "length of requested output"))
-            end
-            colnames = newname
-        end
+        colnames = _gen_colnames(res, newname)
         isempty(colnames) && return # nothing to do
 
         if any(in(transformed_cols), colnames)
@@ -261,51 +321,14 @@ function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVe
         end
         if res isa AbstractDataFrame
             lr = nrow(res)
-            # allow shortening to 0 rows
-            if allow_resizing_newdf[] && nrow(newdf) == 1
-                newdfcols = _columns(newdf)
-                for (i, col) in enumerate(newdfcols)
-                    newdfcols[i] = fill!(similar(col, lr), first(col))
-                end
-            end
-
-            # !allow_resizing_newdf[] && ncol(newdf) == 0
-            # means that we use `select` or `transform` not `combine`
-            if !allow_resizing_newdf[] && ncol(newdf) == 0 && lr != nrow(df)
-                throw(ArgumentError("length $(lr) of vector returned from " *
-                                    "function $fun is different from number of rows " *
-                                    "$(nrow(df)) of the source data frame."))
-            end
-            allow_resizing_newdf[] = false
+            _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
             @assert length(colnames) == ncol(res)
             for (newname, v) in zip(colnames, eachcol(res))
-                vpar = parent(v)
-                parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
-                if copycols && !(fun isa ByRow) &&
-                    (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
-                    newdf[!, newname] = copy(v)
-                else
-                    newdf[!, newname] = v
-                end
+                _add_col_check_copy(df, newdf, col_idx, copycols, fun, newname, v)
             end
         elseif res isa AbstractMatrix
             lr = size(res, 1)
-            # allow shortening to 0 rows
-            if allow_resizing_newdf[] && nrow(newdf) == 1
-                newdfcols = _columns(newdf)
-                for (i, col) in enumerate(newdfcols)
-                    newdfcols[i] = fill!(similar(col, lr), first(col))
-                end
-            end
-
-            # !allow_resizing_newdf[] && ncol(newdf) == 0
-            # means that we use `select` or `transform` not `combine`
-            if !allow_resizing_newdf[] && ncol(newdf) == 0 && lr != nrow(df)
-                throw(ArgumentError("length $(lr) of vector returned from " *
-                                    "function $fun is different from number of rows " *
-                                    "$(nrow(df)) of the source data frame."))
-            end
-            allow_resizing_newdf[] = false
+            _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
             @assert length(colnames) == size(res, 2)
             for (i, newname) in enumerate(colnames)
                 newdf[!, newname] = res[:, i]
@@ -313,62 +336,18 @@ function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVe
         elseif res isa NamedTuple
             if all(v -> v isa AbstractVector, res)
                 lr = length(res[1])
-                # allow shortening to 0 rows
-                if allow_resizing_newdf[] && nrow(newdf) == 1
-                    newdfcols = _columns(newdf)
-                    for (i, col) in enumerate(newdfcols)
-                        newdfcols[i] = fill!(similar(col, lr), first(col))
-                    end
-                end
-
-                # !allow_resizing_newdf[] && ncol(newdf) == 0
-                # means that we use `select` or `transform` not `combine`
-                if !allow_resizing_newdf[] && ncol(newdf) == 0 && lr != nrow(df)
-                    throw(ArgumentError("length $(lr) of vector returned from " *
-                                        "function $fun is different from number of rows " *
-                                        "$(nrow(df)) of the source data frame."))
-                end
-                allow_resizing_newdf[] = false
+                _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
                 @assert length(colnames) == length(res)
                 for (newname, v) in zip(colnames, res)
-                    vpar = parent(v)
-                    parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
-                    if copycols && !(fun isa ByRow) &&
-                        (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
-                        newdf[!, newname] = copy(v)
-                    else
-                        newdf[!, newname] = v
-                    end
+                    _add_col_check_copy(df, newdf, col_idx, copycols, fun, newname, v)
                 end
             elseif any(v -> v isa AbstractVector, res)
                 throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
             else
-                if ncol(newdf) == 0
-                    # if allow_resizing_newdf[] is false we know this is select or transform
-                    rows = allow_resizing_newdf[] ? 1 : nrow(df)
-                else
-                    # allow squashing a scalar to 0 rows
-                    rows = nrow(newdf)
-                end
-                @assert length(colnames) == length(res)
-                for (newname, v) in zip(colnames, res)
-                    # note that newdf potentially can contain c in general
-                    newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(v), rows), v)
-                end
+                _insert_row_multicolumn(df, newdf, allow_resizing_newdf, colnames, res)
             end
         elseif res isa DataFrameRow
-            if ncol(newdf) == 0
-                # if allow_resizing_newdf[] is false we know this is select or transform
-                rows = allow_resizing_newdf[] ? 1 : nrow(df)
-            else
-                # allow squashing a scalar to 0 rows
-                rows = nrow(newdf)
-            end
-            @assert length(colnames) == length(res)
-            for (newname, v) in zip(colnames, res)
-                # note that newdf potentially can contain c in general
-                newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(v), rows), v)
-            end
+            _insert_row_multicolumn(df, newdf, allow_resizing_newdf, colnames, res)
         end
     elseif res isa AbstractVector
         if newname === nothing
@@ -379,30 +358,9 @@ function select_transform!(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVe
         else
             push!(transformed_cols, newname)
         end
-        # allow shortening to 0 rows
-        if allow_resizing_newdf[] && nrow(newdf) == 1
-            newdfcols = _columns(newdf)
-            for (i, col) in enumerate(newdfcols)
-                newdfcols[i] = fill!(similar(col, length(res)), first(col))
-            end
-        end
-
-        # !allow_resizing_newdf[] && ncol(newdf) == 0
-        # means that we use `select` or `transform` not `combine`
-        if !allow_resizing_newdf[] && ncol(newdf) == 0 && length(res) != nrow(df)
-            throw(ArgumentError("length $(length(res)) of vector returned from " *
-                                "function $fun is different from number of rows " *
-                                "$(nrow(df)) of the source data frame."))
-        end
-        allow_resizing_newdf[] = false
-        respar = parent(res)
-        parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
-        if copycols && !(fun isa ByRow) &&
-            (res isa SubArray || any(i -> respar === parent(cdf[i]), parent_cols))
-            newdf[!, newname] = copy(res)
-        else
-            newdf[!, newname] = res
-        end
+        lr = length(res)
+        _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
+        _add_col_check_copy(df, newdf, col_idx, copycols, fun, newname, res)
     else
         if newname === nothing
             newname = :x1
@@ -575,7 +533,7 @@ julia> select!(df, AsTable(:) => ByRow(mean), renamecols=false)
 select!(df::DataFrame, args...; renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
-function select!(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+function select!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("Only transformations are allowed when function is a " *
                             "frist argument to select!"))
@@ -595,7 +553,7 @@ See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
 transform!(df::DataFrame, args...; renamecols::Bool=true) =
     select!(df, :, args..., renamecols=renamecols)
 
-function transform!(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+function transform!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("Only transformations are allowed when function is a " *
                             "frist argument to transform!"))
@@ -726,7 +684,7 @@ julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
 select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
     manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
 
-function select(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+function select(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("Only transformations are allowed when function is a " *
                             "frist argument to select"))
@@ -747,7 +705,7 @@ See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
     select(df, :, args..., copycols=copycols, renamecols=renamecols)
 
-function transform(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+function transform(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("Only transformations are allowed when function is a " *
                             "frist argument to transform"))
@@ -790,7 +748,7 @@ julia> combine(df, :a => sum, nrow, renamecols=false)
 combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
     manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
-function combine(arg::Function, df::AbstractDataFrame; renamecols::Bool=true)
+function combine(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("Only transformations are allowed when function is a " *
                             "frist argument to combine"))
@@ -830,7 +788,7 @@ function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, rename
                     copycols, keeprows)
 end
 
-function _manipulate(df::AbstractDataFrame, normalized_cs, copycols::Bool, keeprows::Bool)
+function _manipulate(df::AbstractDataFrame, @nospecialize(normalized_cs), copycols::Bool, keeprows::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
     # the role of transformed_cols is the following
