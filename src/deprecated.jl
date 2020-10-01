@@ -109,7 +109,7 @@ end
 @deprecate DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false,
           copycols::Bool=true) where {N} DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
 @deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol}; makeunique::Bool=false,
-          copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames);
+          copycols::Bool=true) where {N} DataFrame(collect(columns), collect(cnames);
               makeunique=makeunique, copycols=copycols)
 @deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString}; makeunique::Bool=false,
                      copycols::Bool=true) where {N} DataFrame(collect(AbstractVector, columns), [Symbol(c) for c in cnames];
