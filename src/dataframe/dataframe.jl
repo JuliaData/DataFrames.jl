@@ -12,19 +12,11 @@ DataFrame(columns::AbstractVector, names::AbstractVector{Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::AbstractVector, names::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,<:AbstractString};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::Matrix, names::AbstractVector{Symbol}; makeunique::Bool=false)
-DataFrame(columns::Matrix, names::AbstractVector{<:AbstractString};
-          makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
           copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false, copycols::Bool=true) where {N}
 DataFrame() # an empty DataFrame
 DataFrame(column_eltypes::AbstractVector, names::AbstractVector{Symbol},
           nrows::Integer=0; makeunique::Bool=false)
@@ -37,7 +29,7 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
 
 # Arguments
-- `columns` : a Vector with each column as contents or a Matrix
+- `columns` : a vector with each column as contents
 - `names` : the column names
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicates in `names` are found; if `true`, duplicate names will be suffixed
@@ -46,26 +38,24 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
   column contents; note that the `copycols` keyword argument indicates if
   if vectors passed as columns should be copied so it is not possible to create
   a column whose name is `:copycols` using this constructor
-- `t` : elemental type of all columns
-- `nrows`, `ncols` : number of rows and columns
+- `nrows` : number of rows
 - `column_eltypes` : element type of each column
-- `categorical` : a vector of `Bool` indicating which columns should be converted
-  to `CategoricalVector`
 - `ds` : `AbstractDict` of columns
 - `table` : any type that implements the
   [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
 - `copycols` : whether vectors passed as columns should be copied; if set
   to `false` then the constructor will still copy the passed columns
   if it is not possible to construct a `DataFrame` without materializing new columns.
+- `keepkeys` : if the resulting `DataFrame` should contain the grouping columns
+  of a `GroupedDataFrame`
 
 All columns in `columns` must be `AbstractVector`s and have the same length. An
-exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`,
-`DataFrame(pairs::AbstractVector{<:Pair})`, and `DataFrame(pairs::NTuple{N, Pair})` form
-constructors which additionally allow a column to be of any other type that is
-not an `AbstractArray`, in which case the passed value is automatically repeated
-to fill a new vector of the appropriate length. As a particular rule values
-stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
-in the same way.
+exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`, and
+`DataFrame(pairs::AbstractVector{<:Pair})` form constructors which additionally
+allow a column to be of any other type that is not an `AbstractArray`, in which
+case the passed value is automatically repeated to fill a new vector of the
+appropriate length. As a particular rule values stored in a `Ref` or a
+`0`-dimensional `AbstractArray` are unwrapped and treated in the same way.
 
 Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
 into a `DataFrame`. In this case the order of rows in the result follows the order
@@ -85,28 +75,53 @@ performance-critical code, do not index into a `DataFrame` inside of loops.
 
 # Examples
 ```julia
-df = DataFrame()
-v = ["x","y","z"][rand(1:3, 10)]
-df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
-df2 = DataFrame(A = 1:10, B = v, C = rand(10))
-summary(df1)
-describe(df2)
-first(df1, 10)
-df1.B
-df2[!, :C]
-df1[:, :A]
-df1[1:4, 1:2]
-df1[Not(1:4), Not(1:2)]
-df1[1:2, [:A,:C]]
-df1[1:2, r"[AC]"]
-df1[:, [:A,:C]]
-df1[:, [1,3]]
-df1[1:4, :]
-df1[1:4, :C]
-df1[1:4, :C] = 40. * df1[1:4, :C]
-[df1; df2]  # vcat
-[df1 df2]  # hcat
-size(df1)
+julia> DataFrame(a=1:2, b=0)
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame("a" => 1:2, "b" => 0)
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame([[1, 2], [0, 0]], [:a, :b])
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame((a=[1, 2], b=[0, 0]))
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame([(a=1, b=0), (a=2, b=0)])
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame(Tables.table([1 0; 2 0], header=[:a, :b]))
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
 ```
 """
 struct DataFrame <: AbstractDataFrame
