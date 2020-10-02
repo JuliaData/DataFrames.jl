@@ -401,34 +401,21 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
 end
 
 
-function transpose1(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable)
-    unstack(stack(df,Not(src_namescol), variable_name=dest_namescol), dest_namescol, src_namescol, :value)
-end
+"""
+    transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
 
-function transpose2(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable; copycols=false)
-    m = permutedims(Matrix(df[!, Not(src_namescol)]))
-    df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
-    hcat(df2, DataFrame(m, df[!, src_namescol]), copycols=copycols)
-end
+Transpose a `DataFrame`, such that rows become columns,
+and the column indexed by `src_namescol` becomes a header.
 
-function transpose2_comprehension(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable; copycols=false)
-    m = permutedims(Matrix(df[!, Not(src_namescol)]))
-    df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
-    hcat(df2, DataFrame([[x for x in col] for col in eachcol(m)], df[!, src_namescol]), copycols=copycols)
-end
-
-function transpose3(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable)
-    df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
-    for row in eachrow(df)
-        df2[!,row[src_namescol]] = Vector(row[Not(src_namescol)])
+"""
+function Base.transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
+    if promote_type
+        m = permutedims(Matrix(df[!, Not(src_namescol)]))
+        df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
+        return hcat(df2, DataFrame(m, df[!, src_namescol], makeunique=makeunique), copycols=copycols)
+    else
+        m = permutedims(Matrix{Any}(df[!, Not(src_namescol)]))
+        df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
+        hcat(df2, DataFrame([[x for x in col] for col in eachcol(m)], df[!, src_namescol], makeunique=makeunique), copycols=copycols)
     end
-    return df2
-end
-
-function transpose3_comprehension(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable)
-    df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
-    for row in eachrow(df)
-        df2[!,row[src_namescol]] =  [x for x in row[Not(src_namescol)]]
-    end
-    return df2
 end
