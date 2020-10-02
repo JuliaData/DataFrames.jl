@@ -508,7 +508,44 @@ end
 end
 
 @testset "transpose" begin
-    # todo
+    df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
+    df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1,2], d=rand(Bool,2))
+    df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool,10))
+
+    df1_t = transpose(df1)
+    @test size(df1_t,1) == ncol(df1) - 1
+    @test size(df1_t, 2) == nrow(df1) + 1
+    @test names(df1_t) == ["a", "x", "y"]
+    @test eltype(df1_t.x) <: AbstractFloat
+    @test eltype(df1_t.y) <: AbstractFloat
+
+    df1_tp = transpose(df1, promote_type=false)
+    @test size(df1_tp,1) == ncol(df1) - 1
+    @test size(df1_tp, 2) == nrow(df1) + 1
+    @test names(df1_tp) == ["a", "x", "y"]
+    @test Bool <: eltype(df1_tp.x)
+    @test Int <: eltype(df1_tp.x)
+    @test AbstractFloat <: eltype(df1_tp.x)
+
+    df2_t = transpose(df2)
+    @test size(df2_t,1) == ncol(df2) - 1
+    @test size(df2_t, 2) == nrow(df2) + 1
+    @test names(df2_t) == ["a", "x", "y"]
+    @test Any <: eltype(df2_t.x)
+    @test Any <: eltype(df2_t.y)
+
+
+    df2_tp = transpose(df2, promote_type=false)
+    @test size(df2_tp,1) == ncol(df2) - 1
+    @test size(df2_tp, 2) == nrow(df2) + 1
+    @test names(df2_tp) == ["a", "x", "y"]
+    @test Bool <: eltype(df2_tp.x)
+    @test Int <: eltype(df2_tp.x)
+    @test AbstractFloat <: eltype(df2_tp.x)
+    @test Any <: eltype(df2_tp.y)
+
+    @test_throws ArgumentError transpose(df3)
+    @test names(transpose(df3, makeunique=true)) == ["a", "x", ("x_$i" for i in 1:9)...]
 end
 
 end # module
