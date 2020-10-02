@@ -248,7 +248,24 @@ julia> append!(df1, df2)
 │ 4   │ 4     │ 4     │
 │ 5   │ 5     │ 5     │
 │ 6   │ 6     │ 6     │
+
+julia> append!(df1, df2, promote = true)
+9×2 DataFrame
+│ Row │ A       │ B     │
+│     │ Float64 │ Int64 │
+├─────┼─────────┼───────┤
+│ 1   │ 1.0     │ 1     │
+│ 2   │ 2.0     │ 2     │
+│ 3   │ 3.0     │ 3     │
+│ 4   │ 4.0     │ 4     │
+│ 5   │ 5.0     │ 5     │
+│ 6   │ 6.0     │ 6     │
+│ 7   │ 4.0     │ 4     │
+│ 8   │ 5.0     │ 5     │
+│ 9   │ 6.0     │ 6     │
 ```
+
+Notice how column `A` got promoted to `Float64` in the last example upon supplying keyword argument `promote` equal `true`.
 
 ### Constructing from another table type
 
@@ -620,7 +637,7 @@ julia> df[ (df.x .> 2) .& (df.a .== 'c'), : ]
 An alternative formulation, which notably saves on the need to use broadcasting syntax via `.` prefixes, uses [`filter`](@ref) or [`filter!`](@ref):
 
 ```jldoctest dataframe
-julia> filter([:x, :a] => ((x1,x2) -> (x1 > 2) && (x2 == 'c')), df)
+julia> filter([:x, :a] => ((x, a) -> (x > 2) && (a == 'c')), df)
 1×4 DataFrame
 │ Row │ x     │ y      │ a    │ b       │
 │     │ Int64 │ String │ Char │ Float64 │
