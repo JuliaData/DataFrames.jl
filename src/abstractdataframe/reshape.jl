@@ -402,11 +402,28 @@ end
 
 
 """
-    transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
+    transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
 
 Transpose a `DataFrame`, such that rows become columns,
 and the column indexed by `src_namescol` becomes a header.
 
+By default, the type of resulting columns will depend on the promoted type of all input columns.
+Pass `promote_type=false` to make resulting column types depend on the elements of the originating rows,
+though note that this may be substantially slower.
+
+
+# Examples
+
+```julia
+df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2)) # all types can be promoted to Float64
+df2 = DataFrame(a=["x", "y"], b=[1, "str"], c=[1,2], d=rand(Bool,2))
+
+transpose(df1)
+transpose(df1, promote_type=false)
+
+transpose(df2)
+transpose(df2, promote_type=false)
+````
 """
 function Base.transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
     if promote_type
