@@ -406,7 +406,7 @@ transpose1(df::AbstractDataFrame, indexcol=1) = unstack(stack(df,Not(indexcol)),
 function transpose2(df::AbstractDataFrame, indexcol=1)
     m = permutedims(Matrix(df[!, Not(indexcol)]))
     df2 = DataFrame(variable=names(df[!, Not(indexcol)]))
-    hcat(df2, DataFrame(m, df[!, indexcol]))
+    hcat(df2, DataFrame(m, df[!, indexcol], copycols=false), copycols=false)
 end
 
 function transpose3(df::AbstractDataFrame, indexcol=1)
