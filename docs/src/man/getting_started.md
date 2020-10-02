@@ -576,7 +576,7 @@ a function object that tests whether each value belongs to the subset
     - when `view` or `@view` is used (e.g. `@view df[1:3, :A]`).
 
     More details on copies, views, and references can be found
-    in [`getindex` and `view`](@ref).
+    in the [`getindex` and `view`](@ref) section.
 
 #### Column selection using `select` and `select!`, `transform` and `transform!`
 
