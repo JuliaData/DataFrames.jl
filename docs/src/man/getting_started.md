@@ -237,7 +237,6 @@ julia> df1 = DataFrame(A=1:3, B=1:3);
 julia> df2 = DataFrame(A=4.0:6.0, B=4:6);
 
 julia> append!(df1, df2)
-
 6×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │
@@ -613,7 +612,9 @@ a function object that tests whether each value belongs to the subset
 
 #### Selecting rows with `filter`
 
-We have seen above how to subset a `DataFrame` to several criteria, involving multiple columns, by supplying a logical vector to the first dimension. For instance, in the following we want to subset to all rows where `x > 2` and where `a == 'c'`:
+We have seen above how to subset a `DataFrame` to several criteria, involving multiple
+columns, by supplying a logical vector to the first dimension. For instance, in the
+following we want to subset to all rows where  `x > 2` and where `a == 'c'`:
 
 ```jldoctest dataframe
 julia> df = DataFrame(:x => 1:4, :y => "a", :a => 'a':'d', :b => exp(1))
