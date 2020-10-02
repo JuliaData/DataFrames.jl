@@ -401,18 +401,20 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
 end
 
 
-transpose1(df::AbstractDataFrame, indexcol=1) = unstack(stack(df,Not(indexcol)), :variable, indexcol,:value)
-
-function transpose2(df::AbstractDataFrame, indexcol=1)
-    m = permutedims(Matrix(df[!, Not(indexcol)]))
-    df2 = DataFrame(variable=names(df[!, Not(indexcol)]))
-    hcat(df2, DataFrame(m, df[!, indexcol], copycols=false), copycols=false)
+function transpose1(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable)
+    unstack(stack(df,Not(src_namescol), variable_name=dest_namescol), dest_namescol, src_namescol, :value)
 end
 
-function transpose3(df::AbstractDataFrame, indexcol=1)
-    df2 = DataFrame(variable=names(df[!, Not(indexcol)]))
+function transpose2(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable)
+    m = permutedims((Matrix(df[!, Not(src_namescol)])))
+    df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
+    hcat(df2, DataFrame(m, df[!, src_namescol]), copycols=false)
+end
+
+function transpose3(df::AbstractDataFrame, src_namescol=1, dest_namescol=:variable)
+    df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
     for row in eachrow(df)
-        df2[!,row[indexcol]] = Vector(row[Not(indexcol)])
+        df2[!,row[src_namescol]] = Vector(row[Not(src_namescol)])
     end
     return df2
 end
