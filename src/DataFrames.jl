@@ -117,5 +117,7 @@ include("dataframe/sort.jl")
 include("deprecated.jl")
 
 include("other/tables.jl")
+include("wheredataframe/wheredataframe.jl")
+export where
 
 end # module DataFrames
