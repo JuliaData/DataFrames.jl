@@ -373,7 +373,7 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
 
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
         if newname isa Symbol
-            throw(ArgumentError("Table returned while a single column return value was requested"))
+            throw(ArgumentError("Table returned but a single output column was expected"))
         end
         colnames = _gen_colnames(res, newname)
         isempty(colnames) && return # nothing to do
