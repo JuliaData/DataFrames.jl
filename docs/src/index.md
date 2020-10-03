@@ -19,8 +19,8 @@ especially for those  coming to Julia from R or Python.
 
 DataFrames.jl plays a central role in the Julia Data ecosystem, and has tight
 integrations with a range of different libraries. DataFrames.jl isn't the only
-tool for working with tabular data in Julia --- as noted below, there are some
-other great libraries for certain use-cases --- but it provides great data
+tool for working with tabular data in Julia -- as noted below, there are some
+other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
 ## DataFrames.jl and the Julia Data Ecosystem
@@ -67,6 +67,13 @@ integrated they are with DataFrames.jl.
     - [ScikitLearn.jl](https://cstjean.github.io/ScikitLearn.jl/stable/):
       A Julia wrapper around the full Python scikit-learn machine learning library.
       Not well integrated with DataFrames.jl, but can be combined using StatsModels.jl.
+    - [AutoMLPipeline](https://github.com/IBM/AutoMLPipeline.jl):
+      A package that makes it trivial to create complex ML 
+      pipeline structures using simple expressions. It leverages 
+      on the built-in macro programming features of Julia to 
+      symbolically process, manipulate pipeline expressions, 
+      and makes it easy to discover optimal structures for 
+      machine learning regression and classification.
     - Deep learning:
       [KNet.jl](https://denizyuret.github.io/Knet.jl/stable/tutorial/#Introduction-to-Knet-1)
       and [Flux.jl](https://github.com/FluxML/Flux.jl).
@@ -83,6 +90,8 @@ integrated they are with DataFrames.jl.
       plotting library that uses a different "grammar of graphics" syntax and has
       an emphasis on interactive graphics.
 - **Data Wrangling**:
+    - [Impute.jl](https://github.com/invenia/Impute.jl):
+      various methods for handling missing data in vectors, matrices and tables.
     - [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl):
       A range of convenience functions for DataFrames.jl that augment `select` and
       `transform` to provide a user experience similar to that provided by
@@ -105,8 +114,8 @@ integrated they are with DataFrames.jl.
       CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
       Stata, SPSS, and SAS files (using
       [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
-      and reading (though not writing) parquet files
-      (using [ParquetFiles.jl](https://github.com/queryverse/ParquetFiles.jl)).
+      and reading and writing parquet files
+      (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it

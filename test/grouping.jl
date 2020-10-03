@@ -1,6 +1,6 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
@@ -2849,6 +2849,31 @@ end
             @test_throws Union{ArgumentError, MethodError} combine(gdf, :x => (x -> fun(x)) => :y)
         end
     end
+end
+
+@testset "renamecols=false tests" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    gdf = groupby_checked(df, :a)
+
+    @test select(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test_throws ArgumentError select(gdf, [] => () -> 10, renamecols=false)
+    @test transform(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+    @test combine(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test combine([:a, :b] => +, gdf, renamecols=false) == DataFrame(a=1:3, a_b=5:2:9)
+    @test combine(identity, gdf, renamecols=false) == df
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    gdf = groupby_checked(df, :a)
+    @test select!(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    gdf = groupby_checked(df, :a)
+    @test transform!(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
 end
 
 end # module

@@ -98,7 +98,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer, 0) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -142,13 +142,17 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                 cell_val = df[row, column_name]
                 if ismissing(cell_val)
                     write(io, "<td><em>missing</em></td>")
+                elseif cell_val isa Markdown.MD
+                    write(io, "<td>")
+                    show(io, "text/html", cell_val)
+                    write(io, "</td>")
                 elseif cell_val isa SHOW_TABULAR_TYPES
                     write(io, "<td><em>")
-                    cell = sprint(ourshow, cell_val)
+                    cell = sprint(ourshow, cell_val, 0)
                     write(io, html_escape(cell))
                     write(io, "</em></td>")
                 else
-                    cell = sprint(ourshow, cell_val)
+                    cell = sprint(ourshow, cell_val, 0)
                     write(io, "<td>$(html_escape(cell))</td>")
                 end
             else
@@ -266,7 +270,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     if get(io, :limit, false)
         tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
         mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer) .+ 2
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer, 0) .+ 2
         mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
@@ -302,15 +306,17 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                 cell = df[row,col]
                 if ismissing(cell)
                     print(io, "\\emph{missing}")
+                elseif cell isa Markdown.MD
+                    print(io, strip(repr(MIME("text/latex"), cell)))
                 elseif cell isa SHOW_TABULAR_TYPES
                     print(io, "\\emph{")
-                    print(io, latex_escape(sprint(ourshow, cell, context=io)))
+                    print(io, latex_escape(sprint(ourshow, cell, 0, context=io)))
                     print(io, "}")
                 else
                     if showable(MIME("text/latex"), cell)
                         show(io, MIME("text/latex"), cell)
                     else
-                        print(io, latex_escape(sprint(ourshow, cell, context=io)))
+                        print(io, latex_escape(sprint(ourshow, cell, 0, context=io)))
                     end
                 end
             end
@@ -380,7 +386,10 @@ end
 #
 ##############################################################################
 
-escapedprint(io::IO, x::Any, escapes::AbstractString) = ourshow(io, x)
+escapedprint(io::IO, x::SHOW_TABULAR_TYPES, escapes::AbstractString) =
+    escapedprint(io, summary(x), escapes)
+escapedprint(io::IO, x::Any, escapes::AbstractString) =
+    escapedprint(io, sprint(print, x), escapes)
 escapedprint(io::IO, x::AbstractString, escapes::AbstractString) =
     escape_string(io, x, escapes)
 
@@ -410,17 +419,23 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if ismissing(df[i, j])
+            cell = df[i, j]
+            if ismissing(cell)
                 print(io, missingstring)
-            elseif isnothing(df[i, j])
+            elseif isnothing(cell)
                 print(io, nothingstring)
             else
-                if ! (etypes[j] <: Real)
+                if cell isa Markdown.MD
                     print(io, quotemark)
-                    escapedprint(io, df[i, j], quotestr)
+                    r = repr(cell)
+                    escapedprint(io, chomp(r), quotestr)
+                    print(io, quotemark)
+                elseif !(etypes[j] <: Real)
+                    print(io, quotemark)
+                    escapedprint(io, cell, quotestr)
                     print(io, quotemark)
                 else
-                    print(io, df[i, j])
+                    print(io, cell)
                 end
             end
             if j < p

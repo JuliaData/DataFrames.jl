@@ -139,8 +139,6 @@ The following two examples show two ways to sort the `iris` dataset with the sam
 ```jldoctest sort
 julia> sort!(iris, [:Species, :PetalLength], rev=(true, false));
 
-julia> julia> sort!(iris, [:Species, :PetalLength], rev=(true, false));
-
 julia> first(iris, 4)
 4×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species        │

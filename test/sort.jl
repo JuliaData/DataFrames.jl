@@ -1,6 +1,6 @@
 module TestSort
 
-using DataFrames, Random, Test
+using DataFrames, Random, Test, CategoricalArrays
 
 @testset "standard tests" begin
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
@@ -145,6 +145,19 @@ end
         @test f(df) == f(df, :) == f(df, All()) == f(df, r"x") ==
               f(df, Between(1, 4)) == f(df, Not([]))
     end
+end
+
+@testset "view kwarg test" begin
+    df = DataFrame(rand(3,4))
+    @test sort(df) isa DataFrame
+    @inferred sort(df)
+    @test sort(view(df, 1:2, 1:2)) isa DataFrame
+    @test sort(df, view=false) isa DataFrame
+    @test sort(view(df, 1:2, 1:2), view=false) isa DataFrame
+    @test sort(df, view=true) isa SubDataFrame
+    @test sort(df, view=true) == sort(df)
+    @test sort(view(df, 1:2, 1:2), view=true) isa SubDataFrame
+    @test sort(view(df, 1:2, 1:2), view=true) == sort(view(df, 1:2, 1:2))
 end
 
 end # module

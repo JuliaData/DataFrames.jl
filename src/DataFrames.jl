@@ -1,11 +1,12 @@
 module DataFrames
 
 using Statistics, Printf, REPL
-using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
-@reexport using CategoricalArrays, Missings, InvertedIndices
+using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, CategoricalArrays
+@reexport using Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
+using Markdown
 
 import DataAPI,
        DataAPI.All,
@@ -28,7 +29,6 @@ export AbstractDataFrame,
        allowmissing!,
        antijoin,
        by,
-       categorical!,
        columnindex,
        combine,
        completecases,
@@ -78,6 +78,13 @@ end
 
 if VERSION < v"1.2"
     export hasproperty
+end
+
+if isdefined(Base, :only)  # Introduced in 1.4.0
+    import Base.only
+else
+    import Compat.only
+    export only
 end
 
 include("other/utils.jl")

@@ -355,7 +355,12 @@ we can observe that:
 
 #### Indexing syntax
 
-Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
+Specific subsets of a data frame can be extracted using the indexing syntax,
+similar to matrices. In the [Indexing](@ref) section of the manual you can find
+all the details about the available options. Here we highlight the basic options.
+
+The colon `:` indicates that all items (rows or columns
+depending on its position) should be retained:
 
 ```jldoctest dataframe
 julia> df[1:3, :]
@@ -481,7 +486,7 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
-Finally, you can use `Not` and `All` selectors in more complex column selection scenarios.
+Finally, you can use `Not`, `Between`, and `All` selectors in more complex column selection scenarios.
 The following examples move all columns whose names match `r"x"` regular expression respectively to the front and to the end of a data frame:
 ```
 julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
@@ -571,7 +576,7 @@ a function object that tests whether each value belongs to the subset
     - when `view` or `@view` is used (e.g. `@view df[1:3, :A]`).
 
     More details on copies, views, and references can be found
-    [here.](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/#getindex-and-view-1)
+    in the [`getindex` and `view`](@ref) section.
 
 #### Column selection using `select` and `select!`, `transform` and `transform!`
 

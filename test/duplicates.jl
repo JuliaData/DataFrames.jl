@@ -1,6 +1,6 @@
 module TestDuplicates
 
-using Test, DataFrames
+using Test, DataFrames, CategoricalArrays
 const ≅ = isequal
 
 @testset "nonunique" begin

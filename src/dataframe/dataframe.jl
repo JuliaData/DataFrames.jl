@@ -23,6 +23,8 @@ DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
           copycols::Bool=true)
+DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false, copycols::Bool=true) where {N}
 DataFrame() # an empty DataFrame
 DataFrame(column_eltypes::AbstractVector, names::AbstractVector{Symbol},
           nrows::Integer=0; makeunique::Bool=false)
@@ -51,14 +53,14 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
   to `CategoricalVector`
 - `ds` : `AbstractDict` of columns
 - `table` : any type that implements the
-  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface; in particular
-  a tuple or vector of `Pair{Symbol, <:AbstractVector}}` objects is a table.
+  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
 - `copycols` : whether vectors passed as columns should be copied; if set
   to `false` then the constructor will still copy the passed columns
   if it is not possible to construct a `DataFrame` without materializing new columns.
 
 All columns in `columns` must be `AbstractVector`s and have the same length. An
-exception are `DataFrame(kwargs...)` and `DataFrame(pairs::Pair...)` form
+exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`,
+`DataFrame(pairs::AbstractVector{<:Pair})`, and `DataFrame(pairs::NTuple{N, Pair})` form
 constructors which additionally allow a column to be of any other type that is
 not an `AbstractArray`, in which case the passed value is automatically repeated
 to fill a new vector of the appropriate length. As a particular rule values
@@ -989,106 +991,6 @@ disallowmissing!(df::DataFrame, cols::MultiColumnIndex; error::Bool=true) =
 
 disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
     disallowmissing!(df, axes(df, 2), error=error)
-
-##############################################################################
-##
-## Pooling
-##
-##############################################################################
-
-"""
-    categorical!(df::DataFrame, cols=Union{AbstractString, Missing};
-                 compress::Bool=false)
-
-Change columns selected by `cols` in data frame `df` to `CategoricalVector`.
-
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR) or a `Type`.
-
-If `categorical!` is called with the `cols` argument being a `Type`, then
-all columns whose element type is a subtype of this type
-(by default `Union{AbstractString, Missing}`) will be converted to categorical.
-
-If the `compress` keyword argument is set to `true` then the created
-`CategoricalVector`s will be compressed.
-
-All created `CategoricalVector`s are unordered.
-
-# Examples
-```julia
-julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
-2×3 DataFrame
-│ Row │ X      │ Y     │ Z      │
-│     │ String │ Int64 │ String │
-├─────┼────────┼───────┼────────┤
-│ 1   │ a      │ 1     │ p      │
-│ 2   │ b      │ 2     │ q      │
-
-julia> categorical!(df)
-2×3 DataFrame
-│ Row │ X    │ Y     │ Z    │
-│     │ Cat… │ Int64 │ Cat… │
-├─────┼──────┼───────┼──────┤
-│ 1   │ a    │ 1     │ p    │
-│ 2   │ b    │ 2     │ q    │
-
-julia> eltype.(eachcol(df))
-3-element Array{DataType,1}:
- CategoricalValue{String,UInt32}
- Int64
- CategoricalValue{String,UInt32}
-
-julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
-2×3 DataFrame
-│ Row │ X      │ Y     │ Z      │
-│     │ String │ Int64 │ String │
-├─────┼────────┼───────┼────────┤
-│ 1   │ a      │ 1     │ p      │
-│ 2   │ b      │ 2     │ q      │
-
-julia> categorical!(df, :Y, compress=true)
-2×3 DataFrame
-│ Row │ X      │ Y    │ Z      │
-│     │ String │ Cat… │ String │
-├─────┼────────┼──────┼────────┤
-│ 1   │ a      │ 1    │ p      │
-│ 2   │ b      │ 2    │ q      │
-
-julia> eltype.(eachcol(df))
-3-element Array{DataType,1}:
- String
- CategoricalValue{Int64,UInt8}
- String
-```
-"""
-function categorical! end
-
-function categorical!(df::DataFrame, cols::ColumnIndex;
-                      compress::Bool=false)
-    df[!, cols] = categorical(df[!, cols], compress=compress)
-    return df
-end
-
-function categorical!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
-                      compress::Bool=false)
-    for cname in cols
-        df[!, cname] = categorical(df[!, cname], compress=compress)
-    end
-    return df
-end
-
-categorical!(df::DataFrame, cols::MultiColumnIndex;
-             compress::Bool=false) =
-    categorical!(df, index(df)[cols], compress=compress)
-
-function categorical!(df::DataFrame, cols::Type=Union{AbstractString, Missing};
-                      compress::Bool=false)
-    for i in 1:size(df, 2)
-        if eltype(df[!, i]) <: cols
-            df[!, i] = categorical(df[!, i], compress=compress)
-        end
-    end
-    return df
-end
 
 """
     append!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
