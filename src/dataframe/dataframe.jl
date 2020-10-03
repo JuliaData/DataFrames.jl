@@ -499,6 +499,10 @@ Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
     (df[!, col_ind] = v)
 Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
     (df[!, col_ind] = v)
+Base.setproperty!(::AbstractDataFrame, ::Symbol, ::Any) =
+    throw(ArgumentError("it is only allowed to pass a vector as a column of a DataFrame"))
+Base.setproperty!(::AbstractDataFrame, ::AbstractString, ::Any) =
+    throw(ArgumentError("it is only allowed to pass a vector as a column of a DataFrame"))
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
