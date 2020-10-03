@@ -4,6 +4,10 @@ using DataFrames, Test, Random, Statistics, CategoricalArrays
 
 const ≅ = isequal
 
+"""Check if passed data frames are `isequal` and have the same types of columns"""
+isequal_coltyped(df1::AbstractDataFrame, df2::AbstractDataFrame) =
+    isequal(df1, df2) && typeof.(eachcol(df1)) == typeof.(eachcol(df2))
+
 Random.seed!(1234)
 
 @testset "select! Not" begin
@@ -887,18 +891,14 @@ end
         @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9], [:d, :b, :a])
 
-        res = select(df3, [] => (() -> v) => :a, :x1 => x -> [])
-        @test propertynames(res) == [:a, :x1_function] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Int, Any]
-        res = select(df3, :x1 => x -> [], [] => (() -> v) => :a)
-        @test propertynames(res) == [:x1_function, :a] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Any, Int]
-        res = select(df3, [] => (() -> v) => :a, :x1)
-        @test propertynames(res) == [:a, :x1] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Int, Char]
-        res = select(df3, :x1, [] => (() -> v) => :a)
-        @test propertynames(res) == [:x1, :a] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Char, Int]
+        @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1 => x -> []),
+                               DataFrame(a=Int[], x1_function=Any[]))
+        @test isequal_coltyped(select(df3, :x1 => x -> [], [] => (() -> v) => :a),
+                               DataFrame(x1_function=Any[], a=Int[]))
+        @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1),
+                               DataFrame(a=Int[], x1=Char[]))
+        @test isequal_coltyped(select(df3, :x1, [] => (() -> v) => :a),
+                               DataFrame(x1=Char[], a=Int[]))
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
     @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
@@ -1328,10 +1328,7 @@ end
 end
 
 @testset "additional tests for new rules" begin
-#    select select! transform transform! combine
-#    Union{Type{AsTable}, Symbol, AbstractVector{Symbol}, AbstractString, AbstractVector{<:AbstractString}}
-#    DataFrame, SubDataFrame
-    @testset "SELECT(FUN, DF)" begin
+    @testset "transformation function with a function as first argument" begin
         for df in (DataFrame(a=1:2, b=3:4, c=5:6), view(DataFrame(a=1:3, b=3:5, c=5:7, d=11:13), 1:2, 1:3))
             @test select(sdf -> sdf.b, df) == DataFrame(x1=3:4)
             @test select(sdf -> (b = 2sdf.b,), df) == DataFrame(b=[6,8])
@@ -1431,7 +1428,7 @@ end
         @test transform!(sdf -> DataFrame(a=10)[1, :], copy(df)) == DataFrame(a=[10, 10], b=3:4, c=5:6)
     end
 
-    @testset "SELECT(DF, => AsTable)" begin
+    @testset "transformation function with multiple columns as destination" begin
         for df in (DataFrame(a=1:2, b=3:4, c=5:6), view(DataFrame(a=1:3, b=3:5, c=5:7, d=11:13), 1:2, 1:3))
             for fun in (select, combine, transform),
                 res in (DataFrame(), DataFrame(a=1,b=2)[1, :], ones(1,1),
@@ -1524,12 +1521,10 @@ end
         @test eltype(combine(df, [] => ByRow(() -> 1)).function) == Int
         @test eltype(transform(df, [] => ByRow(() -> 1)).function) == Int
 
-        df2 = select(df, [] => ByRow(() -> (a=1,b="1")) => AsTable)
-        @test names(df2) == ["a", "b"]
-        @test eltype.(eachcol(df2)) == [Int, String]
-        df2 = select(df, [] => ByRow(() -> (a=1,b="1")) => [:p, :q])
-        @test names(df2) == ["p", "q"]
-        @test eltype.(eachcol(df2)) == [Int, String]
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (a=1,b="1")) => AsTable),
+                               DataFrame(a=Int[], b=String[]))
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (a=1,b="1")) => [:p, :q]),
+                               DataFrame(p=Int[], q=String[]))
 
         # here this follows Tables.jl behavior
         for res in ([1, "1"], (1, "1"))
@@ -1554,12 +1549,10 @@ end
         @test eltype(combine(df, AsTable([]) => ByRow(x -> 1)).function) == Int
         @test eltype(transform(df, AsTable([]) => ByRow(x -> 1)).function) == Int
 
-        df2 = select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => AsTable)
-        @test names(df2) == ["a", "b"]
-        @test eltype.(eachcol(df2)) == [Int, String]
-        df2 = select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => [:p, :q])
-        @test names(df2) == ["p", "q"]
-        @test eltype.(eachcol(df2)) == [Int, String]
+        @test isequal_coltyped(select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => AsTable),
+                               DataFrame(a=Int[], b=String[]))
+        @test isequal_coltyped(select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => [:p, :q]),
+                               DataFrame(p=Int[], q=String[]))
 
         # here this follows Tables.jl behavior
         for res in ([1, "1"], (1, "1"))
