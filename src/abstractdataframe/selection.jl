@@ -68,8 +68,9 @@ normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractStrin
 
 function normalize_selection(idx::AbstractIndex,
                              sel::Pair{<:Any,<:Pair{<:Base.Callable,
-                             <:Union{Symbol, AbstractString, DataType,
-                                     AbstractVector{Symbol}, AbstractVector{<:AbstractString}}}},
+                                                    <:Union{Symbol, AbstractString, DataType,
+                                                            AbstractVector{Symbol},
+                                                            AbstractVector{<:AbstractString}}}},
                              renamecols::Bool)
     lls = last(last(sel))
     if lls isa DataType
@@ -169,7 +170,7 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-function _transformation_helper(df, col_idx, @nospecialize(fun))
+function _transformation_helper(df::AbstractDataFrame, col_idx, @nospecialize(fun))
     if col_idx === nothing
         return fun(df)
     elseif col_idx isa Int
@@ -178,7 +179,7 @@ function _transformation_helper(df, col_idx, @nospecialize(fun))
         tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
         if isempty(tbl) && fun isa ByRow
             if isempty(df)
-                T = Base.return_types(fun.fun, (NamedTuple{(),Tuple{}},))[1]
+                T = Core.Compiler.return_type(fun.fun, (NamedTuple{(),Tuple{}},))
                 return T[]
             else
                 return [fun.fun(NamedTuple()) for _ in 1:nrow(df)]
@@ -211,7 +212,7 @@ function _gen_colnames(@nospecialize(res), newname)
         colnames = propertynames(res)
     end
 
-    if !(newname === AsTable || newname === nothing)
+    if newname !== AsTable && newname !== nothing
         if length(colnames) != length(newname)
             throw(ArgumentError("Number of returned columns does not match the " *
                                 "length of requested output"))
@@ -273,7 +274,7 @@ end
 function _add_col_check_copy(df, newdf, col_idx, copycols, @nospecialize(fun), newname, @nospecialize(v))
     cdf = eachcol(df)
     vpar = parent(v)
-    parent_cols = col_idx isa AsTable ? col_idx.cols : (col_idx === nothing ? (1:ncol(df)) : col_idx)
+    parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
     if copycols && !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
         newdf[!, newname] = copy(v)
     else
@@ -313,7 +314,8 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
         isempty(colnames) && return # nothing to do
 
         if any(in(transformed_cols), colnames)
-            throw(ArgumentError("Duplicate column name returned"))
+            throw(ArgumentError("Duplicate column name(s) returned: :" *
+                                "$(join(intersect(colnames, transformed_cols), ", :"))"))
         else
             startlen = length(transformed_cols)
             union!(transformed_cols, colnames)
@@ -354,7 +356,7 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
             newname = :x1
         end
         if newname in transformed_cols
-            throw(ArgumentError("duplicate name of a transformed column"))
+            throw(ArgumentError("duplicate output column name: :$newname"))
         else
             push!(transformed_cols, newname)
         end
@@ -366,7 +368,7 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
             newname = :x1
         end
         if newname in transformed_cols
-            throw(ArgumentError("duplicate name of a transformed column"))
+            throw(ArgumentError("duplicate output column name: :$newname"))
         else
             push!(transformed_cols, newname)
         end
@@ -535,8 +537,7 @@ select!(df::DataFrame, args...; renamecols::Bool=true) =
 
 function select!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
-        throw(ArgumentError("Only transformations are allowed when function is a " *
-                            "frist argument to select!"))
+        throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
     end
     return select!(df, arg)
 end
@@ -555,8 +556,7 @@ transform!(df::DataFrame, args...; renamecols::Bool=true) =
 
 function transform!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
-        throw(ArgumentError("Only transformations are allowed when function is a " *
-                            "frist argument to transform!"))
+        throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
     end
     return transform!(df, arg)
 end
@@ -686,8 +686,7 @@ select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=tru
 
 function select(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
-        throw(ArgumentError("Only transformations are allowed when function is a " *
-                            "frist argument to select"))
+        throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
     end
     return select(df, arg)
 end
@@ -707,8 +706,7 @@ transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=
 
 function transform(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
-        throw(ArgumentError("Only transformations are allowed when function is a " *
-                            "frist argument to transform"))
+        throw(ArgumentError("First argument to must be a transformation if the second argument is a data frame"))
     end
     return transform(df, arg)
 end
@@ -750,8 +748,7 @@ combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
 
 function combine(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
-        throw(ArgumentError("Only transformations are allowed when function is a " *
-                            "frist argument to combine"))
+        throw(ArgumentError("First argument to select! must be a transformation if the second argument is a data frame"))
     end
     return combine(df, arg)
 end
