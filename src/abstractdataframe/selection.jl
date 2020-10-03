@@ -275,7 +275,7 @@ end
 function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                              copycols::Bool, @nospecialize(fun),
-                             newname::Symbol, @nospecialize(v))
+                             newname::Symbol, v::AbstractVector)
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
