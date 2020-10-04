@@ -367,7 +367,7 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
     # in _manipulate, therefore in select_transform! such a duplicate should not happen
     res = _transformation_helper(df, col_idx, fun)
 
-    if (newname === AsTable || newname isa AbstractVector{Symbol})
+    if newname === AsTable || newname isa AbstractVector{Symbol}
         res = _expand_to_table(res)
     end
 
