@@ -47,9 +47,6 @@ julia> filter(where(df, :a => ByRow(>(1)), :b => x -> x .< 2))
 # transform only certain rows
 julia> transform(where(df, :a => ByRow(ismissing)), :a => (x -> 0) => :a)
 julia> transform(where(df, :a => ByRow(!ismissing)), :a => cumsum)
-# this returns an error since type different
-julia> transform(where(df, :a => ByRow(ismissing)), :a => (x -> "1") => :a)
-
 # combine using certain rows
 julia> combine(where(df, :a => ByRow(!ismissing)), :a => sum)
 ```
@@ -72,10 +69,12 @@ end
 ## with original row number
 ##
 ##############################################################################
-
-function Base.summary(io::IO, wdf::WhereDataFrame)
-    print(io, "Where DataFrame")
+function Base.summary(wdf::WhereDataFrame)
+    @sprintf("%d×%d %s", size(parent(wdf))..., "WhereDataFrame")
 end
+
+Base.summary(io::IO, wdf::WhereDataFrame) = summary(wdf)
+
 
 function Base.show(io::IO,
           wdf::WhereDataFrame;
