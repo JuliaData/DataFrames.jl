@@ -64,7 +64,9 @@ export AbstractDataFrame,
        transform!,
        unique!,
        unstack,
-       valuecols
+       valuecols,
+       where,
+       WhereDataFrame
 
 # TODO: remove these exports in year 2021
 export by, aggregate
@@ -118,6 +120,5 @@ include("deprecated.jl")
 
 include("other/tables.jl")
 include("wheredataframe/wheredataframe.jl")
-export where
 
 end # module DataFrames
