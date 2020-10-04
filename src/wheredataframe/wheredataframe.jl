@@ -10,7 +10,7 @@ struct WhereDataFrame{D<:AbstractDataFrame, T<:AbstractVector{Int}}
     rows::T
 end
 
-Base.@propagate_inbounds function WhereDataFrame(parent::AbstractDataFrame, rows::AbstractVector{Bool})
+function WhereDataFrame(parent::AbstractDataFrame, rows::AbstractVector{Bool})
     if length(rows) != nrow(parent)
         throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index" *
                             " (got $(length(rows)), expected $(nrow(parent)))"))
@@ -127,7 +127,7 @@ end
 
 ##############################################################################
 ##
-## Common Operations
+## Operations
 ##
 ##############################################################################
 
@@ -135,30 +135,16 @@ Base.filter(wdf::WhereDataFrame) = parent(wdf)[rows(wdf), :]
 Base.filter!(wdf::WhereDataFrame) = delete!(parent(wdf), setdiff(1:nrow(parent(wdf)), rows(wdf)))
 Base.delete!(wdf::WhereDataFrame) = delete!(parent(wdf), rows(wdf))
 Base.view(wdf::WhereDataFrame) = view(parent(wdf), rows(wdf), :)
-#function nonunique(wdf::WhereDataFrame, args...)
-#  x = falses(size(parent(wdf), 1))
-#  idx = rows(wdf)[findall(nonunique(view(wdf), args...))]
-#  x[idx] .= true
-#  return x
-#end
-#Base.unique!(wdf::WhereDataFrame, args...) = delete!(parent(wdf), findall(nonunique(wdf, args...)))
-#Base.unique(wdf::WhereDataFrame, args...) = parent(wdf)[(!).(nonunique(wdf, args...)), :]
 combine(wdf::WhereDataFrame, args...; kwargs...) = combine(view(wdf), args...; kwargs...)
-
 DataFrame(wdf::WhereDataFrame; copycols::Bool=true) = DataFrame(view(wdf); copycols = copycols)
-Base.first(df::WhereDataFrame, args...) = first(view(df), args...)
-Base.last(df::WhereDataFrame, args...) = last(view(df), args...)
 DataAPI.describe(wdf::WhereDataFrame, args...; kwargs...) = describe(view(wdf), args...; kwargs...)
 
 ##############################################################################
 ##
-## Select/transform
+## transform/transform!
 ##
 ##############################################################################
-#select!(wdf::WhereDataFrame, args...; renamecols::Bool=true) =
-    #_replace_columns!(parent(wdf), select(wdf, args..., copycols=false, renamecols=renamecols))
-#select(wdf::WhereDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
-    #manipulate(wdf, args..., copycols=copycols, renamecols=renamecols)
+
 transform!(df::WhereDataFrame, args...; renamecols::Bool=true) =
     _replace_columns!(parent(wdf), transform(wdf, args..., copycols=false, renamecols=renamecols))
 transform(wdf::WhereDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
