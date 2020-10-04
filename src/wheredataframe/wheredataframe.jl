@@ -47,6 +47,8 @@ julia> filter(where(df, :a => ByRow(>(1)), :b => x -> x .< 2))
 # transform only certain rows
 julia> transform(where(df, :a => ByRow(ismissing)), :a => (x -> 0) => :a)
 julia> transform(where(df, :a => ByRow(!ismissing)), :a => cumsum)
+# this returns an error since type different
+julia> transform(where(df, :a => ByRow(ismissing)), :a => (x -> "1") => :a)
 
 # combine using certain rows
 julia> combine(where(df, :a => ByRow(!ismissing)), :a => sum)
@@ -256,14 +258,14 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
         if copycols && !(fun isa ByRow) &&
             (res isa SubArray || any(i -> respar === parent(cdf[i]), parent_cols))
             if newname ∈ propertynames(df)
-                newdf[!, newname] = convert(Vector{Union{eltype(res), eltype(df[!, newname])}}, df[:, newname])
+                newdf[!, newname] = copycols ? df[:, newname] : df[!, newname]
             else
                 newdf[!, newname] = Vector{Union{eltype(res), Missing}}(missing, size(df, 1))
             end
             newdf[rows(wdf), newname] = copy(res)
         else
             if newname ∈ propertynames(df)
-                newdf[!, newname] = convert(Vector{Union{eltype(res), eltype(df[!, newname])}}, df[:, newname])
+                newdf[!, newname] = copycols ? df[:, newname] : df[!, newname]
             else
                 newdf[!, newname] = Vector{Union{eltype(res), Missing}}(missing, size(df, 1))
             end
@@ -272,7 +274,7 @@ function select_transform!(nc::Pair{<:Union{Int, AbstractVector{Int}, AsTable},
     else
         res_unwrap = res isa Union{AbstractArray{<:Any, 0}, Ref} ? res[] : res
           if newname ∈ propertynames(df)
-              newdf[!, newname] = convert(Vector{Union{eltype(res), eltype(df[!, newname])}}, df[:, newname])
+              newdf[!, newname] = copycols ? df[:, newname] : df[!, newname]
           else
              newdf[!, newname] = Vector{Union{eltype(res), Missing}}(missing, size(df, 1))
         end
