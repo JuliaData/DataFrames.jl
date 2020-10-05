@@ -401,8 +401,10 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
 end
 
 
+Base.transpose(::AbstractDataFrame, args...; kwargs...) = MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
+
 """
-    transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
+    permutedims(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
 
 Transpose a `DataFrame`, such that rows become columns,
 and the column indexed by `src_namescol` becomes a header.
@@ -418,21 +420,28 @@ though note that this may be substantially slower.
 df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2)) # all types can be promoted to Float64
 df2 = DataFrame(a=["x", "y"], b=[1, "str"], c=[1,2], d=rand(Bool,2))
 
-transpose(df1)
-transpose(df1, promote_type=false)
+permutedims(df1)
+permutedims(df1, promote_type=false)
 
-transpose(df2)
-transpose(df2, promote_type=false)
+permutedims(df2)
+permutedims(df2, promote_type=false)
 ````
 """
-function Base.transpose(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
-    if promote_type
-        m = permutedims(Matrix(df[!, Not(src_namescol)]))
-        df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
-        return hcat(df2, DataFrame(m, df[!, src_namescol], makeunique=makeunique), copycols=copycols)
+function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1,
+    dest_namescol::Union{Symbol, AbstractString}=src_namescol isa Integer ?
+                                                 _names(df)[src_namescol] :
+                                                 src_namescol;
+    makeunique::Bool=false, promote::Symbol=:all)
+
+    df_notsrc = df[!, Not(src_namescol)]
+    df_permuted = DataFrame([names(df_notsrc)], [dest_namescol])
+    if promote == :all || ((promote == :none ) && (all(col-> eltype(col) == eltype(first(eachcol(df_notsrc))), eachcol(df_notsrc))))
+        m = permutedims(Matrix(df_notsrc))
+        hcat!(df_permuted, DataFrame(m, df[!, src_namescol], makeunique=makeunique), copycols=false)
+    elseif promote == :none
+        m = permutedims(Matrix{Any}(df_notsrc))
+        hcat!(df_permuted, DataFrame(collect.(eachcol(m)), df[!, src_namescol], makeunique=make_unique), copycols=false)
     else
-        m = permutedims(Matrix{Any}(df[!, Not(src_namescol)]))
-        df2 = DataFrame([names(df[!, Not(src_namescol)])], [dest_namescol])
-        hcat(df2, DataFrame([[x for x in col] for col in eachcol(m)], df[!, src_namescol], makeunique=makeunique), copycols=copycols)
+        throw(ArgumentError("Value '$promote' for `promote` not supported"))
     end
 end

@@ -507,45 +507,61 @@ end
     @test eltype(typeof(sdf2.value)) === Float64
 end
 
-@testset "transpose" begin
+@testset "permute dims" begin
     df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
     df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1,2], d=rand(Bool,2))
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool,10))
+    df4 = DataFrame(a=rand(2), b=rand(2), c=rand(2), d=["x", "y"], e=[:x, :y], f=[missing, "y"], g=[1,2])
 
-    df1_t = transpose(df1)
-    @test size(df1_t,1) == ncol(df1) - 1
-    @test size(df1_t, 2) == nrow(df1) + 1
-    @test names(df1_t) == ["a", "x", "y"]
-    @test eltype(df1_t.x) <: AbstractFloat
-    @test eltype(df1_t.y) <: AbstractFloat
+    @test_throws MethodError transpose(df1)
+    @test_throws ArgumentError permutedims(df1, promote=:foo)
 
-    df1_tp = transpose(df1, promote_type=false)
-    @test size(df1_tp,1) == ncol(df1) - 1
-    @test size(df1_tp, 2) == nrow(df1) + 1
-    @test names(df1_tp) == ["a", "x", "y"]
-    @test Bool <: eltype(df1_tp.x)
-    @test Int <: eltype(df1_tp.x)
-    @test AbstractFloat <: eltype(df1_tp.x)
+    df1_pd = permutedims(df1)
+    @test df1_pd
+    @test size(df1_pd, 1) == ncol(df1) - 1
+    @test size(df1_pd, 2) == nrow(df1) + 1
+    @test names(df1_pd) == ["a", "x", "y"]
+    @test eltype(df1_pd.x) <: AbstractFloat
+    @test eltype(df1_pd.y) <: AbstractFloat
 
-    df2_t = transpose(df2)
-    @test size(df2_t,1) == ncol(df2) - 1
-    @test size(df2_t, 2) == nrow(df2) + 1
-    @test names(df2_t) == ["a", "x", "y"]
-    @test Any <: eltype(df2_t.x)
-    @test Any <: eltype(df2_t.y)
+    df1_pdn = permutedims(df1, promote=:none)
+    @test size(df1_pdn, 1) == ncol(df1) - 1
+    @test size(df1_pdn, 2) == nrow(df1) + 1
+    @test names(df1_pdn) == ["a", "x", "y"]
+    @test Bool <: eltype(df1_pdn.x)
+    @test Int <: eltype(df1_pdn.x)
+    @test AbstractFloat <: eltype(df1_pdn.x)
+
+    df2_pd = permutedims(df2)
+    @test size(df2_pd, 1) == ncol(df2) - 1
+    @test size(df2_pd, 2) == nrow(df2) + 1
+    @test names(df2_pd) == ["a", "x", "y"]
+    @test Any <: eltype(df2_pd.x)
+    @test Any <: eltype(df2_pd.y)
 
 
-    df2_tp = transpose(df2, promote_type=false)
-    @test size(df2_tp,1) == ncol(df2) - 1
-    @test size(df2_tp, 2) == nrow(df2) + 1
-    @test names(df2_tp) == ["a", "x", "y"]
-    @test Bool <: eltype(df2_tp.x)
-    @test Int <: eltype(df2_tp.x)
-    @test AbstractFloat <: eltype(df2_tp.x)
-    @test Any <: eltype(df2_tp.y)
+    df2_pdn = permutedims(df2, promote=:none)
+    @test size(df2_pdn, 1) == ncol(df2) - 1
+    @test size(df2_pdn, 2) == nrow(df2) + 1
+    @test names(df2_pdn) == ["a", "x", "y"]
+    @test Bool <: eltype(df2_pdn.x)
+    @test Int <: eltype(df2_pdn.x)
+    @test AbstractFloat <: eltype(df2_pdn.x)
+    @test Any <: eltype(df2_pdn.y)
 
-    @test_throws ArgumentError transpose(df3)
-    @test names(transpose(df3, makeunique=true)) == ["a", "x", ("x_$i" for i in 1:9)...]
+    @test_throws ArgumentError permutedims(df3)
+    @test names(permutedims(df3, makeunique=true)) == ["a", "x", ("x_$i" for i in 1:9)...]
+
+    #=
+    Needs other tests, TODO: https://github.com/JuliaData/DataFrames.jl/pull/2447#discussion_r499123081
+
+        please check:
+
+            1. DataFrame()
+            2. DataFrame(a=Int[], b=Float64[])
+            3. and cases that should error (e.g. missing column, column with new names that is not Symbol or string etc.)
+    =#
+
 end
 
 end # module
