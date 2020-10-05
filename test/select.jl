@@ -734,11 +734,9 @@ end
             @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
         elseif retval isa DataFrame
             @test_throws MethodError select(df, :x => ByRow(x -> retval) => AsTable)
-        else # Matrix; surprising but following the API
-            @test select(df, :x => ByRow(x -> retval) => AsTable) ==
-                  DataFrame(["CartesianIndex($i, $j)" => 1.0 for i in 1:2, j in 1:2]...)
-            @test select(df, :x => ByRow(x -> retval) => [:a, :b, :c, :d]) ==
-                  DataFrame(a=1.0, b=1.0, c=1.0, d=1.0)
+        else # Matrix: wrong type of keys
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval) => AsTable)
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval) => [:a, :b, :c, :d])
         end
     end
 
@@ -748,7 +746,7 @@ end
         if retval isa Tuple
             @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(x1=1, x2=2)
         else
-            @test select(df, :x => ByRow(x -> retval) => Symbol.("x", 1:8)) == DataFrame(ones(1, 8))
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval) => AsTable)
         end
         cdf = copy(df)
         select!(cdf, :x => x -> retval)

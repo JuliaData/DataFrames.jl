@@ -224,11 +224,15 @@ _expand_to_table(res::Union{AbstractDataFrame, NamedTuple, DataFrameRow, Abstrac
 function _expand_to_table(res::AbstractVector)
     isempty(res) && return Tables.columntable(res)
     kp1 = keys(res[1])
+    prepend = all(x -> x isa Integer, kp1)
+    if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
+        throw(ArgumentError("keys of the returned elements must be " *
+                            "`Symbol`s, strings or integers"))
+    end
     if any(x -> !isequal(keys(x), kp1), res)
         throw(ArgumentError("keys of the returned elements must be identical"))
     end
     newres = DataFrame()
-    prepend = all(x -> x isa Integer, kp1)
     for n in kp1
         newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
     end
