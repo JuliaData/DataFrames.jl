@@ -433,6 +433,8 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1,
                                                  src_namescol;
     makeunique::Bool=false, promote::Symbol=:all)
 
+    nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for tables with 0 rows"))
+
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame([names(df_notsrc)], [dest_namescol])
     if promote == :all || ((promote == :none ) && (all(col-> eltype(col) == eltype(first(eachcol(df_notsrc))), eachcol(df_notsrc))))
@@ -440,7 +442,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1,
         hcat!(df_permuted, DataFrame(m, df[!, src_namescol], makeunique=makeunique), copycols=false)
     elseif promote == :none
         m = permutedims(Matrix{Any}(df_notsrc))
-        hcat!(df_permuted, DataFrame(collect.(eachcol(m)), df[!, src_namescol], makeunique=make_unique), copycols=false)
+        hcat!(df_permuted, DataFrame([[x for x in col] for col in eachcol(m)], df[!, src_namescol], makeunique=makeunique), copycols=false)
     else
         throw(ArgumentError("Value '$promote' for `promote` not supported"))
     end

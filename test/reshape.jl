@@ -511,7 +511,7 @@ end
     df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
     df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1,2], d=rand(Bool,2))
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool,10))
-    df4 = DataFrame(a=rand(2), b=rand(2), c=rand(2), d=["x", "y"], e=[:x, :y], f=[missing, "y"], g=[1,2])
+    df4 = DataFrame(a=rand(2), b=rand(2), c=rand(2), d=["x", "y"], e=[:x, :y], f=[missing, "y"], g=[1,2], h=[1., missing])
 
     @test_throws MethodError transpose(df1)
     @test_throws ArgumentError permutedims(df1, promote=:foo)
@@ -561,7 +561,9 @@ end
             2. DataFrame(a=Int[], b=Float64[])
             3. and cases that should error (e.g. missing column, column with new names that is not Symbol or string etc.)
     =#
-
+    @test_throws MethodError permutedims(df4[!, Not([:d, :e, :f, :g, :h])])
+    @test permutedims(df4[!, Not([:e, :f, :g, :h])], :d) == permutedims(df4[!, Not([:e, :f, :g, :h])], :d, promote=:none)
+    @test_throws ArgumentError permutedims(DataFrame())
 end
 
 end # module
