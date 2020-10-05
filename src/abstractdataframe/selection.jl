@@ -213,7 +213,7 @@ function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol}
         colnames = newname
     end
 
-    # fix the type to avoid unnecesarry compilations of methods
+    # fix the type to avoid unnecessary compilations of methods
     # this should be cheap
     return colnames isa Vector{Symbol} ? colnames : collect(Symbol, colnames)
 end
