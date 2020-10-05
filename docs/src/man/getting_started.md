@@ -627,6 +627,14 @@ julia> select(df, :x2, :x2 => ByRow(sqrt)) # transform columns by row
 ├─────┼───────┼─────────┤
 │ 1   │ 3     │ 1.73205 │
 │ 2   │ 4     │ 2.0     │
+
+julia> select(df, AsTable(:) => ByRow(extrema) => [:lo, :hi]) # return multiple columns
+2×2 DataFrame
+│ Row │ lo    │ hi    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 5     │
+│ 2   │ 2     │ 6     │
 ```
 
 It is important to note that `select` always returns a data frame,

@@ -432,35 +432,41 @@ SELECT_ARG_RULES =
 
     * Any index that is allowed for column indexing
       ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+    * A function or a type
     * Column transformation operations using the `Pair` notation that is
-      described below and vectors of such pairs.
+      described below and vectors or matrices of such pairs.
 
     Columns can be renamed using the `old_column => new_column_name` syntax, and
     transformed using the `old_column => fun => new_column_name` syntax.
-    `new_column_name` must be a `Symbol` or a string, and `fun` a function or a
-    type. If `old_column` is a `Symbol`, a string, or an integer then `fun` is
-    applied to the corresponding column vector. Otherwise `old_column` can be
-    any column indexing syntax, in which case `fun` will be passed the column
-    vectors specified by `old_column` as separate arguments. The only exception
-    is when `old_column` is an `AsTable` type wrapping a selector, in which case
-    `fun` is passed a `NamedTuple` containing the selected columns.
+    `new_column_name` must be a `Symbol` or a string, a vector of `Symbol` or
+    string, or `AsTable`, and `fun` a function or a type. If `old_column` is a
+    `Symbol`, a string, or an integer then `fun` is applied to the corresponding
+    column vector. Otherwise `old_column` can be any column indexing syntax, in
+    which case `fun` will be passed the column vectors specified by `old_column`
+    as separate arguments. The only exception is when `old_column` is an
+    `AsTable` type wrapping a selector, in which case `fun` is passed a
+    `NamedTuple` containing the selected columns.
+
+    Column renaming and transformation operations can be passed wrapped in
+    vectors or matrices (this is useful when combined with broadcasting).
+
+    # Rules when `new_column_name` is a `Symbol` or a string or is missing
 
     If `fun` returns a value of type other than `AbstractVector` then it will be
     broadcasted into a vector matching the target number of rows in the data
     frame, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
-    `DataFrameRow`, `AbstractMatrix`, in which case an error is thrown as
-    currently these return types are not allowed. As a particular rule, values
-    wrapped in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and
-    then broadcasted.
+    `DataFrameRow`, `AbstractMatrix`, in which case an error is thrown. As a
+    particular rule, values wrapped in a `Ref` or a `0`-dimensional
+    `AbstractArray` are unwrapped and then broadcasted.
 
     To apply `fun` to each row instead of whole columns, it can be wrapped in a
     `ByRow` struct. In this case if `old_column` is a `Symbol`, a string, or an
     integer then `fun` is applied to each element (row) of `old_column` using
     broadcasting. Otherwise `old_column` can be any column indexing syntax, in
     which case `fun` will be passed one argument for each of the columns
-    specified by `old_column`. If `ByRow` is used it is not allowed for
-    `old_column` to select an empty set of columns nor for `fun` to return a
-    `NamedTuple` or a `DataFrameRow`.
+    specified by `old_column`. If `ByRow` is used it is allowed for
+    `old_column` to select an empty set of columns, in which case no arguments
+    are passed to `fun` for each row.
 
     Column transformation can also be specified using the short `old_column =>
     fun` form. In this case, `new_column_name` is automatically generated as
@@ -473,8 +479,52 @@ SELECT_ARG_RULES =
     It is not allowed to pass `renamecols=false` if `old_column` is empty
     as it would generate an empty column name.
 
-    Column renaming and transformation operations can be passed wrapped in
-    vectors (this is useful when combined with broadcasting).
+    # Rules when `new_column_name` is a vector of `Symbol` or a string or is `AsTable`
+
+    In this case it is assumed that `fun` returns multiple columns.
+
+    If `fun` returns one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
+    `AbstractMatrix` then rules described below for `args` being a function or
+    a type apply.
+
+    If `fun` returns an `AbstractVector` then each element of this vector must
+    support `keys` function that must return a collection of `Symbol`s, strings
+    or integers; the return value of `keys` must be identical for all elements.
+    Then as many columns are created as there are elements in the return value
+    of the `keys` function and their names are set to be equal to the key names,
+    except if `keys` returns integers, in which case they are prefixed by `x`
+    (so the column names are e.g. `x1`, `x2`, ...)
+
+    If `fun` returns a value of any other type then it is assumed that it is
+    a table conforming to Tables.jl API and the `Tables.columntable` function is
+    called on it to get the resulting columns and their names.
+
+    Additionally if `new_column_name` is a vector of `Symbol` or string then column
+    names produced using the rules above are ignored and replaced by `new_column_name`
+    (the number of columns must be the same as the length `new_column_name` in this case).
+
+    # Rules when element of `args` is a function or a type
+
+    In this case a transformaton is passed `df` as a single argument.
+
+    If the return value of the transformation is of `AbstractDataFrame`,
+    `NamedTuple`, `DataFrameRow` or `AbstractMatrix` then it is treated as
+    containing multiple columns. For `AbstractMatrix` column names are generated
+    as `x1`, `x2`, etc. For `AbstractDataFrame`, `NamedTuple` of vectors and
+    `AbstractMatrix` the columns are taken as is from the returned value. For
+    `DataFrameRow` and` NamedTuple` not containing any vectors the returned
+    value is broadcasted a vector matching the target number of rows in the data
+    frame.
+
+    If the return value is an `AbstractVector` then it is used as-is. The resulting
+    column gets a name `x1`.
+
+    In all other cases the return value is broadcasted into a vector matching
+    the target number of rows in the data frame. As a particular rule, values
+    wrapped in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and
+    then broadcasted. The resulting column gets a name `x1`.
+
+    # Special rules
 
     As a special rule passing `nrow` without specifying `old_column` creates a
     column named `:nrow` containing a number of rows in a source data frame, and
@@ -493,6 +543,7 @@ SELECT_ARG_RULES =
 
 """
     select!(df::DataFrame, args...; renamecols::Bool=true)
+    select!(args::Callable, df::DataFrame; renamecols::Bool=true)
 
 Mutate `df` in place to retain only columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`, except when no
@@ -547,16 +598,16 @@ julia> select!(df, :, [:c, :b] => (c,b) -> c .+ b .- sum(b)/length(b))
 
 julia> df = DataFrame(a=1:3, b=4:6);
 
-julia> select!(df, names(df) .=> sum);
+julia> select!(df, names(df) .=> [minimum maximum]);
 
 julia> df
-3×2 DataFrame
-│ Row │ a_sum │ b_sum │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 6     │ 15    │
-│ 2   │ 6     │ 15    │
-│ 3   │ 6     │ 15    │
+3×4 DataFrame
+│ Row │ a_minimum │ b_minimum │ a_maximum │ b_maximum │
+│     │ Int64     │ Int64     │ Int64     │ Int64     │
+├─────┼───────────┼───────────┼───────────┼───────────┤
+│ 1   │ 1         │ 4         │ 3         │ 6         │
+│ 2   │ 1         │ 4         │ 3         │ 6         │
+│ 3   │ 1         │ 4         │ 3         │ 6         │
 
 julia> df = DataFrame(a=1:3, b=4:6);
 
@@ -570,6 +621,36 @@ julia> select!(df, AsTable(:) => ByRow(mean), renamecols=false)
 │ 1   │ 2.5     │
 │ 2   │ 3.5     │
 │ 3   │ 4.5     │
+
+julia> df = DataFrame(a=1:3, b=4:6);
+
+julia> select!(first, df)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 1     │ 4     │
+│ 3   │ 1     │ 4     │
+
+julia> df = DataFrame(a=1:3, b=4:6, c=7:9)
+3×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 7     │
+│ 2   │ 2     │ 5     │ 8     │
+│ 3   │ 3     │ 6     │ 9     │
+
+julia> select!(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats,
+               AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
+3×3 DataFrame
+│ Row │ stats                   │ mean    │ std     │
+│     │ NamedTuple…             │ Float64 │ Float64 │
+├─────┼─────────────────────────┼─────────┼─────────┤
+│ 1   │ (mean = 4.0, std = 3.0) │ 4.0     │ 3.0     │
+│ 2   │ (mean = 5.0, std = 3.0) │ 5.0     │ 3.0     │
+│ 3   │ (mean = 6.0, std = 3.0) │ 6.0     │ 3.0     │
 ```
 
 """
@@ -585,6 +666,7 @@ end
 
 """
     transform!(df::DataFrame, args...; renamecols::Bool=true)
+    transform!(args::Callable, df::DataFrame; renamecols::Bool=true)
 
 Mutate `df` in place to add columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`.
@@ -604,6 +686,7 @@ end
 
 """
     select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
+    select(args::Callable, df::DataFrame; renamecols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `args` and
 return it. The result is guaranteed to have the same number of rows as `df`,
@@ -648,7 +731,7 @@ julia> df = DataFrame(a=1:3, b=4:6)
 │ 2   │ 2     │ 5     │
 │ 3   │ 3     │ 6     │
 
-julia> select(df, :b)
+julia> select(df, 2)
 3×1 DataFrame
 │ Row │ b     │
 │     │ Int64 │
@@ -656,24 +739,6 @@ julia> select(df, :b)
 │ 1   │ 4     │
 │ 2   │ 5     │
 │ 3   │ 6     │
-
-julia> select(df, Not(:b)) # drop column :b from df
-3×1 DataFrame
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
-│ 3   │ 3     │
-
-julia> select(df, :a => :c, :b)
-3×2 DataFrame
-│ Row │ c     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
 
 julia> select(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
@@ -693,23 +758,16 @@ julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 │ 2   │ 2     │ 5     │ 2.0          │
 │ 3   │ 3     │ 6     │ 4.0          │
 
-julia> select(df, names(df) .=> sum)
-3×2 DataFrame
-│ Row │ a_sum │ b_sum │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 6     │ 15    │
-│ 2   │ 6     │ 15    │
-│ 3   │ 6     │ 15    │
+julia> select(df, names(df) .=> [minimum maximum])
+3×4 DataFrame
+│ Row │ a_minimum │ b_minimum │ a_maximum │ b_maximum │
+│     │ Int64     │ Int64     │ Int64     │ Int64     │
+├─────┼───────────┼───────────┼───────────┼───────────┤
+│ 1   │ 1         │ 4         │ 3         │ 6         │
+│ 2   │ 1         │ 4         │ 3         │ 6         │
+│ 3   │ 1         │ 4         │ 3         │ 6         │
 
-julia> select(df, names(df) .=> sum .=> [:A, :B])
-3×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 6     │ 15    │
-│ 2   │ 6     │ 15    │
-│ 3   │ 6     │ 15    │
+julia> using Statistics
 
 julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
 3×1 DataFrame
@@ -719,6 +777,34 @@ julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
 │ 1   │ 2.5     │
 │ 2   │ 3.5     │
 │ 3   │ 4.5     │
+
+julia> select(first, df)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 1     │ 4     │
+│ 3   │ 1     │ 4     │
+
+julia> df = DataFrame(a=1:3, b=4:6, c=7:9)
+3×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 7     │
+│ 2   │ 2     │ 5     │ 8     │
+│ 3   │ 3     │ 6     │ 9     │
+
+julia> select(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats,
+              AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
+3×3 DataFrame
+│ Row │ stats                   │ mean    │ std     │
+│     │ NamedTuple…             │ Float64 │ Float64 │
+├─────┼─────────────────────────┼─────────┼─────────┤
+│ 1   │ (mean = 4.0, std = 3.0) │ 4.0     │ 3.0     │
+│ 2   │ (mean = 5.0, std = 3.0) │ 5.0     │ 3.0     │
+│ 3   │ (mean = 6.0, std = 3.0) │ 6.0     │ 3.0     │
 ```
 
 """
@@ -734,6 +820,7 @@ end
 
 """
     transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
+    transform(args::Callable, df::DataFrame; renamecols::Bool=true)
 
 Create a new data frame that contains columns from `df` and adds columns
 specified by `args` and return it.
@@ -754,7 +841,7 @@ end
 
 """
     combine(df::AbstractDataFrame, args...; renamecols::Bool=true)
-    combine(arg, df::AbstractDataFrame; renamecols::Bool=true)
+    combine(args::Callable, df::AbstractDataFrame; renamecols::Bool=true)
 
 Create a new data frame that contains columns from `df` specified by `args` and
 return it. The result can have any number of rows that is determined by the
@@ -782,6 +869,68 @@ julia> combine(df, :a => sum, nrow, renamecols=false)
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 6     │ 3     │
+
+julia> combine(df, :a => ByRow(sin) => :c, :b)
+3×2 DataFrame
+│ Row │ c        │ b     │
+│     │ Float64  │ Int64 │
+├─────┼──────────┼───────┤
+│ 1   │ 0.841471 │ 4     │
+│ 2   │ 0.909297 │ 5     │
+│ 3   │ 0.14112  │ 6     │
+
+julia> combine(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
+3×3 DataFrame
+│ Row │ a     │ b     │ a_b_function │
+│     │ Int64 │ Int64 │ Float64      │
+├─────┼───────┼───────┼──────────────┤
+│ 1   │ 1     │ 4     │ 0.0          │
+│ 2   │ 2     │ 5     │ 2.0          │
+│ 3   │ 3     │ 6     │ 4.0          │
+
+julia> combine(df, names(df) .=> [minimum maximum])
+1×4 DataFrame
+│ Row │ a_minimum │ b_minimum │ a_maximum │ b_maximum │
+│     │ Int64     │ Int64     │ Int64     │ Int64     │
+├─────┼───────────┼───────────┼───────────┼───────────┤
+│ 1   │ 1         │ 4         │ 3         │ 6         │
+
+julia> using Statistics
+
+julia> combine(df, AsTable(:) => ByRow(mean), renamecols=false)
+3×1 DataFrame
+│ Row │ a_b     │
+│     │ Float64 │
+├─────┼─────────┤
+│ 1   │ 2.5     │
+│ 2   │ 3.5     │
+│ 3   │ 4.5     │
+
+julia> combine(first, df)
+1×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+
+julia> df = DataFrame(a=1:3, b=4:6, c=7:9)
+3×3 DataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 7     │
+│ 2   │ 2     │ 5     │ 8     │
+│ 3   │ 3     │ 6     │ 9     │
+
+julia> combine(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats,
+                      AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
+3×3 DataFrame
+│ Row │ stats                   │ mean    │ std     │
+│     │ NamedTuple…             │ Float64 │ Float64 │
+├─────┼─────────────────────────┼─────────┼─────────┤
+│ 1   │ (mean = 4.0, std = 3.0) │ 4.0     │ 3.0     │
+│ 2   │ (mean = 5.0, std = 3.0) │ 5.0     │ 3.0     │
+│ 3   │ (mean = 6.0, std = 3.0) │ 6.0     │ 3.0     │
 ```
 """
 combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
