@@ -407,7 +407,7 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
 
 """
     permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
-                dest_namescol::Union{Symbol,Int};
+                dest_namescol::Union{Symbol,AbstractString};
                 makeunique::Bool=false)
     permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex; makeunique::Bool=false)
     permutedims(df::AbstractDataFrame; makeunique::Bool=false)
