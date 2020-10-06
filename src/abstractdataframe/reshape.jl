@@ -437,15 +437,28 @@ all columns in resulting `DataFrame` will be promoted to `Float64`.
 
 # Examples
 
-```julia
-df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
-df2 = DataFrame(a=["x", "y"], b=[1, "str"], c=[1,2], d=rand(Bool,2))
+```jldoctest
+julia> df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2));
 
-permutedims(df1)
-permutedims(df1, promote_type=false)
+julia> df2 = DataFrame(a=["x", "y"], b=[1, "str"], c=[1,2], d=rand(Bool,2));
 
-permutedims(df2)
-permutedims(df2, promote_type=false)
+julia> permutedims(df1) # note the column type
+3×3 DataFrame
+│ Row │ a      │ x        │ y        │
+│     │ String │ Float64  │ Float64  │
+├─────┼────────┼──────────┼──────────┤
+│ 1   │ b      │ 0.982197 │ 0.263357 │
+│ 2   │ c      │ 1.0      │ 2.0      │
+│ 3   │ d      │ 0.0      │ 1.0      │
+
+julia> permutedims(df2)
+3×3 DataFrame
+│ Row │ a      │ x   │ y   │
+│     │ String │ Any │ Any │
+├─────┼────────┼─────┼─────┤
+│ 1   │ b      │ 1   │ str │
+│ 2   │ c      │ 1   │ 2   │
+│ 3   │ d      │ 0   │ 0   │
 ````
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
