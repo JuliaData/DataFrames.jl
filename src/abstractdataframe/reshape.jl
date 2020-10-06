@@ -403,7 +403,6 @@ end
 
 Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
-    # ↑ is 94 char, is that OK? (there are a couple other lines in this file that go over)
 
 """
     permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
@@ -412,15 +411,16 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex; makeunique::Bool=false)
     permutedims(df::AbstractDataFrame; makeunique::Bool=false)
 
-Turn a `DataFrame` on its side such that rows become columns
-and the column indexed by `src_namescol` becomes a header.
+Turn `df` on its side such that rows become columns
+and the column indexed by `src_namescol` becomes the names of new columns.
 In the resulting `DataFrame`,
 The header of `df` will become the first column
-with name specified by `dest_namescol`
+with name specified by `dest_namescol`.
 
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
+  This column eltype must be `<: Union{String, Symbol}`.
   Defaults to first column.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
@@ -428,67 +428,80 @@ with name specified by `dest_namescol`
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 
-Note: The eltypes of columns in resulting `DataFrame` will depend
-on the eltypes of _all_ input columns.
+Note: The eltypes of columns in resulting `DataFrame`
+(other than the first column, which always has eltype `String`)
+will depend on the eltypes of _all_ input columns
+based on the results of `prote_type`.
 That is, if the source `DataFrame` contains `String` and `Int` columns,
-all resulting columns will have eltype `Any`.
+resulting columns will have eltype `Any`.
 If the source has a mix of numeric types (eg. `Float64` and `Int`),
-all columns in resulting `DataFrame` will be promoted to `Float64`.
+columns in resulting `DataFrame` will be promoted to `Float64`.
 
 # Examples
 
 ```jldoctest
-julia> df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2));
+julia> df1 = DataFrame(a=["x", "y"], b=[1.,2.], c=[3,4], d=[true,false])
+2×4 DataFrame
+│ Row │ a      │ b       │ c     │ d    │
+│     │ String │ Float64 │ Int64 │ Bool │
+├─────┼────────┼─────────┼───────┼──────┤
+│ 1   │ x      │ 1.0     │ 3     │ 1    │
+│ 2   │ y      │ 2.0     │ 4     │ 0    │
 
-julia> df2 = DataFrame(a=["x", "y"], b=[1, "str"], c=[1,2], d=rand(Bool,2));
+julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3,4], d=[true,false])
+2×4 DataFrame
+│ Row │ a      │ b   │ c     │ d    │
+│     │ String │ Any │ Int64 │ Bool │
+├─────┼────────┼─────┼───────┼──────┤
+│ 1   │ x      │ 1   │ 3     │ 1    │
+│ 2   │ y      │ two │ 4     │ 0    │
 
-julia> permutedims(df1) # note the column type
+julia> permutedims(df1) # note the column types
 3×3 DataFrame
-│ Row │ a      │ x        │ y        │
-│     │ String │ Float64  │ Float64  │
-├─────┼────────┼──────────┼──────────┤
-│ 1   │ b      │ 0.982197 │ 0.263357 │
-│ 2   │ c      │ 1.0      │ 2.0      │
-│ 3   │ d      │ 0.0      │ 1.0      │
+│ Row │ a      │ x       │ y       │
+│     │ String │ Float64 │ Float64 │
+├─────┼────────┼─────────┼─────────┤
+│ 1   │ b      │ 1.0     │ 2.0     │
+│ 2   │ c      │ 3.0     │ 4.0     │
+│ 3   │ d      │ 1.0     │ 0.0     │
 
 julia> permutedims(df2)
 3×3 DataFrame
 │ Row │ a      │ x   │ y   │
 │     │ String │ Any │ Any │
 ├─────┼────────┼─────┼─────┤
-│ 1   │ b      │ 1   │ str │
-│ 2   │ c      │ 1   │ 2   │
-│ 3   │ d      │ 0   │ 0   │
-````
+│ 1   │ b      │ 1   │ two │
+│ 2   │ c      │ 3   │ 4   │
+│ 3   │ d      │ 1   │ 0   │
+```
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           dest_namescol::Union{Symbol, AbstractString};
                           makeunique::Bool=false)
 
-    nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for data frame with 0 rows"))
+    nrow(df) > 0 || throw(
+        ArgumentError("`permutedims` not defined for data frame with 0 rows"))
     eltype(df[!, src_namescol]) <: SymbolOrString || throw(
-            ArgumentError("src_namescol must have eltype `Symbol` or `AbstractString`"))
+            ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
 
     df_notsrc = df[!, Not(src_namescol)]
-    df_permuted = DataFrame([names(df_notsrc)], [dest_namescol])
+    df_permuted = DataFrame(dest_namescol => names(df_notsrc))
 
     m = permutedims(Matrix(df_notsrc))
     df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
-    hcat!(df_permuted, df_tmp, copycols=false)
+    return hcat!(df_permuted, df_tmp, copycols=false)
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
                           makeunique::Bool=false)
-    nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for data frame with 0 rows"))
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(ArgumentError("`src_namescol` doesn't exist"))
         dest_namescol = _names(df)[src_namescol]
     else
         dest_namescol = src_namescol
     end
-    permutedims(df, src_namescol, dest_namescol; makeunique=makeunique)
+    return permutedims(df, src_namescol, dest_namescol; makeunique=makeunique)
 end
 
-function Base.permutedims(df::AbstractDataFrame; makeunique::Bool=false)
+Base.permutedims(df::AbstractDataFrame; makeunique::Bool=false) =
     permutedims(df, 1; makeunique=makeunique)
-end
