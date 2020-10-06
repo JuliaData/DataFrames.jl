@@ -428,16 +428,19 @@ permutedims(df2, promote_type=false)
 ````
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1,
-    dest_namescol::Union{Symbol, AbstractString}=src_namescol isa Integer ?
-                                                 _names(df)[src_namescol] :
-                                                 src_namescol;
-    makeunique::Bool=false, promote::Symbol=:all)
+                          dest_namescol::Union{Symbol, AbstractString}=src_namescol isa Integer ?
+                                                                       _names(df)[src_namescol] :
+                                                                       src_namescol;
+                          makeunique::Bool=false, promote::Symbol=:all)
 
-    nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for tables with 0 rows"))
+    nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for data frame with 0 rows"))
+
 
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame([names(df_notsrc)], [dest_namescol])
-    if promote == :all || ((promote == :none ) && (all(col-> eltype(col) == eltype(first(eachcol(df_notsrc))), eachcol(df_notsrc))))
+
+    an_eltype = eltype(first(eachcol(df_notsrc)))
+    if promote == :all || ((promote == :none ) && (all(col-> eltype(col) == an_eltype, eachcol(df_notsrc))))
         m = permutedims(Matrix(df_notsrc))
         hcat!(df_permuted, DataFrame(m, df[!, src_namescol], makeunique=makeunique), copycols=false)
     elseif promote == :none

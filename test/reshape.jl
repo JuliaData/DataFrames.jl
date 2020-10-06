@@ -507,7 +507,7 @@ end
     @test eltype(typeof(sdf2.value)) === Float64
 end
 
-@testset "permute dims" begin
+@testset "permutedims" begin
     df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
     df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1,2], d=rand(Bool,2))
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool,10))
@@ -515,12 +515,19 @@ end
 
     @test_throws MethodError transpose(df1)
     @test_throws ArgumentError permutedims(df1, promote=:foo)
+    @test_throws ArgumentError permutedims(df1, :bar)
 
     df1_pd = permutedims(df1)
     @test df1_pd
     @test size(df1_pd, 1) == ncol(df1) - 1
     @test size(df1_pd, 2) == nrow(df1) + 1
     @test names(df1_pd) == ["a", "x", "y"]
+
+    orignames = names(df1)[2:end]
+    for (i, row) in ennumerate(eachrow(df1_pd))
+        @test Vector(df[i, :]) == [orignames[i]; df1[!, orignames[i]]]
+    end
+
     @test eltype(df1_pd.x) <: AbstractFloat
     @test eltype(df1_pd.y) <: AbstractFloat
 
@@ -538,7 +545,6 @@ end
     @test names(df2_pd) == ["a", "x", "y"]
     @test Any <: eltype(df2_pd.x)
     @test Any <: eltype(df2_pd.y)
-
 
     df2_pdn = permutedims(df2, promote=:none)
     @test size(df2_pdn, 1) == ncol(df2) - 1
@@ -558,12 +564,17 @@ end
         please check:
 
             1. DataFrame()
-            2. DataFrame(a=Int[], b=Float64[])
-            3. and cases that should error (e.g. missing column, column with new names that is not Symbol or string etc.)
     =#
+
+    # Can't index Float Column
     @test_throws MethodError permutedims(df4[!, Not([:d, :e, :f, :g, :h])])
+    # promote=:all and =:none are the same if all columns are same eltype
     @test permutedims(df4[!, Not([:e, :f, :g, :h])], :d) == permutedims(df4[!, Not([:e, :f, :g, :h])], :d, promote=:none)
-    @test_throws ArgumentError permutedims(DataFrame())
+
+    # can't permute dfs with 0 rows
+    @test_throws ArgumentError permutedims(DataFrame()) # not working
+    @test_throws ArgumentError permutedims(DataFrame(a=Int[], b=Float64[]))
+
 end
 
 end # module
