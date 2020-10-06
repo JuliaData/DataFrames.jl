@@ -401,23 +401,44 @@ function CategoricalArrays.CategoricalArray(v::RepeatedVector)
 end
 
 
-Base.transpose(::AbstractDataFrame, args...; kwargs...) = MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
+Base.transpose(::AbstractDataFrame, args...; kwargs...) =
+    MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
+    # ↑ is 94 char, is that OK? (there are a couple other lines in this file that go over)
 
 """
-    permutedims(df::AbstractDataFrame, src_namescol=1, dest_namescol=names(df)[src_namescol]; copycols::Bool=false, makeunique=false, promote_type::Bool=true)
+    permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
+                dest_namescol::Union{Symbol,Int};
+                makeunique::Bool=false)
+    permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex; makeunique::Bool=false)
+    permutedims(df::AbstractDataFrame; makeunique::Bool=false)
 
-Transpose a `DataFrame`, such that rows become columns,
+Turn a `DataFrame` on its side such that rows become columns
 and the column indexed by `src_namescol` becomes a header.
+In the resulting `DataFrame`,
+The header of `df` will become the first column
+with name specified by `dest_namescol`
 
-By default, the type of resulting columns will depend on the promoted type of all input columns.
-Pass `promote_type=false` to make resulting column types depend on the elements of the originating rows,
-though note that this may be substantially slower.
+# Arguments
+- `df` : the `AbstractDataFrame`
+- `src_namescol` : the column that will become the new header.
+  Defaults to first column.
+- `dest_namescol` : the name of the first column in the returned `DataFrame`.
+  Defaults to the same name as `src_namescol`.
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
 
+Note: The eltypes of columns in resulting `DataFrame` will depend
+on the eltypes of _all_ input columns.
+That is, if the source `DataFrame` contains `String` and `Int` columns,
+all resulting columns will have eltype `Any`.
+If the source has a mix of numeric types (eg. `Float64` and `Int`),
+all columns in resulting `DataFrame` will be promoted to `Float64`.
 
 # Examples
 
 ```julia
-df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2)) # all types can be promoted to Float64
+df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
 df2 = DataFrame(a=["x", "y"], b=[1, "str"], c=[1,2], d=rand(Bool,2))
 
 permutedims(df1)
@@ -427,26 +448,34 @@ permutedims(df2)
 permutedims(df2, promote_type=false)
 ````
 """
-function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1,
-                          dest_namescol::Union{Symbol, AbstractString}=src_namescol isa Integer ?
-                                                                       _names(df)[src_namescol] :
-                                                                       src_namescol;
-                          makeunique::Bool=false, promote::Symbol=:all)
+function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
+                          dest_namescol::Union{Symbol, AbstractString};
+                          makeunique::Bool=false)
 
     nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for data frame with 0 rows"))
-
+    eltype(df[!, src_namescol]) <: SymbolOrString || throw(
+            ArgumentError("src_namescol must have eltype `Symbol` or `AbstractString`"))
 
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame([names(df_notsrc)], [dest_namescol])
 
-    an_eltype = eltype(first(eachcol(df_notsrc)))
-    if promote == :all || ((promote == :none ) && (all(col-> eltype(col) == an_eltype, eachcol(df_notsrc))))
-        m = permutedims(Matrix(df_notsrc))
-        hcat!(df_permuted, DataFrame(m, df[!, src_namescol], makeunique=makeunique), copycols=false)
-    elseif promote == :none
-        m = permutedims(Matrix{Any}(df_notsrc))
-        hcat!(df_permuted, DataFrame([[x for x in col] for col in eachcol(m)], df[!, src_namescol], makeunique=makeunique), copycols=false)
+    m = permutedims(Matrix(df_notsrc))
+    df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
+    hcat!(df_permuted, df_tmp, copycols=false)
+end
+
+function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
+                          makeunique::Bool=false)
+    nrow(df) > 0 || throw(ArgumentError("`permutedims` not defined for data frame with 0 rows"))
+    if src_namescol isa Integer
+        1 <= src_namescol <= ncol(df) || throw(ArgumentError("`src_namescol` doesn't exist"))
+        dest_namescol = _names(df)[src_namescol]
     else
-        throw(ArgumentError("Value '$promote' for `promote` not supported"))
+        dest_namescol = src_namescol
     end
+    permutedims(df, src_namescol, dest_namescol; makeunique=makeunique)
+end
+
+function Base.permutedims(df::AbstractDataFrame; makeunique::Bool=false)
+    permutedims(df, 1; makeunique=makeunique)
 end

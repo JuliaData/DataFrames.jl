@@ -511,70 +511,54 @@ end
     df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1,2], d=rand(Bool,2))
     df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1,2], d=rand(Bool,2))
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool,10))
-    df4 = DataFrame(a=rand(2), b=rand(2), c=rand(2), d=["x", "y"], e=[:x, :y], f=[missing, "y"], g=[1,2], h=[1., missing])
+    df4 = DataFrame(a=rand(2), b=rand(2), c=[1,2], d=[1., missing],
+                    e=["x", "y"], f=[:x, :y], # valid src
+                    g=[missing, "y"], h=Union{Missing,String}["x","y"])
 
     @test_throws MethodError transpose(df1)
-    @test_throws ArgumentError permutedims(df1, promote=:foo)
     @test_throws ArgumentError permutedims(df1, :bar)
 
     df1_pd = permutedims(df1)
-    @test df1_pd
     @test size(df1_pd, 1) == ncol(df1) - 1
     @test size(df1_pd, 2) == nrow(df1) + 1
     @test names(df1_pd) == ["a", "x", "y"]
+    @test df1_pd == permutedims(df1, :a) == permutedims(df1, 1)
+    @test names(permutedims(df1, :a, :foo)) == ["foo", "x", "y"]
 
-    orignames = names(df1)[2:end]
-    for (i, row) in ennumerate(eachrow(df1_pd))
-        @test Vector(df[i, :]) == [orignames[i]; df1[!, orignames[i]]]
+    orignames1 = names(df1)[2:end]
+    for (i, row) in enumerate(eachrow(df1_pd))
+        @test Vector(row) == [orignames1[i]; df1[!, orignames1[i]]]
     end
 
-    @test eltype(df1_pd.x) <: AbstractFloat
-    @test eltype(df1_pd.y) <: AbstractFloat
-
-    df1_pdn = permutedims(df1, promote=:none)
-    @test size(df1_pdn, 1) == ncol(df1) - 1
-    @test size(df1_pdn, 2) == nrow(df1) + 1
-    @test names(df1_pdn) == ["a", "x", "y"]
-    @test Bool <: eltype(df1_pdn.x)
-    @test Int <: eltype(df1_pdn.x)
-    @test AbstractFloat <: eltype(df1_pdn.x)
+    @test eltype(df1_pd.x) <: Float64
+    @test eltype(df1_pd.y) <: Float64
 
     df2_pd = permutedims(df2)
     @test size(df2_pd, 1) == ncol(df2) - 1
     @test size(df2_pd, 2) == nrow(df2) + 1
     @test names(df2_pd) == ["a", "x", "y"]
+
+    orignames2 = names(df2)[2:end]
+    for (i, row) in enumerate(eachrow(df2_pd))
+        @test Vector(row) == [orignames2[i]; df2[!, orignames2[i]]]
+    end
     @test Any <: eltype(df2_pd.x)
     @test Any <: eltype(df2_pd.y)
-
-    df2_pdn = permutedims(df2, promote=:none)
-    @test size(df2_pdn, 1) == ncol(df2) - 1
-    @test size(df2_pdn, 2) == nrow(df2) + 1
-    @test names(df2_pdn) == ["a", "x", "y"]
-    @test Bool <: eltype(df2_pdn.x)
-    @test Int <: eltype(df2_pdn.x)
-    @test AbstractFloat <: eltype(df2_pdn.x)
-    @test Any <: eltype(df2_pdn.y)
 
     @test_throws ArgumentError permutedims(df3)
     @test names(permutedims(df3, makeunique=true)) == ["a", "x", ("x_$i" for i in 1:9)...]
 
-    #=
-    Needs other tests, TODO: https://github.com/JuliaData/DataFrames.jl/pull/2447#discussion_r499123081
-
-        please check:
-
-            1. DataFrame()
-    =#
-
+    @test permutedims(df4[!, [:a,:b,:c,:e]], :e) ==
+          permutedims(df4[!, [:e,:a,:b,:c]]) ==
+          permutedims(df4[!, [:a,:b,:c,:f]], :f, :e)
     # Can't index Float Column
-    @test_throws MethodError permutedims(df4[!, Not([:d, :e, :f, :g, :h])])
-    # promote=:all and =:none are the same if all columns are same eltype
-    @test permutedims(df4[!, Not([:e, :f, :g, :h])], :d) == permutedims(df4[!, Not([:e, :f, :g, :h])], :d, promote=:none)
-
+    @test_throws ArgumentError permutedims(df4[!, [:a,:b,:c]])
+    # Can't index in the presence of missing
+    @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]])
+    @test_throws ArgumentError permutedims(df4[!, [:h,:a,:b]])
     # can't permute dfs with 0 rows
-    @test_throws ArgumentError permutedims(DataFrame()) # not working
-    @test_throws ArgumentError permutedims(DataFrame(a=Int[], b=Float64[]))
-
+    @test_throws ArgumentError permutedims(DataFrame())
+    @test_throws ArgumentError permutedims(DataFrame(a=String[], b=Float64[]))
 end
 
 end # module
