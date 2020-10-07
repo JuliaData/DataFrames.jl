@@ -525,8 +525,8 @@ end
         @test Vector(row) == [orignames1[i]; df1[!, orignames1[i]]]
     end
 
-    @test eltype(df1_pd.x) <: Float64
-    @test eltype(df1_pd.y) <: Float64
+    @test eltype(df1_pd.x) == Float64
+    @test eltype(df1_pd.y) == Float64
 
     df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1, 2], d=rand(Bool, 2))
 
@@ -539,8 +539,8 @@ end
     for (i, row) in enumerate(eachrow(df2_pd))
         @test Vector(row) == [orignames2[i]; df2[!, orignames2[i]]]
     end
-    @test Any <: eltype(df2_pd.x)
-    @test Any <: eltype(df2_pd.y)
+    @test Any == eltype(df2_pd.x)
+    @test Any == eltype(df2_pd.y)
 
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool, 10))
 
@@ -555,9 +555,9 @@ end
     @test permutedims(df4[!, [:a, :b, :c, :e]], :e) ==
           permutedims(df4[!, [:e, :a, :b, :c]]) ==
           permutedims(df4[!, [:a, :b, :c, :f]], :f, :e)
-    # Can't index Float Column
+    # Can't index float Column
     @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]])
-    # Can't index in the presence of missing
+    # Can't index columns that allow for missing
     @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]])
     @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]])
     # can't permute dfs with 0 rows

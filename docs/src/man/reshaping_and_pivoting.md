@@ -405,7 +405,7 @@ julia> permutedims(df1)
 Note that the first column (by default) of the original `df`
 becomes the column names in the permuted result,
 and the column names of the original become a new column.
-Note also that the types of the other columns
+Note also that the element types of the other columns
 are the result of `promote_type` on _all_ the permuted columns.
 
 ```jldoctest reshape

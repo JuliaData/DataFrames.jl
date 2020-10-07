@@ -413,8 +413,7 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
 
 Turn `df` on its side such that rows become columns
 and the column indexed by `src_namescol` becomes the names of new columns.
-In the resulting `DataFrame`,
-The header of `df` will become the first column
+In the resulting `DataFrame`, column names of `df` will become the first column
 with name specified by `dest_namescol`.
 
 # Arguments
@@ -482,7 +481,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
     nrow(df) > 0 || throw(
         ArgumentError("`permutedims` not defined for data frame with 0 rows"))
     eltype(df[!, src_namescol]) <: SymbolOrString || throw(
-            ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
+        ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
 
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame(dest_namescol => names(df_notsrc))
@@ -495,7 +494,7 @@ end
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
                           makeunique::Bool=false)
     if src_namescol isa Integer
-        1 <= src_namescol <= ncol(df) || throw(ArgumentError("`src_namescol` doesn't exist"))
+        1 <= src_namescol <= ncol(df) || throw(BoundsError("`src_namescol` doesn't exist"))
         dest_namescol = _names(df)[src_namescol]
     else
         dest_namescol = src_namescol
