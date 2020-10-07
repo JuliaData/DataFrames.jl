@@ -453,11 +453,11 @@ SELECT_ARG_RULES =
     # Rules when `new_column_name` is a `Symbol` or a string or is absent
 
     If `fun` returns a value of type other than `AbstractVector` then it will be
-    broadcasted into a vector matching the target number of rows in the data
+    repeated in a vector matching the target number of rows in the data
     frame, unless its type is one of `AbstractDataFrame`, `NamedTuple`,
     `DataFrameRow`, `AbstractMatrix`, in which case an error is thrown. As a
     particular rule, values wrapped in a `Ref` or a `0`-dimensional
-    `AbstractArray` are unwrapped and then broadcasted.
+    `AbstractArray` are unwrapped and then repeated.
 
     To apply `fun` to each row instead of whole columns, it can be wrapped in a
     `ByRow` struct. In this case if `old_column` is a `Symbol`, a string, or an
@@ -488,7 +488,7 @@ SELECT_ARG_RULES =
     when `args` is a function or a type apply.
 
     If `fun` returns an `AbstractVector` then each element of this vector must
-    support `keys` function that must return a collection of `Symbol`s, strings
+    support the `keys` function, which must return a collection of `Symbol`s, strings
     or integers; the return value of `keys` must be identical for all elements.
     Then as many columns are created as there are elements in the return value
     of the `keys` function. If `new_column_name` is `AsTable` then their names
@@ -521,10 +521,10 @@ SELECT_ARG_RULES =
     If the return value is an `AbstractVector` then it is used as-is. The resulting
     column gets the name `x1`.
 
-    In all other cases the return value is broadcasted into a vector matching
+    In all other cases the return value is repeated in a vector matching
     the target number of rows in the data frame. As a particular rule, values
     wrapped in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and
-    then broadcasted. The resulting column gets the name `x1`.
+    then repeated. The resulting column gets the name `x1`.
 
     # Special rules
 
