@@ -438,8 +438,8 @@ SELECT_ARG_RULES =
 
     Columns can be renamed using the `old_column => new_column_name` syntax, and
     transformed using the `old_column => fun => new_column_name` syntax.
-    `new_column_name` must be a `Symbol` or a string, a vector of `Symbol` or
-    string, or `AsTable`, and `fun` a function or a type. If `old_column` is a
+    `new_column_name` must be a `Symbol` or a string, a vector of `Symbol`s or
+    strings, or `AsTable`. `fun` must be a function or a type. If `old_column` is a
     `Symbol`, a string, or an integer then `fun` is applied to the corresponding
     column vector. Otherwise `old_column` can be any column indexing syntax, in
     which case `fun` will be passed the column vectors specified by `old_column`
@@ -450,7 +450,7 @@ SELECT_ARG_RULES =
     Column renaming and transformation operations can be passed wrapped in
     vectors or matrices (this is useful when combined with broadcasting).
 
-    # Rules when `new_column_name` is a `Symbol` or a string or is missing
+    # Rules when `new_column_name` is a `Symbol` or a string or is absent
 
     If `fun` returns a value of type other than `AbstractVector` then it will be
     broadcasted into a vector matching the target number of rows in the data
@@ -465,8 +465,8 @@ SELECT_ARG_RULES =
     broadcasting. Otherwise `old_column` can be any column indexing syntax, in
     which case `fun` will be passed one argument for each of the columns
     specified by `old_column`. If `ByRow` is used it is allowed for
-    `old_column` to select an empty set of columns, in which case no arguments
-    are passed to `fun` for each row.
+    `old_column` to select an empty set of columns, in which case `fun`
+     is called for each row without any arguments.
 
     Column transformation can also be specified using the short `old_column =>
     fun` form. In this case, `new_column_name` is automatically generated as
@@ -479,7 +479,7 @@ SELECT_ARG_RULES =
     It is not allowed to pass `renamecols=false` if `old_column` is empty
     as it would generate an empty column name.
 
-    # Rules when `new_column_name` is a vector of `Symbol` or a string or is `AsTable`
+    # Rules when `new_column_name` is a vector of `Symbol`s or strings or is `AsTable`
 
     In this case it is assumed that `fun` returns multiple columns.
 
@@ -493,36 +493,36 @@ SELECT_ARG_RULES =
     Then as many columns are created as there are elements in the return value
     of the `keys` function and their names are set to be equal to the key names,
     except if `keys` returns integers, in which case they are prefixed by `x`
-    (so the column names are e.g. `x1`, `x2`, ...)
+    (so the column names are e.g. `x1`, `x2`, ...).
 
     If `fun` returns a value of any other type then it is assumed that it is
-    a table conforming to Tables.jl API and the `Tables.columntable` function is
+    a table conforming to the Tables.jl API and the `Tables.columntable` function is
     called on it to get the resulting columns and their names.
 
-    Additionally if `new_column_name` is a vector of `Symbol` or string then column
+    Additionally if `new_column_name` is a vector of `Symbol`s or strings then column
     names produced using the rules above are ignored and replaced by `new_column_name`
-    (the number of columns must be the same as the length `new_column_name` in this case).
+    (the number of columns must be the same as the length of `new_column_name` in this case).
 
     # Rules when element of `args` is a function or a type
 
-    In this case a transformaton is passed `df` as a single argument.
+    In this case the function or type is called with `df` as a single argument.
 
-    If the return value of the transformation is of `AbstractDataFrame`,
+    If the return value of the transformation is one of `AbstractDataFrame`,
     `NamedTuple`, `DataFrameRow` or `AbstractMatrix` then it is treated as
     containing multiple columns. For `AbstractMatrix` column names are generated
     as `x1`, `x2`, etc. For `AbstractDataFrame`, `NamedTuple` of vectors and
     `AbstractMatrix` the columns are taken as is from the returned value. For
     `DataFrameRow` and` NamedTuple` not containing any vectors the returned
-    value is broadcasted a vector matching the target number of rows in the data
+    value is broadcasted to a vector matching the target number of rows in the data
     frame.
 
     If the return value is an `AbstractVector` then it is used as-is. The resulting
-    column gets a name `x1`.
+    column gets the name `x1`.
 
     In all other cases the return value is broadcasted into a vector matching
     the target number of rows in the data frame. As a particular rule, values
     wrapped in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and
-    then broadcasted. The resulting column gets a name `x1`.
+    then broadcasted. The resulting column gets the name `x1`.
 
     # Special rules
 
@@ -923,7 +923,7 @@ julia> df = DataFrame(a=1:3, b=4:6, c=7:9)
 │ 3   │ 3     │ 6     │ 9     │
 
 julia> combine(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats,
-                      AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
+               AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
 3×3 DataFrame
 │ Row │ stats                   │ mean    │ std     │
 │     │ NamedTuple…             │ Float64 │ Float64 │
