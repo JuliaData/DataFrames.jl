@@ -405,7 +405,7 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
 
 """
-    permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
+    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, <:AbstractString},
                 dest_namescol::Union{Symbol,AbstractString};
                 makeunique::Bool=false)
     permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex; makeunique::Bool=false)
