@@ -525,6 +525,7 @@ end
         @test Vector(row) == [orignames1[i]; df1[!, orignames1[i]]]
     end
 
+    # All columns should be promoted
     @test eltype(df1_pd.x) == Float64
     @test eltype(df1_pd.y) == Float64
 
@@ -555,14 +556,18 @@ end
     @test permutedims(df4[!, [:a, :b, :c, :e]], :e) ==
           permutedims(df4[!, [:e, :a, :b, :c]]) ==
           permutedims(df4[!, [:a, :b, :c, :f]], :f, :e)
+    # Can permute single-column
+    @test permutedims(df4[!, [:e]]) == DataFrame(e=String[], x=[], y=[])
     # Can't index float Column
     @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]])
+    @test_throws ArgumentError permutedims(DataFrame(a=Float64[], b=Float64[]))
     # Can't index columns that allow for missing
     @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]])
     @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]])
-    # can't permute dfs with 0 rows
-    @test_throws ArgumentError permutedims(DataFrame())
-    @test_throws ArgumentError permutedims(DataFrame(a=String[], b=Float64[]))
+    # Can't permute empty `df` ...
+    @test_throws BoundsError permutedims(DataFrame())
+    # ... but can permute zero-row df
+    @test permutedims(DataFrame(a=String[], b=Float64[])) == DataFrame(a=["b"])
 end
 
 end # module

@@ -478,16 +478,21 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           dest_namescol::Union{Symbol, <:AbstractString};
                           makeunique::Bool=false)
 
-    nrow(df) > 0 || throw(
-        ArgumentError("`permutedims` not defined for data frame with 0 rows"))
+    if src_namescol isa Integer
+        1 <= src_namescol <= ncol(df) || throw(BoundsError("`src_namescol` doesn't exist"))
+    end
     eltype(df[!, src_namescol]) <: SymbolOrString || throw(
         ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
 
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame(dest_namescol => names(df_notsrc))
 
-    m = permutedims(Matrix(df_notsrc))
-    df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
+    if ncol(df_notsrc) == 0
+        df_tmp = DataFrame(Dict(n=>[] for n in df[!, src_namescol]))
+    else
+        m = permutedims(Matrix(df_notsrc))
+        df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
+    end
     return hcat!(df_permuted, df_tmp, copycols=false)
 end
 
