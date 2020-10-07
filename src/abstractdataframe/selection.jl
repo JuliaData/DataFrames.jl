@@ -484,24 +484,26 @@ SELECT_ARG_RULES =
     In this case it is assumed that `fun` returns multiple columns.
 
     If `fun` returns one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
-    `AbstractMatrix` then rules described below for `args` being a function or
-    a type apply.
+    `AbstractMatrix` then rules described in the section describing the case
+    when `args` is a function or a type apply.
 
     If `fun` returns an `AbstractVector` then each element of this vector must
     support `keys` function that must return a collection of `Symbol`s, strings
     or integers; the return value of `keys` must be identical for all elements.
     Then as many columns are created as there are elements in the return value
-    of the `keys` function and their names are set to be equal to the key names,
-    except if `keys` returns integers, in which case they are prefixed by `x`
-    (so the column names are e.g. `x1`, `x2`, ...).
+    of the `keys` function. If `new_column_name` is `AsTable` then their names
+    are set to be equal to the key names except if `keys` returns integers, in
+    which case they are prefixed by `x` (so the column names are e.g. `x1`,
+    `x2`, ...). If `new_column_name` is a vector of `Symbol`s or strings then
+    column names produced using the rules above are ignored and replaced by
+    `new_column_name` (the number of columns must be the same as the length of
+    `new_column_name` in this case).
 
-    If `fun` returns a value of any other type then it is assumed that it is
-    a table conforming to the Tables.jl API and the `Tables.columntable` function is
-    called on it to get the resulting columns and their names.
-
-    Additionally if `new_column_name` is a vector of `Symbol`s or strings then column
-    names produced using the rules above are ignored and replaced by `new_column_name`
-    (the number of columns must be the same as the length of `new_column_name` in this case).
+    If `fun` returns a value of any other type then it is assumed that it is a
+    table conforming to the Tables.jl API and the `Tables.columntable` function
+    is called on it to get the resulting columns and their names. The names are
+    retained when `new_column_name` is `AsTable` and are replaced if
+    `new_column_name` is a vector of `Symbol`s or strings.
 
     # Rules when element of `args` is a function or a type
 
