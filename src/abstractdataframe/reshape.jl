@@ -475,7 +475,7 @@ julia> permutedims(df2)
 ```
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
-                          dest_namescol::Union{Symbol, AbstractString};
+                          dest_namescol::Union{Symbol, <:AbstractString};
                           makeunique::Bool=false)
 
     nrow(df) > 0 || throw(

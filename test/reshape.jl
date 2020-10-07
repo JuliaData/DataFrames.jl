@@ -528,7 +528,7 @@ end
     @test eltype(df1_pd.x) == Float64
     @test eltype(df1_pd.y) == Float64
 
-    df2 = DataFrame(a=["x", "y"], b=[1., "str"], c=[1, 2], d=rand(Bool, 2))
+    df2 = DataFrame(a=["x", "y"], b=[1.0, "str"], c=[1, 2], d=rand(Bool, 2))
 
     df2_pd = permutedims(df2)
     @test size(df2_pd, 1) == ncol(df2) - 1

@@ -384,7 +384,7 @@ julia> first(unstack(x, :Species, :vsum), 6)
 To turn an `AbstractDataFrame` on its side, use [`permutedims`](@ref).
 
 ```jldoctest reshape
-julia> df1 = DataFrame(a=["x", "y"], b=[1.,2.], c=[3,4], d=[true,false])
+julia> df1 = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true,false])
 2×4 DataFrame
 │ Row │ a      │ b       │ c     │ d    │
 │     │ String │ Float64 │ Int64 │ Bool │
@@ -409,7 +409,7 @@ Note also that the element types of the other columns
 are the result of `promote_type` on _all_ the permuted columns.
 
 ```jldoctest reshape
-julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3,4], d=[true,false])
+julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3, 4], d=[true, false])
 2×4 DataFrame
 │ Row │ a      │ b   │ c     │ d    │
 │     │ String │ Any │ Int64 │ Bool │
