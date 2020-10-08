@@ -46,7 +46,7 @@ const ≅ = isequal
     @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
           DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
           DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]) ==
-          DataFrame(([1,2,3], [1,2,3])) == DataFrame([1:3, [1,2,3]])
+          DataFrame([1:3, [1,2,3]])
           DataFrame([:x1=>1:3, :x2=>[1,2,3]]) == DataFrame(["x1"=>1:3, "x2"=>[1,2,3]])
 
     @inferred DataFrame([1:3, 1:3])

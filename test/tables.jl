@@ -196,7 +196,7 @@ end
 end
 
 @testset "columnindex" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(Tables.table(rand(3,4), header=[:x1, :x2, :x3, :x4]))
 
     for x in (df, view(df, 1, :), view(df, 1:1, :))
         @test columnindex.(Ref(x), names(df)) == 1:4
@@ -217,7 +217,7 @@ end
 end
 
 @testset "eachrow and eachcol integration" begin
-    df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+    df = DataFrame(Tables.table(rand(3,4), header=[:a, :b, :c, :d]))
 
     df2 = DataFrame(eachrow(df))
     @test df == df2

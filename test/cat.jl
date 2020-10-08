@@ -12,7 +12,7 @@ const ≅ = isequal
 
     df2 = DataFrame([nvint, nvstr])
     df3 = DataFrame([nvint])
-    df4 = convert(DataFrame, [1:4 1:4])
+    df4 = DataFrame(Tables.table([1:4 1:4], header=[:x1, :x2]))
     df5 = DataFrame([Union{Int, Missing}[1,2,3,4], nvstr])
 
     ref_df = copy(df3)
@@ -224,10 +224,10 @@ end
 
 @testset "vcat" begin
     missing_df = DataFrame()
-    df = DataFrame([3.0  2.0  2.0
-                    2.0  2.0  2.0
-                    3.0  1.0  2.0
-                    3.0  3.0  3.0])
+    df = DataFrame(Tables.table([3.0  2.0  2.0
+                                 2.0  2.0  2.0
+                                 3.0  1.0  2.0
+                                 3.0  3.0  3.0], header=[:x1, :x2, :x3]))
     df[!, 3] = Int.(df[!, 3])
 
     @test vcat(missing_df) == DataFrame()

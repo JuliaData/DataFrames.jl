@@ -363,6 +363,24 @@ end
     @test typeof(df[!, "B"]) == Vector{Union{Float64, Missing}}
     @test typeof(df[!, "C"]) == Vector{Union{String, Missing}}
     @test names(df) == ["A", "B", "C"]
+
+    df = convert(DataFrame, zeros(10, 5))
+    @test size(df, 1) == 10
+    @test size(df, 2) == 5
+    @test typeof(df[!, 1]) == Vector{Float64}
+    @test typeof(df[:, 1]) == Vector{Float64}
+
+    df = convert(DataFrame, ones(10, 5))
+    @test size(df, 1) == 10
+    @test size(df, 2) == 5
+    @test typeof(df[!, 1]) == Vector{Float64}
+    @test typeof(df[:, 1]) == Vector{Float64}
+
+    df = convert(DataFrame, Matrix{Float64}(undef, 10, 5))
+    @test size(df, 1) == 10
+    @test size(df, 2) == 5
+    @test typeof(df[!, 1]) == Vector{Float64}
+    @test typeof(df[:, 1]) == Vector{Float64}
 end
 
 end # module

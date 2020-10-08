@@ -105,16 +105,16 @@ end
     r.c = "C"
     @test df.c[3] == "C"
 
-    df = DataFrame([1 2 3 4
-                    5 6 7 8])
+    df = DataFrame(Tables.table([1 2 3 4
+                                 5 6 7 8], header=[:x1, :x2, :x3, :x4]))
     r = df[1, r"[1-3]"]
     @test names(r) == ["x1", "x2", "x3"]
     r[:] .= 10
-    @test df == DataFrame([10 10 10 4
-                            5  6  7 8])
+    @test df == DataFrame(Tables.table([10 10 10 4
+                                         5  6  7 8], header=[:x1, :x2, :x3, :x4]))
     r[r"[2-3]"] .= 20
-    @test df == DataFrame([10 20 20 4
-                            5  6  7 8])
+    @test df == DataFrame(Tables.table([10 20 20 4
+                                         5  6  7 8], header=[:x1, :x2, :x3, :x4]))
 end
 
 @testset "equality" begin
@@ -235,13 +235,13 @@ end
     @test !haskey(r, 1000)
     @test_throws ArgumentError haskey(r, true)
 
-    x = DataFrame(ones(5,4))
+    x = DataFrame(Tables.table(ones(5,4)))
     dfr = view(x, 2, 2:3)
     @test names(dfr) == names(x)[2:3]
     dfr = view(x, 2, [4,2])
     @test names(dfr) == names(x)[[4,2]]
 
-    x = DataFrame(ones(10,10))
+    x = DataFrame(Tables.table(ones(10,10), header=[Symbol(:x, i) for i in 1:10]))
     r = x[3, [8, 5, 1, 3]]
     @test length(r) == 4
     @test lastindex(r) == 4
@@ -350,7 +350,7 @@ end
 
 @testset "iteration and collect" begin
     ref = ["a", "b", "c"]
-    df = DataFrame(permutedims(ref))
+    df = DataFrame(Tables.table(permutedims(ref), header=[:x1, :x2, :x3]))
     dfr = df[1, :]
     @test Base.IteratorEltype(dfr) == Base.EltypeUnknown()
     @test collect(dfr) == ref
@@ -366,7 +366,7 @@ end
 end
 
 @testset "duplicate column" begin
-    df = DataFrame([11:16 21:26 31:36 41:46])
+    df = DataFrame(Tables.table([11:16 21:26 31:36 41:46]))
     sdf = view(df, [3,1,4], [3,1,4])
     @test_throws ArgumentError df[2, [2,2,2]]
     @test_throws ArgumentError sdf[2, [2,2,2]]
@@ -522,7 +522,7 @@ end
 end
 
 @testset "rownumber" begin
-    df = DataFrame(reshape(1:12, 3, 4))
+    df = DataFrame(Tables.table(reshape(1:12, 3, 4)))
     dfr = df[2, :]
     @test rownumber(dfr) == 2
     @test parentindices(dfr) == (2, 1:4)

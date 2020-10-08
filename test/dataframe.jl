@@ -12,7 +12,7 @@ const ≇ = !isequal
     Random.seed!(1234)
     for k in 1:20
         sn = shuffle(n)
-        df = DataFrame(zeros(1,26), n)
+        df = DataFrame(Tables.table(zeros(1,26), header=n))
         p = Dict(Pair.(n, sn))
         cyclelength = Int[]
         for x in n
@@ -347,24 +347,6 @@ end
 end
 
 @testset "DataFrame constructors" begin
-    df = convert(DataFrame, zeros(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[!, 1]) == Vector{Float64}
-    @test typeof(df[:, 1]) == Vector{Float64}
-
-    df = convert(DataFrame, ones(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[!, 1]) == Vector{Float64}
-    @test typeof(df[:, 1]) == Vector{Float64}
-
-    df = convert(DataFrame, Matrix{Float64}(undef, 10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[!, 1]) == Vector{Float64}
-    @test typeof(df[:, 1]) == Vector{Float64}
-
     @test DataFrame([Union{Int, Missing}[1, 2, 3], Union{Float64, Missing}[2.5, 4.5, 6.5]],
                     [:A, :B]) ==
         DataFrame(A = Union{Int, Missing}[1, 2, 3], B = Union{Float64, Missing}[2.5, 4.5, 6.5])
@@ -384,9 +366,9 @@ end
     df = DataFrame(x=categorical(["a"])[1])
     @test df.x isa CategoricalVector{String}
 
-    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
-    @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
-    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]), zero(UInt))
+    @test hash(DataFrame(Tables.table([1 2; 3 4]))) == hash(DataFrame(Tables.table([1 2; 3 4])))
+    @test hash(DataFrame(Tables.table([1 2; 3 4]))) != hash(DataFrame(Tables.table([1 3; 2 4])))
+    @test hash(DataFrame(Tables.table([1 2; 3 4]))) == hash(DataFrame(Tables.table([1 2; 3 4])), zero(UInt))
 end
 
 @testset "push!(df, row)" begin
@@ -1006,7 +988,7 @@ end
         @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
     end
 
-    sdf = view(DataFrame(ones(2,3)), 1:2, 1:3)
+    sdf = view(DataFrame(Tables.table(ones(2,3), header=[:x1, :x2, :x3])), 1:2, 1:3)
     @test_throws ArgumentError rename!(uppercase, sdf)
     @test_throws ArgumentError rename!(sdf, :x1 => :y1)
     @test_throws ArgumentError rename!(sdf, [:a, :b, :c])
@@ -1416,7 +1398,7 @@ end
 end
 
 @testset "handling of end in indexing" begin
-    z = DataFrame(rand(4,5))
+    z = DataFrame(Tables.table(rand(4,5), header=[:x1, :x2, :x3, :x4, :x5]))
     x = z
     y = deepcopy(x)
     @test x[:, end] == x[:, 5]

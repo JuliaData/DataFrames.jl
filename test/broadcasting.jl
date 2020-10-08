@@ -1723,7 +1723,7 @@ end
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= Ref((a=1,b=2))
-        @test df[:, 1:2] == DataFrame(Tables.table(fill((a=1, b=2), 3, 2), header=[:x1, :x2, :x3]))
+        @test df[:, 1:2] == DataFrame(Tables.table(fill((a=1, b=2), 3, 2), header=[:x1, :x2]))
         @test df[:, 3] == [1, 1, 1]
         @test df.x1 !== df.x2
 

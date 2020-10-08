@@ -181,7 +181,7 @@ end
 end
 
 @testset "dropmissing and unique view kwarg test" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(Tables.table(rand(3,4), header=[:x1, :x2, :x3, :x4]))
     for fun in (dropmissing, unique)
         @test fun(df) isa DataFrame
         @inferred fun(df)
@@ -409,7 +409,7 @@ end
 end
 
 @testset "filter view kwarg test" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(Tables.table(rand(3,4), header=[:x1, :x2, :x3, :x4]))
     for fun in (row -> row.x1 > 0, :x1 => x -> x > 0, "x1" => x -> x > 0,
                 [:x1] => x -> x > 0, ["x1"] => x -> x > 0,
                 r"1" => x -> x > 0, AsTable(:) => x -> x.x1 > 0)
