@@ -405,11 +405,9 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
 
 """
-    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, <:AbstractString},
-                dest_namescol::Union{Symbol,AbstractString};
-                makeunique::Bool=false)
-    permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex; makeunique::Bool=false)
-    permutedims(df::AbstractDataFrame; makeunique::Bool=false)
+    permutedims(df::AbstractDataFrame [, src_namescol::Union{Int, Symbol, <:AbstractString}
+                    [, dest_namescol::Union{Symbol, AbstractString} ]];
+                    makeunique::Bool=false)
 
 Turn `df` on its side such that rows become columns
 and the column indexed by `src_namescol` becomes the names of new columns.
@@ -427,14 +425,13 @@ with name specified by `dest_namescol`.
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 
-Note: The eltypes of columns in resulting `DataFrame`
-(other than the first column, which always has eltype `String`)
-will depend on the eltypes of _all_ input columns
-based on the results of `prote_type`.
-That is, if the source `DataFrame` contains `String` and `Int` columns,
-resulting columns will have eltype `Any`.
-If the source has a mix of numeric types (eg. `Float64` and `Int`),
-columns in resulting `DataFrame` will be promoted to `Float64`.
+Note: The element types of columns in resulting `DataFrame`
+(other than the first column, which always has element type `String`)
+will depend on the element types of _all_ input columns
+based on the result of `promote_type`.
+That is, if the source data frame contains `Int` and `Float64` columns,
+resulting columns will have element type `Float64`. If the source has
+`Int` and `String` columns, resulting columns will have element type `Any`.
 
 # Examples
 
@@ -496,7 +493,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
     return hcat!(df_permuted, df_tmp, copycols=false)
 end
 
-function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
+function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1;
                           makeunique::Bool=false)
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
@@ -506,6 +503,3 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
     end
     return permutedims(df, src_namescol, dest_namescol; makeunique=makeunique)
 end
-
-Base.permutedims(df::AbstractDataFrame; makeunique::Bool=false) =
-    permutedims(df, 1; makeunique=makeunique)
