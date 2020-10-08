@@ -479,16 +479,16 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           makeunique::Bool=false)
 
     if src_namescol isa Integer
-        1 <= src_namescol <= ncol(df) || throw(BoundsError("`src_namescol` doesn't exist"))
+        1 <= src_namescol <= ncol(df) || throw(BoundsError(df, src_namescol))
     end
-    eltype(df[!, src_namescol]) <: SymbolOrString || throw(
-        ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
+    eltype(df[!, src_namescol]) <: SymbolOrString ||
+        throw(ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
 
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame(dest_namescol => names(df_notsrc))
 
     if ncol(df_notsrc) == 0
-        df_tmp = DataFrame(Dict(n=>[] for n in df[!, src_namescol]))
+        df_tmp = DataFrame((n=>[] for n in df[!, src_namescol])...)
     else
         m = permutedims(Matrix(df_notsrc))
         df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
@@ -499,7 +499,7 @@ end
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
                           makeunique::Bool=false)
     if src_namescol isa Integer
-        1 <= src_namescol <= ncol(df) || throw(BoundsError("`src_namescol` doesn't exist"))
+        1 <= src_namescol <= ncol(df) || throw(BoundsError(df, src_namescol))
         dest_namescol = _names(df)[src_namescol]
     else
         dest_namescol = src_namescol
