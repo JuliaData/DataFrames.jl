@@ -479,7 +479,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           makeunique::Bool=false)
 
     if src_namescol isa Integer
-        1 <= src_namescol <= ncol(df) || throw(BoundsError(df, src_namescol))
+        1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
     end
     eltype(df[!, src_namescol]) <: SymbolOrString ||
         throw(ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
@@ -499,7 +499,7 @@ end
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
                           makeunique::Bool=false)
     if src_namescol isa Integer
-        1 <= src_namescol <= ncol(df) || throw(BoundsError(df, src_namescol))
+        1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
         dest_namescol = _names(df)[src_namescol]
     else
         dest_namescol = src_namescol
