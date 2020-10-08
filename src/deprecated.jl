@@ -117,13 +117,13 @@ end
 @deprecate DataFrame(columns::NTuple{N, AbstractVector};
                      copycols::Bool=true) where {N} DataFrame(collect(columns),
                                                               Symbol.(:x, 1:length(columns)), copycols=copycols)
-@deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
-                     makeunique::Bool=false) DataFrame([columns[:, i] for i in 1:size(columns, 2)],
-                                                       cnames; makeunique=makeunique, copycols=false)
 
+# this is not a 100% correct deprecation as it does not support makeunique, but
+# we leave it as is to show users a recommended way to create a DataFrame from a matrix
+@deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+                     makeunique::Bool=false) DataFrame(Tables.table(columns, header=cnames))
 @deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
-                     makeunique::Bool=false) DataFrame([columns[:, i] for i in 1:size(columns, 2)],
-                                                       Symbol.(cnames); makeunique=makeunique, copycols=false)
+                     makeunique::Bool=false) DataFrame(Tables.table(columns, header=cnames))
 
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
@@ -142,3 +142,6 @@ DataFrame(column_eltypes::AbstractVector{<:Type},
           cnames::AbstractVector{<:AbstractString},
           nrows::Integer=0; makeunique::Bool=false) =
     DataFrame(column_eltypes, Symbol.(cnames), nrows; makeunique=makeunique)
+
+import Base: convert
+@deprecate convert(::Type{DataFrame}, A::AbstractMatrix) DataFrame(Tables.table(A, header=Symbol.(:x, axes(A, 2))))
