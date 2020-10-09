@@ -2,6 +2,10 @@
 
 ## Breaking changes
 
+* the rules for transformations passed to `select`/`select!`, `transform`/`transform!`,
+  and `combine` have been made more flexible; in particular now it is allowed to
+  return multiple columns from a transformation function
+  [#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461)
 * CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
   to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
   In the same vein, the `categorical` and `categorical!` functions
@@ -32,6 +36,8 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* `GroupKeys` now supports `in` for `GroupKey`, `Tuple`, `NamedTuple` and dictionaries
+  ([2392](https://github.com/JuliaData/DataFrames.jl/pull/2392))
 * in `describe` the specification of custom aggregation is now `function => name`;
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))

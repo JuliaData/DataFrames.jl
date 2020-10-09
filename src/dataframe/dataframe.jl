@@ -472,6 +472,12 @@ Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
     (df[!, col_ind] = v)
 Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
     (df[!, col_ind] = v)
+Base.setproperty!(::DataFrame, col_ind::Symbol, v::Any) =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame." *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
+Base.setproperty!(::DataFrame, col_ind::AbstractString, v::Any) =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame." *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)

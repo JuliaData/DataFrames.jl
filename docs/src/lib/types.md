@@ -55,7 +55,8 @@ The `ByRow` type is a special type used for selection operations to signal that 
 to each element (row) of the selection.
 
 The `AsTable` type is a special type used for selection operations to signal that the columns selected by a wrapped
-selector should be passed as a `NamedTuple` to the function.
+selector should be passed as a `NamedTuple` to the function or to signal that it is requested
+to expand the return value of a transformation into multiple columns.
 
 ## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
 
