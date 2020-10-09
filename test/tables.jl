@@ -264,4 +264,19 @@ end
     @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)
 end
 
+@testset "test constructor with vectors" begin
+    @test DataFrame(Any[]) == DataFrame()
+    @test DataFrame(Vector[]) == DataFrame()
+    @test DataFrame(Pair{Symbol, Vector}[]) == DataFrame()
+    @test DataFrame(Pair[]) == DataFrame()
+    @test DataFrame([[1]]) == DataFrame(x1=1)
+    @test DataFrame(Any[[1]]) == DataFrame(x1=1)
+    @test DataFrame([:a => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any[:a => [1]]) == DataFrame(a=1)
+    @test DataFrame(["a" => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any["a" => [1]]) == DataFrame(a=1)
+    @test DataFrame([SubString("a", 1) => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any[SubString("a", 1) => [1]]) == DataFrame(a=1)
+end
+
 end # module

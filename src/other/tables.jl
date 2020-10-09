@@ -43,11 +43,13 @@ fromcolumns(x, names; copycols::Bool=true) =
               copycols=copycols)
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
-    if !Tables.istable(x)
-        if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
+    if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
+        # here we handle the cases that are accepted by standard DataFrame constructors
+        # but eltype(x) is more flexible than assumed in these methods
+        if all(col -> isa(col, AbstractVector), x)
             return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
-        elseif (x isa AbstractVector || x isa Tuple) &&
-            all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
+        elseif all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
+            all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
                              copycols=copycols)
         end

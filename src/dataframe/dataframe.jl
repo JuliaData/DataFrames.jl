@@ -198,9 +198,14 @@ function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=fals
 end
 
 # this is needed as a workaround for Tables.jl dispatch
-DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
-          copycols::Bool=true) =
-    DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+function DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
+                   copycols::Bool=true)
+    if isempty(pairs)
+        return DataFrame()
+    else
+        return DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+    end
+end
 
 function DataFrame(d::AbstractDict; copycols::Bool=true)
     if isa(d, Dict)
