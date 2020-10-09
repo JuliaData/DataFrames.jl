@@ -411,6 +411,8 @@ julia> df
 """
 function mapcols!(f::Union{Function,Type}, df::DataFrame)
     # note: `f` must return a consistent length
+    (ncol(df) == 0) && return df # skip if no columns
+
     vs = AbstractVector[]
     seenscalar = false
     seenvector = false
