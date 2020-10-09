@@ -1989,8 +1989,10 @@ end
           [df DataFrame(x_function=[(-1,), (-2,) ,(-3,) ,(-4,) ,(-5,)],
                         y_function=[(-6,), (-7,) ,(-8,) ,(-9,) ,(-10,)])]
 
-    @test_throws ArgumentError combine(gdf, AsTable([:x, :y]) => ByRow(identity))
-    @test_throws ArgumentError combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :]))
+    @test combine(gdf, AsTable([:x, :y]) => ByRow(identity)) ==
+          DataFrame(g=[1,1,1,2,2], x_y_identity=ByRow(identity)((x=1:5, y=6:10)))
+    @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :])) ==
+          DataFrame(g=[1,1,1,2,2], x_y_function=fill(df[1, :], 5))
 end
 
 @testset "test correctness of ungrouping" begin
@@ -2710,12 +2712,8 @@ end
     @test isequal_typed(combine(df, :x => (x -> 1:2) => :y), DataFrame(y=1:2))
     @test isequal_typed(combine(df, :x => (x -> x isa Vector{Int} ? "a" : 'a') => :y),
                         DataFrame(y="a"))
-
-    # in the future this should be DataFrame(nrow=0)
-    @test_throws ArgumentError combine(nrow, df)
-
-    # in the future this should be DataFrame(a=1,b=2)
-    @test_throws ArgumentError combine(sdf -> DataFrame(a=1,b=2), df)
+    @test combine(nrow, df) == DataFrame(nrow=0)
+    @test combine(sdf -> DataFrame(a=1,b=2), df) == DataFrame(a=1,b=2)
 end
 
 @testset "disallowed tuple column selector" begin
