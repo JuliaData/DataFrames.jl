@@ -14,7 +14,10 @@ makedocs(
     doctest = false,
     clean = false,
     sitename = "DataFrames.jl",
-    format = Documenter.HTML(canonical = "https://juliadata.github.io/DataFrames.jl/stable/"),
+    format=Documenter.HTML(
+        canonical="https://juliadata.github.io/DataFrames.jl/stable/",
+        assets=["assets/favicon.ico"]
+    ),
     pages = Any[
         "Introduction" => "index.md",
         "User Guide" => Any[
