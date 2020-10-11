@@ -67,10 +67,11 @@ normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractStrin
     normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols::Bool)
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:Any,<:Pair{<:Base.Callable,
-                                                    <:Union{Symbol, AbstractString, DataType,
-                                                            AbstractVector{Symbol},
-                                                            AbstractVector{<:AbstractString}}}},
+                             @nospecialize(sel::Pair{<:Any,
+                                                     <:Pair{<:Base.Callable,
+                                                            <:Union{Symbol, AbstractString, DataType,
+                                                                    AbstractVector{Symbol},
+                                                                    AbstractVector{<:AbstractString}}}}),
                              renamecols::Bool)
     lls = last(last(sel))
     if lls isa DataType
@@ -170,34 +171,29 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-_empty_selector_helper(fun, len) = [fun() for _ in 1:len]
+_transformation_helper(df::AbstractDataFrame, col_idx::Nothing, fun) = fun(df)
+_transformation_helper(df::AbstractDataFrame, col_idx::Int, fun) = fun(df[!, col_idx])
+
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
-function _transformation_helper(df::AbstractDataFrame,
-                                col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                                @nospecialize(fun))
-    if col_idx === nothing
-        return fun(df)
-    elseif col_idx isa Int
-        return fun(df[!, col_idx])
-    elseif col_idx isa AsTable
-        tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
-        if isempty(tbl) && fun isa ByRow
-            return _empty_astable_helper(fun.fun, nrow(df))
-        else
-            return fun(tbl)
-        end
+function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, fun)
+    tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
+    if isempty(tbl) && fun isa ByRow
+        return _empty_astable_helper(fun.fun, nrow(df))
     else
-        # it should be fast enough here as we do not expect to do it millions of times
-        @assert col_idx isa AbstractVector{Int}
-        if isempty(col_idx) && fun isa ByRow
-            return _empty_selector_helper(fun.fun, nrow(df))
-        else
-            cdf = eachcol(df)
-            return fun(map(c -> cdf[c], col_idx)...)
-        end
+        return fun(tbl)
     end
-    throw(ErrorException("unreachable reached"))
+end
+
+_empty_selector_helper(fun, len) = [fun() for _ in 1:len]
+
+function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, fun)
+    if isempty(col_idx) && fun isa ByRow
+        return _empty_selector_helper(fun.fun, nrow(df))
+    else
+        cdf = eachcol(df)
+        return fun(map(c -> cdf[c], col_idx)...)
+    end
 end
 
 function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol},
@@ -428,6 +424,8 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
                                   res_unwrap)
     end
 end
+
+@nospecialize
 
 SELECT_ARG_RULES =
     """
@@ -1104,3 +1102,5 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
         return view(dfv, :, isempty(newinds) ? [] : All(newinds...))
     end
 end
+
+@specialize
