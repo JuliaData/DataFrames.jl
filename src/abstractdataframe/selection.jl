@@ -67,11 +67,20 @@ normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractStrin
     normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols::Bool)
 
 function normalize_selection(idx::AbstractIndex,
-                             @nospecialize(sel::Pair{<:Any,
-                                                     <:Pair{<:Base.Callable,
-                                                            <:Union{Symbol, AbstractString, DataType,
-                                                                    AbstractVector{Symbol},
-                                                                    AbstractVector{<:AbstractString}}}}),
+                             sel::Pair{<:ColumnIndex,
+                                       <:Pair{<:Base.Callable,
+                                              <:Union{Symbol, AbstractString}}},
+                             renamecols::Bool)
+    src, (fun, dst) = sel
+    return idx[src] => fun => Symbol(dst)
+end
+
+function normalize_selection(idx::AbstractIndex,
+                             sel::Pair{<:Any,
+                                       <:Pair{<:Base.Callable,
+                                              <:Union{Symbol, AbstractString, DataType,
+                                                      AbstractVector{Symbol},
+                                                      AbstractVector{<:AbstractString}}}},
                              renamecols::Bool)
     lls = last(last(sel))
     if lls isa DataType
@@ -425,8 +434,6 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
     end
 end
 
-@nospecialize
-
 SELECT_ARG_RULES =
     """
     Arguments passed as `args...` can be:
@@ -657,7 +664,7 @@ julia> select!(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stat
 ```
 
 """
-select!(df::DataFrame, args...; renamecols::Bool=true) =
+select!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
 function select!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -677,7 +684,7 @@ Equivalent to `select!(df, :, args...)`.
 
 See [`select!`](@ref) for detailed rules regarding accepted values for `args`.
 """
-transform!(df::DataFrame, args...; renamecols::Bool=true) =
+transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
     select!(df, :, args..., renamecols=renamecols)
 
 function transform!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -811,7 +818,7 @@ julia> select(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats
 ```
 
 """
-select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
+select(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
     manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
 
 function select(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -832,7 +839,7 @@ Equivalent to `select(df, :, args..., copycols=copycols)`.
 
 See [`select`](@ref) for detailed rules regarding accepted values for `args`.
 """
-transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
+transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
     select(df, :, args..., copycols=copycols, renamecols=renamecols)
 
 function transform(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -936,7 +943,7 @@ julia> combine(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stat
 │ 3   │ (mean = 6.0, std = 3.0) │ 6.0     │ 3.0     │
 ```
 """
-combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
+combine(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
     manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
 function combine(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -965,7 +972,7 @@ manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
            renamecols::Bool) =
     manipulate(df, [c], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
 
-function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, renamecols::Bool)
+function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVecOrMat{<:Pair}
@@ -1062,7 +1069,7 @@ function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
     end
 end
 
-function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
+function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, keeprows::Bool,
                     renamecols::Bool)
     if copycols
         cs_vec = []
@@ -1102,5 +1109,3 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
         return view(dfv, :, isempty(newinds) ? [] : All(newinds...))
     end
 end
-
-@specialize
