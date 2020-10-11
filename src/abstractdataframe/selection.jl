@@ -170,6 +170,9 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
+_empty_selector_helper(fun, len) = [fun() for _ in 1:len]
+_empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
+
 function _transformation_helper(df::AbstractDataFrame,
                                 col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                                 @nospecialize(fun))
@@ -180,7 +183,7 @@ function _transformation_helper(df::AbstractDataFrame,
     elseif col_idx isa AsTable
         tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
         if isempty(tbl) && fun isa ByRow
-            return [fun.fun(NamedTuple()) for _ in 1:nrow(df)]
+            return _empty_astable_helper(fun.fun, nrow(df))
         else
             return fun(tbl)
         end
@@ -188,7 +191,7 @@ function _transformation_helper(df::AbstractDataFrame,
         # it should be fast enough here as we do not expect to do it millions of times
         @assert col_idx isa AbstractVector{Int}
         if isempty(col_idx) && fun isa ByRow
-            return [fun.fun() for _ in 1:nrow(df)]
+            return _empty_selector_helper(fun.fun, nrow(df))
         else
             cdf = eachcol(df)
             return fun(map(c -> cdf[c], col_idx)...)
