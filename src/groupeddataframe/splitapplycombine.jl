@@ -503,7 +503,7 @@ function _combine_prepare(gd::GroupedDataFrame,
     for p in cs
         if p === nrow
             push!(cs_vec, nrow => :nrow)
-        elseif p isa AbstractVector{<:Pair}
+        elseif p isa AbstractVecOrMat{<:Pair}
             append!(cs_vec, p)
         else
             push!(cs_vec, p)

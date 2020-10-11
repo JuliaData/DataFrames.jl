@@ -1837,4 +1837,15 @@ end
     end
 end
 
+@testset "setproperty! corner cases" begin
+    df = DataFrame(a=1)
+    @test_throws ArgumentError df.a = 1
+    @test_throws ArgumentError df."a" = 1
+    dfv = @view df[:, :]
+    @test_throws ArgumentError dfv.a = [1]
+    @test_throws ArgumentError dfv."a" = [1]
+    @test_throws ArgumentError dfv.a = 1
+    @test_throws ArgumentError dfv."a" = 1
+end
+
 end # module

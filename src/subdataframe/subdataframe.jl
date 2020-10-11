@@ -149,6 +149,15 @@ end
 Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bool, colinds::Any) =
     throw(ArgumentError("invalid row index of type Bool"))
 
+Base.setproperty!(::SubDataFrame, ::Symbol, ::Any) =
+    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed." *
+                        "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
+                        "to perform an in-place assignment."))
+Base.setproperty!(::SubDataFrame, ::AbstractString, ::Any) =
+    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed." *
+                        "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
+                        "to perform an in-place assignment."))
+
 ##############################################################################
 ##
 ## Miscellaneous

@@ -80,6 +80,13 @@ if VERSION < v"1.2"
     export hasproperty
 end
 
+if isdefined(Base, :only)  # Introduced in 1.4.0
+    import Base.only
+else
+    import Compat.only
+    export only
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 

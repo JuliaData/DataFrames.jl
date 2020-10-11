@@ -812,9 +812,9 @@ function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 """
-    outerjoin(df1, df2; on, kind = :inner, makeunique = false, indicator = nothing,
+    outerjoin(df1, df2; on, makeunique = false, indicator = nothing,
               validate = (false, false), renamecols = identity => identity)
-    outerjoin(df1, df2, dfs...; on, kind = :inner, makeunique = false,
+    outerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false))
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
