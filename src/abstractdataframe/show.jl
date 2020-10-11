@@ -43,6 +43,10 @@ end
 const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
                                  DataFrameColumns, GroupedDataFrame}
 
+# workaround Julia 1.0 for Char
+ourshow(io::IO, x::Char, truncstring::Int; styled::Bool=false) =
+    ourshow(io, string(x), styled=styled, truncstring)
+
 ourshow(io::IO, x::Nothing, truncstring::Int; styled::Bool=false) =
     ourshow(io, "", styled=styled, truncstring)
 ourshow(io::IO, x::SHOW_TABULAR_TYPES, truncstring::Int; styled::Bool=false) =
