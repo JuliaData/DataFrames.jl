@@ -3020,4 +3020,59 @@ end
     @test_throws MethodError select(gdf, AsTable([]) => ByRow(inc0) => :bin)
 end
 
+@testset "aggregation of reordered groups" begin
+    df = DataFrame(id = [1, 2, 3, 1, 3, 2], x=1:6)
+    gdf = groupby(df, :id)
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test select(df, identity) == select(gdf, identity)
+    @test select(df, :id, x -> (a=x.x, b=x.x)) == select(gdf, x -> (a=x.x, b=x.x))
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test transform(df, identity) == transform(gdf, identity)
+    @test transform(df, x -> (a=x.x, b=x.x)) == transform(gdf, x -> (a=x.x, b=x.x))
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], x_function=[2, 8, 4, 12, 6, 10])
+    @test combine(gdf, identity) == df
+    @test combine(gdf, x -> (a=x.x, b=x.x)) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], a=[1, 4, 2, 6, 3, 5], b=[1, 4, 2, 6, 3, 5])
+    gdf = groupby(df, :id)[[3, 1, 2]]
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test select(df, identity) == select(gdf, identity)
+    @test select(df, :id, x -> (a=x.x, b=x.x)) == select(gdf, x -> (a=x.x, b=x.x))
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test transform(df, identity) == transform(gdf, identity)
+    @test transform(df, x -> (a=x.x, b=x.x)) == transform(gdf, x -> (a=x.x, b=x.x))
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[3, 3, 1, 1, 2, 2], x_function=[6, 10, 2, 8, 4, 12])
+    @test combine(gdf, identity) == df[[3, 5, 1, 4, 2, 6], :]
+    @test combine(gdf, x -> (a=x.x, b=x.x)) ==
+          DataFrame(id=[3, 3, 1, 1, 2, 2], a=[3, 5, 1, 4, 2, 6], b=[3, 5, 1, 4, 2, 6])
+
+    df = DataFrame(id = [3, 2, 1, 3, 1, 2], x=1:6)
+    gdf = groupby(df, :id, sort=true)
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test select(df, identity) == select(gdf, identity)
+    @test select(df, :id, x -> (a=x.x, b=x.x)) == select(gdf, x -> (a=x.x, b=x.x))
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test transform(df, identity) == transform(gdf, identity)
+    @test transform(df, x -> (a=x.x, b=x.x)) == transform(gdf, x -> (a=x.x, b=x.x))
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], x_function=[6, 10, 4, 12, 2, 8])
+    @test combine(gdf, identity) == DataFrame(id=[1, 1, 2, 2, 3, 3], x=[3, 5, 2, 6, 1, 4])
+    @test combine(gdf, x -> (a=x.x, b=x.x)) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], a=[3, 5, 2, 6, 1, 4], b=[3, 5, 2, 6, 1, 4])
+
+    gdf = groupby(df, :id)[[3, 1, 2]]
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test select(df, identity) == select(gdf, identity)
+    @test select(df, :id, x -> (a=x.x, b=x.x)) == select(gdf, x -> (a=x.x, b=x.x))
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test transform(df, identity) == transform(gdf, identity)
+    @test transform(df, x -> (a=x.x, b=x.x)) == transform(gdf, x -> (a=x.x, b=x.x))
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[1, 1, 3, 3, 2, 2], x_function=[6, 10, 2, 8, 4, 12])
+    @test combine(gdf, identity) == DataFrame(id=[1, 1, 3, 3, 2, 2], x=[3, 5, 1, 4, 2, 6])
+    @test combine(gdf, x -> (a=x.x, b=x.x)) ==
+          DataFrame(id=[1, 1, 3, 3, 2, 2], a=[3, 5, 1, 4, 2, 6], b=[3, 5, 1, 4, 2, 6])
+end
+
 end # module
