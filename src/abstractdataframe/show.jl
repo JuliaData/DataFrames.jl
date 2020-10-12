@@ -32,7 +32,7 @@ Render a value to an `IO` object compactly using print.
 `truncstring` indicates the approximate number of text characters width to truncate
 the output (if it is a non-positive value then no truncation is applied).
 """
-function ourshow(io::IO, x::T, truncstring::Int; styled::Bool=false) where T
+function ourshow(io::IO, x::Any, truncstring::Int; styled::Bool=false)
     io_ctx = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
     sx = sprint(print, x, context=io_ctx)
     sx = escape_string(sx, ()) # do not escape "
