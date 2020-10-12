@@ -1297,6 +1297,7 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
             # we can probably make it more efficient, but I leave it as an optimization for the future
             gd_idx = gd.idx
             k = 0
+            # consider adding @inbounds later
             for (s, e) in zip(gd.starts, gd.ends)
                 for j in s:e
                     k += 1
