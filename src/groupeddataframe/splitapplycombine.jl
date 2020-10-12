@@ -453,126 +453,15 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 │ 8   │ 4     │ 1     │ 8     │ 9     │
 ```
 """
-function combine(f::Base.Callable, gd::GroupedDataFrame;
-                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
-    return combine_helper(f, gd, keepkeys=keepkeys, ungroup=ungroup,
-                          copycols=true, keeprows=false, renamecols=renamecols)
-end
-
-combine(f::typeof(nrow), gd::GroupedDataFrame;
+combine(f::Base.Callable, gd::GroupedDataFrame;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    combine(gd, [nrow => :nrow], keepkeys=keepkeys, ungroup=ungroup,
-            renamecols=renamecols)
-
-function combine(p::Pair, gd::GroupedDataFrame;
-                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
-    # move handling of aggregate to specialized combine
-    p_from, p_to = p
-
-    # verify if it is not better to use a fast path, which we achieve
-    # by moving to combine(::GroupedDataFrame, ::AbstractVector) method
-    # note that even if length(gd) == 0 we can do this step
-    if isagg(p_from => (p_to isa Pair ? first(p_to) : p_to), gd) || p_from === nrow
-        return combine(gd, [p], keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
-    end
-
-    if p_from isa Tuple
-        cs = collect(p_from)
-        # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("passing a Tuple $p_from as column selector is not supported" *
-                            ", use a vector $cs instead"))
-    else
-        cs = p_from
-    end
-    return combine_helper(cs => p_to, gd, keepkeys=keepkeys, ungroup=ungroup,
-                          copycols=true, keeprows=false, renamecols=renamecols)
-end
+    return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
 
 combine(gd::GroupedDataFrame,
-        cs::Union{Pair, typeof(nrow), ColumnIndex, MultiColumnIndex}...;
+        cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
     _combine_prepare(gd, cs..., keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
-
-function _combine_prepare(gd::GroupedDataFrame,
-                          @nospecialize(cs::Union{Pair, typeof(nrow),
-                                        ColumnIndex, MultiColumnIndex}...);
-                          keepkeys::Bool, ungroup::Bool, copycols::Bool,
-                          keeprows::Bool, renamecols::Bool)
-    cs_vec = []
-    for p in cs
-        if p === nrow
-            push!(cs_vec, nrow => :nrow)
-        elseif p isa AbstractVecOrMat{<:Pair}
-            append!(cs_vec, p)
-        else
-            push!(cs_vec, p)
-        end
-    end
-    if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
-        x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
-        # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not supported" *
-                            ", use a vector $(collect(first(x))) instead"))
-        for (i, v) in enumerate(cs_vec)
-            if first(v) isa Tuple
-                cs_vec[i] = collect(first(v)) => last(v)
-            end
-        end
-    end
-    cs_norm_pre = [normalize_selection(index(parent(gd)), c, renamecols) for c in cs_vec]
-    seen_cols = Set{Symbol}()
-    process_vectors = false
-    for v in cs_norm_pre
-        if v isa Pair
-            out_col = last(last(v))
-            if out_col in seen_cols
-                throw(ArgumentError("Duplicate output column name $out_col requested"))
-            end
-            push!(seen_cols, out_col)
-        else
-            @assert v isa AbstractVector{Int}
-            process_vectors = true
-        end
-    end
-    processed_cols = Set{Symbol}()
-    if process_vectors
-        cs_norm = Pair[]
-        for (i, v) in enumerate(cs_norm_pre)
-            if v isa Pair
-                push!(cs_norm, v)
-                push!(processed_cols, last(last(v)))
-            else
-                @assert v isa AbstractVector{Int}
-                for col_idx in v
-                    col_name = _names(gd)[col_idx]
-                    if !(col_name in processed_cols)
-                        push!(processed_cols, col_name)
-                        if col_name in seen_cols
-                            trans_idx = findfirst(cs_norm_pre) do p
-                                p isa Pair || return false
-                                last(last(p)) == col_name
-                            end
-                            @assert !isnothing(trans_idx) && trans_idx > i
-                            push!(cs_norm, cs_norm_pre[trans_idx])
-                            # it is safe to delete from cs_norm_pre
-                            # as we have not reached trans_idx index yet
-                            deleteat!(cs_norm_pre, trans_idx)
-                        else
-                            push!(cs_norm, col_idx => identity => col_name)
-                        end
-                    end
-                end
-            end
-        end
-    else
-        cs_norm = collect(Pair, cs_norm_pre)
-    end
-    f = Pair[first(x) => first(last(x)) for x in cs_norm]
-    nms = Symbol[last(last(x)) for x in cs_norm]
-    return combine_helper(f, gd, nms, keepkeys=keepkeys, ungroup=ungroup,
-                          copycols=copycols, keeprows=keeprows, renamecols=renamecols)
-end
 
 function gen_groups(idx::Vector{Int})
     groups = zeros(Int, length(idx))
@@ -588,17 +477,56 @@ function gen_groups(idx::Vector{Int})
     return groups
 end
 
-function combine_helper(f, gd::GroupedDataFrame,
-                        nms::Union{AbstractVector{Symbol},Nothing}=nothing;
-                        keepkeys::Bool, ungroup::Bool,
-                        copycols::Bool, keeprows::Bool, renamecols::Bool)
+function _combine_prepare(gd::GroupedDataFrame,
+                          @nospecialize(cs::Union{Pair, Base.Callable,
+                                        ColumnIndex, MultiColumnIndex}...);
+                          keepkeys::Bool, ungroup::Bool, copycols::Bool,
+                          keeprows::Bool, renamecols::Bool)
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
-    idx, valscat = _combine(f, gd, nms, copycols, keeprows, renamecols)
+
+    cs_vec = []
+    for p in cs
+        if p === nrow
+            push!(cs_vec, nrow => :nrow)
+        elseif p isa AbstractVecOrMat{<:Pair}
+            append!(cs_vec, p)
+        else
+            push!(cs_vec, p)
+        end
+    end
+    if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
+        x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
+        # an explicit error is thrown as this was allowed in the past
+        throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not supported" *
+                            ", use a vector $(collect(first(x))) instead"))
+    end
+
+    cs_norm = []
+    optional_transform = Bool[]
+    for arg in [normalize_selection(index(parent(gd)), c, renamecols) for c in cs_vec]
+        if arg isa AbstractVector{Int}
+            for col_idx in arg
+                push!(cs_norm, col_idx => identity => _names(gd)[col_idx])
+                push!(optional_transform, true)
+            end
+        else
+            push!(cs_norm, arg)
+            push!(optional_transform, false)
+        end
+    end
+
+    # cs_norm holds now either src => fun => dst or just fun
+    # if optional_transform[i] is true then the transformation will be skipped
+    # if earlier column with a column with the same name was created
+
+    idx, valscat = _combine(gd, cs_norm, optional_transform, copycols, keeprows, renamecols)
+
     !keepkeys && ungroup && return valscat
-    keys = groupcols(gd)
-    for key in keys
+
+    gd_keys = groupcols(gd)
+    for key in gd_keys
         if hasproperty(valscat, key)
             if (keeprows && !isequal(valscat[!, key], parent(gd)[!, key])) ||
                 (!keeprows && !isequal(valscat[!, key], view(parent(gd)[!, key], idx)))
@@ -612,17 +540,17 @@ function combine_helper(f, gd::GroupedDataFrame,
     else
         newparent = length(gd) > 0 ? parent(gd)[idx, gd.cols] : parent(gd)[1:0, gd.cols]
     end
-    added_cols = select(valscat, Not(intersect(keys, _names(valscat))), copycols=false)
+    added_cols = select(valscat, Not(intersect(gd_keys, _names(valscat))), copycols=false)
     hcat!(newparent, length(gd) > 0 ? added_cols : similar(added_cols, 0), copycols=false)
     ungroup && return newparent
 
-    if length(idx) == 0 && !(keeprows && length(keys) > 0)
+    if length(idx) == 0 && !(keeprows && length(gd_keys) > 0)
         @assert nrow(newparent) == 0
         return GroupedDataFrame(newparent, copy(gd.cols), Int[],
                                 Int[], Int[], Int[], 0, Dict{Any,Int}(),
                                 Threads.ReentrantLock())
     elseif keeprows
-        @assert length(keys) > 0 || idx == gd.idx
+        @assert length(gd_keys) > 0 || idx == gd.idx
         # in this case we are sure that the result GroupedDataFrame has the
         # same structure as the source except that grouping columns are at the start
         return Threads.lock(gd.lazy_lock) do
@@ -1117,8 +1045,9 @@ function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedData
     end
 end
 
-isagg((col, fun)::Pair, gdf::GroupedDataFrame) =
-    col isa ColumnIndex && check_aggregate(fun, parent(gdf)[!, col]) isa AbstractAggregate
+isagg((col, (fun, outcol))::Pair{<:ColumnIndex, <:Pair{<:Any, <:SymbolOrString}}, gdf::GroupedDataFrame) =
+    check_aggregate(fun, parent(gdf)[!, col]) isa AbstractAggregate
+isagg(::Any, gdf::GroupedDataFrame) = false
 
 function _agg2idx_map_helper(idx, idx_agg)
     agg2idx_map = fill(-1, length(idx))
@@ -1150,14 +1079,16 @@ function prepare_idx_keeprows(idx::AbstractVector{<:Integer},
     return idx_keeprows
 end
 
-function _combine(f::AbstractVector{<:Pair},
-                  gd::GroupedDataFrame, nms::AbstractVector{Symbol},
-                  copycols::Bool, keeprows::Bool, renamecols::Bool)
-    # here f should be normalized and in a form of source_cols => fun
-    @assert all(x -> first(x) isa Union{Int, AbstractVector{Int}, AsTable}, f)
-    @assert all(x -> last(x) isa Base.Callable, f)
+struct TransRes
+    col_idx::Vector{Int} # index for a column
+    col::AbstractVector # computed value of a column
+    name::Symbol # name of a column
+    optional::Bool # if a column is allowed to be replaced in the future
+end
 
-    if isempty(f)
+function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform::Vector{Bool},
+                  copycols::Bool, keeprows::Bool, renamecols::Bool)
+    if isempty(cs_norm)
         if keeprows && nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
             throw(ArgumentError("select and transform do not support " *
                                 "`GroupedDataFrame`s from which some groups have "*
@@ -1178,30 +1109,100 @@ function _combine(f::AbstractVector{<:Pair},
     end
 
     idx_agg = nothing
-    if length(gd) > 0 && any(x -> isagg(x, gd), f)
+    if length(gd) > 0 && any(x -> isagg(x, gd), cs_norm)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
-    elseif length(gd) == 0 || !all(x -> isagg(x, gd), f)
+    elseif length(gd) == 0 || !all(x -> isagg(x, gd), cs_norm)
         # Trigger computation of indices
         # This can speed up some aggregates that would not trigger this on their own
         @assert gd.idx !== nothing
     end
-    res = Vector{Any}(undef, length(f))
+
+    trans_res = Vector{TransRes}()
+
+    # seen_cols keeps an information about lotacion of columns already processed
+    # and if a given column can be replaced in the future
+    seen_cols = Dict{Symbol, Tuple{Bool, Int}}()
+
     parentdf = parent(gd)
-    for (i, p) in enumerate(f)
-        source_cols, fun = p
-        if length(gd) > 0 && isagg(p, gd)
-            incol = parentdf[!, source_cols]
-            agg = check_aggregate(last(p), incol)
+    for i in eachindex(cs_norm, optional_transform)
+        cs_i = cs_norm[i]
+        ot_i = optional_transform[i]
+
+        if length(gd) > 0 && isagg(cs_i, gd)
+            @assert !ot_i
+            out_col_name = last(last(cs_i))
+            incol = parentdf[!, first(cs_i)]
+            agg = check_aggregate(first(last(cs_i)), incol)
             outcol = agg(incol, gd)
-            res[i] = idx_agg, outcol
-        elseif keeprows && fun === identity && !(source_cols isa AsTable)
+
+            if haskey(seen_cols, out_col_name)
+                optional, loc = seen_cols[out_col_name]
+                # we have seen this col but it is not allowed to replace it
+                optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                trans_res[loc] = TransRes(idx_agg, outcol, out_col_name, ot_i)
+                seen_cols[out_col_name] = (ot_i, loc)
+            else
+                push!(trans_res, TransRes(idx_agg, outcol, out_col_name, ot_i))
+                seen_cols[out_col_name] = (ot_i, length(trans_res))
+            end
+        elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
+               !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
+            # this is a fast path used when we pass a column or rename a column in select or transform
+            source_cols = first(cs_i)
+            out_col_name = last(last(cs_i))
             @assert source_cols isa Union{Int, AbstractVector{Int}}
             @assert length(source_cols) == 1
             outcol = parentdf[!, first(source_cols)]
-            res[i] = idx_keeprows, copycols ? copy(outcol) : outcol
+
+            if haskey(seen_cols, out_col_name)
+                optional, loc = seen_cols[out_col_name]
+                @assert trans_res[loc].name == out_col_name
+                if optional
+                    if !ot_i
+                        @assert trans_res[loc].optional
+                        trans_res[loc] = TransRes(idx_keeprows, copycols ? copy(outcol) : outcol,
+                                                  out_col_name, ot_i)
+                        seen_cols[out_col_name] = (ot_i, loc)
+                    end
+                else
+                    # if ot_i is true, then we ignore processing this column
+                    ot_i || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                end
+            else
+                push!(trans_res, TransRes(idx_keeprows, copycols ? copy(outcol) : outcol,
+                                          out_col_name, ot_i))
+                seen_cols[out_col_name] = (ot_i, length(trans_res))
+            end
+        elseif cs_i isa Base.Callable
+            firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parent(gd), 0))
+            idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
+            @assert length(outcols) == length(nms)
+            for j in eachindex(outcols)
+                outcol = outcols[j]
+                out_col_name = nms[j]
+                if haskey(seen_cols, out_col_name)
+                    optional, loc = seen_cols[out_col_name]
+                    # if column was seen and it is optional now ignore it
+                    if !ot_i
+                        optional, loc = seen_cols[out_col_name]
+                        # we have seen this col but it is not allowed to replace it
+                        optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                        @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                        trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+                        seen_cols[out_col_name] = (ot_i, loc)
+                    end
+                else
+                    push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+                    seen_cols[out_col_name] = (ot_i, length(trans_res))
+                end
+            end
         else
+            @assert cs_i isa Pair
+            source_cols, (fun, out_col_name) = cs_i
+            out_col_name isa Symbol || throw(ArgumentError("returning multiple columns is not supported yet"))
             if source_cols isa Int
                 incols = (parentdf[!, source_cols],)
             elseif source_cols isa AsTable
@@ -1217,8 +1218,7 @@ function _combine(f::AbstractVector{<:Pair},
                        do_call(fun, Int[], 1:1, 0:0, gd, incols, 1)
             firstmulticol = firstres isa MULTI_COLS_TYPE
             if firstmulticol
-                throw(ArgumentError("a single value or vector result is required when " *
-                                    "passing multiple functions (got $(typeof(res)))"))
+                throw(ArgumentError("a single value or vector result is required (got $(typeof(res)))"))
             end
             # if idx_agg was not computed yet it is nothing
             # in this case if we are not passed a vector compute it.
@@ -1237,28 +1237,44 @@ function _combine(f::AbstractVector{<:Pair},
                                                   Val(firstmulticol),
                                                   firstres isa AbstractVector ? nothing : idx_agg)
             @assert length(outcols) == 1
-            res[i] = idx, outcols[1]
+            outcol = outcols[1]
+
+            if haskey(seen_cols, out_col_name)
+                # if column was seen and it is optional now ignore it
+                if !ot_i
+                    optional, loc = seen_cols[out_col_name]
+                    # we have seen this col but it is not allowed to replace it
+                    optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                    @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                    trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+                    seen_cols[out_col_name] = (ot_i, loc)
+                end
+            else
+                push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+                seen_cols[out_col_name] = (ot_i, length(trans_res))
+            end
         end
     end
+
     # idx_agg === nothing then we have only functions that
     # returned multiple rows and idx_loc = 1
-    idx_loc = findfirst(x -> x[1] !== idx_agg, res)
+    idx_loc = findfirst(x -> x.col_idx !== idx_agg, trans_res)
     if !keeprows && isnothing(idx_loc)
         @assert !isnothing(idx_agg)
         idx = idx_agg
     else
-        idx = keeprows ? idx_keeprows : res[idx_loc][1]
+        idx = keeprows ? idx_keeprows : trans_res[idx_loc].col_idx
         agg2idx_map = nothing
-        for i in 1:length(res)
-            if res[i][1] !== idx && res[i][1] != idx
-                if res[i][1] === idx_agg
+        for i in 1:length(trans_res)
+            if trans_res[i].col_idx !== idx
+                if trans_res[i].col_idx === idx_agg
                     # we perform pseudo broadcasting here
                     # keep -1 as a sentinel for errors
                     if isnothing(agg2idx_map)
                         agg2idx_map = _agg2idx_map_helper(idx, idx_agg)
                     end
-                    res[i] = idx_agg, res[i][2][agg2idx_map]
-                elseif idx != res[i][1]
+                    trans_res[i] = TransRes(idx_agg, trans_res[i].col[agg2idx_map], trans_res[i].name, trans_res[i].optional)
+                elseif idx != trans_res[i].col_idx
                     if keeprows
                         throw(ArgumentError("all functions must return vectors with " *
                                             "as many values as rows in each group"))
@@ -1270,70 +1286,34 @@ function _combine(f::AbstractVector{<:Pair},
         end
     end
 
-    # here first field in res[i] is used to keep track how the column was generated
+    # here first field in trans_res[i] is used to keep track how the column was generated
     # a correct index is stored in idx variable
 
-    for (i, (col_idx, col)) in enumerate(res)
-        if keeprows && res[i][1] !== idx_keeprows # we need to reorder the column
+    for i in eachindex(trans_res)
+        col_idx = trans_res[i].col_idx
+        col = trans_res[i].col
+        if keeprows && col_idx !== idx_keeprows # we need to reorder the column
             newcol = similar(col)
             # we can probably make it more efficient, but I leave it as an optimization for the future
             gd_idx = gd.idx
-            for j in eachindex(gd.idx, col)
-                newcol[gd_idx[j]] = col[j]
+            k = 0
+            for (s, e) in zip(gd.starts, gd.ends)
+                for j in s:e
+                    k += 1
+                    newcol[gd_idx[j]] = col[k]
+                end
             end
-            res[i] = (col_idx, newcol)
+            @assert k == length(gd_idx)
+            trans_res[i] = TransRes(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
         end
     end
-    outcols = map(x -> x[2], res)
+
+    outcols = AbstractVector[x.col for x in trans_res]
+    nms = Symbol[x.name for x in trans_res]
     # this check is redundant given we check idx above
     # but it is safer to double check and it is cheap
     @assert all(x -> length(x) == length(outcols[1]), outcols)
-    return idx, DataFrame(collect(AbstractVector, outcols), nms, copycols=false)
-end
-
-function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
-                  copycols::Bool, keeprows::Bool, renamecols::Bool)
-    @assert copycols && !keeprows
-    # use `similar` as `gd` might have been subsetted
-    firstres = length(gd) > 0 ? fun(gd[1]) : fun(similar(parent(gd), 0))
-    idx, outcols, nms = _combine_multicol(firstres, fun, gd, nothing)
-    valscat = DataFrame(collect(AbstractVector, outcols), nms)
-    return idx, valscat
-end
-
-function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing,
-                  copycols::Bool, keeprows::Bool, renamecols::Bool)
-    # here p should not be normalized as we allow tabular return value from fun
-    # map and combine should not dispatch here if p is isagg
-    @assert copycols && !keeprows
-    source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p, renamecols)
-    parentdf = parent(gd)
-    if source_cols isa Int
-        incols = (parent(gd)[!, source_cols],)
-    elseif source_cols isa AsTable
-        incols = Tables.columntable(select(parentdf,
-                                           source_cols.cols,
-                                           copycols=false))
-    else
-        @assert source_cols isa AbstractVector{Int}
-        incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
-    end
-    firstres = length(gd) > 0 ?
-               do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1) :
-               do_call(fun, Int[], 1:1, 0:0, gd, incols, 1)
-    idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
-    # disallow passing target column name to genuine tables
-    if firstres isa MULTI_COLS_TYPE
-        if p isa Pair{<:Any, <:Pair{<:Any, <:SymbolOrString}}
-            throw(ArgumentError("setting column name for tabular return value is disallowed"))
-        end
-    else
-        # fetch auto generated or passed target column name to nms overwritting
-        # what _combine_with_first produced
-        nms = [out_col]
-    end
-    valscat = DataFrame(collect(AbstractVector, outcols), nms)
-    return idx, valscat
+    return idx, DataFrame(outcols, nms, copycols=false)
 end
 
 function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
@@ -1716,6 +1696,15 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 │ 8   │ 2     │ 1     │ 8     │ 9     │
 ```
 """
+function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
+                keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+    if f isa Colon
+        throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
+    end
+    return select(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
+end
+
+
 select(gd::GroupedDataFrame, args...; copycols::Bool=true, keepkeys::Bool=true,
        ungroup::Bool=true, renamecols::Bool=true) =
     _combine_prepare(gd, args..., copycols=copycols, keepkeys=keepkeys,
@@ -1733,6 +1722,14 @@ but keeps the columns of `parent(gd)` in their original order.
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform!`](@ref)
 """
+function transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
+                keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+    if f isa Colon
+        throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
+    end
+    return transform(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
+end
+
 function transform(gd::GroupedDataFrame, args...; copycols::Bool=true,
                    keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
@@ -1758,6 +1755,13 @@ using the same parent data frame they might get corrupt.
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`transform`](@ref), [`transform!`](@ref)
 """
+function select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
+    if f isa Colon
+        throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
+    end
+    return select!(gd, f, ungroup=ungroup)
+end
+
 function select!(gd::GroupedDataFrame{DataFrame}, args...;
                  ungroup::Bool=true, renamecols::Bool=true)
     newdf = select(gd, args..., copycols=false, renamecols=renamecols)
@@ -1778,6 +1782,13 @@ and keeps the columns of `parent(gd)` in their original order.
 
 [`groupby`](@ref), [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref)
 """
+function transform!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
+    if f isa Colon
+        throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
+    end
+    return transform!(gd, f, ungroup=ungroup)
+end
+
 function transform!(gd::GroupedDataFrame{DataFrame}, args...;
                     ungroup::Bool=true, renamecols::Bool=true)
     newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
@@ -1786,3 +1797,51 @@ function transform!(gd::GroupedDataFrame{DataFrame}, args...;
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
+
+
+#### OLD CODE: remove later
+
+# function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
+#                   copycols::Bool, keeprows::Bool, renamecols::Bool)
+#     @assert copycols && !keeprows
+#     # use `similar` as `gd` might have been subsetted
+#     firstres = length(gd) > 0 ? fun(gd[1]) : fun(similar(parent(gd), 0))
+#     idx, outcols, nms = _combine_multicol(firstres, fun, gd, nothing)
+#     valscat = DataFrame(collect(AbstractVector, outcols), nms)
+#     return idx, valscat
+# end
+
+# function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing,
+#                   copycols::Bool, keeprows::Bool, renamecols::Bool)
+#     # here p should not be normalized as we allow tabular return value from fun
+#     # map and combine should not dispatch here if p is isagg
+#     @assert copycols && !keeprows
+#     source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p, renamecols)
+#     parentdf = parent(gd)
+#     if source_cols isa Int
+#         incols = (parent(gd)[!, source_cols],)
+#     elseif source_cols isa AsTable
+#         incols = Tables.columntable(select(parentdf,
+#                                            source_cols.cols,
+#                                            copycols=false))
+#     else
+#         @assert source_cols isa AbstractVector{Int}
+#         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
+#     end
+#     firstres = length(gd) > 0 ?
+#                do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1) :
+#                do_call(fun, Int[], 1:1, 0:0, gd, incols, 1)
+#     idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
+#     # disallow passing target column name to genuine tables
+#     if firstres isa MULTI_COLS_TYPE
+#         if p isa Pair{<:Any, <:Pair{<:Any, <:SymbolOrString}}
+#             throw(ArgumentError("setting column name for tabular return value is disallowed"))
+#         end
+#     else
+#         # fetch auto generated or passed target column name to nms overwritting
+#         # what _combine_with_first produced
+#         nms = [out_col]
+#     end
+#     valscat = DataFrame(collect(AbstractVector, outcols), nms)
+#     return idx, valscat
+# end
