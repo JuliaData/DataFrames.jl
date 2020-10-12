@@ -93,7 +93,7 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
 
     # This is only type display shortening so we
     # are OK with any T whose name starts with Categorical here
-    if startswith(sT, "Categorical")
+    if startswith(sT, "CategoricalValue")
         sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix
