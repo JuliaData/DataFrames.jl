@@ -994,9 +994,10 @@ end
 @inline function Base.filter((cols, f)::Pair, df::AbstractDataFrame; view::Bool=false)
     int_cols = index(df)[cols] # it will be AbstractVector{Int} or Int
     if length(int_cols) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        rowidxs = [f() for _ in axes(df, 1)]
+    else
+        rowidxs = _filter_helper(f, (df[!, i] for i in int_cols)...)
     end
-    rowidxs = _filter_helper(f, (df[!, i] for i in int_cols)...)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -1006,9 +1007,10 @@ end
                                                      AbstractVector{<:Symbol}}},
                              df::AbstractDataFrame; view::Bool=false)
     if length(cols) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        rowidxs = [f() for _ in axes(df, 1)]
+    else
+        rowidxs = _filter_helper(f, (df[!, i] for i in cols)...)
     end
-    rowidxs = _filter_helper(f, (df[!, i] for i in cols)...)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -1018,9 +1020,10 @@ _filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
                              view::Bool=false)
     df_tmp = select(df, cols.cols, copycols=false)
     if ncol(df_tmp) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        rowidxs = [f(NamedTuple()) for _ in axes(df, 1)]
+    else
+        rowidxs = _filter_helper_astable(f, Tables.namedtupleiterator(df_tmp))
     end
-    rowidxs = _filter_helper_astable(f, Tables.namedtupleiterator(df_tmp))
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -1101,7 +1104,7 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 │ 3   │ 1     │ b      │
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) = _filter!_helper(df, f, eachrow(df))
+Base.filter!(f, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
@@ -1115,17 +1118,20 @@ Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
 
 function _filter!_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        rowidxs = findall(x -> !f(), axes(df, 1))
+    else
+        rowidxs = findall(((x...) -> !(f(x...)::Bool)).(cols...))
     end
-    return delete!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
+    return delete!(df, rowidxs)
 end
 
 function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
     dff = select(df, cols.cols, copycols=false)
     if ncol(dff) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        return delete!(df, findall(x -> !f(NamedTuple()), axes(df, 1)))
+    else
+        return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
     end
-    return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
 end
 
 _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =

@@ -2979,4 +2979,45 @@ end
     @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
 end
 
+@testset "empty ByRow" begin
+    inc0 = let
+        state = 0
+        () -> (state += 1)
+    end
+
+    inc1 = let
+        state = 0
+        x -> (state += 1)
+    end
+
+    df = DataFrame(a=[1,1,1,2,2,3,4,4,5,5,5,5], b=1:12)
+    gdf = groupby_checked(df, :a)
+
+    @test select(gdf, [] => ByRow(inc0) => :bin) ==
+          DataFrame(a=df.a, bin=1:12)
+    @test combine(gdf, [] => ByRow(inc0) => :bin) ==
+          DataFrame(a=df.a, bin=13:24)
+    @test select(gdf, AsTable([]) => ByRow(inc1) => :bin) ==
+          DataFrame(a=df.a, bin=1:12)
+    @test combine(gdf, AsTable([]) => ByRow(inc1) => :bin) ==
+          DataFrame(a=df.a, bin=13:24)
+    @test combine(gdf[Not(2)], [] => ByRow(inc0) => :bin) ==
+          DataFrame(a=df.a[Not(4:5)], bin=25:34)
+    @test combine(gdf[Not(2)], AsTable([]) => ByRow(inc1) => :bin) ==
+          DataFrame(a=df.a[Not(4:5)], bin=25:34)
+
+    # note that type inference in a comprehension does not always work
+    @test isequal_coltyped(combine(gdf[[]], [] => ByRow(inc0) => :bin),
+                           DataFrame(a=Int[], bin=Any[]))
+    @test isequal_coltyped(combine(gdf[[]], [] => ByRow(rand) => :bin),
+                           DataFrame(a=Int[], bin=Float64[]))
+    @test isequal_coltyped(combine(gdf[[]], AsTable([]) => ByRow(inc1) => :bin),
+                           DataFrame(a=Int[], bin=Any[]))
+    @test isequal_coltyped(combine(gdf[[]], AsTable([]) => ByRow(x -> rand()) => :bin),
+                           DataFrame(a=Int[], bin=Float64[]))
+
+    @test_throws MethodError select(gdf, [] => ByRow(inc1) => :bin)
+    @test_throws MethodError select(gdf, AsTable([]) => ByRow(inc0) => :bin)
+end
+
 end # module
