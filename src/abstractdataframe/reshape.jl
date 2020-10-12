@@ -426,7 +426,7 @@ with name specified by `dest_namescol`.
   with `_i` (`i` starting at 1 for the first duplicate).
 
 Note: The element types of columns in resulting `DataFrame`
-(other than the first column, which always has element type `String`)
+(other than the first column, w hich always has element type `String`)
 will depend on the element types of _all_ input columns
 based on the result of `promote_type`.
 That is, if the source data frame contains `Int` and `Float64` columns,
@@ -485,12 +485,12 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
     df_permuted = DataFrame(dest_namescol => names(df_notsrc))
 
     if ncol(df_notsrc) == 0
-        df_tmp = DataFrame((n=>[] for n in df[!, src_namescol])...)
+        df_tmp = DataFrame((n=>[] for n in df[!, src_namescol])..., makeunique=makeunique)
     else
         m = permutedims(Matrix(df_notsrc))
         df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
     end
-    return hcat!(df_permuted, df_tmp, copycols=false)
+    return hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex=1;

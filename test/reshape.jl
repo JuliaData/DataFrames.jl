@@ -545,8 +545,11 @@ end
 
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool, 10))
 
+    d3pd_names = ["a", "x", ("x_$i" for i in 1:9)...]
     @test_throws ArgumentError permutedims(df3)
-    @test names(permutedims(df3, makeunique=true)) == ["a", "x", ("x_$i" for i in 1:9)...]
+    @test names(permutedims(df3, makeunique=true)) == d3pd_names
+    @test_throws ArgumentError permutedims(df3[!, [:a]]) # single column branch
+    @test names(permutedims(df3[!, [:a]], makeunique=true)) == d3pd_names
 
     df4 = DataFrame(a=rand(2), b=rand(2), c=[1, 2], d=[1., missing],
                     e=["x", "y"], f=[:x, :y], # valid src
