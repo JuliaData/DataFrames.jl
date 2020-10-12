@@ -1229,9 +1229,14 @@ function _combine(f::AbstractVector{<:Pair},
             newcol = similar(col)
             # we can probably make it more efficient, but I leave it as an optimization for the future
             gd_idx = gd.idx
-            for j in eachindex(gd.idx, col)
-                newcol[gd_idx[j]] = col[j]
+            k = 0
+            for (s, e) in zip(gd.starts, gd.ends)
+                for j in s:e
+                    k += 1
+                    newcol[gd_idx[j]] = col[k]
+                end
             end
+            @assert k == length(gd_idx)
             res[i] = (col_idx, newcol)
         end
     end

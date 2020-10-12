@@ -2483,4 +2483,30 @@ end
     @test eltype(df2.a) === eltype(df2.b) === Union{UInt, Missing}
 end
 
+@testset "aggregation of reordered groups" begin
+    df = DataFrame(id = [1, 2, 3, 1, 3, 2], x=1:6)
+    gdf = groupby(df, :id)
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], x_function=[2, 8, 4, 12, 6, 10])
+    gdf = groupby(df, :id)[[3, 1, 2]]
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[3, 3, 1, 1, 2, 2], x_function=[6, 10, 2, 8, 4, 12])
+
+    df = DataFrame(id = [3, 2, 1, 3, 1, 2], x=1:6)
+    gdf = groupby(df, :id, sort=true)
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], x_function=[6, 10, 4, 12, 2, 8])
+    gdf = groupby(df, :id)[[3, 1, 2]]
+    @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
+    @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
+    @test combine(gdf, :x => x -> 2x) ==
+          DataFrame(id=[1, 1, 3, 3, 2, 2], x_function=[6, 10, 2, 8, 4, 12])
+end
+
 end # module
