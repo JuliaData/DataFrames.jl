@@ -17,15 +17,11 @@ DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=t
 DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
           copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
-DataFrame() # an empty DataFrame
-DataFrame(column_eltypes::AbstractVector, names::AbstractVector{Symbol},
-          nrows::Integer=0; makeunique::Bool=false)
-DataFrame(column_eltypes::AbstractVector, names::AbstractVector{<:AbstractString},
-          nrows::Integer=0; makeunique::Bool=false)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
 DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
+DataFrame() # an empty DataFrame
 ```
 
 # Arguments
