@@ -46,7 +46,7 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 - `copycols` : whether vectors passed as columns should be copied; if set
   to `false` then the constructor will still copy the passed columns
   if it is not possible to construct a `DataFrame` without materializing new columns.
-- `keepkeys` : if the resulting `DataFrame` should contain the grouping columns
+- `keepkeys` : whether the resulting `DataFrame` should contain the grouping columns
   of a `GroupedDataFrame`
 
 All columns in `columns` must be `AbstractVector`s and have the same length. An
