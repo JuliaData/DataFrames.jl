@@ -165,20 +165,30 @@ Note that there are some differences between the widened results above.
 """
 function unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::ColumnIndex,
                  value::ColumnIndex; renamecols::Function=identity)
-    refkeycol = categorical(df[!, rowkey])
-    droplevels!(refkeycol)
-    keycol = categorical(df[!, colkey])
-    droplevels!(keycol)
+    refkeycol = df[!, rowkey]
+    refkeycol isa PooledVector || (refkeycol = PooledArray(refkeycol))
+    keycol = df[!, colkey]
+    keycol isa PooledVector || (keycol = PooledArray(keycol))
     valuecol = df[!, value]
     return _unstack(df, index(df)[rowkey], index(df)[colkey],
                     keycol, valuecol, refkeycol, renamecols)
 end
 
+function preprocess_pooledvector(v::PooledVector)
+    used = falses(length(v.pool))
+    for x in v.refs
+        used[x] |= true
+    end
+    v_unique = sum(used)
+    v_missing = something(findfirst(isequal(missing), v.pool), 0)
+    return v_unique, v_missing
+end
+
 function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
-                  keycol::CategoricalVector, valuecol::AbstractVector,
-                  refkeycol::CategoricalVector, renamecols::Function)
-    Nrow = length(refkeycol.pool)
-    Ncol = length(keycol.pool)
+                  keycol::PooledVector, valuecol::AbstractVector,
+                  refkeycol::PooledVector, renamecols::Function)
+    Nrow, refkeycol_missing = preprocess_pooledvector(refkeycol)
+    Ncol, keycol_missing = preprocess_pooledvector(keycol)
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
     hadmissing = false # have we encountered missing in refkeycol
     mask_filled = falses(Nrow+1, Ncol) # has a given [row,col] entry been filled?
@@ -186,7 +196,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
     warned_missing = false # have we already printed missing in keycol warning?
     for k in 1:nrow(df)
         kref = keycol.refs[k]
-        if kref <= 0 # we have found missing in colkey
+        if kref == keycol_missing # we have found missing in colkey
             if !warned_missing
                 @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
@@ -194,7 +204,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
             continue # skip processing it
         end
         refkref = refkeycol.refs[k]
-        if refkref <= 0 # we have found missing in rowkey
+        if refkref == keycol_missing # we have found missing in rowkey
             if !hadmissing # if it is the first time we have to add a new row
                 hadmissing = true
                 # we use the fact that missing is greater than anything
