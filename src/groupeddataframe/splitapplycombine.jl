@@ -1202,7 +1202,7 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
         else
             @assert cs_i isa Pair
             source_cols, (fun, out_col_name) = cs_i
-            out_col_name isa Symbol || throw(ArgumentError("returning multiple columns is not supported yet"))
+
             if source_cols isa Int
                 incols = (parentdf[!, source_cols],)
             elseif source_cols isa AsTable
@@ -1213,45 +1213,105 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
                 @assert source_cols isa AbstractVector{Int}
                 incols = ntuple(i -> parentdf[!, source_cols[i]], length(source_cols))
             end
+
             firstres = length(gd) > 0 ?
                        do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1) :
                        do_call(fun, Int[], 1:1, 0:0, gd, incols, 1)
             firstmulticol = firstres isa MULTI_COLS_TYPE
-            if firstmulticol
-                throw(ArgumentError("a single value or vector result is required (got $(typeof(res)))"))
-            end
-            # if idx_agg was not computed yet it is nothing
-            # in this case if we are not passed a vector compute it.
-            if !(firstres isa AbstractVector) && isnothing(idx_agg)
-                idx_agg = Vector{Int}(undef, length(gd))
-                fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
-            end
-            # TODO: if firstres is a vector we recompute idx for every function
-            # this could be avoided - it could be computed only the first time
-            # and later we could just check if lengths of groups match this first idx
 
-            # the last argument passed to _combine_with_first informs it about precomputed
-            # idx. Currently we do it only for single-row return values otherwise we pass
-            # nothing to signal that idx has to be computed in _combine_with_first
-            idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
-                                                  Val(firstmulticol),
-                                                  firstres isa AbstractVector ? nothing : idx_agg)
-            @assert length(outcols) == 1
-            outcol = outcols[1]
+            if out_col_name isa Symbol
+                if firstmulticol
+                    throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
+                end
+                # if idx_agg was not computed yet it is nothing
+                # in this case if we are not passed a vector compute it.
+                if !(firstres isa AbstractVector) && isnothing(idx_agg)
+                    idx_agg = Vector{Int}(undef, length(gd))
+                    fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+                end
+                # TODO: if firstres is a vector we recompute idx for every function
+                # this could be avoided - it could be computed only the first time
+                # and later we could just check if lengths of groups match this first idx
 
-            if haskey(seen_cols, out_col_name)
-                # if column was seen and it is optional now ignore it
-                if !ot_i
-                    optional, loc = seen_cols[out_col_name]
-                    # we have seen this col but it is not allowed to replace it
-                    optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
-                    @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                    trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
-                    seen_cols[out_col_name] = (ot_i, loc)
+                # the last argument passed to _combine_with_first informs it about precomputed
+                # idx. Currently we do it only for single-row return values otherwise we pass
+                # nothing to signal that idx has to be computed in _combine_with_first
+                idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
+                                                      Val(firstmulticol),
+                                                      firstres isa AbstractVector ? nothing : idx_agg)
+                @assert length(outcols) == 1
+                outcol = outcols[1]
+
+                if haskey(seen_cols, out_col_name)
+                    # if column was seen and it is optional now ignore it
+                    if !ot_i
+                        optional, loc = seen_cols[out_col_name]
+                        # we have seen this col but it is not allowed to replace it
+                        optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                        @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                        trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+                        seen_cols[out_col_name] = (ot_i, loc)
+                    end
+                else
+                    push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+                    seen_cols[out_col_name] = (ot_i, length(trans_res))
+                end
+            elseif out_col_name == AsTable || out_col_name isa AbstractVector{Symbol}
+                if firstres isa AbstractVector
+                    idx, outcol_vec, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
+                                                          Val(firstmulticol), nothing)
+                    @assert length(outcol_vec) == 1
+                    res = outcol_vec[1]
+                    @assert length(res) > 0
+
+                    kp1 = keys(res[1])
+                    prepend = all(x -> x isa Integer, kp1)
+                    if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
+                        throw(ArgumentError("keys of the returned elements must be " *
+                                            "`Symbol`s, strings or integers"))
+                    end
+                    if any(x -> !isequal(keys(x), kp1), res)
+                        throw(ArgumentError("keys of the returned elements must be identical"))
+                    end
+                    outcols = [[x[n] for x in res] for n in kp1]
+                    nms = [prepend ? Symbol("x", n) : Symbol(n) for n in kp1]
+                else
+                    if !firstmulticol
+                        firstres = Tables.columntable(firstres)
+                        fun = (x...) -> Tables.columntable(fun(x...))
+                    end
+                    idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
+                    @assert length(outcols) == length(nms)
+                end
+                if out_col_name isa AbstractVector{Symbol}
+                    if length(out_col_name) != length(nms)
+                        throw(ArgumentError("Number of returned columns does not " *
+                                            "match the length of requested output"))
+                    else
+                        nms = out_col_name
+                    end
+                end
+                for j in eachindex(outcols)
+                    outcol = outcols[j]
+                    out_col_name = nms[j]
+                    if haskey(seen_cols, out_col_name)
+                        optional, loc = seen_cols[out_col_name]
+                        # if column was seen and it is optional now ignore it
+                        if !ot_i
+                            optional, loc = seen_cols[out_col_name]
+                            # we have seen this col but it is not allowed to replace it
+                            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                            trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+                            seen_cols[out_col_name] = (ot_i, loc)
+                        end
+                    else
+                        push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+                        seen_cols[out_col_name] = (ot_i, length(trans_res))
+                    end
                 end
             else
-                push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
-                seen_cols[out_col_name] = (ot_i, length(trans_res))
+                throw(ArgumentError("unsupported target column name specifier $out_col_name"))
             end
         end
     end
@@ -1798,51 +1858,3 @@ function transform!(gd::GroupedDataFrame{DataFrame}, args...;
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
-
-
-#### OLD CODE: remove later
-
-# function _combine(fun::Base.Callable, gd::GroupedDataFrame, ::Nothing,
-#                   copycols::Bool, keeprows::Bool, renamecols::Bool)
-#     @assert copycols && !keeprows
-#     # use `similar` as `gd` might have been subsetted
-#     firstres = length(gd) > 0 ? fun(gd[1]) : fun(similar(parent(gd), 0))
-#     idx, outcols, nms = _combine_multicol(firstres, fun, gd, nothing)
-#     valscat = DataFrame(collect(AbstractVector, outcols), nms)
-#     return idx, valscat
-# end
-
-# function _combine(p::Pair, gd::GroupedDataFrame, ::Nothing,
-#                   copycols::Bool, keeprows::Bool, renamecols::Bool)
-#     # here p should not be normalized as we allow tabular return value from fun
-#     # map and combine should not dispatch here if p is isagg
-#     @assert copycols && !keeprows
-#     source_cols, (fun, out_col) = normalize_selection(index(parent(gd)), p, renamecols)
-#     parentdf = parent(gd)
-#     if source_cols isa Int
-#         incols = (parent(gd)[!, source_cols],)
-#     elseif source_cols isa AsTable
-#         incols = Tables.columntable(select(parentdf,
-#                                            source_cols.cols,
-#                                            copycols=false))
-#     else
-#         @assert source_cols isa AbstractVector{Int}
-#         incols = ntuple(i -> parent(gd)[!, source_cols[i]], length(source_cols))
-#     end
-#     firstres = length(gd) > 0 ?
-#                do_call(fun, gd.idx, gd.starts, gd.ends, gd, incols, 1) :
-#                do_call(fun, Int[], 1:1, 0:0, gd, incols, 1)
-#     idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
-#     # disallow passing target column name to genuine tables
-#     if firstres isa MULTI_COLS_TYPE
-#         if p isa Pair{<:Any, <:Pair{<:Any, <:SymbolOrString}}
-#             throw(ArgumentError("setting column name for tabular return value is disallowed"))
-#         end
-#     else
-#         # fetch auto generated or passed target column name to nms overwritting
-#         # what _combine_with_first produced
-#         nms = [out_col]
-#     end
-#     valscat = DataFrame(collect(AbstractVector, outcols), nms)
-#     return idx, valscat
-# end
