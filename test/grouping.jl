@@ -770,65 +770,70 @@ end
     # Only test that different combine syntaxes work,
     # and rely on tests below for deeper checks
     @test combine(gd, :c => sum) ==
-        combine(:c => sum, gd) ==
         combine(gd, :c => sum => :c_sum) ==
-        combine(:c => sum => :c_sum, gd) ==
         combine(gd, [:c => sum]) ==
         combine(gd, [:c => sum => :c_sum]) ==
-        combine(d -> (c_sum=sum(d.c),), gd)
-    @test_throws MethodError combine(gd, d -> (c_sum=sum(d.c),))
+        combine(d -> (c_sum=sum(d.c),), gd) ==
+        combine(gd, d -> (c_sum=sum(d.c),)) ==
+        combine(gd, d -> (c_sum=[sum(d.c)],)) ==
+        combine(gd, d -> DataFrame(c_sum=sum(d.c))) ==
+        combine(gd, :c => (x -> [sum(x)]) => [:c_sum]) ==
+        combine(gd, :c => (x -> [(c_sum=sum(x),)]) => AsTable) ==
+        combine(gd, :c => (x -> fill(sum(x),1,1)) => [:c_sum]) ==
+        combine(gd, :c => (x -> [Dict(:c_sum => sum(x))]) => AsTable)
+    @test_throws MethodError combine(:c => sum, gd)
+    @test_throws ArgumentError combine(:, gd)
 
     @test combine(gd, :c => vexp) ==
-        combine(:c => vexp, gd) ==
         combine(gd, :c => vexp => :c_function) ==
-        combine(:c => vexp => :c_function, gd) ==
-        combine(:c => c -> (c_function = vexp(c),), gd) ==
         combine(gd, [:c => vexp]) ==
         combine(gd, [:c => vexp => :c_function]) ==
-        combine(d -> (c_function=exp.(d.c),), gd)
+        combine(d -> (c_function=exp.(d.c),), gd) ==
+        combine(gd, d -> (c_function=exp.(d.c),)) ==
+        combine(gd, :c => (x -> (c_function=exp.(x),)) => AsTable) ==
+        combine(gd, :c => ByRow(exp) => :c_function) ==
+        combine(gd, :c => ByRow(x -> [exp(x)]) => [:c_function])
     @test_throws ArgumentError combine(gd, :c => c -> (c_function = vexp(c),))
-    @test_throws MethodError combine(gd, d -> (c_function=exp.(d.c),))
 
     @test combine(gd, :b => sum, :c => sum) ==
         combine(gd, :b => sum => :b_sum, :c => sum => :c_sum) ==
         combine(gd, [:b => sum, :c => sum]) ==
         combine(gd, [:b => sum => :b_sum, :c => sum => :c_sum]) ==
-        combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
-    @test_throws MethodError combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
+        combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd) ==
+        combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c))) ==
+        combine(gd, d -> (b_sum=sum(d.b),), d -> (c_sum=sum(d.c),))
 
     @test combine(gd, :b => vexp, :c => identity) ==
         combine(gd, :b => vexp => :b_function, :c => identity => :c_identity) ==
         combine(gd, [:b => vexp, :c => identity]) ==
         combine(gd, [:b => vexp => :b_function, :c => identity => :c_identity]) ==
         combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd) ==
-        combine([:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c), gd)
-    @test_throws MethodError combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c))
+        combine(gd, [:b, :c] => ((b, c) -> (b_function=vexp(b), c_identity=c)) => AsTable) ==
+        combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c))
     @test_throws ArgumentError combine(gd, [:b, :c] => (b, c) -> (b_function=vexp(b), c_identity=c))
 
-    @test combine(x -> extrema(x.c), gd) == combine(:c => (x -> extrema(x)) => :x1, gd)
-    @test combine(x -> x.b+x.c, gd) == combine([:b,:c] => (+) => :x1, gd)
-    @test combine(x -> (p=x.b, q=x.c), gd) ==
-          combine([:b,:c] => (b,c) -> (p=b,q=c), gd)
-    @test_throws MethodError combine(gd, x -> (p=x.b, q=x.c))
+    @test combine(x -> extrema(x.c), gd) == combine(gd, :c => (x -> extrema(x)) => :x1)
+    @test combine(x -> hcat(extrema(x.c)...), gd) == combine(gd, :c => (x -> [extrema(x)]) => AsTable)
+    @test combine(x -> x.b+x.c, gd) == combine(gd, [:b,:c] => (+) => :x1)
+    @test combine(x -> (p=x.b, q=x.c), gd) == combine(gd, [:b,:c] => ((b,c) -> (p=b,q=c)) => AsTable)
     @test_throws ArgumentError combine(gd, [:b,:c] => (b,c) -> (p=b,q=c))
 
     @test combine(x -> DataFrame(p=x.b, q=x.c), gd) ==
-          combine([:b,:c] => (b,c) -> DataFrame(p=b,q=c), gd)
-    @test_throws MethodError combine(gd, x -> DataFrame(p=x.b, q=x.c))
+          combine(gd, [:b,:c] => ((b,c) -> DataFrame(p=b,q=c)) => AsTable) ==
+          combine(gd, x -> DataFrame(p=x.b, q=x.c))
     @test_throws ArgumentError combine(gd, [:b,:c] => (b,c) -> DataFrame(p=b,q=c))
 
     @test combine(x -> [1 2; 3 4], gd) ==
-          combine([:b,:c] => (b,c) -> [1 2; 3 4], gd)
-    @test_throws MethodError combine(gd, x -> [1 2; 3 4])
+          combine(gd, [:b,:c] => ((b,c) -> [1 2; 3 4]) => AsTable)
     @test_throws ArgumentError combine(gd, [:b,:c] => (b,c) -> [1 2; 3 4])
 
     @test combine(nrow, gd) == combine(gd, nrow) == combine(gd, [nrow => :nrow]) ==
           combine(gd, 1 => length => :nrow)
-    @test combine(nrow => :res, gd) == combine(gd, nrow => :res) ==
+    @test combine(gd, nrow => :res) ==
           combine(gd, [nrow => :res]) == combine(gd, 1 => length => :res)
     @test combine(gd, nrow => :res, nrow, [nrow => :res2]) ==
           combine(gd, 1 => length => :res, 1 => length => :nrow, 1 => length => :res2)
-    @test_throws ArgumentError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
+    @test_throws MethodError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
     @test_throws ArgumentError combine(gd, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
     @test_throws ArgumentError combine(gd, nrow, nrow)
     @test_throws ArgumentError combine(gd, [nrow])

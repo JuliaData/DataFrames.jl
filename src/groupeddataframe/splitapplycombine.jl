@@ -453,9 +453,13 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 │ 8   │ 4     │ 1     │ 8     │ 9     │
 ```
 """
-combine(f::Base.Callable, gd::GroupedDataFrame;
-        keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
+function combine(f::Base.Callable, gd::GroupedDataFrame;
+                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+    if f isa Colon
+        throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
+    end
     return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
+end
 
 combine(gd::GroupedDataFrame,
         cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
@@ -576,7 +580,7 @@ function wrap(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}})
     if !isempty(x)
         len1 = length(x[1])
         for i in 2:length(x)
-            length(x[i]) == len1 || throw(DimensionMismatch("all vectors returned in a" *
+            length(x[i]) == len1 || throw(DimensionMismatch("all vectors returned in a " *
                                                             "NamedTuple must have the same length"))
         end
     end
@@ -1301,7 +1305,8 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
                 else
                     if !firstmulticol
                         firstres = Tables.columntable(firstres)
-                        fun = (x...) -> Tables.columntable(fun(x...))
+                        oldfun = fun
+                        fun = (x...) -> Tables.columntable(oldfun(x...))
                     end
                     idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
 
@@ -1351,6 +1356,7 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
         end
     end
 
+    isempty(trans_res) && return Int[], DataFrame()
     # idx_agg === nothing then we have only functions that
     # returned multiple rows and idx_loc = 1
     idx_loc = findfirst(x -> x.col_idx !== idx_agg, trans_res)
