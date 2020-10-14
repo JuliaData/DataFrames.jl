@@ -570,7 +570,18 @@ end
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
-wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
+wrap(x::Union{AbstractDataFrame, DataFrameRow}) = x
+wrap(x::NamedTuple) = x
+function wrap(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}})
+    if !isempty(x)
+        len1 = length(x[1])
+        for i in 2:length(x)
+            length(x[i]) == len1 || throw(DimensionMismatch("all vectors returned in a" *
+                                                            "NamedTuple must have the same length"))
+        end
+    end
+    return x
+end
 wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
@@ -1179,6 +1190,18 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
         elseif cs_i isa Base.Callable
             firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parent(gd), 0))
             idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
+
+            if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
+                NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+                # if idx_agg was not computed yet it is nothing
+                # in this case if we are not passed a vector compute it.
+                if isnothing(idx_agg)
+                    idx_agg = Vector{Int}(undef, length(gd))
+                    fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+                end
+                @assert idx == idx_agg
+                idx = idx_agg
+            end
             @assert length(outcols) == length(nms)
             for j in eachindex(outcols)
                 outcol = outcols[j]
@@ -1281,6 +1304,18 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
                         fun = (x...) -> Tables.columntable(fun(x...))
                     end
                     idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
+
+                    if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
+                        NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+                        # if idx_agg was not computed yet it is nothing
+                        # in this case if we are not passed a vector compute it.
+                        if isnothing(idx_agg)
+                            idx_agg = Vector{Int}(undef, length(gd))
+                            fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+                        end
+                        @assert idx == idx_agg
+                        idx = idx_agg
+                    end
                     @assert length(outcols) == length(nms)
                 end
                 if out_col_name isa AbstractVector{Symbol}
