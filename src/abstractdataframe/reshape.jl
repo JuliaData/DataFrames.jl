@@ -417,7 +417,7 @@ with name specified by `dest_namescol`.
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
-  This column's element type must be `AbstractString`, `Symbol`, or `Int`.
+  This column's element type must be `AbstractString` or `Symbol`.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
 - `makeunique` : if `false` (the default), an error will be raised
