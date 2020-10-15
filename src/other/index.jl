@@ -15,7 +15,7 @@ const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Colon}
 const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
 
 const COLUMNINDEX_STR = "`Symbol`, string or integer"
-const MULTICOLUMNINDEX_STR = "`:`, `All`, `Between`, `Not`, a regular expression," *
+const MULTICOLUMNINDEX_STR = "`:`, `All`, `Between`, `Not`, a regular expression, " *
                           " or a vector of `Symbol`s, strings or integers"
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
@@ -66,7 +66,7 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     xbackup = copy(x)
     processedfrom = Set{Symbol}()
     processedto = Set{Symbol}()
-    toholder = Dict{Symbol,Int}()
+    toholder = Dict{Symbol, Int}()
     for (from, to) in nms
         if from ∈ processedfrom
             copy!(x.lookup, xbackup.lookup)
@@ -343,7 +343,7 @@ end
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
-struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} <: AbstractIndex
+struct SubIndex{I<:AbstractIndex, S<:AbstractVector{Int}, T<:AbstractVector{Int}} <: AbstractIndex
     parent::I
     cols::S # columns from idx selected in SubIndex
     remap::T # reverse mapping from cols to their position in the SubIndex
@@ -355,7 +355,7 @@ Base.copy(x::SubIndex) = Index(_names(x))
 
 @inline parentcols(ind::SubIndex) = ind.cols
 
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer,AbstractVector{<:Integer}}) =
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer, AbstractVector{<:Integer}}) =
     ind.cols[idx]
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Bool) =
     throw(ArgumentError("column indexing with Bool is not allowed"))

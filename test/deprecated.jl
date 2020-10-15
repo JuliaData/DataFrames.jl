@@ -5,16 +5,16 @@ using Test, DataFrames, CategoricalArrays
 const ≅ = isequal
 
 @testset "DataFrame!" begin
-    x = [1,2,3]
-    y = [4,5,6]
-    @test DataFrame!(x=x, y=y, copycols=true) == DataFrame(x=x,y=y)
+    x = [1, 2, 3]
+    y = [4, 5, 6]
+    @test DataFrame!(x=x, y=y, copycols=true) == DataFrame(x=x, y=y)
     df1 = DataFrame(x=x, y=y)
     df2 = DataFrame!(df1)
     @test df1 == df2
     @test df1.x === df2.x
     @test df1.y === df2.y
 
-    a=[1,2,3]
+    a=[1, 2, 3]
     df = DataFrame!(:a=>a, :b=>1, :c=>1:3)
     @test propertynames(df) == [:a, :b, :c]
     @test df.a === a
@@ -55,7 +55,7 @@ end
 @testset "test categorical" begin
     df = DataFrame(x=["a", "b", "c"],
                    y=["a", "b", missing],
-                   z=[1,2,3])
+                   z=[1, 2, 3])
     for x in [df, view(df, :, :)]
         y = categorical(x)
         @test y isa DataFrame
@@ -77,7 +77,7 @@ end
         @test y.y isa Vector{Union{Missing, String}}
         @test y.z isa CategoricalVector{Int}
 
-        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+        for colsel in [:, names(x), [1, 2, 3], [true, true, true], r"", Not(r"a")]
             y = categorical(x, colsel)
             @test y isa DataFrame
             @test x ≅ y
@@ -133,9 +133,9 @@ end
     DRT = CategoricalArrays.DefaultRefType
     @test all(c -> isa(c, Vector{Union{Int, Missing}}), eachcol(categorical!(deepcopy(df))))
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-              eachcol(categorical!(deepcopy(df), [1,2])))
+              eachcol(categorical!(deepcopy(df), [1, 2])))
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-              eachcol(categorical!(deepcopy(df), [:A,:B])))
+              eachcol(categorical!(deepcopy(df), [:A, :B])))
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
                     _columns(categorical!(deepcopy(df), [:A]))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
@@ -147,9 +147,9 @@ end
 
     @test all(c -> isa(c, Vector{Union{Int, Missing}}), eachcol(categorical!(deepcopy(df))))
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-              eachcol(categorical!(deepcopy(df), Not(Not([1,2])))))
+              eachcol(categorical!(deepcopy(df), Not(Not([1, 2])))))
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-              eachcol(categorical!(deepcopy(df), Not(Not([:A,:B])))))
+              eachcol(categorical!(deepcopy(df), Not(Not([:A, :B])))))
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
                     _columns(categorical!(deepcopy(df), Not(Not([:A]))))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
@@ -163,48 +163,48 @@ end
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df)))),
-                  [CategoricalArrays.CategoricalValue{String,UInt32},
+                  [CategoricalArrays.CategoricalValue{String, UInt32},
                    Char, Bool, Int,
-                   CategoricalArrays.CategoricalValue{String,UInt32}]))
+                   CategoricalArrays.CategoricalValue{String, UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), :))),
-                  [CategoricalArrays.CategoricalValue{String,UInt32},
-                   CategoricalArrays.CategoricalValue{Char,UInt32},
-                   CategoricalArrays.CategoricalValue{Bool,UInt32},
-                   CategoricalArrays.CategoricalValue{Int,UInt32},
-                   CategoricalArrays.CategoricalValue{String,UInt32}]))
+                  [CategoricalArrays.CategoricalValue{String, UInt32},
+                   CategoricalArrays.CategoricalValue{Char, UInt32},
+                   CategoricalArrays.CategoricalValue{Bool, UInt32},
+                   CategoricalArrays.CategoricalValue{Int, UInt32},
+                   CategoricalArrays.CategoricalValue{String, UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), compress=true))),
-                  [CategoricalArrays.CategoricalValue{String,UInt8},
+                  [CategoricalArrays.CategoricalValue{String, UInt8},
                    Char, Bool, Int,
-                   CategoricalArrays.CategoricalValue{String,UInt8}]))
+                   CategoricalArrays.CategoricalValue{String, UInt8}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), names(df)))),
-                  [CategoricalArrays.CategoricalValue{String,UInt32},
-                   CategoricalArrays.CategoricalValue{Char,UInt32},
-                   CategoricalArrays.CategoricalValue{Bool,UInt32},
-                   CategoricalArrays.CategoricalValue{Int,UInt32},
-                   CategoricalArrays.CategoricalValue{String,UInt32}]))
+                  [CategoricalArrays.CategoricalValue{String, UInt32},
+                   CategoricalArrays.CategoricalValue{Char, UInt32},
+                   CategoricalArrays.CategoricalValue{Bool, UInt32},
+                   CategoricalArrays.CategoricalValue{Int, UInt32},
+                   CategoricalArrays.CategoricalValue{String, UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), names(df), compress=true))),
-                  [CategoricalArrays.CategoricalValue{String,UInt8},
-                   CategoricalArrays.CategoricalValue{Char,UInt8},
-                   CategoricalArrays.CategoricalValue{Bool,UInt8},
-                   CategoricalArrays.CategoricalValue{Int,UInt8},
-                   CategoricalArrays.CategoricalValue{String,UInt8}]))
+                  [CategoricalArrays.CategoricalValue{String, UInt8},
+                   CategoricalArrays.CategoricalValue{Char, UInt8},
+                   CategoricalArrays.CategoricalValue{Bool, UInt8},
+                   CategoricalArrays.CategoricalValue{Int, UInt8},
+                   CategoricalArrays.CategoricalValue{String, UInt8}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Not(1:0)))),
-                  [CategoricalArrays.CategoricalValue{String,UInt32},
-                   CategoricalArrays.CategoricalValue{Char,UInt32},
-                   CategoricalArrays.CategoricalValue{Bool,UInt32},
-                   CategoricalArrays.CategoricalValue{Int,UInt32},
-                   CategoricalArrays.CategoricalValue{String,UInt32}]))
+                  [CategoricalArrays.CategoricalValue{String, UInt32},
+                   CategoricalArrays.CategoricalValue{Char, UInt32},
+                   CategoricalArrays.CategoricalValue{Bool, UInt32},
+                   CategoricalArrays.CategoricalValue{Int, UInt32},
+                   CategoricalArrays.CategoricalValue{String, UInt32}]))
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Not(1:0), compress=true))),
-                  [CategoricalArrays.CategoricalValue{String,UInt8},
-                   CategoricalArrays.CategoricalValue{Char,UInt8},
-                   CategoricalArrays.CategoricalValue{Bool,UInt8},
-                   CategoricalArrays.CategoricalValue{Int,UInt8},
-                   CategoricalArrays.CategoricalValue{String,UInt8}]))
+                  [CategoricalArrays.CategoricalValue{String, UInt8},
+                   CategoricalArrays.CategoricalValue{Char, UInt8},
+                   CategoricalArrays.CategoricalValue{Bool, UInt8},
+                   CategoricalArrays.CategoricalValue{Int, UInt8},
+                   CategoricalArrays.CategoricalValue{String, UInt8}]))
 
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df), Integer))),
                   [String, Char,
-                   CategoricalArrays.CategoricalValue{Bool,UInt32},
-                   CategoricalArrays.CategoricalValue{Int,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool, UInt32},
+                   CategoricalArrays.CategoricalValue{Int, UInt32},
                    String]))
 
     df = DataFrame([["a", missing]])
@@ -223,11 +223,11 @@ end
     categorical(df, All())
     categorical(df, Between(1, 2))
     categorical!(df, All())
-    categorical!(df, Between(1,2))
+    categorical!(df, Between(1, 2))
 end
 
 @testset "deprecated describe syntax" begin
-    @test describe(DataFrame(a=[1,2]), cols = :a, :min, :min2 => minimum, "max2" => maximum, :max) ==
+    @test describe(DataFrame(a=[1, 2]), cols = :a, :min, :min2 => minimum, "max2" => maximum, :max) ==
           DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 end
 

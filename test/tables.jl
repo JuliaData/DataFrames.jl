@@ -187,7 +187,7 @@ end
     @test Tables.columntable(df3) == nt
     @test Tables.columntable(df3) !== nt
 
-    v = [(a=1,b=2), (a=3, b=4)]
+    v = [(a=1, b=2), (a=3, b=4)]
     df = DataFrame(v)
     @test size(df) == (2, 2)
     @test df.a == [1, 3]
@@ -196,7 +196,7 @@ end
 end
 
 @testset "columnindex" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(rand(3, 4))
 
     for x in (df, view(df, 1, :), view(df, 1:1, :))
         @test columnindex.(Ref(x), names(df)) == 1:4
@@ -217,32 +217,32 @@ end
 end
 
 @testset "eachrow and eachcol integration" begin
-    df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+    df = DataFrame(rand(3, 4), [:a, :b, :c, :d])
 
     df2 = DataFrame(eachrow(df))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachrow(df), copycols=false)
     @test df == df2
-    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test all(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(pairs(eachcol(df)))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(pairs(eachcol(df)), copycols=false)
     @test df == df2
-    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test all(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
     @test df == df2
-    @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test all(((a, b),) -> a == b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
     @test Tables.rowtable(df) == Tables.rowtable(eachcol(df))

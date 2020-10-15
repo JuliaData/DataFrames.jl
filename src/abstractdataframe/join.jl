@@ -6,7 +6,7 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
-const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
+const OnType = Union{SymbolOrString, NTuple{2, Symbol}, Pair{Symbol, Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
@@ -27,18 +27,18 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
             if v isa SymbolOrString
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
-            elseif v isa Union{Pair{Symbol,Symbol},
+            elseif v isa Union{Pair{Symbol, Symbol},
                                Pair{<:AbstractString, <:AbstractString}}
                 push!(left_on, Symbol(first(v)))
                 push!(right_on, Symbol(last(v)))
-            elseif v isa NTuple{2,Symbol}
+            elseif v isa NTuple{2, Symbol}
                 # an explicit error is thrown as Tuple{Symbol, Symbol} was supported in the past
                 throw(ArgumentError("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
                                     "such tuples as a value of `on` keyword argument is " *
-                                    "not supported: use `Pair{Symbol,Symbol}` instead."))
+                                    "not supported: use `Pair{Symbol, Symbol}` instead."))
             else
                 throw(ArgumentError("All elements of `on` argument to `join` must be " *
-                                    "Symbol or Pair{Symbol,Symbol}."))
+                                    "Symbol or Pair{Symbol, Symbol}."))
             end
         end
         new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
@@ -47,7 +47,7 @@ end
 
 DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{<:OnType, AbstractVector}) where
     {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
-    DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
+    DataFrameJoiner{DF1, DF2}(dfl, dfr, on)
 
 # helper map between the row indices in original and joined table
 struct RowIndexMap
@@ -421,8 +421,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     if indicator !== nothing
         refs = left_indicator + right_indicator
-        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
-        indicatorcol = CategoricalArray{String,1}(refs, pool)
+        pool = CategoricalPool{String, UInt8}(["left_only", "right_only", "both"])
+        indicatorcol = CategoricalArray{String, 1}(refs, pool)
 
         unique_indicator = indicator
         if makeunique

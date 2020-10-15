@@ -53,14 +53,14 @@ Since `df[!, :col]` does not make a copy, changing the elements of the column ve
 
 ```jldoctest dataframe
 julia> df.A
-4-element Array{Int64,1}:
+4-element Array{Int64, 1}:
  1
  2
  3
  4
 
 julia> df."A"
-4-element Array{Int64,1}:
+4-element Array{Int64, 1}:
  1
  2
  3
@@ -110,7 +110,7 @@ Column names can be obtained as strings using the `names` function:
 
 ```jldoctest dataframe
 julia> names(df)
-2-element Array{String,1}:
+2-element Array{String, 1}:
  "A"
  "B"
 ```
@@ -118,7 +118,7 @@ julia> names(df)
 To get column names as `Symbol`s use the `propertynames` function:
 ```
 julia> propertynames(df)
-2-element Array{Symbol,1}:
+2-element Array{Symbol, 1}:
  :A
  :B
 ```
@@ -143,7 +143,7 @@ julia> df.A = 1:8
 1:8
 
 julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
-8-element Array{String,1}:
+8-element Array{String, 1}:
  "M"
  "F"
  "F"
@@ -254,8 +254,8 @@ A particular common case of a collection that supports the
 [Tables.jl](https://github.com/JuliaData/Tables.jl) interface is
 a vector of `NamedTuple`s:
 ```
-julia> v = [(a=1,b=2), (a=3,b=4)]
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+julia> v = [(a=1, b=2), (a=3, b=4)]
+2-element Array{NamedTuple{(:a, :b), Tuple{Int64, Int64}}, 1}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 
@@ -272,7 +272,7 @@ You can also easily convert a data frame back to a vector of `NamedTuple`s:
 julia> using Tables
 
 julia> Tables.rowtable(df)
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+2-element Array{NamedTuple{(:a, :b), Tuple{Int64, Int64}}, 1}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 ```
@@ -438,7 +438,7 @@ julia> df[!, [:A]] == df[:, [:A]]
 true
 
 julia> df[!, :A]
-500-element Array{Int64,1}:
+500-element Array{Int64, 1}:
    1
    3
    5
@@ -653,7 +653,7 @@ julia> select(df, :x1)
 │ 1   │ 1     │
 
 julia> df[:, :x1]
-1-element Array{Int64,1}:
+1-element Array{Int64, 1}:
  1
 ```
 
@@ -897,7 +897,7 @@ julia> sort!(df)
 │ 3   │ 3     │
 
 julia> x
-3-element Array{Int64,1}:
+3-element Array{Int64, 1}:
  1
  2
  3
@@ -915,7 +915,7 @@ julia> df
 │ 3   │ 3     │
 
 julia> x
-3-element Array{Int64,1}:
+3-element Array{Int64, 1}:
  100
    2
    3
@@ -978,7 +978,7 @@ julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j",
 │ 4   │ None   │ 4     │ h      │ z      │
 
 julia> replace!(df.a, "None" => "c")
-4-element Array{String,1}:
+4-element Array{String, 1}:
  "a"
  "c"
  "b"

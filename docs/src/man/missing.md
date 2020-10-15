@@ -15,7 +15,7 @@ The `Missing` type lets users create `Vector`s and `DataFrame` columns with miss
 
 ```jldoctest missings
 julia> x = [1, 2, missing]
-3-element Array{Union{Missing, Int64},1}:
+3-element Array{Union{Missing, Int64}, 1}:
  1
  2
   missing
@@ -35,7 +35,7 @@ true
 
 ```jldoctest missings
 julia> skipmissing(x)
-Base.SkipMissing{Array{Union{Missing, Int64},1}}(Union{Missing, Int64}[1, 2, missing])
+Base.SkipMissing{Array{Union{Missing, Int64}, 1}}(Union{Missing, Int64}[1, 2, missing])
 
 ```
 
@@ -46,7 +46,7 @@ julia> sum(skipmissing(x))
 3
 
 julia> collect(skipmissing(x))
-2-element Array{Int64,1}:
+2-element Array{Int64, 1}:
  1
  2
 
@@ -56,7 +56,7 @@ The function `coalesce` can be used to replace missing values with another value
 
 ```jldoctest missings
 julia> coalesce.(x, 0)
-3-element Array{Int64,1}:
+3-element Array{Int64, 1}:
  1
  2
  0
@@ -92,7 +92,7 @@ julia> dropmissing(df, :x)
 │ 3   │ 5     │ 1      │ e       │
 ```
 
-By default the `dropmissing` and `dropmissing!` functions keep the `Union{T,Missing}` element type in columns selected for row removal. To remove the `Missing` part, if present, set the `disallowmissing` option to `true` (it will become the default behavior in the future).
+By default the `dropmissing` and `dropmissing!` functions keep the `Union{T, Missing}` element type in columns selected for row removal. To remove the `Missing` part, if present, set the `disallowmissing` option to `true` (it will become the default behavior in the future).
 
 ```jldoctest missings
 julia> dropmissing(df, disallowmissing=true)
@@ -113,10 +113,10 @@ The function `Missings.replace` returns an iterator which replaces `missing` ele
 julia> using Missings
 
 julia> Missings.replace(x, 1)
-Missings.EachReplaceMissing{Array{Union{Missing, Int64},1},Int64}(Union{Missing, Int64}[1, 2, missing], 1)
+Missings.EachReplaceMissing{Array{Union{Missing, Int64}, 1}, Int64}(Union{Missing, Int64}[1, 2, missing], 1)
 
 julia> collect(Missings.replace(x, 1))
-3-element Array{Int64,1}:
+3-element Array{Int64, 1}:
  1
  2
  1
@@ -141,21 +141,21 @@ The `missings` function constructs `Vector`s and `Array`s supporting missing val
 
 ```jldoctest missings
 julia> missings(1)
-1-element Array{Missing,1}:
+1-element Array{Missing, 1}:
  missing
 
 julia> missings(3)
-3-element Array{Missing,1}:
+3-element Array{Missing, 1}:
  missing
  missing
  missing
 
 julia> missings(1, 3)
-1×3 Array{Missing,2}:
+1×3 Array{Missing, 2}:
  missing  missing  missing
 
 julia> missings(Int, 1, 3)
-1×3 Array{Union{Missing, Int64},2}:
+1×3 Array{Union{Missing, Int64}, 2}:
  missing  missing  missing
 
 ```

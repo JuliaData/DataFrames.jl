@@ -12,16 +12,16 @@ DataFrame(columns::AbstractVector, names::AbstractVector{Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::AbstractVector, names::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
+DataFrame(columns::NTuple{N, AbstractVector}, names::NTuple{N, Symbol};
           makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,<:AbstractString};
+DataFrame(columns::NTuple{N, AbstractVector}, names::NTuple{N, <:AbstractString};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::Matrix, names::AbstractVector{Symbol}; makeunique::Bool=false)
 DataFrame(columns::Matrix, names::AbstractVector{<:AbstractString};
           makeunique::Bool=false)
 DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
+DataFrame(pairs::Pair{Symbol, <:Any}...; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(pairs::Pair{<:AbstractString, <:Any}...; makeunique::Bool=false,
           copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false, copycols::Bool=true) where {N}
@@ -86,7 +86,7 @@ performance-critical code, do not index into a `DataFrame` inside of loops.
 # Examples
 ```julia
 df = DataFrame()
-v = ["x","y","z"][rand(1:3, 10)]
+v = ["x", "y", "z"][rand(1:3, 10)]
 df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
 df2 = DataFrame(A = 1:10, B = v, C = rand(10))
 summary(df1)
@@ -97,10 +97,10 @@ df2[!, :C]
 df1[:, :A]
 df1[1:4, 1:2]
 df1[Not(1:4), Not(1:2)]
-df1[1:2, [:A,:C]]
+df1[1:2, [:A, :C]]
 df1[1:2, r"[AC]"]
-df1[:, [:A,:C]]
-df1[:, [1,3]]
+df1[:, [:A, :C]]
+df1[:, [1, 3]]
 df1[1:4, :]
 df1[1:4, :C]
 df1[1:4, :C] = 40. * df1[1:4, :C]
@@ -166,18 +166,18 @@ end
 
 DataFrame(df::DataFrame; copycols::Bool=true) = copy(df, copycols=copycols)
 
-function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false,
+function DataFrame(pairs::Pair{Symbol, <:Any}...; makeunique::Bool=false,
                    copycols::Bool=true)::DataFrame
-    colnames = [Symbol(k) for (k,v) in pairs]
-    columns = Any[v for (k,v) in pairs]
+    colnames = [Symbol(k) for (k, v) in pairs]
+    columns = Any[v for (k, v) in pairs]
     return DataFrame(columns, Index(colnames, makeunique=makeunique),
                      copycols=copycols)
 end
 
-function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
+function DataFrame(pairs::Pair{<:AbstractString, <:Any}...; makeunique::Bool=false,
                    copycols::Bool=true)::DataFrame
-    colnames = [Symbol(k) for (k,v) in pairs]
-    columns = Any[v for (k,v) in pairs]
+    colnames = [Symbol(k) for (k, v) in pairs]
+    columns = Any[v for (k, v) in pairs]
     return DataFrame(columns, Index(colnames, makeunique=makeunique),
                      copycols=copycols)
 end
@@ -665,7 +665,7 @@ julia> insertcols!(d, 2, :c => 2:4, :c => 3:5, makeunique=true)
 │ 3   │ 'c'  │ 4     │ 5     │ 3     │
 ```
 """
-function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol,<:Any}...;
+function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true)
     col_ind = Int(col isa SymbolOrString ? columnindex(df, col) : col)
     if !(0 < col_ind <= ncol(df) + 1)
@@ -755,18 +755,18 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol,<:A
     return df
 end
 
-insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString,<:Any}...;
+insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true) =
-    insertcols!(df, col, (Symbol(n) => v for (n,v) in name_cols)...,
+    insertcols!(df, col, (Symbol(n) => v for (n, v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::DataFrame, name_cols::Pair{Symbol,<:Any}...;
+insertcols!(df::DataFrame, name_cols::Pair{Symbol, <:Any}...;
             makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, ncol(df)+1, name_cols..., makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString,<:Any}...;
+insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
             makeunique::Bool=false, copycols::Bool=true) =
-    insertcols!(df, (Symbol(n) => v for (n,v) in name_cols)...,
+    insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
 function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
@@ -776,7 +776,7 @@ function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false,
     end
     if !isempty(name_cols)
         # an explicit error is thrown as keyword argument was supported in the past
-        throw(ArgumentError("inserting colums using a keyword argument is not supported," *
+        throw(ArgumentError("inserting colums using a keyword argument is not supported, " *
                             " pass a Pair as a positional argument instead"))
     end
     return df

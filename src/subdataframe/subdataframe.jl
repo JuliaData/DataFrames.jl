@@ -1,5 +1,5 @@
 """
-    SubDataFrame{<:AbstractDataFrame,<:AbstractIndex,<:AbstractVector{Int}} <: AbstractDataFrame
+    SubDataFrame{<:AbstractDataFrame, <:AbstractIndex, <:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of an `AbstractDataFrame`. It is returned by a call to the `view` function
 on an `AbstractDataFrame` if a collections of rows and columns are specified.
@@ -18,11 +18,11 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 sdf1 = view(df, 2:3) # column subsetting
-sdf2 = @view df[end:-1:1, [1,3]]  # row and column subsetting
+sdf2 = @view df[end:-1:1, [1, 3]]  # row and column subsetting
 sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 ```
 """
-struct SubDataFrame{D<:AbstractDataFrame,S<:AbstractIndex,T<:AbstractVector{Int}} <: AbstractDataFrame
+struct SubDataFrame{D<:AbstractDataFrame, S<:AbstractIndex, T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::D
     colindex::S
     rows::T # maps from subdf row indexes to parent row indexes

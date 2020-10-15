@@ -307,7 +307,7 @@ end
                    maxwidths::Vector{Int},
                    leftcol::Int,
                    rightcol::Int,
-                   rowid::Union{Int,Nothing},
+                   rowid::Union{Int, Nothing},
                    buffer::IOBuffer)
 
 Render a subset of rows and columns of an `AbstractDataFrame` to an
@@ -632,7 +632,7 @@ function _show(io::IO,
 end
 
 """
-    show([io::IO,] df::AbstractDataFrame;
+    show([io::IO, ] df::AbstractDataFrame;
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
          allgroups::Bool = !get(io, :limit, false),

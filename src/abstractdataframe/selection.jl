@@ -122,7 +122,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:ColumnIndex,<:Base.Callable}, renamecols::Bool)
+                             sel::Pair{<:ColumnIndex, <:Base.Callable}, renamecols::Bool)
     c = idx[first(sel)]
     fun = last(sel)
     if renamecols
@@ -482,7 +482,7 @@ SELECT_ARG_RULES =
     `renamecols=false`. Up to three column names are used for multiple input
     columns and they are joined using `_`; if more than three columns are passed
     then the name consists of the first two names and `etc` suffix then, e.g.
-    `[:a,:b,:c,:d] => fun` produces the new column name `:a_b_etc_fun` if
+    `[:a, :b, :c, :d] => fun` produces the new column name `:a_b_etc_fun` if
     `renamecols=true` and ``:a_b_etc` if `renamecols=false`.
     It is not allowed to pass `renamecols=false` if `old_column` is empty
     as it would generate an empty column name.
@@ -597,7 +597,7 @@ julia> select!(df, :a => ByRow(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select!(df, :, [:c, :b] => (c,b) -> c .+ b .- sum(b)/length(b))
+julia> select!(df, :, [:c, :b] => (c, b) -> c .+ b .- sum(b)/length(b))
 3×3 DataFrame
 │ Row │ c        │ b     │ c_b_function │
 │     │ Float64  │ Int64 │ Float64      │
@@ -759,7 +759,7 @@ julia> select(df, :a => ByRow(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
+julia> select(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
 │ Row │ a     │ b     │ a_b_function │
 │     │ Int64 │ Int64 │ Float64      │
@@ -889,7 +889,7 @@ julia> combine(df, :a => ByRow(sin) => :c, :b)
 │ 2   │ 0.909297 │ 5     │
 │ 3   │ 0.14112  │ 6     │
 
-julia> combine(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
+julia> combine(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
 │ Row │ a     │ b     │ a_b_function │
 │     │ Int64 │ Int64 │ Float64      │

@@ -25,10 +25,10 @@ const ≅ = isequal
     # first column stays as CategoricalArray in df3
     @test df3 == df4
     #Make sure unstack works with missing values at the start of the value column
-    df[1,:Value] = missing
+    df[1, :Value] = missing
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
-    df4[1,:Mass] = missing
+    df4[1, :Mass] = missing
     @test df2 ≅ df4
 
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
@@ -62,11 +62,11 @@ const ≅ = isequal
     @test df3 == df4
     #Make sure unstack works with missing values at the start of the value column
     allowmissing!(df, :Value)
-    df[1,:Value] = missing
+    df[1, :Value] = missing
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
     allowmissing!(df4, :Mass)
-    df4[2,:Mass] = missing
+    df4[2, :Mass] = missing
     @test df2 ≅ df4
 
     df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
@@ -89,9 +89,9 @@ const ≅ = isequal
     @test_throws TypeError unstack(df, :Key, :Value, renamecols=Symbol)
 
     # test missing value in grouping variable
-    mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
-    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+    mdf = DataFrame(id=[missing, 1, 2, 3], a=1:4, b=1:4)
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[1:3, :] == sort(mdf)[1:3, :]
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[1:3, :] == sort(mdf)[1:3, :]
     @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
     @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
 
@@ -158,7 +158,7 @@ end
     b = unstack(df, :variable, :value)
     @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
 
-    df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
+    df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1, 1])
     @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
     @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :id, :variable, :value)
 end
@@ -225,14 +225,14 @@ end
     @test d1s2 == d1s3
     @test propertynames(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
-    d1m = stack(d1[:, [1,3,4]], Not(:a))
+    d1m = stack(d1[:, [1, 3, 4]], Not(:a))
     @test propertynames(d1m) == [:a, :variable, :value]
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
     @test propertynames(d1s_named) == [:c, :d, :e, :letter, :someval]
-    d1m_named = stack(d1[:, [1,3,4]], Not(:a), variable_name=:letter, value_name=:someval)
+    d1m_named = stack(d1[:, [1, 3, 4]], Not(:a), variable_name=:letter, value_name=:someval)
     @test propertynames(d1m_named) == [:a, :letter, :someval]
 
     # test empty measures or ids
@@ -270,21 +270,21 @@ end
     @test d1s[!, 5] isa DataFrames.StackedVector
     @test ndims(d1s[!, 5]) == 1
     @test ndims(typeof(d1s[!, 2])) == 1
-    @test d1s[!, 4][[1,24]] == ["a", "b"]
-    @test d1s[!, 5][[1,24]] == [1, 4]
+    @test d1s[!, 4][[1, 24]] == ["a", "b"]
+    @test d1s[!, 5][[1, 24]] == [1, 4]
     @test_throws ArgumentError d1s[!, 4][true]
     @test_throws ArgumentError d1s[!, 5][true]
     @test_throws ArgumentError d1s[!, 4][1.0]
     @test_throws ArgumentError d1s[!, 5][1.0]
 
     d1ss = stack(d1, [:a, :b], view=true)
-    @test d1ss[!, 4][[1,24]] == ["a", "b"]
+    @test d1ss[!, 4][[1, 24]] == ["a", "b"]
     @test d1ss[!, 4] isa DataFrames.RepeatedVector
     d1ss = stack(d1, [:a, :b], view=true, variable_eltype=String)
-    @test d1ss[!, 4][[1,24]] == ["a", "b"]
+    @test d1ss[!, 4][[1, 24]] == ["a", "b"]
     @test d1ss[!, 4] isa DataFrames.RepeatedVector
     d1ss = stack(d1, [:a, :b], view=true, variable_eltype=Symbol)
-    @test d1ss[!, 4][[1,24]] == [:a, :b]
+    @test d1ss[!, 4][[1, 24]] == [:a, :b]
     @test d1ss[!, 4] isa DataFrames.RepeatedVector
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
@@ -307,7 +307,7 @@ end
     @test d1s2 == d1s3
     @test propertynames(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
-    d1m = stack(d1[:, [1,3,4]], Not(:a), view=true)
+    d1m = stack(d1[:, [1, 3, 4]], Not(:a), view=true)
     @test propertynames(d1m) == [:a, :variable, :value]
 
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
@@ -329,13 +329,13 @@ end
     @test d1us3 == unstack(d1s2)
 
     # test unstack with exactly one key column that is not passed
-    df1 = stack(DataFrame(rand(10,10)))
+    df1 = stack(DataFrame(rand(10, 10)))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
     # test empty keycol
-    @test_throws ArgumentError unstack(stack(DataFrame(rand(3,2))), :variable, :value)
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(3, 2))), :variable, :value)
 end
 
 @testset "column names duplicates" begin
@@ -494,7 +494,7 @@ end
 end
 
 @testset "test stack eltype" begin
-    df = DataFrame(rand(4,5))
+    df = DataFrame(rand(4, 5))
     sdf = stack(df)
     @test eltype(sdf.variable) === String
     @test eltype(typeof(sdf.variable)) === String

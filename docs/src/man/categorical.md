@@ -4,7 +4,7 @@ Often, we have to deal with factors that take on a small number of levels:
 
 ```jldoctest categorical
 julia> v = ["Group A", "Group A", "Group A", "Group B", "Group B", "Group B"]
-6-element Array{String,1}:
+6-element Array{String, 1}:
  "Group A"
  "Group A"
  "Group A"
@@ -22,7 +22,7 @@ into a small pool of levels. This is what the `CategoricalArray` type does:
 julia> using CategoricalArrays
 
 julia> cv = CategoricalArray(v)
-6-element CategoricalArray{String,1,UInt32}:
+6-element CategoricalArray{String, 1, UInt32}:
  "Group A"
  "Group A"
  "Group A"
@@ -37,7 +37,7 @@ julia> cv = CategoricalArray(v)
 ```jldoctest categorical
 julia> cv = CategoricalArray(["Group A", missing, "Group A",
                               "Group B", "Group B", missing])
-6-element CategoricalArray{Union{Missing, String},1,UInt32}:
+6-element CategoricalArray{Union{Missing, String}, 1, UInt32}:
  "Group A"
  missing
  "Group A"
@@ -52,7 +52,7 @@ the `levels` function (note that levels may or may not be actually used in the d
 
 ```jldoctest categorical
 julia> levels(cv)
-2-element Array{String,1}:
+2-element Array{String, 1}:
  "Group A"
  "Group B"
 
@@ -65,12 +65,12 @@ which can be useful for display purposes or when working with ordered variables.
 julia> levels!(cv, ["Group B", "Group A"]);
 
 julia> levels(cv)
-2-element Array{String,1}:
+2-element Array{String, 1}:
  "Group B"
  "Group A"
 
 julia> sort(cv)
-6-element CategoricalArray{Union{Missing, String},1,UInt32}:
+6-element CategoricalArray{Union{Missing, String}, 1, UInt32}:
  "Group B"
  "Group B"
  "Group A"
@@ -85,7 +85,7 @@ You can use less memory by calling the `compress` function:
 
 ```jldoctest categorical
 julia> cv = compress(cv)
-6-element CategoricalArray{Union{Missing, String},1,UInt8}:
+6-element CategoricalArray{Union{Missing, String}, 1, UInt8}:
  "Group A"
  missing
  "Group A"
@@ -100,7 +100,7 @@ function. It additionally accepts a keyword argument `compress` which when set t
 is equivalent to calling `compress` on the new vector:
 ```jldoctest categorical
 julia> cv1 = categorical(["A", "B"], compress=true)
-2-element CategoricalArray{String,1,UInt8}:
+2-element CategoricalArray{String, 1, UInt8}:
  "A"
  "B"
 ```
@@ -109,7 +109,7 @@ If the `ordered` keyword argument is set to `true`, the resulting `CategoricalAr
 ordered, which means that its levels can be tested for order (rather than throwing an error):
 ```jldoctest categorical
 julia> cv2 = categorical(["A", "B"], ordered=true)
-2-element CategoricalArray{String,1,UInt32}:
+2-element CategoricalArray{String, 1, UInt32}:
  "A"
  "B"
 
@@ -128,7 +128,7 @@ julia> isordered(cv1)
 false
 
 julia> ordered!(cv1, true)
-2-element CategoricalArray{String,1,UInt8}:
+2-element CategoricalArray{String, 1, UInt8}:
  "A"
  "B"
 

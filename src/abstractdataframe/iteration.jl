@@ -6,14 +6,14 @@
 
 # Iteration by rows
 """
-    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
+    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D, S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame,S} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame, S} <: AbstractVector{DataFrameRow{D, S}}
     df::D
 end
 
@@ -62,13 +62,13 @@ x  4
 y  14
 
 julia> copy.(eachrow(df))
-4-element Array{NamedTuple{(:x, :y),Tuple{Int64,Int64}},1}:
+4-element Array{NamedTuple{(:x, :y), Tuple{Int64, Int64}}, 1}:
  (x = 1, y = 11)
  (x = 2, y = 12)
  (x = 3, y = 13)
  (x = 4, y = 14)
 
-julia> eachrow(view(df, [4,3], [2,1]))
+julia> eachrow(view(df, [4, 3], [2, 1]))
 2-element DataFrameRows:
  DataFrameRow (row 4)
 y  14
@@ -149,19 +149,19 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 4   │ 4     │ 14    │
 
 julia> collect(eachcol(df))
-2-element Array{AbstractArray{T,1} where T,1}:
+2-element Array{AbstractArray{T, 1} where T, 1}:
  [1, 2, 3, 4]
  [11, 12, 13, 14]
 
 julia> map(eachcol(df)) do col
            maximum(col) - minimum(col)
        end
-2-element Array{Int64,1}:
+2-element Array{Int64, 1}:
  3
  3
 
 julia> sum.(eachcol(df))
-2-element Array{Int64,1}:
+2-element Array{Int64, 1}:
  10
  50
 ```
@@ -319,7 +319,7 @@ Base.show(dfcs::DataFrameColumns;
          rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
 
 """
-    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+    mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
 
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -351,7 +351,7 @@ julia> mapcols(x -> x.^2, df)
 │ 4   │ 16    │ 196   │
 ```
 """
-function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     vs = AbstractVector[]
     seenscalar = false
@@ -376,7 +376,7 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
 end
 
 """
-    mapcols!(f::Union{Function,Type}, df::DataFrame)
+    mapcols!(f::Union{Function, Type}, df::DataFrame)
 
 Update a `DataFrame` in-place where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -409,7 +409,7 @@ julia> df
 │ 4   │ 16    │ 196   │
 ```
 """
-function mapcols!(f::Union{Function,Type}, df::DataFrame)
+function mapcols!(f::Union{Function, Type}, df::DataFrame)
     # note: `f` must return a consistent length
     ncol(df) == 0 && return df # skip if no columns
 

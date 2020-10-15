@@ -59,7 +59,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 
 `getindex` on `DataFrame`:
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[!, col][row]`;
-* `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
+* `df[CartesianIndex(row, col)]` -> the same as `df[row, col]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df`;
 * `df[rows, col]` -> a copy of the vector `df[!, col]` with only the entries corresponding to `rows` selected,
                      the same as `df[!, col][rows]`;
@@ -79,7 +79,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 
 `getindex` on `SubDataFrame`:
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
-* `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row,col]`;
+* `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row, col]`;
 * `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)`;
 * `sdf[rows, col]` -> a copy of `sdf[!, col]` with only rows `rows` selected, the same as `sdf[!, col][rows]`;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;

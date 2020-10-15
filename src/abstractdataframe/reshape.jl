@@ -1,5 +1,5 @@
 """
-    stack(df::AbstractDataFrame, [measure_vars], [id_vars];
+    stack(df::AbstractDataFrame [measure_vars], [id_vars];
           variable_name=:variable, value_name=:value,
           view::Bool=false, variable_eltype::Type=String)
 
@@ -181,7 +181,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
     Ncol = length(keycol.pool)
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
     hadmissing = false # have we encountered missing in refkeycol
-    mask_filled = falses(Nrow+1, Ncol) # has a given [row,col] entry been filled?
+    mask_filled = falses(Nrow+1, Ncol) # has a given [row, col] entry been filled?
     warned_dup = false # have we already printed duplicate entries warning?
     warned_missing = false # have we already printed missing in keycol warning?
     for k in 1:nrow(df)
@@ -277,7 +277,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         i = rowkey[k]
         if !warned_dup && mask_filled[i, kref]
             @warn("Duplicate entries in unstack at row $k for key "*
-                 "$(tuple((df[k,s] for s in rowkeys)...)) and variable $(keycol[k]).")
+                 "$(tuple((df[k, s] for s in rowkeys)...)) and variable $(keycol[k]).")
             warned_dup = true
         end
         unstacked_val[kref][i] = valuecol[k]
@@ -305,7 +305,7 @@ StackedVector(d::AbstractVector)
 
 # Examples
 ```julia
-StackedVector(Any[[1,2], [9,10], [11,12]])  # [1,2,9,10,11,12]
+StackedVector(Any[[1, 2], [9, 10], [11, 12]])  # [1, 2, 9, 10, 11, 12]
 ```
 """
 struct StackedVector{T} <: AbstractVector{T}
@@ -364,9 +364,9 @@ to `repeat`.
 
 # Examples
 ```julia
-RepeatedVector([1,2], 3, 1)   # [1,1,1,2,2,2]
-RepeatedVector([1,2], 1, 3)   # [1,2,1,2,1,2]
-RepeatedVector([1,2], 2, 2)   # [1,2,1,2,1,2,1,2]
+RepeatedVector([1, 2], 3, 1)   # [1, 1, 1, 2, 2, 2]
+RepeatedVector([1, 2], 1, 3)   # [1, 2, 1, 2, 1, 2]
+RepeatedVector([1, 2], 2, 2)   # [1, 2, 1, 2, 1, 2, 1, 2]
 ```
 """
 struct RepeatedVector{T} <: AbstractVector{T}
@@ -382,7 +382,7 @@ CategoricalArrays.isordered(v::RepeatedVector{<:Union{CategoricalValue, Missing}
 
 function Base.getindex(v::RepeatedVector, i::Int)
     N = length(parent(v))
-    idx = Base.fld1(mod1(i,v.inner*N),v.inner)
+    idx = Base.fld1(mod1(i, v.inner*N), v.inner)
     parent(v)[idx]
 end
 

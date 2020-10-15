@@ -90,13 +90,13 @@ function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering
     pp = similar(p)
     c = _columns(df)
 
-    for (i,col) in enumerate(c)
+    for (i, col) in enumerate(c)
         # Check if this column has been sorted already
         if any(j -> c[j]===col, 1:i-1)
             continue
         end
 
-        copyto!(pp,p)
+        copyto!(pp, p)
         Base.permute!!(col, pp)
     end
     return df

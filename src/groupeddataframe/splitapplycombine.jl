@@ -589,7 +589,7 @@ function gen_groups(idx::Vector{Int})
 end
 
 function combine_helper(f, gd::GroupedDataFrame,
-                        nms::Union{AbstractVector{Symbol},Nothing}=nothing;
+                        nms::Union{AbstractVector{Symbol}, Nothing}=nothing;
                         keepkeys::Bool, ungroup::Bool,
                         copycols::Bool, keeprows::Bool, renamecols::Bool)
     if !ungroup && !keepkeys
@@ -619,7 +619,7 @@ function combine_helper(f, gd::GroupedDataFrame,
     if length(idx) == 0 && !(keeprows && length(keys) > 0)
         @assert nrow(newparent) == 0
         return GroupedDataFrame(newparent, copy(gd.cols), Int[],
-                                Int[], Int[], Int[], 0, Dict{Any,Int}(),
+                                Int[], Int[], Int[], 0, Dict{Any, Int}(),
                                 Threads.ReentrantLock())
     elseif keeprows
         @assert length(keys) > 0 || idx == gd.idx

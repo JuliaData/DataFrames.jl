@@ -40,13 +40,13 @@ using Test, DataFrames
     @test collect(eachcol(df)) isa Vector{AbstractVector}
     @test collect(eachcol(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == AbstractVector
-    @test_throws ArgumentError eachcol(df)[[1,1]]
+    @test_throws ArgumentError eachcol(df)[[1, 1]]
     @test eachcol(df)[[1]][1] === df.A
     for col in eachcol(df)
         @test isa(col, AbstractVector)
     end
 
-    @test map(x -> minimum(convert(Vector, x)), eachrow(df)) == [1,2]
+    @test map(x -> minimum(convert(Vector, x)), eachrow(df)) == [1, 2]
     @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
     @test mapcols(minimum, df) == DataFrame(A = [1], B = [2])
     @test map(minimum, eachcol(df)) == [1, 2]
@@ -61,7 +61,7 @@ end
     @test mapcols(sum, df_mapcols) == DataFrame(a=55, b=155)
     @test mapcols(x -> 1, df_mapcols) == DataFrame(a=1, b=1)
     @test_throws ArgumentError mapcols(x -> x[1] == 1 ? 0 : [0], df_mapcols)
-    @test_throws DimensionMismatch mapcols(x -> x[1] == 1 ? [1] : [1,2], df_mapcols)
+    @test_throws DimensionMismatch mapcols(x -> x[1] == 1 ? [1] : [1, 2], df_mapcols)
     @test_throws ArgumentError mapcols(x -> x[1] == 1 ? x : 0, df_mapcols)
     @test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
     df_mapcols2 = mapcols(x -> x, df_mapcols)
@@ -84,7 +84,7 @@ end
 
     df_mapcols = DataFrame(a=1:10, b=11:20)
     @test_throws ArgumentError mapcols!(x -> x[1] == 1 ? 0 : [0], df_mapcols)
-    @test_throws DimensionMismatch mapcols!(x -> x[1] == 1 ? [1] : [1,2], df_mapcols)
+    @test_throws DimensionMismatch mapcols!(x -> x[1] == 1 ? [1] : [1, 2], df_mapcols)
     @test_throws ArgumentError mapcols!(x -> x[1] == 1 ? x : 0, df_mapcols)
     @test_throws ArgumentError mapcols!(x -> x[1] != 1 ? x : 0, df_mapcols)
     @test df_mapcols == DataFrame(a=1:10, b=11:20)
@@ -98,17 +98,17 @@ end
 
 @testset "SubDataFrame" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
-    sdf = view(df, [3,1,4], [3,1,4])
-    @test sdf == df[[3,1,4], [3,1,4]]
-    @test eachrow(sdf) == eachrow(df[[3,1,4], [3,1,4]])
+    sdf = view(df, [3, 1, 4], [3, 1, 4])
+    @test sdf == df[[3, 1, 4], [3, 1, 4]]
+    @test eachrow(sdf) == eachrow(df[[3, 1, 4], [3, 1, 4]])
     @test size(eachrow(sdf)) == (3,)
-    @test eachcol(sdf) == eachcol(df[[3,1,4], [3,1,4]])
+    @test eachcol(sdf) == eachcol(df[[3, 1, 4], [3, 1, 4]])
     @test length(eachcol(sdf)) == 3
 end
 
 @testset "parent mutation" begin
     df = DataFrame([11:16 21:26 31:36 41:46])
-    sdf = view(df, [3,1,4], [3,1,4])
+    sdf = view(df, [3, 1, 4], [3, 1, 4])
     erd = eachrow(df)
     erv = eachrow(sdf)
     rename!(df, Symbol.(string.("y", 1:4)))
@@ -117,7 +117,7 @@ end
     @test copy(erv[1]) == (y3=33, y1=53, y4=43)
     df[!, :z] .= 1
     @test length(erd[1]) == 5 # the added column is reflected
-    select!(df, Not([4,5]))
+    select!(df, Not([4, 5]))
     @test copy(erd[1]) == (y1 = 51, y2 = 21, y3 = 31) # the removed columns are reflected
 end
 
