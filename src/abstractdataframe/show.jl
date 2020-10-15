@@ -632,7 +632,7 @@ function _show(io::IO,
 end
 
 """
-    show([io::IO, ] df::AbstractDataFrame;
+    show([io::IO,] df::AbstractDataFrame;
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
          allgroups::Bool = !get(io, :limit, false),

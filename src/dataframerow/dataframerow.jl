@@ -318,7 +318,7 @@ end
 Base.view(r::DataFrameRow, ::Colon) = r
 
 """
-    size(dfr::DataFrameRow, [dim])
+    size(dfr::DataFrameRow [, dim])
 
 Return a 1-tuple containing the number of elements of `dfr`.
 If an optional dimension `dim` is specified, it must be `1`, and the number of
