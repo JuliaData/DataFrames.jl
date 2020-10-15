@@ -499,11 +499,11 @@ end
     df1 = DataFrame(A = 1, B = 1, C = 1, D = 1)
     df2 = DataFrame(A = 1, C = 1, D = 1, E = 1, F = 1)
     err = @test_throws ArgumentError vcat(df1, df2)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, and" *
-                           " column(s) B are missing from argument(s) 2"
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, and " *
+                           "column(s) B are missing from argument(s) 2"
     err = @test_throws ArgumentError vcat(df1, df1, df2, df2)
     @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, " *
-                           " and column(s) B are missing from argument(s) 3 and 4"
+                           "and column(s) B are missing from argument(s) 3 and 4"
     df3 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1)
     err = @test_throws ArgumentError vcat(df1, df2, df3)
     @test err.value.msg == "column(s) E and F are missing from argument(s) 1, " *
@@ -511,10 +511,10 @@ end
                            "column(s) F are missing from argument(s) 3"
     err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3)
     @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, " *
-                           " column(s) B are missing from argument(s) 3 and 4, " *
+                           "column(s) B are missing from argument(s) 3 and 4, " *
                            "and column(s) F are missing from argument(s) 5 and 6"
     err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, " *
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3," *
                            " column(s) B are missing from argument(s) 4, 5 and 6, and" *
                            " column(s) F are missing from argument(s) 7, 8 and 9"
     # df4 is a superset of names found in all other DataFrames and won't be shown in error
@@ -525,8 +525,8 @@ end
                            "column(s) F are missing from argument(s) 3"
     err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3, df4, df4)
     @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, " *
-                           " column(s) B are missing from argument(s) 3 and 4, and" *
-                           " column(s) F are missing from argument(s) 5 and 6"
+                           "column(s) B are missing from argument(s) 3 and 4, and " *
+                           "column(s) F are missing from argument(s) 5 and 6"
     err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2,
                                           df3, df3, df3, df4, df4, df4)
     @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 " *
@@ -534,8 +534,8 @@ end
                            "and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
     err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2,
                                           df3, df4, df1, df2, df3, df4)
-    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9" *
-                           ", column(s) B are missing from argument(s) 2, 6 and 10, " *
+    @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, " *
+                           "column(s) B are missing from argument(s) 2, 6 and 10, " *
                            "and column(s) F are missing from argument(s) 3, 7 and 11"
 end
 
