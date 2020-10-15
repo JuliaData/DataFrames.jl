@@ -513,7 +513,7 @@ end
     @test_throws MethodError transpose(df1)
     @test_throws ArgumentError permutedims(df1, :bar)
 
-    df1_pd = permutedims(df1)
+    df1_pd = permutedims(df1, 1)
     @test size(df1_pd, 1) == ncol(df1) - 1
     @test size(df1_pd, 2) == nrow(df1) + 1
     @test names(df1_pd) == ["a", "x", "y"]
@@ -531,7 +531,7 @@ end
 
     df2 = DataFrame(a=["x", "y"], b=[1.0, "str"], c=[1, 2], d=rand(Bool, 2))
 
-    df2_pd = permutedims(df2)
+    df2_pd = permutedims(df2, :a)
     @test size(df2_pd, 1) == ncol(df2) - 1
     @test size(df2_pd, 2) == nrow(df2) + 1
     @test names(df2_pd) == ["a", "x", "y"]
@@ -546,10 +546,10 @@ end
     df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool, 10))
 
     d3pd_names = ["a", "x", ("x_$i" for i in 1:9)...]
-    @test_throws ArgumentError permutedims(df3)
-    @test names(permutedims(df3, makeunique=true)) == d3pd_names
-    @test_throws ArgumentError permutedims(df3[!, [:a]]) # single column branch
-    @test names(permutedims(df3[!, [:a]], makeunique=true)) == d3pd_names
+    @test_throws ArgumentError permutedims(df3, 1)
+    @test names(permutedims(df3, 1, makeunique=true)) == d3pd_names
+    @test_throws ArgumentError permutedims(df3[!, [:a]], 1) # single column branch
+    @test names(permutedims(df3[!, [:a]], 1, makeunique=true)) == d3pd_names
 
     df4 = DataFrame(a=rand(2), b=rand(2), c=[1, 2], d=[1., missing],
                     e=["x", "y"], f=[:x, :y], # valid src
@@ -557,20 +557,20 @@ end
                     )
 
     @test permutedims(df4[!, [:a, :b, :c, :e]], :e) ==
-          permutedims(df4[!, [:e, :a, :b, :c]]) ==
+          permutedims(df4[!, [:e, :a, :b, :c]], 1) ==
           permutedims(df4[!, [:a, :b, :c, :f]], :f, :e)
     # Can permute single-column
-    @test permutedims(df4[!, [:e]]) == DataFrame(e=String[], x=[], y=[])
+    @test permutedims(df4[!, [:e]], 1) == DataFrame(e=String[], x=[], y=[])
     # Can't index float Column
-    @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]])
-    @test_throws ArgumentError permutedims(DataFrame(a=Float64[], b=Float64[]))
+    @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]], 1)
+    @test_throws ArgumentError permutedims(DataFrame(a=Float64[], b=Float64[]), 1)
     # Can't index columns that allow for missing
-    @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]])
-    @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]])
+    @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]], 1)
+    @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]], 1)
     # Can't permute empty `df` ...
-    @test_throws BoundsError permutedims(DataFrame())
+    @test_throws BoundsError permutedims(DataFrame(), 1)
     # ... but can permute zero-row df
-    @test permutedims(DataFrame(a=String[], b=Float64[])) == DataFrame(a=["b"])
+    @test permutedims(DataFrame(a=String[], b=Float64[]), 1) == DataFrame(a=["b"])
 end
 
 end # module
