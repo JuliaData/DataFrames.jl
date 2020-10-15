@@ -405,12 +405,12 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
 
 """
-    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, <:AbstractString}
-                [, dest_namescol::Union{Symbol, AbstractString}];
+    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, AbstractString},
+                [dest_namescol::Union{Symbol, AbstractString}];
                 makeunique::Bool=false)
 
 Turn `df` on its side such that rows become columns
-and the column indexed by `src_namescol` becomes the names of new columns.
+and values in the column indexed by `src_namescol` become the names of new columns.
 In the resulting `DataFrame`, column names of `df` will become the first column
 with name specified by `dest_namescol`.
 
@@ -484,7 +484,8 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
     df_permuted = DataFrame(dest_namescol => names(df_notsrc))
 
     if ncol(df_notsrc) == 0
-        df_tmp = DataFrame((n=>[] for n in df[!, src_namescol])..., makeunique=makeunique)
+        df_tmp = DataFrame(AbstractVector[[] for _ in 1:nrow(df)], df[!, src_namescol],
+                           makeunique=makeunique, copycols=false)
     else
         m = permutedims(Matrix(df_notsrc))
         df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
