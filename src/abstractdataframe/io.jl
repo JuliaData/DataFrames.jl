@@ -80,7 +80,7 @@ function html_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               summary::Bool=true, eltypes::Bool=true, rowid::Union{Int,Nothing}=nothing)
+               summary::Bool=true, eltypes::Bool=true, rowid::Union{Int, Nothing}=nothing)
     _check_consistency(df)
 
     # we will pass around this buffer to avoid its reallocation in ourstrwidth
@@ -248,7 +248,7 @@ function latex_char_escape(char::Char)
 end
 
 function latex_escape(cell::AbstractString)
-    replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
+    replace(cell, ['\\', '~', '#', '$', '%', '&', '_', '^', '{', '}']=>latex_char_escape)
 end
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
