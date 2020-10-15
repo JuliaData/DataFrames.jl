@@ -417,7 +417,7 @@ with name specified by `dest_namescol`.
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
-  This column's element type must be `AbstractString` or `Symbol`.
+  This column's element type must be `AbstractString`, `Symbol`, or `Int`.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
 - `makeunique` : if `false` (the default), an error will be raised
@@ -443,14 +443,6 @@ julia> df1 = DataFrame(a=["x", "y"], b=[1., 2.], c=[3, 4], d=[true,false])
 │ 1   │ x      │ 1.0     │ 3     │ 1    │
 │ 2   │ y      │ 2.0     │ 4     │ 0    │
 
-julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3, 4], d=[true, false])
-2×4 DataFrame
-│ Row │ a      │ b   │ c     │ d    │
-│     │ String │ Any │ Int64 │ Bool │
-├─────┼────────┼─────┼───────┼──────┤
-│ 1   │ x      │ 1   │ 3     │ 1    │
-│ 2   │ y      │ two │ 4     │ 0    │
-
 julia> permutedims(df1, 1) # note the column types
 3×3 DataFrame
 │ Row │ a      │ x       │ y       │
@@ -460,14 +452,22 @@ julia> permutedims(df1, 1) # note the column types
 │ 2   │ c      │ 3.0     │ 4.0     │
 │ 3   │ d      │ 1.0     │ 0.0     │
 
-julia> permutedims(df2, 1)
+julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3, 4], d=[true, false])
+2×4 DataFrame
+│ Row │ a      │ b   │ c     │ d    │
+│     │ String │ Any │ Int64 │ Bool │
+├─────┼────────┼─────┼───────┼──────┤
+│ 1   │ x      │ 1   │ 3     │ 1    │
+│ 2   │ y      │ two │ 4     │ 0    │
+
+julia> permutedims(df2, 1, "different_name")
 3×3 DataFrame
-│ Row │ a      │ x   │ y   │
-│     │ String │ Any │ Any │
-├─────┼────────┼─────┼─────┤
-│ 1   │ b      │ 1   │ two │
-│ 2   │ c      │ 3   │ 4   │
-│ 3   │ d      │ 1   │ 0   │
+│ Row │ different_name │ x   │ y   │
+│     │ String         │ Any │ Any │
+├─────┼────────────────┼─────┼─────┤
+│ 1   │ b              │ 1   │ two │
+│ 2   │ c              │ 3   │ 4   │
+│ 3   │ d              │ 1   │ 0   │
 ```
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
