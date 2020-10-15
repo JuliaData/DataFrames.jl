@@ -35,7 +35,7 @@ const _PRETTY_TABLES_HIGHLIGHTER = Highlighter(_pretty_tables_highlighter_func,
 #     - nothing;
 #     - Cells with types related to DataFrames.jl.
 
-function _pretty_tables_formatter(v, i, j, truncstring = 32)
+function _pretty_tables_formatter(v, i, j)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
@@ -44,10 +44,6 @@ function _pretty_tables_formatter(v, i, j, truncstring = 32)
         # overflow.
         str = sprint(summary, v)
         return str
-    elseif typeof(v) <: Unsigned
-        # In case of an `Unsigned` value, use `show` to obtain the
-        # representation instead of `print` that is used by PrettyTables.
-        return sprint(show, v, context = :compact => true)
     elseif ismissing(v)
         return "missing"
     elseif v === nothing

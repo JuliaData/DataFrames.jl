@@ -600,9 +600,6 @@ function _show(io::IO,
     # `pretty_table`.
     title = summary ? Base.summary(df) : ""
 
-    # Create the formatter considering the current maximum size of the strings.
-    _formatter = (v, i, j) -> _pretty_tables_formatter(v, i, j, truncate)
-
     # If `rowid` is not `nothing`, then we are printing a data row. In this
     # case, we will add this information using the row name column of
     # PrettyTables.jl. Otherwise, we can just use the row number column.
@@ -622,7 +619,7 @@ function _show(io::IO,
                  continuation_row_alignment  = :l,
                  crop                        = crop,
                  crop_num_lines_at_beginning = 2,
-                 formatters                  = (_formatter,),
+                 formatters                  = (_pretty_tables_formatter,),
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
                  maximum_columns_width       = truncate,
                  newline_at_end              = false,
