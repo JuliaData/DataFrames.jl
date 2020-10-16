@@ -74,6 +74,9 @@
   which if set to `true` makes them retun a `SubDataFrame` view into the passed
   data frame.
 * add `only` method for `AbstractDataFrame` ([#2449](https://github.com/JuliaData/DataFrames.jl/pull/2449))
+* passing empty sets of columns in `filter`/`filter!` and in `select`/`transform`/`combine`
+  with `ByRow` is now accepted ([#2476](https://github.com/JuliaData/DataFrames.jl/pull/2476))
+* add `permutedims` method for `AbstractDataFrame` ([#2447](https://github.com/JuliaData/DataFrames.jl/pull/2447))
 
 ## Deprecated
 

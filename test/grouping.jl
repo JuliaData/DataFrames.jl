@@ -594,6 +594,122 @@ end
     end
 end
 
+@testset "grouping arrays that allow missing without missings" begin
+    xv = ["A", "B", "B", "B", "A", "B", "A", "A"]
+    yv = ["B", "A", "A", "B", "A", "B", "A", "A"]
+    xvars = (xv,
+             categorical(xv),
+             levels!(categorical(xv), ["A", "B", "X"]),
+             levels!(categorical(xv), ["X", "B", "A"]),
+             _levels!(PooledArray(xv), ["A", "B"]),
+             _levels!(PooledArray(xv), ["B", "A", "X"]),
+             _levels!(PooledArray(xv), ["X", "A", "B"]))
+    yvars = (yv,
+             categorical(yv),
+             levels!(categorical(yv), ["A", "B", "X"]),
+             levels!(categorical(yv), ["B", "X", "A"]),
+             _levels!(PooledArray(yv), ["A", "B"]),
+             _levels!(PooledArray(yv), ["A", "B", "X"]),
+             _levels!(PooledArray(yv), ["B", "A", "X"]))
+    for x in xvars, y in yvars,
+        fx in (identity, allowmissing),
+        fy in (identity, allowmissing)
+        df = DataFrame(Key1 = fx(x), Key2 = fy(y), Value = 1:8)
+
+        @testset "sort=false, skipmissing=false" begin
+            gd = groupby_checked(df, :Key1)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                    DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6]),
+                ])
+
+            gd = groupby_checked(df, [:Key1, :Key2])
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                    DataFrame(Key1="A", Key2="B", Value=1),
+                    DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                    DataFrame(Key1="B", Key2="B", Value=[4, 6])
+                ])
+        end
+
+        @testset "sort=false, skipmissing=true" begin
+            gd = groupby_checked(df, :Key1, skipmissing=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6])
+            ])
+
+            gd = groupby_checked(df, [:Key1, :Key2], skipmissing=true)
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                    DataFrame(Key1="A", Key2="B", Value=1),
+                    DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                    DataFrame(Key1="B", Key2="B", Value=[4, 6])
+                ])
+        end
+
+        @testset "sort=true, skipmissing=false" begin
+            gd = groupby_checked(df, :Key1, sort=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6]),
+            ])
+            @test issorted(vcat(gd...), :Key1)
+
+            gd = groupby_checked(df, [:Key1, :Key2], sort=true)
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                DataFrame(Key1="A", Key2="B", Value=1),
+                DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                DataFrame(Key1="B", Key2="B", Value=[4, 6]),
+            ])
+            @test issorted(vcat(gd...), [:Key1, :Key2])
+        end
+
+        @testset "sort=true, skipmissing=true" begin
+            gd = groupby_checked(df, :Key1, sort=true, skipmissing=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", "A", "B", "B"], Value=[2, 3, 4, 6])
+            ])
+            @test issorted(vcat(gd...), :Key1)
+
+            gd = groupby_checked(df, [:Key1, :Key2], sort=true, skipmissing=true)
+            @test length(gd) == 4
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                DataFrame(Key1="A", Key2="B", Value=1),
+                DataFrame(Key1="B", Key2="A", Value=[2, 3]),
+                DataFrame(Key1="B", Key2="B", Value=[4, 6])
+            ])
+            @test issorted(vcat(gd...), [:Key1, :Key2])
+        end
+    end
+end
+
+@testset "grouping refarray with fallback" begin
+    # The high number of categories compared to the number of rows triggers the use
+    # of the fallback grouping method
+    for x in ([3, 1, 2], [3, 1, missing])
+        df = DataFrame(x=categorical(x, levels=10000:-1:1),
+                       x2=categorical(x, levels=3:-1:1),
+                       y=[1, 2, 3])
+        for skipmissing in (true, false)
+            @test groupby(df, :x, sort=true, skipmissing=skipmissing) ≅
+                groupby(df, :x, sort=true, skipmissing=skipmissing)
+            @test isequal_unordered(groupby(df, :x, skipmissing=skipmissing),
+                                    collect(AbstractDataFrame, groupby(df, :x, skipmissing=skipmissing)))
+        end
+    end
+end
+
 @testset "grouping with three keys" begin
     # We need many rows so that optimized CategoricalArray method is used
     xv = rand(["A", "B", missing], 100)
@@ -632,17 +748,6 @@ end
         dfs = [groupby_checked(dfb, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)...]
         @test isequal_unordered(gd, dfs)
         @test issorted(vcat(gd...), [:Key1, :Key2, :Key3])
-
-        # This is an implementation detail but it allows checking
-        # that the optimized method is used
-        if df.Key1 isa CategoricalVector &&
-            df.Key2 isa CategoricalVector &&
-            df.Key3 isa CategoricalVector
-            @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true) ≅
-                groupby_checked(df, [:Key1, :Key2, :Key3], sort=false)
-            @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ≅
-                groupby_checked(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
-        end
     end
 end
 
@@ -2873,6 +2978,47 @@ end
     gdf = groupby_checked(df, :a)
     @test transform!(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
     @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+end
+
+@testset "empty ByRow" begin
+    inc0 = let
+        state = 0
+        () -> (state += 1)
+    end
+
+    inc1 = let
+        state = 0
+        x -> (state += 1)
+    end
+
+    df = DataFrame(a=[1,1,1,2,2,3,4,4,5,5,5,5], b=1:12)
+    gdf = groupby_checked(df, :a)
+
+    @test select(gdf, [] => ByRow(inc0) => :bin) ==
+          DataFrame(a=df.a, bin=1:12)
+    @test combine(gdf, [] => ByRow(inc0) => :bin) ==
+          DataFrame(a=df.a, bin=13:24)
+    @test select(gdf, AsTable([]) => ByRow(inc1) => :bin) ==
+          DataFrame(a=df.a, bin=1:12)
+    @test combine(gdf, AsTable([]) => ByRow(inc1) => :bin) ==
+          DataFrame(a=df.a, bin=13:24)
+    @test combine(gdf[Not(2)], [] => ByRow(inc0) => :bin) ==
+          DataFrame(a=df.a[Not(4:5)], bin=25:34)
+    @test combine(gdf[Not(2)], AsTable([]) => ByRow(inc1) => :bin) ==
+          DataFrame(a=df.a[Not(4:5)], bin=25:34)
+
+    # note that type inference in a comprehension does not always work
+    @test isequal_coltyped(combine(gdf[[]], [] => ByRow(inc0) => :bin),
+                           DataFrame(a=Int[], bin=Any[]))
+    @test isequal_coltyped(combine(gdf[[]], [] => ByRow(rand) => :bin),
+                           DataFrame(a=Int[], bin=Float64[]))
+    @test isequal_coltyped(combine(gdf[[]], AsTable([]) => ByRow(inc1) => :bin),
+                           DataFrame(a=Int[], bin=Any[]))
+    @test isequal_coltyped(combine(gdf[[]], AsTable([]) => ByRow(x -> rand()) => :bin),
+                           DataFrame(a=Int[], bin=Float64[]))
+
+    @test_throws MethodError select(gdf, [] => ByRow(inc1) => :bin)
+    @test_throws MethodError select(gdf, AsTable([]) => ByRow(inc0) => :bin)
 end
 
 end # module

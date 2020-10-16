@@ -71,8 +71,11 @@ end
 end
 
 @testset "mapcols!" begin
+    df_empty = DataFrame()
+    @test mapcols!(sum, df_empty) === df_empty
+
     df_mapcols = DataFrame(a=1:10, b=11:20)
-    mapcols!(sum, df_mapcols)
+    @test mapcols!(sum, df_mapcols) === df_mapcols
     @test df_mapcols == DataFrame(a=55, b=155)
 
     df_mapcols = DataFrame(a=1:10, b=11:20)

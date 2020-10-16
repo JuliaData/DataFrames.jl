@@ -453,11 +453,45 @@ end
     @test filter(AsTable("x") => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
     filter!(AsTable("x") => testfun, df)
     @test df == DataFrame(x=[3, 2], y=["b", "a"])
+end
 
-    @test_throws ArgumentError filter([] => () -> true, df)
-    @test_throws ArgumentError filter(AsTable(r"z") => () -> true, df)
-    @test_throws ArgumentError filter!([] => () -> true, df)
-    @test_throws ArgumentError filter!(AsTable(r"z") => () -> true, df)
+@testset "empty arg to filter and filter!" begin
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+
+    @test filter([] => () -> true, df) == df
+    @test filter(AsTable(r"z") => x -> true, df) == df
+    @test filter!([] => () -> true, copy(df)) == df
+    @test filter!(AsTable(r"z") => x -> true, copy(df)) == df
+
+    flipflop0 = let
+        state = false
+        () -> (state = !state)
+    end
+
+    flipflop1 = let
+        state = false
+        x -> (state = !state)
+    end
+
+    @test filter([] => flipflop0, df) == df[[1,3], :]
+    @test filter(Int[] => flipflop0, df) == df[[1,3], :]
+    @test filter(String[] => flipflop0, df) == df[[1,3], :]
+    @test filter(Symbol[] => flipflop0, df) == df[[1,3], :]
+    @test filter(r"z" => flipflop0, df) == df[[1,3], :]
+    @test filter(Not(All()) => flipflop0, df) == df[[1,3], :]
+    @test filter(AsTable(r"z") => flipflop1, df) == df[[1,3], :]
+    @test filter(AsTable([]) => flipflop1, df) == df[[1,3], :]
+    @test filter!([] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Int[] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(String[] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Symbol[] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(r"z" => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Not(All()) => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(AsTable(r"z") => flipflop1, copy(df)) == df[[1,3], :]
+    @test filter!(AsTable([]) => flipflop1, copy(df)) == df[[1,3], :]
+
+    @test_throws MethodError filter([] => flipflop1, df)
+    @test_throws MethodError filter(AsTable([]) => flipflop0, df)
 end
 
 @testset "names with cols" begin

@@ -160,7 +160,8 @@ function groupby(df::AbstractDataFrame, cols;
 
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
-        row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false), groups, skipmissing)
+        row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
+                        groups, skipmissing, sort)
 
     gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
                           Threads.ReentrantLock())
@@ -711,7 +712,11 @@ end
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple{}, i::Integer)
-    f()
+    if f isa ByRow
+        return [f.fun() for _ in 1:(ends[i] - starts[i] + 1)]
+    else
+        return f()
+    end
 end
 
 function do_call(f::Any, idx::AbstractVector{<:Integer},
@@ -753,8 +758,12 @@ end
 function do_call(f::Any, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
-    idx = idx[starts[i]:ends[i]]
-    return f(map(c -> view(c, idx), incols))
+    if f isa ByRow && isempty(incols)
+        return [f.fun(NamedTuple()) for _ in 1:(ends[i] - starts[i] + 1)]
+    else
+        idx = idx[starts[i]:ends[i]]
+        return f(map(c -> view(c, idx), incols))
+    end
 end
 
 function do_call(f::Any, idx::AbstractVector{<:Integer},

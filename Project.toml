@@ -35,7 +35,7 @@ test = ["DataStructures", "DataValues", "Dates", "Logging", "Random", "Test"]
 
 [compat]
 julia = "1"
-CategoricalArrays = "0.8"
+CategoricalArrays = "0.8.3"
 Compat = "3.17"
 DataAPI = "1.2"
 InvertedIndices = "1"
