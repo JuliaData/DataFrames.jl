@@ -568,7 +568,7 @@ end
 end
 
 @testset "select and select! with multiple selectors passed" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     @test select(df, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
     @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
 
@@ -589,7 +589,7 @@ end
 end
 
 @testset "select and select! renaming" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     @test select(df, :x1 => :x2, :x2 => :x1) == rename(df[:, 1:2], [:x2, :x1])
     @test select(df, :x2 => :x1, :x1 => :x2) == DataFrame(x1=df.x2, x2=df.x1)
     @test_throws ArgumentError select(df, [:x1, :x2] => :x3)
@@ -617,16 +617,16 @@ end
     @test x2 === df.x1
     @test names(df) == ["x2", "x1"]
 
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     select!(df, :x1, :x1 => :x2)
     @test df2.x1 === df2.x2
 
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     df2 = select(df, :, :x1 => :x3)
-    @test df2 == DataFrame(collect(eachcol(df))[[1,2,1,4]])
+    @test df2 == DataFrame(collect(eachcol(df))[[1,2,1,4]], :gennames)
     @test df2.x1 !== df2.x3
     df2 = select(df, :, :x1 => :x3, copycols=false)
-    @test df2 == DataFrame(collect(eachcol(df))[[1,2,1,4]])
+    @test df2 == DataFrame(collect(eachcol(df))[[1,2,1,4]], :gennames)
     @test df2.x1 === df2.x3
     @test select(df, :x1 => :x3, :) == DataFrame(collect(eachcol(df))[[1,1,2,4]],
                                                  [:x3, :x1, :x2, :x4])
@@ -636,7 +636,7 @@ end
 end
 
 @testset "select and select! many columns naming" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     for fun in (+, ByRow(+)), copycols in [true, false]
         @test select(df, 1 => fun, copycols=copycols) ==
               DataFrame(Symbol("x1_+") => df.x1)
@@ -664,7 +664,7 @@ end
 end
 
 @testset "select and select! many different transforms" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
 
     df2 = select(df, :x2, :, :x1 => ByRow(x -> x^2) => :r1, :x1 => (x -> x .^ 2) => :r2,
                  [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
@@ -704,7 +704,7 @@ end
 end
 
 @testset "nrow in select" begin
-    df_ref = DataFrame(Tables.table(ones(3,4), header=[:x1, :x2, :x3, :x4]))
+    df_ref = DataFrame(ones(3,4), [:x1, :x2, :x3, :x4])
     for df in [df_ref, view(df_ref, 1:2, 1:2),
                df_ref[1:2, []], view(df_ref, 1:2, []),
                df_ref[[], 1:2], view(df_ref, [], 1:2)]
@@ -758,7 +758,7 @@ end
 end
 
 @testset "select and select! empty selection" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     x = [1:10;]
     y = [1,2,3]
 
@@ -785,7 +785,7 @@ end
 end
 
 @testset "wrong selection patterns" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
 
     @test_throws ArgumentError select(df, "z")
     @test_throws ArgumentError select(df, "z" => :x1)
@@ -794,7 +794,7 @@ end
 end
 
 @testset "select and select! duplicates" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
     df_ref = copy(df)
 
     @test_throws ArgumentError select(df, :x1, :x1)
@@ -815,14 +815,14 @@ end
     select!(df, :x2, r"x", :x1, :)
     @test df == df_ref[:, [:x2, :x1, :x3, :x4]]
 
-    df = DataFrame(Tables.table(rand(10, 2), header=[:x1, :x2]))
+    df = DataFrame(rand(10, 2), [:x1, :x2])
     @test select(df, [:x1, :x1] => -) == DataFrame(Symbol("x1_x1_-") => zeros(10))
     select!(df, [:x1, :x1] => -)
     @test df == DataFrame(Symbol("x1_x1_-") => zeros(10))
 end
 
 @testset "SubDataFrame selection" begin
-    df = DataFrame(Tables.table(rand(12, 5), header=[:x1, :x2, :x3, :x4, :x5]))
+    df = DataFrame(rand(12, 5), [:x1, :x2, :x3, :x4, :x5])
     sdf = view(df, 1:10, 1:4)
     df_ref = copy(sdf)
 
@@ -853,41 +853,41 @@ end
 end
 
 @testset "pseudo-broadcasting" begin
-    df = DataFrame(Tables.table([1 2 3
-                                 4 5 6], header=[:x1, :x2, :x3]))
-    df2 = DataFrame(Tables.table([1 2 3], header=[:x1, :x2, :x3]))
+    df = DataFrame([1 2 3
+                    4 5 6], [:x1, :x2, :x3])
+    df2 = DataFrame([1 2 3], [:x1, :x2, :x3])
     df3 = DataFrame(x1=Char[], x2=Int[], x3=Int[])
     for v in [9, Ref(9), view([9], 1)]
         @test select(df, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
-              DataFrame(Tables.table([9 1 2 3 6
-                                      9 4 5 6 15], header=[:a, :x1, :x2, :x3, :d]))
+              DataFrame([9 1 2 3 6
+                         9 4 5 6 15], [:a, :x1, :x2, :x3, :d])
         @test select(df, (:) => (+) => :d, :, r"z" => (() -> v)  => :a) ==
-              DataFrame(Tables.table([6  1 2 3 9
-                                      15 4 5 6 9], header=[:d, :x1, :x2, :x3, :a]))
+              DataFrame([6  1 2 3 9
+                         15 4 5 6 9], [:d, :x1, :x2, :x3, :a])
         @test select(df, [] => (() -> v) => :a, :x1 => :b, (:) => (+) => :d) ==
-              DataFrame(Tables.table([9 1 6
-                                      9 4 15], header=[:a, :b, :d]))
+              DataFrame([9 1 6
+                         9 4 15], [:a, :b, :d])
         @test select(df, (:) => (+) => :d, :x1 => :b, [] => (() -> v) => :a) ==
-              DataFrame(Tables.table([6  1 9
-                                      15 4 9], header=[:d, :b, :a]))
+              DataFrame([6  1 9
+                         15 4 9], [:d, :b, :a])
         @test select(df, [] => (() -> v) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
-              DataFrame(Tables.table([9 1 6
-                                      9 4 15], header=[:a, :b, :d]))
+              DataFrame([9 1 6
+                         9 4 15], [:a, :b, :d])
         @test select(df, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
-              DataFrame(Tables.table([6  1 9
-                                      15 4 9], header=[:d, :b, :a]))
+              DataFrame([6  1 9
+                         15 4 9], [:d, :b, :a])
         @test select(df2, [] => (() -> v) => :a, :, (:) => (+) => :d) ==
-              DataFrame(Tables.table([9 1 2 3 6], header=[:a, :x1, :x2, :x3, :d]))
+              DataFrame([9 1 2 3 6], [:a, :x1, :x2, :x3, :d])
         @test select(df2, (:) => (+) => :d, :, r"z" => (() -> v)  => :a) ==
-              DataFrame(Tables.table([6  1 2 3 9], header=[:d, :x1, :x2, :x3, :a]))
+              DataFrame([6 1 2 3 9], [:d, :x1, :x2, :x3, :a])
         @test select(df2, [] => (() -> v) => :a, :x1 => :b, (:) => (+) => :d) ==
-              DataFrame(Tables.table([9 1 6], header=[:a, :b, :d]))
+              DataFrame([9 1 6], [:a, :b, :d])
         @test select(df2, (:) => (+) => :d, :x1 => :b, [] => (() -> v) => :a) ==
-              DataFrame(Tables.table([6  1 9], header=[:d, :b, :a]))
+              DataFrame([6 1 9], [:d, :b, :a])
         @test select(df2, [] => (() -> v) => :a, :x1 => (x -> x) => :b, (:) => (+) => :d) ==
-              DataFrame(Tables.table([9 1 6], header=[:a, :b, :d]))
+              DataFrame([9 1 6], [:a, :b, :d])
         @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
-              DataFrame(Tables.table([6  1 9], header=[:d, :b, :a]))
+              DataFrame([6 1 9], [:d, :b, :a])
 
         @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1 => x -> []),
                                DataFrame(a=Int[], x1_function=Any[]))
@@ -901,17 +901,17 @@ end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
     @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
     @test transform(df, names(df) .=> (x -> 9) .=> names(df)) ==
-          repeat(DataFrame(Tables.table([9 9 9], header=[:x1, :x2, :x3])), nrow(df))
+          repeat(DataFrame([9 9 9], [:x1, :x2, :x3]), nrow(df))
     @test combine(df, names(df) .=> (x -> 9) .=> names(df)) ==
-          DataFrame(Tables.table([9 9 9], header=[:x1, :x2, :x3]))
+          DataFrame([9 9 9], [:x1, :x2, :x3])
     @test transform(df, names(df) .=> (x -> 9) .=> names(df), :x1 => :x4) ==
-          DataFrame(Tables.table([9 9 9 1; 9 9 9 4], header=[:x1, :x2, :x3, :x4]))
+          DataFrame([9 9 9 1; 9 9 9 4], [:x1, :x2, :x3, :x4])
     @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3)) ==
-          repeat(DataFrame(Tables.table([9 9 9], header=[:x1, :x2, :x3])), nrow(df3))
+          repeat(DataFrame([9 9 9], [:x1, :x2, :x3]), nrow(df3))
     @test combine(df3, names(df3) .=> (x -> 9) .=> names(df3)) ==
-          DataFrame(Tables.table([9 9 9], header=[:x1, :x2, :x3]))
+          DataFrame([9 9 9], [:x1, :x2, :x3])
     @test transform(df3, names(df3) .=> (x -> 9) .=> names(df3), :x1 => :x4) ==
-          DataFrame(Tables.table(ones(0, 4), header=[:x1, :x2, :x3, :x4]))
+          DataFrame(ones(0, 4), [:x1, :x2, :x3, :x4])
 
     df = DataFrame(x1=1:2, x2=categorical(1:2),
                    x3=[missing,2], x4=categorical([missing, 2]))
@@ -1044,7 +1044,7 @@ end
 end
 
 @testset "empty select" begin
-    df_ref = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df_ref = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
 
     for df in (df_ref, view(df_ref, 1:9, 1:3))
         @test ncol(select(df)) == 0
@@ -1055,7 +1055,7 @@ end
 end
 
 @testset "transform and transform!" begin
-    df = DataFrame(Tables.table(rand(10, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(10, 4), [:x1, :x2, :x3, :x4])
 
     for dfx in (df, view(df, :, :))
         df2 = transform(dfx, [:x1, :x2] => +, :x2 => :x3)

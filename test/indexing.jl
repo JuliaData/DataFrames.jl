@@ -562,7 +562,7 @@ end
 end
 
 @testset "additional tests of post-! getindex rules" begin
-    df = DataFrame(Tables.table(reshape(1.5:16.5, (4,4)), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(reshape(1.5:16.5, (4,4)), [:x1, :x2, :x3, :x4])
 
     @test df[2,2] == df[!, 2][2] == 6.5
     @test_throws BoundsError df[0,2]
@@ -1089,7 +1089,7 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df2 = df[!, :]
     @test_throws MethodError df[1:2, 1:2] = 1
-    @test_throws ArgumentError df[1:2, 1:2] = DataFrame(Tables.table(ones(2,2), header=[:x1, :x2]))
+    @test_throws ArgumentError df[1:2, 1:2] = DataFrame(ones(2,2), [:x1, :x2])
     @test df == DataFrame(a=1:3, b=4:6, c=7:9)
     df[:, :] = DataFrame(a=11:13, b=14:16, c=17:19)
     @test df2 == DataFrame(a=11:13, b=14:16, c=17:19)
@@ -1340,7 +1340,7 @@ end
         @test_throws DimensionMismatch df[1:2, 1:2] = m
 
         @test_throws MethodError sdf[row_sel, col_sel] = 1
-        @test_throws ArgumentError sdf[row_sel, col_sel] = DataFrame(Tables.table(ones(3, 3), header=[:x1, :x2, :x3]))
+        @test_throws ArgumentError sdf[row_sel, col_sel] = DataFrame(ones(3, 3), [:x1, :x2, :x3])
         @test (sdf[row_sel, col_sel] = df2) == df2
         @test df == df2
     end
@@ -1561,68 +1561,68 @@ end
 end
 
 @testset "setindex! with ! or : and multiple cols" begin
-    df = DataFrame(Tables.table(fill("x", 3, 4), header=[:x1, :x2, :x3, :x4]))
-    df[!, :] = DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
-    @test df == DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
-    @test_throws ArgumentError df[!, :] = DataFrame(Tables.table(fill(1, 3, 4), header=[:x1, :x2, :x3, :x4]))[:, [3,2,1]]
-    @test_throws ArgumentError df[!, :] = DataFrame(Tables.table(fill(1, 3, 4), header=[:x1, :x2, :x3, :x4]))[1:2, :]
+    df = DataFrame(fill("x", 3, 4), [:x1, :x2, :x3, :x4])
+    df[!, :] = DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
+    @test df == DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
+    @test_throws ArgumentError df[!, :] = DataFrame(fill(1, 3, 4), [:x1, :x2, :x3, :x4])[:, [3,2,1]]
+    @test_throws ArgumentError df[!, :] = DataFrame(fill(1, 3, 4), [:x1, :x2, :x3, :x4])[1:2, :]
 
-    df = DataFrame(Tables.table(fill("x", 3, 4), header=[:x1, :x2, :x3, :x4]))
-    df[!, Not(4)] = DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))[:, 1:3]
-    @test df[:, 1:3] == DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))[:, 1:3]
+    df = DataFrame(fill("x", 3, 4), [:x1, :x2, :x3, :x4])
+    df[!, Not(4)] = DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])[:, 1:3]
+    @test df[:, 1:3] == DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])[:, 1:3]
 
-    df = DataFrame(Tables.table(fill("x", 3, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(fill("x", 3, 4), [:x1, :x2, :x3, :x4])
     df[!, :] = reshape(1:12, 3, :)
-    @test df == DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
+    @test df == DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
 
-    df = DataFrame(Tables.table(fill("x", 3, 4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(fill("x", 3, 4), [:x1, :x2, :x3, :x4])
     df[!, Not(4)] = reshape(1:12, 3, :)[:, 1:3]
-    @test df[:, 1:3] == DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))[:, 1:3]
+    @test df[:, 1:3] == DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])[:, 1:3]
 
     dfv = view(df, :, :)
-    @test_throws ArgumentError dfv[!, :] = DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
+    @test_throws ArgumentError dfv[!, :] = DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
     @test_throws ArgumentError dfv[!, :] = reshape(1:12, 3, :)
 
     for rows in [:, 1:3], cols in [:, r"", Not(r"xx"), 1:4]
-        df = DataFrame(Tables.table(ones(3,4), header=[:x1, :x2, :x3, :x4]))
-        df[rows, cols] = DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
-        @test df == DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
+        df = DataFrame(ones(3,4), [:x1, :x2, :x3, :x4])
+        df[rows, cols] = DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
+        @test df == DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
     end
 
     for rows in [:, 1:3], cols in [:, r"", Not(r"xx"), 1:4]
-        df = DataFrame(Tables.table(ones(3,4), header=[:x1, :x2, :x3, :x4]))
+        df = DataFrame(ones(3,4), [:x1, :x2, :x3, :x4])
         df[rows, cols] = reshape(1:12, 3, :)
-        @test df == DataFrame(Tables.table(reshape(1:12, 3, :), header=[:x1, :x2, :x3, :x4]))
+        @test df == DataFrame(reshape(1:12, 3, :), [:x1, :x2, :x3, :x4])
     end
 end
 
 @testset "additional setindex! tests" begin
-    df = DataFrame(Tables.table(reshape(1:12, 4, :), header=[:x1, :x2, :x3]))
+    df = DataFrame(reshape(1:12, 4, :), [:x1, :x2, :x3])
     df[1:2, :] = df[3:4, :]
-    @test df == DataFrame(Tables.table([3  7  11
-                                        4  8  12
-                                        3  7  11
-                                        4  8  12], header=[:x1, :x2, :x3]))
+    @test df == DataFrame([3  7  11
+                          4  8  12
+                          3  7  11
+                          4  8  12], [:x1, :x2, :x3])
 
     df[[true,false,true,false], :] = df[[2,4], :]
-    @test df == DataFrame(Tables.table([4  8  12
-                                        4  8  12
-                                        4  8  12
-                                        4  8  12], header=[:x1, :x2, :x3]))
+    @test df == DataFrame([4  8  12
+                          4  8  12
+                          4  8  12
+                          4  8  12], [:x1, :x2, :x3])
 
     @test_throws MethodError df[1, :] = 1
 
     df[:, 2] = ones(4)
-    @test df == DataFrame(Tables.table([4  1  12
-                                        4  1  12
-                                        4  1  12
-                                        4  1  12], header=[:x1, :x2, :x3]))
+    @test df == DataFrame([4  1  12
+                          4  1  12
+                          4  1  12
+                          4  1  12], [:x1, :x2, :x3])
 
     @test_throws InexactError df[:, 2] = fill(1.5, 4)
 end
 
 @testset "invalid view tests" begin
-    dfr = DataFrame(Tables.table(ones(2,3), header=[:x1, :x2, :x3]))
+    dfr = DataFrame(ones(2,3), [:x1, :x2, :x3])
     for df in (dfr, view(dfr, 1:2, 1:3))
         for r in (1, 1:1)
             @test_throws BoundsError view(df, r, 0:1)
@@ -1785,10 +1785,10 @@ end
     end
 
     @testset "old setindex! tests" begin
-        df = DataFrame(Tables.table(reshape(1:12, 4, :), header=[:x1, :x2, :x3]))
+        df = DataFrame(reshape(1:12, 4, :), [:x1, :x2, :x3])
         @test_throws MethodError df[1, :] = df[1:1, :]
 
-        df = DataFrame(Tables.table(reshape(1:12, 4, :), header=[:x1, :x2, :x3]))
+        df = DataFrame(reshape(1:12, 4, :), [:x1, :x2, :x3])
 
         # Scalar broadcasting assignment of rows
         @test_throws MethodError df[1:2, :] = 1
@@ -1818,13 +1818,13 @@ end
         @test_throws MethodError df[[true,false,false,true], 2:3] = [2,3]
 
         # test of 1-row DataFrame assignment
-        df = DataFrame(Tables.table([1 2 3]))
-        @test_throws MethodError df[1, 2:3] = DataFrame(Tables.table([11 12]))
-        @test_throws MethodError df[1, [false, true, true]] = DataFrame(Tables.table([11 12]))
+        df = DataFrame([1 2 3], :gennames)
+        @test_throws MethodError df[1, 2:3] = DataFrame([11 12], :gennames)
+        @test_throws MethodError df[1, [false, true, true]] = DataFrame([11 12], :gennames)
     end
 
     @testset "cornercase of view indexing" begin
-        df = DataFrame(Tables.table(reshape(1:12, 4, :), header=[:x1, :x2, :x3]))
+        df = DataFrame(reshape(1:12, 4, :), [:x1, :x2, :x3])
         dfr = df[1, 3:2]
         for idx in [:x1, :x2, :x3, :x4]
             @test_throws ArgumentError dfr[idx]

@@ -12,7 +12,7 @@ const ≇ = !isequal
     Random.seed!(1234)
     for k in 1:20
         sn = shuffle(n)
-        df = DataFrame(Tables.table(zeros(1,26), header=n))
+        df = DataFrame(zeros(1,26), n)
         p = Dict(Pair.(n, sn))
         cyclelength = Int[]
         for x in n
@@ -366,9 +366,9 @@ end
     df = DataFrame(x=categorical(["a"])[1])
     @test df.x isa CategoricalVector{String}
 
-    @test hash(DataFrame(Tables.table([1 2; 3 4]))) == hash(DataFrame(Tables.table([1 2; 3 4])))
-    @test hash(DataFrame(Tables.table([1 2; 3 4]))) != hash(DataFrame(Tables.table([1 3; 2 4])))
-    @test hash(DataFrame(Tables.table([1 2; 3 4]))) == hash(DataFrame(Tables.table([1 2; 3 4])), zero(UInt))
+    @test hash(DataFrame([1 2; 3 4], :gennames)) == hash(DataFrame([1 2; 3 4], :gennames))
+    @test hash(DataFrame([1 2; 3 4], :gennames)) != hash(DataFrame([1 3; 2 4], :gennames))
+    @test hash(DataFrame([1 2; 3 4], :gennames)) == hash(DataFrame([1 2; 3 4], :gennames), zero(UInt))
 end
 
 @testset "push!(df, row)" begin
@@ -988,7 +988,7 @@ end
         @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
     end
 
-    sdf = view(DataFrame(Tables.table(ones(2,3), header=[:x1, :x2, :x3])), 1:2, 1:3)
+    sdf = view(DataFrame(ones(2,3), [:x1, :x2, :x3]), 1:2, 1:3)
     @test_throws ArgumentError rename!(uppercase, sdf)
     @test_throws ArgumentError rename!(sdf, :x1 => :y1)
     @test_throws ArgumentError rename!(sdf, [:a, :b, :c])
@@ -1053,7 +1053,7 @@ end
 end
 
 @testset "column conversions" begin
-    df = DataFrame([collect(1:10), collect(1:10)])
+    df = DataFrame([collect(1:10), collect(1:10)], :gennames)
     @test !isa(df[!, 1], Vector{Union{Int, Missing}})
     @test allowmissing!(df, 1) === df
     @test isa(df[!, 1], Vector{Union{Int, Missing}})
@@ -1067,7 +1067,7 @@ end
     @test disallowmissing!(df, 1) === df
     @test isa(df[!, 1], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
+    df = DataFrame([collect(1:10), collect(1:10)], :gennames)
     @test !isa(df[!, 1], Vector{Union{Int, Missing}})
     @test allowmissing!(df, Not(Not(1))) === df
     @test isa(df[!, 1], Vector{Union{Int, Missing}})
@@ -1082,19 +1082,19 @@ end
     @test isa(df[!, 1], Vector{Int})
 
     for em in [true, false]
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test allowmissing!(df, [1,2]) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, [1,2], error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test allowmissing!(df, Not(Not([1,2]))) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, Not(Not([1,2])), error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test_throws BoundsError allowmissing!(df, [true])
         @test allowmissing!(df, [true, true]) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
@@ -1102,25 +1102,25 @@ end
         @test disallowmissing!(df, [true,true], error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test allowmissing!(df) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test allowmissing!(df, :) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, :, error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test allowmissing!(df, r"") === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, r"", error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :gennames)
         @test allowmissing!(df, Not(1:0)) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, Not(1:0), error=em) === df
@@ -1128,7 +1128,7 @@ end
     end
 
     df = DataFrame([CategoricalArray(1:10),
-                    CategoricalArray(string.('a':'j'))])
+                    CategoricalArray(string.('a':'j'))], :gennames)
     @test allowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: Union{CategoricalValue{Int}, Missing}
@@ -1398,7 +1398,7 @@ end
 end
 
 @testset "handling of end in indexing" begin
-    z = DataFrame(Tables.table(rand(4,5), header=[:x1, :x2, :x3, :x4, :x5]))
+    z = DataFrame(rand(4,5), [:x1, :x2, :x3, :x4, :x5])
     x = z
     y = deepcopy(x)
     @test x[:, end] == x[:, 5]

@@ -913,10 +913,10 @@ hcat!(df1::DataFrame, df2::DataFrame;
            makeunique=makeunique, copycols=copycols)::DataFrame
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(df, DataFrame(AbstractVector[x], copycols=copycols),
+    hcat!(df, DataFrame(:x1 => x, copycols=copycols),
           makeunique=makeunique, copycols=copycols)
 hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(DataFrame(AbstractVector[x], copycols=copycols), df,
+    hcat!(DataFrame(:x1 => x, copycols=copycols), df,
           makeunique=makeunique, copycols=copycols)
 hcat!(x, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))

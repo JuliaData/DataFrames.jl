@@ -118,6 +118,13 @@ end
                      copycols::Bool=true) where {N} DataFrame(collect(columns),
                                                               Symbol.(:x, 1:length(columns)), copycols=copycols)
 
+# this deprecation is very important, becuase without it users will
+# get strange results with old code as described in https://github.com/JuliaData/Tables.jl/issues/208
+@deprecate DataFrame(columns::AbstractVector{<:AbstractVector}; makeunique::Bool=false,
+                     copycols::Bool=true) DataFrame(columns, :gennames, copycols=copycols)
+
+@deprecate DataFrame(columns::AbstractMatrix) DataFrame(columns, :gennames)
+
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
     Base.depwarn("`DataFrame` constructor with passed eltypes is deprecated. " *

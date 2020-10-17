@@ -30,7 +30,7 @@ using Test, DataFrames, CategoricalArrays, Dates, Markdown
     @test repr(MIME("text/latex"), eachrow(df)) == str
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/latex"),
-                                                DataFrame(Tables.table(ones(2,2))), rowid=10)
+                                                DataFrame(ones(2,2), :gennames), rowid=10)
 end
 
 @testset "Huge LaTeX export" begin
@@ -131,7 +131,7 @@ end
                  "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
-                                                DataFrame(Tables.table(ones(2,2))), rowid=10)
+                                                DataFrame(ones(2,2), :gennames), rowid=10)
 
     df = DataFrame(
         A=Int64[1,4,9,16],
@@ -343,7 +343,7 @@ end
 end
 
 @testset "summary tests" begin
-    df = DataFrame(Tables.table(ones(2,3), header=[:x1, :x2, :x3]))
+    df = DataFrame(ones(2,3), [:x1, :x2, :x3])
 
     for (v, s) in [(df, "2×3 DataFrame"),
                    (view(df, :, :), "2×3 SubDataFrame"),

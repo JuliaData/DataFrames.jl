@@ -30,9 +30,9 @@ const ≅ = isequal
     @test df2.x2 === vecvec[2]
 
     for copycolsarg in (true, false)
-        @test df == DataFrame(vecvec, copycols=copycolsarg)
-        @test df == DataFrame(collect(Any, vecvec), copycols=copycolsarg)
-        @test df == DataFrame(collect(AbstractVector, vecvec), copycols=copycolsarg)
+        @test df == DataFrame(vecvec, :gennames, copycols=copycolsarg)
+        @test df == DataFrame(collect(Any, vecvec), :gennames, copycols=copycolsarg)
+        @test df == DataFrame(collect(AbstractVector, vecvec), :gennames, copycols=copycolsarg)
         @test df == DataFrame(x1 = vecvec[1], x2 = vecvec[2], copycols=copycolsarg)
 
         for cols in ([:x1, :x2], ["x1", "x2"])
@@ -43,13 +43,13 @@ const ≅ = isequal
         end
     end
 
-    @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
-          DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
-          DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]) ==
-          DataFrame([1:3, [1,2,3]])
+    @test DataFrame([1:3, 1:3], :gennames) == DataFrame(Any[1:3, 1:3], :gennames) ==
+          DataFrame(UnitRange[1:3, 1:3], :gennames) == DataFrame(AbstractVector[1:3, 1:3], :gennames) ==
+          DataFrame([[1,2,3], [1,2,3]], :gennames) == DataFrame(Any[[1,2,3], [1,2,3]], :gennames) ==
+          DataFrame([1:3, [1,2,3]], :gennames)
           DataFrame([:x1=>1:3, :x2=>[1,2,3]]) == DataFrame(["x1"=>1:3, "x2"=>[1,2,3]])
 
-    @inferred DataFrame([1:3, 1:3])
+    @inferred DataFrame([1:3, 1:3], :gennames)
     @inferred DataFrame([1:3, 1:3], [:a, :b])
     @inferred DataFrame([1:3, 1:3], ["a", "b"])
 
@@ -227,19 +227,19 @@ end
     x = [1,2,3]
     y = [1,2,3]
 
-    df = DataFrame([x, y])
+    df = DataFrame([x, y], :gennames)
     @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame([x, y], copycols=true)
+    df = DataFrame([x, y], :gennames, copycols=true)
     @test propertynames(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame([x, y], copycols=false)
+    df = DataFrame([x, y], :gennames, copycols=false)
     @test propertynames(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
@@ -301,14 +301,14 @@ end
         @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]), copycols=copycolsarg)
         @test_throws ArgumentError DataFrame(A = rand(2,2), copycols=copycolsarg)
         @test_throws ArgumentError DataFrame(A = rand(2,1), copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame([1, 2, 3], copycols=copycolsarg)
-        @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1,2]], copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame([1, 2, 3], :gennames, copycols=copycolsarg)
+        @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1,2]], :gennames, copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
 
-    @test_throws MethodError DataFrame([1 2; 3 4], copycols=false)
+    @test_throws MethodError DataFrame([1 2; 3 4], :gennames, copycols=false)
 end
 
 @testset "column types" begin

@@ -46,8 +46,6 @@ const ≅ = isequal
     @test df."x1" === x
     @test df."x2" === y
 
-    @test_throws MethodError DataFrame!([1 2; 3 4], copycols=false)
-    @test_throws MethodError DataFrame!([1 2; 3 4])
     @test_throws MethodError DataFrame!([Union{Int, Missing}, Union{Float64, Missing}],
                                         [:x1, :x2], 2)
 end
@@ -232,7 +230,9 @@ end
 end
 
 @testset "deprecated DataFrame constructors" begin
-    @test DataFrame(([1,2], [3,4])) == DataFrame([[1,2], [3,4]])
+    @test DataFrame(([1,2], [3,4])) == DataFrame([[1,2], [3,4]], :gennames)
+    @test DataFrame((categorical([1,2]), categorical([3,4]))) ==
+          DataFrame([categorical([1,2]), categorical([3,4])], :gennames)
     @test DataFrame(([1,2], [3,4]), ("a", "b")) == DataFrame([[1,2], [3,4]], ["a", "b"])
     @test DataFrame(([1,2], [3,4]), (:a, :b)) == DataFrame([[1,2], [3,4]], [:a, :b])
     @test DataFrame(([1,2,3], [1,2,3])) == DataFrame((1:3, 1:3)) == DataFrame((1:3, [1,2,3]))

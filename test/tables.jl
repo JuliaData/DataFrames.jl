@@ -196,7 +196,7 @@ end
 end
 
 @testset "columnindex" begin
-    df = DataFrame(Tables.table(rand(3,4), header=[:x1, :x2, :x3, :x4]))
+    df = DataFrame(rand(3,4), [:x1, :x2, :x3, :x4])
 
     for x in (df, view(df, 1, :), view(df, 1:1, :))
         @test columnindex.(Ref(x), names(df)) == 1:4
@@ -217,7 +217,7 @@ end
 end
 
 @testset "eachrow and eachcol integration" begin
-    df = DataFrame(Tables.table(rand(3,4), header=[:a, :b, :c, :d]))
+    df = DataFrame(rand(3,4), [:a, :b, :c, :d])
 
     df2 = DataFrame(eachrow(df))
     @test df == df2
@@ -266,11 +266,11 @@ end
 
 @testset "test constructor with vectors" begin
     @test DataFrame(Any[]) == DataFrame()
-    @test DataFrame(Vector[]) == DataFrame()
-    @test DataFrame(Pair{Symbol, Vector}[]) == DataFrame()
+    @test DataFrame(Vector[], :gennames) == DataFrame()
+    @test DataFrame(Pair{Symbol, Vector}[], :gennames) == DataFrame()
     @test DataFrame(Pair[]) == DataFrame()
-    @test DataFrame([[1]]) == DataFrame(x1=1)
-    @test DataFrame(Any[[1]]) == DataFrame(x1=1)
+    @test DataFrame([[1]], :gennames) == DataFrame(x1=1)
+    @test DataFrame(Any[[1]], :gennames) == DataFrame(x1=1)
     @test DataFrame([:a => [1]]) == DataFrame(a=1)
     @test DataFrame(Any[:a => [1]]) == DataFrame(a=1)
     @test DataFrame(["a" => [1]]) == DataFrame(a=1)
