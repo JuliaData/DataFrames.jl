@@ -8,70 +8,90 @@ particularly a Vector or CategoricalVector.
 
 # Constructors
 ```julia
-DataFrame(columns::AbstractVector, names::AbstractVector{Symbol};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::AbstractVector, names::AbstractVector{<:AbstractString};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
-          copycols::Bool=true)
+DataFrame(table; copycols::Bool=true)
+
+DataFrame(pairs::Pair...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
-DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
+DataFrame(kwargs..., copycols::Bool=true)
+
+DataFrame(columns::AbstractVecOrMat, names::Union{AbstractVector, Symbol};
+          makeunique::Bool=false, copycols::Bool=true)
+
+DataFrame(::DataFrameRow)
 DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
-DataFrame() # an empty DataFrame
 ```
 
-# Arguments
-- `columns` : a vector with each column as contents
-- `names` : the column names
-- `makeunique` : if `false` (the default), an error will be raised
-  if duplicates in `names` are found; if `true`, duplicate names will be suffixed
-  with `_i` (`i` starting at 1 for the first duplicate).
-- `kwargs` : the key gives the column names, and the value is the
-  column contents; note that the `copycols` keyword argument indicates if
-  if vectors passed as columns should be copied so it is not possible to create
-  a column whose name is `:copycols` using this constructor
-- `nrows` : number of rows
-- `column_eltypes` : element type of each column
-- `ds` : `AbstractDict` of columns
-- `table` : any type that implements the
-  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
-- `copycols` : whether vectors passed as columns should be copied; if set
-  to `false` then the constructor will still copy the passed columns
-  if it is not possible to construct a `DataFrame` without materializing new columns.
-- `keepkeys` : whether the resulting `DataFrame` should contain the grouping columns
-  of a `GroupedDataFrame`
+If a single positional argument is passed to a `DataFrame` constructor then it
+is assumed to be of type that implements the
+[Tables.jl](https://github.com/JuliaData/Tables.jl) interface using which the
+returned `DataFrame` is materialized.
 
-All columns in `columns` must be `AbstractVector`s and have the same length. An
-exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`, and
-`DataFrame(pairs::AbstractVector{<:Pair})` form constructors which additionally
-allow a column to be of any other type that is not an `AbstractArray`, in which
-case the passed value is automatically repeated to fill a new vector of the
-appropriate length. As a particular rule values stored in a `Ref` or a
-`0`-dimensional `AbstractArray` are unwrapped and treated in the same way.
+In addition to this general constructor there are several other convenience
+constructors provided. They are described below.
 
-Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
-into a `DataFrame`. In this case the order of rows in the result follows the order
+It is allowed to pass a vector of `Pair`s, a list of `Pair`s as positional
+arguments, or a list of keyword arguments. In this case each pair is considered
+to represent a column name to column value mapping and column name must be a
+`Symbol` or string. Alternatively a dictionary can be passed to the constructor
+in which case its entries are considered to define the column name and column
+value pairs with the exception that in this case column names can be of any type
+and will be always converted to a `Symbol`. In all these constructors column
+value can be a vector which is consumed as is or any other type that is not an
+`AbstractArray`. In the latter case the passed value is automatically repeated
+to fill a new vector of the appropriate length. As a particular rule values
+stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
+in the same way.
+
+It is also allowed to pass a vector of vectors or a matrix as a first positional
+argument to a `DataFrame` constructor. In thi case they must be followed by
+a vector of `Symbol`s or strings specifying column names or a symbol `:gennames`
+as a second positional argument in wich case the column names `x1`, `x2`, ...
+are automatically generated.
+
+Finally it is allowed to construct a `DataFrame` from a `DataFrameRow` or a
+`GroupedDataFrame`. In the latter case the `keepkeys` keyword argument specifies
+whether the resulting `DataFrame` should contain the grouping columns of the
+passed `GroupedDataFrame` and the order of rows in the result follows the order
 of groups in the `GroupedDataFrame` passed.
 
 # Notes
+
 The `DataFrame` constructor by default copies all columns vectors passed to it.
-Pass `copycols=false` to reuse vectors without copying them
+Pass `copycols=false` keyword argument (where supported) to reuse vectors without
+copying them.
 
-If a column is passed to a `DataFrame` constructor or is assigned as a whole
-using `setindex!` then its reference is stored in the `DataFrame`. An exception
-to this rule is assignment of an `AbstractRange` as a column, in which case the
-range is collected to a `Vector`.
+By default an error will be raised if duplicates in column names are found. Pass
+`makeunique=true` keyword argument (where supported) to accept duplicate names,
+in which case they will be suffixed with `_i` (`i` starting at 1 for the first
+duplicate).
 
-Because column types can vary, a `DataFrame` is not type stable. For
-performance-critical code, do not index into a `DataFrame` inside of loops.
+If an `AbstractRange` is passed to a `DataFrame` constructor as a column it is
+always collected to a `Vector` (even if `copycols=false`). As a general rule
+`AbstractRange` values are always materialized to a `Vector` by all functions in
+DataFrames.jl before being stored in a `DataFrame`.
+
+`DataFrame` object is designed to allow column types to vary and to be
+dynamically changed also after it is constructed. Therefore `DataFrame`s are not
+type stable.
+
+For performance-critical code that requires type-stability either use the
+functionality provided by `select`/`transform`/`combine` functions, use
+`Tables.columntable` and `Tables.namedtupleiterator` functions, use barrier
+functions, or provide type assertions to the variables that hold columns
+extracted from a `DataFrame`.
 
 # Examples
 ```julia
-julia> DataFrame(a=1:2, b=0)
+julia> DataFrame((a=[1,2], b=[3,4])) # Tables.jl table constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 2     │ 4     │
+
+julia> DataFrame([(a=1, b=0), (a=2, b=0)]) # Tables.jl table constructor
 2×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -79,7 +99,7 @@ julia> DataFrame(a=1:2, b=0)
 │ 1   │ 1     │ 0     │
 │ 2   │ 2     │ 0     │
 
-julia> DataFrame("a" => 1:2, "b" => 0)
+julia> DataFrame("a" => 1:2, "b" => 0) # Pair constructor
 2×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -87,7 +107,7 @@ julia> DataFrame("a" => 1:2, "b" => 0)
 │ 1   │ 1     │ 0     │
 │ 2   │ 2     │ 0     │
 
-julia> DataFrame([[1, 2], [0, 0]], [:a, :b])
+julia> DataFrame([:a => 1:2, :b => 0]) # vector of Pairs constructor
 2×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -95,7 +115,15 @@ julia> DataFrame([[1, 2], [0, 0]], [:a, :b])
 │ 1   │ 1     │ 0     │
 │ 2   │ 2     │ 0     │
 
-julia> DataFrame((a=[1, 2], b=[0, 0]))
+julia> DataFrame(Dict(1 => 1:2, 2 => 0)) # dictionary constructor
+2×2 DataFrame
+│ Row │ 1     │ 2     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame(a=1:2, b=0) # keyword argument constructor
 2×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -103,7 +131,7 @@ julia> DataFrame((a=[1, 2], b=[0, 0]))
 │ 1   │ 1     │ 0     │
 │ 2   │ 2     │ 0     │
 
-julia> DataFrame([(a=1, b=0), (a=2, b=0)])
+julia> DataFrame([[1, 2], [0, 0]], [:a, :b]) # vector of vectors constructor
 2×2 DataFrame
 │ Row │ a     │ b     │
 │     │ Int64 │ Int64 │
@@ -111,9 +139,9 @@ julia> DataFrame([(a=1, b=0), (a=2, b=0)])
 │ 1   │ 1     │ 0     │
 │ 2   │ 2     │ 0     │
 
-julia> DataFrame(Tables.table([1 0; 2 0], header=[:a, :b]))
+julia> DataFrame([1 0; 2 0], :gennames) # matrix constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
+│ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
 │ 1   │ 1     │ 0     │
@@ -222,12 +250,15 @@ function DataFrame(; kwargs...)
         columns = Any[]
         copycols = true
         for (kw, val) in kwargs
-            if kw == :copycols
+            if kw === :copycols
                 if val isa Bool
                     copycols = val
                 else
                     throw(ArgumentError("the `copycols` keyword argument must be Boolean"))
                 end
+            elseif kw === :makeunique
+                    throw(ArgumentError("the `makeunique` keyword argument is not allowed" *
+                                        " in DataFrame(; kwargs...) constructor"))
             else
                 push!(cnames, kw)
                 push!(columns, val)
@@ -251,17 +282,44 @@ DataFrame(columns::AbstractVector, cnames::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(columns, Symbol.(cnames), makeunique=makeunique, copycols=copycols)
 
-DataFrame(columns::AbstractVector{<:AbstractVector},
-          cnames::AbstractVector{Symbol}=gennames(length(columns));
+DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{Symbol};
           makeunique::Bool=false, copycols::Bool=true)::DataFrame =
     DataFrame(collect(AbstractVector, columns),
               Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
               copycols=copycols)
 
-DataFrame(columns::AbstractVector{<:AbstractVector},
-          cnames::AbstractVector{<:AbstractString};
+DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
+
+function DataFrame(columns::AbstractVector, cnames::Symbol; copycols::Bool=true)
+    if cnames !== :gennames
+        throw(ArgumentError("if the first positional argument to DataFrame " *
+                            "constructor is a vector of vectors and a second" *
+                            " positional argument is passed then the second " *
+                            "argument must be a list of column names or :gennames"))
+    end
+    return DataFrame(columns, gennames(length(columns)), copycols=copycols)
+end
+
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol}; makeunique::Bool=false) =
+    DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
+              makeunique=makeunique, copycols=false)
+
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
+          makeunique::Bool=false) =
+    DataFrame(columns, Symbol.(cnames); makeunique=makeunique)
+
+function DataFrame(columns::AbstractMatrix, cnames::Symbol)
+    if cnames !== :gennames
+        throw(ArgumentError("if the first positional argument to DataFrame " *
+                            "constructor is a matrix and a second" *
+                            " positional argument is passed then the second " *
+                            "argument must be a list of column names or :gennames"))
+    end
+    return DataFrame(columns, gennames(size(columns, 2)), makeunique=false)
+end
+
 
 ##############################################################################
 ##

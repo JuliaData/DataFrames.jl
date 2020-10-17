@@ -118,13 +118,6 @@ end
                      copycols::Bool=true) where {N} DataFrame(collect(columns),
                                                               Symbol.(:x, 1:length(columns)), copycols=copycols)
 
-# this is not a 100% correct deprecation as it does not support makeunique, but
-# we leave it as is to show users a recommended way to create a DataFrame from a matrix
-@deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
-                     makeunique::Bool=false) DataFrame(Tables.table(columns, header=cnames))
-@deprecate DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
-                     makeunique::Bool=false) DataFrame(Tables.table(columns, header=cnames))
-
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
     Base.depwarn("`DataFrame` constructor with passed eltypes is deprecated. " *
