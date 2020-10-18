@@ -467,14 +467,13 @@ SELECT_ARG_RULES =
     particular rule, values wrapped in a `Ref` or a `0`-dimensional
     `AbstractArray` are unwrapped and then repeated.
 
-    To apply `fun` to each row instead of whole columns, it can be wrapped in a
-    `ByRow` struct. In this case if `old_column` is a `Symbol`, a string, or an
-    integer then `fun` is applied to each element (row) of `old_column` using
-    broadcasting. Otherwise `old_column` can be any column indexing syntax, in
-    which case `fun` will be passed one argument for each of the columns
-    specified by `old_column`. If `ByRow` is used it is allowed for
-    `old_column` to select an empty set of columns, in which case `fun`
-     is called for each row without any arguments.
+    To apply `function` to each row instead of whole columns, it can be wrapped in a
+    `ByRow` struct. `cols` can be any column indexing syntax, in which case
+    `function` will be passed one argument for each of the columns specified by
+    `cols` or a `NamedTuple` of them if specified columns are wrapped in `AsTable`.
+    If `ByRow` is used it is allowed for `cols` to select an empty set of columns,
+    in which case `function` is called for each row without any arguments and an
+    empty `NamedTuple` is passed if empty set of columns is wrapped in `AsTable`.
 
     Column transformation can also be specified using the short `old_column =>
     fun` form. In this case, `new_column_name` is automatically generated as

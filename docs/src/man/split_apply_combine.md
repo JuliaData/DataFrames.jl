@@ -34,18 +34,22 @@ Operations can then be applied on each group using one of the following function
 
 All these functions take a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
-1. standard column selectors (integers, `Symbol`s, vectors of integers, vectors of symbols,
-   `All`, `:`, `Between`, `Not` and regular expressions)
-2. a `cols => function => target_cols` form additionally specifying the target column or columns
-3. a `cols => function` pair indicating that `function` should be called with
+1. standard column selectors (integers, `Symbol`s, vectors of integers, vectors of
+   `Symbol`s, vectors of strings, `:`, `All`, `Between`, `Not` and regular expressions).
+2. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector;
    in this case target column name is automatically generated and it is assumed that
-   `function` returns a single value or a vector; the generated name is created by concatenating
-   source column name and `function` name where possible (see examples below).
-4. a `col => target_cols` pair, which renames the column `col` to `target_cols`
+   `function` returns a single value or a vector; the generated name is created by
+   concatenating source column name and `function` name by default (see examples below).
+3. a `cols => function => target_cols` form additionally explicitly specifying
+   the target column or columns.
+4. a `col => target_cols` pair, which renames the column `col` to `target_cols` which
+   must be single column (a `Symbol` or a string).
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
-   in a group (without `target_cols` the new column is called `:nrow`)
-6. vectors or matrices containing transformations specified by the `Pair` syntax described in points 2 to 5
+   in a group; without `target_cols` the new column is called `:nrow`, otherwise
+   it must be single column (a `Symbol` or a string).
+6. vectors or matrices containing transformations specified by the `Pair` syntax
+   described in points 2 to 5
 8. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
@@ -63,9 +67,10 @@ object then a `NamedTuple` containing columns selected by `cols` is passed to
 `function`.
 
 What is allowed for `function` to return is determined by the `target_cols` value:
-1. If both `cols` and `target_cols` are omitted (so only a `function` is passed), then returning a data frame,
-   a matrix, a `NamedTuple`, or a `DataFrameRow` will produce multiple columns in the
-   result. Returning any other value produces a single column.
+1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
+   then returning a data frame, a matrix, a `NamedTuple`, or a `DataFrameRow` will
+   produce multiple columns in the result. Returning any other value produces
+   a single column.
 2. If `target_cols` is a `Symbol` or a string then the function is assumed to return
    a single column. In this case returning a data frame, a matrix, a `NamedTuple`,
    or a `DataFrameRow` raises an error.
@@ -108,13 +113,12 @@ are requested. In this case single value will be repeated to match the length
 of columns specified by returned vectors.
 
 To apply `function` to each row instead of whole columns, it can be wrapped in a
-`ByRow` struct. In this case if `cols` is a `Symbol`, a string, or an
-integer then `function` is applied to each element (row) of `cols` using
-broadcasting. Otherwise `cols` can be any column indexing syntax, in
-which case `function` will be passed one argument for each of the columns
-specified by `cols`. If `ByRow` is used it is allowed for
-`cols` to select an empty set of columns, in which case `function`
- is called for each row without any arguments.
+`ByRow` struct. `cols` can be any column indexing syntax, in which case
+`function` will be passed one argument for each of the columns specified by
+`cols` or a `NamedTuple` of them if specified columns are wrapped in `AsTable`.
+If `ByRow` is used it is allowed for `cols` to select an empty set of columns,
+in which case `function` is called for each row without any arguments and an
+empty `NamedTuple` is passed if empty set of columns is wrapped in `AsTable`.
 
 There the following keyword arguments are supported by the transformation functions
 (not all keyword arguments are supported in all cases; in general they are allowed
@@ -227,7 +231,7 @@ julia> combine(gdf, nrow, :PetalLength => mean => :mean)
 │ 3   │ Iris-virginica  │ 50    │ 5.552   │
 
 julia> combine(gdf, [:PetalLength, :SepalLength] => ((p, s) -> (a=mean(p)/mean(s), b=sum(p))) =>
-       AsTable) # multiple columns are passed as arguments
+               AsTable) # multiple columns are passed as arguments
 3×3 DataFrame
 │ Row │ Species         │ a        │ b       │
 │     │ String          │ Float64  │ Float64 │
