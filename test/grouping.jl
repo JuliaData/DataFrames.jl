@@ -1200,42 +1200,42 @@ end
     summary_str = summary(gd)
     @test summary_str == "$GroupedDataFrame with 4 groups based on key: A"
     @test str == """
-    $summary_str
-    First Group (1 row): A = 1
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 1     │ x"     │ 1.0     │
-    ⋮
-    Last Group (1 row): A = 4
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+        $summary_str
+        First Group (1 row): A = 1
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+         1   │ 1      x"      1.0
+        ⋮
+        Last Group (1 row): A = 4
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+         1   │ 4      A\\nC    4.0"""
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    $summary_str
-    Group 1 (1 row): A = 1
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 1     │ x\"     │ 1.0     │
-    Group 2 (1 row): A = 2
-    │ Row │ A     │ B           │ C       │
-    │     │ Int64 │ String      │ Float32 │
-    ├─────┼───────┼─────────────┼─────────┤
-    │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
-    Group 3 (1 row): A = 3
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 3     │ z\$     │ 3.0     │
-    Group 4 (1 row): A = 4
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+        $summary_str
+        Group 1 (1 row): A = 1
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+         1   │ 1      x\"      1.0
+        Group 2 (1 row): A = 2
+         Row │ A      B            C
+             │ Int64  String       Float32
+        ─────┼─────────────────────────────
+         1   │ 2      ∀ε>0: x+ε>x  2.0
+        Group 3 (1 row): A = 3
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+         1   │ 3      z\$      3.0
+        Group 4 (1 row): A = 4
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+         1   │ 4      A\\nC    4.0"""
 
     # Test two-argument show
     str1, dsize = capture_stdout() do
@@ -1290,10 +1290,10 @@ end
     @test sprint(show, gd) === """
         $summary_str
         Group 1 (1 row): a = :&, b = "&"
-        │ Row │ a      │ b      │
-        │     │ Symbol │ String │
-        ├─────┼────────┼────────┤
-        │ 1   │ &      │ &      │"""
+         Row │ a       b
+             │ Symbol  String
+        ─────┼────────────────
+         1   │ &       &"""
 
     @test sprint(show, "text/html", gd) ==
         "<p><b>$summary_str</b></p><p><i>" *
@@ -1448,10 +1448,15 @@ end
           groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test isequal_typed(DataFrame(gdf), df)
 
-    @test sprint(show, groupby_checked(df, [])) == "GroupedDataFrame with 1 group based on key: \n" *
-        "Group 1 (3 rows): \n│ Row │ x1    │ x2    │ y     │\n│     │ Int64 │ Int64 │ Int64 │\n" *
-        "├─────┼───────┼───────┼───────┤\n│ 1   │ 1     │ 1     │ 1     │\n" *
-        "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
+    @test sprint(show, groupby_checked(df, [])) == """
+        GroupedDataFrame with 1 group based on key: 
+        Group 1 (3 rows): 
+         Row │ x1     x2     y
+             │ Int64  Int64  Int64
+        ─────┼─────────────────────
+         1   │ 1      1      1
+         2   │ 2      1      2
+         3   │ 2      2      3"""
 
     df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
     gd = groupby_checked(df, :a)
