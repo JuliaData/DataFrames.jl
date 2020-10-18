@@ -1136,7 +1136,7 @@ function _combine(gd::GroupedDataFrame, cs_norm::Vector{Any}, optional_transform
 
     trans_res = Vector{TransRes}()
 
-    # seen_cols keeps an information about lotacion of columns already processed
+    # seen_cols keeps an information about location of columns already processed
     # and if a given column can be replaced in the future
     seen_cols = Dict{Symbol, Tuple{Bool, Int}}()
 

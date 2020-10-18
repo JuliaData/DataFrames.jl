@@ -17,10 +17,9 @@ object from your data frame using the `groupby` function that takes two argument
 
     All operations described for `GroupedDataFrame` in this section of the manual
     are also supported for `AbstractDataFrame` in which case it is considered as
-    being grouped by no columns (typically meaning that it has one group except
-    when the data frame has zero rows in which case it is treated as having zero groups).
+    being grouped on no columns (meaning it has a single group, or zero groups if it is empty).
     The only difference is that in this case the `keepkeys` and `ungroup` keyword
-    arguments are not supported and always a data frame is returned.
+    arguments are not supported and a data frame is always returned.
 
 Operations can then be applied on each group using one of the following functions:
 * `combine`: does not put restrictions on number of rows returned, the order of rows
@@ -46,7 +45,7 @@ each subset of the `DataFrame`. This specification can be of the following forms
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
    in a group (without `target_cols` the new column is called `:nrow`)
-6. vectors or matrices transformations specified by `Pair` syntax described in points 2 to 5
+6. vectors or matrices containing transformations specified by the `Pair` syntax described in points 2 to 5
 8. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
@@ -55,17 +54,16 @@ each subset of the `DataFrame`. This specification can be of the following forms
 All functions have two types of signatures. One of them takes a `GroupedDataFrame`
 as a first argument and an arbitrary number of transfomations described above
 as following arguments. The second type of signature is when `Function` or `Type`
-is passed as a first argument and `GroupedDataFrame` is a second argument (in a
-similar fashion like it is passed in e.g. `map` function).
+is passed as a first argument and `GroupedDataFrame` is the second argument
+(similar to how it is passed to `map`).
 
-As a special rule that applies to `cols => function` and `cols => function =>
-target_cols` syntaxes is the following. If `cols` is wrapped in an `AsTable`
+As a special rule, with the `cols => function` and `cols => function =>
+target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
 object then a `NamedTuple` containing columns selected by `cols` is passed to
 `function`.
 
-What is allowed for `function` to return is determined by the `target_cols` value
-in the following way:
-1. If just a `function` is passed as an argument then returning a data frame,
+What is allowed for `function` to return is determined by the `target_cols` value:
+1. If both `cols` and `target_cols` are omitted (so only a `function` is passed), then returning a data frame,
    a matrix, a `NamedTuple`, or a `DataFrameRow` will produce multiple columns in the
    result. Returning any other value produces a single column.
 2. If `target_cols` is a `Symbol` or a string then the function is assumed to return
@@ -100,9 +98,10 @@ rows. As a particular rule, values wrapped in a `Ref` or a `0`-dimensional
 with the same number and order of rows as the source (even if `GroupedDataFrame`
 had its groups reordered).
 
-For `combine` return value is ordered by the order of groups in `GroupedDataFrame`
-and for each group the functions can return an arbibrary number of rows (provided
-that these numbers are consistent).
+For `combine`, rows in the returned object appear in the order of
+groups in the `GroupedDataFrame`. The functions can return an arbitrary number
+of rows for each group, but the kind of returned object and the number
+and names of columns must be the same for all groups.
 
 It is allowed to mix single values and vectors if multiple transformations
 are requested. In this case single value will be repeated to match the length
@@ -117,19 +116,17 @@ specified by `cols`. If `ByRow` is used it is allowed for
 `cols` to select an empty set of columns, in which case `function`
  is called for each row without any arguments.
 
-The kind of return value and the number and names of columns must be the same for all groups.
-
 There the following keyword arguments are supported by the transformation functions
 (not all keyword arguments are supported in all cases; in general they are allowed
 in situations when they are meaningful, see the documentation of the specific functions
 for details):
-- `keepkeys` : if grouping columns should be kept in the returned data frame.
-- `ungroup` : if the retun value of the operation should be a data frame or a
+- `keepkeys` : whether grouping columns should be kept in the returned data frame.
+- `ungroup` : whether the return value of the operation should be a data frame or a
   `GroupedDataFrame`.
-- `copycols` : if columns of the source data frame should be copied if no transformation
+- `copycols` : whether columns of the source data frame should be copied if no transformation
   is applied to them.
-- `renamecols` : if in `cols => funcion` form the automatically generated column name
-  should include the name of transformation function or not.
+- `renamecols` : whether in the `cols => function` form automatically generated column names
+  should include the name of transformation functions or not.
 
 We show several examples of these functions applied to the `iris` dataset below:
 
