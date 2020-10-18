@@ -582,8 +582,11 @@ function _show(io::IO,
 
     _check_consistency(df)
 
-    names = permutedims(propertynames(df))
-    types = permutedims(compacttype.(eltype.(eachcol(df))))
+    aux       = string.(propertynames(df))
+    names_len = textwidth.(aux)
+    maxwidth  = max.(12, names_len)
+    names     = permutedims(aux)
+    types     = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
 
     crop = :both
 
@@ -593,6 +596,18 @@ function _show(io::IO,
         crop = :vertical
     elseif allrows
         crop = :horizontal
+    end
+
+    # Make sure that `truncate` does not hide the type and the column name.
+    maximum_columns_width = Vector{Int}(undef, length(names))
+
+    for i = 1:length(maximum_columns_width)
+        if truncate == 0
+            maximum_columns_width[i] = 0
+        else
+            maximum_columns_width[i] =
+                max(truncate + 1, names_len[i], textwidth(types[i]))
+        end
     end
 
     # Check if the user wants to display a summary about the DataFrame that is
@@ -622,7 +637,7 @@ function _show(io::IO,
                  crop_num_lines_at_beginning = 2,
                  formatters                  = (_pretty_tables_formatter,),
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
-                 maximum_columns_width       = truncate,
+                 maximum_columns_width       = maximum_columns_width,
                  newline_at_end              = false,
                  nosubheader                 = !eltypes,
                  row_name_alignment          = :l,
