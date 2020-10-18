@@ -103,10 +103,11 @@ rows. As a particular rule, values wrapped in a `Ref` or a `0`-dimensional
 with the same number and order of rows as the source (even if `GroupedDataFrame`
 had its groups reordered).
 
-For `combine`, rows in the returned object appear in the order of
-groups in the `GroupedDataFrame`. The functions can return an arbitrary number
-of rows for each group, but the kind of returned object and the number
-and names of columns must be the same for all groups.
+For `combine`, rows in the returned object appear in the order of groups in the
+`GroupedDataFrame`. The functions can return an arbitrary number of rows for
+each group, but the kind of returned object and the number and names of columns
+must be the same for all groups, except when a `DataFrame()` or `NamedTuple()`
+is returned, in which case a given group is skipped.
 
 It is allowed to mix single values and vectors if multiple transformations
 are requested. In this case single value will be repeated to match the length
@@ -127,10 +128,10 @@ for details):
 - `keepkeys` : whether grouping columns should be kept in the returned data frame.
 - `ungroup` : whether the return value of the operation should be a data frame or a
   `GroupedDataFrame`.
-- `copycols` : whether columns of the source data frame should be copied if no transformation
-  is applied to them.
-- `renamecols` : whether in the `cols => function` form automatically generated column names
-  should include the name of transformation functions or not.
+- `copycols` : whether columns of the source data frame should be copied if no
+  transformation is applied to them.
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
 
 We show several examples of these functions applied to the `iris` dataset below:
 
