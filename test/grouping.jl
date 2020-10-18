@@ -2580,43 +2580,67 @@ end
 @testset "corner cases of group_reduce" begin
     df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1.5,1.5,1.5])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum) == DataFrame(g=1:2, x_sum=[3.0, 4.5])
+    @test combine_checked(gdf, :x => sum) == DataFrame(g=1:2, x_sum=[3.0, 4.5])
 
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_sum_skipmissing=[3.0, 4.5])
-    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.5])
-    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
-    @test combine(gdf, :x => mean) == DataFrame(g=1:2, x_mean=[1.0, 1.5])
-    @test combine(gdf, :x => var) == DataFrame(g=1:2, x_var=[0.0, 0.0])
+    @test combine_checked(gdf, :x => sum∘skipmissing) ==
+        DataFrame(g=1:2, x_sum_skipmissing=[3.0, 4.5])
+    @test combine_checked(gdf, :x => mean∘skipmissing) ==
+        DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.5])
+    @test combine_checked(gdf, :x => var∘skipmissing) ==
+        DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
+    @test combine_checked(gdf, :x => mean) ==
+        DataFrame(g=1:2, x_mean=[1.0, 1.5])
+    @test combine_checked(gdf, :x => var) ==
+        DataFrame(g=1:2, x_var=[0.0, 0.0])
 
     df = DataFrame(g=[1,1,1,2,2,2], x=Any[1,1,1,1,1,missing])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_sum_skipmissing=[3, 2])
-    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.0])
-    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
-    @test combine(gdf, :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
-    @test combine(gdf, :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
-    @test combine(gdf, :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
+    @test combine_checked(gdf, :x => sum∘skipmissing) ==
+        DataFrame(g=1:2, x_sum_skipmissing=[3, 2])
+    @test combine_checked(gdf, :x => mean∘skipmissing) ==
+        DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.0])
+    @test combine_checked(gdf, :x => var∘skipmissing) ==
+        DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
+    @test combine_checked(gdf, :x => sum) ≅
+        DataFrame(g=1:2, x_sum=[3, missing])
+    @test combine_checked(gdf, :x => mean) ≅
+        DataFrame(g=1:2, x_mean=[1.0, missing])
+    @test combine_checked(gdf, :x => var) ≅
+        DataFrame(g=1:2, x_var=[0.0, missing])
 
     df = DataFrame(g=[1,1,1,2,2,2], x=Union{Real, Missing}[1,1,1,1,1,missing])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1:2, x_sum_skipmissing=[3, 2])
-    @test combine(gdf, :x => mean∘skipmissing) == DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.0])
-    @test combine(gdf, :x => var∘skipmissing) == DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
-    @test combine(gdf, :x => sum) ≅ DataFrame(g=1:2, x_sum=[3, missing])
-    @test combine(gdf, :x => mean) ≅ DataFrame(g=1:2, x_mean=[1.0, missing])
-    @test combine(gdf, :x => var) ≅ DataFrame(g=1:2, x_var=[0.0, missing])
+    @test combine_checked(gdf, :x => sum∘skipmissing) ==
+        DataFrame(g=1:2, x_sum_skipmissing=[3, 2])
+    @test combine_checked(gdf, :x => mean∘skipmissing) ==
+        DataFrame(g=1:2, x_mean_skipmissing=[1.0, 1.0])
+    @test combine_checked(gdf, :x => var∘skipmissing) ==
+        DataFrame(g=1:2, x_var_skipmissing=[0.0, 0.0])
+    @test combine_checked(gdf, :x => sum) ≅
+        DataFrame(g=1:2, x_sum=[3, missing])
+    @test combine_checked(gdf, :x => mean) ≅
+        DataFrame(g=1:2, x_mean=[1.0, missing])
+    @test combine_checked(gdf, :x => var) ≅
+        DataFrame(g=1:2, x_var=[0.0, missing])
 
     Random.seed!(1)
     df = DataFrame(g = rand(1:2, 1000), x1 = rand(Int, 1000))
     df.x2 = big.(df.x1)
     gdf = groupby_checked(df, :g)
 
-    res = combine(gdf, :x1 => sum, :x2 => sum, :x1 => x -> sum(x), :x2 => x -> sum(x))
+    res = combine_checked(gdf,
+                          :x1 => sum, :x2 => sum,
+                          :x1 => x -> sum(x),
+                          :x2 => x -> sum(x))
     @test res.x1_sum == res.x1_function
     @test res.x2_sum == res.x2_function
     @test res.x1_sum != res.x2_sum # we are large enough to be sure we differ
 
-    res = combine(gdf, :x1 => mean, :x2 => mean, :x1 => x -> mean(x), :x2 => x -> mean(x))
+    res = combine_checked(gdf,
+                          :x1 => mean,
+                          :x2 => mean,
+                          :x1 => x -> mean(x),
+                          :x2 => x -> mean(x))
     if VERSION >= v"1.5"
         @test res.x1_mean ≈ res.x1_function
     else
@@ -2628,71 +2652,97 @@ end
     # make sure we do correct promotions in corner case similar to Base
     df = DataFrame(g=[1,1,1,1,1,1], x=Real[1,1,big(typemax(Int)),1,1,1])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum)[1, 2] == sum(df.x)
-    @test eltype(combine(gdf, :x => sum)[!, 2]) === BigInt
+    res = combine_checked(gdf, :x => sum)
+    @test res[1, 2] == sum(df.x)
+    @test eltype(res[!, 2]) === BigInt
     df = DataFrame(g=[1,1,1,1,1,1], x=Real[1,1,typemax(Int),1,1,1])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum)[1, 2] == sum(df.x)
-    @test eltype(combine(gdf, :x => sum)[!, 2]) === Int
+    res = combine_checked(gdf, :x => sum)
+    @test res[1, 2] == sum(df.x)
+    @test eltype(res[!, 2]) === Int
+
     df = DataFrame(g=[1,1,1,1,1,1], x=fill(missing, 6))
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum)[1, 2] isa Missing
-    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
+    res = combine_checked(gdf, :x => sum)
+    @test res[1, 2] isa Missing
+    @test eltype(res[!, 2]) === Missing
     @test_throws MethodError combine(gdf, :x => sum∘skipmissing)
+
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Real, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum)[1, 2] isa Missing
-    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
-    @test combine(gdf, :x => sum∘skipmissing) == DataFrame(g=1, x_sum_skipmissing=0)
-    @test eltype(combine(gdf, :x => sum∘skipmissing)[!, 2]) === Int
+    res = combine_checked(gdf, :x => sum)
+    @test res[1, 2] isa Missing
+    @test eltype(res[!, 2]) === Missing
+    res = combine_checked(gdf, :x => sum∘skipmissing)
+    @test res == DataFrame(g=1, x_sum_skipmissing=0)
+    @test eltype(res[!, 2]) === Int
+
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Union{Int, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum)[1, 2] isa Missing
-    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
-    @test combine(gdf, :x => sum∘skipmissing)[1, 2] == 0
-    @test eltype(combine(gdf, :x => sum∘skipmissing)[!, 2]) === Int
+    res = combine_checked(gdf, :x => sum)
+    @test res[1, 2] isa Missing
+    @test eltype(res[!, 2]) === Missing
+
+    res = combine_checked(gdf, :x => sum∘skipmissing)
+    @test res[1, 2] == 0
+    @test eltype(res[!, 2]) === Int
     df = DataFrame(g=[1,1,1,1,1,1], x=convert(Vector{Any}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum)[1, 2] isa Missing
-    @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
+    res = combine_checked(gdf, :x => sum)
+    @test res[1, 2] isa Missing
+    @test eltype(res[!, 2]) === Missing
     @test_throws MethodError combine(gdf, :x => sum∘skipmissing)
 
     # these questions can go to a final exam in "mastering combine" class
     df = DataFrame(g=[1, 2, 3], x=["a", "b", "c"])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum => :a, :x => prod => :b) ==
-          combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
+    @test combine_checked(gdf, :x => sum => :a, :x => prod => :b) ==
+          combine_checked(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
+
     df = DataFrame(g=[1, 2, 3], x=Any["a", "b", "c"])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum => :a, :x => prod => :b) ==
-          combine(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
+    @test combine_checked(gdf, :x => sum => :a, :x => prod => :b) ==
+          combine_checked(gdf, :x => (x -> sum(x)) => :a, :x => (x -> prod(x)) => :b)
+
     df = DataFrame(g=[1, 1], x=[missing, "a"])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
-          combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
+    @test combine_checked(gdf,
+                          :x => sum∘skipmissing => :a,
+                          :x => prod∘skipmissing => :b) ==
+          combine_checked(gdf,
+                          :x => (x -> sum(skipmissing(x))) => :a,
+                          :x => (x -> prod(skipmissing(x))) => :b)
+
     df = DataFrame(g=[1, 1], x=Any[missing, "a"])
     gdf = groupby_checked(df, :g)
-    @test combine(gdf, :x => sum∘skipmissing => :a, :x => prod∘skipmissing => :b) ==
-          combine(gdf, :x => (x -> sum(skipmissing(x))) => :a, :x => (x -> prod(skipmissing(x))) => :b)
+    @test combine_checked(gdf,
+                          :x => sum∘skipmissing => :a,
+                          :x => prod∘skipmissing => :b) ==
+          combine_checked(gdf,
+                          :x => (x -> sum(skipmissing(x))) => :a,
+                          :x => (x -> prod(skipmissing(x))) => :b)
 
     df = DataFrame(g=[1, 2], x=Any[nothing, "a"])
     gdf = groupby_checked(df, :g)
-    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    df2 = combine_checked(gdf, :x => sum => :a, :x => prod => :b)
     @test df2 == DataFrame(g=[1, 2], a=[nothing, "a"], b=[nothing, "a"])
     @test eltype(df2.a) === eltype(df2.b) === Union{Nothing, String}
+
     df = DataFrame(g=[1, 2], x=Any[1, 1.0])
     gdf = groupby_checked(df, :g)
-    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    df2 = _checked(gdf, :x => sum => :a, :x => prod => :b)
     @test df2 == DataFrame(g=[1, 2], a=ones(2), b=ones(2))
     @test eltype(df2.a) === eltype(df2.b) === Float64
+
     df = DataFrame(g=[1, 2], x=[1, "1"])
     gdf = groupby_checked(df, :g)
-    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    df2 = combine_checked(gdf, :x => sum => :a, :x => prod => :b)
     @test df2 == DataFrame(g=[1, 2], a=[1, "1"], b=[1, "1"])
     @test eltype(df2.a) === eltype(df2.b) === Any
+
     df = DataFrame(g=[1, 1, 2], x=[UInt8(1), UInt8(1), missing])
     gdf = groupby_checked(df, :g)
-    df2 = combine(gdf, :x => sum => :a, :x => prod => :b)
+    df2 = combine_checked(gdf, :x => sum => :a, :x => prod => :b)
     @test df2 ≅ DataFrame(g=[1, 2], a=[2, missing], b=[1, missing])
     @test eltype(df2.a) === eltype(df2.b) === Union{UInt, Missing}
 end
