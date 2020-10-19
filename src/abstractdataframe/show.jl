@@ -585,7 +585,7 @@ function _show(io::IO,
     aux       = names(df)
     names_len = textwidth.(aux)
     maxwidth  = max.(12, names_len)
-    names     = permutedims(aux)
+    names_mat = permutedims(aux)
     types     = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
 
     crop = :both
@@ -601,9 +601,6 @@ function _show(io::IO,
     # Make sure that `truncate` does not hide the type and the column name.
     maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
                              for (l, t) in zip(names_len, types)]
-                
-        end
-    end
 
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
@@ -626,7 +623,7 @@ function _show(io::IO,
     compact_printing::Bool = get(io, :compact, true)
 
     # Print the table with the selected options.
-    pretty_table(io, df, vcat(names, types);
+    pretty_table(io, df, vcat(names_mat, types);
                  alignment                   = :l,
                  compact_printing            = compact_printing,
                  continuation_row_alignment  = :l,
