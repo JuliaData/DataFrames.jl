@@ -582,7 +582,7 @@ function _show(io::IO,
 
     _check_consistency(df)
 
-    aux       = string.(propertynames(df))
+    aux       = names(df)
     names_len = textwidth.(aux)
     maxwidth  = max.(12, names_len)
     names     = permutedims(aux)
