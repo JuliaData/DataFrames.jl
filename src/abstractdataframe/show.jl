@@ -617,7 +617,7 @@ function _show(io::IO,
         show_row_number = true
         row_names = nothing
     else
-        size(df, 1) != 1 &&
+        nrow(df) != 1 &&
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
         show_row_number = false
         row_names = [string(rowid)]
