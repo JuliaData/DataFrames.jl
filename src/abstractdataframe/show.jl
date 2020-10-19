@@ -626,7 +626,7 @@ function _show(io::IO,
     compact_printing::Bool = get(io, :compact, true)
 
     # Print the table with the selected options.
-    pretty_table(io, df, vcat(names,types);
+    pretty_table(io, df, vcat(names, types);
                  alignment                   = :l,
                  compact_printing            = compact_printing,
                  continuation_row_alignment  = :l,
