@@ -10,11 +10,12 @@
 # `missing`, `#undef`, and types related to DataFrames.jl.
 function _pretty_tables_highlighter_func(data, i::Integer, j::Integer)
     try
-        return ismissing(data[i,j]) ||
-            data[i,j] === nothing ||
-            typeof(data[i,j]) <: Union{AbstractDataFrame, GroupedDataFrame,
-                                       DataFrameRow, DataFrameRows,
-                                       DataFrameColumns}
+        cell = data[i, j]
+        return ismissing(cell) ||
+            cell === nothing ||
+            cell isa Union{AbstractDataFrame, GroupedDataFrame,
+                           DataFrameRow, DataFrameRows,
+                           DataFrameColumns}
     catch e
         if isa(e, UndefRefError)
             return true
