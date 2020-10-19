@@ -3070,35 +3070,100 @@ end
 end
 
 @testset "new rules tests" begin
-    df = DataFrame(id = [1, 2, 3, 1, 3, 2], x=1:6)
-    gdf = groupby(df, :id)
+    @testset "basic tests" begin
+        df = DataFrame(id = [1, 2, 3, 1, 3, 2], x=1:6)
+        gdf = groupby(df, :id)
 
-    @test combine(gdf, x -> reshape(1:4, 2, 2)) ==
-          DataFrame(id=[1,1,2,2,3,3], x1=[1,2,1,2,1,2], x2=[3,4,3,4,3,4])
-    @test combine(gdf, x -> DataFrame(a=1:2, b=3:4)) ==
-          DataFrame(id=[1,1,2,2,3,3], a=[1,2,1,2,1,2], b=[3,4,3,4,3,4])
-    @test combine(gdf, x -> DataFrame(a=1:2, b=3:4)[1, :]) ==
-          DataFrame(id=[1,2,3], a=[1,1,1], b=[3,3,3])
-    @test combine(gdf, x -> (a=1, b=3)) ==
-          DataFrame(id=[1,2,3], a=[1,1,1], b=[3,3,3])
-    @test combine(gdf, x -> (a=1:2, b=3:4)) ==
-          DataFrame(id=[1,1,2,2,3,3], a=[1,2,1,2,1,2], b=[3,4,3,4,3,4])
-    @test combine(gdf, :x => (x -> Dict(:a => 1:2, :b => 3:4)) => AsTable) ==
-          DataFrame(id=[1,1,2,2,3,3], a=[1,2,1,2,1,2], b=[3,4,3,4,3,4])
-    @test combine(gdf, :x => ByRow(x -> [x,x+1,x+2]) => AsTable) ==
-          DataFrame(id=[1,1,2,2,3,3], x1=[1,4,2,6,3,5], x2=[2,5,3,7,4,6], x3=[3,6,4,8,5,7])
-    @test combine(gdf, :x => ByRow(x -> (x,x+1,x+2)) => AsTable) ==
-          DataFrame(id=[1,1,2,2,3,3], x1=[1,4,2,6,3,5], x2=[2,5,3,7,4,6], x3=[3,6,4,8,5,7])
-    @test combine(gdf, :x => ByRow(x -> (a=x,b=x+1,c=x+2)) => AsTable) ==
-          DataFrame(id=[1,1,2,2,3,3], a=[1,4,2,6,3,5], b=[2,5,3,7,4,6], c=[3,6,4,8,5,7])
-    @test combine(gdf, :x => ByRow(x -> [x,x+1,x+2]) => [:p, :q, :r]) ==
-          DataFrame(id=[1,1,2,2,3,3], p=[1,4,2,6,3,5], q=[2,5,3,7,4,6], r=[3,6,4,8,5,7])
-    @test combine(gdf, :x => ByRow(x -> (x,x+1,x+2)) => [:p, :q, :r]) ==
-          DataFrame(id=[1,1,2,2,3,3], p=[1,4,2,6,3,5], q=[2,5,3,7,4,6], r=[3,6,4,8,5,7])
-    @test combine(gdf, :x => ByRow(x -> (a=x,b=x+1,c=x+2)) => [:p, :q, :r]) ==
-          DataFrame(id=[1,1,2,2,3,3], p=[1,4,2,6,3,5], q=[2,5,3,7,4,6], r=[3,6,4,8,5,7])
-    @test combine(gdf, :x => ByRow(x -> 1) => [:p]) == DataFrame(id=[1,1,2,2,3,3], p=1)
-    @test_throws ArgumentError combine(gdf, :x => (x -> 1) => [:p])
+        @test combine(gdf, x -> reshape(1:4, 2, 2)) ==
+              DataFrame(id=[1,1,2,2,3,3], x1=[1,2,1,2,1,2], x2=[3,4,3,4,3,4])
+        @test combine(gdf, x -> DataFrame(a=1:2, b=3:4)) ==
+              DataFrame(id=[1,1,2,2,3,3], a=[1,2,1,2,1,2], b=[3,4,3,4,3,4])
+        @test combine(gdf, x -> DataFrame(a=1:2, b=3:4)[1, :]) ==
+              DataFrame(id=[1,2,3], a=[1,1,1], b=[3,3,3])
+        @test combine(gdf, x -> (a=1, b=3)) ==
+              DataFrame(id=[1,2,3], a=[1,1,1], b=[3,3,3])
+        @test combine(gdf, x -> (a=1:2, b=3:4)) ==
+              DataFrame(id=[1,1,2,2,3,3], a=[1,2,1,2,1,2], b=[3,4,3,4,3,4])
+        @test combine(gdf, :x => (x -> Dict(:a => 1:2, :b => 3:4)) => AsTable) ==
+              DataFrame(id=[1,1,2,2,3,3], a=[1,2,1,2,1,2], b=[3,4,3,4,3,4])
+        @test combine(gdf, :x => ByRow(x -> [x,x+1,x+2]) => AsTable) ==
+              DataFrame(id=[1,1,2,2,3,3], x1=[1,4,2,6,3,5], x2=[2,5,3,7,4,6], x3=[3,6,4,8,5,7])
+        @test combine(gdf, :x => ByRow(x -> (x,x+1,x+2)) => AsTable) ==
+              DataFrame(id=[1,1,2,2,3,3], x1=[1,4,2,6,3,5], x2=[2,5,3,7,4,6], x3=[3,6,4,8,5,7])
+        @test combine(gdf, :x => ByRow(x -> (a=x,b=x+1,c=x+2)) => AsTable) ==
+              DataFrame(id=[1,1,2,2,3,3], a=[1,4,2,6,3,5], b=[2,5,3,7,4,6], c=[3,6,4,8,5,7])
+        @test combine(gdf, :x => ByRow(x -> [x,x+1,x+2]) => [:p, :q, :r]) ==
+              DataFrame(id=[1,1,2,2,3,3], p=[1,4,2,6,3,5], q=[2,5,3,7,4,6], r=[3,6,4,8,5,7])
+        @test combine(gdf, :x => ByRow(x -> (x,x+1,x+2)) => [:p, :q, :r]) ==
+              DataFrame(id=[1,1,2,2,3,3], p=[1,4,2,6,3,5], q=[2,5,3,7,4,6], r=[3,6,4,8,5,7])
+        @test combine(gdf, :x => ByRow(x -> (a=x,b=x+1,c=x+2)) => [:p, :q, :r]) ==
+              DataFrame(id=[1,1,2,2,3,3], p=[1,4,2,6,3,5], q=[2,5,3,7,4,6], r=[3,6,4,8,5,7])
+        @test combine(gdf, :x => ByRow(x -> 1) => [:p]) == DataFrame(id=[1,1,2,2,3,3], p=1)
+        @test_throws ArgumentError combine(gdf, :x => (x -> 1) => [:p])
+
+        @test select(gdf, x -> reshape(1:4, 2, 2)) ==
+              DataFrame(id=[1,2,3,1,3,2], x1=[1,1,1,2,2,2], x2=[3,3,3,4,4,4])
+        @test select(gdf, x -> DataFrame(a=1:2, b=3:4)) ==
+              DataFrame(id=[1,2,3,1,3,2], a=[1,1,1,2,2,2], b=[3,3,3,4,4,4])
+        @test select(gdf, x -> DataFrame(a=1:2, b=3:4)[1, :]) ==
+              DataFrame(id=[1,2,3,1,3,2], a=[1,1,1,1,1,1], b=[3,3,3,3,3,3])
+        @test select(gdf, x -> (a=1, b=3)) ==
+              DataFrame(id=[1,2,3,1,3,2], a=[1,1,1,1,1,1], b=[3,3,3,3,3,3])
+        @test select(gdf, x -> (a=1:2, b=3:4)) ==
+              DataFrame(id=[1,2,3,1,3,2], a=[1,1,1,2,2,2], b=[3,3,3,4,4,4])
+        @test select(gdf, :x => (x -> Dict(:a => 1:2, :b => 3:4)) => AsTable) ==
+              DataFrame(id=[1,2,3,1,3,2], a=[1,1,1,2,2,2], b=[3,3,3,4,4,4])
+        @test select(gdf, :x => ByRow(x -> [x,x+1,x+2]) => AsTable) ==
+              DataFrame(id=[1,2,3,1,3,2], x1=[1,2,3,4,5,6], x2=[2,3,4,5,6,7], x3=[3,4,5,6,7,8])
+        @test select(gdf, :x => ByRow(x -> (x,x+1,x+2)) => AsTable) ==
+              DataFrame(id=[1,2,3,1,3,2], x1=[1,2,3,4,5,6], x2=[2,3,4,5,6,7], x3=[3,4,5,6,7,8])
+        @test select(gdf, :x => ByRow(x -> (a=x,b=x+1,c=x+2)) => AsTable) ==
+              DataFrame(id=[1,2,3,1,3,2], a=[1,2,3,4,5,6], b=[2,3,4,5,6,7], c=[3,4,5,6,7,8])
+        @test select(gdf, :x => ByRow(x -> [x,x+1,x+2]) => [:p, :q, :r]) ==
+              DataFrame(id=[1,2,3,1,3,2], p=[1,2,3,4,5,6], q=[2,3,4,5,6,7], r=[3,4,5,6,7,8])
+        @test select(gdf, :x => ByRow(x -> (x,x+1,x+2)) => [:p, :q, :r]) ==
+              DataFrame(id=[1,2,3,1,3,2], p=[1,2,3,4,5,6], q=[2,3,4,5,6,7], r=[3,4,5,6,7,8])
+        @test select(gdf, :x => ByRow(x -> (a=x,b=x+1,c=x+2)) => [:p, :q, :r]) ==
+              DataFrame(id=[1,2,3,1,3,2], p=[1,2,3,4,5,6], q=[2,3,4,5,6,7], r=[3,4,5,6,7,8])
+        @test select(gdf, :x => ByRow(x -> 1) => [:p]) == DataFrame(id=[1,2,3,1,3,2], p=1)
+        @test_throws ArgumentError select(gdf, :x => (x -> 1) => [:p])
+    end
+
+    @testset "checking invariants" begin
+        Random.seed!(1234)
+        df = DataFrame(x=rand(1000), id=rand(1:20, 1000), y=rand(1000), z=rand(1000))
+        gdf = groupby_checked(df, :id)
+        gdf2 = gdf[20:-1:1]
+        @test transform(df, x -> sum(df.x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                        [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y) ==
+              transform(gdf, x -> sum(parent(x).x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                        [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y) ==
+              transform(gdf2, x -> sum(parent(x).x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                        [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y) ==
+              DataFrame(:x => df.z, :id => df.id, :y => df.y, :z => df.z, :x1 => sum(df.x),
+                        :p => 2df.x, :q => 2df.y, :id2 => df.id, Symbol("x_y_z_+") => df.x+df.y+df.z,
+                        :min => min.(df.y, df.z), :max => max.(df.y, df.z))
+
+        @test select(df, x -> sum(df.x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                    [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y) ==
+              select(gdf, x -> sum(parent(x).x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                    [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y, keepkeys=false) ==
+              select(gdf2, x -> sum(parent(x).x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                    [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y, keepkeys=false) ==
+              DataFrame(:x1 => sum(df.x), :p => 2df.x, :q => 2df.y, :id2 => df.id,
+                        :x => df.z, Symbol("x_y_z_+") => df.x+df.y+df.z,
+                        :min => min.(df.y, df.z), :max => max.(df.y, df.z), :y => df.y)
+
+        @test combine(df, x -> sum(df.x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                      [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y) |> sort ==
+              combine(gdf, x -> sum(parent(x).x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                      [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y, keepkeys=false) |> sort ==
+              combine(gdf2, x -> sum(parent(x).x), x -> (p=2x.x, q=2x.y), :id => :id2, :z => :x,
+                      [:x, :y, :z] => +, [:y, :z] => ByRow(minmax) => [:min, :max], :y, keepkeys=false) |> sort ==
+              DataFrame(:x1 => sum(df.x), :p => 2df.x, :q => 2df.y, :id2 => df.id,
+                        :x => df.z, Symbol("x_y_z_+") => df.x+df.y+df.z,
+                        :min => min.(df.y, df.z), :max => max.(df.y, df.z), :y => df.y) |> sort
+    end
 end
 
 end # module
