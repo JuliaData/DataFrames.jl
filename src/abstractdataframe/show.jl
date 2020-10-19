@@ -599,14 +599,9 @@ function _show(io::IO,
     end
 
     # Make sure that `truncate` does not hide the type and the column name.
-    maximum_columns_width = Vector{Int}(undef, length(names))
-
-    for i = 1:length(maximum_columns_width)
-        if truncate == 0
-            maximum_columns_width[i] = 0
-        else
-            maximum_columns_width[i] =
-                max(truncate + 1, names_len[i], textwidth(types[i]))
+    maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+                             for (l, t) in zip(names_len, types)]
+                
         end
     end
 
