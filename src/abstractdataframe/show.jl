@@ -628,10 +628,12 @@ function _show(io::IO,
         row_names = [string(rowid)]
     end
 
+    compact_printing::Bool = get(io, :compact, true)
+
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names,types);
                  alignment                   = :l,
-                 compact_printing            = get(io, :compact, true),
+                 compact_printing            = compact_printing,
                  continuation_row_alignment  = :l,
                  crop                        = crop,
                  crop_num_lines_at_beginning = 2,
