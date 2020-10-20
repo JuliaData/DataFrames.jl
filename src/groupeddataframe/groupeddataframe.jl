@@ -33,6 +33,186 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
                                          # thread safe
 end
 
+"""
+    groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
+
+Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
+into row groups.
+
+# Arguments
+- `df` : an `AbstractDataFrame` to split
+- `cols` : data frame columns to group by. Can be any column selector
+  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `sort` : whether to sort groups according to the values of the grouping columns
+  `cols`; if all `cols` are `CategoricalVector`s then groups are always sorted
+  irrespective of the value of `sort`
+- `skipmissing` : whether to skip groups with `missing` values in one of the
+  grouping columns `cols`
+
+# Details
+An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
+for each grouping into `df`.
+Within each group, the order of rows in `df` is preserved.
+
+`cols` can be any valid data frame indexing expression.
+In particular if it is an empty vector then a single-group `GroupedDataFrame`
+is created.
+
+A `GroupedDataFrame` also supports
+indexing by groups, `map` (which applies a function to each group)
+and `combine` (which applies a function to each group
+and combines the result into a data frame).
+
+`GroupedDataFrame` also supports the dictionary interface. The keys are
+[`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
+which can also be used to get the values of the grouping columns for each group.
+`Tuples` and `NamedTuple`s containing the values of the grouping columns (in the
+same order as the `cols` argument) are also accepted as indices. Finally,
+an `AbstractDict` can be used to index into a grouped data frame where
+the keys are column names of the data frame. The order of the keys does
+not matter in this case.
+
+# See also
+
+[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
+
+# Examples
+```julia
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a)
+GroupedDataFrame with 4 groups based on key: a
+First Group (2 rows): a = 1
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 1     │
+│ 2   │ 1     │ 2     │ 5     │
+⋮
+Last Group (2 rows): a = 4
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 4     │ 1     │ 4     │
+│ 2   │ 4     │ 1     │ 8     │
+
+julia> gd[1]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 1     │
+│ 2   │ 1     │ 2     │ 5     │
+
+julia> last(gd)
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 4     │ 1     │ 4     │
+│ 2   │ 4     │ 1     │ 8     │
+
+julia> gd[(a=3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> gd[Dict("a" => 3)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> gd[(3,)]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> k = first(keys(gd))
+GroupKey: (a = 3)
+
+julia> gd[k]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+
+julia> for g in gd
+           println(g)
+       end
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 1     │
+│ 2   │ 1     │ 2     │ 5     │
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 2     │
+│ 2   │ 2     │ 1     │ 6     │
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 4     │ 1     │ 4     │
+│ 2   │ 4     │ 1     │ 8     │
+```
+"""
+function groupby(df::AbstractDataFrame, cols;
+                 sort::Bool=false, skipmissing::Bool=false)
+    _check_consistency(df)
+    idxcols = index(df)[cols]
+    if isempty(idxcols)
+        return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
+                                nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
+                                nothing, Threads.ReentrantLock())
+    end
+    sdf = select(df, idxcols, copycols=false)
+
+    groups = Vector{Int}(undef, nrow(df))
+    ngroups, rhashes, gslots, sorted =
+        row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
+                        groups, skipmissing, sort)
+
+    gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
+                          Threads.ReentrantLock())
+
+    # sort groups if row_group_slots hasn't already done that
+    if sort && !sorted
+        # Find index of representative row for each group
+        idx = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
+        group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
+        groups = gd.groups
+        @inbounds for i in eachindex(groups)
+            gix = groups[i]
+            groups[i] = gix == 0 ? 0 : group_invperm[gix]
+        end
+    end
+
+    return gd
+end
+
 function genkeymap(gd, cols)
     # currently we use Dict{Any,Int} because then field :keymap in GroupedDataFrame
     # has a concrete type which makes the access to it faster as we do not have a dynamic
