@@ -579,3 +579,106 @@ Base.unique(v::RepeatedVector) = unique(parent(v))
 #     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
 #     res
 # end
+
+Base.transpose(::AbstractDataFrame, args...; kwargs...) =
+    MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
+
+"""
+    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, AbstractString},
+                [dest_namescol::Union{Symbol, AbstractString}];
+                makeunique::Bool=false)
+
+Turn `df` on its side such that rows become columns
+and values in the column indexed by `src_namescol` become the names of new columns.
+In the resulting `DataFrame`, column names of `df` will become the first column
+with name specified by `dest_namescol`.
+
+# Arguments
+- `df` : the `AbstractDataFrame`
+- `src_namescol` : the column that will become the new header.
+  This column's element type must be `AbstractString` or `Symbol`.
+- `dest_namescol` : the name of the first column in the returned `DataFrame`.
+  Defaults to the same name as `src_namescol`.
+- `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
+
+Note: The element types of columns in resulting `DataFrame`
+(other than the first column, which always has element type `String`)
+will depend on the element types of _all_ input columns
+based on the result of `promote_type`.
+That is, if the source data frame contains `Int` and `Float64` columns,
+resulting columns will have element type `Float64`. If the source has
+`Int` and `String` columns, resulting columns will have element type `Any`.
+
+# Examples
+
+```jldoctest
+julia> df1 = DataFrame(a=["x", "y"], b=[1., 2.], c=[3, 4], d=[true,false])
+2×4 DataFrame
+│ Row │ a      │ b       │ c     │ d    │
+│     │ String │ Float64 │ Int64 │ Bool │
+├─────┼────────┼─────────┼───────┼──────┤
+│ 1   │ x      │ 1.0     │ 3     │ 1    │
+│ 2   │ y      │ 2.0     │ 4     │ 0    │
+
+julia> permutedims(df1, 1) # note the column types
+3×3 DataFrame
+│ Row │ a      │ x       │ y       │
+│     │ String │ Float64 │ Float64 │
+├─────┼────────┼─────────┼─────────┤
+│ 1   │ b      │ 1.0     │ 2.0     │
+│ 2   │ c      │ 3.0     │ 4.0     │
+│ 3   │ d      │ 1.0     │ 0.0     │
+
+julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3, 4], d=[true, false])
+2×4 DataFrame
+│ Row │ a      │ b   │ c     │ d    │
+│     │ String │ Any │ Int64 │ Bool │
+├─────┼────────┼─────┼───────┼──────┤
+│ 1   │ x      │ 1   │ 3     │ 1    │
+│ 2   │ y      │ two │ 4     │ 0    │
+
+julia> permutedims(df2, 1, "different_name")
+3×3 DataFrame
+│ Row │ different_name │ x   │ y   │
+│     │ String         │ Any │ Any │
+├─────┼────────────────┼─────┼─────┤
+│ 1   │ b              │ 1   │ two │
+│ 2   │ c              │ 3   │ 4   │
+│ 3   │ d              │ 1   │ 0   │
+```
+"""
+function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
+                          dest_namescol::Union{Symbol, AbstractString};
+                          makeunique::Bool=false)
+
+    if src_namescol isa Integer
+        1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
+    end
+    eltype(df[!, src_namescol]) <: SymbolOrString ||
+        throw(ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
+
+    df_notsrc = df[!, Not(src_namescol)]
+    df_permuted = DataFrame(dest_namescol => names(df_notsrc))
+
+    if ncol(df_notsrc) == 0
+        df_tmp = DataFrame(AbstractVector[[] for _ in 1:nrow(df)], df[!, src_namescol],
+                           makeunique=makeunique, copycols=false)
+    else
+        m = permutedims(Matrix(df_notsrc))
+        df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
+    end
+    return hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
+end
+
+function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
+                          makeunique::Bool=false)
+    if src_namescol isa Integer
+        1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
+        dest_namescol = _names(df)[src_namescol]
+    else
+        dest_namescol = src_namescol
+    end
+    return permutedims(df, src_namescol, dest_namescol; makeunique=makeunique)
+end

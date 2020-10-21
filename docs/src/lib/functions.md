@@ -57,6 +57,7 @@ vcat
 ```@docs
 stack
 unstack
+permutedims
 ```
 
 ## Sorting
