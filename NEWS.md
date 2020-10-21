@@ -43,7 +43,7 @@
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
 * `unstack` now does not depend on CategoricalArrays.jl and has two new keyword
   arguments `allowmissing` and `allowduplicates`
-  ([]())
+  ([#2494](https://github.com/JuliaData/DataFrames.jl/pull/2494))
 
 ## New functionalities
 
