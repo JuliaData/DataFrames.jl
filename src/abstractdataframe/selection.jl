@@ -1106,6 +1106,6 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                 push!(newinds, newind)
             end
         end
-        return view(dfv, :, isempty(newinds) ? [] : All(newinds...))
+        return view(dfv, :, Cols(newinds...))
     end
 end

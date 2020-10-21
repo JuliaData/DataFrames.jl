@@ -76,6 +76,7 @@
 * add `only` method for `AbstractDataFrame` ([#2449](https://github.com/JuliaData/DataFrames.jl/pull/2449))
 * passing empty sets of columns in `filter`/`filter!` and in `select`/`transform`/`combine`
   with `ByRow` is now accepted ([#2476](https://github.com/JuliaData/DataFrames.jl/pull/2476))
+* Add support for `Cols` from DataAPI.jl ([]())
 
 ## Deprecated
 
