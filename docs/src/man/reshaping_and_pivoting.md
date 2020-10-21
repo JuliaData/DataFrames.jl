@@ -380,3 +380,53 @@ julia> first(unstack(x, :Species, :vsum), 6)
 │ 4   │ PetalWidth  │ 0.244       │ 1.326           │ 2.026          │
 │ 5   │ id          │ 25.5        │ 75.5            │ 125.5          │
 ```
+
+To turn an `AbstractDataFrame` on its side, use [`permutedims`](@ref).
+
+```jldoctest reshape
+julia> df1 = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
+2×4 DataFrame
+│ Row │ a      │ b       │ c     │ d    │
+│     │ String │ Float64 │ Int64 │ Bool │
+├─────┼────────┼─────────┼───────┼──────┤
+│ 1   │ x      │ 1.0     │ 3     │ 1    │
+│ 2   │ y      │ 2.0     │ 4     │ 0    │
+
+julia> permutedims(df1, 1)
+3×3 DataFrame
+│ Row │ a      │ x       │ y       │
+│     │ String │ Float64 │ Float64 │
+├─────┼────────┼─────────┼─────────┤
+│ 1   │ b      │ 1.0     │ 2.0     │
+│ 2   │ c      │ 3.0     │ 4.0     │
+│ 3   │ d      │ 1.0     │ 0.0     │
+```
+
+Note that the column indexed by `src_colnames` in the original `df`
+becomes the column names in the permuted result,
+and the column names of the original become a new column.
+Typically, this would be used on columns with homogenous element types,
+since the element types of the other columns
+are the result of `promote_type` on _all_ the permuted columns.
+Note also that, by default, the new column created from the column names
+of the original `df` has the same name as `src_namescol`.
+An optional positional argument `dest_namescol` can alter this:
+
+```jldoctest reshape
+julia> df2 = DataFrame(a=["x", "y"], b=[1, "two"], c=[3, 4], d=[true, false])
+2×4 DataFrame
+│ Row │ a      │ b   │ c     │ d    │
+│     │ String │ Any │ Int64 │ Bool │
+├─────┼────────┼─────┼───────┼──────┤
+│ 1   │ x      │ 1   │ 3     │ 1    │
+│ 2   │ y      │ two │ 4     │ 0    │
+
+julia> permutedims(df2, 1, "different_name")
+3×3 DataFrame
+│ Row │ different_name │ x   │ y   │
+│     │ String         │ Any │ Any │
+├─────┼────────────────┼─────┼─────┤
+│ 1   │ b              │ 1   │ two │
+│ 2   │ c              │ 3   │ 4   │
+│ 3   │ d              │ 1   │ 0   │
+```
