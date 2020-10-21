@@ -43,16 +43,93 @@ that return views into the original data frame.
 
 # Examples
 ```julia
-d1 = DataFrame(a = repeat([1:3;], inner = [4]),
-               b = repeat([1:4;], inner = [3]),
-               c = randn(12),
-               d = randn(12),
-               e = map(string, 'a':'l'))
+julia> df = DataFrame(a = repeat([1:3;], inner = [2]),
+                      b = repeat([1:2;], inner = [3]),
+                      c = randn(6),
+                      d = randn(),
+                      e = map(string, 'a':'f'))
+6×5 DataFrame
+│ Row │ a     │ b     │ c        │ d        │ e      │
+│     │ Int64 │ Int64 │ Float64  │ Float64  │ String │
+├─────┼───────┼───────┼──────────┼──────────┼────────┤
+│ 1   │ 1     │ 1     │ -1.1078  │ 0.680175 │ a      │
+│ 2   │ 1     │ 1     │ 0.078634 │ 0.680175 │ b      │
+│ 3   │ 2     │ 1     │ -1.47615 │ 0.680175 │ c      │
+│ 4   │ 2     │ 2     │ 0.826434 │ 0.680175 │ d      │
+│ 5   │ 3     │ 2     │ 0.597258 │ 0.680175 │ e      │
+│ 6   │ 3     │ 2     │ 1.49645  │ 0.680175 │ f      │
 
-d1s = stack(d1, [:c, :d])
-d1s2 = stack(d1, [:c, :d], [:a])
-d1m = stack(d1, Not([:a, :b, :e]))
-d1s_name = stack(d1, Not([:a, :b, :e]), variable_name=:somemeasure)
+julia> stack(df, [:c, :d])
+12×5 DataFrame
+│ Row │ a     │ b     │ e      │ variable │ value    │
+│     │ Int64 │ Int64 │ String │ String   │ Float64  │
+├─────┼───────┼───────┼────────┼──────────┼──────────┤
+│ 1   │ 1     │ 1     │ a      │ c        │ -1.1078  │
+│ 2   │ 1     │ 1     │ b      │ c        │ 0.078634 │
+│ 3   │ 2     │ 1     │ c      │ c        │ -1.47615 │
+│ 4   │ 2     │ 2     │ d      │ c        │ 0.826434 │
+│ 5   │ 3     │ 2     │ e      │ c        │ 0.597258 │
+│ 6   │ 3     │ 2     │ f      │ c        │ 1.49645  │
+│ 7   │ 1     │ 1     │ a      │ d        │ 0.680175 │
+│ 8   │ 1     │ 1     │ b      │ d        │ 0.680175 │
+│ 9   │ 2     │ 1     │ c      │ d        │ 0.680175 │
+│ 10  │ 2     │ 2     │ d      │ d        │ 0.680175 │
+│ 11  │ 3     │ 2     │ e      │ d        │ 0.680175 │
+│ 12  │ 3     │ 2     │ f      │ d        │ 0.680175 │
+
+julia> stack(df, [:c, :d], [:a])
+12×3 DataFrame
+│ Row │ a     │ variable │ value    │
+│     │ Int64 │ String   │ Float64  │
+├─────┼───────┼──────────┼──────────┤
+│ 1   │ 1     │ c        │ -1.1078  │
+│ 2   │ 1     │ c        │ 0.078634 │
+│ 3   │ 2     │ c        │ -1.47615 │
+│ 4   │ 2     │ c        │ 0.826434 │
+│ 5   │ 3     │ c        │ 0.597258 │
+│ 6   │ 3     │ c        │ 1.49645  │
+│ 7   │ 1     │ d        │ 0.680175 │
+│ 8   │ 1     │ d        │ 0.680175 │
+│ 9   │ 2     │ d        │ 0.680175 │
+│ 10  │ 2     │ d        │ 0.680175 │
+│ 11  │ 3     │ d        │ 0.680175 │
+│ 12  │ 3     │ d        │ 0.680175 │
+
+julia> stack(df, Not([:a, :b, :e]))
+12×5 DataFrame
+│ Row │ a     │ b     │ e      │ variable │ value    │
+│     │ Int64 │ Int64 │ String │ String   │ Float64  │
+├─────┼───────┼───────┼────────┼──────────┼──────────┤
+│ 1   │ 1     │ 1     │ a      │ c        │ -1.1078  │
+│ 2   │ 1     │ 1     │ b      │ c        │ 0.078634 │
+│ 3   │ 2     │ 1     │ c      │ c        │ -1.47615 │
+│ 4   │ 2     │ 2     │ d      │ c        │ 0.826434 │
+│ 5   │ 3     │ 2     │ e      │ c        │ 0.597258 │
+│ 6   │ 3     │ 2     │ f      │ c        │ 1.49645  │
+│ 7   │ 1     │ 1     │ a      │ d        │ 0.680175 │
+│ 8   │ 1     │ 1     │ b      │ d        │ 0.680175 │
+│ 9   │ 2     │ 1     │ c      │ d        │ 0.680175 │
+│ 10  │ 2     │ 2     │ d      │ d        │ 0.680175 │
+│ 11  │ 3     │ 2     │ e      │ d        │ 0.680175 │
+│ 12  │ 3     │ 2     │ f      │ d        │ 0.680175 │
+
+julia> stack(df, Not([:a, :b, :e]), variable_name=:somemeasure)
+12×5 DataFrame
+│ Row │ a     │ b     │ e      │ somemeasure │ value    │
+│     │ Int64 │ Int64 │ String │ String      │ Float64  │
+├─────┼───────┼───────┼────────┼─────────────┼──────────┤
+│ 1   │ 1     │ 1     │ a      │ c           │ -1.1078  │
+│ 2   │ 1     │ 1     │ b      │ c           │ 0.078634 │
+│ 3   │ 2     │ 1     │ c      │ c           │ -1.47615 │
+│ 4   │ 2     │ 2     │ d      │ c           │ 0.826434 │
+│ 5   │ 3     │ 2     │ e      │ c           │ 0.597258 │
+│ 6   │ 3     │ 2     │ f      │ c           │ 1.49645  │
+│ 7   │ 1     │ 1     │ a      │ d           │ 0.680175 │
+│ 8   │ 1     │ 1     │ b      │ d           │ 0.680175 │
+│ 9   │ 2     │ 1     │ c      │ d           │ 0.680175 │
+│ 10  │ 2     │ 2     │ d      │ d           │ 0.680175 │
+│ 11  │ 3     │ 2     │ e      │ d           │ 0.680175 │
+│ 12  │ 3     │ 2     │ f      │ d           │ 0.680175 │
 ```
 """
 function stack(df::AbstractDataFrame,
@@ -121,19 +198,20 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
 end
 
 """
-    unstack(df::AbstractDataFrame, rowkeys, colkey, value; renamecols::Function=identity)
-    unstack(df::AbstractDataFrame, colkey, value; renamecols::Function=identity)
-    unstack(df::AbstractDataFrame; renamecols::Function=identity)
+    unstack(df::AbstractDataFrame, rowkeys, colkey, value; renamecols::Function=identity,
+            allowmissing::Bool=false, allowduplicates::Bool=false)
+    unstack(df::AbstractDataFrame, colkey, value; renamecols::Function=identity,
+            allowmissing::Bool=false, allowduplicates::Bool=false)
+    unstack(df::AbstractDataFrame; renamecols::Function=identity,
+            allowmissing::Bool=false, allowduplicates::Bool=false)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
-If `colkey` contains `missing` values then they will be skipped and a warning
-will be printed.
+Row keys and values from value column will be sorted by default unless they are
+not ordered (i.e. passing them to `sort` fails) in which case the order of the
+result is unspecified.
 
-If combination of `rowkeys` and `colkey` contains duplicate entries then last
-`value` will be retained and a warning will be printed.
-
-# Arguments
+# Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
 - `rowkeys` : the columns with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`.
@@ -141,127 +219,219 @@ If combination of `rowkeys` and `colkey` contains duplicate entries then last
 - `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
   defaults to `:variable`
 - `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
-- `renamecols` : a function called on each unique value in `colkey` which must
-                 return the name of the column to be created (typically as a string
-                 or a `Symbol`). Duplicate names are not allowed.
 
+# Keyword arguments
+
+`renamecols` is a function called on each unique value in `colkey` which must
+return the name of the column to be created (typically as a string or a
+`Symbol`). Duplicates in resulting names when converted to `Symbol` are not allowed.
+
+If `colkey` contains `missing` values then they will be included  if
+`allowmissing=true` and an error will be thrown otherwise (the default).
+
+If combination of `rowkeys` and `colkey` contains duplicate entries then last
+`value` will be retained and a warning will be printed if `allowduplicates=true`
+and an error will be thrown otherwise (the default).
 
 # Examples
-```julia
-wide = DataFrame(id = 1:12,
-                 a  = repeat([1:3;], inner = [4]),
-                 b  = repeat([1:4;], inner = [3]),
-                 c  = randn(12),
-                 d  = randn(12))
 
-long = stack(wide)
-wide0 = unstack(long)
-wide1 = unstack(long, :variable, :value)
-wide2 = unstack(long, :id, :variable, :value)
-wide3 = unstack(long, [:id, :a], :variable, :value)
-wide4 = unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
+```julia
+julia> wide = DataFrame(id = 1:6,
+                        a  = repeat([1:3;], inner = [2]),
+                        b  = repeat([1:2;], inner = [3]),
+                        c  = randn(6),
+                        d  = randn(6))
+6×5 DataFrame
+│ Row │ id    │ a     │ b     │ c         │ d         │
+│     │ Int64 │ Int64 │ Int64 │ Float64   │ Float64   │
+├─────┼───────┼───────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ 1     │ 1     │ 1.20649   │ -1.27628  │
+│ 2   │ 2     │ 1     │ 1     │ -0.917794 │ 0.940007  │
+│ 3   │ 3     │ 2     │ 1     │ 0.309629  │ 0.820397  │
+│ 4   │ 4     │ 2     │ 2     │ 1.46677   │ -1.03457  │
+│ 5   │ 5     │ 3     │ 2     │ 1.04339   │ -0.770464 │
+│ 6   │ 6     │ 3     │ 2     │ -0.172475 │ -2.81039  │
+
+julia> long = stack(wide)
+12×5 DataFrame
+│ Row │ id    │ a     │ b     │ variable │ value     │
+│     │ Int64 │ Int64 │ Int64 │ String   │ Float64   │
+├─────┼───────┼───────┼───────┼──────────┼───────────┤
+│ 1   │ 1     │ 1     │ 1     │ c        │ 1.20649   │
+│ 2   │ 2     │ 1     │ 1     │ c        │ -0.917794 │
+│ 3   │ 3     │ 2     │ 1     │ c        │ 0.309629  │
+│ 4   │ 4     │ 2     │ 2     │ c        │ 1.46677   │
+│ 5   │ 5     │ 3     │ 2     │ c        │ 1.04339   │
+│ 6   │ 6     │ 3     │ 2     │ c        │ -0.172475 │
+│ 7   │ 1     │ 1     │ 1     │ d        │ -1.27628  │
+│ 8   │ 2     │ 1     │ 1     │ d        │ 0.940007  │
+│ 9   │ 3     │ 2     │ 1     │ d        │ 0.820397  │
+│ 10  │ 4     │ 2     │ 2     │ d        │ -1.03457  │
+│ 11  │ 5     │ 3     │ 2     │ d        │ -0.770464 │
+│ 12  │ 6     │ 3     │ 2     │ d        │ -2.81039  │
+
+julia> unstack(long)
+6×5 DataFrame
+│ Row │ id    │ a     │ b     │ c         │ d         │
+│     │ Int64 │ Int64 │ Int64 │ Float64?  │ Float64?  │
+├─────┼───────┼───────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ 1     │ 1     │ 1.20649   │ -1.27628  │
+│ 2   │ 2     │ 1     │ 1     │ -0.917794 │ 0.940007  │
+│ 3   │ 3     │ 2     │ 1     │ 0.309629  │ 0.820397  │
+│ 4   │ 4     │ 2     │ 2     │ 1.46677   │ -1.03457  │
+│ 5   │ 5     │ 3     │ 2     │ 1.04339   │ -0.770464 │
+│ 6   │ 6     │ 3     │ 2     │ -0.172475 │ -2.81039  │
+
+julia> unstack(long, :variable, :value)
+6×5 DataFrame
+│ Row │ id    │ a     │ b     │ c         │ d         │
+│     │ Int64 │ Int64 │ Int64 │ Float64?  │ Float64?  │
+├─────┼───────┼───────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ 1     │ 1     │ 1.20649   │ -1.27628  │
+│ 2   │ 2     │ 1     │ 1     │ -0.917794 │ 0.940007  │
+│ 3   │ 3     │ 2     │ 1     │ 0.309629  │ 0.820397  │
+│ 4   │ 4     │ 2     │ 2     │ 1.46677   │ -1.03457  │
+│ 5   │ 5     │ 3     │ 2     │ 1.04339   │ -0.770464 │
+│ 6   │ 6     │ 3     │ 2     │ -0.172475 │ -2.81039  │
+
+julia> unstack(long, :id, :variable, :value)
+6×3 DataFrame
+│ Row │ id    │ c         │ d         │
+│     │ Int64 │ Float64?  │ Float64?  │
+├─────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ 1.20649   │ -1.27628  │
+│ 2   │ 2     │ -0.917794 │ 0.940007  │
+│ 3   │ 3     │ 0.309629  │ 0.820397  │
+│ 4   │ 4     │ 1.46677   │ -1.03457  │
+│ 5   │ 5     │ 1.04339   │ -0.770464 │
+│ 6   │ 6     │ -0.172475 │ -2.81039  │
+
+julia> unstack(long, [:id, :a], :variable, :value)
+6×4 DataFrame
+│ Row │ id    │ a     │ c         │ d         │
+│     │ Int64 │ Int64 │ Float64?  │ Float64?  │
+├─────┼───────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ 1     │ 1.20649   │ -1.27628  │
+│ 2   │ 2     │ 1     │ -0.917794 │ 0.940007  │
+│ 3   │ 3     │ 2     │ 0.309629  │ 0.820397  │
+│ 4   │ 4     │ 2     │ 1.46677   │ -1.03457  │
+│ 5   │ 5     │ 3     │ 1.04339   │ -0.770464 │
+│ 6   │ 6     │ 3     │ -0.172475 │ -2.81039  │
+
+julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
+6×3 DataFrame
+│ Row │ id    │ _c        │ _d        │
+│     │ Int64 │ Float64?  │ Float64?  │
+├─────┼───────┼───────────┼───────────┤
+│ 1   │ 1     │ 1.20649   │ -1.27628  │
+│ 2   │ 2     │ -0.917794 │ 0.940007  │
+│ 3   │ 3     │ 0.309629  │ 0.820397  │
+│ 4   │ 4     │ 1.46677   │ -1.03457  │
+│ 5   │ 5     │ 1.04339   │ -0.770464 │
+│ 6   │ 6     │ -0.172475 │ -2.81039  │
 ```
 Note that there are some differences between the widened results above.
 """
 function unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::ColumnIndex,
-                 value::ColumnIndex; renamecols::Function=identity)
+                 value::ColumnIndex; renamecols::Function=identity,
+                 allowmissing::Bool=false, allowduplicates::Bool=false)
     refkeycol = df[!, rowkey]
-    refkeycol isa PooledVector || (refkeycol = PooledArray(refkeycol))
     keycol = df[!, colkey]
-    keycol isa PooledVector || (keycol = PooledArray(keycol))
     valuecol = df[!, value]
     return _unstack(df, index(df)[rowkey], index(df)[colkey],
-                    keycol, valuecol, refkeycol, renamecols)
+                    keycol, valuecol, refkeycol, renamecols, allowmissing, allowduplicates)
 end
 
-function preprocess_pooledvector(v::PooledVector)
-    used = falses(length(v.pool))
-    for x in v.refs
-        used[x] |= true
-    end
-    v_unique = sum(used)
-    v_missing = something(findfirst(isequal(missing), v.pool), 0)
-    return v_unique, v_missing
+function _unstack_preprocess_vector(v::AbstractVector)
+    v_unique = unique(v)
+    had_missing = any(ismissing, v_unique)
+    v_unique = intersect(levels(v), v_unique)
+    had_missing && (v_unique = vcat(v_unique, [missing]))
+    len_v = length(v_unique)
+    v_map = Dict([x => i for (i,x) in enumerate(v_unique)])
+    # both unique and Dict should use isequal to test for identity of values
+    @assert length(v_map) == length(v_unique)
+    # if there are no missings in v then set reference index of missing to 0
+    col = similar(v, length(v_unique))
+    copyto!(col, v_unique)
+    return col, v_map, get(v_map, missing, 0)
 end
 
 function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
-                  keycol::PooledVector, valuecol::AbstractVector,
-                  refkeycol::PooledVector, renamecols::Function)
-    Nrow, refkeycol_missing = preprocess_pooledvector(refkeycol)
-    Ncol, keycol_missing = preprocess_pooledvector(keycol)
-    unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
-    hadmissing = false # have we encountered missing in refkeycol
-    mask_filled = falses(Nrow+1, Ncol) # has a given [row,col] entry been filled?
-    warned_dup = false # have we already printed duplicate entries warning?
-    warned_missing = false # have we already printed missing in keycol warning?
-    for k in 1:nrow(df)
-        kref = keycol.refs[k]
-        if kref == keycol_missing # we have found missing in colkey
-            if !warned_missing
-                @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
-                warned_missing = true
-            end
-            continue # skip processing it
-        end
-        refkref = refkeycol.refs[k]
-        if refkref == keycol_missing # we have found missing in rowkey
-            if !hadmissing # if it is the first time we have to add a new row
-                hadmissing = true
-                # we use the fact that missing is greater than anything
-                for i in eachindex(unstacked_val)
-                    push!(unstacked_val[i], missing)
-                end
-            end
-            i = length(unstacked_val[1])
-        else
-            i = refkref
-        end
-        if !warned_dup && mask_filled[i, kref]
-            @warn("Duplicate entries in unstack at row $k for key "*
-                  "$(refkeycol[k]) and variable $(keycol[k]).")
-            warned_dup = true
-        end
-        unstacked_val[kref][i] = valuecol[k]
-        mask_filled[i, kref] = true
+                  keycol::AbstractVector, valuecol::AbstractVector,
+                  refkeycol::AbstractVector, renamecols::Function,
+                  allowmissing::Bool, allowduplicates::Bool)
+    col, refkeycol_map, refkeycol_missing = _unstack_preprocess_vector(refkeycol)
+    Nrow = length(refkeycol_map)
+    colnames, keycol_map, keycol_missing = _unstack_preprocess_vector(keycol)
+    Ncol = length(keycol_map)
+
+    if keycol_missing != 0 && !allowmissing
+        throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
+                            "Pass `allowmissing=true` to skip missings."))
     end
-    levs = levels(refkeycol)
-    # we have to handle a case with missings in refkeycol as levs will skip missing
-    col = similar(df[!, rowkey], length(levs) + hadmissing)
-    copyto!(col, levs)
-    hadmissing && (col[end] = missing)
-    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(levels(keycol))), copycols=false)
-    return insertcols!(df2, 1, _names(df)[rowkey] => col)
+
+    unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
+    mask_filled = falses(Nrow, Ncol) # has a given [row,col] entry been filled?
+    for k in 1:nrow(df)
+        kref = keycol_map[keycol[k]]
+        refkref = refkeycol_map[refkeycol[k]]
+        if !allowduplicates && mask_filled[refkref, kref]
+            throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
+                                "$(refkeycol[k]) and variable $(keycol[k]). " *
+                                "Pass allowduplicates=true to allow them."))
+        end
+        unstacked_val[kref][refkref] = valuecol[k]
+        mask_filled[refkref, kref] = true
+    end
+    # note that Symbol.(renamecols.(colnames)) must produce unique column names
+    # and _names(df)[rowkey] must also produce a unique name
+    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(colnames)), copycols=false)
+    return insertcols!(df2, 1, _names(df)[rowkey] => col, copycols=false)
 end
 
 function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
-                 value::ColumnIndex; renamecols::Function=identity)
+                 value::ColumnIndex; renamecols::Function=identity,
+                 allowmissing::Bool=false, allowduplicates::Bool=false)
     rowkey_ints = index(df)[rowkeys]
     @assert rowkey_ints isa AbstractVector{Int}
     length(rowkey_ints) == 0 && throw(ArgumentError("No key column found"))
     length(rowkey_ints) == 1 && return unstack(df, rowkey_ints[1], colkey, value,
-                                               renamecols=renamecols)
-    g = groupby(df, rowkey_ints, sort=true)
-    keycol = categorical(df[!, colkey])
-    droplevels!(keycol)
+                                               renamecols=renamecols,
+                                               allowmissing=allowmissing,
+                                               allowduplicates=allowduplicates)
+    local g
+    try
+        g = groupby(df, rowkey_ints, sort=true)
+    catch
+        g = groupby(df, rowkey_ints, sort=false)
+    end
+    keycol = df[!, colkey]
     valuecol = df[!, value]
-    return _unstack(df, rowkey_ints, index(df)[colkey], keycol, valuecol, g, renamecols)
+    return _unstack(df, rowkey_ints, index(df)[colkey], keycol, valuecol, g,
+                    renamecols, allowmissing, allowduplicates)
 end
 
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
-                 renamecols::Function=identity)
+                 renamecols::Function=identity,
+                 allowmissing::Bool=false, allowduplicates::Bool=false)
     colkey_int = index(df)[colkey]
     value_int = index(df)[value]
     return unstack(df, Not(colkey_int, value_int), colkey_int, value_int,
-            renamecols=renamecols)
+            renamecols=renamecols, allowmissing=allowmissing,
+            allowduplicates=allowduplicates)
 end
 
-unstack(df::AbstractDataFrame; renamecols::Function=identity) =
-    unstack(df, :variable, :value, renamecols=renamecols)
+unstack(df::AbstractDataFrame; renamecols::Function=identity,
+        allowmissing::Bool=false, allowduplicates::Bool=false) =
+    unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
+            allowduplicates=allowduplicates)
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
-                  colkey::Int, keycol::CategoricalVector,
+                  colkey::Int, keycol::AbstractVector,
                   valuecol::AbstractVector, g::GroupedDataFrame,
-                  renamecols::Function)
+                  renamecols::Function,
+                  allowmissing::Bool, allowduplicates::Bool)
     idx, starts, ends = g.idx, g.starts, g.ends
     groupidxs = [idx[starts[i]:ends[i]] for i in 1:length(starts)]
     rowkey = zeros(Int, size(df, 1))
@@ -270,30 +440,31 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     end
     df1 = df[idx[starts], g.cols]
     Nrow = length(g)
-    Ncol = length(levels(keycol))
+
+    colnames, keycol_map, keycol_missing = _unstack_preprocess_vector(keycol)
+    Ncol = length(keycol_map)
+
+    if keycol_missing != 0 && !allowmissing
+        throw(ArgumentError("Missing value in variable :$(_names(df)[colkey])." *
+                            " Pass `allowmissing=true` to skip missings."))
+    end
+
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
     mask_filled = falses(Nrow, Ncol)
-    warned_dup = false
-    warned_missing = false
     for k in 1:nrow(df)
-        kref = keycol.refs[k]
-        if kref <= 0
-            if !warned_missing
-                @warn("Missing value in variable :$(_names(df)[colkey]) at row $k. Skipping.")
-                warned_missing = true
-            end
-            continue
-        end
+        kref = keycol_map[keycol[k]]
         i = rowkey[k]
-        if !warned_dup && mask_filled[i, kref]
-            @warn("Duplicate entries in unstack at row $k for key "*
-                 "$(tuple((df[k,s] for s in rowkeys)...)) and variable $(keycol[k]).")
-            warned_dup = true
+        if !allowduplicates && mask_filled[i, kref]
+            throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
+                                "$(tuple((df[k,s] for s in rowkeys)...)) and variable $(keycol[k]). " *
+                                "Pass allowduplicates=true to allow them."))
         end
         unstacked_val[kref][i] = valuecol[k]
         mask_filled[i, kref] = true
     end
-    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(levels(keycol))), copycols=false)
+    # note that Symbol.(renamecols.(colnames)) must produce unique column names
+    # and names between df1 and df2 must be unique
+    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(colnames)), copycols=false)
     hcat(df1, df2, copycols=false)
 end
 
@@ -346,10 +517,6 @@ Base.eltype(v::Type{StackedVector{T}}) where {T} = T
 Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
     similar(v.components[1], T, dims...)
 
-CategoricalArrays.CategoricalArray(v::StackedVector) =
-    CategoricalArray(v[:]) # could be more efficient
-
-
 """
     RepeatedVector{T} <: AbstractVector{T}
 
@@ -387,8 +554,10 @@ end
 
 Base.parent(v::RepeatedVector) = v.parent
 DataAPI.levels(v::RepeatedVector) = levels(parent(v))
-CategoricalArrays.isordered(v::RepeatedVector{<:Union{CategoricalValue, Missing}}) =
-    isordered(parent(v))
+
+# TODO: uncomment when DataAPI.jl supports this
+# DataAPI.isordered(v::RepeatedVector) =
+#     isordered(parent(v))
 
 function Base.getindex(v::RepeatedVector, i::Int)
     N = length(parent(v))
@@ -404,8 +573,9 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(parent(v)), v.inner, v.
 Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(parent(v), T, dims)
 Base.unique(v::RepeatedVector) = unique(parent(v))
 
-function CategoricalArrays.CategoricalArray(v::RepeatedVector)
-    res = CategoricalArray(parent(v), levels=levels(parent(v)))
-    res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
-    res
-end
+# TODO: @nalimilan: is there a generic way to support this?
+# function CategoricalArrays.CategoricalArray(v::RepeatedVector)
+#     res = CategoricalArray(parent(v), levels=levels(parent(v)))
+#     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
+#     res
+# end

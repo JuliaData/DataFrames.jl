@@ -41,6 +41,9 @@
 * in `describe` the specification of custom aggregation is now `function => name`;
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
+* `unstack` now does not depend on CategoricalArrays.jl and has two new keyword
+  arguments `allowmissing` and `allowduplicates`
+  ([]())
 
 ## New functionalities
 
