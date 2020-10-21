@@ -573,6 +573,7 @@ end
           DataFrame(id=A.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
     @test unstack(df, [:id, :id2], :var, :val, renamecols=x -> Symbol(:x, x.x)) ==
           DataFrame(id=A.([2, 1, 3]), id2=A.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
+end
 
 @testset "permutedims" begin
     df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1, 2], d=rand(Bool, 2))
