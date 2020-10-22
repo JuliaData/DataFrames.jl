@@ -559,20 +559,22 @@ end
           DataFrame(id=1:3, a=[1, missing, 7], b=2:3:8, c=3:3:9, missing=[missing, 4, missing])
     @test unstack(df, [:id, :id2], :var, :val, allowmissing=true) ≅
           DataFrame(id=1:3, id2=1:3, a=[1, missing, 7], b=2:3:8, c=3:3:9, missing=[missing, 4, missing])
+end
 
-    # test scenario when sorting fails both in grouping and in variable
-    struct A
-        x
-    end
+# test scenario when sorting fails both in grouping and in variable
+struct A_TYPE
+    x
+end
 
-    df = DataFrame(id=repeat(A.([2, 1, 3]), inner=3),
-                   id2=repeat(A.([2, 1, 3]), inner=3),
-                   var=repeat(A.([3, 2, 1]), 3),
+@testset "additional unstack tests not sortable" begin
+    df = DataFrame(id=repeat(A_TYPE.([2, 1, 3]), inner=3),
+                   id2=repeat(A_TYPE.([2, 1, 3]), inner=3),
+                   var=repeat(A_TYPE.([3, 2, 1]), 3),
                    val=1:9)
     @test unstack(df, :id, :var, :val, renamecols=x -> Symbol(:x, x.x)) ==
-          DataFrame(id=A.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
+          DataFrame(id=A_TYPE.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
     @test unstack(df, [:id, :id2], :var, :val, renamecols=x -> Symbol(:x, x.x)) ==
-          DataFrame(id=A.([2, 1, 3]), id2=A.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
+          DataFrame(id=A_TYPE.([2, 1, 3]), id2=A_TYPE.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
 end
 
 @testset "permutedims" begin
