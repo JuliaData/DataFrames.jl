@@ -911,7 +911,9 @@ julia> dropmissing!(df3, [:x, :y])
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{ColumnIndex, MultiColumnIndex}=:;
                       disallowmissing::Bool=true)
-    delete!(df, (!).(completecases(df, cols)))
+    inds = completecases(df, cols)                                  
+    inds .= .!(inds)
+    delete!(df, inds)
     disallowmissing && disallowmissing!(df, cols)
     df
 end
