@@ -1335,6 +1335,9 @@ end
 
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
     @test transform!(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
     @test transform!(df, :a => +, [:a, :b] => +, Cols(:) => +, renamecols=false) == df
     @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
 end
