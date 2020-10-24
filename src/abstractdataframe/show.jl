@@ -584,7 +584,7 @@ function _show(io::IO,
 
     aux       = names(df)
     names_len = textwidth.(aux)
-    maxwidth  = max.(12, names_len)
+    maxwidth  = max.(9, names_len)
     names_mat = permutedims(aux)
     types     = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
 
