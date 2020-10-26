@@ -222,16 +222,16 @@ result is unspecified.
 
 # Keyword arguments
 
-`renamecols` is a function called on each unique value in `colkey` which must
-return the name of the column to be created (typically as a string or a
-`Symbol`). Duplicates in resulting names when converted to `Symbol` are not allowed.
-
-If `colkey` contains `missing` values then they will be included  if
-`allowmissing=true` and an error will be thrown otherwise (the default).
-
-If combination of `rowkeys` and `colkey` contains duplicate entries then last
-`value` will be retained and a warning will be printed if `allowduplicates=true`
-and an error will be thrown otherwise (the default).
+- `renamecols`: a function called on each unique value in `colkey`; it must return
+  the name of the column to be created (typically as a string or a `Symbol`).
+  Duplicates in resulting names when converted to `Symbol` are not allowed.
+  By default no transformation is performed.
+- `allowmissing`: if `false` (the default) then an error will be thrown if `colkey`
+  contains `missing` values; if `true` then a column referring to `missing` value
+  will be created.
+- allowduplicates`: if `false` (the default) then an error an error will be thrown
+  if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
+  then  then the last encountered `value` will be retained.
 
 # Examples
 
@@ -400,12 +400,15 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                                                renamecols=renamecols,
                                                allowmissing=allowmissing,
                                                allowduplicates=allowduplicates)
-    local g
-    try
-        g = groupby(df, rowkey_ints, sort=true)
-    catch
-        g = groupby(df, rowkey_ints, sort=false)
+    dosort = true
+    if !all(i -> isordered(df[!, i]), rowkey_ints) # avoid issorted in most cases
+        try
+            map(i -> issorted(df[!, i]), rowkey_ints) # this should be relatively cheap
+        catch
+            dosort = false
+        end
     end
+    g = groupby(df, rowkey_ints, sort=dosort)
     keycol = df[!, colkey]
     valuecol = df[!, value]
     return _unstack(df, rowkey_ints, index(df)[colkey], keycol, valuecol, g,
