@@ -343,16 +343,14 @@ function unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::ColumnIndex
 end
 
 function _unstack_preprocess_vector(v::AbstractVector)
-    v_unique = unique(v)
-    had_missing = any(ismissing, v_unique)
-    v_unique = intersect(levels(v), v_unique)
-    had_missing && (v_unique = vcat(v_unique, [missing]))
+    v_unique = intersect([levels(v); missing], unique(v))
     len_v = length(v_unique)
     v_map = Dict([x => i for (i,x) in enumerate(v_unique)])
     # both unique and Dict should use isequal to test for identity of values
     @assert length(v_map) == length(v_unique)
     # if there are no missings in v then set reference index of missing to 0
     col = similar(v, length(v_unique))
+    @assert firstindex(col) == 1 # we do not support e.g. OffsetArrays.jl yet
     copyto!(col, v_unique)
     return col, v_map, get(v_map, missing, 0)
 end
