@@ -543,11 +543,6 @@ struct RepeatedVector{T} <: AbstractVector{T}
 end
 
 Base.parent(v::RepeatedVector) = v.parent
-DataAPI.levels(v::RepeatedVector) = levels(parent(v))
-
-# TODO: uncomment when DataAPI.jl supports this
-# DataAPI.isordered(v::RepeatedVector) =
-#     isordered(parent(v))
 
 function Base.getindex(v::RepeatedVector, i::Int)
     N = length(parent(v))
