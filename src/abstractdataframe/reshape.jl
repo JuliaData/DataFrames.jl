@@ -347,7 +347,11 @@ end
 function _unstack_preprocess_vector(v::AbstractVector)
     # make sure we re-allocate if v is already a PooledArray
     vp = PooledArray{eltype(v)}(v)
-    return DataAPI.refarray(vp), DataAPI.refpool(vp)
+    rp = DataAPI.refpool(vp)
+    pool = similar(v, length(rp))
+    @assert firstindex(pool) == 1
+    copyto!(pool, rp)
+    return DataAPI.refarray(vp), pool
 end
 
 function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
