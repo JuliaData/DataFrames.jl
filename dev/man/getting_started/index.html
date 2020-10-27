@@ -297,21 +297,21 @@ julia&gt; df[!, r&quot;x&quot;]
 │ Row │ x2    │ y     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 2     │ 3     │</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, and <code>All</code> selectors in more complex column selection scenarios. The following examples move all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="language-none">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
+│ 1   │ 2     │ 3     │</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, <code>Cols</code> and <code>All</code> selectors in more complex column selection scenarios (note that <code>Cols()</code> selects no columns while <code>All()</code> selects all columns therefore <code>Cols</code> is a preferred selector if you write generic code). The following examples move all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="language-none">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
 │ Row │ r     │ x1    │ x2    │ y     │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │ 4     │
 
-julia&gt; df[:, All(r&quot;x&quot;, :)]
+julia&gt; df[:, Cols(r&quot;x&quot;, :)]
 1×4 DataFrame
 │ Row │ x1    │ x2    │ r     │ y     │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┼───────┤
 │ 1   │ 2     │ 3     │ 1     │ 4     │
 
-julia&gt; df[:, All(Not(r&quot;x&quot;), :)]
+julia&gt; df[:, Cols(Not(r&quot;x&quot;), :)]
 1×4 DataFrame
 │ Row │ r     │ y     │ x1    │ x2    │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
@@ -703,4 +703,4 @@ julia&gt; df .= ifelse.(df .== &quot;None&quot;, missing, df)
 │ 3   │ b       │ 3     │ k       │ missing │
 │ 4   │ missing │ 4     │ h       │ z       │</code></pre><h2 id="Importing-and-Exporting-Data-(I/O)"><a class="docs-heading-anchor" href="#Importing-and-Exporting-Data-(I/O)">Importing and Exporting Data (I/O)</a><a id="Importing-and-Exporting-Data-(I/O)-1"></a><a class="docs-heading-anchor-permalink" href="#Importing-and-Exporting-Data-(I/O)" title="Permalink"></a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
 Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">DataFrame(CSV.File(input))</code></pre><p>A <code>DataFrame</code> can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
-CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.File</code>, <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../joins/">Joins »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 23 October 2020 09:01">Friday 23 October 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.File</code>, <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../joins/">Joins »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 27 October 2020 23:49">Tuesday 27 October 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
