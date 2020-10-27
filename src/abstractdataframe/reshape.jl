@@ -359,14 +359,25 @@ unstack(df::AbstractDataFrame; renamecols::Function=identity,
     unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
             allowduplicates=allowduplicates)
 
-function getrefs(g::GroupedDataFrame)
-    idx::Vector{Int}, starts::Vector{Int}, ends::Vector{Int} = g.idx, g.starts, g.ends
-    groupidxs = [idx[starts[i]:ends[i]] for i in 1:length(starts)]
-    ref = zeros(Int, size(parent(g), 1))
-    for i in 1:length(groupidxs)
-        ref[groupidxs[i]] .= i
+# we take into account the fact that idx, starts and ends are computed lazily
+# so we rather directly reference the gdf.groups
+# this function is tailor made for unstack so it does assume that no groups were
+# dropped (i.e. gdf.groups does not contain 0 entries)
+function find_group_row(gdf::GroupedDataFrame)
+    rows = zeros(Int, length(gdf))
+    isempty(rows) && return rows
+
+    filled = 0
+    i = 1
+    while filled < length(gdf)
+        group = gdf.groups[i]
+        if rows[group] == 0
+            rows[group] = i
+            filled += 1
+        end
+        i += 1
     end
-    return ref
+    return rows # return row index of first occurence of each group in gdf
 end
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
@@ -374,14 +385,14 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
                   valuecol::AbstractVector, g_rowkey::GroupedDataFrame,
                   renamecols::Function,
                   allowmissing::Bool, allowduplicates::Bool)
-    rowref = getrefs(g_rowkey)
-    df1 = df[g_rowkey.idx[g_rowkey.starts], g_rowkey.cols]
+    rowref = g_rowkey.groups
+    df1 = df[find_group_row(g_rowkey), g_rowkey.cols]
     Nrow = length(g_rowkey)
 
     @assert groupcols(g_colkey) == _names(df)[colkey:colkey]
-    colref = getrefs(g_colkey)
+    colref = g_colkey.groups
     Ncol = length(g_colkey)
-    colref_map = df[g_colkey.starts, colkey]
+    colref_map = df[find_group_row(g_colkey), colkey]
 
     if any(ismissing, colref_map) && !allowmissing
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey])." *
