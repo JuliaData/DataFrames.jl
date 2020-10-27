@@ -563,13 +563,6 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(parent(v)), v.inner, v.
 Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(parent(v), T, dims)
 Base.unique(v::RepeatedVector) = unique(parent(v))
 
-# TODO: @nalimilan: is there a generic way to support this?
-# function CategoricalArrays.CategoricalArray(v::RepeatedVector)
-#     res = CategoricalArray(parent(v), levels=levels(parent(v)))
-#     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
-#     res
-# end
-
 Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
 

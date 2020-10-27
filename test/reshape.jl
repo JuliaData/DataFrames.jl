@@ -420,26 +420,6 @@ end
     @test_throws ArgumentError flatten(df_bad, [:b, :c])
 end
 
-# TODO: uncomment these tests when we improve handling of categorical here
-
-# @testset "test RepeatedVector for categorical" begin
-#     v = categorical(["a", "b", "c"], ordered=true)
-#     levels!(v, ["b", "c", "a"])
-#     rv = DataFrames.RepeatedVector(v, 1, 1)
-#     @test isordered(rv)
-#     @test isordered(categorical(rv))
-#     @test levels(rv) == ["b", "c", "a"]
-#     @test levels(categorical(rv)) == ["b", "c", "a"]
-
-#     v = categorical(["a", "b", "c"])
-#     levels!(v, ["b", "c", "a"])
-#     rv = DataFrames.RepeatedVector(v, 1, 1)
-#     @test !isordered(rv)
-#     @test !isordered(categorical(rv))
-#     @test levels(rv) == ["b", "c", "a"]
-#     @test levels(categorical(rv)) == ["b", "c", "a"]
-# end
-
 @testset "stack categorical test" begin
     Random.seed!(1234)
     d1 = DataFrame(a = repeat([1:3;], inner = [4]),
