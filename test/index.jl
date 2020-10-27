@@ -273,6 +273,8 @@ end
     @test isempty(DataFrames.parentcols(SubIndex(i, r"xx")))
     @test DataFrames.parentcols(SubIndex(i, r"")) == 1:5
     @test DataFrames.parentcols(SubIndex(i, All())) == 1:5
+    @test DataFrames.parentcols(SubIndex(i, Cols(:))) == 1:5
+    @test DataFrames.parentcols(SubIndex(i, Cols())) == Int[]
     @test DataFrames.parentcols(SubIndex(i, Between(:x1, :x12))) == 1:2
     @test isempty(DataFrames.parentcols(SubIndex(i, [])))
 
@@ -290,6 +292,8 @@ end
     @test isempty(DataFrames.parentcols(SubIndex(i2, r"xx")))
     @test DataFrames.parentcols(SubIndex(i2, r"")) == 1:5
     @test DataFrames.parentcols(SubIndex(i2, All())) == 1:5
+    @test DataFrames.parentcols(SubIndex(i2, Cols(:))) == 1:5
+    @test DataFrames.parentcols(SubIndex(i2, Cols())) == Int[]
     @test DataFrames.parentcols(SubIndex(i2, Between(:x1, :x12))) == 1:2
     @test isempty(DataFrames.parentcols(SubIndex(i2, [])))
 
@@ -307,6 +311,8 @@ end
     @test isempty(DataFrames.parentcols(SubIndex(i3, r"xx")))
     @test DataFrames.parentcols(SubIndex(i3, r"")) == 1:2
     @test DataFrames.parentcols(SubIndex(i3, All())) == 1:2
+    @test DataFrames.parentcols(SubIndex(i3, Cols(:))) == 1:2
+    @test DataFrames.parentcols(SubIndex(i3, Cols())) == Int[]
     @test_throws BoundsError DataFrames.parentcols(SubIndex(i3, Between(:x1, :x12))) == 1:2
     @test DataFrames.parentcols(SubIndex(i3, Between(:x12, :x12))) == 1:1
     @test isempty(DataFrames.parentcols(SubIndex(i3, [])))
@@ -454,6 +460,63 @@ end
     df = DataFrame(a1=1, a2=2, b1=3, b2=4)
     @test df[:, All(r"a", Not(r"1"))] == df[:, [1,2,4]]
     @test df[:, All(Not(r"1"), r"a")] == df[:, [2,4,1]]
+end
+
+@testset "Cols indexing" begin
+    df = DataFrame(a=1, b=2, c=3)
+
+    @test ncol(select(df, Cols())) == 0
+    @test ncol(df[:, Cols()]) == 0
+
+    @test select(df, Cols(:)) == df[:, :]
+    @test df[:, Cols(:)] == df[:, :]
+
+    @test select(df, Cols(1,2)) == df[:, 1:2]
+    @test select(df, Cols(1,:b)) == df[:, 1:2]
+    @test select(df, Cols(:a,2)) == df[:, 1:2]
+    @test select(df, Cols(:a,:b)) == df[:, 1:2]
+    @test select(df, Cols(2,1)) == df[:, [2,1]]
+    @test select(df, Cols(:b,1)) == df[:, [2,1]]
+    @test select(df, Cols(2,:a)) == df[:, [2,1]]
+    @test select(df, Cols(:b,:a)) == df[:, [2,1]]
+
+    @test df[:, Cols(1,2)] == df[:, 1:2]
+    @test df[:, Cols(1,:b)] == df[:, 1:2]
+    @test df[:, Cols(:a,2)] == df[:, 1:2]
+    @test df[:, Cols(:a,:b)] == df[:, 1:2]
+    @test df[:, Cols(2,1)] == df[:, [2,1]]
+    @test df[:, Cols(:b,1)] == df[:, [2,1]]
+    @test df[:, Cols(2,:a)] == df[:, [2,1]]
+    @test df[:, Cols(:b,:a)] == df[:, [2,1]]
+
+    @test df[:, Cols(1,1,2)] == df[:, 1:2]
+    @test df[:, Cols(:a,1,:b)] == df[:, 1:2]
+    @test df[:, Cols(:a,2,:b)] == df[:, 1:2]
+    @test df[:, Cols(:a,:b,2)] == df[:, 1:2]
+    @test df[:, Cols(2,1,:a)] == df[:, [2,1]]
+
+    @test select(df, Cols(1,"b")) == df[:, 1:2]
+    @test select(df, Cols("a",2)) == df[:, 1:2]
+    @test select(df, Cols("a","b")) == df[:, 1:2]
+    @test select(df, Cols("b",1)) == df[:, [2,1]]
+    @test select(df, Cols(2,"a")) == df[:, [2,1]]
+    @test select(df, Cols("b","a")) == df[:, [2,1]]
+
+    @test df[:, Cols(1,"b")] == df[:, 1:2]
+    @test df[:, Cols("a",2)] == df[:, 1:2]
+    @test df[:, Cols("a","b")] == df[:, 1:2]
+    @test df[:, Cols("b",1)] == df[:, [2,1]]
+    @test df[:, Cols(2,"a")] == df[:, [2,1]]
+    @test df[:, Cols("b","a")] == df[:, [2,1]]
+
+    @test df[:, Cols("a",1,"b")] == df[:, 1:2]
+    @test df[:, Cols("a",2,"b")] == df[:, 1:2]
+    @test df[:, Cols("a","b",2)] == df[:, 1:2]
+    @test df[:, Cols(2,1,"a")] == df[:, [2,1]]
+
+    df = DataFrame(a1=1, a2=2, b1=3, b2=4)
+    @test df[:, Cols(r"a", Not(r"1"))] == df[:, [1,2,4]]
+    @test df[:, Cols(Not(r"1"), r"a")] == df[:, [2,4,1]]
 end
 
 @testset "views" begin

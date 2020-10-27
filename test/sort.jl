@@ -142,7 +142,7 @@ end
     Random.seed!(1234)
     df = DataFrame(rand(1:2, 1000, 4))
     for f in [sort, sort!, sortperm, issorted]
-        @test f(df) == f(df, :) == f(df, All()) == f(df, r"x") ==
+        @test f(df) == f(df, :) == f(df, All()) == f(df, Cols(:)) == f(df, r"x") ==
               f(df, Between(1, 4)) == f(df, Not([]))
     end
 end

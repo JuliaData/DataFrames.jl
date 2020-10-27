@@ -67,7 +67,7 @@ abstract type AbstractDataFrame end
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
 If `cols` is passed then restrict returned column names to those matching the
-selector (this is useful in particular with regular expressions, `Not`, and `Between`).
+selector (this is useful in particular with regular expressions, `Cols`, `Not`, and `Between`).
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
 or a `Type`, in which case columns whose `eltype` is a subtype of `cols` are returned.
 

@@ -2013,7 +2013,7 @@ end
     df.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
     gdf = groupby_checked(df, :g)
 
-    for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
+    for selector in [Cols(:), All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
                      [1, 2, 3, 4], [true, true, true, true, false]]
         @test combine(gdf, selector, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3) ==
               combine(gdf) do sdf
@@ -2021,7 +2021,7 @@ end
               end
     end
 
-    for selector in [All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
+    for selector in [Cols(:), All(), :, r"x", Between(:x1, :x4), Not(:g), [:x1, :x2, :x3, :x4],
                      [1, 2, 3, 4], [true, true, true, true, false]]
         @test combine(gdf, :x1 => ByRow(sin) => :x1, :x2 => ByRow(sin) => :x3, selector) ==
               combine(gdf) do sdf
@@ -2959,6 +2959,8 @@ end
     gdf = groupby_checked(df, :a)
 
     @test select(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test select(gdf, :a => +, [:a, :b] => +, Cols(:) => +, renamecols=false) ==
           DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
     @test_throws ArgumentError select(gdf, [] => () -> 10, renamecols=false)
     @test transform(gdf, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==

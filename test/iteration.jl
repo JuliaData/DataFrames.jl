@@ -33,6 +33,7 @@ using Test, DataFrames
     @test eachcol(df)[1] == df[:, 1]
     @test eachcol(df)[:A] === df[!, :A]
     @test eachcol(df)[All()] == eachcol(df)
+    @test eachcol(df)[Cols(:)] == eachcol(df)
     @test isequal(eachcol(df)[[1]], eachcol(df[!, [1]]))
     @test eachcol(df).A === df[!, :A]
     @test eachcol(df)["A"] === df[!, "A"]
