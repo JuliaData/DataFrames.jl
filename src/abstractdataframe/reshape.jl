@@ -331,76 +331,17 @@ julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
 ```
 Note that there are some differences between the widened results above.
 """
-function unstack(df::AbstractDataFrame, rowkey::ColumnIndex, colkey::ColumnIndex,
-                 value::ColumnIndex; renamecols::Function=identity,
-                 allowmissing::Bool=false, allowduplicates::Bool=false)
-    refkeycol = df[!, rowkey]
-    rowref, rowref_map = _unstack_preprocess_vector(refkeycol)
-    keycol = df[!, colkey]
-    colref, colref_map = _unstack_preprocess_vector(keycol)
-    valuecol = df[!, value]
-    return _unstack(df, index(df)[rowkey], index(df)[colkey],
-                    colref, colref_map, valuecol, rowref, rowref_map,
-                    renamecols, allowmissing, allowduplicates)
-end
-
-function _unstack_preprocess_vector(v::AbstractVector)
-    # make sure we re-allocate if v is already a PooledArray
-    vp = PooledArray{eltype(v)}(v)
-    rp = DataAPI.refpool(vp)
-    pool = similar(v, length(rp))
-    @assert firstindex(pool) == 1
-    copyto!(pool, rp)
-    return DataAPI.refarray(vp), pool
-end
-
-function _unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int,
-                  colref::AbstractVector, colref_map::AbstractVector, valuecol::AbstractVector,
-                  rowref::AbstractVector, rowref_map::AbstractVector, renamecols::Function,
-                  allowmissing::Bool, allowduplicates::Bool)
-    Nrow = length(rowref_map)
-    Ncol = length(colref_map)
-
-    if any(ismissing, colref_map) && !allowmissing
-        throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
-                            "Pass `allowmissing=true` to skip missings."))
-    end
-
-    unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
-    mask_filled = falses(Nrow, Ncol) # has a given [row,col] entry been filled?
-
-    @assert length(rowref) == length(colref) == length(valuecol)
-    for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
-        if !allowduplicates && mask_filled[row_id, col_id]
-            throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
-                                "$(rowref_map[row_id]) and variable $(colref_map[col_id]). " *
-                                "Pass allowduplicates=true to allow them."))
-        end
-        unstacked_val[col_id][row_id] = val
-        mask_filled[row_id, col_id] = true
-    end
-    # note that Symbol.(renamecols.(colref_map)) must produce unique column names
-    # and _names(df)[rowkey] must also produce a unique name
-    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(colref_map)), copycols=false)
-    return insertcols!(df2, 1, _names(df)[rowkey] => rowref_map, copycols=false)
-end
-
 function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  value::ColumnIndex; renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false)
-    rowkey_ints = index(df)[rowkeys]
+    rowkey_ints = vcat(index(df)[rowkeys])
     @assert rowkey_ints isa AbstractVector{Int}
     length(rowkey_ints) == 0 && throw(ArgumentError("No key column found"))
-    length(rowkey_ints) == 1 && return unstack(df, rowkey_ints[1], colkey, value,
-                                               renamecols=renamecols,
-                                               allowmissing=allowmissing,
-                                               allowduplicates=allowduplicates)
-    g = groupby(df, rowkey_ints)
-    keycol = df[!, colkey]
-    colref, colref_map = _unstack_preprocess_vector(keycol)
+    g_rowkey = groupby(df, rowkey_ints)
+    g_colkey = groupby(df, colkey)
     valuecol = df[!, value]
-    return _unstack(df, rowkey_ints, index(df)[colkey], colref, colref_map,
-                    valuecol, g, renamecols, allowmissing, allowduplicates)
+    return _unstack(df, rowkey_ints, index(df)[colkey], g_colkey,
+                    valuecol, g_rowkey, renamecols, allowmissing, allowduplicates)
 end
 
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
@@ -418,21 +359,29 @@ unstack(df::AbstractDataFrame; renamecols::Function=identity,
     unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
             allowduplicates=allowduplicates)
 
-function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
-                  colkey::Int, colref::AbstractVector, colref_map::AbstractVector,
-                  valuecol::AbstractVector, g::GroupedDataFrame,
-                  renamecols::Function,
-                  allowmissing::Bool, allowduplicates::Bool)
+function getrefs(g::GroupedDataFrame)
     idx::Vector{Int}, starts::Vector{Int}, ends::Vector{Int} = g.idx, g.starts, g.ends
     groupidxs = [idx[starts[i]:ends[i]] for i in 1:length(starts)]
-    rowref = zeros(Int, size(df, 1))
+    ref = zeros(Int, size(parent(g), 1))
     for i in 1:length(groupidxs)
-        rowref[groupidxs[i]] .= i
+        ref[groupidxs[i]] .= i
     end
-    df1 = df[idx[starts], g.cols]
-    Nrow = length(g)
+    return ref
+end
 
-    Ncol = length(colref_map)
+function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
+                  colkey::Int, g_colkey::GroupedDataFrame,
+                  valuecol::AbstractVector, g_rowkey::GroupedDataFrame,
+                  renamecols::Function,
+                  allowmissing::Bool, allowduplicates::Bool)
+    rowref = getrefs(g_rowkey)
+    df1 = df[g_rowkey.idx[g_rowkey.starts], g_rowkey.cols]
+    Nrow = length(g_rowkey)
+
+    @assert groupcols(g_colkey) == _names(df)[colkey:colkey]
+    colref = getrefs(g_colkey)
+    Ncol = length(g_colkey)
+    colref_map = df[g_colkey.starts, colkey]
 
     if any(ismissing, colref_map) && !allowmissing
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey])." *
@@ -446,13 +395,13 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
         if !allowduplicates && mask_filled[row_id, col_id]
             throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
-                                "$(tuple((df[k,s] for s in rowkeys)...)) and variable $(colref_map[col_id]). " *
+                                "$(tuple((df[k, s] for s in rowkeys)...)) and variable $(colref_map[col_id]). " *
                                 "Pass allowduplicates=true to allow them."))
         end
         unstacked_val[col_id][row_id] = val
         mask_filled[row_id, col_id] = true
     end
-    # note that Symbol.(renamecols.(colnames)) must produce unique column names
+    # note that Symbol.(renamecols.(colref_map)) must produce unique column names
     # and names between df1 and df2 must be unique
     df2 = DataFrame(unstacked_val, Symbol.(renamecols.(colref_map)), copycols=false)
     hcat(df1, df2, copycols=false)
