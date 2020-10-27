@@ -52,10 +52,9 @@ const ≅ = isequal
     df2 = unstack(df, :Fish, :Key, :Value)
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    #The expected output, XXX level should be dropped as it has no rows with this key
-    df4 = DataFrame(Fish = ["Batman", "Bob"],
-                    Color = ["Grey", "Red"],
-                    Mass = ["18 g", "12 g"])
+    df4 = DataFrame(Fish = ["Bob", "Batman"],
+                    Mass = ["12 g", "18 g"],
+                    Color = ["Red", "Grey"])
     @test df2 ≅ df4
     @test typeof(df2[!, :Fish]) <: Vector{String}
     # first column stays as CategoricalArray in df3
@@ -66,7 +65,7 @@ const ≅ = isequal
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
     allowmissing!(df4, :Mass)
-    df4[2, :Mass] = missing
+    df4[1, :Mass] = missing
     @test df2 ≅ df4
 
     df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
@@ -74,9 +73,9 @@ const ≅ = isequal
                    Value = ["12 g", "Red", "18 g", "Grey"])
     df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df4 = DataFrame(Fish = ["Batman", "Bob"],
-                    _COLOR_ = ["Grey", "Red"],
-                    _MASS_ = ["18 g", "12 g"])
+    df4 = DataFrame(Fish = ["Bob", "Batman"],
+                    _MASS_ = ["12 g", "18 g"],
+                    _COLOR_ = ["Red", "Grey"])
     @test df2 == df4
     @test df3 == df4
 
@@ -90,10 +89,10 @@ const ≅ = isequal
 
     # test missing value in grouping variable
     mdf = DataFrame(id=[missing, 1, 2, 3], a=1:4, b=1:4)
-    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[1:3, :] == sort(mdf)[1:3, :]
-    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[1:3, :] == sort(mdf)[1:3, :]
-    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
-    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value) ≅ mdf
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value) ≅ mdf
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value) ≅ mdf
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value) ≅ mdf
 
     # test more than one grouping column
     wide = DataFrame(id = 1:12,
@@ -169,8 +168,8 @@ end
     @test_throws ArgumentError unstack(df, :variable, :value)
     @test_throws ArgumentError unstack(df, :variable, :value, allowmissing=true)
     udf = unstack(df, :variable, :value, allowmissing=true, renamecols=x -> coalesce(x, "MISSING"))
-    @test propertynames(udf) == [:id, :a, :b, :missing, :MISSING]
-    @test udf[!, :missing] ≅ [missing, 9.0, missing]
+    @test propertynames(udf) == [:id, :a, :b, :MISSING, :missing]
+    @test udf[!, :missing] ≅ [missing, missing, 9.0]
     @test udf[!, :MISSING] ≅ [3.0, missing, missing]
 
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
@@ -181,8 +180,8 @@ end
     @test_throws ArgumentError unstack(df, 3, 4, allowmissing=true)
     udf = unstack(df, 3, 4, allowmissing=true, renamecols=x -> coalesce(x, "MISSING"))
 
-    @test propertynames(udf) == [:id, :id2, :a, :b, :missing, :MISSING]
-    @test udf[!, :missing] ≅ [missing, 9.0, missing]
+    @test propertynames(udf) == [:id, :id2, :a, :b, :MISSING, :missing]
+    @test udf[!, :missing] ≅ [missing, missing, 9.0]
     @test udf[!, :MISSING] ≅ [3.0, missing, missing]
 end
 

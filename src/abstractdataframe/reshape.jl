@@ -207,8 +207,8 @@ end
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
-Row keys and values from value column will be ordered in the order of their
-appearance in the respective vectors.
+Row keys and values from value column will be ordered in the order produced
+by `groupby`.
 
 # Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
