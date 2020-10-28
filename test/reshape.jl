@@ -498,12 +498,36 @@ end
     @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val) ==
           DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
 
+    # an exertice on current unstack invariants
     Random.seed!(1234)
-    for i in 1:3
+    for i in 1:16
         df = df[Random.shuffle(1:9), :]
-        @test unstack(df, :id, :var, :val) == DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
-        @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val) ==
+        @test unstack(df, :id, :var, :val)[sortperm(unique(df.id)), [1; 1 .+ sortperm(unique(df.var))]] ==
+              DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val)
+        @test unstack(df, :var, :val)[sortperm(unique(df.id)), [1:2; 2 .+ sortperm(unique(df.var))]] ==
               DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+
+        df2 = copy(df)
+        df2.id = PooledArray(df.id)
+        df2.var = PooledArray(df.var)
+        @test unstack(df2, :id, :var, :val)[sortperm(df2.id.pool), [1; 1 .+ sortperm(df2.var.pool)]] ==
+              DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test unstack(df2, [:id, :id2], :var, :val) == unstack(df2, :var, :val)
+        @test unstack(df2, :var, :val)[sortperm(df2.id.pool), [1:2; 2 .+ sortperm(df2.var.pool)]] ==
+              DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+
+        df2 = categorical(df, 1:3)
+        @test unstack(df2, :id, :var, :val) ==
+              DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test unstack(df2, [:id, :id2], :var, :val) == unstack(df2, :var, :val) ==
+              DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        levels!(df2.id, [10, 2, 11, 3, 1, 12])
+        levels!(df2.var, ['x', 'b', 'y', 'c', 'a', 'z'])
+        @test unstack(df2, :id, :var, :val) ==
+              DataFrame(id=1:3, b=2:3:8, c=3:3:9, a=1:3:7)[[2,3,1], :]
+        @test unstack(df2, [:id, :id2], :var, :val) == unstack(df2, :var, :val) ==
+              DataFrame(id=1:3, id2=1:3, b=2:3:8, c=3:3:9, a=1:3:7)[[2,3,1], :]
     end
 
     df = DataFrame(id=repeat(1:3, inner=3),
