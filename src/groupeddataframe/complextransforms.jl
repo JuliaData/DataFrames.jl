@@ -4,7 +4,7 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
+function _combine_multicol(firstres, fun::Base.Callable, gd::GroupedDataFrame,
                            incols::Union{Nothing, AbstractVector, Tuple, NamedTuple})
     firstmulticol = firstres isa MULTI_COLS_TYPE
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
@@ -19,7 +19,7 @@ function _combine_multicol(firstres, fun::Any, gd::GroupedDataFrame,
 end
 
 function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
-                             f::Any, gd::GroupedDataFrame,
+                             f::Base.Callable, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                              firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
     extrude = false
@@ -95,7 +95,7 @@ end
 function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    rowstart::Integer, colstart::Integer,
-                                   f::Any, gd::GroupedDataFrame,
+                                   f::Base.Callable, gd::GroupedDataFrame,
                                    incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                    colnames::NTuple{N, Symbol},
                                    firstmulticol::Val) where N
@@ -181,7 +181,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
                                      outcols::NTuple{N, AbstractVector},
                                      idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                                     f::Any, gd::GroupedDataFrame,
+                                     f::Base.Callable, gd::GroupedDataFrame,
                                      incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                      colnames::NTuple{N, Symbol},
                                      firstmulticol::Val) where N

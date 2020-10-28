@@ -356,7 +356,7 @@ function _combine_process_pair_astable(ot_i::Bool,
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
                                        firstres::Any,
-                                       @nospecialize(fun::Any),
+                                       @nospecialize(fun::Base.Callable),
                                        incols::Union{Tuple, NamedTuple})
     if firstres isa AbstractVector
         idx, outcol_vec, _ = _combine_with_first(wrap(firstres), fun, gd, incols,

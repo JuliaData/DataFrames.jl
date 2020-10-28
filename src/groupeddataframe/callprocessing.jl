@@ -78,7 +78,7 @@ end
 # For more than 4 columns `map` is slower than @generated
 # but this case is probably rare and if huge number of columns is passed @generated
 # has very high compilation cost
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple{}, i::Integer)
     if f isa ByRow
@@ -88,28 +88,28 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
     end
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple{AbstractVector}, i::Integer)
     idx = idx[starts[i]:ends[i]]
     return f(view(incols[1], idx))
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NTuple{2, AbstractVector}, i::Integer)
     idx = idx[starts[i]:ends[i]]
     return f(view(incols[1], idx), view(incols[2], idx))
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NTuple{3, AbstractVector}, i::Integer)
     idx = idx[starts[i]:ends[i]]
     return f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx))
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NTuple{4, AbstractVector}, i::Integer)
     idx = idx[starts[i]:ends[i]]
@@ -117,14 +117,14 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
              view(incols[4], idx))
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
     idx = idx[starts[i]:ends[i]]
     return f(map(c -> view(c, idx), incols)...)
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
     if f isa ByRow && isempty(incols)
@@ -135,7 +135,7 @@ function do_call(f::Any, idx::AbstractVector{<:Integer},
     end
 end
 
-function do_call(f::Any, idx::AbstractVector{<:Integer},
+function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Nothing, i::Integer)
     idx = idx[starts[i]:ends[i]]
