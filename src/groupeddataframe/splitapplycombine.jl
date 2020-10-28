@@ -44,7 +44,8 @@ function _combine_prepare(gd::GroupedDataFrame,
 
     cs_norm = []
     optional_transform = Bool[]
-    for arg in [normalize_selection(index(parent(gd)), c, renamecols) for c in cs_vec]
+    for c in cs_vec
+        arg = normalize_selection(index(parent(gd)), c, renamecols)
         if arg isa AbstractVector{Int}
             for col_idx in arg
                 push!(cs_norm, col_idx => identity => _names(gd)[col_idx])
@@ -173,7 +174,7 @@ include("fastaggregates.jl")
 # implementation of processing of complex transformation functions
 include("complextransforms.jl")
 
-function _agg2idx_map_helper(idx, idx_agg)
+function _agg2idx_map_helper(idx::AbstractVector, idx_agg::AbstractVector)
     agg2idx_map = fill(-1, length(idx))
     aggj = 1
     @inbounds for (j, idxj) in enumerate(idx)
@@ -190,7 +191,7 @@ struct TransRes
     col_idx::Vector{Int} # index for a column
     col::AbstractVector # computed value of a column
     name::Symbol # name of a column
-    optional::Bool # if a column is allowed to be replaced in the future
+    optional::Bool # whether a column is allowed to be replaced in the future
 end
 
 function _combine_process_agg(@nospecialize(cs_i::Any),
@@ -306,7 +307,7 @@ function _combine_process_pair_symbol(ot_i::Bool,
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
                                       firstres::Any,
-                                      @nospecialize(fun::Any),
+                                      @nospecialize(fun::Base.Callable),
                                       incols::Union{Tuple, NamedTuple})
     if firstmulticol
         throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
@@ -618,7 +619,7 @@ end
 function combine(f::Base.Callable, gd::GroupedDataFrame;
                  keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
-        throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
+        throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame"))
     end
     return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
 end

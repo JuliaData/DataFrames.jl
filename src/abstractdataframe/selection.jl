@@ -12,16 +12,16 @@
 
 const TRANSFORMATION_COMMON_RULES =
     """
-    Below detailed common rules for all transformation functions provided in
+    Below detailed common rules for all transformation functions supported by
     DataFrames.jl are explained and compared.
 
     All operations described below are supported both for `GroupedDataFrame` and
-    `AbstractDataFrame` in which case it is considered as being grouped on no
+    `AbstractDataFrame`. In the latter case, the data frame is considered as being grouped on no
     columns (meaning it has a single group, or zero groups if it is empty). The
     only difference is that in this case the `keepkeys` and `ungroup` keyword
     arguments are not supported and a data frame is always returned.
 
-    Operations on can be applied on each group using one of the following functions:
+    Operations can be applied on each group using one of the following functions:
     * `combine`: does not put restrictions on number of rows returned, the order of rows
       is specified by the order of groups in `GroupedDataFrame`; it is typically used
       to compute summary statistics by group;
@@ -51,7 +51,8 @@ const TRANSFORMATION_COMMON_RULES =
     6. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
     8. a function which will be called with a `SubDataFrame` corresponding to each group;
-       this form should be avoided due to its poor performance unless a very large
+       this form should be avoided due to its poor performance unless
+       the number of groups is small or a very large
        number of columns are processed (in which case `SubDataFrame` avoids excessive
        compilation)
 
@@ -582,7 +583,7 @@ end
     select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true, renamecols::Bool=true)
     select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
 
-Mutate `df` or `gd` in place to retain only columns specified by `args...` and
+Mutate `df` or `gd` in place to retain only columns or transformations specified by `args...` and
 return it. The result is guaranteed to have the same number of rows as `df` or
 parent of `gd`, except when no columns are selected (in which case the result
 has zero rows).
@@ -615,7 +616,7 @@ end
 
 Mutate `df` or `gd` in place to add columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`.
-Equivalent to `select!(df, :, args...)` and `select!(gd, :, args...)`.
+Equivalent to `select!(df, :, args...)` or `select!(gd, :, args...)`.
 
 $TRANSFORMATION_COMMON_RULES
 
@@ -875,9 +876,9 @@ end
     transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
               keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
 
-Create a new data frame that contains columns from `df` or `gd` and adds columns
+Create a new data frame that contains columns from `df` or `gd` plus columns
 specified by `args` and return it. The result is guaranteed to have the same
-number of rows as `df`. Equivalent to `select(df, :, args...)`.
+number of rows as `df`. Equivalent to `select(df, :, args...)` or `select(gd, :, args...)`.
 
 $TRANSFORMATION_COMMON_RULES
 
@@ -1092,7 +1093,7 @@ julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max]) # br
 │ 7   │ 4     │ 1     │ 1     │ 4     │
 │ 8   │ 4     │ 1     │ 1     │ 8     │
 
-julia> combine(gd, [:b, :c] .=> Ref) # protecting result
+julia> combine(gd, [:b, :c] .=> Ref) # preventing vector from being spread across multiple rows
 4×3 DataFrame
 │ Row │ a     │ b_Ref    │ c_Ref    │
 │     │ Int64 │ SubArra… │ SubArra… │

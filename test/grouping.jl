@@ -3017,7 +3017,7 @@ end
 end
 
 @testset "aggregation of reordered groups" begin
-    df = DataFrame(id = [1, 2, 3, 1, 3, 2], x=1:6)
+    df = DataFrame(id=[1, 2, 3, 1, 3, 2], x=1:6)
     gdf = groupby(df, :id)
     @test select(df, :id, :x => x -> 2x) == select(gdf, :x => x -> 2x)
     @test select(df, identity) == select(gdf, identity)
@@ -3073,7 +3073,7 @@ end
 
 @testset "new rules tests" begin
     @testset "basic tests" begin
-        df = DataFrame(id = [1, 2, 3, 1, 3, 2], x=1:6)
+        df = DataFrame(id=[1, 2, 3, 1, 3, 2], x=1:6)
         gdf = groupby(df, :id)
 
         @test combine(gdf, x -> reshape(1:4, 2, 2)) ==

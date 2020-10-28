@@ -44,11 +44,11 @@ each subset of the `DataFrame`. This specification can be of the following forms
    concatenating source column name and `function` name by default (see examples below).
 3. a `cols => function => target_cols` form additionally explicitly specifying
    the target column or columns.
-4. a `col => target_cols` pair, which renames the column `col` to `target_cols` which
-   must be single column (a `Symbol` or a string).
+4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
+   must be single name (as a `Symbol` or a string).
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
    in a group; without `target_cols` the new column is called `:nrow`, otherwise
-   it must be single column (a `Symbol` or a string).
+   it must be single name (as a `Symbol` or a string).
 6. vectors or matrices containing transformations specified by the `Pair` syntax
    described in points 2 to 5
 8. a function which will be called with a `SubDataFrame` corresponding to each group;
@@ -57,10 +57,10 @@ each subset of the `DataFrame`. This specification can be of the following forms
    compilation)
 
 All functions have two types of signatures. One of them takes a `GroupedDataFrame`
-as a first argument and an arbitrary number of transfomations described above
-as following arguments. The second type of signature is when `Function` or `Type`
-is passed as a first argument and `GroupedDataFrame` is the second argument
-(similar to how it is passed to `map`).
+as the first argument and an arbitrary number of transformations described above
+as following arguments. The second type of signature is when a `Function` or a `Type`
+is passed as the first argument and a `GroupedDataFrame` as the second argument
+(similar to `map`).
 
 As a special rule, with the `cols => function` and `cols => function =>
 target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
