@@ -473,7 +473,7 @@ julia> sortperm(df, (:x, :y), rev=true)
 """
 function Base.sortperm(df::AbstractDataFrame, cols=[];
                   alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
-    if !(isa(by, Function) || (by isa AbstractVector && eltype(by) <: Function))
+    if !(by isa Base.Callable || (by isa AbstractVector && eltype(by) <: Base.Callable))
         msg = "'by' must be a Function or a vector of Functions. " *
               " Perhaps you wanted 'cols'."
         throw(ArgumentError(msg))
