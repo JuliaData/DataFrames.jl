@@ -266,7 +266,7 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
     idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
 
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
-        NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+                            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
         # if idx_agg was not computed yet it is nothing
         # in this case if we are not passed a vector compute it.
         if isnothing(idx_agg)
@@ -535,7 +535,7 @@ function _combine(gd::GroupedDataFrame,
             idx_callable = _combine_process_callable(cs_i, ot_i, parentdf, gd, seen_cols, trans_res, idx_agg)
             if idx_callable !== nothing
                 if idx_agg === nothing
-                        idx_agg = idx_callable
+                    idx_agg = idx_callable
                 else
                     @assert idx_agg === idx_callable
                 end
@@ -545,7 +545,7 @@ function _combine(gd::GroupedDataFrame,
             idx_pair = _combine_process_pair(cs_i, ot_i, parentdf, gd, seen_cols, trans_res, idx_agg)
             if idx_pair !== nothing
                 if idx_agg === nothing
-                        idx_agg = idx_pair
+                    idx_agg = idx_pair
                 else
                     @assert idx_agg === idx_pair
                 end
@@ -623,6 +623,12 @@ function combine(f::Base.Callable, gd::GroupedDataFrame;
     end
     return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
 end
+
+combine(f::Pair, gd::GroupedDataFrame;
+        keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
+    throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame. " *
+                        "You can pass a `Pair` as a second argument of the transformation. If you want the return " *
+                        "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
 combine(gd::GroupedDataFrame,
         cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;

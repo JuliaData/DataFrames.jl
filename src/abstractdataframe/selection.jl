@@ -1138,6 +1138,11 @@ function combine(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=tru
     return combine(df, arg)
 end
 
+combine(f::Pair, gd::AbstractDataFrame; renamecols::Bool=true) =
+    throw(ArgumentError("First argument must be a transformation if the second argument is a data frame. " *
+                        "You can pass a `Pair` as a second argument of the transformation. If you want the return " *
+                        "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
+
 manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool,
            renamecols::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
