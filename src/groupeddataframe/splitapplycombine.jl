@@ -108,9 +108,6 @@ function _combine_prepare(gd::GroupedDataFrame,
     end
 end
 
-# implementation of execution of transformation function calls and return value wrapping
-include("callprocessing.jl")
-
 # Find first value matching condition for each group
 # Optimized for situations where a matching value is typically encountered
 # among the first rows for each group
@@ -167,12 +164,6 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
     end
     outcol
 end
-
-# implementation of fast processing of aggregation functions
-include("fastaggregates.jl")
-
-# implementation of processing of complex transformation functions
-include("complextransforms.jl")
 
 function _agg2idx_map_helper(idx::AbstractVector, idx_agg::AbstractVector)
     agg2idx_map = fill(-1, length(idx))

@@ -107,6 +107,9 @@ include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
+include("groupeddataframe/callprocessing.jl")
+include("groupeddataframe/fastaggregates.jl")
+include("groupeddataframe/complextransforms.jl")
 
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
