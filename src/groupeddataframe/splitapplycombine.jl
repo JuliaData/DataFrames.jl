@@ -187,7 +187,7 @@ function _agg2idx_map_helper(idx::AbstractVector, idx_agg::AbstractVector)
     return agg2idx_map
 end
 
-struct TransRes
+struct TransformationResult
     col_idx::Vector{Int} # index for a column
     col::AbstractVector # computed value of a column
     name::Symbol # name of a column
@@ -199,7 +199,7 @@ function _combine_process_agg(@nospecialize(cs_i::Any),
                               parentdf::AbstractDataFrame,
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                              trans_res::Vector{TransRes},
+                              trans_res::Vector{TransformationResult},
                               idx_agg::Union{Nothing, AbstractVector{Int}})
     @assert isagg(cs_i, gd)
     @assert !ot_i
@@ -213,10 +213,10 @@ function _combine_process_agg(@nospecialize(cs_i::Any),
         # we have seen this col but it is not allowed to replace it
         optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
         @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-        trans_res[loc] = TransRes(idx_agg, outcol, out_col_name, ot_i)
+        trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, ot_i)
         seen_cols[out_col_name] = (ot_i, loc)
     else
-        push!(trans_res, TransRes(idx_agg, outcol, out_col_name, ot_i))
+        push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, ot_i))
         seen_cols[out_col_name] = (ot_i, length(trans_res))
     end
 end
@@ -225,7 +225,7 @@ function _combine_process_noop(cs_i::Pair,
                                ot_i::Bool,
                                parentdf::AbstractDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                               trans_res::Vector{TransRes},
+                               trans_res::Vector{TransformationResult},
                                idx_keeprows::AbstractVector{Int},
                                copycols::Bool)
     source_cols = first(cs_i)
@@ -240,8 +240,8 @@ function _combine_process_noop(cs_i::Pair,
         if optional
             if !ot_i
                 @assert trans_res[loc].optional
-                trans_res[loc] = TransRes(idx_keeprows, copycols ? copy(outcol) : outcol,
-                                          out_col_name, ot_i)
+                trans_res[loc] = TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
+                                                      out_col_name, ot_i)
                 seen_cols[out_col_name] = (ot_i, loc)
             end
         else
@@ -249,8 +249,8 @@ function _combine_process_noop(cs_i::Pair,
             ot_i || throw(ArgumentError("duplicate output column name: :$out_col_name"))
         end
     else
-        push!(trans_res, TransRes(idx_keeprows, copycols ? copy(outcol) : outcol,
-                                  out_col_name, ot_i))
+        push!(trans_res, TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
+                                              out_col_name, ot_i))
         seen_cols[out_col_name] = (ot_i, length(trans_res))
     end
 end
@@ -260,7 +260,7 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
                                    parentdf::AbstractDataFrame,
                                    gd::GroupedDataFrame,
                                    seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                                   trans_res::Vector{TransRes},
+                                   trans_res::Vector{TransformationResult},
                                    idx_agg::Union{Nothing, AbstractVector{Int}})
     firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parentdf, 0))
     idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
@@ -288,11 +288,11 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
                 # we have seen this col but it is not allowed to replace it
                 optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
                 @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, ot_i)
                 seen_cols[out_col_name] = (ot_i, loc)
             end
         else
-            push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+            push!(trans_res, TransformationResult(idx, outcol, out_col_name, ot_i))
             seen_cols[out_col_name] = (ot_i, length(trans_res))
         end
     end
@@ -302,7 +302,7 @@ end
 function _combine_process_pair_symbol(ot_i::Bool,
                                       gd::GroupedDataFrame,
                                       seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                                      trans_res::Vector{TransRes},
+                                      trans_res::Vector{TransformationResult},
                                       idx_agg::Union{Nothing, AbstractVector{Int}},
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
@@ -338,11 +338,11 @@ function _combine_process_pair_symbol(ot_i::Bool,
             # we have seen this col but it is not allowed to replace it
             optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
             @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-            trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+            trans_res[loc] = TransformationResult(idx, outcol, out_col_name, ot_i)
             seen_cols[out_col_name] = (ot_i, loc)
         end
     else
-        push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+        push!(trans_res, TransformationResult(idx, outcol, out_col_name, ot_i))
         seen_cols[out_col_name] = (ot_i, length(trans_res))
     end
     return idx_agg
@@ -351,7 +351,7 @@ end
 function _combine_process_pair_astable(ot_i::Bool,
                                        gd::GroupedDataFrame,
                                        seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                                       trans_res::Vector{TransRes},
+                                       trans_res::Vector{TransformationResult},
                                        idx_agg::Union{Nothing, AbstractVector{Int}},
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
@@ -416,11 +416,11 @@ function _combine_process_pair_astable(ot_i::Bool,
                 # we have seen this col but it is not allowed to replace it
                 optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
                 @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                trans_res[loc] = TransRes(idx, outcol, out_col_name, ot_i)
+                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, ot_i)
                 seen_cols[out_col_name] = (ot_i, loc)
             end
         else
-            push!(trans_res, TransRes(idx, outcol, out_col_name, ot_i))
+            push!(trans_res, TransformationResult(idx, outcol, out_col_name, ot_i))
             seen_cols[out_col_name] = (ot_i, length(trans_res))
         end
     end
@@ -432,7 +432,7 @@ function _combine_process_pair(@nospecialize(cs_i::Pair),
                                parentdf::AbstractDataFrame,
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                               trans_res::Vector{TransRes},
+                               trans_res::Vector{TransformationResult},
                                idx_agg::Union{Nothing, AbstractVector{Int}})
     source_cols, (fun, out_col_name) = cs_i
 
@@ -514,7 +514,7 @@ function _combine(gd::GroupedDataFrame,
         @assert gd.idx !== nothing
     end
 
-    trans_res = Vector{TransRes}()
+    trans_res = Vector{TransformationResult}()
 
     # seen_cols keeps an information about location of columns already processed
     # and if a given column can be replaced in the future
@@ -571,8 +571,8 @@ function _combine(gd::GroupedDataFrame,
                     if isnothing(agg2idx_map)
                         agg2idx_map = _agg2idx_map_helper(idx, idx_agg)
                     end
-                    trans_res[i] = TransRes(idx_agg, trans_res[i].col[agg2idx_map],
-                                            trans_res[i].name, trans_res[i].optional)
+                    trans_res[i] = TransformationResult(idx_agg, trans_res[i].col[agg2idx_map],
+                                                        trans_res[i].name, trans_res[i].optional)
                 elseif idx != trans_res[i].col_idx
                     if keeprows
                         throw(ArgumentError("all functions must return vectors with " *
@@ -604,7 +604,7 @@ function _combine(gd::GroupedDataFrame,
                 end
             end
             @assert k == length(gd_idx)
-            trans_res[i] = TransRes(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
+            trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
         end
     end
 
