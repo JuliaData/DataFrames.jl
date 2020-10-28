@@ -1,25 +1,33 @@
-# The Split-Apply-Combine Strategy
+# Transforming data frames
 
-Many data analysis tasks involve splitting a data set into groups, applying some
-functions to each of the groups and then combining the results. A standardized
-framework for handling this sort of computation is described in the paper
-"[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)",
-written by Hadley Wickham.
+Many data analysis tasks involve three steps:
+1. splitting a data set into groups,
+2. applying some functions to each of the groups,
+3. combining the results.
+
+Note that any of the steps 1 and 3 of this general procedure can be dropped,
+in which case we just transform a data frame without grouping it and later
+combining the result.
+
+A standardized framework for handling this sort of computation is described in
+the paper "[The Split-Apply-Combine Strategy for Data
+Analysis](http://www.jstatsoft.org/v40/i01)", written by Hadley Wickham.
 
 The DataFrames package supports the split-apply-combine strategy through the
-`groupby` function followed by `combine`, `select`/`select!` or `transform`/`transform!`.
+`groupby` function that creates a `GroupedDataFrame`,
+followed by `combine`, `select`/`select!` or `transform`/`transform!`.
+
+All operations described in this section of the manual are supported both for
+`AbstractDataFrame` (when split and combine steps are skipped) and
+`GroupedDataFrame`. Technically, `AbstractDataFrame` is just considered as being
+grouped on no columns (meaning it has a single group, or zero groups if it is
+empty). The only difference is that in this case the `keepkeys` and `ungroup`
+keyword arguments (described below) are not supported and a data frame is always
+returned, as there are no split and combine steps in this case.
 
 In order to perform operations by groups you first need to create a `GroupedDataFrame`
 object from your data frame using the `groupby` function that takes two arguments:
 (1) a data frame to be grouped, and (2) a set of columns to group by.
-
-!!! note
-
-    All operations described for `GroupedDataFrame` in this section of the manual
-    are also supported for `AbstractDataFrame` in which case it is considered as
-    being grouped on no columns (meaning it has a single group, or zero groups if it is empty).
-    The only difference is that in this case the `keepkeys` and `ungroup` keyword
-    arguments are not supported and a data frame is always returned.
 
 Operations can then be applied on each group using one of the following functions:
 * `combine`: does not put restrictions on number of rows returned, the order of rows

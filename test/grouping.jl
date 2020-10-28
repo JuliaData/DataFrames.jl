@@ -787,7 +787,7 @@ end
         combine(gd, :c => (x -> [(c_sum=sum(x),)]) => AsTable) ==
         combine(gd, :c => (x -> fill(sum(x),1,1)) => [:c_sum]) ==
         combine(gd, :c => (x -> [Dict(:c_sum => sum(x))]) => AsTable)
-    @test_throws MethodError combine(:c => sum, gd)
+    @test_throws ArgumentError combine(:c => sum, gd)
     @test_throws ArgumentError combine(:, gd)
 
     @test combine(gd, :c => vexp) ==
@@ -839,7 +839,7 @@ end
           combine(gd, [nrow => :res]) == combine(gd, 1 => length => :res)
     @test combine(gd, nrow => :res, nrow, [nrow => :res2]) ==
           combine(gd, 1 => length => :res, 1 => length => :nrow, 1 => length => :res2)
-    @test_throws MethodError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
+    @test_throws ArgumentError combine([:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx, gd)
     @test_throws ArgumentError combine(gd, [:b,:c] => ((b,c) -> [1 2; 3 4]) => :xxx)
     @test_throws ArgumentError combine(gd, nrow, nrow)
     @test_throws ArgumentError combine(gd, [nrow])
@@ -2824,7 +2824,7 @@ end
 @testset "disallowed tuple column selector" begin
     df = DataFrame(g=1:3)
     gdf = groupby(df, :g)
-    @test_throws MethodError combine((:g, :g) => identity, gdf)
+    @test_throws ArgumentError combine((:g, :g) => identity, gdf)
     @test_throws ArgumentError combine(gdf, (:g, :g) => identity)
 end
 
