@@ -45,7 +45,11 @@ into row groups.
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort groups according to the values of the grouping columns
   `cols`; if all `cols` are `CategoricalVector`s then groups are always sorted
-  irrespective of the value of `sort`
+  irrespective of the value of `sort`; if `sort=false` then the order of groups
+  is undefined (a typical case is that they follow the order of appreance of
+  respecive values in the grouping columns, but a notable exception is when the
+  columns are `PooledVector`s, in which case they are ordered accoring to the `pool`
+  field in these vectors)
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
