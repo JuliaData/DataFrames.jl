@@ -570,22 +570,33 @@ end
 @testset "select and select! with multiple selectors passed" begin
     df = DataFrame(rand(10, 4))
     @test select(df, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(df, :x2, :x4, Cols(:)) == select(df, :x2, :x4, :x1, :x3)
+    @test select(df, :x2, :x4, Cols()) == select(df, :x2, :x4)
     @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
 
     dfv = view(df, :, :)
     @test select(dfv, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x2, :x4, Cols(:)) == select(df, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x2, :x4, Cols()) == select(df, :x2, :x4)
     @test select(dfv, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols(:)) == select(df, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols()) == select(df, :x4, :x2, :x3)
     @test select(dfv, :x2, :x4, All()) == select(dfv, :x2, :x4, :x1, :x3)
     @test select(dfv, :x4, Between(:x2, :x4), All()) == select(dfv, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols(:)) == select(dfv, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols()) == select(dfv, :x4, :x2, :x3)
 
     dfc = copy(df)
     @test select!(dfc, :x2, :x4, All()) == dfc
+    @test select!(dfc, :x2, :x4, Cols(:)) == dfc
     @test dfc == select(df, :x2, :x4, :x1, :x3)
     dfc = copy(df)
     @test select!(dfc, :x4, Between(:x2, :x4), All()) == dfc
+    @test select!(dfc, :x4, Between(:x2, :x4), Cols(:)) == dfc
     @test dfc == select(df, :x4, :x2, :x3, :x1)
 
     @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
+    @test select(df, Not([:x2, :x3]), Cols(:)) == select(df, :x1, :x4, :x2, :x3)
 end
 
 @testset "select and select! renaming" begin
@@ -1308,6 +1319,8 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
     @test select(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
           DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test select(df, :a => +, [:a, :b] => +, Cols(:) => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
     @test_throws ArgumentError select(df, [] => () -> 10, renamecols=false)
     @test transform(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
           DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
@@ -1322,6 +1335,10 @@ end
 
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
     @test transform!(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    @test transform!(df, :a => +, [:a, :b] => +, Cols(:) => +, renamecols=false) == df
     @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
 end
 

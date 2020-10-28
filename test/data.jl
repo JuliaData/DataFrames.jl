@@ -479,6 +479,7 @@ end
     @test filter(Symbol[] => flipflop0, df) == df[[1,3], :]
     @test filter(r"z" => flipflop0, df) == df[[1,3], :]
     @test filter(Not(All()) => flipflop0, df) == df[[1,3], :]
+    @test filter(Cols() => flipflop0, df) == df[[1,3], :]
     @test filter(AsTable(r"z") => flipflop1, df) == df[[1,3], :]
     @test filter(AsTable([]) => flipflop1, df) == df[[1,3], :]
     @test filter!([] => flipflop0, copy(df)) == df[[1,3], :]
@@ -487,6 +488,7 @@ end
     @test filter!(Symbol[] => flipflop0, copy(df)) == df[[1,3], :]
     @test filter!(r"z" => flipflop0, copy(df)) == df[[1,3], :]
     @test filter!(Not(All()) => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Cols() => flipflop0, copy(df)) == df[[1,3], :]
     @test filter!(AsTable(r"z") => flipflop1, copy(df)) == df[[1,3], :]
     @test filter!(AsTable([]) => flipflop1, copy(df)) == df[[1,3], :]
 
@@ -502,6 +504,7 @@ end
         @test names(v, Between(:x1, :x3)) == ["x1", "x2", "x3"]
         @test names(v, Not(:a)) == names(v, r"x") == ["x1", "x2", "x3", "x4"]
         @test names(v, :x1) == names(v, 2) == ["x1"]
+        @test names(v, Cols()) == names(v, Cols()) == []
     end
 
     for v in [view(df, :, [4,3,2,1]), groupby(view(df, :, [4,3,2,1]), 1), view(df, 1, [4,3,2,1])]
@@ -509,6 +512,7 @@ end
         @test names(v, Between(:x2, :x1)) == ["x2", "x1"]
         @test names(v, Not(:a)) == names(v, r"x") == ["x3", "x2", "x1"]
         @test names(v, :x1) == names(v, 3) == ["x1"]
+        @test names(v, Cols()) == names(v, Cols()) == []
     end
 end
 
