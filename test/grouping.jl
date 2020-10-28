@@ -493,7 +493,11 @@ end
     @test isempty(gd2.ends)
     @test isequal_typed(parent(gd2), DataFrame(A=Int[], X=Int[]))
 
-    @test_throws ArgumentError combine(:x => identity, groupby_checked(DataFrame(x=[1,2,3], :x)))
+    @test_throws ArgumentError combine(:x => identity, groupby_checked(DataFrame(x=[1,2,3]), :x))
+    @test_throws ArgumentError select(groupby_checked(DataFrame(x=[1,2,3], y=1), :x), [] => identity)
+    @test_throws ArgumentError select(groupby_checked(DataFrame(x=[1,2,3], y=1), :x), [:x, :y] => identity)
+    @test_throws ArgumentError select(groupby_checked(DataFrame(x=[1,2,3], y=1), :x), [] => identity => :z)
+    @test_throws ArgumentError select(groupby_checked(DataFrame(x=[1,2,3], y=1), :x), [:x, :y] => identity => :z)
 end
 
 @testset "grouping with missings" begin

@@ -130,8 +130,10 @@ const TRANSFORMATION_COMMON_RULES =
     transformation and single column selection operations must be unique, so e.g.
     `select!(df, :a, :a => :a)` or `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
-    Note that including the same column several times in the data frame via renaming
-    or transformations that return the same object without copying may create
+    As a general rule if `copycols=true` columns are copied and when
+    `copycols=false` columns are reused if possible. Note, however, that
+    including the same column several times in the data frame via renaming or
+    transformations that return the same object without copying may create
     column aliases even if `copycols=true`. An example of such a situation is
     `select!(df, :a, :a => :b, :a => identity => :c)`.
 
@@ -142,8 +144,8 @@ const TRANSFORMATION_COMMON_RULES =
 
     There the following keyword arguments are supported by the transformation functions
     (not all keyword arguments are supported in all cases; in general they are allowed
-    in situations when they are meaningful, see the documentation of the specific functions
-    for details):
+    in situations when they are meaningful, see the signatures of the specific functions
+    in the documentation strings to get the exact information):
     - `keepkeys` : whether grouping columns should be kept in the returned data frame.
     - `ungroup` : whether the return value of the operation should be a data frame or a
       `GroupedDataFrame`.
@@ -785,7 +787,8 @@ Last Group (3 rows): a = 2
 │ 2   │ 2     │ 17    │ 3     │
 │ 3   │ 2     │ 17    │ 3     │
 
-julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c) # specifying a name for target column
+# specifying a name for target column
+julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 8×2 DataFrame
 │ Row │ a     │ sum_log_c │
 │     │ Int64 │ Float64   │
@@ -813,8 +816,8 @@ julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
 │ 7   │ 1     │ 8     │ 19    │
 │ 8   │ 2     │ 4     │ 17    │
 
-julia> select(gd, :b => :b1, :c => :c1,
-              [:b, :c] => +, keepkeys=false) # multiple arguments, renaming and keepkeys
+ # multiple arguments, renaming and keepkeys
+julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
 │ Row │ b1    │ c1    │ b_c_+ │
 │     │ Int64 │ Int64 │ Int64 │
@@ -828,7 +831,8 @@ julia> select(gd, :b => :b1, :c => :c1,
 │ 7   │ 2     │ 7     │ 9     │
 │ 8   │ 1     │ 8     │ 9     │
 
-julia> select(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max]) # broadcasting and column expansion
+# broadcasting and column expansion
+julia> select(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
 │ Row │ a     │ b     │ min   │ max   │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
@@ -1030,7 +1034,8 @@ julia> combine(gd) do d # do syntax for the slower variant
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> combine(gd, :c => (x -> sum(log, x)) => :sum_log_c) # specifying a name for target column
+# specifying a name for target column
+julia> combine(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 4×2 DataFrame
 │ Row │ a     │ sum_log_c │
 │     │ Int64 │ Float64   │
@@ -1064,8 +1069,8 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 │ 5   │ 4     │ 1     │ 4     │
 │ 6   │ 4     │ 1     │ 8     │
 
-julia> combine(gd, :b => :b1, :c => :c1,
-               [:b, :c] => +, keepkeys=false) # auto-splatting, renaming and keepkeys
+# auto-splatting, renaming and keepkeys
+julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
 │ Row │ b1    │ c1    │ b_c_+ │
 │     │ Int64 │ Int64 │ Int64 │
@@ -1079,7 +1084,8 @@ julia> combine(gd, :b => :b1, :c => :c1,
 │ 7   │ 1     │ 4     │ 5     │
 │ 8   │ 1     │ 8     │ 9     │
 
-julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max]) # broadcasting and column expansion
+# broadcasting and column expansion
+julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
 │ Row │ a     │ b     │ min   │ max   │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
@@ -1093,7 +1099,8 @@ julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max]) # br
 │ 7   │ 4     │ 1     │ 1     │ 4     │
 │ 8   │ 4     │ 1     │ 1     │ 8     │
 
-julia> combine(gd, [:b, :c] .=> Ref) # preventing vector from being spread across multiple rows
+# preventing vector from being spread across multiple rows
+julia> combine(gd, [:b, :c] .=> Ref)
 4×3 DataFrame
 │ Row │ a     │ b_Ref    │ c_Ref    │
 │     │ Int64 │ SubArra… │ SubArra… │

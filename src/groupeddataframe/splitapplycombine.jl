@@ -1,3 +1,5 @@
+# in this file we use cs and cs_i variable names that mean "target columns specification"
+
 # this constant defines which types of values returned by aggregation function
 # in combine are considered to produce multiple columns in the resulting data frame
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
@@ -185,15 +187,16 @@ struct TransformationResult
     optional::Bool # whether a column is allowed to be replaced in the future
 end
 
-function _combine_process_agg(@nospecialize(cs_i::Any),
-                              ot_i::Bool,
+# the transformation is an aggregation for which we have the fast path
+function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, Symbol}}),
+                              optional_i::Bool,
                               parentdf::AbstractDataFrame,
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
                               idx_agg::Union{Nothing, AbstractVector{Int}})
     @assert isagg(cs_i, gd)
-    @assert !ot_i
+    @assert !optional_i
     out_col_name = last(last(cs_i))
     incol = parentdf[!, first(cs_i)]
     agg = check_aggregate(first(last(cs_i)), incol)
@@ -204,16 +207,17 @@ function _combine_process_agg(@nospecialize(cs_i::Any),
         # we have seen this col but it is not allowed to replace it
         optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
         @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-        trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, ot_i)
-        seen_cols[out_col_name] = (ot_i, loc)
+        trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
+        seen_cols[out_col_name] = (optional_i, loc)
     else
-        push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, ot_i))
-        seen_cols[out_col_name] = (ot_i, length(trans_res))
+        push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
+        seen_cols[out_col_name] = (optional_i, length(trans_res))
     end
 end
 
-function _combine_process_noop(cs_i::Pair,
-                               ot_i::Bool,
+# move one column without transorming it
+function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pair{typeof(identity), Symbol}},
+                               optional_i::Bool,
                                parentdf::AbstractDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                trans_res::Vector{TransformationResult},
@@ -221,33 +225,36 @@ function _combine_process_noop(cs_i::Pair,
                                copycols::Bool)
     source_cols = first(cs_i)
     out_col_name = last(last(cs_i))
-    @assert source_cols isa Union{Int, AbstractVector{Int}}
-    @assert length(source_cols) == 1
+    if length(source_cols) != 1
+        throw(ArgumentError("Exactly one column can be transformed to one output column" *
+                            " when using identity transformation"))
+    end
     outcol = parentdf[!, first(source_cols)]
 
     if haskey(seen_cols, out_col_name)
         optional, loc = seen_cols[out_col_name]
         @assert trans_res[loc].name == out_col_name
         if optional
-            if !ot_i
+            if !optional_i
                 @assert trans_res[loc].optional
                 trans_res[loc] = TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
-                                                      out_col_name, ot_i)
-                seen_cols[out_col_name] = (ot_i, loc)
+                                                      out_col_name, optional_i)
+                seen_cols[out_col_name] = (optional_i, loc)
             end
         else
-            # if ot_i is true, then we ignore processing this column
-            ot_i || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            # if optional_i is true, then we ignore processing this column
+            optional_i || throw(ArgumentError("duplicate output column name: :$out_col_name"))
         end
     else
         push!(trans_res, TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
-                                              out_col_name, ot_i))
-        seen_cols[out_col_name] = (ot_i, length(trans_res))
+                                              out_col_name, optional_i))
+        seen_cols[out_col_name] = (optional_i, length(trans_res))
     end
 end
 
+# perform a transformation taking SubDataFrame as an input
 function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
-                                   ot_i::Bool,
+                                   optional_i::Bool,
                                    parentdf::AbstractDataFrame,
                                    gd::GroupedDataFrame,
                                    seen_cols::Dict{Symbol, Tuple{Bool, Int}},
@@ -274,23 +281,24 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
         if haskey(seen_cols, out_col_name)
             optional, loc = seen_cols[out_col_name]
             # if column was seen and it is optional now ignore it
-            if !ot_i
+            if !optional_i
                 optional, loc = seen_cols[out_col_name]
                 # we have seen this col but it is not allowed to replace it
                 optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
                 @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, ot_i)
-                seen_cols[out_col_name] = (ot_i, loc)
+                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
+                seen_cols[out_col_name] = (optional_i, loc)
             end
         else
-            push!(trans_res, TransformationResult(idx, outcol, out_col_name, ot_i))
-            seen_cols[out_col_name] = (ot_i, length(trans_res))
+            push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
     end
     return idx_agg
 end
 
-function _combine_process_pair_symbol(ot_i::Bool,
+# perform a transformation specified using the Pair notation with a single output column
+function _combine_process_pair_symbol(optional_i::Bool,
                                       gd::GroupedDataFrame,
                                       seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                       trans_res::Vector{TransformationResult},
@@ -324,22 +332,23 @@ function _combine_process_pair_symbol(ot_i::Bool,
 
     if haskey(seen_cols, out_col_name)
         # if column was seen and it is optional now ignore it
-        if !ot_i
+        if !optional_i
             optional, loc = seen_cols[out_col_name]
             # we have seen this col but it is not allowed to replace it
             optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
             @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-            trans_res[loc] = TransformationResult(idx, outcol, out_col_name, ot_i)
-            seen_cols[out_col_name] = (ot_i, loc)
+            trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
+            seen_cols[out_col_name] = (optional_i, loc)
         end
     else
-        push!(trans_res, TransformationResult(idx, outcol, out_col_name, ot_i))
-        seen_cols[out_col_name] = (ot_i, length(trans_res))
+        push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
+        seen_cols[out_col_name] = (optional_i, length(trans_res))
     end
     return idx_agg
 end
 
-function _combine_process_pair_astable(ot_i::Bool,
+# perform a transformation specified using the Pair notation with multiple output columns
+function _combine_process_pair_astable(optional_i::Bool,
                                        gd::GroupedDataFrame,
                                        seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                        trans_res::Vector{TransformationResult},
@@ -402,24 +411,27 @@ function _combine_process_pair_astable(ot_i::Bool,
         if haskey(seen_cols, out_col_name)
             optional, loc = seen_cols[out_col_name]
             # if column was seen and it is optional now ignore it
-            if !ot_i
+            if !optional_i
                 optional, loc = seen_cols[out_col_name]
                 # we have seen this col but it is not allowed to replace it
                 optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
                 @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, ot_i)
-                seen_cols[out_col_name] = (ot_i, loc)
+                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
+                seen_cols[out_col_name] = (optional_i, loc)
             end
         else
-            push!(trans_res, TransformationResult(idx, outcol, out_col_name, ot_i))
-            seen_cols[out_col_name] = (ot_i, length(trans_res))
+            push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
     end
     return idx_agg
 end
 
+# perform a transformation specified using the Pair notation
+# cs_i is a Pair that has many possible forms so this function is used to dispatch
+# to an appropriate more specialized function
 function _combine_process_pair(@nospecialize(cs_i::Pair),
-                               ot_i::Bool,
+                               optional_i::Bool,
                                parentdf::AbstractDataFrame,
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
@@ -444,11 +456,11 @@ function _combine_process_pair(@nospecialize(cs_i::Pair),
     firstmulticol = firstres isa MULTI_COLS_TYPE
 
     if out_col_name isa Symbol
-        return _combine_process_pair_symbol(ot_i, gd, seen_cols, trans_res, idx_agg,
+        return _combine_process_pair_symbol(optional_i, gd, seen_cols, trans_res, idx_agg,
                                            out_col_name, firstmulticol, firstres, fun, incols)
     end
     if out_col_name == AsTable || out_col_name isa AbstractVector{Symbol}
-        return _combine_process_pair_astable(ot_i, gd, seen_cols, trans_res, idx_agg,
+        return _combine_process_pair_astable(optional_i, gd, seen_cols, trans_res, idx_agg,
                                              out_col_name, firstmulticol, firstres, fun, incols)
     end
     throw(ArgumentError("unsupported target column name specifier $out_col_name"))
@@ -514,16 +526,16 @@ function _combine(gd::GroupedDataFrame,
     parentdf = parent(gd)
     for i in eachindex(cs_norm, optional_transform)
         cs_i = cs_norm[i]
-        ot_i = optional_transform[i]
+        optional_i = optional_transform[i]
 
         if length(gd) > 0 && isagg(cs_i, gd)
-            _combine_process_agg(cs_i, ot_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            _combine_process_agg(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
             # this is a fast path used when we pass a column or rename a column in select or transform
-            _combine_process_noop(cs_i, ot_i, parentdf, seen_cols, trans_res, idx_keeprows, copycols)
+            _combine_process_noop(cs_i, optional_i, parentdf, seen_cols, trans_res, idx_keeprows, copycols)
         elseif cs_i isa Base.Callable
-            idx_callable = _combine_process_callable(cs_i, ot_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            idx_callable = _combine_process_callable(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
             if idx_callable !== nothing
                 if idx_agg === nothing
                     idx_agg = idx_callable
@@ -533,7 +545,7 @@ function _combine(gd::GroupedDataFrame,
             end
         else
             @assert cs_i isa Pair
-            idx_pair = _combine_process_pair(cs_i, ot_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            idx_pair = _combine_process_pair(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
             if idx_pair !== nothing
                 if idx_agg === nothing
                     idx_agg = idx_pair
