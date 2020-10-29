@@ -207,8 +207,10 @@ end
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
-Row keys and values from value column will be ordered in the order produced
-by `groupby`.
+Row and column keys will be ordered in the order of their first appearance except
+when they are stored in an `AbstractVector` which supports `DataAPI.refpool`
+(two most common cases are `CategoricalVector` and `PooledVector`),
+in which case the odrer follows the order of values in this pool.
 
 # Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
