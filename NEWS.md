@@ -41,6 +41,9 @@
 * in `describe` the specification of custom aggregation is now `function => name`;
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
+* in joins passing `NaN` in `on` column now throws an error and
+  passing `missing` thows an error unless `matchmissing=:equal` keyword argument
+  is passed ([#2504](https://github.com/JuliaData/DataFrames.jl/pull/2504))
 
 ## New functionalities
 

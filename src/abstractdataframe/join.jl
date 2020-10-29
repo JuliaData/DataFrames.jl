@@ -55,6 +55,13 @@ struct DataFrameJoiner
         elseif matchmissing !== :equal
             throw(ArgumentError("matchmissing allows only :error or :equal"))
         end
+
+        for df in (dfl_on, dfr_on), col in eachcol(df)
+            if any(x -> (x isa Union{Complex, Real}) & isnan(x), col)
+                throw(ArgumentError("NaN values in key columns are not allowed"))
+            end
+        end
+
         new(dfl, dfr, dfl_on, dfr_on, left_on, right_on)
     end
 end
