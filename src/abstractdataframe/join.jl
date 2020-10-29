@@ -19,7 +19,8 @@ struct DataFrameJoiner
     right_on::Vector{Symbol}
 
     function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame,
-                             on::Union{<:OnType, AbstractVector})
+                             on::Union{<:OnType, AbstractVector},
+                             matchmissing::Symbol)
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
@@ -41,7 +42,20 @@ struct DataFrameJoiner
                                     "Symbol or Pair{Symbol,Symbol}."))
             end
         end
-        new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
+        dfl_on = dfl[!, left_on]
+        dfr_on = dfr[!, right_on]
+
+        if matchmissing === :error
+            for df in [dfl_on, dfr_on], col in eachcol(df)
+                if any(ismissing, col)
+                    throw(ArgumentError("missing values in key columns are not allowed " *
+                                        "when matchmissing==:error"))
+                end
+            end
+        elseif matchmissing !== :equal
+            throw(ArgumentError("matchmissing allows only :error or :equal value"))
+        end
+        new(dfl, dfr, dfl_on, dfr_on, left_on, right_on)
     end
 end
 
@@ -267,7 +281,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                indicator::Union{Nothing, Symbol, AbstractString},
                validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}},
                left_rename::Union{Function, AbstractString, Symbol},
-               right_rename::Union{Function, AbstractString, Symbol})
+               right_rename::Union{Function, AbstractString, Symbol},
+               matchmissing::Symbol)
     _check_consistency(df1)
     _check_consistency(df2)
 
@@ -275,7 +290,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    joiner = DataFrameJoiner(df1, df2, on)
+    joiner = DataFrameJoiner(df1, df2, on, matchmissing)
 
     # Check merge key validity
     left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
@@ -444,10 +459,10 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 """
-    innerjoin(df1, df2; on, makeunique = false,
-              validate = (false, false), renamecols = identity => identity)
-    innerjoin(df1, df2, dfs...; on, makeunique = false,
-              validate = (false, false))
+    innerjoin(df1, df2; on, makeunique=false, validate=(false, false),
+              renamecols=(identity => identity), matchmissing=:error)
+    innerjoin(df1, df2, dfs...; on, makeunique=false,
+              validate=(false, false), matchmissing=:error)
 
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
@@ -482,6 +497,9 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -552,26 +570,30 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
                    on::Union{<:OnType, AbstractVector} = Symbol[],
                    makeunique::Bool=false,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-                   renamecols::Pair=identity => identity)
+                   renamecols::Pair=identity => identity,
+                   matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
                             " containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
                  indicator=nothing, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          matchmissing::Symbol=:error) =
     innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+              dfs..., on=on, makeunique=makeunique, validate=validate,
+              matchmissing=matchmissing)
 
 """
-    leftjoin(df1, df2; on, makeunique = false, indicator = nothing,
-             validate = (false, false), renamecols = identity => identity)
+    leftjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+             renamecols=(identity => identity), matchmissing=:error)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
@@ -607,6 +629,9 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
 
@@ -678,19 +703,21 @@ function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[],
          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-         renamecols::Pair=identity => identity)
+         renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
                             " containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
                  indicator=indicator, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 """
-    rightjoin(df1, df2; on, makeunique = false, indicator = nothing,
-              validate = (false, false), renamecols = identity => identity)
+    rightjoin(df1, df2; on, makeunique=false, indicator = nothing,
+              validate=(false, false), renamecols=(identity => identity),
+              matchmissing=:error)
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
@@ -726,6 +753,9 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
 
@@ -797,21 +827,22 @@ function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           indicator::Union{Nothing, Symbol, AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          renamecols::Pair=identity => identity)
+          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
                             " containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
                  indicator=indicator, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 """
-    outerjoin(df1, df2; on, makeunique = false, indicator = nothing,
-              validate = (false, false), renamecols = identity => identity)
+    outerjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+              renamecols=(identity => identity), matchmissing=:error)
     outerjoin(df1, df2, dfs...; on, makeunique = false,
-              validate = (false, false))
+              validate = (false, false), matchmissing=:error)
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
@@ -851,7 +882,9 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
-
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
 
@@ -929,24 +962,27 @@ function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          renamecols::Pair=identity => identity)
+          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
                             " containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
                  indicator=indicator, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          matchmissing::Symbol=:error) =
     outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+              dfs..., on=on, makeunique=makeunique, validate=validate,
+              matchmissing=matchmissing)
 
 """
-    semijoin(df1, df2; on, makeunique = false, validate = (false, false))
+    semijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
 
 Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
@@ -976,6 +1012,9 @@ The order of rows in the result is undefined and may change in the future releas
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -1040,13 +1079,14 @@ julia> semijoin(name, job2, on = [:ID => :identifier])
 """
 semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+         matchmissing::Symbol=:error) =
     _join(df1, df2, on=on, kind=:semi, makeunique=makeunique,
           indicator=nothing, validate=validate,
-          left_rename=identity, right_rename=identity)
+          left_rename=identity, right_rename=identity, matchmissing=matchmissing)
 
 """
-    antijoin(df1, df2; on, makeunique = false, validate = (false, false))
+    antijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
 
 Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
@@ -1072,6 +1112,9 @@ The order of rows in the result is undefined and may change in the future releas
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -1133,10 +1176,12 @@ julia> antijoin(name, job2, on = [:ID => :identifier])
 """
 antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+         matchmissing::Symbol=:error) =
     _join(df1, df2, on=on, kind=:anti, makeunique=makeunique,
           indicator=nothing, validate=validate,
-          left_rename=identity, right_rename=identity)
+          left_rename=identity, right_rename=identity,
+          matchmissing=matchmissing)
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)
