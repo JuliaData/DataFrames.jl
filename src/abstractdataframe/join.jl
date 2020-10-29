@@ -10,11 +10,11 @@ const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
-struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
-    dfl::DF1
-    dfr::DF2
-    dfl_on::DF1
-    dfr_on::DF2
+struct DataFrameJoiner
+    dfl::AbstractDataFrame
+    dfr::AbstractDataFrame
+    dfl_on::AbstractDataFrame
+    dfr_on::AbstractDataFrame
     left_on::Vector{Symbol}
     right_on::Vector{Symbol}
 
