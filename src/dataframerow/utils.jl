@@ -345,7 +345,7 @@ end
 
 # Find index of a row in gd that matches given row by content, 0 if not found
 function findrow(gd::RowGroupDict,
-                 df::DataFrame,
+                 df::AbstractDataFrame,
                  gd_cols::Tuple{Vararg{AbstractVector}},
                  df_cols::Tuple{Vararg{AbstractVector}},
                  row::Int)
@@ -370,7 +370,7 @@ end
 # Find indices of rows in 'gd' that match given row by content.
 # return empty set if no row matches
 function findrows(gd::RowGroupDict,
-                  df::DataFrame,
+                  df::AbstractDataFrame,
                   gd_cols::Tuple{Vararg{AbstractVector}},
                   df_cols::Tuple{Vararg{AbstractVector}},
                   row::Int)

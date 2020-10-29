@@ -10,16 +10,16 @@ const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
-struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
-    dfl::DF1
-    dfr::DF2
-    dfl_on::DF1
-    dfr_on::DF2
+struct DataFrameJoiner
+    dfl::AbstractDataFrame
+    dfr::AbstractDataFrame
+    dfl_on::AbstractDataFrame
+    dfr_on::AbstractDataFrame
     left_on::Vector{Symbol}
     right_on::Vector{Symbol}
 
-    function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2,
-                                       on::Union{<:OnType, AbstractVector}) where {DF1, DF2}
+    function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame,
+                             on::Union{<:OnType, AbstractVector})
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
@@ -44,10 +44,6 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
         new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
     end
 end
-
-DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{<:OnType, AbstractVector}) where
-    {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
-    DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
 
 # helper map between the row indices in original and joined table
 struct RowIndexMap
