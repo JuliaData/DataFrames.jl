@@ -46,14 +46,14 @@ struct DataFrameJoiner
         dfr_on = dfr[!, right_on]
 
         if matchmissing === :error
-            for df in [dfl_on, dfr_on], col in eachcol(df)
+            for df in (dfl_on, dfr_on), col in eachcol(df)
                 if any(ismissing, col)
                     throw(ArgumentError("missing values in key columns are not allowed " *
-                                        "when matchmissing==:error"))
+                                        "when matchmissing == :error"))
                 end
             end
         elseif matchmissing !== :equal
-            throw(ArgumentError("matchmissing allows only :error or :equal value"))
+            throw(ArgumentError("matchmissing allows only :error or :equal"))
         end
         new(dfl, dfr, dfl_on, dfr_on, left_on, right_on)
     end
@@ -498,7 +498,7 @@ The order of rows in the result is undefined and may change in the future releas
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
-  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
 When merging `on` categorical columns that differ in the ordering of their
@@ -630,7 +630,7 @@ The order of rows in the result is undefined and may change in the future releas
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
-  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
@@ -754,7 +754,7 @@ The order of rows in the result is undefined and may change in the future releas
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
-  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
@@ -883,7 +883,7 @@ The order of rows in the result is undefined and may change in the future releas
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
-  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
@@ -1013,7 +1013,7 @@ The order of rows in the result is undefined and may change in the future releas
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
-  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
 When merging `on` categorical columns that differ in the ordering of their
@@ -1113,7 +1113,7 @@ The order of rows in the result is undefined and may change in the future releas
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
-  in `on` column; if equal to `:equal` then `missing` is allowed and missings are
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
 When merging `on` categorical columns that differ in the ordering of their
