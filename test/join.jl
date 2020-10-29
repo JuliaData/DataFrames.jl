@@ -887,7 +887,7 @@ end
     @test_throws ArgumentError join(df1, df2, on=:id, kind=:inner)
 end
 
-@testset "Make DataFrameJoiner rely on AbstractDataFrame" begin
+@testset "join mixing DataFrame and SubDataFrame" begin
     df1 = DataFrame(a=[1, 2, 3], b=[4, 5, 6])
     df1_copy = df1[df1.a .> 1, :]
     df1_view1 = @view df1[df1.a .> 1, :]
@@ -896,7 +896,6 @@ end
     @test innerjoin(df1_copy, df2, on=:a) ==
           innerjoin(df1_view1, df2, on=:a) ==
           innerjoin(df1_view2, df2, on=:a)
-
 end
 
 end # module
