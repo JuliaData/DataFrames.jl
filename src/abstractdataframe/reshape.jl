@@ -369,15 +369,16 @@ function find_group_row(gdf::GroupedDataFrame)
 
     filled = 0
     i = 1
+    groups = gdf.groups
     while filled < length(gdf)
-        group = gdf.groups[i]
+        group = groups[i]
         if rows[group] == 0
             rows[group] = i
             filled += 1
         end
         i += 1
     end
-    return rows # return row index of first occurence of each group in gdf
+    return rows # return row index of first occurrence of each group in gdf
 end
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},

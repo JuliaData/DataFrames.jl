@@ -498,7 +498,7 @@ end
     @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val) ==
           DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
 
-    # an exertice on current unstack invariants
+    # an exercise on current unstack invariants
     Random.seed!(1234)
     for i in 1:16
         df = df[Random.shuffle(1:9), :]
