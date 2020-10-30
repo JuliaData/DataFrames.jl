@@ -44,12 +44,12 @@ into row groups.
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort groups according to the values of the grouping columns
-  `cols`; if all `cols` are `CategoricalVector`s then groups are always sorted
-  irrespective of the value of `sort`; if `sort=false` then the order of groups
-  is undefined (a typical case is that they follow the order of appreance of
-  respecive values in the grouping columns, but a notable exception is when the
-  columns are `PooledVector`s, in which case they are ordered accoring to the `pool`
-  field in these vectors)
+  `cols`; if `sort=false` then the order of groups follows the order of appereance
+  of values in the grouping columns, except when all grouping columns provide
+  non-`nothing` `DataAPI.refpool` in which case the order of groups follows the
+  order of values returned by `DataAPI.refpool`. As a particular application of
+  this rule if all `cols` are `CategoricalVector`s then groups are always sorted
+  irrespective of the value of `sort`.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 

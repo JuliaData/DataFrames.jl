@@ -141,18 +141,6 @@ const TRANSFORMATION_COMMON_RULES =
     returned and the same copying rules apply as for a `DataFrame` input: this
     means in particular that selected columns will be copied. If
     `copycols=false`, a `SubDataFrame` is returned without copying columns.
-
-    There the following keyword arguments are supported by the transformation functions
-    (not all keyword arguments are supported in all cases; in general they are allowed
-    in situations when they are meaningful, see the signatures of the specific functions
-    in the documentation strings to get the exact information):
-    - `keepkeys` : whether grouping columns should be kept in the returned data frame.
-    - `ungroup` : whether the return value of the operation should be a data frame or a
-      `GroupedDataFrame`.
-    - `copycols` : whether columns of the source data frame should be copied if
-      no transformation is applied to them.
-    - `renamecols` : whether in the `cols => function` form automatically generated
-      column names should include the name of transformation functions or not.
     """
 
 """
@@ -596,6 +584,12 @@ the same parent data frame they might get corrupt.
 
 $TRANSFORMATION_COMMON_RULES
 
+There the following keyword arguments are supported by `select!`:
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
+- `ungroup` : whether the return value of the operation on `gd` should be a data
+  frame or a `GroupedDataFrame`.
+
 See [`select`](@ref) for examples.
 ```
 
@@ -621,6 +615,13 @@ The result is guaranteed to have the same number of rows as `df`.
 Equivalent to `select!(df, :, args...)` or `select!(gd, :, args...)`.
 
 $TRANSFORMATION_COMMON_RULES
+
+There the following keyword arguments are supported by `transform!`:
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
+- `ungroup` : whether the return value of the operation on `gd` should be a data
+  frame or a `GroupedDataFrame`.
+
 
 See [`select`](@ref) for examples.
 """
@@ -648,6 +649,16 @@ as `df`, except when no columns are selected (in which case the result has zero
 rows).
 
 $TRANSFORMATION_COMMON_RULES
+
+There the following keyword arguments are supported by `select`:
+- `copycols` : whether columns of the source data frame should be copied if
+  no transformation is applied to them.
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
+- `keepkeys` : whether grouping columns of `gd` should be kept in the returned
+  data frame.
+- `ungroup` : whether the return value of the operation on `gd` should be a data
+  frame or a `GroupedDataFrame`.
 
 # Examples
 ```jldoctest
@@ -886,7 +897,48 @@ number of rows as `df`. Equivalent to `select(df, :, args...)` or `select(gd, :,
 
 $TRANSFORMATION_COMMON_RULES
 
-See [`select`](@ref) for examples.
+There the following keyword arguments are supported by `transform`:
+- `copycols` : whether columns of the source data frame should be copied if
+  no transformation is applied to them.
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
+- `keepkeys` : whether grouping columns of `gd` should be kept in the returned
+  data frame.
+- `ungroup` : whether the return value of the operation on `gd` should be a data
+  frame or a `GroupedDataFrame`.
+
+Note that for `transform` on `GroupedDataFrame` the `keepkeys` keyword argument
+has an effect of allowing or disallowing changing the value of grouping column
+in the resulting data frame:
+
+```
+julia> gdf = groupby(DataFrame(x=1:2), :x)
+GroupedDataFrame with 2 groups based on key: x
+First Group (1 row): x = 1
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+⋮
+Last Group (1 row): x = 2
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 2     │
+
+julia> transform(gdf, x -> (x=10,), keepkeys=false)
+2×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 10    │
+│ 2   │ 10    │
+
+julia> transform(gdf, x -> (x=10,), keepkeys=true)
+ERROR: ArgumentError: column :x in returned data frame is not equal to grouping key :x
+```
+
+See [`select`](@ref) for more examples.
 """
 transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
     select(df, :, args..., copycols=copycols, renamecols=renamecols)
@@ -911,6 +963,14 @@ Create a new data frame that contains columns from `df` or `gd` specified by
 by the values returned by passed transformations.
 
 $TRANSFORMATION_COMMON_RULES
+
+There the following keyword arguments are supported by `combine`:
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
+- `keepkeys` : whether grouping columns of `gd` should be kept in the returned
+  data frame.
+- `ungroup` : whether the return value of the operation on `gd` should be a data
+  frame or a `GroupedDataFrame`.
 
 # Examples
 ```jldoctest

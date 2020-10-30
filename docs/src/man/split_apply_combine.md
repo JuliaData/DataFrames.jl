@@ -1,4 +1,4 @@
-# Transforming data frames
+# The Split-Apply-Combine Strategy
 
 Many data analysis tasks involve three steps:
 1. splitting a data set into groups,

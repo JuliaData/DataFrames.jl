@@ -176,12 +176,9 @@ end
     @test combine(gdf, nrow => :n, ungroup=false) ==
           combine(gdf, nrow => "n", ungroup=false)
 
-    @test combine(gdf, "a" => identity) == combine(gdf, :a => identity) ==
-          combine(gdf, "a" => identity) == combine(gdf, :a => identity)
-    @test combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity) ==
-          combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
-    @test combine(gdf, nrow => :n) == combine(gdf, nrow => "n") ==
-          combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
+    @test combine(gdf, "a" => identity) == combine(gdf, :a => identity)
+    @test combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
+    @test combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
 end
 
 @testset "DataFrameRow" begin
