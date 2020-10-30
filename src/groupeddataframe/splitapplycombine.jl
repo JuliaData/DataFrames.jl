@@ -630,7 +630,7 @@ end
 combine(f::Pair, gd::GroupedDataFrame;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
     throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame. " *
-                        "You can pass a `Pair` as a second argument of the transformation. If you want the return " *
+                        "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
 combine(gd::GroupedDataFrame,
