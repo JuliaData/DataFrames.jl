@@ -15,7 +15,6 @@ If `view=true` then return a stacked view of a data frame (long format).
 The result is a view because the columns are special `AbstractVectors`
 that return views into the original data frame.
 
-
 # Arguments
 - `df` : the AbstractDataFrame to be stacked
 - `measure_vars` : the columns to be stacked (the measurement variables),
@@ -207,10 +206,7 @@ end
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
-Row and column keys will be ordered in the order of their first appearance except
-when they are stored in an `AbstractVector` which supports `DataAPI.refpool`
-(two most common cases are `CategoricalVector` and `PooledVector`),
-in which case the odrer follows the order of values in this pool.
+Row and column keys will be ordered in the order of their first appearance.
 
 # Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
@@ -380,7 +376,7 @@ function find_group_row(gdf::GroupedDataFrame)
         end
         i += 1
     end
-    return rows # return row index of first occurrence of each group in gdf
+    return rows # return row index of first occurrence of each group in gdf.groups
 end
 
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
@@ -389,13 +385,14 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
                   renamecols::Function,
                   allowmissing::Bool, allowduplicates::Bool)
     rowref = g_rowkey.groups
-    df1 = df[find_group_row(g_rowkey), g_rowkey.cols]
+    row_group_row_idxs = find_group_row(g_rowkey)
     Nrow = length(g_rowkey)
 
     @assert groupcols(g_colkey) == _names(df)[colkey:colkey]
     colref = g_colkey.groups
     Ncol = length(g_colkey)
-    colref_map = df[find_group_row(g_colkey), colkey]
+    col_group_row_idxs = find_group_row(g_colkey)
+    colref_map = df[col_group_row_idxs, colkey]
 
     if any(ismissing, colref_map) && !allowmissing
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey])." *
@@ -415,10 +412,27 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         unstacked_val[col_id][row_id] = val
         mask_filled[row_id, col_id] = true
     end
+
     # note that Symbol.(renamecols.(colref_map)) must produce unique column names
     # and names between df1 and df2 must be unique
+    df1 = df[row_group_row_idxs, g_rowkey.cols]
     df2 = DataFrame(unstacked_val, Symbol.(renamecols.(colref_map)), copycols=false)
-    hcat(df1, df2, copycols=false)
+
+    @assert length(col_group_row_idxs) == ncol(df2)
+    # avoid reordering when col_group_row_idxs was already ordered
+    if !issorted(col_group_row_idxs)
+        df2 = df2[!, sortperm(col_group_row_idxs)]
+    end
+
+    res_df = hcat(df1, df2, copycols=false)
+
+    @assert length(row_group_row_idxs) == nrow(res_df)
+    # avoid reordering when col_group_row_idxs was already ordered
+    if !issorted(row_group_row_idxs)
+        res_df = res_df[sortperm(row_group_row_idxs), :]
+    end
+
+    return res_df
 end
 
 """

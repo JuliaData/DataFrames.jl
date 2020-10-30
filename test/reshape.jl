@@ -16,10 +16,10 @@ const ≅ = isequal
     @test levels(df[!, 2]) == ["YYY", "Color", "Mass"] # make sure we did not mess df[!, 2] levels
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    #The expected output, XXX level should be dropped as it has no rows with this key
+    #The expected output is in odred of appereance
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    Color = Union{String, Missing}["Red", "Grey"],
-                    Mass = Union{String, Missing}["12 g", "18 g"])
+                    Mass = Union{String, Missing}["12 g", "18 g"],
+                    Color = Union{String, Missing}["Red", "Grey"])
     @test df2 ≅ df4
     @test typeof(df2[!, :Fish]) <: CategoricalVector{Union{String, Missing}}
     # first column stays as CategoricalArray in df3
@@ -39,8 +39,8 @@ const ≅ = isequal
     df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    _COLOR_ = Union{String, Missing}["Red", "Grey"],
-                    _MASS_ = Union{String, Missing}["12 g", "18 g"])
+                    _MASS_ = Union{String, Missing}["12 g", "18 g"],
+                    _COLOR_ = Union{String, Missing}["Red", "Grey"])
     @test df2 == df4
     @test df3 == df4
 
@@ -498,36 +498,35 @@ end
     @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val) ==
           DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
 
-    # an exercise on current unstack invariants
+    # make sure we always use order of appereance
     Random.seed!(1234)
     for i in 1:16
         df = df[Random.shuffle(1:9), :]
-        @test unstack(df, :id, :var, :val)[sortperm(unique(df.id)), [1; 1 .+ sortperm(unique(df.var))]] ==
+        wide1 = unstack(df, :id, :var, :val)
+        wide2 = unstack(df, [:id, :id2], :var, :val)
+        wide3 = unstack(df, :var, :val)
+        @test wide1[sortperm(unique(df.id)), [1; 1 .+ sortperm(unique(df.var))]] ==
               DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
-        @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val)
-        @test unstack(df, :var, :val)[sortperm(unique(df.id)), [1:2; 2 .+ sortperm(unique(df.var))]] ==
+        @test wide2[sortperm(unique(df.id)), [1:2; 2 .+ sortperm(unique(df.var))]] ==
               DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test wide2 == wide3
 
         df2 = copy(df)
         df2.id = PooledArray(df.id)
         df2.var = PooledArray(df.var)
-        @test unstack(df2, :id, :var, :val)[sortperm(df2.id.pool), [1; 1 .+ sortperm(df2.var.pool)]] ==
-              DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
-        @test unstack(df2, [:id, :id2], :var, :val) == unstack(df2, :var, :val)
-        @test unstack(df2, :var, :val)[sortperm(df2.id.pool), [1:2; 2 .+ sortperm(df2.var.pool)]] ==
-              DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test unstack(df2, :id, :var, :val) == wide1
+        @test unstack(df2, [:id, :id2], :var, :val) == wide2
+        @test unstack(df2, :var, :val) == wide3
 
         df2 = categorical(df, 1:3)
-        @test unstack(df2, :id, :var, :val) ==
-              DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
-        @test unstack(df2, [:id, :id2], :var, :val) == unstack(df2, :var, :val) ==
-              DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test unstack(df2, :id, :var, :val) == wide1
+        @test unstack(df2, [:id, :id2], :var, :val) == wide2
+        @test unstack(df2, :var, :val) == wide3
         levels!(df2.id, [10, 2, 11, 3, 1, 12])
         levels!(df2.var, ['x', 'b', 'y', 'c', 'a', 'z'])
-        @test unstack(df2, :id, :var, :val) ==
-              DataFrame(id=1:3, b=2:3:8, c=3:3:9, a=1:3:7)[[2,3,1], :]
-        @test unstack(df2, [:id, :id2], :var, :val) == unstack(df2, :var, :val) ==
-              DataFrame(id=1:3, id2=1:3, b=2:3:8, c=3:3:9, a=1:3:7)[[2,3,1], :]
+        @test unstack(df2, :id, :var, :val) == wide1
+        @test unstack(df2, [:id, :id2], :var, :val) == wide2
+        @test unstack(df2, :var, :val) == wide3
     end
 
     df = DataFrame(id=repeat(1:3, inner=3),
