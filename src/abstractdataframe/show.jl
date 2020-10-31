@@ -644,6 +644,7 @@ function _show(io::IO,
                  row_number_column_title     = string(rowlabel),
                  show_row_number             = show_row_number,
                  title                       = title,
+                 vcrop_mode                  = :middle,
                  vlines                      = [1],
                  kwargs...)
 
