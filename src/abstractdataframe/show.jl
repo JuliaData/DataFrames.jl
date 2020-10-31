@@ -605,22 +605,48 @@ function _show(io::IO,
     # Check if any column has only floats so that we can align the decimal
     # points.
     float_cols = Int[]
-    max_pad    = Int[]
+    padding    = Vector{Int}[]
 
     @inbounds for i = 1:length(types)
         # TODO: Should we add support to `Union{Nothing, Float}`?
 
+        # Analyze the order of the number to compute the maximum padding that
+        # must be applied to align the numbers at the decimal point.
         if nonmissingtype(types[i]) <: AbstractFloat
-            aux       = log10.(@views df[:,i])
-            order     = floor.(Int, filter(x -> !ismissing(x) && x ≤ 5, aux))
-            max_pad_i = clamp(maximum(order), 0, 5)
+            max_pad_i = 0
+            length_i  = length(df[:, i])
+            order_i   = zeros(length_i)
+
+            for k = 1:length_i
+                v = df[k, i]
+
+                if v isa Number
+                    abs_v = abs(v)
+                    log_v = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v)) : 0
+
+                    # If the order is higher than 5, then we print using
+                    # scientific notation.
+                    order_v = log_v > 5 ? 0 : floor(Int, log_v)
+
+                    # If the number is negative, we need to add an additional
+                    # padding to print the sign.
+                    v < 0 && (order_v += 1)
+                else
+                    order_v = 0
+                end
+
+                order_i[k] = order_v
+
+                order_v > max_pad_i && (max_pad_i = order_v)
+            end
+
             push!(float_cols, i)
-            push!(max_pad, max_pad_i)
+            push!(padding, max_pad_i .- order_i)
         end
     end
 
     # Create the formatter for floating point columns.
-    ft_float = (v, i, j)->_pretty_tables_float_formatter(v, i, j, float_cols, max_pad)
+    ft_float = (v, i, j)->_pretty_tables_float_formatter(v, i, j, float_cols, padding)
 
     # Make sure that `truncate` does not hide the type and the column name.
     maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))

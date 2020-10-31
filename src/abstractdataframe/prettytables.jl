@@ -57,24 +57,15 @@ end
 # Formatter to align the floating points as in Julia array printing.
 #
 # - `float_cols` contains the IDs of the columns that must be formatted.
-# - `max_pad` is a vector containing the maximum padding in each columns.
+# - `padding` is a vector of vectors containing the padding of each element for
+#   each row.
 
-function _pretty_tables_float_formatter(v, i, j, float_cols, max_pad)
+function _pretty_tables_float_formatter(v, i, j, float_cols, padding)
     # We apply this formatting only to the columns that contains only floats.
     ind = findfirst(x -> x == j, float_cols)
 
     if !(ind === nothing)
-        # Get the order of the current number.
-        order = v isa Number ? floor(Int, log10(v)) : 0
-
-        # If the order is greater than 5, then the number is printed using
-        # scientific notation. This must be taken into account when computing
-        # the paddding.
-        order > 5 && (order = 0)
-
-        # Compute the required pad.
-        max_pad_i = max_pad[ind]
-        pad = clamp(max_pad_i - order, 0, max_pad_i)
+        pad = padding[ind][i]
 
         # Return the formatted number.
         str = sprint(print, v)
