@@ -586,7 +586,11 @@ function _show(io::IO,
     names_len = textwidth.(aux)
     maxwidth  = max.(9, names_len)
     names_mat = permutedims(aux)
-    types     = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
+    types     = eltype.(eachcol(df))
+
+    # NOTE: If we use `type` here, the time to print the first table is 2x more.
+    # This should be something reltated to type inference.
+    types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
 
     crop = :both
 
@@ -598,9 +602,29 @@ function _show(io::IO,
         crop = :horizontal
     end
 
+    # Check if any column has only floats so that we can align the decimal
+    # points.
+    float_cols = Int[]
+    max_pad    = Int[]
+
+    @inbounds for i = 1:length(types)
+        # TODO: Should we add support to `Union{Nothing, Float}`?
+
+        if nonmissingtype(types[i]) <: AbstractFloat
+            aux       = log10.(@views df[:,i])
+            order     = floor.(Int, filter(x -> !ismissing(x) && x ≤ 5, aux))
+            max_pad_i = clamp(maximum(order), 0, 5)
+            push!(float_cols, i)
+            push!(max_pad, max_pad_i)
+        end
+    end
+
+    # Create the formatter for floating point columns.
+    ft_float = (v, i, j)->_pretty_tables_float_formatter(v, i, j, float_cols, max_pad)
+
     # Make sure that `truncate` does not hide the type and the column name.
     maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
-                             for (l, t) in zip(names_len, types)]
+                             for (l, t) in zip(names_len, types_str)]
 
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
@@ -623,14 +647,15 @@ function _show(io::IO,
     compact_printing::Bool = get(io, :compact, true)
 
     # Print the table with the selected options.
-    pretty_table(io, df, vcat(names_mat, types);
+    pretty_table(io, df, vcat(names_mat, types_str);
                  alignment                   = :l,
                  compact_printing            = compact_printing,
                  continuation_row_alignment  = :l,
                  crop                        = crop,
                  crop_num_lines_at_beginning = 2,
                  ellipsis_line_skip          = 3,
-                 formatters                  = (_pretty_tables_formatter,),
+                 formatters                  = (_pretty_tables_general_formatter,
+                                                ft_float),
                  hlines                      = [:header],
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
                  maximum_columns_width       = maximum_columns_width,
