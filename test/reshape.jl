@@ -16,7 +16,7 @@ const ≅ = isequal
     @test levels(df[!, 2]) == ["YYY", "Color", "Mass"] # make sure we did not mess df[!, 2] levels
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    #The expected output is in odred of appereance
+    # The expected output is in order of appearance
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
                     Mass = Union{String, Missing}["12 g", "18 g"],
                     Color = Union{String, Missing}["Red", "Grey"])
@@ -500,6 +500,7 @@ end
 
     # make sure we always use order of appereance
     Random.seed!(1234)
+    # Use a large value to test several orders of appearance
     for i in 1:16
         df = df[Random.shuffle(1:9), :]
         wide1 = unstack(df, :id, :var, :val)
