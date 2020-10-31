@@ -416,10 +416,11 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        refs = left_indicator + right_indicator
-        refs_short, invpool, pool = PooledArrays._label(["left_only", "right_only", "both"], String)
-        @assert refs_short == [1, 2, 3]
-        indicatorcol = PooledArray(PooledArrays.RefArray(refs), invpool, pool)
+        left_indicator .+= right_indicator
+        pa_base = PooledArray(["left_only", "right_only", "both"])
+        indicatorcol = PooledArray(PooledArrays.RefArray(left_indicator),
+                                   Dict{String, UInt8}("left_only" => 0x1, "right_only" => 0x2, "both" => 0x3),
+                                   ["left_only", "right_only", "both"])
 
         unique_indicator = indicator
         if makeunique
