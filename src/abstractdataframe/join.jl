@@ -417,8 +417,9 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     if indicator !== nothing
         refs = left_indicator + right_indicator
-        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
-        indicatorcol = CategoricalArray{String,1}(refs, pool)
+        refs_short, invpool, pool = PooledArrays._label(["left_only", "right_only", "both"], String)
+        @assert refs_short == [1, 2, 3]
+        indicatorcol = PooledArray(PooledArrays.RefArray(refs), invpool, pool)
 
         unique_indicator = indicator
         if makeunique
