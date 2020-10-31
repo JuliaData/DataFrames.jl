@@ -44,6 +44,9 @@
 * in joins passing `NaN` in `on` column now throws an error and
   passing `missing` thows an error unless `matchmissing=:equal` keyword argument
   is passed ([#2504](https://github.com/JuliaData/DataFrames.jl/pull/2504))
+* `unstack` now produces row and column keys in the order of their first appearance
+   and has two new keyword arguments `allowmissing` and `allowduplicates`
+  ([#2494](https://github.com/JuliaData/DataFrames.jl/pull/2494))
 
 ## New functionalities
 

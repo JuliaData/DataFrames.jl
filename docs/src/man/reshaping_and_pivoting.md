@@ -58,7 +58,9 @@ julia> last(d, 6)
 │ 6   │ Iris-virginica │ PetalWidth │ 1.8     │
 ```
 
-The second optional argument to `stack` indicates the columns to be stacked. These are normally referred to as the measured variables. Column names can also be given:
+The second optional argument to `stack` indicates the columns to be stacked.
+These are normally referred to as the measured variables. Column names can also
+be given:
 
 ```jldoctest reshape
 julia> d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth]);
@@ -88,11 +90,18 @@ julia> last(d, 6)
 │ 6   │ Iris-virginica │ PetalWidth │ 1.8     │
 ```
 
-Note that all columns can be of different types. Type promotion follows the rules of `vcat`.
+Note that all columns can be of different types. Type promotion follows the
+rules of `vcat`.
 
-The stacked `DataFrame` that results includes all of the columns not specified to be stacked. These are repeated for each stacked column. These are normally refered to as identifier (id) columns. In addition to the id columns, two additional columns labeled `:variable` and `:values` contain the column identifier and the stacked columns.
+The stacked `DataFrame` that results includes all of the columns not specified
+to be stacked. These are repeated for each stacked column. These are normally
+refered to as identifier (id) columns. In addition to the id columns, two
+additional columns labeled `:variable` and `:values` contain the column
+identifier and the stacked columns.
 
-A third optional argument to `stack` represents the id columns that are repeated. This makes it easier to specify which variables you want included in the long format:
+A third optional argument to `stack` represents the id columns that are
+repeated. This makes it easier to specify which variables you want included in
+the long format:
 
 ```jldoctest reshape
 julia> d = stack(iris, [:SepalLength, :SepalWidth], :Species);
@@ -152,7 +161,9 @@ julia> last(d, 6)
 │ 6   │ Iris-virginica │ PetalWidth │ 1.8     │
 ```
 
-`unstack` converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:
+`unstack` converts from a long format to a wide format.
+The default is requires specifying which columns are an id variable,
+column variable names, and column values:
 
 ```jldoctest reshape
 julia> iris.id = 1:size(iris, 1)
@@ -267,7 +278,8 @@ julia> last(widedf, 6)
 │ 6   │ Iris-virginica │ 150   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │
 ```
 
-You can even skip passing the `:variable` and `:value` values as positional arguments, as they will be used by default, and write:
+You can even skip passing the `:variable` and `:value` values as positional
+arguments, as they will be used by default, and write:
 ```jldoctest reshape
 julia> widedf = unstack(longdf);
 
@@ -296,7 +308,8 @@ julia> last(widedf, 6)
 │ 6   │ Iris-virginica │ 150   │ 5.9         │ 3.0        │ 5.1         │ 1.8        │
 ```
 
-Passing `view=true` to `stack` returns a data frame whose columns are views into the original wide data frame. Here is an example:
+Passing `view=true` to `stack` returns a data frame whose columns are views into
+the original wide data frame. Here is an example:
 
 ```jldoctest reshape
 julia> d = stack(iris, view=true);
@@ -337,7 +350,9 @@ This is provides a view of the original columns stacked together.
 Id columns -- `RepeatedVector`
 This repeats the original columns N times where N is the number of columns stacked.
 
-None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:
+None of these reshaping functions perform any aggregation. To do aggregation,
+use the split-apply-combine functions in combination with reshaping. Here is an
+example:
 
 ```jldoctest reshape
 julia> using Statistics
@@ -356,7 +371,7 @@ julia> first(d, 6)
 │ 5   │ Iris-setosa │ SepalLength │ 5.0     │
 │ 6   │ Iris-setosa │ SepalLength │ 5.4     │
 
-julia> x = by(d, [:variable, :Species], :value => mean => :vsum);
+julia> x = combine(groupby(d, [:variable, :Species]), :value => mean => :vsum);
 
 julia> first(x, 6)
 │ Row │ variable    │ Species         │ vsum    │
