@@ -417,7 +417,6 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     if indicator !== nothing
         left_indicator .+= right_indicator
-        pa_base = PooledArray(["left_only", "right_only", "both"])
         indicatorcol = PooledArray(PooledArrays.RefArray(left_indicator),
                                    Dict{String, UInt8}("left_only" => 0x1, "right_only" => 0x2, "both" => 0x3),
                                    ["left_only", "right_only", "both"])
