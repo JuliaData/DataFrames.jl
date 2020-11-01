@@ -589,7 +589,7 @@ function _show(io::IO,
     types     = eltype.(eachcol(df))
 
     # NOTE: If we use `type` here, the time to print the first table is 2x more.
-    # This should be something reltated to type inference.
+    # This should be something related to type inference.
     types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
 
     crop = :both
@@ -602,51 +602,92 @@ function _show(io::IO,
         crop = :horizontal
     end
 
-    # Check if any column has only floats so that we can align the decimal
-    # points.
+    # This vector stores the column indices that are only floats. In this case,
+    # the printed numbers will be aligned in the decimal point.
     float_cols = Int[]
-    padding    = Vector{Int}[]
 
-    @inbounds for i = 1:length(types)
-        # TODO: Should we add support to `Union{Nothing, Float}`?
+    # These vectors contain the number of the row and the padding that must be
+    # applied so that the float number is aligned with the decimal pointing.
+    indices = Vector{Int}[]
+    padding = Vector{Int}[]
 
-        # Analyze the order of the number to compute the maximum padding that
-        # must be applied to align the numbers at the decimal point.
-        if nonmissingtype(types[i]) <: AbstractFloat
-            max_pad_i = 0
-            length_i  = length(df[:, i])
-            order_i   = zeros(length_i)
+    # If the screen is limited, we do not need to process all the numbers.
+    dsize = displaysize(io)
+    num_rows, num_cols = size(df)
 
-            for k = 1:length_i
-                v = df[k, i]
+    if !allcols
+        # Given the spacing, there is no way to fit more than W/9 rows of
+        # floating numbers in the screen, where W is the display width.
+        Δc = clamp(div(dsize[2],9), 0, num_cols)
+    else
+        Δc = num_cols
+    end
 
-                if v isa Number
-                    abs_v = abs(v)
-                    log_v = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v)) : 0
+    if !allrows
+        # Get the maximum number of lines that we can display given the screen
+        # size.
+        Δr     = clamp(dsize[1] - 4, 0, num_rows)
+    else
+        Δr = num_rows
+    end
 
-                    # If the order is higher than 5, then we print using
-                    # scientific notation.
-                    order_v = log_v > 5 ? 0 : floor(Int, log_v)
+    Δr_lim = cld(Δr, 2)
 
-                    # If the number is negative, we need to add an additional
-                    # padding to print the sign.
-                    v < 0 && (order_v += 1)
-                else
-                    order_v = 0
+    # Do not align the numbers if there are more than 500 rows.
+    if Δr ≤ 500
+        @inbounds for i = 1:Δc
+            # TODO: Should we add support to `Union{Nothing, Float}`?
+
+            # Analyze the order of the number to compute the maximum padding that
+            # must be applied to align the numbers at the decimal point.
+            if nonmissingtype(types[i]) <: AbstractFloat
+                max_pad_i = 0
+                order_i   = zeros(Δr)
+                indices_i = zeros(Δr)
+
+                for k = 1:Δr
+                    # We need to process the top and bottom of the table because we
+                    # are cropping in the middle.
+
+                    if k ≤ Δr_lim
+                        kr = k
+                    else
+                        kr = num_rows - (k - Δr_lim) + 1
+                    end
+
+                    v = df[kr, i]
+
+                    if v isa Number
+                        abs_v = abs(v)
+                        log_v = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v)) : 0
+
+                        # If the order is higher than 5, then we print using
+                        # scientific notation.
+                        order_v = log_v > 5 ? 0 : floor(Int, log_v)
+
+                        # If the number is negative, we need to add an additional
+                        # padding to print the sign.
+                        v < 0 && (order_v += 1)
+                    else
+                        order_v = 0
+                    end
+
+                    order_i[k]   = order_v
+                    indices_i[k] = kr
+
+                    order_v > max_pad_i && (max_pad_i = order_v)
                 end
 
-                order_i[k] = order_v
-
-                order_v > max_pad_i && (max_pad_i = order_v)
+                push!(float_cols, i)
+                push!(indices, indices_i)
+                push!(padding, max_pad_i .- order_i)
             end
-
-            push!(float_cols, i)
-            push!(padding, max_pad_i .- order_i)
         end
     end
 
     # Create the formatter for floating point columns.
-    ft_float = (v, i, j)->_pretty_tables_float_formatter(v, i, j, float_cols, padding)
+    ft_float = (v, i, j)->_pretty_tables_float_formatter(v, i, j, float_cols,
+                                                         indices, padding)
 
     # Make sure that `truncate` does not hide the type and the column name.
     maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))

@@ -57,20 +57,28 @@ end
 # Formatter to align the floating points as in Julia array printing.
 #
 # - `float_cols` contains the IDs of the columns that must be formatted.
+# - `indices` is a vector of vectors containing the indices of each elements
+#   in the data frame.
 # - `padding` is a vector of vectors containing the padding of each element for
 #   each row.
 
-function _pretty_tables_float_formatter(v, i, j, float_cols, padding)
+function _pretty_tables_float_formatter(v, i, j, float_cols, indices, padding)
+    length(float_cols) == 0 && return v
+
     # We apply this formatting only to the columns that contains only floats.
-    ind = findfirst(x -> x == j, float_cols)
+    ind_col = findfirst(x -> x == j, float_cols)
 
-    if !(ind === nothing)
-        pad = padding[ind][i]
+    if !(ind_col === nothing)
+        ind_row = findfirst(x -> x == i, indices[ind_col])
 
-        # Return the formatted number.
-        str = sprint(print, v)
-        return " "^pad * str
-    else
-        return v
+        if !(ind_row === nothing)
+            pad = padding[ind_col][ind_row]
+
+            # Return the formatted number.
+            str = sprint(print, v)
+            return " "^pad * str
+        end
     end
+
+    return v
 end
