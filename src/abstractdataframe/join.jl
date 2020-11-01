@@ -57,7 +57,7 @@ struct DataFrameJoiner
         end
 
         for df in (dfl_on, dfr_on), col in eachcol(df)
-            if any(x -> (x isa Union{Complex, Real}) & isnan(x), col)
+            if any(x -> (x isa Union{Complex, Real}) && isnan(x), col)
                 throw(ArgumentError("NaN values in key columns are not allowed"))
             end
         end
