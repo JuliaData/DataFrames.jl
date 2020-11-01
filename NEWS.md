@@ -5,7 +5,8 @@
 * the rules for transformations passed to `select`/`select!`, `transform`/`transform!`,
   and `combine` have been made more flexible; in particular now it is allowed to
   return multiple columns from a transformation function
-  [#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461)
+  ([#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461) and
+  [#2481](https://github.com/JuliaData/DataFrames.jl/pull/2481))
 * CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
   to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
   In the same vein, the `categorical` and `categorical!` functions

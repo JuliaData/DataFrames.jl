@@ -169,19 +169,16 @@ end
     @test combine(gdf, :a) == combine(gdf, "a") ==
           combine(gdf, [:a]) == combine(gdf, ["a"])
 
-    @test combine("a" => identity, gdf, ungroup=false) ==
-          combine(:a => identity, gdf, ungroup=false)
-    @test combine(["a"] => identity, gdf, ungroup=false) ==
-          combine([:a] => identity, gdf, ungroup=false)
-    @test combine(nrow => :n, gdf, ungroup=false) ==
-          combine(nrow => "n", gdf, ungroup=false)
+    @test combine(gdf, "a" => identity, ungroup=false) ==
+          combine(gdf, :a => identity, ungroup=false)
+    @test combine(gdf, ["a"] => identity, ungroup=false) ==
+          combine(gdf, [:a] => identity, ungroup=false)
+    @test combine(gdf, nrow => :n, ungroup=false) ==
+          combine(gdf, nrow => "n", ungroup=false)
 
-    @test combine("a" => identity, gdf) == combine(:a => identity, gdf) ==
-          combine(gdf, "a" => identity) == combine(gdf, :a => identity)
-    @test combine(["a"] => identity, gdf) == combine([:a] => identity, gdf) ==
-          combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
-    @test combine(nrow => :n, gdf) == combine(nrow => "n", gdf) ==
-          combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
+    @test combine(gdf, "a" => identity) == combine(gdf, :a => identity)
+    @test combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
+    @test combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
 end
 
 @testset "DataFrameRow" begin
