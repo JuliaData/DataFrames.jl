@@ -218,12 +218,19 @@ end
     @test df.x1 isa CategoricalVector{Int}
 end
 
-@testset "categorical with All and Between" begin
+@testset "categorical with Cols, All and Between" begin
     df = DataFrame(x1=["a", "b"], y=[2, 3])
     categorical(df, All())
+    categorical(df, Cols())
     categorical(df, Between(1, 2))
     categorical!(df, All())
+    categorical!(df, Cols())
     categorical!(df, Between(1,2))
+end
+
+@testset "deprecated describe syntax" begin
+    @test describe(DataFrame(a=[1,2]), cols = :a, :min, :min2 => minimum, "max2" => maximum, :max) ==
+          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 end
 
 end # module

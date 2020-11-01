@@ -2,6 +2,10 @@
 
 ## Breaking changes
 
+* the rules for transformations passed to `select`/`select!`, `transform`/`transform!`,
+  and `combine` have been made more flexible; in particular now it is allowed to
+  return multiple columns from a transformation function
+  [#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461)
 * CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
   to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
   In the same vein, the `categorical` and `categorical!` functions
@@ -32,6 +36,16 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* joins now return `PooledVector` not `CategoricalVector` in indicator column
+  ([#2505](https://github.com/JuliaData/DataFrames.jl/pull/2505))
+* `GroupKeys` now supports `in` for `GroupKey`, `Tuple`, `NamedTuple` and dictionaries
+  ([2392](https://github.com/JuliaData/DataFrames.jl/pull/2392))
+* in `describe` the specification of custom aggregation is now `function => name`;
+  old `name => function` order is now deprecated
+  ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
+* `unstack` now produces row and column keys in the order of their first appearance
+   and has two new keyword arguments `allowmissing` and `allowduplicates`
+  ([#2494](https://github.com/JuliaData/DataFrames.jl/pull/2494))
 
 ## New functionalities
 
@@ -61,6 +75,14 @@
   keyword argument that makes it possible to avoid adding transformation function name
   as a suffix in automatically generated column names
   ([#2397](https://github.com/JuliaData/DataFrames.jl/pull/2397))
+* `filter`, `sort`, `dropmissing`, and `unique` now support a `view` keyword argument
+  which if set to `true` makes them retun a `SubDataFrame` view into the passed
+  data frame.
+* add `only` method for `AbstractDataFrame` ([#2449](https://github.com/JuliaData/DataFrames.jl/pull/2449))
+* passing empty sets of columns in `filter`/`filter!` and in `select`/`transform`/`combine`
+  with `ByRow` is now accepted ([#2476](https://github.com/JuliaData/DataFrames.jl/pull/2476))
+* add `permutedims` method for `AbstractDataFrame` ([#2447](https://github.com/JuliaData/DataFrames.jl/pull/2447))
+* add support for `Cols` from DataAPI.jl ([#2495](https://github.com/JuliaData/DataFrames.jl/pull/2495))
 
 ## Deprecated
 
@@ -76,3 +98,7 @@
   ([#2315](https://github.com/JuliaData/DataFrames.jl/pull/2315))
 * add rich display support for Markdown cell entries in HTML and LaTeX
   ([#2346](https://github.com/JuliaData/DataFrames.jl/pull/2346))
+* limit the maximal display width the output can use in `text/plain` before
+  being truncated (in the `textwidth` sense, excluding `…`) to `32` per column
+  by default and fix a corner case when no columns are printed in situations when
+  they are too wide ([2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))

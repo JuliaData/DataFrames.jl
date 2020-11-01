@@ -355,7 +355,12 @@ we can observe that:
 
 #### Indexing syntax
 
-Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
+Specific subsets of a data frame can be extracted using the indexing syntax,
+similar to matrices. In the [Indexing](@ref) section of the manual you can find
+all the details about the available options. Here we highlight the basic options.
+
+The colon `:` indicates that all items (rows or columns
+depending on its position) should be retained:
 
 ```jldoctest dataframe
 julia> df[1:3, :]
@@ -451,7 +456,11 @@ julia> df[!, :A] == df[:, :A]
 true
 ```
 
-In the first case, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1, :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
+In the first case, `[:A]` is a vector, indicating that the resulting object
+should be a `DataFrame`. On the other hand, `:A` is a single symbol, indicating
+that a single column vector should be extracted. Note that in the first case a
+vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1,
+:x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
 
 It is also possible to use a regular expression as a selector of columns matching it:
 ```jldoctest dataframe
@@ -470,7 +479,9 @@ julia> df[!, r"x"]
 │ 1   │ 1     │ 2     │
 ```
 
-A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be used to select all columns excluding a specific subset:
+A `Not` selector (from the
+[InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be
+used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
 julia> df[!, Not(:x1)]
@@ -481,8 +492,13 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
-Finally, you can use `Not` and `All` selectors in more complex column selection scenarios.
-The following examples move all columns whose names match `r"x"` regular expression respectively to the front and to the end of a data frame:
+Finally, you can use `Not`, `Between`, `Cols` and `All` selectors in more
+complex column selection scenarios (note that `Cols()` selects no columns while
+`All()` selects all columns therefore `Cols` is a preferred selector if you
+write generic code). The following examples move all columns whose names match
+`r"x"` regular expression respectively to the front and to the end of a data
+frame:
+
 ```
 julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
@@ -491,14 +507,14 @@ julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 ├─────┼───────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │ 4     │
 
-julia> df[:, All(r"x", :)]
+julia> df[:, Cols(r"x", :)]
 1×4 DataFrame
 │ Row │ x1    │ x2    │ r     │ y     │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┼───────┤
 │ 1   │ 2     │ 3     │ 1     │ 4     │
 
-julia> df[:, All(Not(r"x"), :)]
+julia> df[:, Cols(Not(r"x"), :)]
 1×4 DataFrame
 │ Row │ r     │ y     │ x1    │ x2    │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
@@ -571,7 +587,7 @@ a function object that tests whether each value belongs to the subset
     - when `view` or `@view` is used (e.g. `@view df[1:3, :A]`).
 
     More details on copies, views, and references can be found
-    [here.](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/#getindex-and-view-1)
+    in the [`getindex` and `view`](@ref) section.
 
 #### Column selection using `select` and `select!`, `transform` and `transform!`
 
@@ -627,6 +643,14 @@ julia> select(df, :x2, :x2 => ByRow(sqrt)) # transform columns by row
 ├─────┼───────┼─────────┤
 │ 1   │ 3     │ 1.73205 │
 │ 2   │ 4     │ 2.0     │
+
+julia> select(df, AsTable(:) => ByRow(extrema) => [:lo, :hi]) # return multiple columns
+2×2 DataFrame
+│ Row │ lo    │ hi    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 5     │
+│ 2   │ 2     │ 6     │
 ```
 
 It is important to note that `select` always returns a data frame,

@@ -94,10 +94,20 @@ isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
 # 4) whether groups are already sorted
 # Optional `groups` vector is set to the group indices of each row (starting at 1)
 # With skipmissing=true, rows with missing values are attributed index 0.
+row_group_slots(cols::Tuple{Vararg{AbstractVector}},
+                hash::Val = Val(true),
+                groups::Union{Vector{Int}, Nothing} = nothing,
+                skipmissing::Bool = false,
+                sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} =
+    row_group_slots(cols, DataAPI.refpool.(cols), hash, groups, skipmissing, sort)
+
+# Generic fallback method based on open adressing hash table
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
+                         refpools::Any,
                          hash::Val = Val(true),
                          groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+                         skipmissing::Bool = false,
+                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
@@ -140,70 +150,132 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     return ngroups, rhashes, gslots, false
 end
 
-nlevels(x::PooledArray) = length(x.pool)
-nlevels(x) = length(levels(x))
-
-function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}},
+# Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
+function row_group_slots(cols::NTuple{N,<:AbstractVector},
+                         refpools::NTuple{N,<:AbstractVector},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
+                         skipmissing::Bool = false,
+                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
     # Computing neither hashes nor groups isn't very useful,
     # and this method needs to allocate a groups vector anyway
     @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
 
+    refs = map(DataAPI.refarray, cols)
+    missinginds = map(refpools) do refpool
+        eltype(refpool) >: Missing ?
+            something(findfirst(ismissing, refpool), lastindex(refpool)+1) : lastindex(refpool)+1
+    end
+
     # If skipmissing=true, rows with missings all go to group 0,
     # which will be removed by functions down the stream
-    ngroupstup = map(cols) do c
-        nlevels(c) + (!skipmissing && eltype(c) >: Missing)
+    ngroupstup = map(refpools, missinginds) do refpool, missingind
+        len = length(refpool)
+        if skipmissing && missingind <= lastindex(refpool)
+            return len - 1
+        else
+            return len
+        end
     end
     ngroups = prod(ngroupstup)
 
-    # Fall back to hashing if there would be too many empty combinations.
+    # Fall back to hashing if there would be too many empty combinations
+    # or if the pool does not contain only unique values
     # The first check ensures the computation of ngroups did not overflow.
     # The rationale for the 2 threshold is that while the fallback method is always slower,
     # it allocates a hash table of size length(groups) instead of the remap vector
     # of size ngroups (i.e. the number of possible combinations) in this method:
     # so it makes sense to allocate more memory for better performance,
     # but it needs to remain reasonable compared with the size of the data frame.
-    if prod(Int128.(ngroupstup)) > typemax(Int) || ngroups > 2 * length(groups)
+    anydups = !all(allunique, refpools)
+    if prod(big.(ngroupstup)) > typemax(Int) ||
+       ngroups > 2 * length(groups) ||
+       anydups
+        # In the simplest case, we can work directly with the reference codes
+        newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
+                  sort ||
+                  anydups ? cols : refs
         return invoke(row_group_slots,
-                      Tuple{Tuple{Vararg{AbstractVector}}, Val,
-                            Union{Vector{Int}, Nothing}, Bool},
-                      cols, hash, groups, skipmissing)
+                      Tuple{Tuple{Vararg{AbstractVector}}, Any, Val,
+                            Union{Vector{Int}, Nothing}, Bool, Bool},
+                      newcols, refpools, hash, groups, skipmissing, sort)
     end
 
     seen = fill(false, ngroups)
-    # Compute vector mapping missing to -1 if skipmissing=true
-    refmaps = map(cols) do col
-        nlevs = nlevels(col)
-        refmap = collect(-1:(nlevs-1))
-        # First value in refmap is only used by CategoricalArray
-        # (corresponds to ref 0, i.e. missing values)
-        refmap[1] = skipmissing ? -1 : nlevs
-        if col isa PooledArray{>: Missing} && skipmissing
-            missingind = get(col.invpool, missing, 0)
-            if missingind > 0
-                refmap[missingind+1] = -1
-                refmap[missingind+2:end] .-= 1
-            end
-        end
-        refmap
-    end
     strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N,Int}
-    @inbounds for i in eachindex(groups)
-        local refs
-        let i=i # Workaround for julia#15276
-            refs = map(c -> c.refs[i], cols)
+    firstinds = map(firstindex, refpools)
+    if sort
+        nminds = map(refpools, missinginds) do refpool, missingind
+            missingind > lastindex(refpool) ?
+                eachindex(refpool) : setdiff(eachindex(refpool), missingind)
         end
-        vals = map((m, r, s) -> m[r+1] * s, refmaps, refs, strides)
-        j = sum(vals) + 1
-        # x < 0 happens with -1 in refmap, which corresponds to missing
-        if skipmissing && any(x -> x < 0, vals)
-            j = 0
+        if skipmissing
+            sorted = all(issorted(view(refpool, nmind))
+                         for (refpool, nmind) in zip(refpools, nminds))
         else
-            seen[j] = true
+            sorted = all(issorted, refpools)
         end
-        groups[i] = j
+    else
+        sorted = false
+    end
+    if sort && !sorted
+        # Compute vector mapping missing to -1 if skipmissing=true
+        refmaps = map(cols, refpools, missinginds, nminds) do col, refpool, missingind, nmind
+            refmap = collect(0:length(refpool)-1)
+            if skipmissing
+                fi = firstindex(refpool)
+                if missingind <= lastindex(refpool)
+                    refmap[missingind-fi+1] = -1
+                    refmap[missingind-fi+2:end] .-= 1
+                end
+                if sort
+                    perm = sortperm(view(refpool, nmind))
+                    invpermute!(view(refmap, nmind .- fi .+ 1), perm)
+                end
+            elseif sort
+                # collect is needed for CategoricalRefPool
+                invpermute!(refmap, sortperm(collect(refpool)))
+            end
+            refmap
+        end
+        @inbounds for i in eachindex(groups)
+            local refs_i
+            let i=i # Workaround for julia#15276
+                refs_i = map(c -> c[i], refs)
+            end
+            vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
+            j = sum(vals) + 1
+            # x < 0 happens with -1 in refmap, which corresponds to missing
+            if skipmissing && any(x -> x < 0, vals)
+                j = 0
+            else
+                seen[j] = true
+            end
+            groups[i] = j
+        end
+    else
+        @inbounds for i in eachindex(groups)
+            local refs_i
+            let i=i # Workaround for julia#15276
+                refs_i = map(refs, missinginds) do ref, missingind
+                    r = Int(ref[i])
+                    if skipmissing
+                        return r == missingind ? -1 : (r > missingind ? r-1 : r)
+                    else
+                        return r
+                    end
+                end
+            end
+            vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
+            j = sum(vals) + 1
+            # x < 0 happens with -1, which corresponds to missing
+            if skipmissing && any(x -> x < 0, vals)
+                j = 0
+            else
+                seen[j] = true
+            end
+            groups[i] = j
+        end
     end
     if !all(seen) # Compress group indices to remove unused ones
         oldngroups = ngroups
@@ -220,8 +292,7 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}}
         # To catch potential bugs inducing unnecessary computations
         @assert oldngroups != ngroups
     end
-    sorted = all(col -> col isa CategoricalVector, cols)
-    return ngroups, UInt[], Int[], sorted
+    return ngroups, UInt[], Int[], sort
 end
 
 
@@ -267,14 +338,14 @@ end
 function group_rows(df::AbstractDataFrame)
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
-        row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), groups, false)
+        row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), groups, false, false)
     rperm, starts, stops = compute_indices(groups, ngroups)
     return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
 end
 
 # Find index of a row in gd that matches given row by content, 0 if not found
 function findrow(gd::RowGroupDict,
-                 df::DataFrame,
+                 df::AbstractDataFrame,
                  gd_cols::Tuple{Vararg{AbstractVector}},
                  df_cols::Tuple{Vararg{AbstractVector}},
                  row::Int)
@@ -299,7 +370,7 @@ end
 # Find indices of rows in 'gd' that match given row by content.
 # return empty set if no row matches
 function findrows(gd::RowGroupDict,
-                  df::DataFrame,
+                  df::AbstractDataFrame,
                   gd_cols::Tuple{Vararg{AbstractVector}},
                   df_cols::Tuple{Vararg{AbstractVector}},
                   row::Int)

@@ -3,67 +3,66 @@ Base.summary(df::AbstractDataFrame) =
 Base.summary(io::IO, df::AbstractDataFrame) = print(io, summary(df))
 
 """
-    DataFrames.ourstrwidth(io::IO, x::Any, buffer)
+    DataFrames.ourstrwidth(io::IO, x::Any, buffer::IOBuffer, truncstring::Int)
 
 Determine the number of characters that would be used to print a value.
 """
-function ourstrwidth(io::IO, x::Any, buffer::IOBuffer)
+function ourstrwidth(io::IO, x::Any, buffer::IOBuffer, truncstring::Int)
     truncate(buffer, 0)
-    ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
+    ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x, truncstring)
     return textwidth(String(take!(buffer)))
 end
 
-"""
-    DataFrames.ourshow(io::IO, x::Any)
+function truncatestring(s::AbstractString, truncstring::Int)
+    truncstring <= 0 && return s
+    totalwidth = 0
+    for (i, c) in enumerate(s)
+        totalwidth += textwidth(c)
+        if totalwidth > truncstring
+            return first(s, i-1) * '…'
+        end
+    end
+    return s
+end
 
-Render a value to an `IO` object compactly and omitting type information, by
-calling 3-argument `show`, or 2-argument `show` if the former contains line breaks.
-Unlike `show`, render strings without surrounding quote marks.
 """
-function ourshow(io::IO, x::Any; styled::Bool=false)
+    DataFrames.ourshow(io::IO, x::Any, truncstring::Int)
+
+Render a value to an `IO` object compactly using print.
+`truncstring` indicates the approximate number of text characters width to truncate
+the output (if it is a non-positive value then no truncation is applied).
+"""
+function ourshow(io::IO, x::Any, truncstring::Int; styled::Bool=false)
     io_ctx = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
-
-    # This mirrors the behavior of Base.print_matrix_row
-    # First try 3-arg show
-    sx = sprint(show, "text/plain", x, context=io_ctx)
-
-    # If the output contains line breaks, try 2-arg show instead.
-    if occursin('\n', sx)
-        sx = sprint(show, x, context=io_ctx)
-    end
-
-    # strings should have " stripped here
-    if x isa AbstractString
-        @assert sx[1] == sx[end] == '"'
-        sx = escape_string(chop(sx, head=1, tail=1), "")
-    end
-
-    if styled
-        printstyled(io_ctx, sx, color=:light_black)
-    else
-        print(io_ctx, sx)
-    end
+    sx = sprint(print, x, context=io_ctx)
+    sx = escape_string(sx, ()) # do not escape "
+    sx = truncatestring(sx, truncstring)
+    styled ? printstyled(io_ctx, sx, color=:light_black) : print(io_ctx, sx)
 end
 
 const SHOW_TABULAR_TYPES = Union{AbstractDataFrame, DataFrameRow, DataFrameRows,
                                  DataFrameColumns, GroupedDataFrame}
 
-ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
-ourshow(io::IO, x::CategoricalValue{<:AbstractString}) = escape_string(io, get(x), "")
-ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
-ourshow(io::IO, x::Nothing; styled::Bool=false) = ourshow(io, "", styled=styled)
-ourshow(io::IO, x::SHOW_TABULAR_TYPES; styled::Bool=false) =
-    ourshow(io, summary(x), styled=styled)
-function ourshow(io::IO, x::Markdown.MD)
+# workaround Julia 1.0 for Char
+ourshow(io::IO, x::Char, truncstring::Int; styled::Bool=false) =
+    ourshow(io, string(x), styled=styled, truncstring)
+
+ourshow(io::IO, x::Nothing, truncstring::Int; styled::Bool=false) =
+    ourshow(io, "", styled=styled, truncstring)
+ourshow(io::IO, x::SHOW_TABULAR_TYPES, truncstring::Int; styled::Bool=false) =
+    ourshow(io, summary(x), truncstring, styled=styled)
+
+function ourshow(io::IO, x::Markdown.MD, truncstring::Int)
     r = repr(x)
-    len = min(length(r, 1, something(findfirst(==('\n'), r), lastindex(r)+1)-1), 32)
+    truncstring <= 0 && return chomp(truncstring)
+    len = min(length(r, 1, something(findfirst(==('\n'), r), lastindex(r)+1)-1), truncstring)
     return print(io, len < length(r) - 1 ? first(r, len)*'…' : first(r, len))
 end
 
 # AbstractChar: https://github.com/JuliaLang/julia/pull/34730 (1.5.0-DEV.261)
 # Irrational: https://github.com/JuliaLang/julia/pull/34741 (1.5.0-DEV.266)
 if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
-    function ourshow(io::IO, x::T) where T <: Union{AbstractChar, Irrational}
+    function ourshow(io::IO, x::T, truncstring::Int) where T <: Union{AbstractChar, Irrational}
         io = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
         show(io, x)
     end
@@ -92,7 +91,9 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
 
     maxwidth -= 1 # we will add "…" at the end
 
-    if T <: CategoricalValue
+    # This is only type display shortening so we
+    # are OK with any T whose name starts with CategoricalValue here
+    if startswith(sT, "CategoricalValue") || startswith(sT, "CategoricalArrays.CategoricalValue")
         sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix
@@ -164,38 +165,43 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowlabel::Symbol,
                       rowid::Union{Integer, Nothing},
                       show_eltype::Bool,
-                      buffer::IOBuffer)
+                      buffer::IOBuffer,
+                      truncstring::Int)
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
-    undefstrwidth = ourstrwidth(io, "#undef", buffer)
+    undefstrwidth = ourstrwidth(io, "#undef", buffer, truncstring)
 
     j = 1
     for (name, col) in pairs(eachcol(df))
         # (1) Consider length of column name
-        maxwidth = ourstrwidth(io, name, buffer)
+        # do not truncate column name
+        maxwidth = ourstrwidth(io, name, buffer, 0)
 
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
             if isassigned(col, i)
-                maxwidth = max(maxwidth, ourstrwidth(io, col[i], buffer))
+                maxwidth = max(maxwidth, ourstrwidth(io, col[i], buffer, truncstring))
             else
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
         if show_eltype
-            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col)), buffer))
+            # do not truncate eltype name
+            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col)), buffer, 0))
         else
             maxwidths[j] = maxwidth
         end
         j += 1
     end
 
+    # do not truncate rowlabel
     if rowid isa Nothing
         rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
         rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
-        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(io, rowlabel, buffer))
+        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2),
+                           ourstrwidth(io, rowlabel, buffer, 0))
     else
-        maxwidths[j] = max(ndigits(rowid), ourstrwidth(io, rowlabel, buffer))
+        maxwidths[j] = max(ndigits(rowid), ourstrwidth(io, rowlabel, buffer, 0))
     end
 
     return maxwidths
@@ -320,7 +326,8 @@ function showrowindices(io::IO,
                         leftcol::Int,
                         rightcol::Int,
                         rowid::Union{Integer, Nothing},
-                        buffer::IOBuffer)
+                        buffer::IOBuffer,
+                        truncstring::Int)
     rowmaxwidth = maxwidths[end]
 
     for i in rowindices
@@ -340,15 +347,15 @@ function showrowindices(io::IO,
             strlen = 0
             if isassigned(df[!, j], i)
                 s = df[i, j]
-                strlen = ourstrwidth(io, s, buffer)
+                strlen = ourstrwidth(io, s, buffer, truncstring)
                 if ismissing(s) || s isa SHOW_TABULAR_TYPES
-                    ourshow(io, s, styled=true)
+                    ourshow(io, s, truncstring, styled=true)
                 else
-                    ourshow(io, s)
+                    ourshow(io, s, truncstring)
                 end
             else
-                strlen = ourstrwidth(io, "#undef", buffer)
-                ourshow(io, "#undef", styled=true)
+                strlen = ourstrwidth(io, "#undef", buffer, truncstring)
+                ourshow(io, "#undef", truncstring, styled=true)
             end
             padding = maxwidths[j] - strlen
             for _ in 1:padding
@@ -441,7 +448,8 @@ function showrows(io::IO,
                   displaysummary::Bool,
                   eltypes::Bool,
                   rowid::Union{Integer, Nothing},
-                  buffer::IOBuffer)
+                  buffer::IOBuffer,
+                  truncstring::Int)
 
     ncols = size(df, 2)
 
@@ -457,26 +465,39 @@ function showrows(io::IO,
     nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
     header = displaysummary ? summary(df) : ""
+    cols_other_chunks = chunkbounds[end] - chunkbounds[2]
     if !allcols && length(chunkbounds) > 2
-        header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
+        # if we print only one chunk and it does not fit the screen give up
+        if cols_other_chunks == ncols
+            print(io, header * ". Omitted printing of all columns as they do " *
+                  "not fit the display size")
+            return
+        end
+        header *= ". Omitted printing of $cols_other_chunks columns"
     end
+
     println(io, header)
 
     for chunkindex in 1:nchunks
         leftcol = chunkbounds[chunkindex] + 1
         rightcol = chunkbounds[chunkindex + 1]
 
+        # nothing to print in this chunk
+        leftcol > rightcol && continue
+
         # Print column names
         @printf io "│ %s" rowlabel
-        padding = rowmaxwidth - ourstrwidth(io, rowlabel, buffer)
+        # do not truncate rowlabel
+        padding = rowmaxwidth - ourstrwidth(io, rowlabel, buffer, 0)
         for itr in 1:padding
             write(io, ' ')
         end
         print(io, " │ ")
         for j in leftcol:rightcol
             s = _names(df)[j]
-            ourshow(io, s)
-            padding = maxwidths[j] - ourstrwidth(io, s, buffer)
+            # do not truncate column names
+            ourshow(io, s, 0)
+            padding = maxwidths[j] - ourstrwidth(io, s, buffer, 0)
             for itr in 1:padding
                 write(io, ' ')
             end
@@ -498,7 +519,8 @@ function showrows(io::IO,
             for j in leftcol:rightcol
                 s = compacttype(eltype(df[!, j]), maxwidths[j], false)
                 printstyled(io, s, color=:light_black)
-                padding = maxwidths[j] - ourstrwidth(io, s, buffer)
+                # do not truncate eltype
+                padding = maxwidths[j] - ourstrwidth(io, s, buffer, 0)
                 for itr in 1:padding
                     write(io, ' ')
                 end
@@ -529,23 +551,13 @@ function showrows(io::IO,
         write(io, '\n')
 
         # Print main table body, potentially in two abbreviated sections
-        showrowindices(io,
-                       df,
-                       rowindices1,
-                       maxwidths,
-                       leftcol,
-                       rightcol,
-                       rowid, buffer)
+        showrowindices(io, df, rowindices1, maxwidths, leftcol, rightcol,
+                       rowid, buffer, truncstring)
 
         if !isempty(rowindices2)
             print(io, "\n⋮\n")
-            showrowindices(io,
-                           df,
-                           rowindices2,
-                           maxwidths,
-                           leftcol,
-                           rightcol,
-                           rowid, buffer)
+            showrowindices(io, df, rowindices2, maxwidths, leftcol, rightcol,
+                           rowid, buffer, truncstring)
         end
 
         # Print newlines to separate chunks
@@ -565,7 +577,8 @@ function _show(io::IO,
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
-               rowid=nothing)
+               rowid=nothing,
+               truncstring::Int)
     _check_consistency(df)
 
     # we will pass around this buffer to avoid its reallocation in ourstrwidth
@@ -590,19 +603,11 @@ function _show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid, eltypes, buffer)
+    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid,
+                             eltypes, buffer, truncstring)
     width = getprintedwidth(maxwidths)
-    showrows(io,
-             df,
-             rowindices1,
-             rowindices2,
-             maxwidths,
-             splitcols,
-             allcols,
-             rowlabel,
-             summary,
-             eltypes,
-             rowid, buffer)
+    showrows(io, df, rowindices1, rowindices2, maxwidths, splitcols, allcols,
+             rowlabel, summary, eltypes, rowid, buffer, truncstring)
     return
 end
 
@@ -614,7 +619,8 @@ end
          splitcols::Bool = get(io, :limit, false),
          rowlabel::Symbol = :Row,
          summary::Bool = true,
-         eltypes::Bool = true)
+         eltypes::Bool = true,
+         truncate::Int = 32)
 
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
@@ -643,6 +649,9 @@ while `splitcols` defaults to `true`.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 - `eltypes::Bool = true`: Whether to print the column types under column names.
+- `truncate::Int = 32`: the maximal display width the output can use before
+  being truncated (in the `textwidth` sense, excluding `…`).
+  If `truncate` is 0 or less, no truncation is applied.
 
 # Examples
 ```jldoctest
@@ -667,9 +676,10 @@ Base.show(io::IO,
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          truncate::Int = 32) =
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+          rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncstring=truncate)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
@@ -677,7 +687,8 @@ Base.show(df::AbstractDataFrame;
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          truncate::Int = 32) =
     show(stdout, df,
          allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)

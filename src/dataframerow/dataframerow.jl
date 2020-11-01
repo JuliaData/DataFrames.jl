@@ -224,7 +224,7 @@ end
 
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-for T in (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+for T in MULTICOLUMNINDEX_TUPLE
     @eval function Base.setindex!(df::DataFrame,
                                   v::Union{DataFrameRow, NamedTuple, AbstractDict},
                                   row_ind::Integer,

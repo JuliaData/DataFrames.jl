@@ -68,7 +68,7 @@ abstract type AbstractDataFrame end
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
 If `cols` is passed then restrict returned column names to those matching the
-selector (this is useful in particular with regular expressions, `Not`, and `Between`).
+selector (this is useful in particular with regular expressions, `Cols`, `Not`, and `Between`).
 `cols` can be:
 * any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
 * a `Type`, in which case names of columns whose `eltype` is a subtype of `T`
@@ -442,6 +442,16 @@ end
 ##############################################################################
 
 """
+    only(df::AbstractDataFrame)
+
+If `df` has a single row return it as a `DataFrameRow`; otherwise throw `ArgumentError`.
+"""
+function only(df::AbstractDataFrame)
+    nrow(df) != 1 && throw(ArgumentError("data frame must contain exactly 1 row"))
+    return df[1, :]
+end
+
+"""
     first(df::AbstractDataFrame)
 
 Get the first row of `df` as a `DataFrameRow`.
@@ -486,7 +496,7 @@ where each row represents a variable and each column a summary statistic.
       `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nmissing`, and `:eltype`.
     - `:all` as the only `Symbol` argument to return all statistics.
-    - A `name => function` pair where `name` is a `Symbol` or string. This will
+    - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset of columns from `df`
   to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
@@ -532,7 +542,7 @@ julia> describe(df, :min, :max)
 │ 2   │ x        │ 0.1 │ 1.0 │
 │ 3   │ y        │ 'a' │ 'j' │
 
-julia> describe(df, :min, :sum => sum)
+julia> describe(df, :min, sum => :sum)
 3×3 DataFrame
 │ Row │ variable │ min │ sum │
 │     │ Symbol   │ Any │ Any │
@@ -541,7 +551,7 @@ julia> describe(df, :min, :sum => sum)
 │ 2   │ x        │ 0.1 │ 5.5 │
 │ 3   │ y        │ 'a' │     │
 
-julia> describe(df, :min, :sum => sum, cols=:x)
+julia> describe(df, :min, sum => :sum, cols=:x)
 1×3 DataFrame
 │ Row │ variable │ min     │ sum     │
 │     │ Symbol   │ Float64 │ Float64 │
@@ -549,11 +559,16 @@ julia> describe(df, :min, :sum => sum, cols=:x)
 │ 1   │ x        │ 0.1     │ 5.5     │
 ```
 """
-DataAPI.describe(df::AbstractDataFrame,
-                 stats::Union{Symbol, Pair{<:SymbolOrString}}...;
-                 cols=:) =
-    _describe(select(df, cols, copycols=false), collect(stats))
-
+function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,
+                          Pair{<:Base.Callable,<:SymbolOrString},
+                          Pair{<:SymbolOrString}}...; # TODO: remove after deprecation
+                 cols=:)
+    if any(x -> x isa Pair{<:SymbolOrString}, stats)
+        Base.depwarn("name => function order is deprecated; use function => name instead", :describe)
+    end
+    return _describe(select(df, cols, copycols=false),
+                     Any[s isa Pair{<:SymbolOrString} ? last(s) => first(s) : s for s in stats])
+end
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
               [:mean, :min, :median, :max, :nmissing, :eltype])
@@ -576,9 +591,9 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
     end
 
-    custom_funs = Pair[Symbol(s[1]) => s[2] for s in stats if s isa Pair]
+    custom_funs = Pair[s[1] => Symbol(s[2]) for s in stats if s isa Pair]
 
-    ordered_names = [s isa Symbol ? s : Symbol(first(s)) for s in stats]
+    ordered_names = [s isa Symbol ? s : Symbol(last(s)) for s in stats]
 
     if !allunique(ordered_names)
         df_ord_names = DataFrame(ordered_names = ordered_names)
@@ -673,7 +688,7 @@ end
 
 function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
     for stat in stats
-        d[stat[1]] = try stat[2](col) catch end
+        d[stat[2]] = try stat[1](col) catch end
     end
 end
 
@@ -756,15 +771,20 @@ completecases(df::AbstractDataFrame, cols::MultiColumnIndex) =
     completecases(df[!, cols])
 
 """
-    dropmissing(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols=:; view::Bool=false, disallowmissing::Bool=!view)
 
-Return a copy of data frame `df` excluding rows with missing values.
+Return a data frame excluding rows with missing values in `df`.
 
 If `cols` is provided, only missing values in the corresponding columns are considered.
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
-If `disallowmissing` is `true` (the default) then columns specified in `cols` will
-be converted so as not to allow for missing values using [`disallowmissing!`](@ref).
+If `view=false` a freshly allocated `DataFrame` is returned.
+If `view=true` then a `SubDataFrame` view into `df` is returned. In this case
+`disallowmissing` must be `false`.
+
+If `disallowmissing` is `true` (the default when `view` is `false`)
+then columns specified in `cols` will be converted so as not to allow for missing
+values using [`disallowmissing!`](@ref).
 
 See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
@@ -818,12 +838,20 @@ julia> dropmissing(df, [:x, :y])
 │ 2   │ 5     │ 1     │ e      │
 ```
 """
-function dropmissing(df::AbstractDataFrame,
-                     cols::Union{ColumnIndex, MultiColumnIndex}=:;
-                     disallowmissing::Bool=true)
-    newdf = df[completecases(df, cols), :]
-    disallowmissing && disallowmissing!(newdf, cols)
-    newdf
+@inline function dropmissing(df::AbstractDataFrame,
+                             cols::Union{ColumnIndex, MultiColumnIndex}=:;
+                             view::Bool=false, disallowmissing::Bool=!view)
+    rowidxs = completecases(df, cols)
+    if view
+        if disallowmissing
+            throw(ArgumentError("disallowmissing=true is incompatible with view=true"))
+        end
+        return Base.view(df, rowidxs, :)
+    else
+        newdf = df[rowidxs, :]
+        disallowmissing && disallowmissing!(newdf, cols)
+        return newdf
+    end
 end
 
 """
@@ -890,16 +918,18 @@ julia> dropmissing!(df3, [:x, :y])
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{ColumnIndex, MultiColumnIndex}=:;
                       disallowmissing::Bool=true)
-    delete!(df, (!).(completecases(df, cols)))
+    inds = completecases(df, cols)                                  
+    inds .= .!(inds)
+    delete!(df, inds)
     disallowmissing && disallowmissing!(df, cols)
     df
 end
 
 """
-    filter(fun, df::AbstractDataFrame)
-    filter(cols => fun, df::AbstractDataFrame)
+    filter(fun, df::AbstractDataFrame; view::Bool=false)
+    filter(cols => fun, df::AbstractDataFrame; view::Bool=false)
 
-Return a copy of data frame `df` containing only rows for which `fun`
+Return a data frame containing only rows from `df` for which `fun`
 returns `true`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
@@ -910,6 +940,9 @@ corresponding columns as separate positional arguments, unless `cols` is an
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR), and
 column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
 passed.
+
+If `view=false` a freshly allocated `DataFrame` is returned.
+If `view=true` then a `SubDataFrame` view into `df` is returned.
 
 Passing `cols` leads to a more efficient execution of the operation for large data frames.
 
@@ -962,38 +995,48 @@ julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 │ 3   │ 1     │ b      │
 ```
 """
-Base.filter(f, df::AbstractDataFrame) = _filter_helper(df, f, eachrow(df))
-Base.filter((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
-    _filter_helper(df, f, df[!, col])
-Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
-    filter([index(df)[col] for col in cols] => f, df)
-Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDataFrame) =
-    filter([index(df)[col] for col in cols] => f, df)
-Base.filter((cols, f)::Pair, df::AbstractDataFrame) =
-    filter(index(df)[cols] => f, df)
-
-function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame)
-    cdf = _columns(df)
-    return _filter_helper(df, f, (cdf[i] for i in cols)...)
+@inline function Base.filter(f, df::AbstractDataFrame; view::Bool=false)
+    rowidxs = _filter_helper(f, eachrow(df))
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-function _filter_helper(df::AbstractDataFrame, f, cols...)
-    if length(cols) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+@inline function Base.filter((cols, f)::Pair, df::AbstractDataFrame; view::Bool=false)
+    int_cols = index(df)[cols] # it will be AbstractVector{Int} or Int
+    if length(int_cols) == 0
+        rowidxs = [f() for _ in axes(df, 1)]
+    else
+        rowidxs = _filter_helper(f, (df[!, i] for i in int_cols)...)
     end
-    return df[((x...) -> f(x...)::Bool).(cols...), :]
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
+# this method is needed to allow for passing duplicate columns
+@inline function Base.filter((cols, f)::Pair{<:Union{AbstractVector{<:Integer},
+                                                     AbstractVector{<:AbstractString},
+                                                     AbstractVector{<:Symbol}}},
+                             df::AbstractDataFrame; view::Bool=false)
+    if length(cols) == 0
+        rowidxs = [f() for _ in axes(df, 1)]
+    else
+        rowidxs = _filter_helper(f, (df[!, i] for i in cols)...)
+    end
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
+
+_filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
+
+@inline function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame;
+                             view::Bool=false)
     df_tmp = select(df, cols.cols, copycols=false)
     if ncol(df_tmp) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        rowidxs = [f(NamedTuple()) for _ in axes(df, 1)]
+    else
+        rowidxs = _filter_helper_astable(f, Tables.namedtupleiterator(df_tmp))
     end
-    return _filter_helper_astable(df, Tables.namedtupleiterator(df_tmp), f)
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-_filter_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
-    df[(x -> f(x)::Bool).(nti), :]
+_filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x)::Bool).(nti)
 
 """
     filter!(fun, df::AbstractDataFrame)
@@ -1070,7 +1113,7 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 │ 3   │ 1     │ b      │
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) = _filter!_helper(df, f, eachrow(df))
+Base.filter!(f, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
@@ -1079,25 +1122,25 @@ Base.filter!((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, df::AbstractDa
     filter!([index(df)[col] for col in cols] => f, df)
 Base.filter!((cols, f)::Pair, df::AbstractDataFrame) =
     filter!(index(df)[cols] => f, df)
-
-function Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame)
-    cdf = _columns(df)
-    return _filter!_helper(df, f, (cdf[i] for i in cols)...)
-end
+Base.filter!((cols, f)::Pair{<:AbstractVector{Int}}, df::AbstractDataFrame) =
+    _filter!_helper(df, f, (df[!, i] for i in cols)...)
 
 function _filter!_helper(df::AbstractDataFrame, f, cols...)
     if length(cols) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        rowidxs = findall(x -> !f(), axes(df, 1))
+    else
+        rowidxs = findall(((x...) -> !(f(x...)::Bool)).(cols...))
     end
-    return delete!(df, findall(((x...) -> !(f(x...)::Bool)).(cols...)))
+    return delete!(df, rowidxs)
 end
 
 function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
     dff = select(df, cols.cols, copycols=false)
     if ncol(dff) == 0
-        throw(ArgumentError("At least one column must be passed to filter on"))
+        return delete!(df, findall(x -> !f(NamedTuple()), axes(df, 1)))
+    else
+        return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
     end
-    return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
 end
 
 _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
@@ -1184,22 +1227,32 @@ Base.unique!(df::AbstractDataFrame, cols) =
     delete!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols) =
-    df[(!).(nonunique(df, cols)), :]
+@inline function Base.unique(df::AbstractDataFrame; view::Bool=false)
+    rowidxs = (!).(nonunique(df))
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
+
+@inline function Base.unique(df::AbstractDataFrame, cols; view::Bool=false)
+    rowidxs = (!).(nonunique(df, cols))
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
 
 """
-    unique(df::AbstractDataFrame)
-    unique(df::AbstractDataFrame, cols)
+    unique(df::AbstractDataFrame; view::Bool=false)
+    unique(df::AbstractDataFrame, cols; view::Bool=false)
     unique!(df::AbstractDataFrame)
     unique!(df::AbstractDataFrame, cols)
 
-Delete duplicate rows of data frame `df`, keeping only the first occurrence of unique rows.
-When `cols` is specified, the returned `DataFrame` contains complete rows,
-retaining in each case the first instance for which `df[cols]` is unique.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+Return a data frame containing only the first occurrence of unique rows in `df`.
+When `cols` is specified, the returned `DataFrame` contains
+complete rows, retaining in each case the first instance for which `df[cols]` is
+unique. `cols` can be any column selector ($COLUMNINDEX_STR;
+$MULTICOLUMNINDEX_STR).
 
-When `unique` is called a new data frame is returned; `unique!` updates `df` in-place.
+For `unique`, if `view=false` a freshly allocated `DataFrame` is returned,
+and if `view=true` then a `SubDataFrame` view into `df` is returned.
+
+`unique!` updates `df` in-place and does not support the `view` keyword argument.
 
 See also [`nonunique`](@ref).
 

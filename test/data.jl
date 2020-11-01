@@ -180,6 +180,21 @@ end
     @test eltype(dropmissing!(df).b) == Int
 end
 
+@testset "dropmissing and unique view kwarg test" begin
+    df = DataFrame(rand(3,4))
+    for fun in (dropmissing, unique)
+        @test fun(df) isa DataFrame
+        @inferred fun(df)
+        @test fun(view(df, 1:2, 1:2)) isa DataFrame
+        @test fun(df, view=false) isa DataFrame
+        @test fun(view(df, 1:2, 1:2), view=false) isa DataFrame
+        @test fun(df, view=true) isa SubDataFrame
+        @test fun(df, view=true) == fun(df)
+        @test fun(view(df, 1:2, 1:2), view=true) isa SubDataFrame
+        @test fun(view(df, 1:2, 1:2), view=true) == fun(view(df, 1:2, 1:2))
+    end
+end
+
 @testset "merge" begin
     Random.seed!(1)
     df1 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:10)),
@@ -361,6 +376,10 @@ end
     @test filter!([:x, :x] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter(["x", "x"] => ==, df) == df
+    @test filter!(["x", "x"] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
     @test filter([2, 2] => !=, df) == DataFrame(x=Int[], y=String[])
     @test filter!([2, 2] => !=, df) === df == DataFrame(x=Int[], y=String[])
 
@@ -389,6 +408,33 @@ end
     @test_throws TypeError filter!((:) => (r...) -> r[1] > 1, df)
 end
 
+@testset "filter view kwarg test" begin
+    df = DataFrame(rand(3,4))
+    for fun in (row -> row.x1 > 0, :x1 => x -> x > 0, "x1" => x -> x > 0,
+                [:x1] => x -> x > 0, ["x1"] => x -> x > 0,
+                r"1" => x -> x > 0, AsTable(:) => x -> x.x1 > 0)
+        @test filter(fun, df) isa DataFrame
+        @inferred filter(fun, df)
+        @test filter(fun, view(df, 1:2, 1:2)) isa DataFrame
+        @test filter(fun, df, view=false) isa DataFrame
+        @test filter(fun, view(df, 1:2, 1:2), view=false) isa DataFrame
+        @test filter(fun, df, view=true) isa SubDataFrame
+        @test filter(fun, df, view=true) == filter(fun, df)
+        @test filter(fun, view(df, 1:2, 1:2), view=true) isa SubDataFrame
+        @test filter(fun, view(df, 1:2, 1:2), view=true) == filter(fun, view(df, 1:2, 1:2))
+    end
+end
+
+@testset "filter and filter! with SubDataFrame" begin
+    dfv = view(DataFrame(x = [0, 0, 3, 1, 3, 1], y = 1:6), 3:6, 1:1)
+
+    @test filter(:x => x -> x > 2, dfv) == DataFrame(x = [3, 3])
+    @test filter(:x => x -> x > 2, dfv, view=true) == DataFrame(x = [3, 3])
+    @test parent(filter(:x => x -> x > 2, dfv, view=true)) === parent(dfv)
+
+    @test_throws ArgumentError filter!(:x => x -> x > 2, dfv)
+end
+
 @testset "filter and filter! with AsTable" begin
     df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 
@@ -407,11 +453,47 @@ end
     @test filter(AsTable("x") => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
     filter!(AsTable("x") => testfun, df)
     @test df == DataFrame(x=[3, 2], y=["b", "a"])
+end
 
-    @test_throws ArgumentError filter([] => () -> true, df)
-    @test_throws ArgumentError filter(AsTable(r"z") => () -> true, df)
-    @test_throws ArgumentError filter!([] => () -> true, df)
-    @test_throws ArgumentError filter!(AsTable(r"z") => () -> true, df)
+@testset "empty arg to filter and filter!" begin
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+
+    @test filter([] => () -> true, df) == df
+    @test filter(AsTable(r"z") => x -> true, df) == df
+    @test filter!([] => () -> true, copy(df)) == df
+    @test filter!(AsTable(r"z") => x -> true, copy(df)) == df
+
+    flipflop0 = let
+        state = false
+        () -> (state = !state)
+    end
+
+    flipflop1 = let
+        state = false
+        x -> (state = !state)
+    end
+
+    @test filter([] => flipflop0, df) == df[[1,3], :]
+    @test filter(Int[] => flipflop0, df) == df[[1,3], :]
+    @test filter(String[] => flipflop0, df) == df[[1,3], :]
+    @test filter(Symbol[] => flipflop0, df) == df[[1,3], :]
+    @test filter(r"z" => flipflop0, df) == df[[1,3], :]
+    @test filter(Not(All()) => flipflop0, df) == df[[1,3], :]
+    @test filter(Cols() => flipflop0, df) == df[[1,3], :]
+    @test filter(AsTable(r"z") => flipflop1, df) == df[[1,3], :]
+    @test filter(AsTable([]) => flipflop1, df) == df[[1,3], :]
+    @test filter!([] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Int[] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(String[] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Symbol[] => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(r"z" => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Not(All()) => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(Cols() => flipflop0, copy(df)) == df[[1,3], :]
+    @test filter!(AsTable(r"z") => flipflop1, copy(df)) == df[[1,3], :]
+    @test filter!(AsTable([]) => flipflop1, copy(df)) == df[[1,3], :]
+
+    @test_throws MethodError filter([] => flipflop1, df)
+    @test_throws MethodError filter(AsTable([]) => flipflop0, df)
 end
 
 @testset "names with cols" begin
@@ -422,6 +504,7 @@ end
         @test names(v, Between(:x1, :x3)) == ["x1", "x2", "x3"]
         @test names(v, Not(:a)) == names(v, r"x") == ["x1", "x2", "x3", "x4"]
         @test names(v, :x1) == names(v, 2) == ["x1"]
+        @test names(v, Cols()) == names(v, Cols()) == []
     end
 
     for v in [view(df, :, [4,3,2,1]), groupby(view(df, :, [4,3,2,1]), 1), view(df, 1, [4,3,2,1])]
@@ -429,6 +512,7 @@ end
         @test names(v, Between(:x2, :x1)) == ["x2", "x1"]
         @test names(v, Not(:a)) == names(v, r"x") == ["x3", "x2", "x1"]
         @test names(v, :x1) == names(v, 3) == ["x1"]
+        @test names(v, Cols()) == names(v, Cols()) == []
     end
 end
 

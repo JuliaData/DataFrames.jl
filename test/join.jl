@@ -887,4 +887,15 @@ end
     @test_throws ArgumentError join(df1, df2, on=:id, kind=:inner)
 end
 
+@testset "join mixing DataFrame and SubDataFrame" begin
+    df1 = DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+    df1_copy = df1[df1.a .> 1, :]
+    df1_view1 = @view df1[df1.a .> 1, :]
+    df1_view2 = @view df1[df1.a .> 1, 1:2]
+    df2 = DataFrame(a=[1, 2, 3], c=[7, 8, 9])
+    @test innerjoin(df1_copy, df2, on=:a) ==
+          innerjoin(df1_view1, df2, on=:a) ==
+          innerjoin(df1_view2, df2, on=:a)
+end
+
 end # module

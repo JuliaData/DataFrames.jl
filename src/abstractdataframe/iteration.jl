@@ -254,11 +254,12 @@ function Base.show(io::IO, dfrs::DataFrameRows;
                    splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
-                   eltypes::Bool = true)
+                   eltypes::Bool = true,
+                   truncate::Int = 32)
     df = parent(dfrs)
     summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameRows")
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false, eltypes=eltypes)
+          rowlabel=rowlabel, summary=false, eltypes=eltypes, truncstring=truncate)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
@@ -267,9 +268,10 @@ Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          truncate::Int = 32) =
     show(io, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
 
 Base.show(dfrs::DataFrameRows;
           allrows::Bool = !get(stdout, :limit, true),
@@ -277,9 +279,10 @@ Base.show(dfrs::DataFrameRows;
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          truncate::Int = 32) =
     show(stdout, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
 
 function Base.show(io::IO, dfcs::DataFrameColumns;
                    allrows::Bool = !get(io, :limit, false),
@@ -287,11 +290,12 @@ function Base.show(io::IO, dfcs::DataFrameColumns;
                    splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
-                   eltypes::Bool = true)
+                   eltypes::Bool = true,
+                   truncate::Int = 32)
     df = parent(dfcs)
     summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns")
     _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false, eltypes=eltypes)
+          rowlabel=rowlabel, summary=false, eltypes=eltypes, truncstring=truncate)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
@@ -300,9 +304,10 @@ Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          truncate::Int = 32) =
     show(io, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
 
 Base.show(dfcs::DataFrameColumns;
           allrows::Bool = !get(stdout, :limit, true),
@@ -310,9 +315,10 @@ Base.show(dfcs::DataFrameColumns;
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          eltypes::Bool = true) =
+          eltypes::Bool = true,
+          truncate::Int = 32) =
     show(stdout, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
@@ -407,6 +413,8 @@ julia> df
 """
 function mapcols!(f::Union{Function,Type}, df::DataFrame)
     # note: `f` must return a consistent length
+    ncol(df) == 0 && return df # skip if no columns
+
     vs = AbstractVector[]
     seenscalar = false
     seenvector = false

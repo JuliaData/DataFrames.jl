@@ -23,6 +23,8 @@ DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
           copycols::Bool=true)
+DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false, copycols::Bool=true) where {N}
 DataFrame() # an empty DataFrame
 DataFrame(column_eltypes::AbstractVector, names::AbstractVector{Symbol},
           nrows::Integer=0; makeunique::Bool=false)
@@ -51,14 +53,14 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
   to `CategoricalVector`
 - `ds` : `AbstractDict` of columns
 - `table` : any type that implements the
-  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface; in particular
-  a tuple or vector of `Pair{Symbol, <:AbstractVector}}` objects is a table.
+  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
 - `copycols` : whether vectors passed as columns should be copied; if set
   to `false` then the constructor will still copy the passed columns
   if it is not possible to construct a `DataFrame` without materializing new columns.
 
 All columns in `columns` must be `AbstractVector`s and have the same length. An
-exception are `DataFrame(kwargs...)` and `DataFrame(pairs::Pair...)` form
+exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`,
+`DataFrame(pairs::AbstractVector{<:Pair})`, and `DataFrame(pairs::NTuple{N, Pair})` form
 constructors which additionally allow a column to be of any other type that is
 not an `AbstractArray`, in which case the passed value is automatically repeated
 to fill a new vector of the appropriate length. As a particular rule values
@@ -497,6 +499,12 @@ Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
     (df[!, col_ind] = v)
 Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
     (df[!, col_ind] = v)
+Base.setproperty!(::DataFrame, col_ind::Symbol, v::Any) =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame." *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
+Base.setproperty!(::DataFrame, col_ind::AbstractString, v::Any) =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame." *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)

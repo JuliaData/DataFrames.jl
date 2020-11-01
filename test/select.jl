@@ -4,6 +4,10 @@ using DataFrames, Test, Random, Statistics, CategoricalArrays
 
 const ≅ = isequal
 
+"""Check if passed data frames are `isequal` and have the same types of columns"""
+isequal_coltyped(df1::AbstractDataFrame, df2::AbstractDataFrame) =
+    isequal(df1, df2) && typeof.(eachcol(df1)) == typeof.(eachcol(df2))
+
 Random.seed!(1234)
 
 @testset "select! Not" begin
@@ -566,22 +570,33 @@ end
 @testset "select and select! with multiple selectors passed" begin
     df = DataFrame(rand(10, 4))
     @test select(df, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(df, :x2, :x4, Cols(:)) == select(df, :x2, :x4, :x1, :x3)
+    @test select(df, :x2, :x4, Cols()) == select(df, :x2, :x4)
     @test select(df, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
 
     dfv = view(df, :, :)
     @test select(dfv, :x2, :x4, All()) == select(df, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x2, :x4, Cols(:)) == select(df, :x2, :x4, :x1, :x3)
+    @test select(dfv, :x2, :x4, Cols()) == select(df, :x2, :x4)
     @test select(dfv, :x4, Between(:x2, :x4), All()) == select(df, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols(:)) == select(df, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols()) == select(df, :x4, :x2, :x3)
     @test select(dfv, :x2, :x4, All()) == select(dfv, :x2, :x4, :x1, :x3)
     @test select(dfv, :x4, Between(:x2, :x4), All()) == select(dfv, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols(:)) == select(dfv, :x4, :x2, :x3, :x1)
+    @test select(dfv, :x4, Between(:x2, :x4), Cols()) == select(dfv, :x4, :x2, :x3)
 
     dfc = copy(df)
     @test select!(dfc, :x2, :x4, All()) == dfc
+    @test select!(dfc, :x2, :x4, Cols(:)) == dfc
     @test dfc == select(df, :x2, :x4, :x1, :x3)
     dfc = copy(df)
     @test select!(dfc, :x4, Between(:x2, :x4), All()) == dfc
+    @test select!(dfc, :x4, Between(:x2, :x4), Cols(:)) == dfc
     @test dfc == select(df, :x4, :x2, :x3, :x1)
 
     @test select(df, Not([:x2, :x3]), All()) == select(df, :x1, :x4, :x2, :x3)
+    @test select(df, Not([:x2, :x3]), Cols(:)) == select(df, :x1, :x4, :x2, :x3)
 end
 
 @testset "select and select! renaming" begin
@@ -720,20 +735,30 @@ end
         @test_throws ArgumentError select(df, :x => x -> retval)
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
+
+        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        cdf = copy(df)
+        select!(cdf, :x => ByRow(x -> retval))
+        @test cdf == DataFrame(x_function = [retval])
+
         if retval isa Union{NamedTuple, DataFrameRow}
-            @test_throws ArgumentError select(df, :x => ByRow(x -> retval))
-            @test_throws ArgumentError select!(df, :x => ByRow(x -> retval))
-        else
-            @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
-            cdf = copy(df)
-            select!(cdf, :x => ByRow(x -> retval))
-            @test cdf == DataFrame(x_function = [retval])
+            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
+        elseif retval isa DataFrame
+            @test_throws MethodError select(df, :x => ByRow(x -> retval) => AsTable)
+        else # Matrix: wrong type of keys
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval) => AsTable)
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval) => [:a, :b, :c, :d])
         end
     end
 
     for retval in [(1, 2), ones(2,2,2)]
         @test select(df, :x => x -> retval) == DataFrame(x_function = [retval])
         @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        if retval isa Tuple
+            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(x1=1, x2=2)
+        else
+            @test_throws ArgumentError select(df, :x => ByRow(x -> retval) => AsTable)
+        end
         cdf = copy(df)
         select!(cdf, :x => x -> retval)
         @test cdf == DataFrame(x_function = [retval])
@@ -754,16 +779,16 @@ end
     @test combine(df, r"z" => () -> y) == DataFrame(:function => y)
     @test select(df, r"z" => () -> x)[!, 1] === x # no copy even for copycols=true
     @test_throws MethodError select(df, r"z" => x -> 1)
-    @test_throws ArgumentError select(df, r"z" => ByRow(rand))
+    @test select(df, r"z" => ByRow(() -> 1)) == DataFrame(:function => fill(1, 10))
 
     @test select(df, r"z", copycols=false) == DataFrame()
     @test select(df, r"z" => () -> x, copycols=false) == DataFrame(:function => x)
     @test select(df, r"z" => () -> x, copycols=false)[!, 1] === x
     @test_throws MethodError select(df, r"z" => x -> 1, copycols=false)
-    @test_throws ArgumentError select(df, r"z" => ByRow(rand), copycols=false)
+    @test select(df, r"z" => ByRow(() -> 1)) == DataFrame(:function => fill(1, 10), copycols=false)
 
     @test_throws MethodError select!(df, r"z" => x -> 1)
-    @test_throws ArgumentError select!(df, r"z" => ByRow(rand))
+    @test select!(df, r"z" => ByRow(() -> 1)) == DataFrame(:function => fill(1, 10))
     @test_throws MethodError select!(df, r"z" => () -> x, copycols=false)
 
     select!(df, r"z" => () -> x)
@@ -875,18 +900,14 @@ end
         @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
               DataFrame([6  1 9], [:d, :b, :a])
 
-        res = select(df3, [] => (() -> v) => :a, :x1 => x -> [])
-        @test propertynames(res) == [:a, :x1_function] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Int, Any]
-        res = select(df3, :x1 => x -> [], [] => (() -> v) => :a)
-        @test propertynames(res) == [:x1_function, :a] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Any, Int]
-        res = select(df3, [] => (() -> v) => :a, :x1)
-        @test propertynames(res) == [:a, :x1] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Int, Char]
-        res = select(df3, :x1, [] => (() -> v) => :a)
-        @test propertynames(res) == [:x1, :a] && nrow(res) == 0
-        @test eltype.(eachcol(res)) == [Char, Int]
+        @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1 => x -> []),
+                               DataFrame(a=Int[], x1_function=Any[]))
+        @test isequal_coltyped(select(df3, :x1 => x -> [], [] => (() -> v) => :a),
+                               DataFrame(x1_function=Any[], a=Int[]))
+        @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1),
+                               DataFrame(a=Int[], x1=Char[]))
+        @test isequal_coltyped(select(df3, :x1, [] => (() -> v) => :a),
+                               DataFrame(x1=Char[], a=Int[]))
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
     @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
@@ -1122,9 +1143,15 @@ end
           hcat(df, DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
                                              [(a = 2, b = 5, c = 8)],
                                              [(a = 3, b = 6, c = 9)]]))
-    @test_throws ArgumentError select(df, AsTable(:) => ByRow(identity))
-    @test_throws ArgumentError select(df, AsTable(:) => ByRow(x -> df[1, :]))
-    @test_throws ArgumentError transform(df, AsTable(Not(:)) => ByRow(identity))
+    @test select(df, AsTable(:) => ByRow(identity)) ==
+          DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7), (a = 2, b = 5, c = 8), (a = 3, b = 6, c = 9)])
+    @test select(df, AsTable(:) => ByRow(identity) => AsTable) == df
+    @test select(df, AsTable(:) => ByRow(x -> df[1, :])) ==
+          DataFrame(a_b_c_function=fill(df[1,:], 3))
+    @test select(df, AsTable(:) => ByRow(x -> df[1, :]) => AsTable) ==
+          DataFrame(a=[1,1,1], b=4, c=7)
+    @test transform(df, AsTable(Not(:)) =>
+          ByRow(identity)) == [df DataFrame(:identity => fill(NamedTuple(), nrow(df)))]
 
     @test select(df, AsTable(Not(:)) => Ref) == repeat(DataFrame(Ref = NamedTuple()), nrow(df))
     @test combine(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
@@ -1164,12 +1191,14 @@ end
 
     @test combine(x -> Matrix(x), df) == rename(df, [:x1, :x2])
     @test combine(x -> Ref(1:3), df) == DataFrame(x1=[1:3])
-    @test_throws ArgumentError combine(df, x -> Ref(1:3))
+    @test combine(df, x -> Ref(1:3)) == DataFrame(x1=[1:3])
 
-    @test combine(AsTable(:) => identity, df) == df
-    @test combine((:) => cor, df) == DataFrame(x_y_cor = 1.0)
-    @test combine(:x => x -> Ref(1:3), df) == DataFrame(x_function=[1:3])
+    @test_throws ArgumentError combine(df, AsTable(:) => identity)
+    @test combine(df, AsTable(:) => identity => AsTable) == df
+    @test combine(df, (:) => cor) == DataFrame(x_y_cor = 1.0)
+    @test combine(df, :x => x -> Ref(1:3)) == DataFrame(x_function=[1:3])
     @test_throws ArgumentError combine(df, :x => x -> ones(1,1))
+    @test combine(df, :x => (x -> ones(1,1)) => AsTable) == DataFrame(x1=1.0)
 
     df2 = combine(df, :x => identity)
     @test df2[:, 1] == df.x
@@ -1188,8 +1217,9 @@ end
 
     @test combine(x -> Matrix(x), dfv) == rename(dfv, [:x1, :x2])
 
-    @test combine(AsTable(:) => identity, dfv) == dfv
-    @test combine((:) => cor, dfv) == DataFrame(y_x_cor = 1.0)
+    @test_throws ArgumentError combine(dfv, AsTable(:) => identity)
+    @test combine(dfv, AsTable(:) => identity => AsTable) == dfv
+    @test combine(dfv, (:) => cor) == DataFrame(y_x_cor = 1.0)
 
     df2 = combine(dfv, :x => identity)
     @test df2[:, 1] == dfv.x
@@ -1289,12 +1319,14 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
     @test select(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
           DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
+    @test select(df, :a => +, [:a, :b] => +, Cols(:) => +, renamecols=false) ==
+          DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
     @test_throws ArgumentError select(df, [] => () -> 10, renamecols=false)
     @test transform(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
           DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
     @test combine(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) ==
           DataFrame(a=1:3, a_b=5:2:9, a_b_etc=22:4:30)
-    @test combine([:a, :b] => +, df, renamecols=false) == DataFrame(a_b=5:2:9)
+    @test combine(df, [:a, :b] => +, renamecols=false) == DataFrame(a_b=5:2:9)
     @test combine(identity, df, renamecols=false) == df
 
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
@@ -1304,6 +1336,245 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
     @test transform!(df, :a => +, [:a, :b] => +, All() => +, renamecols=false) == df
     @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+
+    df = DataFrame(a=1:3, b=4:6, c=7:9, d=10:12)
+    @test transform!(df, :a => +, [:a, :b] => +, Cols(:) => +, renamecols=false) == df
+    @test df == DataFrame(a=1:3, b=4:6, c=7:9, d=10:12, a_b=5:2:9, a_b_etc=22:4:30)
+end
+
+@testset "additional tests for new rules" begin
+    @testset "transformation function with a function as first argument" begin
+        for df in (DataFrame(a=1:2, b=3:4, c=5:6), view(DataFrame(a=1:3, b=3:5, c=5:7, d=11:13), 1:2, 1:3))
+            @test select(sdf -> sdf.b, df) == DataFrame(x1=3:4)
+            @test select(sdf -> (b = 2sdf.b,), df) == DataFrame(b=[6,8])
+            @test select(sdf -> (b = 1,), df) == DataFrame(b=[1, 1])
+            @test_throws ArgumentError select(sdf -> (b = [1],), df)
+            @test select(sdf -> (b = [1, 5],), df) == DataFrame(b=[1, 5])
+            @test select(sdf -> 1, df) == DataFrame(x1=[1, 1])
+            @test select(sdf -> fill([1]), df) == DataFrame(x1=[[1], [1]])
+            @test select(sdf -> Ref([1]), df) == DataFrame(x1=[[1], [1]])
+            @test select(sdf -> "x", df) == DataFrame(x1=["x", "x"])
+            @test select(sdf -> [[1,2],[3,4]], df) == DataFrame(x1=[[1,2],[3,4]])
+            for ret in (DataFrame(), NamedTuple(), zeros(0,0), DataFrame(t=1)[1, 1:0])
+                @test select(sdf -> ret, df) == DataFrame()
+            end
+            @test_throws ArgumentError select(sdf -> DataFrame(a=10), df)
+            @test_throws ArgumentError select(sdf -> zeros(1, 2), df)
+            @test select(sdf -> DataFrame(a=[10, 11]), df) == DataFrame(a=[10, 11])
+            @test select(sdf -> [10 11; 12 13], df) == DataFrame(x1=[10, 12], x2=[11, 13])
+            @test select(sdf -> DataFrame(a=10)[1, :], df) == DataFrame(a=[10, 10])
+
+            @test transform(sdf -> sdf.b, df) == [df DataFrame(x1=3:4)]
+            @test transform(sdf -> (b = 2sdf.b,), df) == DataFrame(a=1:2, b=[6,8], c=5:6)
+            @test transform(sdf -> (b = 1,), df) == DataFrame(a=[1,2], b=[1, 1], c=[5,6])
+            @test_throws ArgumentError transform(sdf -> (b = [1],), df)
+            @test transform(sdf -> (b = [1, 5],), df) == DataFrame(a=[1,2], b=[1, 5], c=[5,6])
+            @test transform(sdf -> 1, df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=1)
+            @test transform(sdf -> fill([1]), df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1],[1]])
+            @test transform(sdf -> Ref([1]), df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1],[1]])
+            @test transform(sdf -> "x", df) == DataFrame(a=1:2, b=3:4, c=5:6, x1="x")
+            @test transform(sdf -> [[1,2],[3,4]], df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1,2],[3,4]])
+            for ret in (DataFrame(), NamedTuple(), zeros(0,0), DataFrame(t=1)[1, 1:0])
+                @test transform(sdf -> ret, df) == df
+            end
+            @test_throws ArgumentError transform(sdf -> DataFrame(a=10), df)
+            @test_throws ArgumentError transform(sdf -> zeros(1, 2), df)
+            @test transform(sdf -> DataFrame(a=[10, 11]), df) == DataFrame(a=[10, 11], b=3:4, c=5:6)
+            @test transform(sdf -> [10 11; 12 13], df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[10, 12], x2=[11, 13])
+            @test transform(sdf -> DataFrame(a=10)[1, :], df) == DataFrame(a=[10, 10], b=3:4, c=5:6)
+
+            @test combine(sdf -> sdf.b, df) == DataFrame(x1=3:4)
+            @test combine(sdf -> (b = 2sdf.b,), df) == DataFrame(b=[6,8])
+            @test combine(sdf -> (b = 1,), df) == DataFrame(b=[1])
+            @test combine(sdf -> (b = [1],), df) == DataFrame(b=[1])
+            @test combine(sdf -> (b = [1, 5],), df) == DataFrame(b=[1, 5])
+            @test combine(sdf -> 1, df) == DataFrame(x1=[1])
+            @test combine(sdf -> fill([1]), df) == DataFrame(x1=[[1]])
+            @test combine(sdf -> Ref([1]), df) == DataFrame(x1=[[1]])
+            @test combine(sdf -> "x", df) == DataFrame(x1=["x"])
+            @test combine(sdf -> [[1,2],[3,4]], df) == DataFrame(x1=[[1,2],[3,4]])
+            for ret in (DataFrame(), NamedTuple(), zeros(0,0), DataFrame(t=1)[1, 1:0])
+                @test combine(sdf -> ret, df) == DataFrame()
+            end
+            @test combine(sdf -> DataFrame(a=10), df) == DataFrame(a=10)
+            @test combine(sdf -> zeros(1, 2), df) == DataFrame(x1=0, x2=0)
+            @test combine(sdf -> DataFrame(a=[10, 11]), df) == DataFrame(a=[10, 11])
+            @test combine(sdf -> [10 11; 12 13], df) == DataFrame(x1=[10, 12], x2=[11, 13])
+            @test combine(sdf -> DataFrame(a=10)[1, :], df) == DataFrame(a=[10])
+        end
+
+        df = DataFrame(a=1:2, b=3:4, c=5:6)
+        @test select!(sdf -> sdf.b, copy(df)) == DataFrame(x1=3:4)
+        @test select!(sdf -> (b = 2sdf.b,), copy(df)) == DataFrame(b=[6,8])
+        @test select!(sdf -> (b = 1,), copy(df)) == DataFrame(b=[1, 1])
+        @test_throws ArgumentError select!(sdf -> (b = [1],), copy(df))
+        @test select!(sdf -> (b = [1, 5],), copy(df)) == DataFrame(b=[1, 5])
+        @test select!(sdf -> 1, copy(df)) == DataFrame(x1=[1, 1])
+        @test select!(sdf -> fill([1]), copy(df)) == DataFrame(x1=[[1], [1]])
+        @test select!(sdf -> Ref([1]), copy(df)) == DataFrame(x1=[[1], [1]])
+        @test select!(sdf -> "x", copy(df)) == DataFrame(x1=["x", "x"])
+        @test select!(sdf -> [[1,2],[3,4]], copy(df)) == DataFrame(x1=[[1,2],[3,4]])
+        for ret in (DataFrame(), NamedTuple(), zeros(0,0), DataFrame(t=1)[1, 1:0])
+            @test select!(sdf -> ret, copy(df)) == DataFrame()
+        end
+        @test_throws ArgumentError select!(sdf -> DataFrame(a=10), copy(df))
+        @test_throws ArgumentError select!(sdf -> zeros(1, 2), copy(df))
+        @test select!(sdf -> DataFrame(a=[10, 11]), copy(df)) == DataFrame(a=[10, 11])
+        @test select!(sdf -> [10 11; 12 13], copy(df)) == DataFrame(x1=[10, 12], x2=[11, 13])
+        @test select!(sdf -> DataFrame(a=10)[1, :], copy(df)) == DataFrame(a=[10, 10])
+
+        @test transform!(sdf -> sdf.b, copy(df)) == [df DataFrame(x1=3:4)]
+        @test transform!(sdf -> (b = 2sdf.b,), copy(df)) == DataFrame(a=1:2, b=[6,8], c=5:6)
+        @test transform!(sdf -> (b = 1,), copy(df)) == DataFrame(a=[1,2], b=[1, 1], c=[5,6])
+        @test_throws ArgumentError transform!(sdf -> (b = [1],), copy(df))
+        @test transform!(sdf -> (b = [1, 5],), copy(df)) == DataFrame(a=[1,2], b=[1, 5], c=[5,6])
+        @test transform!(sdf -> 1, copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=1)
+        @test transform!(sdf -> fill([1]), copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1],[1]])
+        @test transform!(sdf -> Ref([1]), copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1],[1]])
+        @test transform!(sdf -> "x", copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1="x")
+        @test transform!(sdf -> [[1,2],[3,4]], copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1,2],[3,4]])
+        for ret in (DataFrame(), NamedTuple(), zeros(0,0), DataFrame(t=1)[1, 1:0])
+            @test transform!(sdf -> ret, copy(df)) == df
+        end
+        @test_throws ArgumentError transform!(sdf -> DataFrame(a=10), copy(df))
+        @test_throws ArgumentError transform!(sdf -> zeros(1, 2), copy(df))
+        @test transform!(sdf -> DataFrame(a=[10, 11]), copy(df)) == DataFrame(a=[10, 11], b=3:4, c=5:6)
+        @test transform!(sdf -> [10 11; 12 13], copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[10, 12], x2=[11, 13])
+        @test transform!(sdf -> DataFrame(a=10)[1, :], copy(df)) == DataFrame(a=[10, 10], b=3:4, c=5:6)
+    end
+
+    @testset "transformation function with multiple columns as destination" begin
+        for df in (DataFrame(a=1:2, b=3:4, c=5:6), view(DataFrame(a=1:3, b=3:5, c=5:7, d=11:13), 1:2, 1:3))
+            for fun in (select, combine, transform),
+                res in (DataFrame(), DataFrame(a=1,b=2)[1, :], ones(1,1),
+                        (a=1,b=2), (a=[1], b=[2]), (a=1, b=[2]))
+                @test_throws ArgumentError fun(df, :a => x -> res)
+                @test_throws ArgumentError fun(df, :a => (x -> res) => :z)
+            end
+            for res in (DataFrame(x1=1, x2=2)[1, :], (x1=1,x2=2))
+                @test select(df, :a => (x -> res) => AsTable) == DataFrame(x1=[1,1], x2=[2,2])
+                @test transform(df, :a => (x -> res) => AsTable) == [df DataFrame(x1=[1,1], x2=[2,2])]
+                @test combine(df, :a => (x -> res) => AsTable) == DataFrame(x1=[1], x2=[2])
+                @test select(df, :a => (x -> res) => [:p, :q]) == DataFrame(p=[1,1], q=[2,2])
+                @test transform(df, :a => (x -> res) => [:p, :q]) == [df DataFrame(p=[1,1], q=[2,2])]
+                @test combine(df, :a => (x -> res) => [:p, :q]) == DataFrame(p=[1], q=[2])
+                @test_throws ArgumentError select(df, :a => (x -> res) => [:p, :q, :r])
+                @test_throws ArgumentError select(df, :a => (x -> res) => [:p])
+            end
+            for res in (DataFrame(x1=1, x2=2), [1 2], Tables.table([1 2], header=[:x1, :x2]),
+                        (x1=[1], x2=[2]))
+                @test combine(df, :a => (x -> res) => AsTable) == DataFrame(x1=1, x2=2)
+                @test combine(df, :a => (x -> res) => [:p, :q]) == DataFrame(p=1, q=2)
+                @test_throws ArgumentError combine(df, :a => (x -> res) => [:p])
+                @test_throws ArgumentError select(df, :a => (x -> res) => AsTable)
+                @test_throws ArgumentError transform(df, :a => (x -> res) => AsTable)
+            end
+            @test combine(df, :a => ByRow(x -> [x,x+1]),
+                          :a => ByRow(x -> [x, x+1]) => AsTable,
+                          :a => ByRow(x -> [x, x+1]) => [:p, :q],
+                          :a => ByRow(x -> (s=x, t=x+1)) => AsTable,
+                          :a => (x -> (k=x, l=x.+1)) => AsTable,
+                          :a => ByRow(x -> (s=x, t=x+1)) => :z) ==
+                  DataFrame(a_function=[[1, 2], [2, 3]], x1=[1, 2], x2=[2, 3],
+                            p=[1, 2], q=[2, 3], s=[1, 2], t=[2, 3], k=[1, 2], l=[2, 3],
+                            z=[(s=1, t=2), (s=2, t=3)])
+            @test select(df, :a => ByRow(x -> [x,x+1]),
+                         :a => ByRow(x -> [x, x+1]) => AsTable,
+                         :a => ByRow(x -> [x, x+1]) => [:p, :q],
+                         :a => ByRow(x -> (s=x, t=x+1)) => AsTable,
+                         :a => (x -> (k=x, l=x.+1)) => AsTable,
+                         :a => ByRow(x -> (s=x, t=x+1)) => :z) ==
+                  DataFrame(a_function=[[1, 2], [2, 3]], x1=[1, 2], x2=[2, 3],
+                            p=[1, 2], q=[2, 3], s=[1, 2], t=[2, 3], k=[1, 2], l=[2, 3],
+                            z=[(s=1, t=2), (s=2, t=3)])
+            @test transform(df, :a => ByRow(x -> [x,x+1]),
+                            :a => ByRow(x -> [x, x+1]) => AsTable,
+                            :a => ByRow(x -> [x, x+1]) => [:p, :q],
+                            :a => ByRow(x -> (s=x, t=x+1)) => AsTable,
+                            :a => (x -> (k=x, l=x.+1)) => AsTable,
+                            :a => ByRow(x -> (s=x, t=x+1)) => :z) ==
+                  [df DataFrame(a_function=[[1, 2], [2, 3]], x1=[1, 2], x2=[2, 3],
+                                p=[1, 2], q=[2, 3], s=[1, 2], t=[2, 3], k=[1, 2], l=[2, 3],
+                                z=[(s=1, t=2), (s=2, t=3)])]
+            @test_throws ArgumentError select(df, :a => (x -> [(a=1,b=2), (a=1, b=2, c=3)]) => AsTable)
+            @test_throws ArgumentError select(df, :a => (x -> [(a=1,b=2), (a=1, c=3)]) => AsTable)
+            @test_throws ArgumentError combine(df, :a => (x -> (a=1,b=2)) => :x)
+        end
+    end
+
+    @testset "check correctness of duplicate column names" begin
+        for df in (DataFrame(a=1:2, b=3:4, c=5:6), view(DataFrame(a=1:3, b=3:5, c=5:7, d=11:13), 1:2, 1:3))
+            @test select(df, :b, :) == DataFrame(b=3:4, a=1:2, c=5:6)
+            @test select(df, :b => :c, :) == DataFrame(c=3:4, a=1:2, b=3:4)
+            @test_throws ArgumentError select(df, :b => [:c, :d], :)
+            @test_throws ArgumentError select(df, :a, :a => x -> (a=[1,2], b=[3,4]))
+            @test_throws ArgumentError select(df, :a, :a => (x -> (a=[1,2], b=[3,4])) => AsTable)
+            @test select(df, [:b, :a], :a => (x -> (a=[11,12], b=[13,14])) => AsTable, :) ==
+                  DataFrame(b=[13, 14], a=[11, 12], c=[5, 6])
+            @test select(df, [:b, :a], :a => (x -> (a=[11,12], b=[13,14])) => [:b, :a], :) ==
+                  DataFrame(b=[11, 12], a=[13, 14], c=[5, 6])
+        end
+    end
+end
+
+@testset "empty ByRow" begin
+    df = DataFrame(a=1:3)
+
+    @test select(df, [] => ByRow(() -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test combine(df, [] => ByRow(() -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test transform(df, [] => ByRow(() -> 1)) == DataFrame("a" => 1:3, "function" => [1, 1, 1])
+
+    for df in (DataFrame(), DataFrame(a=[]))
+        @test select(df, [] => ByRow(() -> 1)) == DataFrame("function" => [])
+        @test combine(df, [] => ByRow(() -> 1)) == DataFrame("function" => [])
+        if ncol(df) == 0
+            @test transform(df, [] => ByRow(() -> 1)) == DataFrame("function" => [])
+        else
+            @test transform(df, [] => ByRow(() -> 1)) == DataFrame("a" => [], "function" => [])
+        end
+        @test eltype(select(df, [] => ByRow(() -> 1)).function) == Int
+        @test eltype(combine(df, [] => ByRow(() -> 1)).function) == Int
+        @test eltype(transform(df, [] => ByRow(() -> 1)).function) == Int
+
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (a=1,b="1")) => AsTable),
+                               DataFrame(a=Int[], b=String[]))
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (a=1,b="1")) => [:p, :q]),
+                               DataFrame(p=Int[], q=String[]))
+
+        # here this follows Tables.jl behavior
+        for res in ([1, "1"], (1, "1"))
+            @test select(df, [] => ByRow(() -> res) => AsTable) == DataFrame()
+            @test_throws ArgumentError select(df, [] => ByRow(() -> res) => [:p, :q])
+        end
+    end
+
+    @test select(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test combine(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [1, 1, 1])
+    @test transform(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("a" => 1:3, "function" => [1, 1, 1])
+
+    for df in (DataFrame(), DataFrame(a=[]))
+        @test select(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [])
+        @test combine(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [])
+        if ncol(df) == 0
+            @test transform(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [])
+        else
+            @test transform(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("a" => [], "function" => [])
+        end
+        @test eltype(select(df, AsTable([]) => ByRow(x -> 1)).function) == Int
+        @test eltype(combine(df, AsTable([]) => ByRow(x -> 1)).function) == Int
+        @test eltype(transform(df, AsTable([]) => ByRow(x -> 1)).function) == Int
+
+        @test isequal_coltyped(select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => AsTable),
+                               DataFrame(a=Int[], b=String[]))
+        @test isequal_coltyped(select(df, AsTable([]) => ByRow(x -> (a=1,b="1")) => [:p, :q]),
+                               DataFrame(p=Int[], q=String[]))
+
+        # here this follows Tables.jl behavior
+        for res in ([1, "1"], (1, "1"))
+            @test select(df, AsTable([]) => ByRow(x -> res) => AsTable) == DataFrame()
+            @test_throws ArgumentError select(df, AsTable([]) => ByRow(x -> res) => [:p, :q])
+        end
+    end
 end
 
 end # module

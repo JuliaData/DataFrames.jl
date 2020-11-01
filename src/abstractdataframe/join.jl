@@ -10,16 +10,16 @@ const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
-struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
-    dfl::DF1
-    dfr::DF2
-    dfl_on::DF1
-    dfr_on::DF2
+struct DataFrameJoiner
+    dfl::AbstractDataFrame
+    dfr::AbstractDataFrame
+    dfl_on::AbstractDataFrame
+    dfr_on::AbstractDataFrame
     left_on::Vector{Symbol}
     right_on::Vector{Symbol}
 
-    function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2,
-                                       on::Union{<:OnType, AbstractVector}) where {DF1, DF2}
+    function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame,
+                             on::Union{<:OnType, AbstractVector})
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
@@ -44,10 +44,6 @@ struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
         new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
     end
 end
-
-DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{<:OnType, AbstractVector}) where
-    {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
-    DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
 
 # helper map between the row indices in original and joined table
 struct RowIndexMap
@@ -125,10 +121,10 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         # about the permutation of left data frame in rightjoin as we always
         # assign 0x1 to it anyway and these rows are guaranteed to come first
         # (even if they are permuted)
-        left_indicator = zeros(UInt8, nrow)
-        left_indicator[axes(all_orig_left_ixs, 1)] .= 0x1
-        right_indicator = zeros(UInt8, nrow)
-        right_indicator[axes(all_orig_right_ixs, 1)] .= 0x2
+        left_indicator = zeros(UInt32, nrow)
+        left_indicator[axes(all_orig_left_ixs, 1)] .= 1
+        right_indicator = zeros(UInt32, nrow)
+        right_indicator[axes(all_orig_right_ixs, 1)] .= 2
         permute!(right_indicator, right_perm)
     end
 
@@ -420,9 +416,13 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        refs = left_indicator + right_indicator
-        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
-        indicatorcol = CategoricalArray{String,1}(refs, pool)
+        left_indicator .+= right_indicator
+        pool = ["left_only", "right_only", "both"]
+        invpool = Dict{String, UInt32}("left_only" => 1,
+                                       "right_only" => 2,
+                                       "both" => 3)
+        indicatorcol = PooledArray(PooledArrays.RefArray(left_indicator),
+                                   invpool, pool)
 
         unique_indicator = indicator
         if makeunique
@@ -812,9 +812,9 @@ function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 """
-    outerjoin(df1, df2; on, kind = :inner, makeunique = false, indicator = nothing,
+    outerjoin(df1, df2; on, makeunique = false, indicator = nothing,
               validate = (false, false), renamecols = identity => identity)
-    outerjoin(df1, df2, dfs...; on, kind = :inner, makeunique = false,
+    outerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false))
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`

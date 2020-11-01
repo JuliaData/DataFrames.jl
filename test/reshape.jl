@@ -1,6 +1,6 @@
 module TestReshape
 
-using Test, DataFrames, Random, Logging, PooledArrays, CategoricalArrays
+using Test, DataFrames, Random, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 @testset "the output of unstack" begin
@@ -16,19 +16,19 @@ const ≅ = isequal
     @test levels(df[!, 2]) == ["YYY", "Color", "Mass"] # make sure we did not mess df[!, 2] levels
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    #The expected output, XXX level should be dropped as it has no rows with this key
+    # The expected output is in order of appearance
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    Color = Union{String, Missing}["Red", "Grey"],
-                    Mass = Union{String, Missing}["12 g", "18 g"])
+                    Mass = Union{String, Missing}["12 g", "18 g"],
+                    Color = Union{String, Missing}["Red", "Grey"])
     @test df2 ≅ df4
     @test typeof(df2[!, :Fish]) <: CategoricalVector{Union{String, Missing}}
     # first column stays as CategoricalArray in df3
     @test df3 == df4
     #Make sure unstack works with missing values at the start of the value column
-    df[1,:Value] = missing
+    df[1, :Value] = missing
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
-    df4[1,:Mass] = missing
+    df4[1, :Mass] = missing
     @test df2 ≅ df4
 
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
@@ -39,8 +39,8 @@ const ≅ = isequal
     df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    _COLOR_ = Union{String, Missing}["Red", "Grey"],
-                    _MASS_ = Union{String, Missing}["12 g", "18 g"])
+                    _MASS_ = Union{String, Missing}["12 g", "18 g"],
+                    _COLOR_ = Union{String, Missing}["Red", "Grey"])
     @test df2 == df4
     @test df3 == df4
 
@@ -52,21 +52,20 @@ const ≅ = isequal
     df2 = unstack(df, :Fish, :Key, :Value)
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    #The expected output, XXX level should be dropped as it has no rows with this key
-    df4 = DataFrame(Fish = ["Batman", "Bob"],
-                    Color = ["Grey", "Red"],
-                    Mass = ["18 g", "12 g"])
+    df4 = DataFrame(Fish = ["Bob", "Batman"],
+                    Mass = ["12 g", "18 g"],
+                    Color = ["Red", "Grey"])
     @test df2 ≅ df4
     @test typeof(df2[!, :Fish]) <: Vector{String}
     # first column stays as CategoricalArray in df3
     @test df3 == df4
     #Make sure unstack works with missing values at the start of the value column
     allowmissing!(df, :Value)
-    df[1,:Value] = missing
+    df[1, :Value] = missing
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
     allowmissing!(df4, :Mass)
-    df4[2,:Mass] = missing
+    df4[1, :Mass] = missing
     @test df2 ≅ df4
 
     df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
@@ -74,9 +73,9 @@ const ≅ = isequal
                    Value = ["12 g", "Red", "18 g", "Grey"])
     df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df4 = DataFrame(Fish = ["Batman", "Bob"],
-                    _COLOR_ = ["Grey", "Red"],
-                    _MASS_ = ["18 g", "12 g"])
+    df4 = DataFrame(Fish = ["Bob", "Batman"],
+                    _MASS_ = ["12 g", "18 g"],
+                    _COLOR_ = ["Red", "Grey"])
     @test df2 == df4
     @test df3 == df4
 
@@ -89,11 +88,11 @@ const ≅ = isequal
     @test_throws TypeError unstack(df, :Key, :Value, renamecols=Symbol)
 
     # test missing value in grouping variable
-    mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
-    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
-    @test unstack(stack(mdf, Not(1)), :id, :variable, :value)[:, 2:3] == sort(mdf)[:, 2:3]
+    mdf = DataFrame(id=[missing, 1, 2, 3], a=1:4, b=1:4)
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value) ≅ mdf
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value) ≅ mdf
+    @test unstack(stack(mdf, Not(:id)), :id, :variable, :value) ≅ mdf
+    @test unstack(stack(mdf, Not(1)), :id, :variable, :value) ≅ mdf
 
     # test more than one grouping column
     wide = DataFrame(id = 1:12,
@@ -143,46 +142,47 @@ end
     df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
                    id2=Union{Int, Missing}[1, 2, 1, 2],
                    variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-    @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
-    @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
-    a, b = with_logger(NullLogger()) do
-        unstack(df, :id, :variable, :value), unstack(df, :variable, :value)
-    end
+    @test_throws ArgumentError unstack(df, :id, :variable, :value)
+    @test_throws ArgumentError unstack(df, :variable, :value)
+    a = unstack(df, :id, :variable, :value, allowduplicates=true)
+    b = unstack(df, :variable, :value, allowduplicates=true)
     @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
     @test b ≅ DataFrame(id = [1, 2], id2 = [1, 2], a = [5, missing], b = [missing, 6])
 
     df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
-    @test_nowarn unstack(df, :id, :variable, :value)
-    @test_nowarn unstack(df, :variable, :value)
     a = unstack(df, :id, :variable, :value)
     b = unstack(df, :variable, :value)
     @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
 
     df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
-    @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
-    @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :id, :variable, :value)
+    @test_throws ArgumentError unstack(df, :variable, :value)
+    @test_throws ArgumentError unstack(df, :id, :variable, :value)
+    @test unstack(df, :variable, :value, allowduplicates=true) ≅ DataFrame(id=1, x=missing)
+    @test unstack(df, :id, :variable, :value, allowduplicates=true) ≅ DataFrame(id=1, x=missing)
 end
 
 @testset "missing values in colkey" begin
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable :variable at row 3. Skipping.") unstack(df, :variable, :value)
-    udf = with_logger(NullLogger()) do
-        unstack(df, :variable, :value)
-    end
-    @test propertynames(udf) == [:id, :a, :b, :missing]
-    @test udf[!, :missing] ≅ [missing, 9.0, missing]
+    @test_throws ArgumentError unstack(df, :variable, :value)
+    @test_throws ArgumentError unstack(df, :variable, :value, allowmissing=true)
+    udf = unstack(df, :variable, :value, allowmissing=true, renamecols=x -> coalesce(x, "MISSING"))
+    @test propertynames(udf) == [:id, :a, :b, :MISSING, :missing]
+    @test udf[!, :missing] ≅ [missing, missing, 9.0]
+    @test udf[!, :MISSING] ≅ [3.0, missing, missing]
+
     df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                    variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                    value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-    @test_logs (:warn, "Missing value in variable :variable at row 3. Skipping.") unstack(df, 3, 4)
-    udf = with_logger(NullLogger()) do
-        unstack(df, 3, 4)
-    end
-    @test propertynames(udf) == [:id, :id2, :a, :b, :missing]
-    @test udf[!, :missing] ≅ [missing, 9.0, missing]
+    @test_throws ArgumentError unstack(df, 3, 4)
+    @test_throws ArgumentError unstack(df, 3, 4, allowmissing=true)
+    udf = unstack(df, 3, 4, allowmissing=true, renamecols=x -> coalesce(x, "MISSING"))
+
+    @test propertynames(udf) == [:id, :id2, :a, :b, :MISSING, :missing]
+    @test udf[!, :missing] ≅ [missing, missing, 9.0]
+    @test udf[!, :MISSING] ≅ [3.0, missing, missing]
 end
 
 @testset "stack-unstack correctness" begin
@@ -225,14 +225,14 @@ end
     @test d1s2 == d1s3
     @test propertynames(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
-    d1m = stack(d1[:, [1,3,4]], Not(:a))
+    d1m = stack(d1[:, [1, 3, 4]], Not(:a))
     @test propertynames(d1m) == [:a, :variable, :value]
 
     # Test naming of measure/value columns
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
     @test d1s_named == stack(d1, r"[ab]", variable_name=:letter, value_name=:someval)
     @test propertynames(d1s_named) == [:c, :d, :e, :letter, :someval]
-    d1m_named = stack(d1[:, [1,3,4]], Not(:a), variable_name=:letter, value_name=:someval)
+    d1m_named = stack(d1[:, [1, 3, 4]], Not(:a), variable_name=:letter, value_name=:someval)
     @test propertynames(d1m_named) == [:a, :letter, :someval]
 
     # test empty measures or ids
@@ -270,21 +270,21 @@ end
     @test d1s[!, 5] isa DataFrames.StackedVector
     @test ndims(d1s[!, 5]) == 1
     @test ndims(typeof(d1s[!, 2])) == 1
-    @test d1s[!, 4][[1,24]] == ["a", "b"]
-    @test d1s[!, 5][[1,24]] == [1, 4]
+    @test d1s[!, 4][[1, 24]] == ["a", "b"]
+    @test d1s[!, 5][[1, 24]] == [1, 4]
     @test_throws ArgumentError d1s[!, 4][true]
     @test_throws ArgumentError d1s[!, 5][true]
     @test_throws ArgumentError d1s[!, 4][1.0]
     @test_throws ArgumentError d1s[!, 5][1.0]
 
     d1ss = stack(d1, [:a, :b], view=true)
-    @test d1ss[!, 4][[1,24]] == ["a", "b"]
+    @test d1ss[!, 4][[1, 24]] == ["a", "b"]
     @test d1ss[!, 4] isa DataFrames.RepeatedVector
     d1ss = stack(d1, [:a, :b], view=true, variable_eltype=String)
-    @test d1ss[!, 4][[1,24]] == ["a", "b"]
+    @test d1ss[!, 4][[1, 24]] == ["a", "b"]
     @test d1ss[!, 4] isa DataFrames.RepeatedVector
     d1ss = stack(d1, [:a, :b], view=true, variable_eltype=Symbol)
-    @test d1ss[!, 4][[1,24]] == [:a, :b]
+    @test d1ss[!, 4][[1, 24]] == [:a, :b]
     @test d1ss[!, 4] isa DataFrames.RepeatedVector
 
     # Those tests check indexing RepeatedVector/StackedVector by a vector
@@ -307,7 +307,7 @@ end
     @test d1s2 == d1s3
     @test propertynames(d1s) == [:c, :d, :e, :variable, :value]
     @test d1s == d1m
-    d1m = stack(d1[:, [1,3,4]], Not(:a), view=true)
+    d1m = stack(d1[:, [1, 3, 4]], Not(:a), view=true)
     @test propertynames(d1m) == [:a, :variable, :value]
 
     d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval, view=true)
@@ -329,13 +329,13 @@ end
     @test d1us3 == unstack(d1s2)
 
     # test unstack with exactly one key column that is not passed
-    df1 = stack(DataFrame(rand(10,10)))
+    df1 = stack(DataFrame(rand(10, 10)))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
     # test empty keycol
-    @test_throws ArgumentError unstack(stack(DataFrame(rand(3,2))), :variable, :value)
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(3, 2))), :variable, :value)
 end
 
 @testset "column names duplicates" begin
@@ -414,27 +414,10 @@ end
     df_allcols = DataFrame(b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
     ref_allcols = DataFrame(b = [1, 2, 3, 4], c = [5, 6, 7, 8])
     @test flatten(df_allcols, All()) == ref_allcols
+    @test flatten(df_allcols, Cols(:)) == ref_allcols
     @test flatten(df_allcols, :) == ref_allcols
     df_bad = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
     @test_throws ArgumentError flatten(df_bad, [:b, :c])
-end
-
-@testset "test RepeatedVector for categorical" begin
-    v = categorical(["a", "b", "c"], ordered=true)
-    levels!(v, ["b", "c", "a"])
-    rv = DataFrames.RepeatedVector(v, 1, 1)
-    @test isordered(v)
-    @test isordered(categorical(v))
-    @test levels(v) == ["b", "c", "a"]
-    @test levels(categorical(v)) == ["b", "c", "a"]
-
-    v = categorical(["a", "b", "c"])
-    levels!(v, ["b", "c", "a"])
-    rv = DataFrames.RepeatedVector(v, 1, 1)
-    @test !isordered(v)
-    @test !isordered(categorical(v))
-    @test levels(v) == ["b", "c", "a"]
-    @test levels(categorical(v)) == ["b", "c", "a"]
 end
 
 @testset "stack categorical test" begin
@@ -494,7 +477,7 @@ end
 end
 
 @testset "test stack eltype" begin
-    df = DataFrame(rand(4,5))
+    df = DataFrame(rand(4, 5))
     sdf = stack(df)
     @test eltype(sdf.variable) === String
     @test eltype(typeof(sdf.variable)) === String
@@ -505,6 +488,163 @@ end
     @test eltype(typeof(sdf2.variable)) === String
     @test eltype(sdf2.value) === Float64
     @test eltype(typeof(sdf2.value)) === Float64
+end
+
+@testset "additional unstack tests" begin
+    df = DataFrame(id=repeat(1:3, inner=3),
+                   id2=repeat(1:3, inner=3),
+                   var=repeat('a':'c', 3),
+                   val=1:9)
+    @test unstack(df, :id, :var, :val) == DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+    @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val) ==
+          DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+
+    # make sure we always use order of appereance
+    Random.seed!(1234)
+    # Use a large value to test several orders of appearance
+    for i in 1:16
+        df = df[Random.shuffle(1:9), :]
+        wide1 = unstack(df, :id, :var, :val)
+        wide2 = unstack(df, [:id, :id2], :var, :val)
+        wide3 = unstack(df, :var, :val)
+        @test wide1[sortperm(unique(df.id)), [1; 1 .+ sortperm(unique(df.var))]] ==
+              DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test wide2[sortperm(unique(df.id)), [1:2; 2 .+ sortperm(unique(df.var))]] ==
+              DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+        @test wide2 == wide3
+
+        df2 = copy(df)
+        df2.id = PooledArray(df.id)
+        df2.var = PooledArray(df.var)
+        @test unstack(df2, :id, :var, :val) == wide1
+        @test unstack(df2, [:id, :id2], :var, :val) == wide2
+        @test unstack(df2, :var, :val) == wide3
+
+        df2 = categorical(df, 1:3)
+        @test unstack(df2, :id, :var, :val) == wide1
+        @test unstack(df2, [:id, :id2], :var, :val) == wide2
+        @test unstack(df2, :var, :val) == wide3
+        levels!(df2.id, [10, 2, 11, 3, 1, 12])
+        levels!(df2.var, ['x', 'b', 'y', 'c', 'a', 'z'])
+        @test unstack(df2, :id, :var, :val) == wide1
+        @test unstack(df2, [:id, :id2], :var, :val) == wide2
+        @test unstack(df2, :var, :val) == wide3
+    end
+
+    df = DataFrame(id=repeat(1:3, inner=3),
+                   a=repeat(1:3, inner=3),
+                   var=repeat('a':'c', 3),
+                   val=1:9)
+    @test unstack(df, :id, :var, :val) == DataFrame(id=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
+    @test_throws ArgumentError unstack(df, :a, :var, :val)
+    @test_throws ArgumentError unstack(df, [:id, :a], :var, :val)
+
+    df = DataFrame(id=repeat(1:3, inner=3),
+                   id2=repeat(1:3, inner=3),
+                   var=repeat('a':'c', 3),
+                   val=1:9)
+    df[4, 1:2] .= 1
+    @test_throws ArgumentError unstack(df, :id, :var, :val)
+    @test_throws ArgumentError unstack(df, [:id, :id2], :var, :val)
+    @test unstack(df, :id, :var, :val, allowduplicates=true) ≅
+          DataFrame(id=1:3, a=[4, missing, 7], b=2:3:8, c=3:3:9)
+    @test unstack(df, [:id, :id2], :var, :val, allowduplicates=true) ≅
+          DataFrame(id=1:3, id2=1:3, a=[4, missing, 7], b=2:3:8, c=3:3:9)
+
+    df = DataFrame(id=repeat(1:3, inner=3),
+                   id2=repeat(1:3, inner=3),
+                   var=repeat('a':'c', 3),
+                   val=1:9)
+    allowmissing!(df, :var)
+    df.var[4] = missing
+    @test_throws ArgumentError unstack(df, :id, :var, :val)
+    @test_throws ArgumentError unstack(df, [:id, :id2], :var, :val)
+    @test unstack(df, :id, :var, :val, allowmissing=true) ≅
+          DataFrame(id=1:3, a=[1, missing, 7], b=2:3:8, c=3:3:9, missing=[missing, 4, missing])
+    @test unstack(df, [:id, :id2], :var, :val, allowmissing=true) ≅
+          DataFrame(id=1:3, id2=1:3, a=[1, missing, 7], b=2:3:8, c=3:3:9, missing=[missing, 4, missing])
+end
+
+# test scenario when sorting fails both in grouping and in variable
+struct A_TYPE
+    x
+end
+
+@testset "additional unstack tests not sortable" begin
+    df = DataFrame(id=repeat(A_TYPE.([2, 1, 3]), inner=3),
+                   id2=repeat(A_TYPE.([2, 1, 3]), inner=3),
+                   var=repeat(A_TYPE.([3, 2, 1]), 3),
+                   val=1:9)
+    @test unstack(df, :id, :var, :val, renamecols=x -> Symbol(:x, x.x)) ==
+          DataFrame(id=A_TYPE.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
+    @test unstack(df, [:id, :id2], :var, :val, renamecols=x -> Symbol(:x, x.x)) ==
+          DataFrame(id=A_TYPE.([2, 1, 3]), id2=A_TYPE.([2, 1, 3]), x3=1:3:7, x2=2:3:8, x1=3:3:9)
+end
+
+@testset "permutedims" begin
+    df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1, 2], d=rand(Bool, 2))
+
+    @test_throws MethodError transpose(df1)
+    @test_throws ArgumentError permutedims(df1, :bar)
+
+    df1_pd = permutedims(df1, 1)
+    @test size(df1_pd, 1) == ncol(df1) - 1
+    @test size(df1_pd, 2) == nrow(df1) + 1
+    @test names(df1_pd) == ["a", "x", "y"]
+    @test df1_pd == permutedims(df1, :a) == permutedims(df1, 1)
+    @test names(permutedims(df1, :a, :foo)) == ["foo", "x", "y"]
+
+    orignames1 = names(df1)[2:end]
+    for (i, row) in enumerate(eachrow(df1_pd))
+        @test Vector(row) == [orignames1[i]; df1[!, orignames1[i]]]
+    end
+
+    # All columns should be promoted
+    @test eltype(df1_pd.x) == Float64
+    @test eltype(df1_pd.y) == Float64
+
+    df2 = DataFrame(a=["x", "y"], b=[1.0, "str"], c=[1, 2], d=rand(Bool, 2))
+
+    df2_pd = permutedims(df2, :a)
+    @test size(df2_pd, 1) == ncol(df2) - 1
+    @test size(df2_pd, 2) == nrow(df2) + 1
+    @test names(df2_pd) == ["a", "x", "y"]
+
+    orignames2 = names(df2)[2:end]
+    for (i, row) in enumerate(eachrow(df2_pd))
+        @test Vector(row) == [orignames2[i]; df2[!, orignames2[i]]]
+    end
+    @test Any == eltype(df2_pd.x)
+    @test Any == eltype(df2_pd.y)
+
+    df3 = DataFrame(a=fill("x", 10), b=rand(10), c=rand(Int, 10), d=rand(Bool, 10))
+
+    d3pd_names = ["a", "x", ("x_$i" for i in 1:9)...]
+    @test_throws ArgumentError permutedims(df3, 1)
+    @test names(permutedims(df3, 1, makeunique=true)) == d3pd_names
+    @test_throws ArgumentError permutedims(df3[!, [:a]], 1) # single column branch
+    @test names(permutedims(df3[!, [:a]], 1, makeunique=true)) == d3pd_names
+
+    df4 = DataFrame(a=rand(2), b=rand(2), c=[1, 2], d=[1., missing],
+                    e=["x", "y"], f=[:x, :y], # valid src
+                    g=[missing, "y"], h=Union{Missing, String}["x", "y"] # invalid src
+                    )
+
+    @test permutedims(df4[!, [:a, :b, :c, :e]], :e) ==
+          permutedims(df4[!, [:e, :a, :b, :c]], 1) ==
+          permutedims(df4[!, [:a, :b, :c, :f]], :f, :e)
+    # Can permute single-column
+    @test permutedims(df4[!, [:e]], 1) == DataFrame(e=String[], x=[], y=[])
+    # Can't index float Column
+    @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]], 1)
+    @test_throws ArgumentError permutedims(DataFrame(a=Float64[], b=Float64[]), 1)
+    # Can't index columns that allow for missing
+    @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]], 1)
+    @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]], 1)
+    # Can't permute empty `df` ...
+    @test_throws BoundsError permutedims(DataFrame(), 1)
+    # ... but can permute zero-row df
+    @test permutedims(DataFrame(a=String[], b=Float64[]), 1) == DataFrame(a=["b"])
 end
 
 end # module

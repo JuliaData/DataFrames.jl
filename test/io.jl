@@ -180,9 +180,9 @@ end
     @test sprint(DataFrames.printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
-        1,"'a'","A","a","A","1",missing,missing
-        2,"'b'","B","b","B","2",missing,missing
-        3,"'c'","C","c",missing,"3",missing,missing
+        1,"a","A","a","A","1",missing,missing
+        2,"b","B","b","B","2",missing,missing
+        3,"c","C","c",missing,"3",missing,missing
         """
 end
 
@@ -531,18 +531,18 @@ end
 
     @test str == """
     9×2 DataFrame
-    │ Row │ A     │ B                                              │
-    │     │ Int64 │ Any                                            │
-    ├─────┼───────┼────────────────────────────────────────────────┤
-    │ 1   │ 1     │ 9×2 DataFrame                                  │
-    │ 2   │ 2     │ 2-element DataFrameRow                         │
-    │ 3   │ 3     │ 1×2 SubDataFrame                               │
-    │ 4   │ 4     │ 9-element DataFrameRows                        │
-    │ 5   │ 5     │ 2-element DataFrameColumns                     │
-    │ 6   │ 6     │ GroupedDataFrame with 9 groups based on key: A │
-    │ 7   │ 7     │ missing                                        │
-    │ 8   │ 8     │                                                │
-    │ 9   │ 9     │ #undef                                         │"""
+    │ Row │ A     │ B                                 │
+    │     │ Int64 │ Any                               │
+    ├─────┼───────┼───────────────────────────────────┤
+    │ 1   │ 1     │ 9×2 DataFrame                     │
+    │ 2   │ 2     │ 2-element DataFrameRow            │
+    │ 3   │ 3     │ 1×2 SubDataFrame                  │
+    │ 4   │ 4     │ 9-element DataFrameRows           │
+    │ 5   │ 5     │ 2-element DataFrameColumns        │
+    │ 6   │ 6     │ GroupedDataFrame with 9 groups b… │
+    │ 7   │ 7     │ missing                           │
+    │ 8   │ 8     │                                   │
+    │ 9   │ 9     │ #undef                            │"""
 
 
     io = IOBuffer()
@@ -550,18 +550,18 @@ end
     str = String(take!(io))
     @test str == """
     9×2 DataFrame
-    │ Row │ A     │ B                                              │
-    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                                            │
-    ├─────┼───────┼────────────────────────────────────────────────┤
-    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                                  │
-    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m                         │
-    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                               │
-    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m                        │
-    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m                     │
-    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups based on key: A\e[39m │
-    │ 7   │ 7     │ \e[90mmissing\e[39m                                        │
-    │ 8   │ 8     │                                                │
-    │ 9   │ 9     │ \e[90m#undef\e[39m                                         │"""
+    │ Row │ A     │ B                                 │
+    │     │ \e[90mInt64\e[39m │ \e[90mAny\e[39m                               │
+    ├─────┼───────┼───────────────────────────────────┤
+    │ 1   │ 1     │ \e[90m9×2 DataFrame\e[39m                     │
+    │ 2   │ 2     │ \e[90m2-element DataFrameRow\e[39m            │
+    │ 3   │ 3     │ \e[90m1×2 SubDataFrame\e[39m                  │
+    │ 4   │ 4     │ \e[90m9-element DataFrameRows\e[39m           │
+    │ 5   │ 5     │ \e[90m2-element DataFrameColumns\e[39m        │
+    │ 6   │ 6     │ \e[90mGroupedDataFrame with 9 groups b…\e[39m │
+    │ 7   │ 7     │ \e[90mmissing\e[39m                           │
+    │ 8   │ 8     │                                   │
+    │ 9   │ 9     │ \e[90m#undef\e[39m                            │"""
 
 
     io = IOBuffer()
@@ -604,35 +604,143 @@ end
     @test_throws UndefRefError show(io, MIME("text/csv"), df)
     @test_throws UndefRefError show(io, MIME("text/tab-separated-values"), df)
 
+    df[end, 2] = "\""
+    push!(df, (10, Symbol("\"")))
+    push!(df, (11, '"'))
     io = IOBuffer()
-    show(io, MIME("text/csv"), df[1:end-1, :])
+    show(io, MIME("text/csv"), df)
     str = String(take!(io))
     @test str == """
     "A","B"
-    1,"9×2 DataFrame"
+    1,"11×2 DataFrame"
     2,"2-element DataFrameRow"
     3,"1×2 SubDataFrame"
-    4,"9-element DataFrameRows"
+    4,"11-element DataFrameRows"
     5,"2-element DataFrameColumns"
     6,"GroupedDataFrame with 9 groups based on key: A"
     7,missing
     8,nothing
+    9,"\\""
+    10,"\\""
+    11,"\\""
     """
 
     io = IOBuffer()
-    show(io, MIME("text/tab-separated-values"), df[1:end-1, :])
+    show(io, MIME("text/tab-separated-values"), df)
     str = String(take!(io))
     @test str == """
     "A"\t"B"
-    1\t"9×2 DataFrame"
+    1\t"11×2 DataFrame"
     2\t"2-element DataFrameRow"
     3\t"1×2 SubDataFrame"
-    4\t"9-element DataFrameRows"
+    4\t"11-element DataFrameRows"
     5\t"2-element DataFrameColumns"
     6\t"GroupedDataFrame with 9 groups based on key: A"
     7\tmissing
     8\tnothing
+    9\t"\\""
+    10\t"\\""
+    11\t"\\""
     """
+end
+
+@testset "check truncate keyword argument" begin
+    df = DataFrame(x = "0123456789"^10)
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/html"), df)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
+                 "<tr><th></th><th>String</th></tr></thead>" *
+                 "<tbody><p>1 rows × 1 columns</p><tr><th>1</th>" *
+                 "<td>01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789</td>"*
+                 "</tr></tbody></table>"
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/latex"), df)
+    str = String(take!(io))
+    @test str == """
+    \\begin{tabular}{r|c}
+    \t& x\\\\
+    \t\\hline
+    \t& String\\\\
+    \t\\hline
+    \t1 & 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 \\\\
+    \\end{tabular}
+    """
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/csv"), df)
+    str = String(take!(io))
+    @test str == "\"x\"\n\"01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789\"\n"
+
+    # no truncation
+    io = IOBuffer()
+    show(io, MIME("text/tab-separated-values"), df)
+    str = String(take!(io))
+    @test str == "\"x\"\n\"01234567890123456789012345678901234567890123456789" *
+                 "01234567890123456789012345678901234567890123456789\"\n"
+
+    # default truncation
+    io = IOBuffer()
+    show(io, MIME("text/plain"), df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                 │
+    │     │ String                            │
+    ├─────┼───────────────────────────────────┤
+    │ 1   │ 01234567890123456789012345678901… │"""
+
+    # no truncation
+    io = IOBuffer()
+    show(io, df, truncate=0)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x                                                                                                    │
+    │     │ String                                                                                               │
+    ├─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 1   │ 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 │"""
+
+    # custom truncation
+    io = IOBuffer()
+    show(io, df, truncate=1)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ Row │ x      │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ 0…     │"""
+
+
+    df = DataFrame(x12345678901234567890 = "0123456789"^10)
+    io = IOBuffer()
+    show(io, df, truncate=1, rowlabel=:r12345678901234567890)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrame
+    │ r12345678901234567890 │ x12345678901234567890 │
+    │                       │ String                │
+    ├───────────────────────┼───────────────────────┤
+    │ 1                     │ 0…                    │"""
+
 end
 
 end # module

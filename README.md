@@ -2,7 +2,7 @@ DataFrames.jl
 =============
 
 [![Coverage Status](https://coveralls.io/repos/JuliaData/DataFrames.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaData/DataFrames.jl?branch=master)
-[![Travis Build Status](https://travis-ci.org/JuliaData/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaData/DataFrames.jl)
+[![Travis Build Status](https://travis-ci.com/JuliaData/DataFrames.jl.svg?branch=master)](https://travis-ci.com/JuliaData/DataFrames.jl)
 
 Tools for working with tabular data in Julia.
 

@@ -670,9 +670,9 @@ end
     describe_output.test_std = describe_output.std
     # Test that describe works with a Pair and a symbol
     @test describe_output[:, [:variable, :mean, :test_std]] ≅
-          describe(df, :mean, :test_std => std)
+          describe(df, :mean, std => :test_std)
     @test describe_output[:, [:variable, :mean, :test_std]] ≅
-          describe(df, :mean, "test_std" => std)
+          describe(df, :mean, std => "test_std")
 
     # Test that describe works with a dataframe with no observations
     df = DataFrame(a = Int[], b = String[], c = [])
@@ -682,6 +682,9 @@ end
     @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
     @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
+
+    @test describe(DataFrame(a=[1,2]), cols = :a, :min, minimum => :min2, maximum => "max2", :max) ==
+          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
     @test_throws ArgumentError describe(df, :mean, :all)
 end
@@ -1048,7 +1051,7 @@ end
     @inferred ncol(df)
 end
 
-@testset "description" begin
+@testset "first, last and only" begin
     df = DataFrame(A = 1:10)
 
     @test first(df) == df[1, :]
@@ -1060,6 +1063,11 @@ end
     @test first(df, 1) == DataFrame(A = 1)
     @test last(df, 6) == DataFrame(A = 5:10)
     @test last(df, 1) == DataFrame(A = 10)
+
+    @test_throws ArgumentError only(df)
+    @test_throws ArgumentError only(DataFrame())
+    df = DataFrame(a=1, b=2)
+    @test only(df) === df[1, :]
 end
 
 @testset "column conversions" begin
@@ -1544,107 +1552,151 @@ end
     # we check dispatch here only
     df = DataFrame(a=1, b=2, c=3)
     completecases(df, All())
+    completecases(df, Cols(:))
     completecases(df, Between(1, 2))
     dropmissing(df, All())
+    dropmissing(df, Cols(:))
     dropmissing(df, Between(1, 2))
     dropmissing!(df, All())
+    dropmissing!(df, Cols(:))
     dropmissing!(df, Between(1, 2))
     disallowmissing(df, All())
+    disallowmissing(df, Cols(:))
     disallowmissing(df, Between(1, 2))
     allowmissing(df, All())
+    allowmissing(df, Cols(:))
     allowmissing(df, Between(1, 2))
 
     df[1, All()]
+    df[1, Cols(:)]
     df[1, Between(1,2)]
     df[1:1, All()]
+    df[1:1, Cols(:)]
     df[1:1, Between(1,2)]
     df[Not(1), All()]
+    df[Not(1), Cols(:)]
     df[Not(1), Between(1,2)]
     df[:, All()]
+    df[:, Cols(:)]
     df[:, Between(1,2)]
     df[!, All()]
+    df[!, Cols(:)]
     df[!, Between(1,2)]
 
     @view df[1, All()]
+    @view df[1, Cols(:)]
     @view df[1, Between(1,2)]
     @view df[1:1, All()]
+    @view df[1:1, Cols(:)]
     @view df[1:1, Between(1,2)]
     @view df[Not(1), All()]
+    @view df[Not(1), Cols(:)]
     @view df[Not(1), Between(1,2)]
     @view df[:, All()]
+    @view df[:, Cols(:)]
     @view df[:, Between(1,2)]
     @view df[!, All()]
+    @view df[!, Cols(:)]
     @view df[!, Between(1,2)]
 
     df[1, All()] = (a=1, b=2, c=3)
+    df[1, Cols(:)] = (a=1, b=2, c=3)
     df[1, Between(1,2)] = (a=1, b=2)
     df[1:1, All()] = df
+    df[1:1, Cols(:)] = df
     df[1:1, Between(1,2)] = df[!, 1:2]
     df[:, All()] = df
+    df[:, Cols(:)] = df
     df[:, Between(1,2)] = df[!, 1:2]
     df[1:1, All()] = Matrix(df)
+    df[1:1, Cols(:)] = Matrix(df)
     df[1:1, Between(1,2)] = Matrix(df[!, 1:2])
     df[:, All()] = Matrix(df)
+    df[:, Cols(:)] = Matrix(df)
     df[:, Between(1,2)] = Matrix(df[!, 1:2])
 
     df2 = vcat(df, df)
     df2[Not(1), All()] = df
+    df2[Not(1), Cols(:)] = df
     df2[Not(1), Between(1,2)] = df[!, 1:2]
     df2[Not(1), All()] = Matrix(df)
+    df2[Not(1), Cols(:)] = Matrix(df)
     df2[Not(1), Between(1,2)] = Matrix(df[!,1:2])
 
     allowmissing!(df2, All())
+    allowmissing!(df2, Cols(:))
     allowmissing!(df2, Between(1,2))
     disallowmissing!(df2, All())
+    disallowmissing!(df2, Cols(:))
     disallowmissing!(df2, Between(1,2))
 
     dfr = df[1, :]
     dfr[All()]
+    dfr[Cols(:)]
     dfr[Between(1,2)]
     dfr[All()] = (a=1, b=2, c=3)
+    dfr[Cols(:)] = (a=1, b=2, c=3)
     dfr[Between(1,2)] = (a=1, b=2)
     @view dfr[All()]
+    @view dfr[Cols(:)]
     @view dfr[Between(1,2)]
 
     dfv = view(df, :, :)
 
     dfv[1, All()]
+    dfv[1, Cols(:)]
     dfv[1, Between(1,2)]
     dfv[1:1, All()]
+    dfv[1:1, Cols(:)]
     dfv[1:1, Between(1,2)]
     dfv[Not(1), All()]
+    dfv[Not(1), Cols(:)]
     dfv[Not(1), Between(1,2)]
     dfv[:, All()]
+    dfv[:, Cols(:)]
     dfv[:, Between(1,2)]
     dfv[!, All()]
+    dfv[!, Cols(:)]
     dfv[!, Between(1,2)]
 
     @view dfv[1, All()]
+    @view dfv[1, Cols(:)]
     @view dfv[1, Between(1,2)]
     @view dfv[1:1, All()]
+    @view dfv[1:1, Cols(:)]
     @view dfv[1:1, Between(1,2)]
     @view dfv[Not(1), All()]
+    @view dfv[Not(1), Cols(:)]
     @view dfv[Not(1), Between(1,2)]
     @view dfv[:, All()]
+    @view dfv[:, Cols(:)]
     @view dfv[:, Between(1,2)]
     @view dfv[!, All()]
+    @view dfv[!, Cols(:)]
     @view dfv[!, Between(1,2)]
 
     dfv[1, All()] = (a=1, b=2, c=3)
+    dfv[1, Cols(:)] = (a=1, b=2, c=3)
     dfv[1, Between(1,2)] = (a=1, b=2)
     dfv[1:1, All()] = df
+    dfv[1:1, Cols(:)] = df
     dfv[1:1, Between(1,2)] = df[!, 1:2]
     dfv[:, All()] = df
+    dfv[:, Cols(:)] = df
     dfv[:, Between(1,2)] = df[!, 1:2]
     dfv[1:1, All()] = Matrix(df)
+    dfv[1:1, Cols(:)] = Matrix(df)
     dfv[1:1, Between(1,2)] = Matrix(df[!, 1:2])
     dfv[:, All()] = Matrix(df)
+    dfv[:, Cols(:)] = Matrix(df)
     dfv[:, Between(1,2)] = Matrix(df[!, 1:2])
 
     df2v = view(vcat(df, df), :, :)
     df2v[Not(1), All()] = df
+    df2v[Not(1), Cols(:)] = df
     df2v[Not(1), Between(1,2)] = df[!, 1:2]
     df2v[Not(1), All()] = Matrix(df)
+    df2v[Not(1), Cols(:)] = Matrix(df)
     df2v[Not(1), Between(1,2)] = Matrix(df[!, 1:2])
 end
 

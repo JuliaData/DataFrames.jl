@@ -11,11 +11,11 @@ Base.summary(io::IO, idx::AbstractIndex) = print(io, summary(idx))
 
 const SymbolOrString = Union{Symbol, AbstractString}
 const ColumnIndex = Union{Signed, Unsigned, SymbolOrString}
-const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Colon}
-const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Colon)
+const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Cols, Colon}
+const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Cols, :Colon)
 
 const COLUMNINDEX_STR = "`Symbol`, string or integer"
-const MULTICOLUMNINDEX_STR = "`:`, `All`, `Between`, `Not`, a regular expression," *
+const MULTICOLUMNINDEX_STR = "`:`, `Cols`, `All`, `Between`, `Not`, a regular expression," *
                           " or a vector of `Symbol`s, strings or integers"
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
@@ -219,6 +219,8 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::Between) = x[idx.first]:x[idx.last]
 @inline Base.getindex(x::AbstractIndex, idx::All) =
     isempty(idx.cols) ? (1:length(x)) : union(getindex.(Ref(x), idx.cols)...)
+@inline Base.getindex(x::AbstractIndex, idx::Cols) =
+    isempty(idx.cols) ? Int[] : union(getindex.(Ref(x), idx.cols)...)
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)

@@ -14,7 +14,10 @@ makedocs(
     doctest = false,
     clean = false,
     sitename = "DataFrames.jl",
-    format = Documenter.HTML(),
+    format = Documenter.HTML(
+        canonical = "https://juliadata.github.io/DataFrames.jl/stable/",
+        assets = ["assets/favicon.ico"]
+    ),
     pages = Any[
         "Introduction" => "index.md",
         "User Guide" => Any[
@@ -26,7 +29,7 @@ makedocs(
             "Categorical Data" => "man/categorical.md",
             "Missing Data" => "man/missing.md",
             "Data manipulation frameworks" => "man/querying_frameworks.md",
-            "Comparison with Stata/R" => "man/comparisons.md"
+            "Comparison with Python/R/Stata" => "man/comparisons.md"
         ],
         "API" => Any[
             "Types" => "lib/types.md",

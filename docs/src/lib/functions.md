@@ -57,6 +57,7 @@ vcat
 ```@docs
 stack
 unstack
+permutedims
 ```
 
 ## Sorting
@@ -99,6 +100,7 @@ filter
 filter!
 first
 last
+only
 nonunique
 unique
 unique!

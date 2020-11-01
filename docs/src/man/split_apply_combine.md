@@ -27,7 +27,7 @@ Operations can then be applied on each group using one of the following function
 All these functions take a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
 1. standard column selectors (integers, symbols, vectors of integers, vectors of symbols,
-   `All`, `:`, `Between`, `Not` and regular expressions)
+   `All`, `Cols`, `:`, `Between`, `Not` and regular expressions)
 2. a `cols => function` pair indicating that `function` should be called with
    positional arguments holding columns `cols`, which can be a any valid column selector
 3. a `cols => function => target_col` form additionally
