@@ -584,7 +584,7 @@ the same parent data frame they might get corrupt.
 
 $TRANSFORMATION_COMMON_RULES
 
-There the following keyword arguments are supported by `select!`:
+# Keyword arguments
 - `renamecols` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
 - `ungroup` : whether the return value of the operation on `gd` should be a data
@@ -616,12 +616,11 @@ Equivalent to `select!(df, :, args...)` or `select!(gd, :, args...)`.
 
 $TRANSFORMATION_COMMON_RULES
 
-There the following keyword arguments are supported by `transform!`:
+# Keyword arguments
 - `renamecols` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
 - `ungroup` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-
 
 See [`select`](@ref) for examples.
 """
@@ -650,7 +649,7 @@ rows).
 
 $TRANSFORMATION_COMMON_RULES
 
-There the following keyword arguments are supported by `select`:
+# Keyword arguments
 - `copycols` : whether columns of the source data frame should be copied if
   no transformation is applied to them.
 - `renamecols` : whether in the `cols => function` form automatically generated
@@ -897,7 +896,7 @@ number of rows as `df`. Equivalent to `select(df, :, args...)` or `select(gd, :,
 
 $TRANSFORMATION_COMMON_RULES
 
-There the following keyword arguments are supported by `transform`:
+# Keyword arguments
 - `copycols` : whether columns of the source data frame should be copied if
   no transformation is applied to them.
 - `renamecols` : whether in the `cols => function` form automatically generated
@@ -907,9 +906,8 @@ There the following keyword arguments are supported by `transform`:
 - `ungroup` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 
-Note that for `transform` on `GroupedDataFrame` the `keepkeys` keyword argument
-has an effect of allowing or disallowing changing the value of grouping column
-in the resulting data frame:
+Note that when the first argument is a `GroupedDataFrame`, `keepkeys=false`
+is needed to be able to return a different value for the grouping column:
 
 ```
 julia> gdf = groupby(DataFrame(x=1:2), :x)
@@ -964,7 +962,7 @@ by the values returned by passed transformations.
 
 $TRANSFORMATION_COMMON_RULES
 
-There the following keyword arguments are supported by `combine`:
+# Keyword arguments
 - `renamecols` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
 - `keepkeys` : whether grouping columns of `gd` should be kept in the returned

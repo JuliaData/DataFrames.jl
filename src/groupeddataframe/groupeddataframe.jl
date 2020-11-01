@@ -44,7 +44,7 @@ into row groups.
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort groups according to the values of the grouping columns
-  `cols`; if `sort=false` then the order of groups follows the order of appereance
+  `cols`; if `sort=false` then the order of groups follows the order of appearance
   of values in the grouping columns, except when all grouping columns provide
   non-`nothing` `DataAPI.refpool` in which case the order of groups follows the
   order of values returned by `DataAPI.refpool`. As a particular application of
