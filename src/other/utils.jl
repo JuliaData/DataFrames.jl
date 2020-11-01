@@ -84,14 +84,15 @@ end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
 
-testtype(t::Type, ct::Type, unionmissing::Bool) =
-    if t === Missing
-        return ct === Missing
+function testtype(T::Type, CT::Type, unionmissing::Bool)
+    if T === Missing
+        return CT === Missing
     else
         if unionmissing
-            ct === Missing && return t === Union{} || Missing <: t
-            return ct <: Union{t, Missing}
+            CT === Missing && return T === Union{} || Missing <: T
+            return CT <: Union{T, Missing}
         else
-            return ct <: t
+            return CT <: T
         end
     end
+end
