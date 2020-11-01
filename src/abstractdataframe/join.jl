@@ -121,10 +121,10 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         # about the permutation of left data frame in rightjoin as we always
         # assign 0x1 to it anyway and these rows are guaranteed to come first
         # (even if they are permuted)
-        left_indicator = zeros(UInt8, nrow)
-        left_indicator[axes(all_orig_left_ixs, 1)] .= 0x1
-        right_indicator = zeros(UInt8, nrow)
-        right_indicator[axes(all_orig_right_ixs, 1)] .= 0x2
+        left_indicator = zeros(UInt32, nrow)
+        left_indicator[axes(all_orig_left_ixs, 1)] .= 1
+        right_indicator = zeros(UInt32, nrow)
+        right_indicator[axes(all_orig_right_ixs, 1)] .= 2
         permute!(right_indicator, right_perm)
     end
 
@@ -416,9 +416,13 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        refs = left_indicator + right_indicator
-        pool = CategoricalPool{String,UInt8}(["left_only", "right_only", "both"])
-        indicatorcol = CategoricalArray{String,1}(refs, pool)
+        left_indicator .+= right_indicator
+        pool = ["left_only", "right_only", "both"]
+        invpool = Dict{String, UInt32}("left_only" => 1,
+                                       "right_only" => 2,
+                                       "both" => 3)
+        indicatorcol = PooledArray(PooledArrays.RefArray(left_indicator),
+                                   invpool, pool)
 
         unique_indicator = indicator
         if makeunique
