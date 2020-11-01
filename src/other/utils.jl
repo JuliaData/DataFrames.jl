@@ -90,7 +90,7 @@ end
 funname(c::ComposedFunction) = Symbol(funname(c.f), :_, funname(c.g))
 
 testtype(t::Type, ct::Type, unionmissing::Bool) =
-    if t == Missing
+    if t === Missing
         return ct === Missing
     else
         if unionmissing
