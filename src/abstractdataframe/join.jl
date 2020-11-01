@@ -652,6 +652,11 @@ The order of rows in the result is undefined and may change in the future releas
 
 All columns of the returned data table will support missing values.
 
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
+
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
@@ -775,6 +780,11 @@ The order of rows in the result is undefined and may change in the future releas
   matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -905,6 +915,11 @@ The order of rows in the result is undefined and may change in the future releas
 
 All columns of the returned data table will support missing values.
 
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
+
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
@@ -1033,6 +1048,11 @@ The order of rows in the result is undefined and may change in the future releas
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
 
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
+
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
@@ -1132,6 +1152,11 @@ The order of rows in the result is undefined and may change in the future releas
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched (`isequal` is used for comparisons of rows for equality)
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
