@@ -15,7 +15,7 @@ const TRANSFORMATION_COMMON_RULES =
     Below detailed common rules for all transformation functions supported by
     DataFrames.jl are explained and compared.
 
-    All operations described in this section of the manual are supported both for
+    All these operations are supported both for
     `AbstractDataFrame` (when split and combine steps are skipped) and
     `GroupedDataFrame`. Technically, `AbstractDataFrame` is just considered as being
     grouped on no columns (meaning it has a single group, or zero groups if it is

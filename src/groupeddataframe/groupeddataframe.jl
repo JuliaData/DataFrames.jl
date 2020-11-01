@@ -45,7 +45,7 @@ into row groups.
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort groups according to the values of the grouping columns
   `cols`; if `sort=false` then the order of groups in the result is undefined
-  and may change in the future releases. In the current implementation the
+  and may change in future releases. In the current implementation
   groups are ordered following the order of appearance of values in the grouping
   columns, except when all grouping columns provide non-`nothing`
   `DataAPI.refpool` in which case the order of groups follows the order of
