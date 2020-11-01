@@ -58,7 +58,7 @@ struct DataFrameJoiner
 
         for df in (dfl_on, dfr_on), col in eachcol(df)
             if any(x -> (x isa Union{Complex, Real}) &&
-                        (isnan(x) || real(x) == -0.0 || imag(x) == -0.0), col)
+                        (isnan(x) || real(x) === -0.0 || imag(x) === -0.0), col)
                 throw(ArgumentError("currently for numeric values NaN and `-0.0` " *
                                     "in their real or imaginary components are not" *
                                     " allowed. Use CategoricalArrays.jl to wrap" *

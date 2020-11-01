@@ -41,8 +41,8 @@
 * in `describe` the specification of custom aggregation is now `function => name`;
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
-* in joins passing `NaN` in `on` column now throws an error and
-  passing `missing` thows an error unless `matchmissing=:equal` keyword argument
+* in joins passing `NaN` or real or imaginary `-0.0` in `on` column now throws an
+  error; passing `missing` thows an error unless `matchmissing=:equal` keyword argument
   is passed ([#2504](https://github.com/JuliaData/DataFrames.jl/pull/2504))
 * `unstack` now produces row and column keys in the order of their first appearance
    and has two new keyword arguments `allowmissing` and `allowduplicates`
