@@ -15,13 +15,19 @@ const TRANSFORMATION_COMMON_RULES =
     Below detailed common rules for all transformation functions supported by
     DataFrames.jl are explained and compared.
 
-    All operations described below are supported both for `GroupedDataFrame` and
-    `AbstractDataFrame`. In the latter case, the data frame is considered as being grouped on no
-    columns (meaning it has a single group, or zero groups if it is empty). The
-    only difference is that in this case the `keepkeys` and `ungroup` keyword
-    arguments are not supported and a data frame is always returned.
+    All operations described in this section of the manual are supported both for
+    `AbstractDataFrame` (when split and combine steps are skipped) and
+    `GroupedDataFrame`. Technically, `AbstractDataFrame` is just considered as being
+    grouped on no columns (meaning it has a single group, or zero groups if it is
+    empty). The only difference is that in this case the `keepkeys` and `ungroup`
+    keyword arguments (described below) are not supported and a data frame is always
+    returned, as there are no split and combine steps in this case.
 
-    Operations can be applied on each group using one of the following functions:
+    In order to perform operations by groups you first need to create a `GroupedDataFrame`
+    object from your data frame using the `groupby` function that takes two arguments:
+    (1) a data frame to be grouped, and (2) a set of columns to group by.
+
+    Operations can then be applied on each group using one of the following functions:
     * `combine`: does not put restrictions on number of rows returned, the order of rows
       is specified by the order of groups in `GroupedDataFrame`; it is typically used
       to compute summary statistics by group;
@@ -34,8 +40,9 @@ const TRANSFORMATION_COMMON_RULES =
 
     All these functions take a specification of one or more functions to apply to
     each subset of the `DataFrame`. This specification can be of the following forms:
-    1. standard column selectors (integers, `Symbol`s, vectors of integers, vectors of
-       `Symbol`s, vectors of strings, `:`, `All`, `Between`, `Not` and regular expressions).
+    1. standard column selectors (integers, `Symbol`s, strings, vectors of integers,
+       vectors of `Symbol`s, vectors of strings,
+       `All`, `Cols`, `:`, `Between`, `Not` and regular expressions)
     2. a `cols => function` pair indicating that `function` should be called with
        positional arguments holding columns `cols`, which can be a any valid column selector;
        in this case target column name is automatically generated and it is assumed that
@@ -43,24 +50,23 @@ const TRANSFORMATION_COMMON_RULES =
        concatenating source column name and `function` name by default (see examples below).
     3. a `cols => function => target_cols` form additionally explicitly specifying
        the target column or columns.
-    4. a `col => target_cols` pair, which renames the column `col` to `target_cols` which
-       must be single column (a `Symbol` or a string).
+    4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
+       must be single name (as a `Symbol` or a string).
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
        in a group; without `target_cols` the new column is called `:nrow`, otherwise
-       it must be single column (a `Symbol` or a string).
+       it must be single name (as a `Symbol` or a string).
     6. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
     8. a function which will be called with a `SubDataFrame` corresponding to each group;
-       this form should be avoided due to its poor performance unless
-       the number of groups is small or a very large
+       this form should be avoided due to its poor performance unless a very large
        number of columns are processed (in which case `SubDataFrame` avoids excessive
        compilation)
 
     All functions have two types of signatures. One of them takes a `GroupedDataFrame`
-    as a first argument and an arbitrary number of transfomations described above
-    as following arguments. The second type of signature is when `Function` or `Type`
-    is passed as a first argument and `GroupedDataFrame` is the second argument
-    (similar to how it is passed to `map`).
+    as the first argument and an arbitrary number of transformations described above
+    as following arguments. The second type of signature is when a `Function` or a `Type`
+    is passed as the first argument and a `GroupedDataFrame` as the second argument
+    (similar to `map`).
 
     As a special rule, with the `cols => function` and `cols => function =>
     target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
@@ -104,11 +110,11 @@ const TRANSFORMATION_COMMON_RULES =
     with the same number and order of rows as the source (even if `GroupedDataFrame`
     had its groups reordered).
 
-    For `combine`, rows in the returned object appear in the order of groups in
-    the `GroupedDataFrame`. The functions can return an arbitrary number of rows
-    for each group, but the kind of returned object and the number and names of
-    columns must be the same for all groups, except when a `DataFrame()` or
-    `NamedTuple()` is returned, in which case a given group is skipped.
+    For `combine`, rows in the returned object appear in the order of groups in the
+    `GroupedDataFrame`. The functions can return an arbitrary number of rows for
+    each group, but the kind of returned object and the number and names of columns
+    must be the same for all groups, except when a `DataFrame()` or `NamedTuple()`
+    is returned, in which case a given group is skipped.
 
     It is allowed to mix single values and vectors if multiple transformations
     are requested. In this case single value will be repeated to match the length
@@ -585,9 +591,9 @@ the same parent data frame they might get corrupt.
 $TRANSFORMATION_COMMON_RULES
 
 # Keyword arguments
-- `renamecols` : whether in the `cols => function` form automatically generated
+- `renamecols::Bool=true` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
-- `ungroup` : whether the return value of the operation on `gd` should be a data
+- `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 
 See [`select`](@ref) for examples.
@@ -617,9 +623,9 @@ Equivalent to `select!(df, :, args...)` or `select!(gd, :, args...)`.
 $TRANSFORMATION_COMMON_RULES
 
 # Keyword arguments
-- `renamecols` : whether in the `cols => function` form automatically generated
+- `renamecols::Bool=true` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
-- `ungroup` : whether the return value of the operation on `gd` should be a data
+- `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 
 See [`select`](@ref) for examples.
@@ -650,13 +656,13 @@ rows).
 $TRANSFORMATION_COMMON_RULES
 
 # Keyword arguments
-- `copycols` : whether columns of the source data frame should be copied if
+- `copycols::Bool=true` : whether columns of the source data frame should be copied if
   no transformation is applied to them.
-- `renamecols` : whether in the `cols => function` form automatically generated
+- `renamecols::Bool=true` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
-- `keepkeys` : whether grouping columns of `gd` should be kept in the returned
+- `keepkeys::Bool=true` : whether grouping columns of `gd` should be kept in the returned
   data frame.
-- `ungroup` : whether the return value of the operation on `gd` should be a data
+- `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 
 # Examples
@@ -897,13 +903,13 @@ number of rows as `df`. Equivalent to `select(df, :, args...)` or `select(gd, :,
 $TRANSFORMATION_COMMON_RULES
 
 # Keyword arguments
-- `copycols` : whether columns of the source data frame should be copied if
+- `copycols::Bool=true` : whether columns of the source data frame should be copied if
   no transformation is applied to them.
-- `renamecols` : whether in the `cols => function` form automatically generated
+- `renamecols::Bool=true` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
-- `keepkeys` : whether grouping columns of `gd` should be kept in the returned
+- `keepkeys::Bool=true` : whether grouping columns of `gd` should be kept in the returned
   data frame.
-- `ungroup` : whether the return value of the operation on `gd` should be a data
+- `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 
 Note that when the first argument is a `GroupedDataFrame`, `keepkeys=false`
@@ -963,11 +969,11 @@ by the values returned by passed transformations.
 $TRANSFORMATION_COMMON_RULES
 
 # Keyword arguments
-- `renamecols` : whether in the `cols => function` form automatically generated
+- `renamecols::Bool=true` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
-- `keepkeys` : whether grouping columns of `gd` should be kept in the returned
+- `keepkeys::Bool=true` : whether grouping columns of `gd` should be kept in the returned
   data frame.
-- `ungroup` : whether the return value of the operation on `gd` should be a data
+- `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 
 # Examples
