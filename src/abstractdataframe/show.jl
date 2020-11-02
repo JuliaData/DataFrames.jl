@@ -652,11 +652,11 @@ function _show(io::IO,
 
                     v = df[kr, i]
 
-                    order_v::Int = 0
+                    order_v = 0
 
                     if v isa Number
                         abs_v = abs(v)
-                        log_v::Int = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v)) : 0
+                        log_v = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v))::Int : 0
 
                         # If the order is higher than 5, then we print using
                         # scientific notation.
