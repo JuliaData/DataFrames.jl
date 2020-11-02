@@ -96,6 +96,9 @@
 
 ## Dependency changes
 
+* DataAPI.jl version 1.4 is now required. It implies that `All(args...)` is
+  deprecated and `Cols(args...)` is recommended instead. `All()` is still supported.
+
 ## Other relevant changes
 
 * Documentation is now available also in *Dark* mode
