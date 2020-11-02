@@ -602,6 +602,8 @@ function _show(io::IO,
         crop = :horizontal
     end
 
+    compact_printing::Bool = get(io, :compact, true)
+
     # This vector stores the column indices that are only floats. In this case,
     # the printed numbers will be aligned in the decimal point.
     float_cols = Int[]
@@ -687,7 +689,8 @@ function _show(io::IO,
 
     # Create the formatter for floating point columns.
     ft_float = (v, i, j)->_pretty_tables_float_formatter(v, i, j, float_cols,
-                                                         indices, padding)
+                                                         indices, padding,
+                                                         compact_printing)
 
     # Make sure that `truncate` does not hide the type and the column name.
     maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
@@ -710,8 +713,6 @@ function _show(io::IO,
         show_row_number = false
         row_names = [string(rowid)]
     end
-
-    compact_printing::Bool = get(io, :compact, true)
 
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names_mat, types_str);

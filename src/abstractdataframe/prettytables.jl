@@ -61,8 +61,11 @@ end
 #   in the data frame.
 # - `padding` is a vector of vectors containing the padding of each element for
 #   each row.
+# - `compact_printing` must be a boolean indicating if we should enable the
+#   `:compact` option of `io` when converting the number to string.
 
-function _pretty_tables_float_formatter(v, i, j, float_cols, indices, padding)
+function _pretty_tables_float_formatter(v, i, j, float_cols, indices, padding,
+                                        compact_printing)
     length(float_cols) == 0 && return v
 
     # We apply this formatting only to the columns that contains only floats.
@@ -75,7 +78,7 @@ function _pretty_tables_float_formatter(v, i, j, float_cols, indices, padding)
             pad = padding[ind_col][ind_row]
 
             # Return the formatted number.
-            str = sprint(print, v)
+            str = sprint(print, v, context = :compact => compact_printing)
             return " "^pad * str
         end
     end
