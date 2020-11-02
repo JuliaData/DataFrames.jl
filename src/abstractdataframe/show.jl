@@ -590,7 +590,7 @@ function _show(io::IO,
 
     # NOTE: If we use `type` here, the time to print the first table is 2x more.
     # This should be something related to type inference.
-    types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
+    types_str = compacttype.(eltype.(eachcol(df)), maxwidth) |> permutedims
 
     crop = :both
 
@@ -659,9 +659,11 @@ function _show(io::IO,
 
                     v = df[kr, i]
 
+                    order_v::Int = 0
+
                     if v isa Number
                         abs_v = abs(v)
-                        log_v = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v)) : 0
+                        log_v::Int = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v)) : 0
 
                         # If the order is higher than 5, then we print using
                         # scientific notation.
@@ -670,8 +672,6 @@ function _show(io::IO,
                         # If the number is negative, we need to add an additional
                         # padding to print the sign.
                         v < 0 && (order_v += 1)
-                    else
-                        order_v = 0
                     end
 
                     order_i[k]   = order_v
