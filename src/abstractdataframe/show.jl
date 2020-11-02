@@ -609,7 +609,7 @@ function _show(io::IO,
     float_cols = Int[]
 
     # These vectors contain the number of the row and the padding that must be
-    # applied so that the float number is aligned with the decimal pointing.
+    # applied so that the float number is aligned with on the decimal point
     indices = Vector{Int}[]
     padding = Vector{Int}[]
 
@@ -626,8 +626,7 @@ function _show(io::IO,
     end
 
     if !allrows
-        # Get the maximum number of lines that we can display given the screen
-        # size.
+        # Get the maximum number of lines that we can display given the screen size.
         Δr = clamp(dsize[1] - 4, 0, num_rows)
     else
         Δr = num_rows
