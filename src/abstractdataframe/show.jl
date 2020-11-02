@@ -582,17 +582,15 @@ function _show(io::IO,
 
     _check_consistency(df)
 
-    aux       = names(df)
+    aux = names(df)
     names_len = textwidth.(aux)
-    maxwidth  = max.(9, names_len)
+    maxwidth = max.(9, names_len)
     names_mat = permutedims(aux)
-    types     = eltype.(eachcol(df))
+    types = eltype.(eachcol(df))
 
     # NOTE: If we use `type` here, the time to print the first table is 2x more.
     # This should be something related to type inference.
     types_str = compacttype.(eltype.(eachcol(df)), maxwidth) |> permutedims
-
-    crop = :both
 
     if allcols && allrows
         crop = :none
@@ -600,6 +598,8 @@ function _show(io::IO,
         crop = :vertical
     elseif allrows
         crop = :horizontal
+    else
+        crop = :both
     end
 
     compact_printing::Bool = get(io, :compact, true)
@@ -637,25 +637,21 @@ function _show(io::IO,
 
     # Do not align the numbers if there are more than 500 rows.
     if Δr ≤ 500
-        @inbounds for i = 1:Δc
+        for i = 1:Δc
             # TODO: Should we add support to `Union{Nothing, Float}`?
 
             # Analyze the order of the number to compute the maximum padding
             # that must be applied to align the numbers at the decimal point.
             if nonmissingtype(types[i]) <: AbstractFloat
                 max_pad_i = 0
-                order_i   = zeros(Δr)
+                order_i = zeros(Δr)
                 indices_i = zeros(Δr)
 
                 for k = 1:Δr
                     # We need to process the top and bottom of the table because
                     # we are cropping in the middle.
 
-                    if k ≤ Δr_lim
-                        kr = k
-                    else
-                        kr = num_rows - (k - Δr_lim) + 1
-                    end
+                    kr =  k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
 
                     v = df[kr, i]
 
@@ -674,7 +670,7 @@ function _show(io::IO,
                         v < 0 && (order_v += 1)
                     end
 
-                    order_i[k]   = order_v
+                    order_i[k] = order_v
                     indices_i[k] = kr
 
                     order_v > max_pad_i && (max_pad_i = order_v)

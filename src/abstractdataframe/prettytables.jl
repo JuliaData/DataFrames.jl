@@ -68,12 +68,12 @@ function _pretty_tables_float_formatter(v, i, j, float_cols, indices, padding,
     length(float_cols) == 0 && return v
 
     # We apply this formatting only to the columns that contains only floats.
-    ind_col = findfirst(x -> x == j, float_cols)
+    ind_col = findfirst(==(j), float_cols)
 
-    if !(ind_col === nothing)
-        ind_row = findfirst(x -> x == i, indices[ind_col])
+    if ind_col !== nothing
+        ind_row = findfirst(==(i), indices[ind_col])
 
-        if !(ind_row === nothing)
+        if ind_row !== nothing
             pad = padding[ind_col][ind_row]
 
             # Return the formatted number.
