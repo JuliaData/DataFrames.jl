@@ -605,7 +605,7 @@ function _show(io::IO,
     compact_printing::Bool = get(io, :compact, true)
 
     # This vector stores the column indices that are only floats. In this case,
-    # the printed numbers will be aligned in the decimal point.
+    # the printed numbers will be aligned on the decimal point.
     float_cols = Int[]
 
     # These vectors contain the number of the row and the padding that must be
