@@ -425,7 +425,7 @@ end
          Row │ a        b
              │ Nothing  $(Int)
         ─────┼────────────────
-         1   │          1"""
+           1 │          1"""
 
 
     df = DataFrame(a=1:3, b=["a", "b", "c"], c=Int64[1,0,1])
@@ -436,7 +436,7 @@ end
          Row │ b       c
              │ String  Int64
         ─────┼───────────────
-         2   │ b       0"""
+           2 │ b       0"""
 
     # Test two-argument show
     str1, size = capture_stdout() do
@@ -480,7 +480,7 @@ end
     DataFrameRow
      Row │ b  c
     ─────┼──────
-     2   │ b  0"""
+       2 │ b  0"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), dfr, eltypes=false)
@@ -489,7 +489,7 @@ end
     DataFrameRow
      Row │ b  c
     ─────┼──────
-     2   │ b  0"""
+       2 │ b  0"""
 
     io = IOBuffer()
     show(io, MIME("text/html"), dfr, eltypes=false)

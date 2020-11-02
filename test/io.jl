@@ -222,19 +222,20 @@ end
                            "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
         ]
     )
-    @test sprint(show, "text/plain", df) == """
+    @test sprint(show, "text/plain", df) ==
+        """
         8×2 DataFrame
          Row │ A      B
-             │ Int64  Markdown.MD
+             │ Int64  MD…
         ─────┼──────────────────────────────────────────
-         1   │ 1        DataFrames.jl (http://juliadat…
-         2   │ 4        \\frac{x^2}{x^2+y^2}
-         3   │ 9        Header\\n  ≡≡≡≡≡≡≡≡
-         4   │ 16       This is very, very, very, very…
-         5   │ 25    
-         6   │ 36       ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…
-         7   │ 49       ∫αγ∞1∫αγ∞\\n\\n    •    2∫αγ∞3∫α…
-         8   │ 64       ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…"""
+           1 │ 1        DataFrames.jl (http://juliadat…
+           2 │ 4        \\frac{x^2}{x^2+y^2}
+           3 │ 9        Header\\n  ≡≡≡≡≡≡≡≡
+           4 │ 16       This is very, very, very, very…
+           5 │ 25
+           6 │ 36       ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…
+           7 │ 49       ∫αγ∞1∫αγ∞\\n\\n    •    2∫αγ∞3∫α…
+           8 │ 64       ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…"""
 
     @test sprint(show, "text/csv", df) ==
         """
@@ -371,9 +372,9 @@ end
          Row │ A      B
              │ Int32  String
         ─────┼───────────────
-         1   │ 1      x
-         2   │ 2      y
-         3   │ 3      z"""
+           1 │ 1      x
+           2 │ 2      y
+           3 │ 3      z"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), eachcol(df), eltypes=true)
@@ -383,9 +384,9 @@ end
          Row │ A      B
              │ Int32  String
         ─────┼───────────────
-         1   │ 1      x
-         2   │ 2      y
-         3   │ 3      z"""
+           1 │ 1      x
+           2 │ 2      y
+           3 │ 3      z"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), eachrow(df), eltypes=true)
@@ -395,9 +396,9 @@ end
          Row │ A      B
              │ Int32  String
         ─────┼───────────────
-         1   │ 1      x
-         2   │ 2      y
-         3   │ 3      z"""
+           1 │ 1      x
+           2 │ 2      y
+           3 │ 3      z"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), df, eltypes=false)
@@ -406,9 +407,9 @@ end
         3×2 DataFrame
          Row │ A  B
         ─────┼──────
-         1   │ 1  x
-         2   │ 2  y
-         3   │ 3  z"""
+           1 │ 1  x
+           2 │ 2  y
+           3 │ 3  z"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), eachcol(df), eltypes=false)
@@ -417,9 +418,9 @@ end
         3×2 DataFrameColumns
          Row │ A  B
         ─────┼──────
-         1   │ 1  x
-         2   │ 2  y
-         3   │ 3  z"""
+           1 │ 1  x
+           2 │ 2  y
+           3 │ 3  z"""
 
     io = IOBuffer()
     show(io, MIME("text/plain"), eachrow(df), eltypes=false)
@@ -428,9 +429,9 @@ end
         3×2 DataFrameRows
          Row │ A  B
         ─────┼──────
-         1   │ 1  x
-         2   │ 2  y
-         3   │ 3  z"""
+           1 │ 1  x
+           2 │ 2  y
+           3 │ 3  z"""
 
     io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=true)
@@ -534,34 +535,34 @@ end
      Row │ A      B
          │ Int64  Any
     ─────┼──────────────────────────────────────────
-     1   │ 1      9×2 DataFrame
-     2   │ 2      2-element DataFrameRow
-     3   │ 3      1×2 SubDataFrame
-     4   │ 4      9-element DataFrameRows
-     5   │ 5      2-element DataFrameColumns
-     6   │ 6      GroupedDataFrame with 9 groups b…
-     7   │ 7      missing
-     8   │ 8     
-     9   │ 9      #undef"""
+       1 │ 1      9×2 DataFrame
+       2 │ 2      2-element DataFrameRow
+       3 │ 3      1×2 SubDataFrame
+       4 │ 4      9-element DataFrameRows
+       5 │ 5      2-element DataFrameColumns
+       6 │ 6      GroupedDataFrame with 9 groups b…
+       7 │ 7      missing
+       8 │ 8
+       9 │ 9      #undef"""
 
 
     io = IOBuffer()
     show(IOContext(io, :color => true), df)
     str = String(take!(io))
     @test str == """
-        \e[1m9×2 DataFrame\e[0m
-        \e[1m Row \e[0m│\e[0m\e[1m A     \e[0m\e[0m\e[1m B\e[0m\e[0m
-        \e[1m     \e[0m│\e[0m\e[90m Int64 \e[0m\e[0m\e[90m Any\e[0m\e[0m
-        ─────\e[0m┼\e[0m───────\e[0m\e[0m───────────────────────────────────\e[0m\e[0m
-         1   \e[0m│\e[0m 1     \e[0m\e[0m\e[90m 9×2 DataFrame\e[0m\e[0m
-         2   \e[0m│\e[0m 2     \e[0m\e[0m\e[90m 2-element DataFrameRow\e[0m\e[0m
-         3   \e[0m│\e[0m 3     \e[0m\e[0m\e[90m 1×2 SubDataFrame\e[0m\e[0m
-         4   \e[0m│\e[0m 4     \e[0m\e[0m\e[90m 9-element DataFrameRows\e[0m\e[0m
-         5   \e[0m│\e[0m 5     \e[0m\e[0m\e[90m 2-element DataFrameColumns\e[0m\e[0m
-         6   \e[0m│\e[0m 6     \e[0m\e[0m\e[90m GroupedDataFrame with 9 groups b…\e[0m\e[0m
-         7   \e[0m│\e[0m 7     \e[0m\e[0m\e[90m missing\e[0m\e[0m
-         8   \e[0m│\e[0m 8     \e[0m\e[0m\e[90m\e[0m\e[0m
-         9   \e[0m│\e[0m 9     \e[0m\e[0m\e[90m #undef\e[0m\e[0m"""
+    \e[1m9×2 DataFrame\e[0m
+    \e[1m Row \e[0m│\e[1m A     \e[0m\e[1m B                                 \e[0m
+    \e[1m     \e[0m│\e[90m Int64 \e[0m\e[90m Any                               \e[0m
+    ─────┼──────────────────────────────────────────
+       1 │ 1     \e[90m 9×2 DataFrame                     \e[0m
+       2 │ 2     \e[90m 2-element DataFrameRow            \e[0m
+       3 │ 3     \e[90m 1×2 SubDataFrame                  \e[0m
+       4 │ 4     \e[90m 9-element DataFrameRows           \e[0m
+       5 │ 5     \e[90m 2-element DataFrameColumns        \e[0m
+       6 │ 6     \e[90m GroupedDataFrame with 9 groups b… \e[0m
+       7 │ 7     \e[90m missing                           \e[0m
+       8 │ 8     \e[90m                                   \e[0m
+       9 │ 9     \e[90m #undef                            \e[0m"""
 
     io = IOBuffer()
     show(io, MIME("text/html"), df)
@@ -694,7 +695,7 @@ end
          Row │ x
              │ String
         ─────┼───────────────────────────────────
-         1   │ 01234567890123456789012345678901…"""
+           1 │ 01234567890123456789012345678901…"""
 
     io = IOBuffer()
     show(io, df)
@@ -704,7 +705,7 @@ end
          Row │ x
              │ String
         ─────┼───────────────────────────────────
-         1   │ 01234567890123456789012345678901…"""
+           1 │ 01234567890123456789012345678901…"""
 
     # no truncation
     io = IOBuffer()
@@ -715,7 +716,7 @@ end
          Row │ x
              │ String
         ─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────
-         1   │ 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"""
+           1 │ 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"""
 
     # custom truncation
     io = IOBuffer()
@@ -726,7 +727,7 @@ end
          Row │ x
              │ String
         ─────┼────────
-         1   │ 01234…"""
+           1 │ 01234…"""
 
 
     df = DataFrame(x12345678901234567890 = "0123456789"^10)
@@ -738,7 +739,7 @@ end
          r12345678901234567890 │ x12345678901234567890
                                │ String
         ───────────────────────┼───────────────────────
-         1                     │ 01234567890123456789…"""
+                             1 │ 01234567890123456789…"""
 
 end
 
