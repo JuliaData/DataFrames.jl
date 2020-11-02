@@ -68,7 +68,7 @@ function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
                                         indices::Vector{Vector{Int}},
                                         padding::Vector{Vector{Int}},
                                         compact_printing::Bool)
-    length(float_cols) == 0 && return v
+    isempty(float_cols) && return v
 
     # We apply this formatting only to the columns that contains only floats.
     ind_col = findfirst(==(j), float_cols)
@@ -85,5 +85,8 @@ function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
         end
     end
 
+    # The formatter is applied to all tables' cells. Hence, we must return the
+    # input value `v` unchanged if this cell is not part of a column that has
+    # floating point numbers.
     return v
 end
