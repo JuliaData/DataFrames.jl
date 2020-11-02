@@ -790,12 +790,12 @@ julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
 julia> show(df, allcols=true)
 3×2 DataFrame
-│ Row │ A     │ B      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ x      │
-│ 2   │ 2     │ y      │
-│ 3   │ 3     │ z      │
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │ 1      x
+   2 │ 2      y
+   3 │ 3      z
 ```
 """
 Base.show(io::IO,
