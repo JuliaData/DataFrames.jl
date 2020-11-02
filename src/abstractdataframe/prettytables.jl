@@ -36,7 +36,7 @@ const _PRETTY_TABLES_HIGHLIGHTER = Highlighter(_pretty_tables_highlighter_func,
 #     - nothing;
 #     - Cells with types related to DataFrames.jl.
 
-function _pretty_tables_general_formatter(v, i, j)
+function _pretty_tables_general_formatter(v, i::Integer, j::Integer)
     if typeof(v) <: Union{AbstractDataFrame, GroupedDataFrame, DataFrameRow,
                           DataFrameRows, DataFrameColumns}
 
@@ -63,8 +63,11 @@ end
 # - `compact_printing` must be a boolean indicating if we should enable the
 #   `:compact` option of `io` when converting the number to string.
 
-function _pretty_tables_float_formatter(v, i, j, float_cols, indices, padding,
-                                        compact_printing)
+function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
+                                        float_cols::Vector{Int},
+                                        indices::Vector{Vector{Int}},
+                                        padding::Vector{Vector{Int}},
+                                        compact_printing::Bool)
     length(float_cols) == 0 && return v
 
     # We apply this formatting only to the columns that contains only floats.
