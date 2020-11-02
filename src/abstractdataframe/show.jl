@@ -638,8 +638,6 @@ function _show(io::IO,
     # Do not align the numbers if there are more than 500 rows.
     if Δr ≤ 500
         for i = 1:Δc
-            # TODO: Should we add support to `Union{Nothing, Float}`?
-
             # Analyze the order of the number to compute the maximum padding
             # that must be applied to align the numbers at the decimal point.
             if nonmissingtype(types[i]) <: AbstractFloat
