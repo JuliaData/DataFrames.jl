@@ -618,7 +618,7 @@ function _show(io::IO,
     if !allcols
         # Given the spacing, there is no way to fit more than W/9 rows of
         # floating numbers in the screen, where W is the display width.
-        Δc = clamp(div(dsize[2],9), 0, num_cols)
+        Δc = clamp(div(dsize[2], 9), 0, num_cols)
     else
         Δc = num_cols
     end
@@ -626,7 +626,7 @@ function _show(io::IO,
     if !allrows
         # Get the maximum number of lines that we can display given the screen
         # size.
-        Δr     = clamp(dsize[1] - 4, 0, num_rows)
+        Δr = clamp(dsize[1] - 4, 0, num_rows)
     else
         Δr = num_rows
     end
@@ -638,16 +638,16 @@ function _show(io::IO,
         @inbounds for i = 1:Δc
             # TODO: Should we add support to `Union{Nothing, Float}`?
 
-            # Analyze the order of the number to compute the maximum padding that
-            # must be applied to align the numbers at the decimal point.
+            # Analyze the order of the number to compute the maximum padding
+            # that must be applied to align the numbers at the decimal point.
             if nonmissingtype(types[i]) <: AbstractFloat
                 max_pad_i = 0
                 order_i   = zeros(Δr)
                 indices_i = zeros(Δr)
 
                 for k = 1:Δr
-                    # We need to process the top and bottom of the table because we
-                    # are cropping in the middle.
+                    # We need to process the top and bottom of the table because
+                    # we are cropping in the middle.
 
                     if k ≤ Δr_lim
                         kr = k
