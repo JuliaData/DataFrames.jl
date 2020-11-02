@@ -243,11 +243,13 @@ end
     df2[!, :A] = ["a", missing, "c"]
     df2[!, :C] = Union{Int, Missing}[1, 2, 4]
 
-    m1 = innerjoin(df1, df2, on = :A)
+    @test_throws ArgumentError innerjoin(df1, df2, on = :A)
+    m1 = innerjoin(df1, df2, on = :A, matchmissing=:equal)
     @test size(m1) == (3,3)
     @test m1[!, :A] ≅ ["a","a", missing]
 
-    m2 = outerjoin(df1, df2, on = :A)
+    @test_throws ArgumentError outerjoin(df1, df2, on = :A)
+    m2 = outerjoin(df1, df2, on = :A, matchmissing=:equal)
     @test size(m2) == (5,3)
     @test m2[!, :A] ≅ ["a", "b", "a", missing, "c"]
 end
@@ -262,12 +264,12 @@ end
                     v2 = 1:6)
     df2[1,:a] = missing
 
-    m1 = innerjoin(df1, df2, on = [:a,:b])
+    m1 = innerjoin(df1, df2, on = [:a,:b], matchmissing=:equal)
     @test m1 == DataFrame(a=[:x,:x,:x,:x,:x,:y,:x,:x],
                           b=[:A,:A,:A,:A,:B,:B,:A,:A],
                           v1=[1,1,2,2,3,4,5,5],
                           v2=[3,6,3,6,4,2,3,6])
-    m2 = outerjoin(df1, df2, on = [:a,:b])
+    m2 = outerjoin(df1, df2, on = [:a,:b], matchmissing=:equal)
     @test m2 ≅ DataFrame(a=[:x,:x,:x,:x,:x,:y,:x,:x,:x,missing,:x],
                          b=[:A,:A,:A,:A,:B,:B,:A,:A,:D,:A,:C],
                          v1=[1,1,2,2,3,4,5,5,6,missing,missing],
