@@ -43,8 +43,7 @@ function _pretty_tables_general_formatter(v, i, j)
         # Here, we must not use `print` or `show`. Otherwise, we will call
         # `_pretty_table` to render the current table leading to a stack
         # overflow.
-        str = sprint(summary, v)
-        return str
+        return sprint(summary, v)
     elseif ismissing(v)
         return "missing"
     elseif v === nothing
