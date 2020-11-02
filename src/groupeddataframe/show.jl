@@ -12,7 +12,8 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    allcols::Bool = !get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
-                   truncate::Int = 32)
+                   truncate::Int = 32,
+                   kwargs...)
     N = length(gd)
 
     summary && Base.summary(io, gd)
@@ -29,8 +30,9 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
             println(io)
 
-            show(io, gd[i], summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, truncate=truncate)
+            show(io, gd[i]; summary=false,
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+                 truncate=truncate, kwargs...)
         end
     else
         if N > 0
@@ -44,8 +46,9 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
             println(io)
 
-            show(io, gd[1], summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, truncate=truncate)
+            show(io, gd[1]; summary=false,
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+                 truncate=truncate, kwargs...)
         end
         if N > 1
             nrows = size(gd[N], 1)
@@ -58,8 +61,9 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
             println(io)
 
-            show(io, gd[N], summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, truncate=truncate)
+            show(io, gd[N]; summary=false,
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+                 truncate=truncate, kwargs...)
         end
     end
 end
@@ -70,8 +74,10 @@ function Base.show(df::GroupedDataFrame;
                    allgroups::Bool = !get(stdout, :limit, true),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
-                   truncate::Int = 32) # -> Nothing
-    return show(stdout, df,
+                   truncate::Int = 32,
+                   kwargs...) # -> Nothing
+    return show(stdout, df;
                 allrows=allrows, allcols=allcols, allgroups=allgroups,
-                rowlabel=rowlabel, summary=summary, truncate=truncate)
+                rowlabel=rowlabel, summary=summary, truncate=truncate,
+                kwargs...)
 end

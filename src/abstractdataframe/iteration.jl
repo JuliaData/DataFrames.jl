@@ -252,11 +252,13 @@ function Base.show(io::IO, dfrs::DataFrameRows;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
                    eltypes::Bool = true,
-                   truncate::Int = 32)
+                   truncate::Int = 32,
+                   kwargs...)
     df = parent(dfrs)
     title = summary ? "$(nrow(df))×$(ncol(df)) DataFrameRows" : ""
-    _show(io, df, allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-          summary=false, eltypes=eltypes, truncate=truncate, title=title)
+    _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=false, eltypes=eltypes, truncate=truncate, title=title,
+          kwargs...)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
@@ -265,9 +267,10 @@ Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(io, dfrs, allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-         summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(io, dfrs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(dfrs::DataFrameRows;
           allrows::Bool = !get(stdout, :limit, true),
@@ -275,9 +278,10 @@ Base.show(dfrs::DataFrameRows;
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, dfrs, allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-         summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, dfrs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 function Base.show(io::IO, dfcs::DataFrameColumns;
                    allrows::Bool = !get(io, :limit, false),
@@ -285,11 +289,13 @@ function Base.show(io::IO, dfcs::DataFrameColumns;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
                    eltypes::Bool = true,
-                   truncate::Int = 32)
+                   truncate::Int = 32,
+                   kwargs...)
     df = parent(dfcs)
     title = summary ? "$(nrow(df))×$(ncol(df)) DataFrameColumns" : ""
-    _show(io, parent(dfcs), allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-          summary=false, eltypes=eltypes, truncate=truncate, title=title)
+    _show(io, parent(dfcs); allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=false, eltypes=eltypes, truncate=truncate, title=title,
+          kwargs...)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
@@ -298,9 +304,10 @@ Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(io, dfcs, allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-         summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(io, dfcs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(dfcs::DataFrameColumns;
           allrows::Bool = !get(stdout, :limit, true),
@@ -308,9 +315,10 @@ Base.show(dfcs::DataFrameColumns;
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, dfcs, allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-         summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, dfcs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
