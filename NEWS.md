@@ -5,7 +5,8 @@
 * the rules for transformations passed to `select`/`select!`, `transform`/`transform!`,
   and `combine` have been made more flexible; in particular now it is allowed to
   return multiple columns from a transformation function
-  [#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461)
+  ([#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461) and
+  [#2481](https://github.com/JuliaData/DataFrames.jl/pull/2481))
 * CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
   to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
   In the same vein, the `categorical` and `categorical!` functions
@@ -36,11 +37,19 @@
   choose the fast path only when it is safe; this resolves inconsistencies
   with what the same functions not using fast path produce
   ([#2357](https://github.com/JuliaData/DataFrames.jl/pull/2357))
+* joins now return `PooledVector` not `CategoricalVector` in indicator column
+  ([#2505](https://github.com/JuliaData/DataFrames.jl/pull/2505))
 * `GroupKeys` now supports `in` for `GroupKey`, `Tuple`, `NamedTuple` and dictionaries
   ([2392](https://github.com/JuliaData/DataFrames.jl/pull/2392))
 * in `describe` the specification of custom aggregation is now `function => name`;
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
+* in joins passing `NaN` or real or imaginary `-0.0` in `on` column now throws an
+  error; passing `missing` thows an error unless `matchmissing=:equal` keyword argument
+  is passed ([#2504](https://github.com/JuliaData/DataFrames.jl/pull/2504))
+* `unstack` now produces row and column keys in the order of their first appearance
+   and has two new keyword arguments `allowmissing` and `allowduplicates`
+  ([#2494](https://github.com/JuliaData/DataFrames.jl/pull/2494))
 
 ## New functionalities
 
@@ -77,6 +86,7 @@
 * passing empty sets of columns in `filter`/`filter!` and in `select`/`transform`/`combine`
   with `ByRow` is now accepted ([#2476](https://github.com/JuliaData/DataFrames.jl/pull/2476))
 * add `permutedims` method for `AbstractDataFrame` ([#2447](https://github.com/JuliaData/DataFrames.jl/pull/2447))
+* add support for `Cols` from DataAPI.jl ([#2495](https://github.com/JuliaData/DataFrames.jl/pull/2495))
 
 ## Deprecated
 
@@ -87,6 +97,9 @@
   ([#2350](https://github.com/JuliaData/DataFrames.jl/pull/2350))
 
 ## Dependency changes
+
+* DataAPI.jl version 1.4 is now required. It implies that `All(args...)` is
+  deprecated and `Cols(args...)` is recommended instead. `All()` is still supported.
 
 ## Other relevant changes
 

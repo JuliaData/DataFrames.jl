@@ -11,6 +11,7 @@ using Markdown
 import DataAPI,
        DataAPI.All,
        DataAPI.Between,
+       DataAPI.Cols,
        DataAPI.describe,
        Tables,
        Tables.columnindex,
@@ -21,6 +22,7 @@ export AbstractDataFrame,
        AsTable,
        Between,
        ByRow,
+       Cols,
        DataFrame,
        DataFrameRow,
        GroupedDataFrame,
@@ -105,6 +107,9 @@ include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
+include("groupeddataframe/callprocessing.jl")
+include("groupeddataframe/fastaggregates.jl")
+include("groupeddataframe/complextransforms.jl")
 
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")

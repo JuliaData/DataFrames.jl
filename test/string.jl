@@ -169,26 +169,23 @@ end
     @test combine(gdf, :a) == combine(gdf, "a") ==
           combine(gdf, [:a]) == combine(gdf, ["a"])
 
-    @test combine("a" => identity, gdf, ungroup=false) ==
-          combine(:a => identity, gdf, ungroup=false)
-    @test combine(["a"] => identity, gdf, ungroup=false) ==
-          combine([:a] => identity, gdf, ungroup=false)
-    @test combine(nrow => :n, gdf, ungroup=false) ==
-          combine(nrow => "n", gdf, ungroup=false)
+    @test combine(gdf, "a" => identity, ungroup=false) ==
+          combine(gdf, :a => identity, ungroup=false)
+    @test combine(gdf, ["a"] => identity, ungroup=false) ==
+          combine(gdf, [:a] => identity, ungroup=false)
+    @test combine(gdf, nrow => :n, ungroup=false) ==
+          combine(gdf, nrow => "n", ungroup=false)
 
-    @test combine("a" => identity, gdf) == combine(:a => identity, gdf) ==
-          combine(gdf, "a" => identity) == combine(gdf, :a => identity)
-    @test combine(["a"] => identity, gdf) == combine([:a] => identity, gdf) ==
-          combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
-    @test combine(nrow => :n, gdf) == combine(nrow => "n", gdf) ==
-          combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
+    @test combine(gdf, "a" => identity) == combine(gdf, :a => identity)
+    @test combine(gdf, ["a"] => identity) == combine(gdf, [:a] => identity)
+    @test combine(gdf, nrow => :n) == combine(gdf, nrow => "n")
 end
 
 @testset "DataFrameRow" begin
     dfr = DataFrame(a=1:2, b=3:4, c=5:6)[2, ["c", "a"]]
     @test names(dfr) == ["c", "a"]
     @test names(dfr, "a") == names(dfr, :a) == names(dfr, 2) == names(dfr, Not("c")) ==
-          names(dfr, All("a")) == names(dfr, Between("a", "a")) == ["a"]
+          names(dfr, All("a")) == names(dfr, Cols("a")) == names(dfr, Between("a", "a")) == ["a"]
     @test keys(dfr) == propertynames(dfr) == [:c, :a]
     @test haskey(dfr, :a) == haskey(dfr, "a") == true
     @test haskey(dfr, :z) == haskey(dfr, "z") == false

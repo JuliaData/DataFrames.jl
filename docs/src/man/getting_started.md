@@ -456,7 +456,11 @@ julia> df[!, :A] == df[:, :A]
 true
 ```
 
-In the first case, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1, :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
+In the first case, `[:A]` is a vector, indicating that the resulting object
+should be a `DataFrame`. On the other hand, `:A` is a single symbol, indicating
+that a single column vector should be extracted. Note that in the first case a
+vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1,
+:x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
 
 It is also possible to use a regular expression as a selector of columns matching it:
 ```jldoctest dataframe
@@ -475,7 +479,9 @@ julia> df[!, r"x"]
 │ 1   │ 1     │ 2     │
 ```
 
-A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be used to select all columns excluding a specific subset:
+A `Not` selector (from the
+[InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be
+used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
 julia> df[!, Not(:x1)]
@@ -486,8 +492,13 @@ julia> df[!, Not(:x1)]
 │ 1   │ 2     │ 3     │
 ```
 
-Finally, you can use `Not`, `Between`, and `All` selectors in more complex column selection scenarios.
-The following examples move all columns whose names match `r"x"` regular expression respectively to the front and to the end of a data frame:
+Finally, you can use `Not`, `Between`, `Cols` and `All` selectors in more
+complex column selection scenarios (note that `Cols()` selects no columns while
+`All()` selects all columns therefore `Cols` is a preferred selector if you
+write generic code). The following examples move all columns whose names match
+`r"x"` regular expression respectively to the front and to the end of a data
+frame:
+
 ```
 julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
@@ -496,14 +507,14 @@ julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 ├─────┼───────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │ 4     │
 
-julia> df[:, All(r"x", :)]
+julia> df[:, Cols(r"x", :)]
 1×4 DataFrame
 │ Row │ x1    │ x2    │ r     │ y     │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │
 ├─────┼───────┼───────┼───────┼───────┤
 │ 1   │ 2     │ 3     │ 1     │ 4     │
 
-julia> df[:, All(Not(r"x"), :)]
+julia> df[:, Cols(Not(r"x"), :)]
 1×4 DataFrame
 │ Row │ r     │ y     │ x1    │ x2    │
 │     │ Int64 │ Int64 │ Int64 │ Int64 │

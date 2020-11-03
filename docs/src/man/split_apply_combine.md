@@ -1,13 +1,29 @@
 # The Split-Apply-Combine Strategy
 
-Many data analysis tasks involve splitting a data set into groups, applying some
-functions to each of the groups and then combining the results. A standardized
-framework for handling this sort of computation is described in the paper
-"[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)",
-written by Hadley Wickham.
+Many data analysis tasks involve three steps:
+1. splitting a data set into groups,
+2. applying some functions to each of the groups,
+3. combining the results.
+
+Note that any of the steps 1 and 3 of this general procedure can be dropped,
+in which case we just transform a data frame without grouping it and later
+combining the result.
+
+A standardized framework for handling this sort of computation is described in
+the paper "[The Split-Apply-Combine Strategy for Data
+Analysis](http://www.jstatsoft.org/v40/i01)", written by Hadley Wickham.
 
 The DataFrames package supports the split-apply-combine strategy through the
-`groupby` function followed by `combine`, `select`/`select!` or `transform`/`transform!`.
+`groupby` function that creates a `GroupedDataFrame`,
+followed by `combine`, `select`/`select!` or `transform`/`transform!`.
+
+All operations described in this section of the manual are supported both for
+`AbstractDataFrame` (when split and combine steps are skipped) and
+`GroupedDataFrame`. Technically, `AbstractDataFrame` is just considered as being
+grouped on no columns (meaning it has a single group, or zero groups if it is
+empty). The only difference is that in this case the `keepkeys` and `ungroup`
+keyword arguments (described below) are not supported and a data frame is always
+returned, as there are no split and combine steps in this case.
 
 In order to perform operations by groups you first need to create a `GroupedDataFrame`
 object from your data frame using the `groupby` function that takes two arguments:
@@ -26,59 +42,107 @@ Operations can then be applied on each group using one of the following function
 
 All these functions take a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
-1. standard column selectors (integers, symbols, vectors of integers, vectors of symbols,
-   `All`, `:`, `Between`, `Not` and regular expressions)
+1. standard column selectors (integers, `Symbol`s, strings, vectors of integers,
+   vectors of `Symbol`s, vectors of strings,
+   `All`, `Cols`, `:`, `Between`, `Not` and regular expressions)
 2. a `cols => function` pair indicating that `function` should be called with
-   positional arguments holding columns `cols`, which can be a any valid column selector
-3. a `cols => function => target_col` form additionally
-   specifying the name of the target column (this assumes that `function` returns a single
-   value or a vector)
-4. a `col => target_col` pair, which renames the column `col` to `target_col`
-5. a `nrow` or `nrow => target_col` form which efficiently computes the number of rows
-   in a group (without `target_col` the new column is called `:nrow`)
-6. several arguments of the forms given above, or vectors thereof
-7. a function which will be called with a `SubDataFrame` corresponding to each group;
+   positional arguments holding columns `cols`, which can be a any valid column selector;
+   in this case target column name is automatically generated and it is assumed that
+   `function` returns a single value or a vector; the generated name is created by
+   concatenating source column name and `function` name by default (see examples below).
+3. a `cols => function => target_cols` form additionally explicitly specifying
+   the target column or columns.
+4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
+   must be single name (as a `Symbol` or a string).
+5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
+   in a group; without `target_cols` the new column is called `:nrow`, otherwise
+   it must be single name (as a `Symbol` or a string).
+6. vectors or matrices containing transformations specified by the `Pair` syntax
+   described in points 2 to 5
+8. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)
 
-As a special rule that applies to `cols => function` syntax, if `cols` is wrapped
-in an `AsTable` object then a `NamedTuple` containing columns selected by `cols` is
-passed to `function`.
+All functions have two types of signatures. One of them takes a `GroupedDataFrame`
+as the first argument and an arbitrary number of transformations described above
+as following arguments. The second type of signature is when a `Function` or a `Type`
+is passed as the first argument and a `GroupedDataFrame` as the second argument
+(similar to `map`).
 
-In all of these cases, `function` can return either a single row or multiple rows.
-`function` can always generate a single column by returning a single value or a vector.
-Additionally, if `combine` is passed exactly one `function`, `cols => function`,
-or `cols => function => outcol` as a first argument
-and `target_col` is not specified,
-`function` can return multiple columns in the form of an `AbstractDataFrame`,
-`AbstractMatrix`, `NamedTuple` or `DataFrameRow`.
+As a special rule, with the `cols => function` and `cols => function =>
+target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
+object then a `NamedTuple` containing columns selected by `cols` is passed to
+`function`.
+
+What is allowed for `function` to return is determined by the `target_cols` value:
+1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
+   then returning a data frame, a matrix, a `NamedTuple`, or a `DataFrameRow` will
+   produce multiple columns in the result. Returning any other value produces
+   a single column.
+2. If `target_cols` is a `Symbol` or a string then the function is assumed to return
+   a single column. In this case returning a data frame, a matrix, a `NamedTuple`,
+   or a `DataFrameRow` raises an error.
+3. If `target_cols` is a vector of `Symbol`s or strings or `AsTable` it is assumed
+   that `function` returns multiple columns.
+   If `function` returns one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
+   `AbstractMatrix` then rules described in point 1 above apply.
+   If `function` returns an `AbstractVector` then each element of this vector must
+   support the `keys` function, which must return a collection of `Symbol`s, strings
+   or integers; the return value of `keys` must be identical for all elements.
+   Then as many columns are created as there are elements in the return value
+   of the `keys` function. If `target_cols` is `AsTable` then their names
+   are set to be equal to the key names except if `keys` returns integers, in
+   which case they are prefixed by `x` (so the column names are e.g. `x1`,
+   `x2`, ...). If `target_cols` is a vector of `Symbol`s or strings then
+   column names produced using the rules above are ignored and replaced by
+   `target_cols` (the number of columns must be the same as the length of
+   `target_cols` in this case).
+   If `fun` returns a value of any other type then it is assumed that it is a
+   table conforming to the Tables.jl API and the `Tables.columntable` function
+   is called on it to get the resulting columns and their names. The names are
+   retained when `target_cols` is `AsTable` and are replaced if
+   `target_cols` is a vector of `Symbol`s or strings.
+
+In all of these cases, `function` can return either a single row or multiple
+rows. As a particular rule, values wrapped in a `Ref` or a `0`-dimensional
+`AbstractArray` are unwrapped and then treated as a single row.
 
 `select`/`select!` and `transform`/`transform!` always return a `DataFrame`
-with the same number of rows as the source.
-For `combine`, the shape of the resulting `DataFrame` is determined
-according to the following rules:
-- a single value produces a single row and column per group
-- a named tuple or `DataFrameRow` produces a single row and one column per field
-- a vector produces a single column with one row per entry
-- a named tuple of vectors produces one column per field with one row per entry in the vectors
-- a `DataFrame` or a matrix produces as many rows and columns as it contains;
-  note that this option should be avoided due to its poor performance when the number
-  of groups is large
+with the same number and order of rows as the source (even if `GroupedDataFrame`
+had its groups reordered).
 
-The kind of return value and the number and names of columns must be the same for all groups.
+For `combine`, rows in the returned object appear in the order of groups in the
+`GroupedDataFrame`. The functions can return an arbitrary number of rows for
+each group, but the kind of returned object and the number and names of columns
+must be the same for all groups, except when a `DataFrame()` or `NamedTuple()`
+is returned, in which case a given group is skipped.
 
 It is allowed to mix single values and vectors if multiple transformations
-are requested. In this case single value will be broadcasted to match the length
+are requested. In this case single value will be repeated to match the length
 of columns specified by returned vectors.
-As a particular rule, values wrapped in a `Ref` or a `0`-dimensional `AbstractArray`
-are unwrapped and then broadcasted.
 
-If a single value or a vector is returned by the `function` and `target_col` is not
-provided, it is generated automatically, by concatenating source column name and
-`function` name where possible (see examples below).
+To apply `function` to each row instead of whole columns, it can be wrapped in a
+`ByRow` struct. `cols` can be any column indexing syntax, in which case
+`function` will be passed one argument for each of the columns specified by
+`cols` or a `NamedTuple` of them if specified columns are wrapped in `AsTable`.
+If `ByRow` is used it is allowed for `cols` to select an empty set of columns,
+in which case `function` is called for each row without any arguments and an
+empty `NamedTuple` is passed if empty set of columns is wrapped in `AsTable`.
 
-We show several examples of the `by` function applied to the `iris` dataset below:
+There the following keyword arguments are supported by the transformation functions
+(not all keyword arguments are supported in all cases; in general they are allowed
+in situations when they are meaningful, see the documentation of the specific functions
+for details):
+- `keepkeys` : whether grouping columns should be kept in the returned data frame.
+- `ungroup` : whether the return value of the operation should be a data frame or a
+  `GroupedDataFrame`.
+- `copycols` : whether columns of the source data frame should be copied if no
+  transformation is applied to them.
+- `renamecols` : whether in the `cols => function` form automatically generated
+  column names should include the name of transformation functions or not.
+
+We show several examples of these functions applied to the `iris` dataset below:
 
 ```jldoctest sac
 julia> using DataFrames, CSV, Statistics
@@ -176,8 +240,8 @@ julia> combine(gdf, nrow, :PetalLength => mean => :mean)
 │ 2   │ Iris-versicolor │ 50    │ 4.26    │
 │ 3   │ Iris-virginica  │ 50    │ 5.552   │
 
-julia> combine([:PetalLength, :SepalLength] => (p, s) -> (a=mean(p)/mean(s), b=sum(p)),
-               gdf) # multiple columns are passed as arguments
+julia> combine(gdf, [:PetalLength, :SepalLength] => ((p, s) -> (a=mean(p)/mean(s), b=sum(p))) =>
+               AsTable) # multiple columns are passed as arguments
 3×3 DataFrame
 │ Row │ Species         │ a        │ b       │
 │     │ String          │ Float64  │ Float64 │
@@ -215,6 +279,14 @@ julia> combine(gdf, 1:2 => cor, nrow)
 │ 2   │ Iris-versicolor │ 0.525911                   │ 50    │
 │ 3   │ Iris-virginica  │ 0.457228                   │ 50    │
 
+julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
+3×3 DataFrame
+│ Row │ Species         │ min     │ max     │
+│     │ String          │ Float64 │ Float64 │
+├─────┼─────────────────┼─────────┼─────────┤
+│ 1   │ Iris-setosa     │ 1.0     │ 1.9     │
+│ 2   │ Iris-versicolor │ 3.0     │ 5.1     │
+│ 3   │ Iris-virginica  │ 4.5     │ 6.9     │
 ```
 
 Contrary to `combine`, the `select` and `transform` functions always return
@@ -268,7 +340,7 @@ julia> transform(gdf, :Species => x -> chop.(x, head=5, tail=0))
 │ 150 │ Iris-virginica │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ virginica        │
 ```
 
-The `combine` function also supports the `do` block form. However, as noted above,
+All functions also support the `do` block form. However, as noted above,
 this form is slow and should therefore be avoided when performance matters.
 
 ```jldoctest sac
@@ -385,7 +457,7 @@ julia> combine(gd, valuecols(gd) .=> mean)
 │ 2   │ Iris-versicolor │ 5.936            │ 2.77            │ 4.26             │ 1.326           │
 │ 3   │ Iris-virginica  │ 6.588            │ 2.974           │ 5.552            │ 2.026           │
 
-julia> combine(gd, valuecols(gd) .=> (x -> (x .- mean(x)) ./ std(x)) .=> valuecols(gd))
+julia> combine(gd, valuecols(gd) .=> (x -> (x .- mean(x)) ./ std(x)), renamecols=false)
 150×5 DataFrame
 │ Row │ Species        │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │
 │     │ String         │ Float64     │ Float64    │ Float64     │ Float64    │

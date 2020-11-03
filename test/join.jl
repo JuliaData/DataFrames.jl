@@ -573,25 +573,57 @@ end
     @test innerjoin(name, job, on=:ID, validate=(false, false)) == inner
 
     # Make sure ok with various special values
-    for special in [missing, NaN, 0.0, -0.0]
+    for special in [missing, NaN, -0.0]
         name_w_special = DataFrame(ID = [1, 2, 3, special],
                                    Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
-        @test innerjoin(name_w_special, job, on=:ID, validate=(true, false)) == inner
+        @test_throws ArgumentError innerjoin(name_w_special, job, on=:ID)
+        @test_throws ArgumentError leftjoin(name_w_special, job, on=:ID)
+        @test_throws ArgumentError rightjoin(name_w_special, job, on=:ID)
+        @test_throws ArgumentError outerjoin(name_w_special, job, on=:ID)
+        @test_throws ArgumentError semijoin(name_w_special, job, on=:ID)
+        @test_throws ArgumentError antijoin(name_w_special, job, on=:ID)
+    end
+
+    for special in [missing, 0.0]
+        name_w_special = DataFrame(ID = [1, 2, 3, special],
+                                   Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
+        @test innerjoin(name_w_special, job, on=:ID, validate=(true, false), matchmissing=:equal) ≅ inner
+        @test leftjoin(name_w_special, job, on=:ID, validate=(true, false), matchmissing=:equal) ≅
+              vcat(left, DataFrame(ID=special, Name="Maria Tester", Job=missing))
+        @test rightjoin(name_w_special, job, on=:ID, validate=(true, false), matchmissing=:equal) ≅ right
+        @test outerjoin(name_w_special, job, on=:ID, validate=(true, false), matchmissing=:equal)[[1:4;6;5], :] ≅
+              vcat(outer, DataFrame(ID=special, Name="Maria Tester", Job=missing))
+        @test semijoin(name_w_special, job, on=:ID, validate=(true, false), matchmissing=:equal) ≅ semi
+        @test antijoin(name_w_special, job, on=:ID, validate=(true, false), matchmissing=:equal) ≅
+              vcat(anti, DataFrame(ID=special, Name="Maria Tester"))
 
         # Make sure duplicated special values still an exception
         name_w_special_dups = DataFrame(ID = [1, 2, 3, special, special],
                                         Name = ["John Doe", "Jane Doe", "Joe Blogs",
                                                 "Maria Tester", "Jill Jillerson"])
         @test_throws ArgumentError innerjoin(name_w_special_dups, name, on=:ID,
+                                        validate=(true, false), matchmissing=:equal)
+    end
+
+    for special in [NaN, -0.0]
+        name_w_special = DataFrame(ID = categorical([1, 2, 3, special]),
+                                   Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
+        @test innerjoin(name_w_special, categorical(job, :ID), on=:ID, validate=(true, false)) == inner
+
+        # Make sure duplicated special values still an exception
+        name_w_special_dups = DataFrame(ID = categorical([1, 2, 3, special, special]),
+                                        Name = ["John Doe", "Jane Doe", "Joe Blogs",
+                                                "Maria Tester", "Jill Jillerson"])
+        @test_throws ArgumentError innerjoin(name_w_special_dups, categorical(name, :ID), on=:ID,
                                         validate=(true, false))
     end
 
     # Check 0.0 and -0.0 seen as different
-    name_w_zeros = DataFrame(ID = [1, 2, 3, 0.0, -0.0],
+    name_w_zeros = DataFrame(ID = categorical([1, 2, 3, 0.0, -0.0]),
                              Name = ["John Doe", "Jane Doe",
                                      "Joe Blogs", "Maria Tester",
                                      "Jill Jillerson"])
-    name_w_zeros2 = DataFrame(ID = [1, 2, 3, 0.0, -0.0],
+    name_w_zeros2 = DataFrame(ID = categorical([1, 2, 3, 0.0, -0.0]),
                               Name = ["John Doe", "Jane Doe",
                                       "Joe Blogs", "Maria Tester",
                                       "Jill Jillerson"],
@@ -885,6 +917,17 @@ end
     df3 = DataFrame(id=[1,3,4], z=[1,3,4])
     @test_throws ArgumentError join(df1, df2, df3, on=:id, kind=:left)
     @test_throws ArgumentError join(df1, df2, on=:id, kind=:inner)
+end
+
+@testset "join mixing DataFrame and SubDataFrame" begin
+    df1 = DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+    df1_copy = df1[df1.a .> 1, :]
+    df1_view1 = @view df1[df1.a .> 1, :]
+    df1_view2 = @view df1[df1.a .> 1, 1:2]
+    df2 = DataFrame(a=[1, 2, 3], c=[7, 8, 9])
+    @test innerjoin(df1_copy, df2, on=:a) ==
+          innerjoin(df1_view1, df2, on=:a) ==
+          innerjoin(df1_view2, df2, on=:a)
 end
 
 end # module
