@@ -4,10 +4,10 @@ using Test, DataFrames, PooledArrays, Random, CategoricalArrays
 
 const ≅ = isequal
 
-refdf = DataFrame(reshape(1.5:15.5, (3,5)), [:x1, :x2, :x3, :x4, :x5])
+refdf = DataFrame(reshape(1.5:15.5, (3,5)), :auto)
 
 @testset "CartesianIndex" begin
-    df = DataFrame(rand(2, 3), [:x1, :x2, :x3])
+    df = DataFrame(rand(2, 3), :auto)
     for i in axes(df, 1), j in axes(df, 2)
         @test df[i,j] == df[CartesianIndex(i,j)]
         r = rand()
@@ -995,32 +995,32 @@ end
 end
 
 @testset "tuple broadcasting" begin
-    X = DataFrame(zeros(2, 3), [:x1, :x2, :x3])
+    X = DataFrame(zeros(2, 3), :auto)
     X .= (1, 2)
-    @test X == DataFrame([1 1 1; 2 2 2], [:x1, :x2, :x3])
+    @test X == DataFrame([1 1 1; 2 2 2], :auto)
 
-    X = DataFrame(zeros(2, 3), [:x1, :x2, :x3])
+    X = DataFrame(zeros(2, 3), :auto)
     X .= (1, 2) .+ 10 .- X
-    @test X == DataFrame([11 11 11; 12 12 12], [:x1, :x2, :x3])
+    @test X == DataFrame([11 11 11; 12 12 12], :auto)
 
-    X = DataFrame(zeros(2, 3), [:x1, :x2, :x3])
+    X = DataFrame(zeros(2, 3), :auto)
     X .+= (1, 2) .+ 10
-    @test X == DataFrame([11 11 11; 12 12 12], [:x1, :x2, :x3])
+    @test X == DataFrame([11 11 11; 12 12 12], :auto)
 
-    df = DataFrame(rand(2, 3), [:x1, :x2, :x3])
-    @test floor.(Int, df ./ (1,)) == DataFrame(zeros(Int, 2, 3), [:x1, :x2, :x3])
+    df = DataFrame(rand(2, 3), :auto)
+    @test floor.(Int, df ./ (1,)) == DataFrame(zeros(Int, 2, 3), :auto)
     df .= floor.(Int, df ./ (1,))
-    @test df == DataFrame(zeros(2, 3), [:x1, :x2, :x3])
+    @test df == DataFrame(zeros(2, 3), :auto)
 
-    df = DataFrame(rand(2, 3), [:x1, :x2, :x3])
+    df = DataFrame(rand(2, 3), :auto)
     @test_throws InexactError convert.(Int, df)
     df2 = convert.(Int, floor.(df))
-    @test df2 == DataFrame(zeros(Int, 2, 3), [:x1, :x2, :x3])
+    @test df2 == DataFrame(zeros(Int, 2, 3), :auto)
     @test eltype.(eachcol(df2)) == [Int, Int, Int]
 end
 
 @testset "scalar on assignment side" begin
-    df = DataFrame(rand(2, 3), [:x1, :x2, :x3])
+    df = DataFrame(rand(2, 3), :auto)
     @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
     df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
@@ -1030,17 +1030,17 @@ end
 end
 
 @testset "nothing test" begin
-    X = DataFrame(Any[1 2; 3 4], [:x1, :x2])
+    X = DataFrame(Any[1 2; 3 4], :auto)
     X .= nothing
-    @test (X .== nothing) == DataFrame(trues(2, 2), [:x1, :x2])
+    @test (X .== nothing) == DataFrame(trues(2, 2), :auto)
 
-    X = DataFrame([1 2; 3 4], [:x1, :x2])
+    X = DataFrame([1 2; 3 4], :auto)
     @test_throws MethodError X .= nothing
-    @test X == DataFrame([1 2; 3 4], [:x1, :x2])
+    @test X == DataFrame([1 2; 3 4], :auto)
 
-    X = DataFrame([1 2; 3 4], [:x1, :x2])
+    X = DataFrame([1 2; 3 4], :auto)
     foreach(i -> X[!, i] .= nothing, axes(X, 2))
-    @test (X .== nothing) == DataFrame(trues(2, 2), [:x1, :x2])
+    @test (X .== nothing) == DataFrame(trues(2, 2), :auto)
 end
 
 @testset "aliasing test" begin
@@ -1071,7 +1071,7 @@ end
 
     Random.seed!(1234)
     for i in 1:10
-        df1 = DataFrame(rand(100, 100), :gennames)
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
             df2[!, rand(1:100)] = df1[!, i]
@@ -1083,7 +1083,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100), :gennames)
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
             df2[!, rand(1:100)] = df1[!, i]
@@ -1095,7 +1095,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100), :gennames)
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
             df2[!, rand(1:100)] = df1[!, i]
@@ -1107,7 +1107,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100), :gennames)
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
@@ -1125,7 +1125,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100), :gennames)
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
@@ -1143,7 +1143,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100), :gennames)
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
@@ -1162,7 +1162,7 @@ end
 end
 
 @testset "@. test" begin
-    df = DataFrame(rand(2, 3), [:x1, :x2, :x3])
+    df = DataFrame(rand(2, 3), :auto)
     sdf = view(df, 1:1, :)
     dfm = Matrix(df)
     sdfm = Matrix(sdf)
@@ -1177,7 +1177,7 @@ end
 
 @testset "test common cases" begin
     m = rand(1000, 10)
-    df = DataFrame(m, :gennames)
+    df = DataFrame(m, :auto)
     @test df .+ 1 == DataFrame(m .+ 1, names(df))
     @test df .+ transpose(1:10) == DataFrame(m .+ transpose(1:10), names(df))
     @test df .+ (1:1000) == DataFrame(m .+ (1:1000), names(df))
@@ -1257,7 +1257,7 @@ end
 
 @testset "broadcasting with 3-dimensional object" begin
     y = zeros(4,3,2)
-    df = DataFrame(ones(4,3), :gennames)
+    df = DataFrame(ones(4,3), :auto)
     @test_throws DimensionMismatch df .+ y
     @test_throws DimensionMismatch y .+ df
     @test_throws DimensionMismatch df .+= y
@@ -1658,51 +1658,51 @@ end
                      ["x1", "x2"], Between("x1", "x2")]
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= "a"
-        @test df == DataFrame(fill("a", 3, 2), [:x1, :x2])
+        @test df == DataFrame(fill("a", 3, 2), :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= Ref((a=1,b=2))
-        @test df == DataFrame(fill((a=1, b=2), 3, 2), [:x1, :x2])
+        @test df == DataFrame(fill((a=1, b=2), 3, 2), :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= ["a" "b"]
         @test df == DataFrame(["a" "b"
                                "a" "b"
-                               "a" "b"], [:x1, :x2])
+                               "a" "b"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= ["a", "b", "c"]
         @test df == DataFrame(["a" "a"
                                "b" "b"
-                               "c" "c"], [:x1, :x2])
+                               "c" "c"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= categorical(["a"])
         @test df == DataFrame(["a" "a"
                                "a" "a"
-                               "a" "a"], [:x1, :x2])
+                               "a" "a"], :auto)
         @test df.x1 isa CategoricalVector
         @test df.x2 isa CategoricalVector
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
-        df[!, selector] .= DataFrame(["a" "b"], [:x1, :x2])
+        df[!, selector] .= DataFrame(["a" "b"], :auto)
         @test df == DataFrame(["a" "b"
                                "a" "b"
-                               "a" "b"], [:x1, :x2])
+                               "a" "b"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= DataFrame(["a" "d"
                                       "b" "e"
-                                      "c" "f"], [:x1, :x2])
+                                      "c" "f"], :auto)
         @test df == DataFrame(["a" "d"
                                "b" "e"
-                               "c" "f"], [:x1, :x2])
+                               "c" "f"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
@@ -1711,19 +1711,19 @@ end
                             "c" "f"]
         @test df == DataFrame(["a" "d"
                                "b" "e"
-                               "c" "f"], [:x1, :x2])
+                               "c" "f"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= "a"
         @test df == DataFrame(["a" "a" 1
                                "a" "a" 1
-                               "a" "a" 1], [:x1, :x2, :x3])
+                               "a" "a" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= Ref((a=1,b=2))
-        @test df[:, 1:2] == DataFrame(fill((a=1, b=2), 3, 2), [:x1, :x2])
+        @test df[:, 1:2] == DataFrame(fill((a=1, b=2), 3, 2), :auto)
         @test df[:, 3] == [1, 1, 1]
         @test df.x1 !== df.x2
 
@@ -1731,39 +1731,39 @@ end
         df[!, selector] .= ["a" "b"]
         @test df == DataFrame(["a" "b" 1
                                "a" "b" 1
-                               "a" "b" 1], [:x1, :x2, :x3])
+                               "a" "b" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= ["a", "b", "c"]
         @test df == DataFrame(["a" "a" 1
                                "b" "b" 1
-                               "c" "c" 1], [:x1, :x2, :x3])
+                               "c" "c" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= categorical(["a"])
         @test df == DataFrame(["a" "a" 1
                                "a" "a" 1
-                               "a" "a" 1], [:x1, :x2, :x3])
+                               "a" "a" 1], :auto)
         @test df.x1 isa CategoricalVector
         @test df.x2 isa CategoricalVector
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
-        df[!, selector] .= DataFrame(["a" "b"], [:x1, :x2])
+        df[!, selector] .= DataFrame(["a" "b"], :auto)
         @test df == DataFrame(["a" "b" 1
                                "a" "b" 1
-                               "a" "b" 1], [:x1, :x2, :x3])
+                               "a" "b" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= DataFrame(["a" "d"
                                       "b" "e"
-                                      "c" "f"], [:x1, :x2])
+                                      "c" "f"], :auto)
         @test df == DataFrame(["a" "d" 1
                                "b" "e" 1
-                               "c" "f" 1], [:x1, :x2, :x3])
+                               "c" "f" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
@@ -1772,7 +1772,7 @@ end
                             "c" "f"]
         @test df == DataFrame(["a" "d" 1
                                "b" "e" 1
-                               "c" "f" 1], [:x1, :x2, :x3])
+                               "c" "f" 1], :auto)
         @test df.x1 !== df.x2
     end
 
@@ -1787,7 +1787,7 @@ end
 end
 
 @testset "@views on df[!, col]" begin
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     @views df[!, 1] .+= 1
     @test df[!, 1] == [2.0, 2.0, 2.0]
     @views df[:, 2] .= df[!, 4] .+ df[!, 3]
@@ -1798,7 +1798,7 @@ end
 end
 
 @testset "broadcasting of df[:, col] = value" begin
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     z = ["a", "b", "c"]
     df[:, :z] .= z
     @test df.z == z
@@ -1806,29 +1806,29 @@ end
     @test_throws ArgumentError df[:, 6] .= z
     @test_throws MethodError df[:, 1] .= z
 
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     z = "abc"
     df[:, :z] .= z
     @test df.z == fill("abc", 3)
     @test_throws ArgumentError df[:, 6] .= z
     @test_throws MethodError df[:, 1] .= z
 
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 1)
     @test_throws DimensionMismatch df[:, :z] .= z
 
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     z = ["a", "b", "c"]
     df[:, "z"] .= z
     @test df.z == z
     @test df.z !== z
 
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     z = "abc"
     df[:, "z"] .= z
     @test df.z == fill("abc", 3)
 
-    df = DataFrame(ones(3, 4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 1)
     @test_throws DimensionMismatch df[:, "z"] .= z
 end

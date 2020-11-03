@@ -97,7 +97,7 @@ end
 end
 
 @testset "SubDataFrame" begin
-    df = DataFrame([11:16 21:26 31:36 41:46], :gennames)
+    df = DataFrame([11:16 21:26 31:36 41:46], :auto)
     sdf = view(df, [3,1,4], [3,1,4])
     @test sdf == df[[3,1,4], [3,1,4]]
     @test eachrow(sdf) == eachrow(df[[3,1,4], [3,1,4]])
@@ -107,7 +107,7 @@ end
 end
 
 @testset "parent mutation" begin
-    df = DataFrame([11:16 21:26 31:36 41:46], :gennames)
+    df = DataFrame([11:16 21:26 31:36 41:46], :auto)
     sdf = view(df, [3,1,4], [3,1,4])
     erd = eachrow(df)
     erv = eachrow(sdf)
@@ -122,7 +122,7 @@ end
 end
 
 @testset "getproperty and propertynames" begin
-    df_base = DataFrame([11:16 21:26 31:36 41:46], :gennames)
+    df_base = DataFrame([11:16 21:26 31:36 41:46], :auto)
     for df in (df_base, view(df_base, 1:3, 1:3))
         for x in (eachcol(df), eachrow(df))
             @test propertynames(x) == propertynames(df)
@@ -141,7 +141,7 @@ end
 end
 
 @testset "keys, values and pairs for eachcol" begin
-    df = DataFrame([11:16 21:26 31:36 41:46], :gennames)
+    df = DataFrame([11:16 21:26 31:36 41:46], :auto)
 
     cols = eachcol(df)
 

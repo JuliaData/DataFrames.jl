@@ -5,8 +5,8 @@ const ≅ = isequal
 
 @testset "constructors" begin
     df1 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
-    df2 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]], :gennames)
-    df3 = DataFrame([[1, 2, missing, 4]], :gennames)
+    df2 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]], :auto)
+    df3 = DataFrame([[1, 2, missing, 4]], :auto)
     df6 = DataFrame([[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
@@ -112,9 +112,9 @@ end
 
 @testset "completecases and dropmissing" begin
     df1 = DataFrame([Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)],
-                    :gennames)
+                    :auto)
     df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]],
-                    :gennames)
+                    :auto)
 
     @test df2[completecases(df2), :] == df2[[1, 2, 4], :]
     @test dropmissing(df2) == df2[[1, 2, 4], :]
@@ -183,7 +183,7 @@ end
 end
 
 @testset "dropmissing and unique view kwarg test" begin
-    df = DataFrame(rand(3,4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(rand(3,4), :auto)
     for fun in (dropmissing, unique)
         @test fun(df) isa DataFrame
         @inferred fun(df)
@@ -411,7 +411,7 @@ end
 end
 
 @testset "filter view kwarg test" begin
-    df = DataFrame(rand(3,4), [:x1, :x2, :x3, :x4])
+    df = DataFrame(rand(3,4), :auto)
     for fun in (row -> row.x1 > 0, :x1 => x -> x > 0, "x1" => x -> x > 0,
                 [:x1] => x -> x > 0, ["x1"] => x -> x > 0,
                 r"1" => x -> x > 0, AsTable(:) => x -> x.x1 > 0)

@@ -1,5 +1,5 @@
 @testset "begin and end tests" begin
-    df = DataFrame([(i, j) for i in 1:3, j in 1:4], [:x1, :x2, :x3, :x4])
+    df = DataFrame([(i, j) for i in 1:3, j in 1:4], :auto)
     @test df[begin, begin] == df[1, 1]
     @test df[begin, end] == df[1, 4]
     @test df[end, begin] == df[3, 1]

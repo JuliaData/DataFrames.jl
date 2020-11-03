@@ -121,9 +121,9 @@ end
 # this deprecation is very important, becuase without it users will
 # get strange results with old code as described in https://github.com/JuliaData/Tables.jl/issues/208
 @deprecate DataFrame(columns::AbstractVector{<:AbstractVector}; makeunique::Bool=false,
-                     copycols::Bool=true) DataFrame(columns, :gennames, copycols=copycols)
+                     copycols::Bool=true) DataFrame(columns, :auto, copycols=copycols)
 
-@deprecate DataFrame(columns::AbstractMatrix) DataFrame(columns, :gennames)
+@deprecate DataFrame(columns::AbstractMatrix) DataFrame(columns, :auto)
 
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type

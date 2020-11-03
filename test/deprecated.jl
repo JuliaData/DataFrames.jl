@@ -159,7 +159,7 @@ end
 end
 
 @testset "categorical!" begin
-    df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
+    df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]], :auto)
     @test all(map(<:, eltype.(eachcol(categorical!(deepcopy(df)))),
                   [CategoricalArrays.CategoricalValue{String,UInt32},
                    Char, Bool, Int,
@@ -205,7 +205,7 @@ end
                    CategoricalArrays.CategoricalValue{Int,UInt32},
                    String]))
 
-    df = DataFrame([["a", missing]])
+    df = DataFrame([["a", missing]], :auto)
     categorical!(df)
     @test df.x1 isa CategoricalVector{Union{Missing, String}}
 
@@ -230,9 +230,9 @@ end
 end
 
 @testset "deprecated DataFrame constructors" begin
-    @test DataFrame(([1,2], [3,4])) == DataFrame([[1,2], [3,4]], :gennames)
+    @test DataFrame(([1,2], [3,4])) == DataFrame([[1,2], [3,4]], :auto)
     @test DataFrame((categorical([1,2]), categorical([3,4]))) ==
-          DataFrame([categorical([1,2]), categorical([3,4])], :gennames)
+          DataFrame([categorical([1,2]), categorical([3,4])], :auto)
     @test DataFrame(([1,2], [3,4]), ("a", "b")) == DataFrame([[1,2], [3,4]], ["a", "b"])
     @test DataFrame(([1,2], [3,4]), (:a, :b)) == DataFrame([[1,2], [3,4]], [:a, :b])
     @test DataFrame(([1,2,3], [1,2,3])) == DataFrame((1:3, 1:3)) == DataFrame((1:3, [1,2,3]))
@@ -310,7 +310,7 @@ end
     @test df."x1" === x
     @test df."x2" === y
 
-    df = DataFrame([1 2; 3 4])
+    df = DataFrame([1 2; 3 4], :auto)
     @test size(df) == (2, 2)
     @test df.x1 == [1, 3]
     @test df.x2 == [2, 4]

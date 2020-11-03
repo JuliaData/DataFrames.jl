@@ -215,7 +215,7 @@ end
     @test names(DataFrames.index(df2)) == ["y"]
     @test DataFrames._names(DataFrames.index(df2)) == [:y]
 
-    x = DataFrame(ones(5,4), :gennames)
+    x = DataFrame(ones(5,4), :auto)
     df = view(x, 2:3, 2:3)
     @test names(df) == names(x)[2:3]
     df = view(x, 2:3, [4,2])
@@ -241,12 +241,12 @@ end
 end
 
 @testset "duplicate column" begin
-    df = DataFrame([11:16 21:26 31:36 41:46], :gennames)
+    df = DataFrame([11:16 21:26 31:36 41:46], :auto)
     @test_throws ArgumentError view(df, [3,1,4], [3,3,3])
 end
 
 @testset "conversion to DataFrame" begin
-    df = DataFrame([11:16 21:26 31:36 41:46], :gennames)
+    df = DataFrame([11:16 21:26 31:36 41:46], :auto)
     sdf = view(df, [3,1,4], [3,2,1])
     df2 = DataFrame(sdf)
     @test df2 isa DataFrame
