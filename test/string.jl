@@ -185,7 +185,7 @@ end
     dfr = DataFrame(a=1:2, b=3:4, c=5:6)[2, ["c", "a"]]
     @test names(dfr) == ["c", "a"]
     @test names(dfr, "a") == names(dfr, :a) == names(dfr, 2) == names(dfr, Not("c")) ==
-          names(dfr, All("a")) == names(dfr, Cols("a")) == names(dfr, Between("a", "a")) == ["a"]
+          names(dfr, ["a"]) == names(dfr, Cols("a")) == names(dfr, Between("a", "a")) == ["a"]
     @test keys(dfr) == propertynames(dfr) == [:c, :a]
     @test haskey(dfr, :a) == haskey(dfr, "a") == true
     @test haskey(dfr, :z) == haskey(dfr, "z") == false
