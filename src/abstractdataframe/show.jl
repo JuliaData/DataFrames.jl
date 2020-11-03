@@ -588,9 +588,9 @@ function _show(io::IO,
     names_mat = permutedims(aux)
     types = eltype.(eachcol(df))
 
-    # NOTE: If we use `type` here, the time to print the first table is 2x more.
+    # NOTE: If we reuse `types` here, the time to print the first table is 2x more.
     # This should be something related to type inference.
-    types_str = compacttype.(eltype.(eachcol(df)), maxwidth) |> permutedims
+    types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
 
     if allcols && allrows
         crop = :none
@@ -648,7 +648,7 @@ function _show(io::IO,
                     # We need to process the top and bottom of the table because
                     # we are cropping in the middle.
 
-                    kr =  k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
+                    kr = k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
 
                     v = df[kr, i]
 
@@ -656,7 +656,8 @@ function _show(io::IO,
 
                     if v isa Number
                         abs_v = abs(v)
-                        log_v = (!isinf(v) && !isnan(v) && abs_v > 1) ? floor(Int, log10(abs_v))::Int : 0
+                        log_v = (v isa Union{Real, Complex} && !isinf(v) && !isnan(v) && abs_v > 1) ?
+                            floor(Int, log10(abs_v))::Int : 0
 
                         # If the order is higher than 5, then we print using
                         # scientific notation.
