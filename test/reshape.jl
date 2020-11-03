@@ -36,8 +36,8 @@ const ≅ = isequal
                    Value = Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
     levels!(df[!, 1], ["XXX", "Bob", "Batman"])
     levels!(df[!, 2], ["YYY", "Color", "Mass"])
-    df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
+    df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(string(x)), "_"))
+    df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(string(x)), "_"))
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
                     _MASS_ = Union{String, Missing}["12 g", "18 g"],
                     _COLOR_ = Union{String, Missing}["Red", "Grey"])
@@ -520,7 +520,7 @@ end
         @test unstack(df2, [:id, :id2], :var, :val) == wide2
         @test unstack(df2, :var, :val) == wide3
 
-        df2 = categorical(df, 1:3)
+        df2 = transform(df, 1:3 .=> categorical, renamecols=false)
         @test unstack(df2, :id, :var, :val) == wide1
         @test unstack(df2, [:id, :id2], :var, :val) == wide2
         @test unstack(df2, :var, :val) == wide3
