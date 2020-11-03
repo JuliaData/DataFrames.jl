@@ -44,8 +44,8 @@ fromcolumns(x, names; copycols::Bool=true) =
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
     if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
-        # here we handle the case that is accepted a DataFrame constructor
-        # defined for a vector of `Pair`s but eltype(x) is less specific
+        # here we handle eltypes not specific enough to be dispatched
+        # to other DataFrames constructors taking vector of `Pair`s
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
             all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],

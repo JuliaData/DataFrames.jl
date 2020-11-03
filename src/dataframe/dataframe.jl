@@ -37,17 +37,16 @@ to represent a column name to column value mapping and column name must be a
 in which case its entries are considered to define the column name and column
 value pairs with the exception that in this case column names can be of any type
 and will be always converted to a `Symbol`. In all these constructors column
-value can be a vector which is consumed as is or any other type that is not an
-`AbstractArray`. In the latter case the passed value is automatically repeated
+value can be a vector which is consumed as is or an object of any other type (except
+`AbstractArray`). In the latter case the passed value is automatically repeated
 to fill a new vector of the appropriate length. As a particular rule values
 stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
 in the same way.
 
-It is also allowed to pass a vector of vectors or a matrix as a first positional
-argument to a `DataFrame` constructor. In thi case they must be followed by
-a vector of `Symbol`s or strings specifying column names or a symbol `:gennames`
-as a second positional argument in wich case the column names `x1`, `x2`, ...
-are automatically generated.
+It is also allowed to pass a vector of vectors or a matrix as as the first
+argument. In this case the second argument must be
+a vector of `Symbol`s or strings specifying column names, or the symbol `:gennames`
+to generate column names `x1`, `x2`, ... automatically.
 
 Finally it is allowed to construct a `DataFrame` from a `DataFrameRow` or a
 `GroupedDataFrame`. In the latter case the `keepkeys` keyword argument specifies
@@ -58,7 +57,7 @@ of groups in the `GroupedDataFrame` passed.
 # Notes
 
 The `DataFrame` constructor by default copies all columns vectors passed to it.
-Pass `copycols=false` keyword argument (where supported) to reuse vectors without
+Pass the `copycols=false` keyword argument (where supported) to reuse vectors without
 copying them.
 
 By default an error will be raised if duplicates in column names are found. Pass
@@ -71,7 +70,7 @@ always collected to a `Vector` (even if `copycols=false`). As a general rule
 `AbstractRange` values are always materialized to a `Vector` by all functions in
 DataFrames.jl before being stored in a `DataFrame`.
 
-`DataFrame` object is designed to allow column types to vary and to be
+The `DataFrame` type is designed to allow column types to vary and to be
 dynamically changed also after it is constructed. Therefore `DataFrame`s are not
 type stable.
 
