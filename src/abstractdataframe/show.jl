@@ -644,13 +644,15 @@ function _show(io::IO,
                 order_i = zeros(Δr)
                 indices_i = zeros(Δr)
 
+                col = df[!, i]
+
                 for k = 1:Δr
                     # We need to process the top and bottom of the table because
                     # we are cropping in the middle.
 
                     kr = k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
 
-                    v = df[kr, i]
+                    v = col[kr]
 
                     order_v = 0
 
