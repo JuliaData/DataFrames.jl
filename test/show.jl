@@ -161,7 +161,7 @@ end
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
     str1 = capture_stdout() do
-        show(df, screen_size = (24,80))
+        show(df)
     end
     io = IOContext(IOBuffer(), :limit=>true, :displaysize=>(24,80))
     show(io, df)
@@ -171,7 +171,7 @@ end
     Random.seed!(1)
     df_big = DataFrame(rand(25,5))
     str1 = capture_stdout() do
-        show(df_big, screen_size = (24,80))
+        show(df_big)
     end
     io = IOContext(IOBuffer(), :limit=>true, :displaysize=>(24,80))
     show(io, df_big)
