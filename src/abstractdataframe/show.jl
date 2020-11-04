@@ -604,6 +604,12 @@ function _show(io::IO,
 
     compact_printing::Bool = get(io, :compact, true)
 
+    num_rows, num_cols = size(df)
+
+    # By default, we align the columns to the left unless they are numbers,
+    # which is checked in the following.
+    alignment = [:l for i = 1:num_cols]
+
     # This vector stores the column indices that are only floats. In this case,
     # the printed numbers will be aligned on the decimal point.
     float_cols = Int[]
@@ -615,7 +621,6 @@ function _show(io::IO,
 
     # If the screen is limited, we do not need to process all the numbers.
     dsize = displaysize(io)
-    num_rows, num_cols = size(df)
 
     if !allcols
         # Given the spacing, there is no way to fit more than W/9 rows of
@@ -634,12 +639,18 @@ function _show(io::IO,
 
     Δr_lim = cld(Δr, 2)
 
-    # Do not align the numbers if there are more than 500 rows.
-    if Δr ≤ 500
-        for i = 1:Δc
-            # Analyze the order of the number to compute the maximum padding
-            # that must be applied to align the numbers at the decimal point.
-            if nonmissingtype(types[i]) <: AbstractFloat
+    for i = 1:Δc
+        type_i = nonmissingtype(types[i])
+
+        if type_i <: AbstractFloat
+            # Do not align the numbers if there are more than 500 rows.
+            if Δr ≥ 500
+                alignment[i] = :r
+            else
+                # Analyze the order of the number to compute the maximum padding
+                # that must be applied to align the numbers at the decimal
+                # point.
+
                 max_pad_i = 0
                 order_i = zeros(Δr)
                 indices_i = zeros(Δr)
@@ -680,6 +691,8 @@ function _show(io::IO,
                 push!(indices, indices_i)
                 push!(padding, max_pad_i .- order_i)
             end
+        elseif type_i <: Number
+            alignment[i] = :r
         end
     end
 
@@ -712,7 +725,7 @@ function _show(io::IO,
 
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names_mat, types_str);
-                 alignment                   = :l,
+                 alignment                   = alignment,
                  compact_printing            = compact_printing,
                  continuation_row_alignment  = :l,
                  crop                        = crop,
@@ -720,6 +733,7 @@ function _show(io::IO,
                  ellipsis_line_skip          = 3,
                  formatters                  = (_pretty_tables_general_formatter,
                                                 ft_float),
+                 header_alignment            = :l,
                  hlines                      = [:header],
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
                  maximum_columns_width       = maximum_columns_width,
