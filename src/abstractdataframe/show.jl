@@ -727,7 +727,6 @@ function _show(io::IO,
     pretty_table(io, df, vcat(names_mat, types_str);
                  alignment                   = alignment,
                  compact_printing            = compact_printing,
-                 continuation_row_alignment  = :l,
                  crop                        = crop,
                  crop_num_lines_at_beginning = 2,
                  ellipsis_line_skip          = 3,
