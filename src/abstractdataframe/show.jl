@@ -639,61 +639,72 @@ function _show(io::IO,
 
     Δr_lim = cld(Δr, 2)
 
+    # Columns composed of numbers are printed aligned to the left.
     for i = 1:Δc
         type_i = nonmissingtype(types[i])
 
         if type_i <: AbstractFloat
-            # Do not align the numbers if there are more than 5000 rows.
-            if Δr ≥ 5000
-                alignment[i] = :r
-            else
-                # Analyze the order of the number to compute the maximum padding
-                # that must be applied to align the numbers at the decimal
-                # point.
-
-                max_pad_i = 0
-                order_i = zeros(Δr)
-                indices_i = zeros(Δr)
-
-                col = df[!, i]
-
-                for k = 1:Δr
-                    # We need to process the top and bottom of the table because
-                    # we are cropping in the middle.
-
-                    kr = k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
-
-                    v = col[kr]
-
-                    order_v = 0
-
-                    if v isa Number
-                        abs_v = abs(v)
-                        log_v = (v isa Union{Real, Complex} && !isinf(v) && !isnan(v) && abs_v > 1) ?
-                            floor(Int, log10(abs_v))::Int : 0
-
-                        # If the order is higher than 5, then we print using
-                        # scientific notation.
-                        order_v = log_v > 5 ? 0 : floor(Int, log_v)
-
-                        # If the number is negative, we need to add an additional
-                        # padding to print the sign.
-                        v < 0 && (order_v += 1)
-                    end
-
-                    order_i[k] = order_v
-                    indices_i[k] = kr
-
-                    order_v > max_pad_i && (max_pad_i = order_v)
-                end
-
-                push!(float_cols, i)
-                push!(indices, indices_i)
-                push!(padding, max_pad_i .- order_i)
-            end
+            alignment[i] = :r
+            push!(float_cols, i)
         elseif type_i <: Number
             alignment[i] = :r
         end
+    end
+
+    # Check if the quantity of data to be printed allows the alignment of
+    # floats.
+    num_float_cols = length(float_cols)
+
+    if Δr*num_float_cols ≤ 200_000
+        for i in float_cols
+            # Analyze the order of the number to compute the maximum padding
+            # that must be applied to align the numbers at the decimal
+            # point.
+
+            max_pad_i = 0
+            order_i = zeros(Δr)
+            indices_i = zeros(Δr)
+
+            col = df[!, i]
+
+            for k = 1:Δr
+                # We need to process the top and bottom of the table because
+                # we are cropping in the middle.
+
+                kr = k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
+
+                v = col[kr]
+
+                order_v = 0
+
+                if v isa Number
+                    abs_v = abs(v)
+                    log_v = (v isa Union{Real, Complex} && !isinf(v) && !isnan(v) && abs_v > 1) ?
+                        floor(Int, log10(abs_v))::Int : 0
+
+                    # If the order is higher than 5, then we print using
+                    # scientific notation.
+                    order_v = log_v > 5 ? 0 : floor(Int, log_v)
+
+                    # If the number is negative, we need to add an additional
+                    # padding to print the sign.
+                    v < 0 && (order_v += 1)
+                end
+
+                order_i[k] = order_v
+                indices_i[k] = kr
+
+                order_v > max_pad_i && (max_pad_i = order_v)
+            end
+
+            # The algorithm requires the cells to be left aligned.
+            alignment[i] = :l
+
+            push!(indices, indices_i)
+            push!(padding, max_pad_i .- order_i)
+        end
+    else
+        empty!(float_cols)
     end
 
     # Create the formatter for floating point columns.
