@@ -1205,13 +1205,13 @@ end
          Row │ A      B       C
              │ Int64  String  Float32
         ─────┼────────────────────────
-           1 │ 1      x"      1.0
+           1 │     1  x"      1.0
         ⋮
         Last Group (1 row): A = 4
          Row │ A      B       C
              │ Int64  String  Float32
         ─────┼────────────────────────
-           1 │ 4      A\\nC    4.0"""
+           1 │     4  A\\nC    4.0"""
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
@@ -1220,22 +1220,22 @@ end
          Row │ A      B       C
              │ Int64  String  Float32
         ─────┼────────────────────────
-           1 │ 1      x\"      1.0
+           1 │     1  x\"      1.0
         Group 2 (1 row): A = 2
          Row │ A      B            C
              │ Int64  String       Float32
         ─────┼─────────────────────────────
-           1 │ 2      ∀ε>0: x+ε>x  2.0
+           1 │     2  ∀ε>0: x+ε>x  2.0
         Group 3 (1 row): A = 3
          Row │ A      B       C
              │ Int64  String  Float32
         ─────┼────────────────────────
-           1 │ 3      z\$      3.0
+           1 │     3  z\$      3.0
         Group 4 (1 row): A = 4
          Row │ A      B       C
              │ Int64  String  Float32
         ─────┼────────────────────────
-           1 │ 4      A\\nC    4.0"""
+           1 │     4  A\\nC    4.0"""
 
     # Test two-argument show
     str1, dsize = capture_stdout() do
@@ -1454,9 +1454,9 @@ end
          Row │ x1     x2     y
              │ Int64  Int64  Int64
         ─────┼─────────────────────
-           1 │ 1      1      1
-           2 │ 2      1      2
-           3 │ 2      2      3"""
+           1 │     1      1      1
+           2 │     2      1      2
+           3 │     2      2      3"""
 
     df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
     gd = groupby_checked(df, :a)
