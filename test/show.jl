@@ -15,10 +15,11 @@ function capture_stdout(f::Function)
     rd, wr = redirect_stdout()
     f()
     redirect_stdout(oldstdout)
+    size = displaysize(rd)
     close(wr)
     str = read(rd, String)
     close(rd)
-    str
+    str, size
 end
 
 @testset "Basic show test with allrows and allcols" begin
@@ -160,20 +161,20 @@ end
 @testset "IOContext parameters test" begin
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
-    str1 = capture_stdout() do
+    str1, size = capture_stdout() do
         show(df)
     end
-    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>(24,80))
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
     show(io, df)
     str2 = String(take!(io.io))
     @test str1 == str2
 
     Random.seed!(1)
     df_big = DataFrame(rand(25,5))
-    str1 = capture_stdout() do
+    str1, size = capture_stdout() do
         show(df_big)
     end
-    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>(24,80))
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
     show(io, df_big)
     str2 = String(take!(io.io))
     @test str1 == str2
