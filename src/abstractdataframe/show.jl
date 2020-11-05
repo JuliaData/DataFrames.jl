@@ -643,8 +643,8 @@ function _show(io::IO,
         type_i = nonmissingtype(types[i])
 
         if type_i <: AbstractFloat
-            # Do not align the numbers if there are more than 500 rows.
-            if Δr ≥ 500
+            # Do not align the numbers if there are more than 5000 rows.
+            if Δr ≥ 5000
                 alignment[i] = :r
             else
                 # Analyze the order of the number to compute the maximum padding
