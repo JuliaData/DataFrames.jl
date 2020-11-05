@@ -500,7 +500,7 @@ end
 
 @testset "Floating point alignment" begin
     df = DataFrame(a = [i == 2 ? missing : 10^i for i = -7:1.:7],
-                   b = 1:1:15,
+                   b = Int64.(1:1:15),
                    c = [i % 2 == 0 for i = 1:15],
                    d = [i == 2 ? "test" : 10^i for i = -7:1.:7])
 
