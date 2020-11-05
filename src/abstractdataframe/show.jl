@@ -608,7 +608,7 @@ function _show(io::IO,
 
     # By default, we align the columns to the left unless they are numbers,
     # which is checked in the following.
-    alignment = [:l for i = 1:num_cols]
+    alignment = fill(:l, num_cols)
 
     # This vector stores the column indices that are only floats. In this case,
     # the printed numbers will be aligned on the decimal point.
