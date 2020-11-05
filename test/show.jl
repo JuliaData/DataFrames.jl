@@ -302,7 +302,7 @@ end
         @test sprint(show, df) == """
             1×1 DataFrame
              Row │ a
-                 │ Irrational{:π}
+                 │ Irration…
             ─────┼────────────────────────
                1 │ π = 3.1415926535897..."""
     else
