@@ -51,19 +51,8 @@ function hashrows_col_pool!(h::Vector{UInt},
         end
 
         fi = firstindex(rp)
-        if fi == 1
-            @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
-                h[i] = hashes[ref]
-            end
-        elseif fi == 0
-            @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
-                h[i] = hashes[ref+1]
-            end
-        else
-            # currently no implementation of DataAPI.jl interface hits this branch
-            @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
-                h[i] = hashes[ref+1-fi]
-            end
+        @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
+            h[i] = hashes[ref+1-fi]
         end
     else
         @inbounds for (i, x) in enumerate(v)
