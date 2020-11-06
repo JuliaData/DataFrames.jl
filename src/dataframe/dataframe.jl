@@ -234,7 +234,7 @@ function DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
         return DataFrame()
     else
         if !(all(((k,v),) -> k isa Symbol, pairs) || all(((k,v),) -> k isa AbstractString, pairs))
-            throw(ArgumentError("All column names must be either Symbols or strings"))
+            throw(ArgumentError("All column names must be either Symbols or strings (mixing is not allowed)"))
         end
         colnames = [Symbol(k) for (k,v) in pairs]
         columns = Any[v for (k,v) in pairs]
