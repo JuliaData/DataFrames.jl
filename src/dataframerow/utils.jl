@@ -35,19 +35,35 @@ function hashrows_col!(h::Vector{UInt},
 end
 
 # should give the same hash as AbstractVector{T}
-function hashrows_col!(h::Vector{UInt},
-                       n::Vector{Bool},
-                       v::AbstractCategoricalVector,
-                       firstcol::Bool)
-    levs = levels(v)
+function hashrows_col_pool!(h::Vector{UInt},
+                            n::Vector{Bool},
+                            v::AbstractVector,
+                            rp::AbstractVector, # this condition is currently met in all implementations, but is not part of the API
+                            firstcol::Bool)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
-    if firstcol
-        hashes = Vector{UInt}(undef, length(levs)+1)
-        hashes[1] = hash(missing)
-        hashes[2:end] .= hash.(levs)
-        @inbounds for (i, ref) in enumerate(v.refs)
-            h[i] = hashes[ref+1]
+    # also when there are more than 90% of refs in the pool than the length of the
+    # vector avoid using this path. 90% is picked heuristically
+    if firstcol && length(rp) < 0.9length(v)
+        hashes = Vector{UInt}(undef, length(rp))
+        @inbounds for (i, v) in zip(eachindex(hashes), rp)
+            hashes[i] = hash(v)
+        end
+
+        fi = firstindex(rp)
+        if fi == 1
+            @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
+                h[i] = hashes[ref]
+            end
+        elseif fi == 0
+            @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
+                h[i] = hashes[ref+1]
+            end
+        else
+            # currently no implementation of DataAPI.jl interface hits this branch
+            @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
+                h[i] = hashes[ref+1-fi]
+            end
         end
     else
         @inbounds for (i, x) in enumerate(v)
@@ -67,7 +83,12 @@ function hashrows(cols::Tuple{Vararg{AbstractVector}}, skipmissing::Bool)
     rhashes = zeros(UInt, len)
     missings = fill(false, skipmissing ? len : 0)
     for (i, col) in enumerate(cols)
-        hashrows_col!(rhashes, missings, col, i == 1)
+        rp = DataAPI.refpool(x)
+        if rp === nothing
+            hashrows_col!(rhashes, missings, col, i == 1)
+        else
+            hashrows_col_pool!(rhashes, missings, col, rp, i == 1)
+        end
     end
     return (rhashes, missings)
 end
