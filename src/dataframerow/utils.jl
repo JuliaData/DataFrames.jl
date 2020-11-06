@@ -23,6 +23,7 @@ end
 function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
                        v::AbstractVector{T},
+                       rp::Nothing,
                        firstcol::Bool) where T
     @inbounds for i in eachindex(h)
         el = v[i]
@@ -35,11 +36,11 @@ function hashrows_col!(h::Vector{UInt},
 end
 
 # should give the same hash as AbstractVector{T}
-function hashrows_col_pool!(h::Vector{UInt},
-                            n::Vector{Bool},
-                            v::AbstractVector,
-                            rp::AbstractVector, # this condition is currently met in all implementations, but is not part of the API
-                            firstcol::Bool)
+function hashrows_col!(h::Vector{UInt},
+                       n::Vector{Bool},
+                       v::AbstractVector,
+                       rp::Any,
+                       firstcol::Bool)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
     # also when there are more than 90% of refs in the pool than the length of the
@@ -51,6 +52,8 @@ function hashrows_col_pool!(h::Vector{UInt},
         end
 
         fi = firstindex(rp)
+        # here we rely on the fact that `DataAPI.refpool` supports a continuous
+        # block of indices
         @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
             h[i] = hashes[ref+1-fi]
         end
@@ -72,12 +75,8 @@ function hashrows(cols::Tuple{Vararg{AbstractVector}}, skipmissing::Bool)
     rhashes = zeros(UInt, len)
     missings = fill(false, skipmissing ? len : 0)
     for (i, col) in enumerate(cols)
-        rp = DataAPI.refpool(x)
-        if rp === nothing
-            hashrows_col!(rhashes, missings, col, i == 1)
-        else
-            hashrows_col_pool!(rhashes, missings, col, rp, i == 1)
-        end
+        rp = DataAPI.refpool(col)
+        hashrows_col!(rhashes, missings, col, rp, i == 1)
     end
     return (rhashes, missings)
 end
