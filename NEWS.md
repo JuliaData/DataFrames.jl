@@ -95,10 +95,15 @@
 ## Deprecated
 
 * `DataFrame!` is now deprecated ([#2338](https://github.com/JuliaData/DataFrames.jl/pull/2338))
+* several in-standard `DataFrame` constructors are now deprecated
+  ([#2464](https://github.com/JuliaData/DataFrames.jl/pull/2464))
 * all old deprecations now throw an error
   ([#2350](https://github.com/JuliaData/DataFrames.jl/pull/2350))
 
 ## Dependency changes
+
+* DataAPI.jl version 1.4 is now required. It implies that `All(args...)` is
+  deprecated and `Cols(args...)` is recommended instead. `All()` is still supported.
 
 ## Other relevant changes
 

@@ -8,105 +8,150 @@ particularly a Vector or CategoricalVector.
 
 # Constructors
 ```julia
-DataFrame(columns::AbstractVector, names::AbstractVector{Symbol};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::AbstractVector, names::AbstractVector{<:AbstractString};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,<:AbstractString};
-          makeunique::Bool=false, copycols::Bool=true)
-DataFrame(columns::Matrix, names::AbstractVector{Symbol}; makeunique::Bool=false)
-DataFrame(columns::Matrix, names::AbstractVector{<:AbstractString};
-          makeunique::Bool=false)
-DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
-          copycols::Bool=true)
+DataFrame(pairs::Pair...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false, copycols::Bool=true) where {N}
-DataFrame() # an empty DataFrame
-DataFrame(column_eltypes::AbstractVector, names::AbstractVector{Symbol},
-          nrows::Integer=0; makeunique::Bool=false)
-DataFrame(column_eltypes::AbstractVector, names::AbstractVector{<:AbstractString},
-          nrows::Integer=0; makeunique::Bool=false)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
-DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
+DataFrame(kwargs..., copycols::Bool=true)
+
+DataFrame(columns::AbstractVecOrMat, names::Union{AbstractVector, Symbol};
+          makeunique::Bool=false, copycols::Bool=true)
+
+DataFrame(table; copycols::Bool=true)
+DataFrame(::DataFrameRow)
 DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
 
-# Arguments
-- `columns` : a Vector with each column as contents or a Matrix
-- `names` : the column names
+# Keyword arguments
+
+- `copycols` : whether vectors passed as columns should be copied; by default set
+  to `true` and the vectors are copied; if set to `false` then the constructor
+  will still copy the passed columns if it is not possible to construct a
+  `DataFrame` without materializing new columns.
 - `makeunique` : if `false` (the default), an error will be raised
-  if duplicates in `names` are found; if `true`, duplicate names will be suffixed
-  with `_i` (`i` starting at 1 for the first duplicate).
-- `kwargs` : the key gives the column names, and the value is the
-  column contents; note that the `copycols` keyword argument indicates if
-  if vectors passed as columns should be copied so it is not possible to create
-  a column whose name is `:copycols` using this constructor
-- `t` : elemental type of all columns
-- `nrows`, `ncols` : number of rows and columns
-- `column_eltypes` : element type of each column
-- `categorical` : a vector of `Bool` indicating which columns should be converted
-  to `CategoricalVector`
-- `ds` : `AbstractDict` of columns
-- `table` : any type that implements the
-  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
-- `copycols` : whether vectors passed as columns should be copied; if set
-  to `false` then the constructor will still copy the passed columns
-  if it is not possible to construct a `DataFrame` without materializing new columns.
 
-All columns in `columns` must be `AbstractVector`s and have the same length. An
-exception are `DataFrame(kwargs...)`, `DataFrame(pairs::Pair...)`,
-`DataFrame(pairs::AbstractVector{<:Pair})`, and `DataFrame(pairs::NTuple{N, Pair})` form
-constructors which additionally allow a column to be of any other type that is
-not an `AbstractArray`, in which case the passed value is automatically repeated
-to fill a new vector of the appropriate length. As a particular rule values
-stored in a `Ref` or a `0`-dimensional `AbstractArray` are unwrapped and treated
-in the same way.
+(note that not all constructors support these keyword arguments)
 
-Additionally `DataFrame` can be used to collect a [`GroupedDataFrame`](@ref)
-into a `DataFrame`. In this case the order of rows in the result follows the order
+# Details on behavior of different constructors
+
+It is allowed to pass a vector of `Pair`s, a list of `Pair`s as positional
+arguments, or a list of keyword arguments. In this case each pair is considered
+to represent a column name to column value mapping and column name must be a
+`Symbol` or string. Alternatively a dictionary can be passed to the constructor
+in which case its entries are considered to define the column name and column
+value pairs. If the dictionary is a `Dict` then column names will be sorted in
+the returned `DataFrame`.
+
+In all the constructors described above column value can be a vector which is
+consumed as is or an object of any other type (except `AbstractArray`). In the
+latter case the passed value is automatically repeated to fill a new vector of
+the appropriate length. As a particular rule values stored in a `Ref` or a
+`0`-dimensional `AbstractArray` are unwrapped and treated in the same way.
+
+It is also allowed to pass a vector of vectors or a matrix as as the first
+argument. In this case the second argument must be
+a vector of `Symbol`s or strings specifying column names, or the symbol `:auto`
+to generate column names `x1`, `x2`, ... automatically.
+
+If a single positional argument is passed to a `DataFrame` constructor then it
+is assumed to be of type that implements the
+[Tables.jl](https://github.com/JuliaData/Tables.jl) interface using which the
+returned `DataFrame` is materialized.
+
+Finally it is allowed to construct a `DataFrame` from a `DataFrameRow` or a
+`GroupedDataFrame`. In the latter case the `keepkeys` keyword argument specifies
+whether the resulting `DataFrame` should contain the grouping columns of the
+passed `GroupedDataFrame` and the order of rows in the result follows the order
 of groups in the `GroupedDataFrame` passed.
 
 # Notes
+
 The `DataFrame` constructor by default copies all columns vectors passed to it.
-Pass `copycols=false` to reuse vectors without copying them
+Pass the `copycols=false` keyword argument (where supported) to reuse vectors without
+copying them.
 
-If a column is passed to a `DataFrame` constructor or is assigned as a whole
-using `setindex!` then its reference is stored in the `DataFrame`. An exception
-to this rule is assignment of an `AbstractRange` as a column, in which case the
-range is collected to a `Vector`.
+By default an error will be raised if duplicates in column names are found. Pass
+`makeunique=true` keyword argument (where supported) to accept duplicate names,
+in which case they will be suffixed with `_i` (`i` starting at 1 for the first
+duplicate).
 
-Because column types can vary, a `DataFrame` is not type stable. For
-performance-critical code, do not index into a `DataFrame` inside of loops.
+If an `AbstractRange` is passed to a `DataFrame` constructor as a column it is
+always collected to a `Vector` (even if `copycols=false`). As a general rule
+`AbstractRange` values are always materialized to a `Vector` by all functions in
+DataFrames.jl before being stored in a `DataFrame`.
+
+The `DataFrame` type is designed to allow column types to vary and to be
+dynamically changed also after it is constructed. Therefore `DataFrame`s are not
+type stable. For performance-critical code that requires type-stability either
+use the functionality provided by `select`/`transform`/`combine` functions, use
+`Tables.columntable` and `Tables.namedtupleiterator` functions, use barrier
+functions, or provide type assertions to the variables that hold columns
+extracted from a `DataFrame`.
 
 # Examples
 ```julia
-df = DataFrame()
-v = ["x","y","z"][rand(1:3, 10)]
-df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
-df2 = DataFrame(A = 1:10, B = v, C = rand(10))
-summary(df1)
-describe(df2)
-first(df1, 10)
-df1.B
-df2[!, :C]
-df1[:, :A]
-df1[1:4, 1:2]
-df1[Not(1:4), Not(1:2)]
-df1[1:2, [:A,:C]]
-df1[1:2, r"[AC]"]
-df1[:, [:A,:C]]
-df1[:, [1,3]]
-df1[1:4, :]
-df1[1:4, :C]
-df1[1:4, :C] = 40. * df1[1:4, :C]
-[df1; df2]  # vcat
-[df1 df2]  # hcat
-size(df1)
+julia> DataFrame((a=[1,2], b=[3,4])) # Tables.jl table constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 2     │ 4     │
+
+julia> DataFrame([(a=1, b=0), (a=2, b=0)]) # Tables.jl table constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame("a" => 1:2, "b" => 0) # Pair constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame([:a => 1:2, :b => 0]) # vector of Pairs constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame(Dict(:a => 1:2, :b => 0)) # dictionary constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame(a=1:2, b=0) # keyword argument constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame([[1, 2], [0, 0]], [:a, :b]) # vector of vectors constructor
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
+
+julia> DataFrame([1 0; 2 0], :auto) # matrix constructor
+2×2 DataFrame
+│ Row │ x1    │ x2    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 0     │
+│ 2   │ 2     │ 0     │
 ```
 """
 struct DataFrame <: AbstractDataFrame
@@ -182,24 +227,36 @@ function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=fals
                      copycols=copycols)
 end
 
-# these two are needed as a workaround Tables.jl dispatch
-DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
-          copycols::Bool=true) =
-    DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
-
-DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false,
-          copycols::Bool=true) where {N} =
-    DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+# this is needed as a workaround for Tables.jl dispatch
+function DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
+                   copycols::Bool=true)
+    if isempty(pairs)
+        return DataFrame()
+    else
+        if !(all(((k,v),) -> k isa Symbol, pairs) || all(((k,v),) -> k isa AbstractString, pairs))
+            throw(ArgumentError("All column names must be either Symbols or strings (mixing is not allowed)"))
+        end
+        colnames = [Symbol(k) for (k,v) in pairs]
+        columns = Any[v for (k,v) in pairs]
+        return DataFrame(columns, Index(colnames, makeunique=makeunique),
+                         copycols=copycols)
+    end
+end
 
 function DataFrame(d::AbstractDict; copycols::Bool=true)
-    if isa(d, Dict)
-        colnames = sort!(collect(keys(d)))
+    if all(k -> k isa Symbol, keys(d))
+        colnames = collect(Symbol, keys(d))
+    elseif all(k -> k isa AbstractString, keys(d))
+        colnames = [Symbol(k) for k in keys(d)]
     else
-        colnames = keys(d)
+        throw(ArgumentError("All column names must be either Symbols or strings (mixing is not allowed)"))
     end
-    colindex = Index([Symbol(k) for k in colnames])
-    columns = Any[d[c] for c in colnames]
-    DataFrame(columns, colindex, copycols=copycols)
+
+    colindex = Index(colnames)
+    columns = Any[v for v in values(d)]
+    df = DataFrame(columns, colindex, copycols=copycols)
+    d isa Dict && select!(df, sort!(propertynames(df)))
+    return df
 end
 
 function DataFrame(; kwargs...)
@@ -210,12 +267,15 @@ function DataFrame(; kwargs...)
         columns = Any[]
         copycols = true
         for (kw, val) in kwargs
-            if kw == :copycols
+            if kw === :copycols
                 if val isa Bool
                     copycols = val
                 else
                     throw(ArgumentError("the `copycols` keyword argument must be Boolean"))
                 end
+            elseif kw === :makeunique
+                    throw(ArgumentError("the `makeunique` keyword argument is not allowed" *
+                                        " in DataFrame(; kwargs...) constructor"))
             else
                 push!(cnames, kw)
                 push!(columns, val)
@@ -239,34 +299,27 @@ DataFrame(columns::AbstractVector, cnames::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(columns, Symbol.(cnames), makeunique=makeunique, copycols=copycols)
 
-DataFrame(columns::AbstractVector{<:AbstractVector},
-          cnames::AbstractVector{Symbol}=gennames(length(columns));
+DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{Symbol};
           makeunique::Bool=false, copycols::Bool=true)::DataFrame =
     DataFrame(collect(AbstractVector, columns),
               Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
               copycols=copycols)
 
-DataFrame(columns::AbstractVector{<:AbstractVector},
-          cnames::AbstractVector{<:AbstractString};
+DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{<:AbstractString};
           makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
 
-DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
-          makeunique::Bool=false, copycols::Bool=true) where {N} =
-    DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames),
-              makeunique=makeunique, copycols=copycols)
+function DataFrame(columns::AbstractVector, cnames::Symbol; copycols::Bool=true)
+    if cnames !== :auto
+        throw(ArgumentError("if the first positional argument to DataFrame " *
+                            "constructor is a vector of vectors and the second " *
+                            "positional argument is passed then the second " *
+                            "argument must be a vector of column names or :auto"))
+    end
+    return DataFrame(columns, gennames(length(columns)), copycols=copycols)
+end
 
-DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString};
-          makeunique::Bool=false, copycols::Bool=true) where {N} =
-    DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
-
-DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
-    DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
-              copycols=copycols)
-
-DataFrame(columns::AbstractMatrix,
-          cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
-          makeunique::Bool=false) =
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol}; makeunique::Bool=false) =
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)
 
@@ -274,20 +327,16 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
           makeunique::Bool=false) =
     DataFrame(columns, Symbol.(cnames); makeunique=makeunique)
 
-function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = AbstractVector[elty >: Missing ?
-                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
-                             Tables.allocatecolumn(elty, nrows)
-                             for elty in column_eltypes]
-    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames),
-                     makeunique=makeunique), copycols=false)
+function DataFrame(columns::AbstractMatrix, cnames::Symbol)
+    if cnames !== :auto
+        throw(ArgumentError("if the first positional argument to DataFrame " *
+                            "constructor is a matrix and a second " *
+                            "positional argument is passed then the second " *
+                            "argument must be a vector of column names or :auto"))
+    end
+    return DataFrame(columns, gennames(size(columns, 2)), makeunique=false)
 end
 
-DataFrame(column_eltypes::AbstractVector{<:Type},
-          cnames::AbstractVector{<:AbstractString},
-          nrows::Integer=0; makeunique::Bool=false) =
-    DataFrame(column_eltypes, Symbol.(cnames), nrows; makeunique=makeunique)
 
 ##############################################################################
 ##
@@ -881,10 +930,10 @@ hcat!(df1::DataFrame, df2::DataFrame;
            makeunique=makeunique, copycols=copycols)::DataFrame
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(df, DataFrame(AbstractVector[x], copycols=copycols),
+    hcat!(df, DataFrame(AbstractVector[x], [:x1], copycols=copycols),
           makeunique=makeunique, copycols=copycols)
 hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(DataFrame(AbstractVector[x], copycols=copycols), df,
+    hcat!(DataFrame(AbstractVector[x], [:x1], copycols=copycols), df,
           makeunique=makeunique, copycols=copycols)
 hcat!(x, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
@@ -1176,8 +1225,6 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
     end
     return df1
 end
-
-Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 

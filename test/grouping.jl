@@ -1831,8 +1831,8 @@ end
 @testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
     N = 4
     for (i, x1) in enumerate(collect.(Iterators.product(repeat([[true, false]], N)...))),
-        er in (DataFrame(), view(DataFrame(ones(2,2)), 2:1, 2:1),
-               view(DataFrame(ones(2,2)), 1:2, 2:1),
+        er in (DataFrame(), view(DataFrame(ones(2,2), :auto), 2:1, 2:1),
+               view(DataFrame(ones(2,2), :auto), 1:2, 2:1),
                NamedTuple(), rand(0,0), rand(5,0),
                DataFrame(x1=Int[]), DataFrame(x1=Any[]),
                (x1=Int[],), (x1=Any[],), rand(0,1)),
@@ -1997,7 +1997,7 @@ end
               DataFrame(g=1:100, g_function=1:100)
     end
 
-    df_ref = DataFrame(rand(10, 4))
+    df_ref = DataFrame(rand(10, 4), :auto)
     df_ref.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
 
     for i in 0:nrow(df_ref), dosort in [true, false], dokeepkeys in [true, false]
@@ -2014,7 +2014,7 @@ end
 end
 
 @testset "passing columns" begin
-    df = DataFrame(rand(10, 4))
+    df = DataFrame(rand(10, 4), :auto)
     df.g = shuffle!([1,2,2,3,3,3,4,4,4,4])
     gdf = groupby_checked(df, :g)
 
@@ -2937,9 +2937,10 @@ end
                 maximum, minimum, maximum∘skipmissing, minimum∘skipmissing,
                 first, last, length, first∘skipmissing, last∘skipmissing),
         col in ([ones(2,2), zeros(2,2), ones(2,2)], [ones(2,2), zeros(2,2), missing],
-                [DataFrame(ones(2,2)), DataFrame(zeros(2,2)), DataFrame(ones(2,2))],
-                [DataFrame(ones(2,2)), DataFrame(zeros(2,2)), ones(2,2)],
-                [DataFrame(ones(2,2)), DataFrame(zeros(2,2)), missing],
+                [DataFrame(ones(2,2), :auto), DataFrame(zeros(2,2), :auto),
+                DataFrame(ones(2,2), :auto)], [DataFrame(ones(2,2), :auto),
+                DataFrame(zeros(2,2), :auto), ones(2,2)],
+                [DataFrame(ones(2,2), :auto), DataFrame(zeros(2,2), :auto), missing],
                 [(a=1, b=2), (a=3, b=4), (a=5, b=6)], [(a=1, b=2), (a=3, b=4), missing])
         gdf = groupby_checked(DataFrame(g=[1, 1, 1], x=col), :g)
         if fun === length

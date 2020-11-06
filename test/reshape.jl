@@ -36,8 +36,8 @@ const ≅ = isequal
                    Value = Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
     levels!(df[!, 1], ["XXX", "Bob", "Batman"])
     levels!(df[!, 2], ["YYY", "Color", "Mass"])
-    df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
+    df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(string(x)), "_"))
+    df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(string(x)), "_"))
     df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
                     _MASS_ = Union{String, Missing}["12 g", "18 g"],
                     _COLOR_ = Union{String, Missing}["Red", "Grey"])
@@ -83,7 +83,7 @@ const ≅ = isequal
     @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
     @test_throws ArgumentError unstack(df, r"xxxxx", :Key, :Value)
     @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
-    @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))),
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10), :auto)),
                                   :id, :variable, :value)
     @test_throws TypeError unstack(df, :Key, :Value, renamecols=Symbol)
 
@@ -187,7 +187,7 @@ end
 
 @testset "stack-unstack correctness" begin
     Random.seed!(1234)
-    x = DataFrame(rand(100, 50))
+    x = DataFrame(rand(100, 50), :auto)
     x[!, :id] = [1:99; missing]
     x[!, :id2] = string.("a", x[!, :id])
     x[!, :s] = [i % 2 == 0 ? randstring() : missing for i in 1:100]
@@ -329,13 +329,13 @@ end
     @test d1us3 == unstack(d1s2)
 
     # test unstack with exactly one key column that is not passed
-    df1 = stack(DataFrame(rand(10, 10)))
+    df1 = stack(DataFrame(rand(10,10), :auto))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
     # test empty keycol
-    @test_throws ArgumentError unstack(stack(DataFrame(rand(3, 2))), :variable, :value)
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(3,2), :auto)), :variable, :value)
 end
 
 @testset "column names duplicates" begin
@@ -477,7 +477,7 @@ end
 end
 
 @testset "test stack eltype" begin
-    df = DataFrame(rand(4, 5))
+    df = DataFrame(rand(4,5), :auto)
     sdf = stack(df)
     @test eltype(sdf.variable) === String
     @test eltype(typeof(sdf.variable)) === String
@@ -520,7 +520,7 @@ end
         @test unstack(df2, [:id, :id2], :var, :val) == wide2
         @test unstack(df2, :var, :val) == wide3
 
-        df2 = categorical(df, 1:3)
+        df2 = transform(df, 1:3 .=> categorical, renamecols=false)
         @test unstack(df2, :id, :var, :val) == wide1
         @test unstack(df2, [:id, :id2], :var, :val) == wide2
         @test unstack(df2, :var, :val) == wide3

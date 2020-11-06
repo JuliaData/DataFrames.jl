@@ -105,3 +105,43 @@ function categorical!(df::DataFrame, cols::Union{Type, Nothing}=nothing;
     end
     return transform!(df, names(df, cols) .=> (x -> categorical(x, compress=compress)), renamecols=false)
 end
+
+@deprecate DataFrame(pairs::NTuple{N, Pair}; makeunique::Bool=false,
+          copycols::Bool=true) where {N} DataFrame(pairs..., makeunique=makeunique, copycols=copycols)
+@deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol}; makeunique::Bool=false,
+          copycols::Bool=true) where {N} DataFrame(collect(columns), collect(cnames);
+              makeunique=makeunique, copycols=copycols)
+@deprecate DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, AbstractString}; makeunique::Bool=false,
+                     copycols::Bool=true) where {N} DataFrame(collect(columns), [Symbol(c) for c in cnames];
+                                                              makeunique=makeunique, copycols=copycols)
+@deprecate DataFrame(columns::NTuple{N, AbstractVector};
+                     copycols::Bool=true) where {N} DataFrame(collect(columns),
+                                                              Symbol.(:x, 1:length(columns)), copycols=copycols)
+
+# this deprecation is very important, becuase without it users will
+# get strange results with old code as described in https://github.com/JuliaData/Tables.jl/issues/208
+@deprecate DataFrame(columns::AbstractVector{<:AbstractVector}; makeunique::Bool=false,
+                     copycols::Bool=true) DataFrame(columns, :auto, copycols=copycols)
+
+@deprecate DataFrame(columns::AbstractMatrix) DataFrame(columns, :auto)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
+    Base.depwarn("`DataFrame` constructor with passed eltypes is deprecated. " *
+                 "Pass explicitly created columns to a `DataFrame` constructor instead.",
+                     :DataFrame)
+    columns = AbstractVector[elty >: Missing ?
+                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                             Tables.allocatecolumn(elty, nrows)
+                             for elty in column_eltypes]
+    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames),
+                     makeunique=makeunique), copycols=false)
+end
+
+DataFrame(column_eltypes::AbstractVector{<:Type},
+          cnames::AbstractVector{<:AbstractString},
+          nrows::Integer=0; makeunique::Bool=false) =
+    DataFrame(column_eltypes, Symbol.(cnames), nrows; makeunique=makeunique)
+
+import Base: convert
+@deprecate convert(::Type{DataFrame}, A::AbstractMatrix) DataFrame(Tables.table(A, header=Symbol.(:x, axes(A, 2))))

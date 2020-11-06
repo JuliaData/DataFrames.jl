@@ -59,7 +59,8 @@ end
 end
 
 @testset "displaysize test" begin
-    df_big = DataFrame(reshape(Int64(10000001):Int64(10000000+25*5), 25, 5))
+    df_big = DataFrame(reshape(Int64(10000001):Int64(10000000+25*5), 25, 5),
+                       :auto)
 
     io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big)
@@ -170,7 +171,7 @@ end
     @test str1 == str2
 
     Random.seed!(1)
-    df_big = DataFrame(rand(25,5))
+    df_big = DataFrame(rand(25,5), :auto)
     str1, size = capture_stdout() do
         show(df_big)
     end
