@@ -98,7 +98,7 @@ using DataFrames, Random, Test, CategoricalArrays
 
     Random.seed!(1)
     # here there will be probably no ties
-    df_rand1 = DataFrame(rand(100, 4))
+    df_rand1 = DataFrame(rand(100, 4), :auto)
     # but here we know we will have ties
     df_rand2 = copy(df_rand1)
     df_rand2.x1 = shuffle([fill(1, 50); fill(2, 50)])
@@ -140,7 +140,7 @@ end
 
 @testset "non standard selectors" begin
     Random.seed!(1234)
-    df = DataFrame(rand(1:2, 1000, 4))
+    df = DataFrame(rand(1:2, 1000, 4), :auto)
     for f in [sort, sort!, sortperm, issorted]
         @test f(df) == f(df, :) == f(df, All()) == f(df, Cols(:)) == f(df, r"x") ==
               f(df, Between(1, 4)) == f(df, Not([]))
@@ -148,7 +148,7 @@ end
 end
 
 @testset "view kwarg test" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(rand(3,4), :auto)
     @test sort(df) isa DataFrame
     @inferred sort(df)
     @test sort(view(df, 1:2, 1:2)) isa DataFrame

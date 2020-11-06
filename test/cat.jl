@@ -10,10 +10,10 @@ const ≅ = isequal
     nvint = [1, 2, missing, 4]
     nvstr = ["one", "two", missing, "four"]
 
-    df2 = DataFrame([nvint, nvstr])
-    df3 = DataFrame([nvint])
-    df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame([Union{Int, Missing}[1,2,3,4], nvstr])
+    df2 = DataFrame([nvint, nvstr], :auto)
+    df3 = DataFrame([nvint], :auto)
+    df4 = DataFrame([1:4 1:4], [:x1, :x2])
+    df5 = DataFrame([Union{Int, Missing}[1,2,3,4], nvstr], :auto)
 
     ref_df = copy(df3)
     dfh = hcat(df3, df4, makeunique=true)
@@ -227,7 +227,7 @@ end
     df = DataFrame([3.0  2.0  2.0
                     2.0  2.0  2.0
                     3.0  1.0  2.0
-                    3.0  3.0  3.0])
+                    3.0  3.0  3.0], :auto)
     df[!, 3] = Int.(df[!, 3])
 
     @test vcat(missing_df) == DataFrame()
@@ -253,13 +253,13 @@ end
     alt_df = deepcopy(df)
     @test vcat(df, alt_df) == DataFrame([[3.0,2.0,3.0,3.0,3.0,2.0,3.0,3.0],
                                          [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
-                                         [2,2,2,3,2,2,2,3]])
+                                         [2,2,2,3,2,2,2,3]], :auto)
 
     # Don't fail on non-matching types
     df[!, 1] = zeros(Int, nrow(df))
     @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
                                          [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
-                                         [2,2,2,3,2,2,2,3]])
+                                         [2,2,2,3,2,2,2,3]], :auto)
 
     df1 = DataFrame(A=Int[], B=Float64[])
     df2 = DataFrame(B=1.0, A=1)

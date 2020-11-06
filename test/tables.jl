@@ -196,7 +196,7 @@ end
 end
 
 @testset "columnindex" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(rand(3,4), :auto)
 
     for x in (df, view(df, 1, :), view(df, 1:1, :))
         @test columnindex.(Ref(x), names(df)) == 1:4
@@ -262,6 +262,21 @@ end
     @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
     @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
     @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)
+end
+
+@testset "test constructor with vectors" begin
+    @test DataFrame(Any[]) == DataFrame()
+    @test DataFrame(Vector[], :auto) == DataFrame()
+    @test DataFrame(Pair{Symbol, Vector}[], :auto) == DataFrame()
+    @test DataFrame(Pair[]) == DataFrame()
+    @test DataFrame([[1]], :auto) == DataFrame(x1=1)
+    @test DataFrame(Any[[1]], :auto) == DataFrame(x1=1)
+    @test DataFrame([:a => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any[:a => [1]]) == DataFrame(a=1)
+    @test DataFrame(["a" => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any["a" => [1]]) == DataFrame(a=1)
+    @test DataFrame([SubString("a", 1) => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any[SubString("a", 1) => [1]]) == DataFrame(a=1)
 end
 
 end # module
