@@ -1,6 +1,6 @@
 module TestConstructors
 
-using Test, DataFrames, CategoricalArrays
+using Test, DataFrames, CategoricalArrays, DataStructures
 using DataFrames: Index, _columns, index
 const ≅ = isequal
 
@@ -345,10 +345,14 @@ end
 end
 
 @testset "Dict constructor corner case" begin
-    @test DataFrame(Dict('a' => 1, true => 2)) == DataFrame("a" => 1, "true" => 2)
-    @test DataFrame(Dict('z' => 1, true => 2)) == DataFrame("true" => 2, "z" => 1)
-    @test DataFrame(Dict([c => i for (i, c) in enumerate('a':'z')])) ==
+    @test_throws ArgumentError DataFrame(Dict('a' => 1, true => 2))
+    @test_throws ArgumentError DataFrame(Dict(:z => 1, "true" => 2))
+    @test DataFrame(Dict("z" => 1, "true" => 2)) == DataFrame("true" => 2, "z" => 1)
+    @test DataFrame(Dict([Symbol(c) => i for (i, c) in enumerate('a':'z')])) ==
+          DataFrame(Dict([string(c) => i for (i, c) in enumerate('a':'z')])) ==
           DataFrame([Symbol(c) => i for (i, c) in enumerate('a':'z')])
+    @test DataFrame(OrderedDict(:z => 1, :a => 2)) == DataFrame(z=1, a=2)
+
 end
 
 end # module
