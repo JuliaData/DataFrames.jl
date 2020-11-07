@@ -652,7 +652,7 @@ function _show(io::IO,
     end
 
     # Check if the quantity of data to be printed allows the alignment of
-    # floats.
+    # floats without taking too long.
     num_float_cols = length(float_cols)
 
     if Δr*num_float_cols ≤ 200_000
