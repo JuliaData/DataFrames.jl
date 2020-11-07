@@ -639,7 +639,7 @@ function _show(io::IO,
 
     Δr_lim = cld(Δr, 2)
 
-    # Columns composed of numbers are printed aligned to the left.
+    # Columns composed of numbers are printed aligned to the right.
     for i = 1:Δc
         type_i = nonmissingtype(types[i])
 
