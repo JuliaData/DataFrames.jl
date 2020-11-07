@@ -3178,4 +3178,19 @@ end
                     :min => min.(df.y, df.z), :max => max.(df.y, df.z), :y => df.y) |> sort
 end
 
+@testset "hashing of pooled vectors" begin
+    # test both hashrow calculation paths - the of pool length threshold is 50%
+    for x in ([1:9; fill(1, 101)], [1:100;],
+              [1:9; fill(missing, 101)], [1:99; missing])
+        x1 = PooledArray(x);
+        x2 = categorical(x);
+        @test DataFrames.hashrows((x,), false) ==
+              DataFrames.hashrows((x1,), false) ==
+              DataFrames.hashrows((x2,), false)
+        @test DataFrames.hashrows((x,), true) ==
+              DataFrames.hashrows((x1,), true) ==
+              DataFrames.hashrows((x2,), true)
+    end
+end
+
 end # module
