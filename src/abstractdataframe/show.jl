@@ -677,7 +677,7 @@ function _show(io::IO,
 
                 order_v = 0
 
-                if v isa Number
+                if v !== missing
                     abs_v = abs(v)
                     log_v = (v isa Union{Real, Complex} && !isinf(v) && !isnan(v) && abs_v > 1) ?
                         floor(Int, log10(abs_v))::Int : 0
