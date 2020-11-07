@@ -122,9 +122,9 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             # !ismissing check is purely an optimization to avoid a copy later
             outcol = similar(incol, condf === !ismissing ? S : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
-            incolT = typeof(incol).name
-            if incolT.name === :CategoricalArray &&
-                nameof(incolT.module) === :CategoricalArrays
+            outcolT = typeof(outcol).name
+            if outcolT.name === :CategoricalArray &&
+                nameof(outcolT.module) === :CategoricalArrays
                 # we know that CategoricalArray has `pool` field
                 outcol.pool = incol.pool
             end
@@ -201,9 +201,9 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     end
     # Reallocate Vector created in groupreduce_init with min or max
     # for CategoricalVector
-    incolT = typeof(incol).name
-    if incolT.name === :CategoricalArray &&
-        nameof(incolT.module) === :CategoricalArrays && res isa Vector
+    resT = typeof(res).name
+    if resT.name === :CategoricalArray &&
+        nameof(resT.module) === :CategoricalArrays
         @assert op === min || op === max
         # we know that CategoricalArray has `pool` field
         @assert res.pool === incol.pool
