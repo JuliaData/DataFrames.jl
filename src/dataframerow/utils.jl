@@ -45,14 +45,14 @@ function hashrows_col!(h::Vector{UInt},
     # which is always zero
     # also when there are more than 90% of refs in the pool than the length of the
     # vector avoid using this path. 90% is picked heuristically
-    if firstcol && length(rp) < 0.9length(v)
+    if firstcol && 2 * length(rp) < length(v)
         hashes = Vector{UInt}(undef, length(rp))
         @inbounds for (i, v) in zip(eachindex(hashes), rp)
             hashes[i] = hash(v)
         end
 
         fi = firstindex(rp)
-        # here we rely on the fact that `DataAPI.refpool` supports a continuous
+        # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
         @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
             h[i] = hashes[ref+1-fi]
