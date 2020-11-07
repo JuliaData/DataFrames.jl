@@ -125,7 +125,8 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             incolT = typeof(incol).name
             if incolT.name === :CategoricalArray &&
                 nameof(incolT.module) === :CategoricalArrays
-                outcol = Vector{eltype(incol)}(undef, length(gd))
+                # we know that CategoricalArray has `pool` field
+                outcol.pool = incol.pool
             end
             # It is safe to use a non-missing init value
             # since missing will poison the result if present
@@ -204,8 +205,9 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     if incolT.name === :CategoricalArray &&
         nameof(incolT.module) === :CategoricalArrays && res isa Vector
         @assert op === min || op === max
-        # use the fact that broadcasted identity will create CategoricalVector here
-        res = identity.(res)
+        # we know that CategoricalArray has `pool` field
+        @assert res.pool === incol.pool
+        res.pool = copy(incol.pool)
     end
     if isconcretetype(eltype(res))
         return res
