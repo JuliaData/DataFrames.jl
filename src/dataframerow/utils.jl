@@ -43,8 +43,8 @@ function hashrows_col!(h::Vector{UInt},
                        firstcol::Bool)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
-    # also when there are more than 90% of refs in the pool than the length of the
-    # vector avoid using this path. 90% is picked heuristically
+    # also when the number of values in the pool is more than half the length
+    # of the vector avoid using this path. 50% is roughly based on benchmarks
     if firstcol && 2 * length(rp) < length(v)
         hashes = Vector{UInt}(undef, length(rp))
         @inbounds for (i, v) in zip(eachindex(hashes), rp)
