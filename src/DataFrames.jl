@@ -7,6 +7,7 @@ using Base.Sort, Base.Order, Base.Iterators
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
 using Markdown
+using PrettyTables
 
 import DataAPI,
        DataAPI.All,
@@ -53,6 +54,7 @@ export AbstractDataFrame,
        nrow,
        order,
        outerjoin,
+       PrettyTables,
        rename!,
        rename,
        repeat!,
@@ -111,6 +113,7 @@ include("groupeddataframe/callprocessing.jl")
 include("groupeddataframe/fastaggregates.jl")
 include("groupeddataframe/complextransforms.jl")
 
+include("abstractdataframe/prettytables.jl")
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
