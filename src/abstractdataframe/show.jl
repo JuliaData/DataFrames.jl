@@ -686,9 +686,9 @@ function _show(io::IO,
                     # scientific notation.
                     order_v = log_v > 5 ? 0 : floor(Int, log_v)
 
-                    # If the number is negative, we need to add an additional
+                    # If the number is negative (including -0.0), we need to add an additional
                     # padding to print the sign.
-                    v < 0 && (order_v += 1)
+                    isless(v, 0) && (order_v += 1)
                 end
 
                 order_i[k] = order_v
