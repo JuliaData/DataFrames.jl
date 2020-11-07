@@ -679,7 +679,7 @@ function _show(io::IO,
 
                 if v !== missing
                     abs_v = abs(v)
-                    log_v = (v isa Union{Real, Complex} && !isinf(v) && !isnan(v) && abs_v > 1) ?
+                    log_v = !isinf(v) && !isnan(v) && abs_v > 1 ?
                         floor(Int, log10(abs_v))::Int : 0
 
                     # If the order is higher than 5, then we print using
