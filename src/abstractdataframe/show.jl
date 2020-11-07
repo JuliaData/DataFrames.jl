@@ -661,7 +661,7 @@ function _show(io::IO,
             # that must be applied to align the numbers at the decimal
             # point.
 
-            max_pad_i = 0
+            max_order_i = 0
             order_i = zeros(Δr)
             indices_i = zeros(Δr)
 
@@ -694,14 +694,19 @@ function _show(io::IO,
                 order_i[k] = order_v
                 indices_i[k] = kr
 
-                order_v > max_pad_i && (max_pad_i = order_v)
+                order_v > max_order_i && (max_order_i = order_v)
             end
 
             # The algorithm requires the cells to be left aligned.
             alignment[i] = :l
 
             push!(indices, indices_i)
-            push!(padding, max_pad_i .- order_i)
+
+            # `order_i` now contains the padding that must be applied to align
+            # the number in the decimal point.
+            order_i .= max_order_i .- order_i
+
+            push!(padding, order_i)
         end
     else
         empty!(float_cols)
