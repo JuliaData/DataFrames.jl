@@ -503,31 +503,33 @@ end
     df = DataFrame(a = [i == 2 ? missing : 10^i for i = -7:1.:7],
                    b = Int64.(1:1:15),
                    c = [i % 2 == 0 for i = 1:15],
-                   d = [i == 2 ? "test" : 10^i for i = -7:1.:7])
+                   d = [i == 2 ? "test" : 10^i for i = -7:1.:7],
+                   e = [i == 2 ? -0.0 : i == 3 ? +0.0 : 10^i for i = -7:1.:7])
 
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == """
-        15×4 DataFrame
-         Row │ a             b      c      d
-             │ Float64?      Int64  Bool   Any
-        ─────┼──────────────────────────────────────
-           1 │      1.0e-7       1  false  1.0e-7
-           2 │      1.0e-6       2   true  1.0e-6
-           3 │      1.0e-5       3  false  1.0e-5
-           4 │      0.0001       4   true  0.0001
-           5 │      0.001        5  false  0.001
-           6 │      0.01         6   true  0.01
-           7 │      0.1          7  false  0.1
-           8 │      1.0          8   true  1.0
-           9 │     10.0          9  false  10.0
-          10 │      missing     10   true  test
-          11 │   1000.0         11  false  1000.0
-          12 │  10000.0         12   true  10000.0
-          13 │ 100000.0         13  false  100000.0
-          14 │      1.0e6       14   true  1.0e6
-          15 │      1.0e7       15  false  1.0e7"""
+        15×5 DataFrame
+         Row │ a             b      c      d         e
+             │ Float64?      Int64  Bool   Any       Float64
+        ─────┼───────────────────────────────────────────────────
+           1 │      1.0e-7       1  false  1.0e-7         1.0e-7
+           2 │      1.0e-6       2   true  1.0e-6         1.0e-6
+           3 │      1.0e-5       3  false  1.0e-5         1.0e-5
+           4 │      0.0001       4   true  0.0001         0.0001
+           5 │      0.001        5  false  0.001          0.001
+           6 │      0.01         6   true  0.01           0.01
+           7 │      0.1          7  false  0.1            0.1
+           8 │      1.0          8   true  1.0            1.0
+           9 │     10.0          9  false  10.0          10.0
+          10 │      missing     10   true  test          -0.0
+          11 │   1000.0         11  false  1000.0         0.0
+          12 │  10000.0         12   true  10000.0    10000.0
+          13 │ 100000.0         13  false  100000.0  100000.0
+          14 │      1.0e6       14   true  1.0e6          1.0e6
+          15 │      1.0e7       15  false  1.0e7          1.0e7"""
+
 end
 
 end # module
