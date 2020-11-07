@@ -3174,8 +3174,9 @@ end
 end
 
 @testset "hashing of pooled vectors" begin
-    for x in ([1:900; fill(1, 101)], [1:902; fill(1, 99)],
-              [1:900; fill(missing, 101)], [1:902; fill(missing, 99)])
+    # test both hashrow calculation paths - the of pool length thereshold is 50%
+    for x in ([1:9; fill(1, 101)], [1:100;],
+              [1:9; fill(missing, 101)], [1:99; missing])
         x1 = PooledArray(x);
         x2 = categorical(x);
         @test DataFrames.hashrows((x,), false) ==
