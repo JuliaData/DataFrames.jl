@@ -122,10 +122,11 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             # !ismissing check is purely an optimization to avoid a copy later
             outcol = similar(incol, condf === !ismissing ? S : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
-            if incol isa CategoricalVector
-                U = Union{CategoricalArrays.leveltype(outcol),
-                          eltype(outcol) >: Missing ? Missing : Union{}}
-                outcol = CategoricalArray{U, 1}(outcol.refs, incol.pool)
+            outcolT = typeof(outcol).name
+            if outcolT.name === :CategoricalArray &&
+                nameof(outcolT.module) === :CategoricalArrays
+                # we know that CategoricalArray has `pool` field
+                outcol.pool = incol.pool
             end
             # It is safe to use a non-missing init value
             # since missing will poison the result if present
@@ -198,11 +199,15 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     if checkempty && any(iszero, counts)
         throw(ArgumentError("some groups contain only missing values"))
     end
-    # Undo pool sharing done by groupreduce_init
-    if res isa CategoricalVector && res.pool === incol.pool
-        V = Union{CategoricalArrays.leveltype(res),
-                  eltype(res) >: Missing ? Missing : Union{}}
-        res = CategoricalArray{V, 1}(res.refs, copy(res.pool))
+    # Reallocate Vector created in groupreduce_init with min or max
+    # for CategoricalVector
+    resT = typeof(res).name
+    if resT.name === :CategoricalArray &&
+        nameof(resT.module) === :CategoricalArrays
+        @assert op === min || op === max
+        # we know that CategoricalArray has `pool` field
+        @assert res.pool === incol.pool
+        res.pool = copy(incol.pool)
     end
     if isconcretetype(eltype(res))
         return res

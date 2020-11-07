@@ -1,6 +1,6 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
@@ -1200,42 +1200,42 @@ end
     summary_str = summary(gd)
     @test summary_str == "$GroupedDataFrame with 4 groups based on key: A"
     @test str == """
-    $summary_str
-    First Group (1 row): A = 1
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 1     │ x"     │ 1.0     │
-    ⋮
-    Last Group (1 row): A = 4
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+        $summary_str
+        First Group (1 row): A = 1
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+           1 │     1  x"      1.0
+        ⋮
+        Last Group (1 row): A = 4
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+           1 │     4  A\\nC    4.0"""
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    $summary_str
-    Group 1 (1 row): A = 1
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 1     │ x\"     │ 1.0     │
-    Group 2 (1 row): A = 2
-    │ Row │ A     │ B           │ C       │
-    │     │ Int64 │ String      │ Float32 │
-    ├─────┼───────┼─────────────┼─────────┤
-    │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
-    Group 3 (1 row): A = 3
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 3     │ z\$     │ 3.0     │
-    Group 4 (1 row): A = 4
-    │ Row │ A     │ B      │ C       │
-    │     │ Int64 │ String │ Float32 │
-    ├─────┼───────┼────────┼─────────┤
-    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+        $summary_str
+        Group 1 (1 row): A = 1
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+           1 │     1  x\"      1.0
+        Group 2 (1 row): A = 2
+         Row │ A      B            C
+             │ Int64  String       Float32
+        ─────┼─────────────────────────────
+           1 │     2  ∀ε>0: x+ε>x  2.0
+        Group 3 (1 row): A = 3
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+           1 │     3  z\$      3.0
+        Group 4 (1 row): A = 4
+         Row │ A      B       C
+             │ Int64  String  Float32
+        ─────┼────────────────────────
+           1 │     4  A\\nC    4.0"""
 
     # Test two-argument show
     str1, dsize = capture_stdout() do
@@ -1290,10 +1290,10 @@ end
     @test sprint(show, gd) === """
         $summary_str
         Group 1 (1 row): a = :&, b = "&"
-        │ Row │ a      │ b      │
-        │     │ Symbol │ String │
-        ├─────┼────────┼────────┤
-        │ 1   │ &      │ &      │"""
+         Row │ a       b
+             │ Symbol  String
+        ─────┼────────────────
+           1 │ &       &"""
 
     @test sprint(show, "text/html", gd) ==
         "<p><b>$summary_str</b></p><p><i>" *
@@ -1448,10 +1448,15 @@ end
           groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test isequal_typed(DataFrame(gdf), df)
 
-    @test sprint(show, groupby_checked(df, [])) == "GroupedDataFrame with 1 group based on key: \n" *
-        "Group 1 (3 rows): \n│ Row │ x1    │ x2    │ y     │\n│     │ Int64 │ Int64 │ Int64 │\n" *
-        "├─────┼───────┼───────┼───────┤\n│ 1   │ 1     │ 1     │ 1     │\n" *
-        "│ 2   │ 2     │ 1     │ 2     │\n│ 3   │ 2     │ 2     │ 3     │"
+    @test sprint(show, groupby_checked(df, [])) == """
+        GroupedDataFrame with 1 group based on key: 
+        Group 1 (3 rows): 
+         Row │ x1     x2     y
+             │ Int64  Int64  Int64
+        ─────┼─────────────────────
+           1 │     1      1      1
+           2 │     2      1      2
+           3 │     2      2      3"""
 
     df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
     gd = groupby_checked(df, :a)
@@ -3171,6 +3176,50 @@ end
           DataFrame(:x1 => sum(df.x), :p => 2df.x, :q => 2df.y, :id2 => df.id,
                     :x => df.z, Symbol("x_y_z_+") => df.x+df.y+df.z,
                     :min => min.(df.y, df.z), :max => max.(df.y, df.z), :y => df.y) |> sort
+end
+
+@testset "extra CategoricalArray aggregation tests" begin
+    for ord in (true, false)
+        df = DataFrame(id = [1, 1, 1, 2, 2, 2], x = categorical(1:6, ordered=ord))
+        gdf = groupby_checked(df, :id)
+        res = combine(gdf, :x .=> [minimum, maximum, first, last, length])
+        @test res == DataFrame(id=[1,2], x_minimum=[1,4], x_maximum=[3,6],
+                               x_first=[1,4], x_last=[3,6], x_length=[3,3])
+        @test res.x_minimum isa CategoricalVector
+        @test res.x_maximum isa CategoricalVector
+        @test res.x_first isa CategoricalVector
+        @test res.x_last isa CategoricalVector
+        @test isordered(res.x_minimum) == ord
+        @test isordered(res.x_maximum) == ord
+        @test isordered(res.x_first) == ord
+        @test isordered(res.x_last) == ord
+        @test DataAPI.refpool(res.x_minimum) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_maximum) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_first) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_last) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_minimum) !== DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_maximum) !== DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_first) !== DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_last) !== DataAPI.refpool(df.x)
+        @test res.x_minimum.pool !== df.x.pool
+        @test res.x_maximum.pool !== df.x.pool
+        @test res.x_first.pool !== df.x.pool
+        @test res.x_last.pool !== df.x.pool
+end
+
+@testset "hashing of pooled vectors" begin
+    # test both hashrow calculation paths - the of pool length threshold is 50%
+    for x in ([1:9; fill(1, 101)], [1:100;],
+              [1:9; fill(missing, 101)], [1:99; missing])
+        x1 = PooledArray(x);
+        x2 = categorical(x);
+        @test DataFrames.hashrows((x,), false) ==
+              DataFrames.hashrows((x1,), false) ==
+              DataFrames.hashrows((x2,), false)
+        @test DataFrames.hashrows((x,), true) ==
+              DataFrames.hashrows((x1,), true) ==
+              DataFrames.hashrows((x2,), true)
+    end
 end
 
 end # module
