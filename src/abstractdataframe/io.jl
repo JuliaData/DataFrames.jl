@@ -47,15 +47,8 @@ Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = ',')
 Base.show(io::IO, mime::MIME"text/tab-separated-values", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = '\t')
-Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
-          rowlabel::Symbol = :Row,
-          summary::Bool = true,
-          eltypes::Bool = true) =
-    show(io, df, allrows=allrows, allcols=allcols,
-         splitcols=splitcols, rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame; kwargs...) =
+    show(io, df; kwargs...)
 
 ##############################################################################
 #

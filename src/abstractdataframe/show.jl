@@ -573,42 +573,200 @@ function _show(io::IO,
                df::AbstractDataFrame;
                allrows::Bool = !get(io, :limit, false),
                allcols::Bool = !get(io, :limit, false),
-               splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
-               rowid=nothing,
-               truncstring::Int)
+               rowid = nothing,
+               truncate::Int = 32,
+               kwargs...)
+
     _check_consistency(df)
 
-    # we will pass around this buffer to avoid its reallocation in ourstrwidth
-    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+    aux = names(df)
+    names_len = textwidth.(aux)
+    maxwidth = max.(9, names_len)
+    names_mat = permutedims(aux)
+    types = eltype.(eachcol(df))
 
-    nrows = size(df, 1)
-    if rowid !== nothing
-        if size(df, 2) == 0
-            rowid = nothing
-        elseif nrows != 1
-            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    # NOTE: If we reuse `types` here, the time to print the first table is 2x more.
+    # This should be something related to type inference.
+    types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
+
+    if allcols && allrows
+        crop = :none
+    elseif allcols
+        crop = :vertical
+    elseif allrows
+        crop = :horizontal
+    else
+        crop = :both
+    end
+
+    compact_printing::Bool = get(io, :compact, true)
+
+    num_rows, num_cols = size(df)
+
+    # By default, we align the columns to the left unless they are numbers,
+    # which is checked in the following.
+    alignment = fill(:l, num_cols)
+
+    # This vector stores the column indices that are only floats. In this case,
+    # the printed numbers will be aligned on the decimal point.
+    float_cols = Int[]
+
+    # These vectors contain the number of the row and the padding that must be
+    # applied so that the float number is aligned with on the decimal point
+    indices = Vector{Int}[]
+    padding = Vector{Int}[]
+
+    # If the screen is limited, we do not need to process all the numbers.
+    dsize = displaysize(io)
+
+    if !allcols
+        # Given the spacing, there is no way to fit more than W/9 rows of
+        # floating numbers in the screen, where W is the display width.
+        Δc = clamp(div(dsize[2], 9), 0, num_cols)
+    else
+        Δc = num_cols
+    end
+
+    if !allrows
+        # Get the maximum number of lines that we can display given the screen size.
+        Δr = clamp(dsize[1] - 4, 0, num_rows)
+    else
+        Δr = num_rows
+    end
+
+    Δr_lim = cld(Δr, 2)
+
+    # Columns composed of numbers are printed aligned to the right.
+    for i = 1:Δc
+        type_i = nonmissingtype(types[i])
+
+        if type_i <: AbstractFloat
+            alignment[i] = :r
+            push!(float_cols, i)
+        elseif type_i <: Number
+            alignment[i] = :r
         end
     end
-    dsize = displaysize(io)
-    availableheight = dsize[1] - 7
-    nrowssubset = fld(availableheight, 2)
-    bound = min(nrowssubset - 1, nrows)
-    if allrows || nrows <= availableheight
-        rowindices1 = 1:nrows
-        rowindices2 = 1:0
+
+    # Check if the quantity of data to be printed allows the alignment of
+    # floats without taking too long.
+    num_float_cols = length(float_cols)
+
+    if Δr*num_float_cols ≤ 200_000
+        for i in float_cols
+            # Analyze the order of the number to compute the maximum padding
+            # that must be applied to align the numbers at the decimal
+            # point.
+
+            max_order_i = 0
+            order_i = zeros(Δr)
+            indices_i = zeros(Δr)
+
+            col = df[!, i]
+
+            for k = 1:Δr
+                # We need to process the top and bottom of the table because
+                # we are cropping in the middle.
+
+                kr = k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
+
+                v = col[kr]
+
+                order_v = 0
+
+                if v !== missing
+                    abs_v = abs(v)
+                    log_v = !isinf(v) && !isnan(v) && abs_v > 1 ?
+                        floor(Int, log10(abs_v))::Int : 0
+
+                    # If the order is higher than 5, then we print using
+                    # scientific notation.
+                    order_v = log_v > 5 ? 0 : floor(Int, log_v)
+
+                    # If the number is negative (including -0.0), we need to add an additional
+                    # padding to print the sign.
+                    isless(v, 0) && (order_v += 1)
+                end
+
+                order_i[k] = order_v
+                indices_i[k] = kr
+
+                order_v > max_order_i && (max_order_i = order_v)
+            end
+
+            # The algorithm requires the cells to be left aligned.
+            alignment[i] = :l
+
+            push!(indices, indices_i)
+
+            # `order_i` now contains the padding that must be applied to align
+            # the number in the decimal point.
+            order_i .= max_order_i .- order_i
+
+            push!(padding, order_i)
+        end
     else
-        rowindices1 = 1:bound
-        rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
+        empty!(float_cols)
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid,
-                             eltypes, buffer, truncstring)
-    width = getprintedwidth(maxwidths)
-    showrows(io, df, rowindices1, rowindices2, maxwidths, splitcols, allcols,
-             rowlabel, summary, eltypes, rowid, buffer, truncstring)
-    return
+
+    # Create the formatter for floating point columns.
+    ft_float(v, i, j) = _pretty_tables_float_formatter(v, i, j, float_cols,
+                                                       indices, padding,
+                                                       compact_printing)
+
+    # Make sure that `truncate` does not hide the type and the column name.
+    maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+                             for (l, t) in zip(names_len, types_str)]
+
+    # Check if the user wants to display a summary about the DataFrame that is
+    # being printed. This will be shown using the `title` option of
+    # `pretty_table`.
+    title = summary ? Base.summary(df) : ""
+
+    # If `rowid` is not `nothing`, then we are printing a data row. In this
+    # case, we will add this information using the row name column of
+    # PrettyTables.jl. Otherwise, we can just use the row number column.
+    if (rowid === nothing) || (ncol(df) == 0)
+        show_row_number = true
+        row_names = nothing
+    else
+        nrow(df) != 1 &&
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        show_row_number = false
+        row_names = [string(rowid)]
+    end
+
+    # Print the table with the selected options.
+    pretty_table(io, df, vcat(names_mat, types_str);
+                 alignment                   = alignment,
+                 compact_printing            = compact_printing,
+                 crop                        = crop,
+                 crop_num_lines_at_beginning = 2,
+                 ellipsis_line_skip          = 3,
+                 formatters                  = (_pretty_tables_general_formatter,
+                                                ft_float),
+                 header_alignment            = :l,
+                 hlines                      = [:header],
+                 highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
+                 maximum_columns_width       = maximum_columns_width,
+                 newline_at_end              = false,
+                 nosubheader                 = !eltypes,
+                 row_name_alignment          = :r,
+                 row_name_crayon             = Crayon(),
+                 row_name_column_title       = string(rowlabel),
+                 row_names                   = row_names,
+                 row_number_alignment        = :r,
+                 row_number_column_title     = string(rowlabel),
+                 show_row_number             = show_row_number,
+                 title                       = title,
+                 vcrop_mode                  = :middle,
+                 vlines                      = [1],
+                 kwargs...)
+
+    return nothing
 end
 
 """
@@ -616,18 +774,17 @@ end
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
          allgroups::Bool = !get(io, :limit, false),
-         splitcols::Bool = get(io, :limit, false),
          rowlabel::Symbol = :Row,
          summary::Bool = true,
          eltypes::Bool = true,
-         truncate::Int = 32)
+         truncate::Int = 32,
+         kwargs...)
 
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
 
 If `io` is omitted, the result is printed to `stdout`,
-and `allrows`, `allcols` and `allgroups` default to `false`
-while `splitcols` defaults to `true`.
+and `allrows`, `allcols` and `allgroups` default to `false`.
 
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
@@ -642,16 +799,14 @@ while `splitcols` defaults to `true`.
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` does not have the `IOContext` property
   `limit` set.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
-  screen width rather than printing all columns in the same block. Only applies
-  if `allcols` is `true`.
-  By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 - `eltypes::Bool = true`: Whether to print the column types under column names.
 - `truncate::Int = 32`: the maximal display width the output can use before
   being truncated (in the `textwidth` sense, excluding `…`).
   If `truncate` is 0 or less, no truncation is applied.
+- `kwargs...`: Any keyword argument supported by the function `pretty_table` of
+  PrettyTables.jl can be passed here to customize the output.
 
 # Examples
 ```jldoctest
@@ -661,34 +816,34 @@ julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
 julia> show(df, allcols=true)
 3×2 DataFrame
-│ Row │ A     │ B      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ x      │
-│ 2   │ 2     │ y      │
-│ 3   │ 3     │ z      │
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │ 1      x
+   2 │ 2      y
+   3 │ 3      z
 ```
 """
 Base.show(io::IO,
           df::AbstractDataFrame;
           allrows::Bool = !get(io, :limit, false),
           allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncstring=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
-          splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, df,
-         allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, df;
+         allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary,
+         eltypes=eltypes, truncate=truncate, kwargs...)
