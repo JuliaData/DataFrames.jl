@@ -1,6 +1,6 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
@@ -3171,6 +3171,36 @@ end
           DataFrame(:x1 => sum(df.x), :p => 2df.x, :q => 2df.y, :id2 => df.id,
                     :x => df.z, Symbol("x_y_z_+") => df.x+df.y+df.z,
                     :min => min.(df.y, df.z), :max => max.(df.y, df.z), :y => df.y) |> sort
+end
+
+@testset "extra CategoricalArray aggregation tests" begin
+    for ord in (true, false)
+        df = DataFrame(id = [1, 1, 1, 2, 2, 2], x = categorical(1:6, ordered=ord))
+        gdf = groupby_checked(df, :id)
+        res = combine(gdf, :x .=> [minimum, maximum, first, last, length])
+        @test res == DataFrame(id=[1,2], x_minimum=[1,4], x_maximum=[3,6],
+                               x_first=[1,4], x_last=[3,6], x_length=[3,3])
+        @test res.x_minimum isa CategoricalVector
+        @test res.x_maximum isa CategoricalVector
+        @test res.x_first isa CategoricalVector
+        @test res.x_last isa CategoricalVector
+        @test isordered(res.x_minimum) == ord
+        @test isordered(res.x_maximum) == ord
+        @test isordered(res.x_first) == ord
+        @test isordered(res.x_last) == ord
+        @test DataAPI.refpool(res.x_minimum) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_maximum) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_first) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_last) == DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_minimum) !== DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_maximum) !== DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_first) !== DataAPI.refpool(df.x)
+        @test DataAPI.refpool(res.x_last) !== DataAPI.refpool(df.x)
+        @test res.x_minimum.pool != df.x.pool
+        @test res.x_maximum.pool != df.x.pool
+        @test res.x_first.pool != df.x.pool
+        @test res.x_last.pool != df.x.pool
+    end
 end
 
 end # module
