@@ -3196,10 +3196,10 @@ end
         @test DataAPI.refpool(res.x_maximum) !== DataAPI.refpool(df.x)
         @test DataAPI.refpool(res.x_first) !== DataAPI.refpool(df.x)
         @test DataAPI.refpool(res.x_last) !== DataAPI.refpool(df.x)
-        @test res.x_minimum.pool != df.x.pool
-        @test res.x_maximum.pool != df.x.pool
-        @test res.x_first.pool != df.x.pool
-        @test res.x_last.pool != df.x.pool
+        @test res.x_minimum.pool !== df.x.pool
+        @test res.x_maximum.pool !== df.x.pool
+        @test res.x_first.pool !== df.x.pool
+        @test res.x_last.pool !== df.x.pool
     end
 end
 
