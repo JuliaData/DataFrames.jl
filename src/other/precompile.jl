@@ -19,7 +19,6 @@ function precompile(all=false)
         end
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_symbol),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int64}},Array{DataFrames.TransformationResult,1},Nothing,Symbol,Bool,Base.RefValue{NamedTuple{(:x, :y),Tuple{SubArray{Int64,1,Array{Int64,1},Tuple{Array{Int64,1}},false},SubArray{Int64,1,Array{Int64,1},Tuple{Array{Int64,1}},false}}}},Union{Function, Type},NamedTuple{(:x, :y),Tuple{Array{Int64,1},Array{Int64,1}}}})
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.innerjoin)),NamedTuple{(:on,),Tuple{Symbol}},typeof(innerjoin),DataFrame,DataFrame})
-        Base.precompile(Tuple{typeof(categorical),SubDataFrame{DataFrame,DataFrames.Index,Base.OneTo{Int64}},Type{Int64}})
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_astable),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int64}},Array{DataFrames.TransformationResult,1},Nothing,Type{AsTable},Bool,DataFrame,Union{Function, Type},Tuple{Array{Bool,1}}})
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_symbol),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int64}},Array{DataFrames.TransformationResult,1},Nothing,Symbol,Bool,Missing,Union{Function, Type},Tuple{Array{Union{Missing, Float64},1}}})
         Base.precompile(Tuple{typeof(categorical!),DataFrame,Array{String,1}})
