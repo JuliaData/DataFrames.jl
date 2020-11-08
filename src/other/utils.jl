@@ -83,16 +83,3 @@ else
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
-
-# precompile.jl contains precompilation directives for all methods whose compilation
-# is triggered by running DataFrames tests and takes more than 0.01s.
-# It is generated using the SnoopCompile package via:
-# using SnoopCompileCore
-# inf_timing = @snoopi tmin=0.01 include("test/runtests.jl")
-# using SnoopCompile
-# pc = SnoopCompile.parcel(inf_timing)
-# SnoopCompile.write("src/other/precompile.jl", pc[:DataFrames], always=true)
-function precompile()
-    include(joinpath(dirname(pathof(DataFrames)), "other", "precompile.jl"))
-    return nothing
-end
