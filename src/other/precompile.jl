@@ -22,7 +22,6 @@ function precompile(all=false)
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_astable),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int64}},Array{DataFrames.TransformationResult,1},Nothing,Type{AsTable},Bool,DataFrame,Union{Function, Type},Tuple{Array{Bool,1}}})
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_symbol),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int64}},Array{DataFrames.TransformationResult,1},Nothing,Symbol,Bool,Missing,Union{Function, Type},Tuple{Array{Union{Missing, Float64},1}}})
         Base.precompile(Tuple{typeof(categorical!),DataFrame,Array{String,1}})
-        Base.precompile(Tuple{typeof(show),IOContext{Base.GenericIOBuffer{Array{UInt8,1}}},DataFrameRow{DataFrame,DataFrames.SubIndex{DataFrames.Index,UnitRange{Int64},UnitRange{Int64}}}})
         let fbody = try __lookup_kwbody__(which(DataFrames.combine, (GroupedDataFrame{DataFrame},Pair{Symbol,Pair{ByRow{typeof(sin)},Symbol}},Vararg{Union{Regex, AbstractString, Function, Signed, Symbol, Unsigned, Pair, AbstractArray{T,1} where T, Type, All, Between, Cols, InvertedIndex},N} where N,))) catch missing end
             if !ismissing(fbody)
                 Base.precompile(fbody, (Bool,Bool,Bool,typeof(combine),GroupedDataFrame{DataFrame},Pair{Symbol,Pair{ByRow{typeof(sin)},Symbol}},Vararg{Union{Regex, AbstractString, Function, Signed, Symbol, Unsigned, Pair, AbstractArray{T,1} where T, Type, All, Between, Cols, InvertedIndex},N} where N,))
@@ -67,7 +66,6 @@ function precompile(all=false)
                     Base.precompile(fbody, (Bool,Bool,Bool,Bool,typeof(select),GroupedDataFrame{DataFrame},Pair{Symbol,typeof(+)},Vararg{Any,N} where N,))
                 end
             end
-        Base.precompile(Tuple{typeof(categorical),SubDataFrame{DataFrame,DataFrames.Index,Base.OneTo{Int64}},Array{Symbol,1}})
         Base.precompile(Tuple{typeof(show),GroupedDataFrame{DataFrame}})
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.combine)),NamedTuple{(:ungroup,),Tuple{Bool}},typeof(combine),GroupedDataFrame{DataFrame},Pair{typeof(nrow),String}})
         Base.precompile(Tuple{typeof(combine),GroupedDataFrame{DataFrame},Pair{Array{Any,1},Pair{ByRow{typeof(rand)},Symbol}}})
@@ -97,10 +95,8 @@ function precompile(all=false)
                 end
             end
         Base.precompile(Tuple{typeof(DataAPI.levels),DataFrames.RepeatedVector{CategoricalArrays.CategoricalValue{String,UInt32}}})
-        Base.precompile(Tuple{typeof(categorical),SubDataFrame{DataFrame,DataFrames.Index,Base.OneTo{Int64}},Array{String,1}})
         Base.precompile(Tuple{typeof(Base.Broadcast.materialize),Base.Broadcast.Broadcasted{DataFrames.DataFrameStyle,Nothing,typeof(+),Tuple{DataFrame,Base.ReshapedArray{Int64,2,Base.OneTo{Int64},Tuple{}}}}})
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_symbol),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int64}},Array{DataFrames.TransformationResult,1},Nothing,Symbol,Bool,BigFloat,Union{Function, Type},Tuple{Array{BigFloat,1}}})
-        Base.precompile(Tuple{typeof(categorical),SubDataFrame{DataFrame,DataFrames.Index,Base.OneTo{Int64}},Colon})
         Base.precompile(Tuple{typeof(repeat),DataFrame,Int64})
         Base.precompile(Tuple{typeof(DataFrames.row_group_slots),Tuple{PooledArrays.PooledArray{Int64,UInt8,1,Array{UInt8,1}}},Val{false},Array{Int64,1},Bool,Bool})
         let fbody = try __lookup_kwbody__(which(DataFrames.combine, (GroupedDataFrame{DataFrame},InvertedIndex{Symbol},Vararg{Union{Regex, AbstractString, Function, Signed, Symbol, Unsigned, Pair, AbstractArray{T,1} where T, Type, All, Between, Cols, InvertedIndex},N} where N,))) catch missing end
