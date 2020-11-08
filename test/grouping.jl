@@ -3205,6 +3205,7 @@ end
         @test res.x_maximum.pool !== df.x.pool
         @test res.x_first.pool !== df.x.pool
         @test res.x_last.pool !== df.x.pool
+    end
 end
 
 @testset "hashing of pooled vectors" begin
