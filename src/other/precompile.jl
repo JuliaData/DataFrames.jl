@@ -7,6 +7,9 @@
 # using SnoopCompile
 # pc = SnoopCompile.parcel(inf_timing)
 # SnoopCompile.write("src/other/precompile_tmp.jl", pc[:DataFrames], always=true)
+# sed -i '/categorical/di' src/other/precompile_tmp.jl # Remove CategoricalArrays uses
+# sed -i '/var"/d' src/other/precompile_tmp.jl # var"" is not supported on old Julia versions
+# sed -i '/materialize!/d' src/other/precompile_tmp.jl # Work around an inference bug
 function precompile(all=false)
     if !all
         ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
