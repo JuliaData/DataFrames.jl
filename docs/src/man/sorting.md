@@ -103,7 +103,6 @@ julia> sort!(iris, [:Species, :SepalWidth])
                                                         136 rows omitted
 
 julia> sort!(iris, [order(:Species, by=length), order(:SepalLength, rev=true)])
-
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String
