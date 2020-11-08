@@ -1449,8 +1449,8 @@ end
     @test isequal_typed(DataFrame(gdf), df)
 
     @test sprint(show, groupby_checked(df, [])) == """
-        GroupedDataFrame with 1 group based on key: 
-        Group 1 (3 rows): 
+        GroupedDataFrame with 1 group based on key:
+        Group 1 (3 rows):
          Row │ x1     x2     y
              │ Int64  Int64  Int64
         ─────┼─────────────────────
@@ -3205,6 +3205,7 @@ end
         @test res.x_maximum.pool !== df.x.pool
         @test res.x_first.pool !== df.x.pool
         @test res.x_last.pool !== df.x.pool
+    end
 end
 
 @testset "hashing of pooled vectors" begin
