@@ -12,11 +12,7 @@ CurrentModule = DataFrames
 ```@docs
 compacttype
 gennames
-getchunkbounds
 getmaxwidths
-getprintedwidth
 ourshow
 ourstrwidth
-showrowindices
-showrows
 ```
