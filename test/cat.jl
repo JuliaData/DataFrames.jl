@@ -316,7 +316,7 @@ end
     df = vcat(DataFrame([CategoricalArray([1])], [:x]),
               DataFrame([CategoricalArray(["1"])], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
-    @test df[!, :x] isa CategoricalVector{Any}
+    @test df[!, :x] isa CategoricalVector{Union{Int, String}}
     df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
     @test df == DataFrame([[true, false]], [:x])
     @test typeof.(eachcol(df)) == [Vector{Bool}]
