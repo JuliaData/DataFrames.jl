@@ -1448,10 +1448,11 @@ end
           groupby_checked(DataFrame(x2_identity=[1,1,2]), [])
     @test isequal_typed(DataFrame(gdf), df)
 
-    @test sprint(show, groupby_checked(df, [])) == """
-        GroupedDataFrame with 1 group based on key:
-        Group 1 (3 rows):
-         Row │ x1     x2     y
+    # work around automatic trimming of trailing whitespace in most editors
+    @test sprint(show, groupby_checked(df, [])) ==
+        "GroupedDataFrame with 1 group based on key: \n" *
+        "Group 1 (3 rows): \n" *
+        """ Row │ x1     x2     y
              │ Int64  Int64  Int64
         ─────┼─────────────────────
            1 │     1      1      1
