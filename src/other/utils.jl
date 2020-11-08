@@ -91,8 +91,8 @@ funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
 # inf_timing = @snoopi tmin=0.01 include("test/runtests.jl")
 # using SnoopCompile
 # pc = SnoopCompile.parcel(inf_timing)
-# SnoopCompile.write("src/precompile", pc[:DataFrames], always=true)
+# SnoopCompile.write("src/other/precompile.jl", pc[:DataFrames], always=true)
 function precompile()
-    include(joinpath(dirname(pathof(DataFrames)), "precompile.jl"))
+    include(joinpath(dirname(pathof(DataFrames)), "other", "precompile.jl"))
     return nothing
 end
