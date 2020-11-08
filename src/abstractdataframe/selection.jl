@@ -669,212 +669,198 @@ $TRANSFORMATION_COMMON_RULES
 ```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
 
 julia> select(df, 2)
 3×1 DataFrame
-│ Row │ b     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 4     │
-│ 2   │ 5     │
-│ 3   │ 6     │
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
 
 julia> select(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
-│ Row │ c        │ b     │
-│     │ Float64  │ Int64 │
-├─────┼──────────┼───────┤
-│ 1   │ 0.841471 │ 4     │
-│ 2   │ 0.909297 │ 5     │
-│ 3   │ 0.14112  │ 6     │
+ Row │ c         b
+     │ Float64   Int64
+─────┼─────────────────
+   1 │ 0.841471      4
+   2 │ 0.909297      5
+   3 │ 0.14112       6
 
 julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
-│ Row │ a     │ b     │ a_b_function │
-│     │ Int64 │ Int64 │ Float64      │
-├─────┼───────┼───────┼──────────────┤
-│ 1   │ 1     │ 4     │ 0.0          │
-│ 2   │ 2     │ 5     │ 2.0          │
-│ 3   │ 3     │ 6     │ 4.0          │
+ Row │ a      b      a_b_function
+     │ Int64  Int64  Float64
+─────┼────────────────────────────
+   1 │     1      4  0.0
+   2 │     2      5  2.0
+   3 │     3      6  4.0
 
 julia> select(df, names(df) .=> [minimum maximum])
 3×4 DataFrame
-│ Row │ a_minimum │ b_minimum │ a_maximum │ b_maximum │
-│     │ Int64     │ Int64     │ Int64     │ Int64     │
-├─────┼───────────┼───────────┼───────────┼───────────┤
-│ 1   │ 1         │ 4         │ 3         │ 6         │
-│ 2   │ 1         │ 4         │ 3         │ 6         │
-│ 3   │ 1         │ 4         │ 3         │ 6         │
+ Row │ a_minimum  b_minimum  a_maximum  b_maximum
+     │ Int64      Int64      Int64      Int64
+─────┼────────────────────────────────────────────
+   1 │         1          4          3          6
+   2 │         1          4          3          6
+   3 │         1          4          3          6
 
 julia> using Statistics
 
 julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
 3×1 DataFrame
-│ Row │ a_b     │
-│     │ Float64 │
-├─────┼─────────┤
-│ 1   │ 2.5     │
-│ 2   │ 3.5     │
-│ 3   │ 4.5     │
+ Row │ a_b
+     │ Float64
+─────┼─────────
+   1 │ 2.5
+   2 │ 3.5
+   3 │ 4.5
 
 julia> select(first, df)
 3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 1     │ 4     │
-│ 3   │ 1     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     1      4
+   3 │     1      4
 
 julia> df = DataFrame(a=1:3, b=4:6, c=7:9)
 3×3 DataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │
-│ 2   │ 2     │ 5     │ 8     │
-│ 3   │ 3     │ 6     │ 9     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      7
+   2 │     2      5      8
+   3 │     3      6      9
 
 julia> select(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats,
               AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
 3×3 DataFrame
-│ Row │ stats                   │ mean    │ std     │
-│     │ NamedTuple…             │ Float64 │ Float64 │
-├─────┼─────────────────────────┼─────────┼─────────┤
-│ 1   │ (mean = 4.0, std = 3.0) │ 4.0     │ 3.0     │
-│ 2   │ (mean = 5.0, std = 3.0) │ 5.0     │ 3.0     │
-│ 3   │ (mean = 6.0, std = 3.0) │ 6.0     │ 3.0     │
+ Row │ stats                    mean     std
+     │ NamedTup…                Float64  Float64
+─────┼───────────────────────────────────────────
+   1 │ (mean = 4.0, std = 3.0)  4.0      3.0
+   2 │ (mean = 5.0, std = 3.0)  5.0      3.0
+   3 │ (mean = 6.0, std = 3.0)  6.0      3.0
 
 julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8)
 8×3 DataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │
-│ 2   │ 1     │ 1     │ 2     │
-│ 3   │ 1     │ 2     │ 3     │
-│ 4   │ 2     │ 1     │ 4     │
-│ 5   │ 2     │ 2     │ 5     │
-│ 6   │ 1     │ 1     │ 6     │
-│ 7   │ 1     │ 2     │ 7     │
-│ 8   │ 2     │ 1     │ 8     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      1      2
+   3 │     1      2      3
+   4 │     2      1      4
+   5 │     2      2      5
+   6 │     1      1      6
+   7 │     1      2      7
+   8 │     2      1      8
 
 julia> gd = groupby(df, :a);
-
-julia> select(gd, :c => sum, nrow)
-8×3 DataFrame
-│ Row │ a     │ c_sum │ nrow  │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 19    │ 5     │
-│ 2   │ 1     │ 19    │ 5     │
-│ 3   │ 1     │ 19    │ 5     │
-│ 4   │ 2     │ 17    │ 3     │
-│ 5   │ 2     │ 17    │ 3     │
-│ 6   │ 1     │ 19    │ 5     │
-│ 7   │ 1     │ 19    │ 5     │
-│ 8   │ 2     │ 17    │ 3     │
 
 julia> select(gd, :c => sum, nrow, ungroup=false)
 GroupedDataFrame with 2 groups based on key: a
 First Group (5 rows): a = 1
-│ Row │ a     │ c_sum │ nrow  │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 19    │ 5     │
-│ 2   │ 1     │ 19    │ 5     │
-│ 3   │ 1     │ 19    │ 5     │
-│ 4   │ 1     │ 19    │ 5     │
-│ 5   │ 1     │ 19    │ 5     │
+ Row │ a      c_sum  nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1     19      5
+   2 │     1     19      5
+   3 │     1     19      5
+   4 │     1     19      5
+   5 │     1     19      5
 ⋮
 Last Group (3 rows): a = 2
-│ Row │ a     │ c_sum │ nrow  │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 17    │ 3     │
-│ 2   │ 2     │ 17    │ 3     │
-│ 3   │ 2     │ 17    │ 3     │
+ Row │ a      c_sum  nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2     17      3
+   2 │     2     17      3
+   3 │     2     17      3
 
 # specifying a name for target column
 julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 8×2 DataFrame
-│ Row │ a     │ sum_log_c │
-│     │ Int64 │ Float64   │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ 5.52943   │
-│ 2   │ 1     │ 5.52943   │
-│ 3   │ 1     │ 5.52943   │
-│ 4   │ 2     │ 5.07517   │
-│ 5   │ 2     │ 5.07517   │
-│ 6   │ 1     │ 5.52943   │
-│ 7   │ 1     │ 5.52943   │
-│ 8   │ 2     │ 5.07517   │
+ Row │ a      sum_log_c
+     │ Int64  Float64
+─────┼──────────────────
+   1 │     1  5.52943
+   2 │     1  5.52943
+   3 │     1  5.52943
+   4 │     2  5.07517
+   5 │     2  5.07517
+   6 │     1  5.52943
+   7 │     1  5.52943
+   8 │     2  5.07517
 
 julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
 8×3 DataFrame
-│ Row │ a     │ b_sum │ c_sum │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 8     │ 19    │
-│ 2   │ 1     │ 8     │ 19    │
-│ 3   │ 1     │ 8     │ 19    │
-│ 4   │ 2     │ 4     │ 17    │
-│ 5   │ 2     │ 4     │ 17    │
-│ 6   │ 1     │ 8     │ 19    │
-│ 7   │ 1     │ 8     │ 19    │
-│ 8   │ 2     │ 4     │ 17    │
+ Row │ a      b_sum  c_sum
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      8     19
+   2 │     1      8     19
+   3 │     1      8     19
+   4 │     2      4     17
+   5 │     2      4     17
+   6 │     1      8     19
+   7 │     1      8     19
+   8 │     2      4     17
 
- # multiple arguments, renaming and keepkeys
+# multiple arguments, renaming and keepkeys
 julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
-│ Row │ b1    │ c1    │ b_c_+ │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 1     │ 3     │
-│ 2   │ 1     │ 2     │ 3     │
-│ 3   │ 2     │ 3     │ 5     │
-│ 4   │ 1     │ 4     │ 5     │
-│ 5   │ 2     │ 5     │ 7     │
-│ 6   │ 1     │ 6     │ 7     │
-│ 7   │ 2     │ 7     │ 9     │
-│ 8   │ 1     │ 8     │ 9     │
+ Row │ b1     c1     b_c_+
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      3
+   2 │     1      2      3
+   3 │     2      3      5
+   4 │     1      4      5
+   5 │     2      5      7
+   6 │     1      6      7
+   7 │     2      7      9
+   8 │     1      8      9
 
 # broadcasting and column expansion
 julia> select(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
-│ Row │ a     │ b     │ min   │ max   │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │ 2     │
-│ 2   │ 1     │ 1     │ 1     │ 2     │
-│ 3   │ 1     │ 2     │ 2     │ 3     │
-│ 4   │ 2     │ 1     │ 1     │ 4     │
-│ 5   │ 2     │ 2     │ 2     │ 5     │
-│ 6   │ 1     │ 1     │ 1     │ 6     │
-│ 7   │ 1     │ 2     │ 2     │ 7     │
-│ 8   │ 2     │ 1     │ 1     │ 8     │
+ Row │ a      b      min    max
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      1      2
+   2 │     1      1      1      2
+   3 │     1      2      2      3
+   4 │     2      1      1      4
+   5 │     2      2      2      5
+   6 │     1      1      1      6
+   7 │     1      2      2      7
+   8 │     2      1      1      8
 
 julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 8×4 DataFrame
-│ Row │ a     │ b     │ c     │ b_c   │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │ 3     │
-│ 2   │ 1     │ 1     │ 2     │ 3     │
-│ 3   │ 1     │ 2     │ 3     │ 5     │
-│ 4   │ 2     │ 1     │ 4     │ 5     │
-│ 5   │ 2     │ 2     │ 5     │ 7     │
-│ 6   │ 1     │ 1     │ 6     │ 7     │
-│ 7   │ 1     │ 2     │ 7     │ 9     │
-│ 8   │ 2     │ 1     │ 8     │ 9     │
+ Row │ a      b      c      b_c
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      1      3
+   2 │     1      1      2      3
+   3 │     1      2      3      5
+   4 │     2      1      4      5
+   5 │     2      2      5      7
+   6 │     1      1      6      7
+   7 │     1      2      7      9
+   8 │     2      1      8      9
 ```
 
 """
@@ -919,24 +905,24 @@ is needed to be able to return a different value for the grouping column:
 julia> gdf = groupby(DataFrame(x=1:2), :x)
 GroupedDataFrame with 2 groups based on key: x
 First Group (1 row): x = 1
-│ Row │ x     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     1
 ⋮
 Last Group (1 row): x = 2
-│ Row │ x     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 2     │
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     2
 
 julia> transform(gdf, x -> (x=10,), keepkeys=false)
 2×1 DataFrame
-│ Row │ x     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 10    │
-│ 2   │ 10    │
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │    10
+   2 │    10
 
 julia> transform(gdf, x -> (x=10,), keepkeys=true)
 ERROR: ArgumentError: column :x in returned data frame is not equal to grouping key :x
@@ -980,81 +966,81 @@ $TRANSFORMATION_COMMON_RULES
 ```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
 
 julia> combine(df, :a => sum, nrow, renamecols=false)
 1×2 DataFrame
-│ Row │ a     │ nrow  │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 6     │ 3     │
+ Row │ a      nrow
+     │ Int64  Int64
+─────┼──────────────
+   1 │     6      3
 
 julia> combine(df, :a => ByRow(sin) => :c, :b)
 3×2 DataFrame
-│ Row │ c        │ b     │
-│     │ Float64  │ Int64 │
-├─────┼──────────┼───────┤
-│ 1   │ 0.841471 │ 4     │
-│ 2   │ 0.909297 │ 5     │
-│ 3   │ 0.14112  │ 6     │
+ Row │ c         b
+     │ Float64   Int64
+─────┼─────────────────
+   1 │ 0.841471      4
+   2 │ 0.909297      5
+   3 │ 0.14112       6
 
 julia> combine(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
-│ Row │ a     │ b     │ a_b_function │
-│     │ Int64 │ Int64 │ Float64      │
-├─────┼───────┼───────┼──────────────┤
-│ 1   │ 1     │ 4     │ 0.0          │
-│ 2   │ 2     │ 5     │ 2.0          │
-│ 3   │ 3     │ 6     │ 4.0          │
+ Row │ a      b      a_b_function
+     │ Int64  Int64  Float64
+─────┼────────────────────────────
+   1 │     1      4  0.0
+   2 │     2      5  2.0
+   3 │     3      6  4.0
 
 julia> combine(df, names(df) .=> [minimum maximum])
 1×4 DataFrame
-│ Row │ a_minimum │ b_minimum │ a_maximum │ b_maximum │
-│     │ Int64     │ Int64     │ Int64     │ Int64     │
-├─────┼───────────┼───────────┼───────────┼───────────┤
-│ 1   │ 1         │ 4         │ 3         │ 6         │
+ Row │ a_minimum  b_minimum  a_maximum  b_maximum
+     │ Int64      Int64      Int64      Int64
+─────┼────────────────────────────────────────────
+   1 │         1          4          3          6
 
 julia> using Statistics
 
 julia> combine(df, AsTable(:) => ByRow(mean), renamecols=false)
 3×1 DataFrame
-│ Row │ a_b     │
-│     │ Float64 │
-├─────┼─────────┤
-│ 1   │ 2.5     │
-│ 2   │ 3.5     │
-│ 3   │ 4.5     │
+ Row │ a_b
+     │ Float64
+─────┼─────────
+   1 │ 2.5
+   2 │ 3.5
+   3 │ 4.5
 
 julia> combine(first, df)
 1×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
 
 julia> df = DataFrame(a=1:3, b=4:6, c=7:9)
 3×3 DataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │
-│ 2   │ 2     │ 5     │ 8     │
-│ 3   │ 3     │ 6     │ 9     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      7
+   2 │     2      5      8
+   3 │     3      6      9
 
 julia> combine(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats,
                AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => AsTable)
 3×3 DataFrame
-│ Row │ stats                   │ mean    │ std     │
-│     │ NamedTuple…             │ Float64 │ Float64 │
-├─────┼─────────────────────────┼─────────┼─────────┤
-│ 1   │ (mean = 4.0, std = 3.0) │ 4.0     │ 3.0     │
-│ 2   │ (mean = 5.0, std = 3.0) │ 5.0     │ 3.0     │
-│ 3   │ (mean = 6.0, std = 3.0) │ 6.0     │ 3.0     │
+ Row │ stats                    mean     std
+     │ NamedTup…                Float64  Float64
+─────┼───────────────────────────────────────────
+   1 │ (mean = 4.0, std = 3.0)  4.0      3.0
+   2 │ (mean = 5.0, std = 3.0)  5.0      3.0
+   3 │ (mean = 6.0, std = 3.0)  6.0      3.0
 
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
@@ -1064,139 +1050,137 @@ julia> gd = groupby(df, :a);
 
 julia> combine(gd, :c => sum, nrow)
 4×3 DataFrame
-│ Row │ a     │ c_sum │ nrow  │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 6     │ 2     │
-│ 2   │ 2     │ 8     │ 2     │
-│ 3   │ 3     │ 10    │ 2     │
-│ 4   │ 4     │ 12    │ 2     │
+ Row │ a      c_sum  nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6      2
+   2 │     2      8      2
+   3 │     3     10      2
+   4 │     4     12      2
 
 julia> combine(gd, :c => sum, nrow, ungroup=false)
 GroupedDataFrame with 4 groups based on key: a
 First Group (1 row): a = 1
-│ Row │ a     │ c_sum │ nrow  │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 6     │ 2     │
+ Row │ a      c_sum  nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6      2
 ⋮
 Last Group (1 row): a = 4
-│ Row │ a     │ c_sum │ nrow  │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 4     │ 12    │ 2     │
+ Row │ a      c_sum  nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4     12      2
 
 julia> combine(gd) do d # do syntax for the slower variant
            sum(d.c)
        end
 4×2 DataFrame
-│ Row │ a     │ x1    │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 6     │
-│ 2   │ 2     │ 8     │
-│ 3   │ 3     │ 10    │
-│ 4   │ 4     │ 12    │
+ Row │ a      x1
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      6
+   2 │     2      8
+   3 │     3     10
+   4 │     4     12
 
-# specifying a name for target column
-julia> combine(gd, :c => (x -> sum(log, x)) => :sum_log_c)
+julia> combine(gd, :c => (x -> sum(log, x)) => :sum_log_c) # specifying a name for target column
 4×2 DataFrame
-│ Row │ a     │ sum_log_c │
-│     │ Int64 │ Float64   │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ 1.60944   │
-│ 2   │ 2     │ 2.48491   │
-│ 3   │ 3     │ 3.04452   │
-│ 4   │ 4     │ 3.46574   │
+ Row │ a      sum_log_c
+     │ Int64  Float64
+─────┼──────────────────
+   1 │     1  1.60944
+   2 │     2  2.48491
+   3 │     3  3.04452
+   4 │     4  3.46574
 
 julia> combine(gd, [:b, :c] .=> sum) # passing a vector of pairs
 4×3 DataFrame
-│ Row │ a     │ b_sum │ c_sum │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 6     │
-│ 2   │ 2     │ 2     │ 8     │
-│ 3   │ 3     │ 4     │ 10    │
-│ 4   │ 4     │ 2     │ 12    │
+ Row │ a      b_sum  c_sum
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      6
+   2 │     2      2      8
+   3 │     3      4     10
+   4 │     4      2     12
 
 julia> combine(gd) do sdf # dropping group when DataFrame() is returned
           sdf.c[1] != 1 ? sdf : DataFrame()
        end
 6×3 DataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 1     │ 2     │
-│ 2   │ 2     │ 1     │ 6     │
-│ 3   │ 3     │ 2     │ 3     │
-│ 4   │ 3     │ 2     │ 7     │
-│ 5   │ 4     │ 1     │ 4     │
-│ 6   │ 4     │ 1     │ 8     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      2
+   2 │     2      1      6
+   3 │     3      2      3
+   4 │     3      2      7
+   5 │     4      1      4
+   6 │     4      1      8
 
 # auto-splatting, renaming and keepkeys
 julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
-│ Row │ b1    │ c1    │ b_c_+ │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 1     │ 3     │
-│ 2   │ 2     │ 5     │ 7     │
-│ 3   │ 1     │ 2     │ 3     │
-│ 4   │ 1     │ 6     │ 7     │
-│ 5   │ 2     │ 3     │ 5     │
-│ 6   │ 2     │ 7     │ 9     │
-│ 7   │ 1     │ 4     │ 5     │
-│ 8   │ 1     │ 8     │ 9     │
+ Row │ b1     c1     b_c_+
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      3
+   2 │     2      5      7
+   3 │     1      2      3
+   4 │     1      6      7
+   5 │     2      3      5
+   6 │     2      7      9
+   7 │     1      4      5
+   8 │     1      8      9
 
 # broadcasting and column expansion
 julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
-│ Row │ a     │ b     │ min   │ max   │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │ 2     │
-│ 2   │ 1     │ 2     │ 2     │ 5     │
-│ 3   │ 2     │ 1     │ 1     │ 2     │
-│ 4   │ 2     │ 1     │ 1     │ 6     │
-│ 5   │ 3     │ 2     │ 2     │ 3     │
-│ 6   │ 3     │ 2     │ 2     │ 7     │
-│ 7   │ 4     │ 1     │ 1     │ 4     │
-│ 8   │ 4     │ 1     │ 1     │ 8     │
+ Row │ a      b      min    max
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      1      2
+   2 │     1      2      2      5
+   3 │     2      1      1      2
+   4 │     2      1      1      6
+   5 │     3      2      2      3
+   6 │     3      2      2      7
+   7 │     4      1      1      4
+   8 │     4      1      1      8
 
-# preventing vector from being spread across multiple rows
-julia> combine(gd, [:b, :c] .=> Ref)
+julia> combine(gd, [:b, :c] .=> Ref) # preventing vector from being spread across multiple rows
 4×3 DataFrame
-│ Row │ a     │ b_Ref    │ c_Ref    │
-│     │ Int64 │ SubArra… │ SubArra… │
-├─────┼───────┼──────────┼──────────┤
-│ 1   │ 1     │ [2, 2]   │ [1, 5]   │
-│ 2   │ 2     │ [1, 1]   │ [2, 6]   │
-│ 3   │ 3     │ [2, 2]   │ [3, 7]   │
-│ 4   │ 4     │ [1, 1]   │ [4, 8]   │
+ Row │ a      b_Ref      c_Ref
+     │ Int64  SubArray…  SubArray…
+─────┼─────────────────────────────
+   1 │     1  [2, 2]     [1, 5]
+   2 │     2  [1, 1]     [2, 6]
+   3 │     3  [2, 2]     [3, 7]
+   4 │     4  [1, 1]     [4, 8]
 
 julia> combine(gd, AsTable(:) => Ref) # protecting result
 4×2 DataFrame
-│ Row │ a     │ a_b_c_Ref                            │
-│     │ Int64 │ NamedTuple…                          │
-├─────┼───────┼──────────────────────────────────────┤
-│ 1   │ 1     │ (a = [1, 1], b = [2, 2], c = [1, 5]) │
-│ 2   │ 2     │ (a = [2, 2], b = [1, 1], c = [2, 6]) │
-│ 3   │ 3     │ (a = [3, 3], b = [2, 2], c = [3, 7]) │
-│ 4   │ 4     │ (a = [4, 4], b = [1, 1], c = [4, 8]) │
+ Row │ a      a_b_c_Ref
+     │ Int64  NamedTup…
+─────┼──────────────────────────────────────────
+   1 │     1  (a = [1, 1], b = [2, 2], c = [1,…
+   2 │     2  (a = [2, 2], b = [1, 1], c = [2,…
+   3 │     3  (a = [3, 3], b = [2, 2], c = [3,…
+   4 │     4  (a = [4, 4], b = [1, 1], c = [4,…
 
 julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 8×4 DataFrame
-│ Row │ a     │ b     │ c     │ b_c   │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │ 3     │
-│ 2   │ 1     │ 2     │ 5     │ 7     │
-│ 3   │ 2     │ 1     │ 2     │ 3     │
-│ 4   │ 2     │ 1     │ 6     │ 7     │
-│ 5   │ 3     │ 2     │ 3     │ 5     │
-│ 6   │ 3     │ 2     │ 7     │ 9     │
-│ 7   │ 4     │ 1     │ 4     │ 5     │
-│ 8   │ 4     │ 1     │ 8     │ 9     │
+ Row │ a      b      c      b_c
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      1      3
+   2 │     1      2      5      7
+   3 │     2      1      2      3
+   4 │     2      1      6      7
+   5 │     3      2      3      5
+   6 │     3      2      7      9
+   7 │     4      1      4      5
+   8 │     4      1      8      9
 ```
 """
 combine(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
@@ -1264,19 +1248,22 @@ function _manipulate(df::AbstractDataFrame, @nospecialize(normalized_cs), copyco
     #
     # julia> df = DataFrame(a=1:2, b=3:4)
     # 2×2 DataFrame
-    # │ Row │ a     │ b     │
-    # │     │ Int64 │ Int64 │
-    # ├─────┼───────┼───────┤
-    # │ 1   │ 1     │ 3     │
-    # │ 2   │ 2     │ 4     │
+    #  Row │ a      b
+    #      │ Int64  Int64
+    # ─────┼──────────────
+    #    1 │     1      3
+    #    2 │     2      4
     #
-    # julia> select(df, :, :a => ByRow(sin) => :a, :a, 1)
+    # julia> select(df, :, :a => ByRow(sin) => :a)
     # 2×2 DataFrame
-    # │ Row │ a        │ b     │
-    # │     │ Float64  │ Int64 │
-    # ├─────┼──────────┼───────┤
-    # │ 1   │ 0.841471 │ 3     │
-    # │ 2   │ 0.909297 │ 4     │
+    #  Row │ a         b
+    #      │ Float64   Int64
+    # ─────┼─────────────────
+    #    1 │ 0.841471      3
+    #    2 │ 0.909297      4
+    #
+    # julia> select(df, :, :a => ByRow(sin) => :a, :a)
+    # ERROR: ArgumentError: duplicate output column name: :a
     #
     # transformed_cols keeps a set of columns that were generated via a transformation
     # up till the point. Note that single column selection and column renaming is

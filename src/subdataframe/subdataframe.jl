@@ -14,12 +14,57 @@ even if they are added or removed after its creation.
 
 # Examples
 ```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-sdf1 = view(df, 2:3) # column subsetting
-sdf2 = @view df[end:-1:1, [1,3]]  # row and column subsetting
-sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = randn(8))
+8×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Float64
+─────┼─────────────────────────
+   1 │     1      2  -0.547803
+   2 │     2      1  -0.250866
+   3 │     3      2   1.09109
+   4 │     4      1   0.190974
+   5 │     1      2  -1.14052
+   6 │     2      1   1.55582
+   7 │     3      2  -0.667519
+   8 │     4      1  -0.495884
+
+julia> sdf1 = view(df, :, 2:3) # column subsetting
+8×2 SubDataFrame
+ Row │ b      c
+     │ Int64  Float64
+─────┼──────────────────
+   1 │     2  -0.547803
+   2 │     1  -0.250866
+   3 │     2   1.09109
+   4 │     1   0.190974
+   5 │     2  -1.14052
+   6 │     1   1.55582
+   7 │     2  -0.667519
+   8 │     1  -0.495884
+
+julia> sdf2 = @view df[end:-1:1, [1,3]]  # row and column subsetting
+8×2 SubDataFrame
+ Row │ a      c
+     │ Int64  Float64
+─────┼──────────────────
+   1 │     4  -0.495884
+   2 │     3  -0.667519
+   3 │     2   1.55582
+   4 │     1  -1.14052
+   5 │     4   0.190974
+   6 │     3   1.09109
+   7 │     2  -0.250866
+   8 │     1  -0.547803
+
+julia> sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Float64
+─────┼─────────────────────────
+   1 │     1      2  -0.547803
+   2 │     1      2  -1.14052
 ```
 """
 struct SubDataFrame{D<:AbstractDataFrame,S<:AbstractIndex,T<:AbstractVector{Int}} <: AbstractDataFrame

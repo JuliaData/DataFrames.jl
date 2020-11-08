@@ -31,34 +31,34 @@ julia> df = DataFrame(a = repeat([1, 2], outer=[2]),
                       b = repeat(["a", "b"], inner=[2]),
                       c = 1:4)
 4×3 DataFrame
-│ Row │ a     │ b      │ c     │
-│     │ Int64 │ String │ Int64 │
-├─────┼───────┼────────┼───────┤
-│ 1   │ 1     │ a      │ 1     │
-│ 2   │ 2     │ a      │ 2     │
-│ 3   │ 1     │ b      │ 3     │
-│ 4   │ 2     │ b      │ 4     │
+ Row │ a      b       c
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           1
+   2 │     2  a           2
+   3 │     1  b           3
+   4 │     2  b           4
 
 julia> df[1, :]
 DataFrameRow
-│ Row │ a     │ b      │ c     │
-│     │ Int64 │ String │ Int64 │
-├─────┼───────┼────────┼───────┤
-│ 1   │ 1     │ a      │ 1     │
+ Row │ a      b       c
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           1
 
 julia> @view df[end, [:a]]
 DataFrameRow
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 4   │ 2     │
+ Row │ a
+     │ Int64
+─────┼───────
+   4 │     2
 
 julia> eachrow(df)[1]
 DataFrameRow
-│ Row │ a     │ b      │ c     │
-│     │ Int64 │ String │ Int64 │
-├─────┼───────┼────────┼───────┤
-│ 1   │ 1     │ a      │ 1     │
+ Row │ a      b       c
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           1
 
 julia> Tuple(df[1, :])
 (1, "a", 1)
@@ -131,19 +131,19 @@ the source `DataFrame` where data that `dfr` gives access to is stored.
 ```julia
 julia> df = DataFrame(reshape(1:12, 3, 4))
 3×4 DataFrame
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │ 10    │
-│ 2   │ 2     │ 5     │ 8     │ 11    │
-│ 3   │ 3     │ 6     │ 9     │ 12    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      7     10
+   2 │     2      5      8     11
+   3 │     3      6      9     12
 
 julia> dfr = df[2, :]
 DataFrameRow
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 2   │ 2     │ 5     │ 8     │ 11    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   2 │     2      5      8     11
 
 julia> rownumber(dfr)
 2
@@ -153,27 +153,27 @@ julia> parentindices(dfr)
 
 julia> parent(dfr)
 3×4 DataFrame
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │ 10    │
-│ 2   │ 2     │ 5     │ 8     │ 11    │
-│ 3   │ 3     │ 6     │ 9     │ 12    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      7     10
+   2 │     2      5      8     11
+   3 │     3      6      9     12
 
 julia> dfv = @view df[2:3, 1:3]
 2×3 SubDataFrame
-│ Row │ x1    │ x2    │ x3    │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 5     │ 8     │
-│ 2   │ 3     │ 6     │ 9     │
+ Row │ x1     x2     x3
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      5      8
+   2 │     3      6      9
 
 julia> dfrv = dfv[2, :]
 DataFrameRow
-│ Row │ x1    │ x2    │ x3    │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 3   │ 3     │ 6     │ 9     │
+ Row │ x1     x2     x3
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   3 │     3      6      9
 
 julia> rownumber(dfrv)
 2
@@ -183,12 +183,12 @@ julia> parentindices(dfrv)
 
 julia> parent(dfrv)
 3×4 DataFrame
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │ 10    │
-│ 2   │ 2     │ 5     │ 8     │ 11    │
-│ 3   │ 3     │ 6     │ 9     │ 12    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      7     10
+   2 │     2      5      8     11
+   3 │     3      6      9     12
 ```
 """
 rownumber(r::DataFrameRow) = getfield(r, :rownumber)
@@ -328,7 +328,12 @@ See also: [`length`](@ref)
 
 # Examples
 ```julia
-julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :];
+julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :]
+DataFrameRow
+ Row │ a      b
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 
 julia> size(dfr)
 (2,)
@@ -349,7 +354,12 @@ See also: [`size`](@ref)
 
 # Examples
 ```julia
-julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :];
+julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :]
+DataFrameRow
+ Row │ a      b
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 
 julia> length(dfr)
 2

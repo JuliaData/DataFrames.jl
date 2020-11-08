@@ -38,28 +38,23 @@ but also passes information on the `eltypes` of the columns of `df`.
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> eachrow(df)
-4-element DataFrameRows:
- DataFrameRow (row 1)
-x  1
-y  11
- DataFrameRow (row 2)
-x  2
-y  12
- DataFrameRow (row 3)
-x  3
-y  13
- DataFrameRow (row 4)
-x  4
-y  14
+4×2 DataFrameRows
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> copy.(eachrow(df))
 4-element Array{NamedTuple{(:x, :y),Tuple{Int64,Int64}},1}:
@@ -69,13 +64,12 @@ julia> copy.(eachrow(df))
  (x = 4, y = 14)
 
 julia> eachrow(view(df, [4,3], [2,1]))
-2-element DataFrameRows:
- DataFrameRow (row 4)
-y  14
-x  4
- DataFrameRow (row 3)
-y  13
-x  3
+2×2 DataFrameRows
+ Row │ y      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │    14      4
+   2 │    13      3
 ```
 """
 eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df)
@@ -140,13 +134,23 @@ $DATAFRAMECOLUMNS_DOCSTR
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
+
+julia> eachcol(df)
+4×2 DataFrameColumns
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> collect(eachcol(df))
 2-element Array{AbstractArray{T,1} where T,1}:
@@ -334,23 +338,23 @@ Note that `mapcols` guarantees not to reuse the columns from `df` in the returne
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> mapcols(x -> x.^2, df)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 121   │
-│ 2   │ 4     │ 144   │
-│ 3   │ 9     │ 169   │
-│ 4   │ 16    │ 196   │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1    121
+   2 │     4    144
+   3 │     9    169
+   4 │    16    196
 ```
 """
 function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
@@ -390,25 +394,25 @@ Note that `mapcols!` reuses the columns from `df` if they are returned by `f`.
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> mapcols!(x -> x.^2, df);
 
 julia> df
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 121   │
-│ 2   │ 4     │ 144   │
-│ 3   │ 9     │ 169   │
-│ 4   │ 16    │ 196   │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1    121
+   2 │     4    144
+   3 │     9    169
+   4 │    16    196
 ```
 """
 function mapcols!(f::Union{Function,Type}, df::DataFrame)

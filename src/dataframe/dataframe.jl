@@ -91,67 +91,67 @@ extracted from a `DataFrame`.
 ```julia
 julia> DataFrame((a=[1,2], b=[3,4])) # Tables.jl table constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
 
 julia> DataFrame([(a=1, b=0), (a=2, b=0)]) # Tables.jl table constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 
 julia> DataFrame("a" => 1:2, "b" => 0) # Pair constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 
 julia> DataFrame([:a => 1:2, :b => 0]) # vector of Pairs constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 
 julia> DataFrame(Dict(:a => 1:2, :b => 0)) # dictionary constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 
 julia> DataFrame(a=1:2, b=0) # keyword argument constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 
 julia> DataFrame([[1, 2], [0, 0]], [:a, :b]) # vector of vectors constructor
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 
 julia> DataFrame([1 0; 2 0], :auto) # matrix constructor
 2×2 DataFrame
-│ Row │ x1    │ x2    │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 0     │
-│ 2   │ 2     │ 0     │
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 ```
 """
 struct DataFrame <: AbstractDataFrame
@@ -686,32 +686,32 @@ If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
 
 # Examples
 ```jldoctest
-julia> d = DataFrame(a=1:3)
+julia> df = DataFrame(a=1:3)
 3×1 DataFrame
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
-│ 3   │ 3     │
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
 
-julia> insertcols!(d, 1, :b => 'a':'c')
+julia> insertcols!(df, 1, :b => 'a':'c')
 3×2 DataFrame
-│ Row │ b    │ a     │
-│     │ Char │ Int64 │
-├─────┼──────┼───────┤
-│ 1   │ 'a'  │ 1     │
-│ 2   │ 'b'  │ 2     │
-│ 3   │ 'c'  │ 3     │
+ Row │ b     a
+     │ Char  Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
 
-julia> insertcols!(d, 2, :c => 2:4, :c => 3:5, makeunique=true)
+julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
 3×4 DataFrame
-│ Row │ b    │ c     │ c_1   │ a     │
-│     │ Char │ Int64 │ Int64 │ Int64 │
-├─────┼──────┼───────┼───────┼───────┤
-│ 1   │ 'a'  │ 2     │ 3     │ 1     │
-│ 2   │ 'b'  │ 3     │ 4     │ 2     │
-│ 3   │ 'c'  │ 4     │ 5     │ 3     │
+ Row │ b     c      c_1    a
+     │ Char  Int64  Int64  Int64
+─────┼───────────────────────────
+   1 │ a         2      3      1
+   2 │ b         3      4      2
+   3 │ c         4      5      3
 ```
 """
 function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol,<:Any}...;
@@ -857,22 +857,22 @@ a vector of sorted and unique integers, a boolean vector, an integer, or `Not`.
 
 # Examples
 ```jldoctest
-julia> d = DataFrame(a=1:3, b=4:6)
+julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 2     │ 5     │
-│ 3   │ 3     │ 6     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
 
-julia> delete!(d, 2)
+julia> delete!(df, 2)
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 4     │
-│ 2   │ 3     │ 6     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      6
 ```
 
 """
@@ -1093,23 +1093,37 @@ to vertically concatenate data frames.
 
 # Examples
 ```jldoctest
-julia> df1 = DataFrame(A=1:3, B=1:3);
+julia> df1 = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
 
-julia> df2 = DataFrame(A=4.0:6.0, B=4:6);
+julia> df2 = DataFrame(A=4.0:6.0, B=4:6)
+3×2 DataFrame
+ Row │ A        B
+     │ Float64  Int64
+─────┼────────────────
+   1 │ 4.0          4
+   2 │ 5.0          5
+   3 │ 6.0          6
 
 julia> append!(df1, df2);
 
 julia> df1
 6×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 4     │ 4     │
-│ 5   │ 5     │ 5     │
-│ 6   │ 6     │ 6     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     4      4
+   5 │     5      5
+   6 │     6      6
 ```
 """
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
@@ -1417,63 +1431,63 @@ julia> df = DataFrame(A=1:3, B=1:3);
 
 julia> push!(df, (true, false))
 4×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     1      0
 
 julia> push!(df, df[1, :])
 5×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 1     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     1      0
+   5 │     1      1
 
 julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
 6×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 1     │
-│ 6   │ 1     │ 0     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     1      0
+   5 │     1      1
+   6 │     1      0
 
 julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
 7×3 DataFrame
-│ Row │ A       │ B       │ C        │
-│     │ Float64 │ Int64?  │ Float64? │
-├─────┼─────────┼─────────┼──────────┤
-│ 1   │ 1.0     │ 1       │ missing  │
-│ 2   │ 2.0     │ 2       │ missing  │
-│ 3   │ 3.0     │ 3       │ missing  │
-│ 4   │ 1.0     │ 0       │ missing  │
-│ 5   │ 1.0     │ 1       │ missing  │
-│ 6   │ 1.0     │ 0       │ missing  │
-│ 7   │ 1.0     │ missing │ 1.0      │
+ Row │ A        B        C
+     │ Float64  Int64?   Float64?
+─────┼────────────────────────────
+   1 │ 1.0            1  missing
+   2 │ 2.0            2  missing
+   3 │ 3.0            3  missing
+   4 │ 1.0            0  missing
+   5 │ 1.0            1  missing
+   6 │ 1.0            0  missing
+   7 │ 1.0      missing  1.0
 
 julia> push!(df, NamedTuple(), cols=:subset)
 8×3 DataFrame
-│ Row │ A        │ B       │ C        │
-│     │ Float64? │ Int64?  │ Float64? │
-├─────┼──────────┼─────────┼──────────┤
-│ 1   │ 1.0      │ 1       │ missing  │
-│ 2   │ 2.0      │ 2       │ missing  │
-│ 3   │ 3.0      │ 3       │ missing  │
-│ 4   │ 1.0      │ 0       │ missing  │
-│ 5   │ 1.0      │ 1       │ missing  │
-│ 6   │ 1.0      │ 0       │ missing  │
-│ 7   │ 1.0      │ missing │ 1.0      │
-│ 8   │ missing  │ missing │ missing  │
+ Row │ A         B        C
+     │ Float64?  Int64?   Float64?
+─────┼─────────────────────────────
+   1 │ 1.0             1  missing
+   2 │ 2.0             2  missing
+   3 │ 3.0             3  missing
+   4 │ 1.0             0  missing
+   5 │ 1.0             1  missing
+   6 │ 1.0             0  missing
+   7 │ 1.0       missing  1.0
+   8 │ missing   missing  missing
 ```
 """
 function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
@@ -1532,31 +1546,31 @@ of rows is repeated. Columns of `df` are freshly allocated.
 ```jldoctest
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
 
 julia> repeat!(df, inner = 2, outer = 3);
 
 julia> df
 12×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 1     │ 3     │
-│ 3   │ 2     │ 4     │
-│ 4   │ 2     │ 4     │
-│ 5   │ 1     │ 3     │
-│ 6   │ 1     │ 3     │
-│ 7   │ 2     │ 4     │
-│ 8   │ 2     │ 4     │
-│ 9   │ 1     │ 3     │
-│ 10  │ 1     │ 3     │
-│ 11  │ 2     │ 4     │
-│ 12  │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     1      3
+   3 │     2      4
+   4 │     2      4
+   5 │     1      3
+   6 │     1      3
+   7 │     2      4
+   8 │     2      4
+   9 │     1      3
+  10 │     1      3
+  11 │     2      4
+  12 │     2      4
 ```
 """
 function repeat!(df::DataFrame; inner::Integer = 1, outer::Integer = 1)
@@ -1575,21 +1589,21 @@ specified by `count`. Columns of `df` are freshly allocated.
 ```jldoctest
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
 
 julia> repeat(df, 2)
 4×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
-│ 3   │ 1     │ 3     │
-│ 4   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+   3 │     1      3
+   4 │     2      4
 ```
 """
 function repeat!(df::DataFrame, count::Integer)
