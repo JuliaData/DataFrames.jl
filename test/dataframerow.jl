@@ -7,7 +7,7 @@ const ≇ = !isequal
 ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
                    c=["A", "B", "C", "A", "B", missing],
-                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+                   d=CategoricalArray(["A", missing, "C", "A", missing, "C"]))
 
 @testset "constructors" begin
     df = deepcopy(ref_df)
