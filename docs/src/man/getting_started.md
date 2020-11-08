@@ -1021,7 +1021,7 @@ julia> x
  2
 ```
 Note, that in the above example the original `x` vector is not mutated in the
-process as `DataFrame(x=x)` constructor stores its copy in a data frame.
+process as the `DataFrame(x=x)` constructor makes a copy by default.
 
 In-place functions are safe to call, except when a view of the `DataFrame`
 (created via a `view`, `@view` or [`groupby`](@ref))
