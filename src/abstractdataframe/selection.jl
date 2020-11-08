@@ -1158,15 +1158,15 @@ julia> combine(gd, [:b, :c] .=> Ref) # preventing vector from being spread acros
    3 │     3  [2, 2]     [3, 7]
    4 │     4  [1, 1]     [4, 8]
 
-julia> combine(gd, AsTable(:) => Ref) # protecting result
+julia> combine(gd, AsTable(Not(:a)) => Ref) # protecting result
 4×2 DataFrame
- Row │ a      a_b_c_Ref
+ Row │ a      b_c_Ref
      │ Int64  NamedTup…
-─────┼──────────────────────────────────────────
-   1 │     1  (a = [1, 1], b = [2, 2], c = [1,…
-   2 │     2  (a = [2, 2], b = [1, 1], c = [2,…
-   3 │     3  (a = [3, 3], b = [2, 2], c = [3,…
-   4 │     4  (a = [4, 4], b = [1, 1], c = [4,…
+─────┼─────────────────────────────────
+   1 │     1  (b = [2, 2], c = [1, 5])
+   2 │     2  (b = [1, 1], c = [2, 6])
+   3 │     3  (b = [2, 2], c = [3, 7])
+   4 │     4  (b = [1, 1], c = [4, 8])
 
 julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 8×4 DataFrame
