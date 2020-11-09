@@ -10,6 +10,8 @@
 # sed -i '/categorical/di' src/other/precompile_tmp.jl # Remove CategoricalArrays uses
 # sed -i '/var"/d' src/other/precompile_tmp.jl # var"" is not supported on old Julia versions
 # sed -i '/materialize!/d' src/other/precompile_tmp.jl # Work around an inference bug
+# sed -i '/setindex_widen_up_to/d' src/other/precompile_tmp.jl # Not present on Julia 1.0
+# sed -i '/restart_copyto_nonleaf!/d' src/other/precompile_tmp.jl # Not present on Julia 1.0
 function precompile(all=false)
     if !all
         ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
@@ -800,7 +802,6 @@ function precompile(all=false)
         Base.precompile(Tuple{typeof(DataFrames._combine_with_first),NamedTuple{(:x1,),Tuple{Int}},Function,GroupedDataFrame{DataFrame},Tuple{Array{DataFrame,1}},Val{false},Array{Int,1}})
         Base.precompile(Tuple{typeof(DataFrames.row_group_slots),Tuple{Array{Int,1},Array{String,1}},Val{true},Array{Int,1},Bool,Bool})
         Base.precompile(Tuple{typeof(DataFrames._combine_tables_with_first!),NamedTuple{(:x1,),Tuple{Array{Int,1}}},Tuple{Array{Int,1}},Array{Int,1},Int,Int,Function,GroupedDataFrame{DataFrame},Nothing,Tuple{Symbol},Val{false}})
-        Base.precompile(Tuple{typeof(Base.setindex_widen_up_to),Array{DataFrames.RepeatedVector{Union{Missing, Int}},1},DataFrames.RepeatedVector{Union{Missing, Float64}},Int})
         Base.precompile(Tuple{typeof(select),SubDataFrame{DataFrame,DataFrames.Index,Base.OneTo{Int}},Any,Any,Vararg{Any,N} where N})
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.innerjoin)),NamedTuple{(:on,),Tuple{Symbol}},typeof(innerjoin),DataFrame,DataFrame})
         Base.precompile(Tuple{DataFrames.Reduce{typeof(Base.add_sum),Nothing,typeof(/)},Array{Union{Missing, BigFloat},1},GroupedDataFrame{DataFrame}})
@@ -1936,7 +1937,6 @@ function precompile(all=false)
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.show)),NamedTuple{(:allrows, :allcols, :allgroups, :rowlabel, :summary, :truncate),Tuple{Bool,Bool,Bool,Symbol,Bool,Int}},typeof(show),Base.PipeEndpoint,GroupedDataFrame{DataFrame}})
         Base.precompile(Tuple{typeof(view),DataFrame,Array{Integer,1},Colon})
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_symbol),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int}},Array{DataFrames.TransformationResult,1},Nothing,Symbol,Bool,Int,Union{Function, Type},Tuple{Array{Union{Missing, Bool},1}}})
-        Base.precompile(Tuple{typeof(Base.setindex_widen_up_to),Array{DataFrames.RepeatedVector{Union{Missing, Float64}},1},DataFrames.RepeatedVector{Union{Missing, String}},Int})
         Base.precompile(Tuple{typeof(DataFrames._combine_with_first),NamedTuple{(:x1,),Tuple{Array{Int,1}}},Function,GroupedDataFrame{DataFrame},Tuple{Array{Int,1}},Val{false},Nothing})
         Base.precompile(Tuple{typeof(insertcols!),DataFrame,Int,Pair{String,Array{String,1}}})
         Base.precompile(Tuple{typeof(DataFrames.row_group_slots),Tuple{Array{Any,1}},Val{false},Array{Int,1},Bool,Bool})
@@ -2046,7 +2046,6 @@ function precompile(all=false)
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.Type)),NamedTuple{(:b, :c, :d),Tuple{Array{Int,1},Array{Int,1},Array{Int,1}}},Type{DataFrame}})
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.Type)),NamedTuple{(:g, :a, :b),Tuple{Array{Int,1},Array{Union{Nothing, String},1},Array{Union{Nothing, String},1}}},Type{DataFrame}})
         Base.precompile(Tuple{DataFrames.Aggregate{typeof(Statistics.var),Nothing},Array{Union{Missing, Int, Int8},1},GroupedDataFrame{DataFrame}})
-        Base.precompile(Tuple{typeof(Base.Broadcast.restart_copyto_nonleaf!),Array{Dict{Symbol,V} where V,1},Array{Dict{Symbol,Any},1},Base.Broadcast.Broadcasted{Base.Broadcast.DefaultArrayStyle{1},Tuple{Base.OneTo{Int}},Type{Dict},Tuple{Base.Broadcast.Extruded{Array{DataFrames.GroupKey{GroupedDataFrame{DataFrame}},1},Tuple{Bool},Tuple{Int}}}},Dict{Symbol,Union{Missing, Int}},Int,Base.OneTo{Int},Int,Int})
         Base.precompile(Tuple{typeof(push!),DataFrame,Dict{String,Int}})
         Base.precompile(Tuple{Core.kwftype(typeof(DataFrames.Type)),NamedTuple{(:a,),Tuple{Array{Union{Missing, BigFloat},1}}},Type{DataFrame}})
         Base.precompile(Tuple{typeof(DataFrames._combine_process_pair_symbol),Bool,GroupedDataFrame{DataFrame},Dict{Symbol,Tuple{Bool,Int}},Array{DataFrames.TransformationResult,1},Nothing,Symbol,Bool,Float64,Union{Function, Type},Tuple{Array{Complex{Int},1}}})
@@ -2845,7 +2844,6 @@ function precompile(all=false)
         Base.precompile(Tuple{typeof(combine),GroupedDataFrame{DataFrame},Pair{Symbol,typeof(sum)},Symbol})
         Base.precompile(Tuple{typeof(view),SubDataFrame{DataFrame,DataFrames.SubIndex{DataFrames.Index,Array{Int,1},Array{Int,1}},Base.OneTo{Int}},Function,Array{Int,1}})
         Base.precompile(Tuple{DataFrames.Reduce{typeof(Base.add_sum),Nothing,typeof(/)},Array{BigInt,1},GroupedDataFrame{DataFrame}})
-        Base.precompile(Tuple{typeof(Base.setindex_widen_up_to),Array{DataFrames.RepeatedVector{Int},1},DataFrames.RepeatedVector{String},Int})
         Base.precompile(Tuple{typeof(getindex),DataFrame,Colon,Cols{Tuple{Int,Int,Int}}})
         Base.precompile(Tuple{typeof(DataFrames._combine_tables_with_first!),NamedTuple{(:a, :b),Tuple{UnitRange{Int},UnitRange{Int}}},Tuple{Array{Int,1},Array{Int,1}},Array{Int,1},Int,Int,Function,GroupedDataFrame{DataFrame},Tuple{Array{Int,1}},Tuple{Symbol,Symbol},Val{true}})
         Base.precompile(Tuple{typeof(insertcols!),DataFrame,Int,Pair{Symbol,Array{Array{Int,1},1}}})
