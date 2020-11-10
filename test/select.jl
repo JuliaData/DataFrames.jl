@@ -1542,10 +1542,12 @@ end
                                DataFrame(p=Int[], q=String[]))
 
         # here this follows Tables.jl behavior
-        for res in ([1, "1"], (1, "1"))
-            @test select(df, [] => ByRow(() -> res) => AsTable) == DataFrame()
-            @test_throws ArgumentError select(df, [] => ByRow(() -> res) => [:p, :q])
-        end
+        @test select(df, [] => ByRow(() -> [1, "1"]) => AsTable) == DataFrame()
+        @test_throws ArgumentError select(df, [] => ByRow(() -> [1, "1"]) => [:p, :q])
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => AsTable),
+                               DataFrame(Column1=Int[], Column2=String[]))
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => [:p, :q]),
+                               DataFrame(p=Int[], q=String[]))
     end
 
     @test select(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [1, 1, 1])
@@ -1570,10 +1572,12 @@ end
                                DataFrame(p=Int[], q=String[]))
 
         # here this follows Tables.jl behavior
-        for res in ([1, "1"], (1, "1"))
-            @test select(df, AsTable([]) => ByRow(x -> res) => AsTable) == DataFrame()
-            @test_throws ArgumentError select(df, AsTable([]) => ByRow(x -> res) => [:p, :q])
-        end
+        @test select(df, [] => ByRow(() -> [1, "1"]) => AsTable) == DataFrame()
+        @test_throws ArgumentError select(df, [] => ByRow(() -> [1, "1"]) => [:p, :q])
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => AsTable),
+                               DataFrame(Column1=Int[], Column2=String[]))
+        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => [:p, :q]),
+                               DataFrame(p=Int[], q=String[]))
     end
 end
 

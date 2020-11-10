@@ -36,7 +36,7 @@ PrettyTables = "0.10"
 Reexport = "0.1, 0.2"
 SortingAlgorithms = "0.1, 0.2, 0.3"
 TableTraits = "0.4, 1"
-Tables = "1.1"
+Tables = "1.2"
 
 [extras]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
