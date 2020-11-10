@@ -265,7 +265,15 @@ end
 end
 
 @testset "test constructor with vectors" begin
-    @test DataFrame(Any[]) == DataFrame()
+    @test_throws ArgumentError DataFrame(Any[])
+    df = DataFrame(typeof((1,1))[])
+    @test names(df) == ["Column1", "Column2"]
+    @test size(df) == (0, 2)
+    @test eltype(df.Column1) == Int
+    df = DataFrame(typeof((a=1, b=1))[])
+    @test names(df) == ["a", "b"]
+    @test size(df) == (0, 2)
+    @test eltype(df.a) == Int
     @test DataFrame(Vector[], :auto) == DataFrame()
     @test DataFrame(Pair{Symbol, Vector}[], :auto) == DataFrame()
     @test DataFrame(Pair[]) == DataFrame()

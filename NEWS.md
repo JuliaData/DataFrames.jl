@@ -102,6 +102,7 @@
 
 ## Dependency changes
 
+* Tables.jl version 1.2 is now required.
 * DataAPI.jl version 1.4 is now required. It implies that `All(args...)` is
   deprecated and `Cols(args...)` is recommended instead. `All()` is still supported.
 
@@ -114,4 +115,8 @@
 * limit the maximal display width the output can use in `text/plain` before
   being truncated (in the `textwidth` sense, excluding `…`) to `32` per column
   by default and fix a corner case when no columns are printed in situations when
-  they are too wide ([2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))
+  they are too wide ([#2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))
+* Common methods are now precompiled to improve responsiveness the first time a method
+  is called in a Julia session. Precompilation takes up to 30 seconds
+  after installing the package
+  ([#2456](https://github.com/JuliaData/DataFrames.jl/pull/2456)).

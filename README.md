@@ -1,7 +1,7 @@
 DataFrames.jl
 =============
 
-[![Coverage Status](http://codecov.io/github/JuliaLang/Example.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaLang/Example.jl?branch=master)
+[![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=master)
 [![Travis Build Status](https://travis-ci.com/JuliaData/DataFrames.jl.svg?branch=master)](https://travis-ci.com/JuliaData/DataFrames.jl)
 
 Tools for working with tabular data in Julia.
