@@ -25,12 +25,23 @@ jobs:
   exclude:
     - os: osx
       arch: i386
+    - julia 1.0
+      os: linux
+      arch: i386
+    - julia 1.0
+      os: osx
+    - julia 1.0
+      os: windows
+    - julia nightly
+      os: linux
+      arch: i386
   allow_failures:
     - julia: nightly
   include:
     - stage: "Documentation"
-      julia: 1.0
+      julia: 1
       os: linux
+      arch: amd64
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                     Pkg.instantiate()'
