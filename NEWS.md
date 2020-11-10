@@ -102,6 +102,7 @@
 
 ## Dependency changes
 
+* Tables.jl version 1.2 is now required.
 * DataAPI.jl version 1.4 is now required. It implies that `All(args...)` is
   deprecated and `Cols(args...)` is recommended instead. `All()` is still supported.
 
