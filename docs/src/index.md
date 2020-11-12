@@ -35,6 +35,9 @@ integrated they are with DataFrames.jl.
 
 
 - **Statistics**
+    - [StatsKit.jl](https://github.com/JuliaStats/StatsKit.jl): A convenience
+      meta-package which loads a set of essential packages for statistics,
+      including those mentioned below in this section and DataFrames.jl itself.
     - [Statistics](https://docs.julialang.org/en/v1/stdlib/Statistics/):
       The Julia standard library comes with a wide range of statistics functionality,
       but to gain access to these functions you must call `using Statistics`.
