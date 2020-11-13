@@ -164,8 +164,8 @@ struct DataFrame <: AbstractDataFrame
         if length(columns) == length(colindex) == 0
             return new(AbstractVector[], Index())
         elseif length(columns) != length(colindex)
-            throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
-                                    " column names ($(length(colindex))) are not equal"))
+            throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
+                                    "column names ($(length(colindex))) are not equal"))
         end
 
         len = -1
@@ -198,8 +198,8 @@ struct DataFrame <: AbstractDataFrame
                 columns[i] = fill!(Tables.allocatecolumn(typeof(x), len), x)
             else
                 if col isa AbstractArray
-                    throw(ArgumentError("adding AbstractArray other than AbstractVector" *
-                                        " as a column of a data frame is not allowed"))
+                    throw(ArgumentError("adding AbstractArray other than AbstractVector " *
+                                        "as a column of a data frame is not allowed"))
                 end
                 columns[i] = fill!(Tables.allocatecolumn(typeof(col), len), col)
             end
@@ -274,8 +274,8 @@ function DataFrame(; kwargs...)
                     throw(ArgumentError("the `copycols` keyword argument must be Boolean"))
                 end
             elseif kw === :makeunique
-                    throw(ArgumentError("the `makeunique` keyword argument is not allowed" *
-                                        " in DataFrame(; kwargs...) constructor"))
+                    throw(ArgumentError("the `makeunique` keyword argument is not allowed " *
+                                        "in DataFrame(; kwargs...) constructor"))
             else
                 push!(cnames, kw)
                 push!(columns, val)
@@ -549,10 +549,10 @@ Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
 Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
     (df[!, col_ind] = v)
 Base.setproperty!(::DataFrame, col_ind::Symbol, v::Any) =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame." *
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame. " *
                         "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
 Base.setproperty!(::DataFrame, col_ind::AbstractString, v::Any) =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame." *
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame. " *
                         "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
@@ -572,8 +572,8 @@ for T in MULTICOLUMNINDEX_TUPLE
                                   col_inds::$T)
         idxs = index(df)[col_inds]
         if length(v) != length(idxs)
-            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
-                                    " collection contains $(length(v)) elements"))
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned " *
+                                    "collection contains $(length(v)) elements"))
         end
         for (i, x) in zip(idxs, v)
             df[row_ind, i] = x
@@ -642,9 +642,9 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
                                   col_inds::$T2)
         idxs = index(df)[col_inds]
         if size(mx, 2) != length(idxs)
-            throw(DimensionMismatch("number of selected columns ($(length(idxs)))" *
-                                    " and number of columns in" *
-                                    " matrix ($(size(mx, 2))) do not match"))
+            throw(DimensionMismatch("number of selected columns ($(length(idxs))) " *
+                                    "and number of columns in " *
+                                    "matrix ($(size(mx, 2))) do not match"))
         end
         for (j, col) in enumerate(idxs)
             df[row_inds, col] = (row_inds === !) ? mx[:, j] : view(mx, :, j)
@@ -825,8 +825,8 @@ function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false,
     end
     if !isempty(name_cols)
         # an explicit error is thrown as keyword argument was supported in the past
-        throw(ArgumentError("inserting colums using a keyword argument is not supported," *
-                            " pass a Pair as a positional argument instead"))
+        throw(ArgumentError("inserting colums using a keyword argument is not supported, " *
+                            "pass a Pair as a positional argument instead"))
     end
     return df
 end
@@ -1317,15 +1317,15 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                                 "is not allowed as it is unordered"))
         elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
             throw(ArgumentError("when `cols == :orderequal` pushed row must " *
-                                "have the same column names and in the" *
-                                " same order as the target data frame"))
+                                "have the same column names and in the " *
+                                "same order as the target data frame"))
         end
     elseif cols === :setequal
         # Only check for equal lengths if :setequal is selected,
         # as an error will be thrown below if some names don't match
         if length(row) != ncols
             # an explicit error is thrown as this was allowed in the past
-            throw(ArgumentError("`push!` with `cols` equal to `:setequal`" *
+            throw(ArgumentError("`push!` with `cols` equal to `:setequal` " *
                                 "requires `row` to have the same number of elements " *
                                 "as the number of columns in `df`."))
         end
@@ -1479,10 +1479,10 @@ julia> push!(df, NamedTuple(), cols=:subset)
 function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
     if !(row isa Union{Tuple, AbstractArray})
         # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("`push!` does not allow passing collections of type" *
-                            " $(typeof(row)) to be pushed into a DataFrame. Only" *
-                            " `Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow`" *
-                            " and `NamedTuple` are allowed."))
+        throw(ArgumentError("`push!` does not allow passing collections of type " *
+                            "$(typeof(row)) to be pushed into a DataFrame. Only " *
+                            "`Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` " *
+                            "and `NamedTuple` are allowed."))
     end
     nrows, ncols = size(df)
     targetrows = nrows + 1

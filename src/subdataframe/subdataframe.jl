@@ -48,8 +48,8 @@ end
 
 Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool}, cols)
     if length(rows) != nrow(parent)
-        throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index" *
-                            " (got $(length(rows)), expected $(nrow(parent)))"))
+        throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index " *
+                            "(got $(length(rows)), expected $(nrow(parent)))"))
     end
     return SubDataFrame(parent, findall(rows), cols)
 end
@@ -150,11 +150,11 @@ Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bo
     throw(ArgumentError("invalid row index of type Bool"))
 
 Base.setproperty!(::SubDataFrame, ::Symbol, ::Any) =
-    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed." *
+    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed. " *
                         "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
                         "to perform an in-place assignment."))
 Base.setproperty!(::SubDataFrame, ::AbstractString, ::Any) =
-    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed." *
+    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed. " *
                         "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
                         "to perform an in-place assignment."))
 
