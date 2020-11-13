@@ -40,8 +40,8 @@ function _combine_prepare(gd::GroupedDataFrame,
     if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
         x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
         # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not supported" *
-                            ", use a vector $(collect(first(x))) instead"))
+        throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not " *
+                            "supported, use a vector $(collect(first(x))) instead"))
     end
 
     cs_norm = []
@@ -226,8 +226,8 @@ function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pai
     source_cols = first(cs_i)
     out_col_name = last(last(cs_i))
     if length(source_cols) != 1
-        throw(ArgumentError("Exactly one column can be transformed to one output column" *
-                            " when using identity transformation"))
+        throw(ArgumentError("Exactly one column can be transformed to one output column " *
+                            "when using identity transformation"))
     end
     outcol = parentdf[!, first(source_cols)]
 
