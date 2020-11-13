@@ -16,7 +16,7 @@ const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :
 
 const COLUMNINDEX_STR = "`Symbol`, string or integer"
 const MULTICOLUMNINDEX_STR = "`:`, `Cols`, `All`, `Between`, `Not`, a regular expression, " *
-                          "or a vector of `Symbol`s, strings or integers"
+                             "or a vector of `Symbol`s, strings or integers"
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
