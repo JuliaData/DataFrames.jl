@@ -537,54 +537,54 @@ See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> innerjoin(name, job, on = :ID)
 2×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
-│     │ Int64 │ String   │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
+ Row │ ID     Name      Job
+     │ Int64  String    String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> innerjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 2×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String    │ String    │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String     String
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
 
 julia> innerjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 2×3 DataFrame
-│ Row │ ID    │ NAME     │ job    │
-│     │ Int64 │ String   │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
+ Row │ ID     NAME      job
+     │ Int64  String    String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
 ```
 """
 function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -672,57 +672,57 @@ See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> leftjoin(name, job, on = :ID)
 3×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String    │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
+ Row │ ID     Name       Job
+     │ Int64  String     String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> leftjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String    │ String?   │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
-│ 3   │ 3     │ Joe Blogs │ missing   │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String     String?
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
 
 julia> leftjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ NAME      │ job     │
-│     │ Int64 │ String    │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
+ Row │ ID     NAME       job
+     │ Int64  String     String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
 ```
 """
 function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -801,57 +801,57 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> rightjoin(name, job, on = :ID)
 3×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+ Row │ ID     Name      Job
+     │ Int64  String?   String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
+   3 │     4  missing   Farmer
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> rightjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String?   │ String    │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
-│ 3   │ 4     │ missing   │ Farmer    │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String?    String
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     4  missing    Farmer
 
 julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ NAME     │ job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+ Row │ ID     NAME      job
+     │ Int64  String?   String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
+   3 │     4  missing   Farmer
 ```
 """
 function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -940,58 +940,58 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> outerjoin(name, job, on = :ID)
 4×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String?   │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
-│ 4   │ 4     │ missing   │ Farmer  │
+ Row │ ID     Name       Job
+     │ Int64  String?    String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
+   4 │     4  missing    Farmer
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> rightjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String?   │ String    │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
-│ 3   │ 4     │ missing   │ Farmer    │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String?    String
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     4  missing    Farmer
 
 julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ NAME     │ job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+ Row │ ID     NAME      job
+     │ Int64  String?   String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
+   3 │     4  missing   Farmer
 ```
 """
 function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -1068,54 +1068,54 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> semijoin(name, job, on = :ID)
 2×2 DataFrame
-│ Row │ ID    │ Name     │
-│     │ Int64 │ String   │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ John Doe │
-│ 2   │ 2     │ Jane Doe │
+ Row │ ID     Name
+     │ Int64  String
+─────┼─────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> semijoin(name, job2, on = :ID => :identifier)
 2×2 DataFrame
-│ Row │ ID    │ Name     │
-│     │ Int64 │ String   │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ John Doe │
-│ 2   │ 2     │ Jane Doe │
+ Row │ ID     Name
+     │ Int64  String
+─────┼─────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
 
 julia> semijoin(name, job2, on = [:ID => :identifier])
 2×2 DataFrame
-│ Row │ ID    │ Name     │
-│     │ Int64 │ String   │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ John Doe │
-│ 2   │ 2     │ Jane Doe │
+ Row │ ID     Name
+     │ Int64  String
+─────┼─────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
 ```
 """
 semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -1173,51 +1173,51 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> antijoin(name, job, on = :ID)
 1×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     3  Joe Blogs
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> antijoin(name, job2, on = :ID => :identifier)
 1×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     3  Joe Blogs
 
 julia> antijoin(name, job2, on = [:ID => :identifier])
 1×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     3  Joe Blogs
 ```
 """
 antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -1257,32 +1257,32 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> df1 = DataFrame(X=1:3)
 3×1 DataFrame
-│ Row │ X     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
-│ 3   │ 3     │
+ Row │ X
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
 
 julia> df2 = DataFrame(Y=["a", "b"])
 2×1 DataFrame
-│ Row │ Y      │
-│     │ String │
-├─────┼────────┤
-│ 1   │ a      │
-│ 2   │ b      │
+ Row │ Y
+     │ String
+─────┼────────
+   1 │ a
+   2 │ b
 
 julia> crossjoin(df1, df2)
 6×2 DataFrame
-│ Row │ X     │ Y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ a      │
-│ 2   │ 1     │ b      │
-│ 3   │ 2     │ a      │
-│ 4   │ 2     │ b      │
-│ 5   │ 3     │ a      │
-│ 6   │ 3     │ b      │
+ Row │ X      Y
+     │ Int64  String
+─────┼───────────────
+   1 │     1  a
+   2 │     1  b
+   3 │     2  a
+   4 │     2  b
+   5 │     3  a
+   6 │     3  b
 ```
 """
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)

@@ -91,97 +91,97 @@ julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
 julia> gd = groupby(df, :a)
 GroupedDataFrame with 4 groups based on key: a
 First Group (2 rows): a = 1
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │
-│ 2   │ 1     │ 2     │ 5     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
 ⋮
 Last Group (2 rows): a = 4
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 4     │ 1     │ 4     │
-│ 2   │ 4     │ 1     │ 8     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4      1      4
+   2 │     4      1      8
 
 julia> gd[1]
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │
-│ 2   │ 1     │ 2     │ 5     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
 
 julia> last(gd)
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 4     │ 1     │ 4     │
-│ 2   │ 4     │ 1     │ 8     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4      1      4
+   2 │     4      1      8
 
 julia> gd[(a=3,)]
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 3     │ 2     │ 3     │
-│ 2   │ 3     │ 2     │ 7     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
 
 julia> gd[Dict("a" => 3)]
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 3     │ 2     │ 3     │
-│ 2   │ 3     │ 2     │ 7     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
 
 julia> gd[(3,)]
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 3     │ 2     │ 3     │
-│ 2   │ 3     │ 2     │ 7     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
 
 julia> k = first(keys(gd))
-GroupKey: (a = 3)
+GroupKey: (a = 1,)
 
 julia> gd[k]
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 3     │ 2     │ 3     │
-│ 2   │ 3     │ 2     │ 7     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
 
 julia> for g in gd
            println(g)
        end
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 1     │
-│ 2   │ 1     │ 2     │ 5     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 1     │ 2     │
-│ 2   │ 2     │ 1     │ 6     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      2
+   2 │     2      1      6
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 3     │ 2     │ 3     │
-│ 2   │ 3     │ 2     │ 7     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
 2×3 SubDataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 4     │ 1     │ 4     │
-│ 2   │ 4     │ 1     │ 8     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4      1      4
+   2 │     4      1      8
 ```
 """
 function groupby(df::AbstractDataFrame, cols;
@@ -690,18 +690,18 @@ julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
 julia> gd = groupby(df, [:a, :b])
 GroupedDataFrame with 6 groups based on keys: a, b
 First Group (2 rows): a = :foo, b = 2
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 2     │ 7     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ foo         2      1
+   2 │ foo         2      7
 ⋮
 Last Group (2 rows): a = :baz, b = 1
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 1     │ 6     │
-│ 2   │ baz    │ 1     │ 12    │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ baz         1      6
+   2 │ baz         1     12
 
 julia> keys(gd)
 6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
@@ -711,16 +711,14 @@ julia> keys(gd)
  GroupKey: (a = :foo, b = 1)
  GroupKey: (a = :bar, b = 2)
  GroupKey: (a = :baz, b = 1)
-```
 
-`GroupKey` objects behave similarly to `NamedTuple`s:
-
-```jldoctest groupkeys
 julia> k = keys(gd)[1]
 GroupKey: (a = :foo, b = 2)
 
 julia> keys(k)
-(:a, :b)
+2-element Array{Symbol,1}:
+ :a
+ :b
 
 julia> values(k)  # Same as Tuple(k)
 (:foo, 2)
@@ -744,11 +742,11 @@ Keys can be used as indices to retrieve the corresponding group from their
 ```jldoctest groupkeys
 julia> gd[k]
 2×3 SubDataFrame
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 2     │ 7     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ foo         2      1
+   2 │ foo         2      7
 
 julia> gd[keys(gd)[1]] == gd[1]
 true
@@ -813,34 +811,34 @@ julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[2]),
 julia> gd = groupby(df, :a)
 GroupedDataFrame with 3 groups based on key: a
 First Group (2 rows): a = :foo
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 1     │ 4     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ foo         2      1
+   2 │ foo         1      4
 ⋮
 Last Group (2 rows): a = :baz
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 2     │ 3     │
-│ 2   │ baz    │ 1     │ 6     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ baz         2      3
+   2 │ baz         1      6
 
 julia> get(gd, (a=:bar,), nothing)
 2×3 SubDataFrame
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ bar    │ 1     │ 2     │
-│ 2   │ bar    │ 2     │ 5     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ bar         1      2
+   2 │ bar         2      5
 
 julia> get(gd, (:baz,), nothing)
 2×3 SubDataFrame
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 2     │ 3     │
-│ 2   │ baz    │ 1     │ 6     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ baz         2      3
+   2 │ baz         1      6
 
 julia> get(gd, (:qux,), nothing)
 ```
@@ -877,33 +875,32 @@ julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
 julia> gd = groupby(df, :g)
 GroupedDataFrame with 2 groups based on key: g
 First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 ⋮
 Last Group (1 row): g = 2
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 2     │ 'b'  │
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     2  b
 
 julia> filter(x -> x.x[1] == 'a', gd)
 GroupedDataFrame with 1 group based on key: g
 First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 
 julia> filter(:x => x -> x[1] == 'a', gd)
 GroupedDataFrame with 1 group based on key: g
 First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
-
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 ```
 """
 Base.filter(f, gdf::GroupedDataFrame) =

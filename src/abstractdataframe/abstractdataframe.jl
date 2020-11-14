@@ -130,42 +130,41 @@ See also: [`rename`](@ref)
 ```julia
 julia> df = DataFrame(i = 1, x = 2, y = 3)
 1×3 DataFrame
-│ Row │ i     │ x     │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ i      x      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename!(df, Dict(:i => "A", :x => "X"))
 1×3 DataFrame
-│ Row │ A     │ X     │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ A      X      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename!(df, [:a, :b, :c])
 1×3 DataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename!(df, [:a, :b, :a])
-ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make
-them unique using a suffix automatically.
+ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make them unique using a suffix automatically.
 
 julia> rename!(df, [:a, :b, :a], makeunique=true)
 1×3 DataFrame
-│ Row │ a     │ b     │ a_1   │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ a      b      a_1
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename!(uppercase, df)
 1×3 DataFrame
-│ Row │ A     │ B     │ A_1   │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ A      B      A_1
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 ```
 """
 function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
@@ -252,45 +251,45 @@ See also: [`rename!`](@ref)
 ```julia
 julia> df = DataFrame(i = 1, x = 2, y = 3)
 1×3 DataFrame
-│ Row │ i     │ x     │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ i      x      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename(df, :i => :A, :x => :X)
 1×3 DataFrame
-│ Row │ A     │ X     │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ A      X      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename(df, :x => :y, :y => :x)
 1×3 DataFrame
-│ Row │ i     │ y     │ x     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ i      y      x
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename(df, [1 => :A, 2 => :X])
 1×3 DataFrame
-│ Row │ A     │ X     │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ A      X      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename(df, Dict("i" => "A", "x" => "X"))
 1×3 DataFrame
-│ Row │ A     │ X     │ y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ A      X      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 
 julia> rename(uppercase, df)
 1×3 DataFrame
-│ Row │ I     │ X     │ Y     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 2     │ 3     │
+ Row │ I      X      Y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
 ```
 """
 rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
@@ -524,37 +523,37 @@ julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 
 julia> describe(df)
 3×7 DataFrame
-│ Row │ variable │ mean   │ min │ median │ max │ nmissing │ eltype   │
-│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Int64    │ DataType │
-├─────┼──────────┼────────┼─────┼────────┼─────┼──────────┼──────────┤
-│ 1   │ i        │ 5.5    │ 1   │ 5.5    │ 10  │ 0        │ Int64    │
-│ 2   │ x        │ 0.55   │ 0.1 │ 0.55   │ 1.0 │ 0        │ Float64  │
-│ 3   │ y        │        │ 'a' │        │ 'j' │ 0        │ Char     │
+ Row │ variable  mean    min  median  max  nmissing  eltype
+     │ Symbol    Union…  Any  Union…  Any  Int64     DataType
+─────┼────────────────────────────────────────────────────────
+   1 │ i         5.5     1    5.5     10          0  Int64
+   2 │ x         0.55    0.1  0.55    1.0         0  Float64
+   3 │ y                 a            j           0  Char
 
 julia> describe(df, :min, :max)
 3×3 DataFrame
-│ Row │ variable │ min │ max │
-│     │ Symbol   │ Any │ Any │
-├─────┼──────────┼─────┼─────┤
-│ 1   │ i        │ 1   │ 10  │
-│ 2   │ x        │ 0.1 │ 1.0 │
-│ 3   │ y        │ 'a' │ 'j' │
+ Row │ variable  min  max
+     │ Symbol    Any  Any
+─────┼────────────────────
+   1 │ i         1    10
+   2 │ x         0.1  1.0
+   3 │ y         a    j
 
 julia> describe(df, :min, sum => :sum)
 3×3 DataFrame
-│ Row │ variable │ min │ sum │
-│     │ Symbol   │ Any │ Any │
-├─────┼──────────┼─────┼─────┤
-│ 1   │ i        │ 1   │ 55  │
-│ 2   │ x        │ 0.1 │ 5.5 │
-│ 3   │ y        │ 'a' │     │
+ Row │ variable  min  sum
+     │ Symbol    Any  Any
+─────┼────────────────────
+   1 │ i         1    55
+   2 │ x         0.1  5.5
+   3 │ y         a
 
 julia> describe(df, :min, sum => :sum, cols=:x)
 1×3 DataFrame
-│ Row │ variable │ min     │ sum     │
-│     │ Symbol   │ Float64 │ Float64 │
-├─────┼──────────┼─────────┼─────────┤
-│ 1   │ x        │ 0.1     │ 5.5     │
+ Row │ variable  min      sum
+     │ Symbol    Float64  Float64
+─────┼────────────────────────────
+   1 │ x             0.1      5.5
 ```
 """
 function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,
@@ -716,14 +715,15 @@ julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
-│ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64?  │ String? │
-├─────┼───────┼─────────┼─────────┤
-│ 1   │ 1     │ missing │ missing │
-│ 2   │ 2     │ 4       │ missing │
-│ 3   │ 3     │ missing │ c       │
-│ 4   │ 4     │ 2       │ d       │
-│ 5   │ 5     │ 1       │ e       │
+5×3 DataFrame
+ Row │ i      x        y
+     │ Int64  Int64?   String?
+─────┼─────────────────────────
+   1 │     1  missing  missing
+   2 │     2        4  missing
+   3 │     3  missing  c
+   4 │     4        2  d
+   5 │     5        1  e
 
 julia> completecases(df)
 5-element BitArray{1}:
@@ -793,47 +793,47 @@ julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
-│ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64?  │ String? │
-├─────┼───────┼─────────┼─────────┤
-│ 1   │ 1     │ missing │ missing │
-│ 2   │ 2     │ 4       │ missing │
-│ 3   │ 3     │ missing │ c       │
-│ 4   │ 4     │ 2       │ d       │
-│ 5   │ 5     │ 1       │ e       │
+ Row │ i      x        y
+     │ Int64  Int64?   String?
+─────┼─────────────────────────
+   1 │     1  missing  missing
+   2 │     2        4  missing
+   3 │     3  missing  c
+   4 │     4        2  d
+   5 │     5        1  e
 
 julia> dropmissing(df)
 2×3 DataFrame
-│ Row │ i     │ x     │ y      │
-│     │ Int64 │ Int64 │ String │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 4     │ 2     │ d      │
-│ 2   │ 5     │ 1     │ e      │
+ Row │ i      x      y
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     4      2  d
+   2 │     5      1  e
 
 julia> dropmissing(df, disallowmissing=false)
 2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64? │ String? │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
+ Row │ i      x       y
+     │ Int64  Int64?  String?
+─────┼────────────────────────
+   1 │     4       2  d
+   2 │     5       1  e
 
 julia> dropmissing(df, :x)
 3×3 DataFrame
-│ Row │ i     │ x     │ y       │
-│     │ Int64 │ Int64 │ String? │
-├─────┼───────┼───────┼─────────┤
-│ 1   │ 2     │ 4     │ missing │
-│ 2   │ 4     │ 2     │ d       │
-│ 3   │ 5     │ 1     │ e       │
+ Row │ i      x      y
+     │ Int64  Int64  String?
+─────┼───────────────────────
+   1 │     2      4  missing
+   2 │     4      2  d
+   3 │     5      1  e
 
 julia> dropmissing(df, [:x, :y])
 2×3 DataFrame
-│ Row │ i     │ x     │ y      │
-│     │ Int64 │ Int64 │ String │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 4     │ 2     │ d      │
-│ 2   │ 5     │ 1     │ e      │
+ Row │ i      x      y
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     4      2  d
+   2 │     5      1  e
 ```
 """
 @inline function dropmissing(df::AbstractDataFrame,
@@ -870,47 +870,47 @@ julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
-│ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64?  │ String? │
-├─────┼───────┼─────────┼─────────┤
-│ 1   │ 1     │ missing │ missing │
-│ 2   │ 2     │ 4       │ missing │
-│ 3   │ 3     │ missing │ c       │
-│ 4   │ 4     │ 2       │ d       │
-│ 5   │ 5     │ 1       │ e       │
+ Row │ i      x        y
+     │ Int64  Int64?   String?
+─────┼─────────────────────────
+   1 │     1  missing  missing
+   2 │     2        4  missing
+   3 │     3  missing  c
+   4 │     4        2  d
+   5 │     5        1  e
 
 julia> dropmissing!(copy(df))
 2×3 DataFrame
-│ Row │ i     │ x     │ y      │
-│     │ Int64 │ Int64 │ String │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 4     │ 2     │ d      │
-│ 2   │ 5     │ 1     │ e      │
+ Row │ i      x      y
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     4      2  d
+   2 │     5      1  e
 
 julia> dropmissing!(copy(df), disallowmissing=false)
 2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64? │ String? │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
+ Row │ i      x       y
+     │ Int64  Int64?  String?
+─────┼────────────────────────
+   1 │     4       2  d
+   2 │     5       1  e
 
 julia> dropmissing!(copy(df), :x)
 3×3 DataFrame
-│ Row │ i     │ x     │ y       │
-│     │ Int64 │ Int64 │ String? │
-├─────┼───────┼───────┼─────────┤
-│ 1   │ 2     │ 4     │ missing │
-│ 2   │ 4     │ 2     │ d       │
-│ 3   │ 5     │ 1     │ e       │
+ Row │ i      x      y
+     │ Int64  Int64  String?
+─────┼───────────────────────
+   1 │     2      4  missing
+   2 │     4      2  d
+   3 │     5      1  e
 
-julia> dropmissing!(df3, [:x, :y])
+julia> dropmissing!(df, [:x, :y])
 2×3 DataFrame
-│ Row │ i     │ x     │ y      │
-│     │ Int64 │ Int64 │ String │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 4     │ 2     │ d      │
-│ 2   │ 5     │ 1     │ e      │
+ Row │ i      x      y
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     4      2  d
+   2 │     5      1  e
 ```
 """
 function dropmissing!(df::AbstractDataFrame,
@@ -950,47 +950,47 @@ See also: [`filter!`](@ref)
 ```
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 2     │ a      │
-│ 4   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     2  a
+   4 │     1  b
 
 julia> filter(row -> row.x > 1, df)
 2×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 2     │ a      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a
 
 julia> filter(:x => x -> x > 1, df)
 2×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 2     │ a      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a
 
 julia> filter([:x, :y] => (x, y) -> x == 1 || y == "b", df)
 3×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     1  b
 
 julia> filter(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 3×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     1  b
 ```
 """
 @inline function Base.filter(f, df::AbstractDataFrame; view::Bool=false)
@@ -1059,56 +1059,50 @@ See also: [`filter`](@ref)
 ```
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 2     │ a      │
-│ 4   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     2  a
+   4 │     1  b
 
-julia> filter!(row -> row.x > 1, df);
-
-julia> df
+julia> filter!(row -> row.x > 1, df)
 2×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 2     │ a      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a
 
-julia> filter!(:x => x -> x == 3, df);
-
-julia> df
+julia> filter!(:x => x -> x == 3, df)
 1×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
 
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
 
-julia> filter!([:x, :y] => (x, y) -> x == 1 || y == "b", df);
-
-julia> df
+julia> filter!([:x, :y] => (x, y) -> x == 1 || y == "b", df)
 3×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     1  b
 
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
 
 julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 3×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     1  b
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
@@ -1195,10 +1189,51 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Examples
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df = vcat(df, df)
-nonunique(df)
-nonunique(df, 1)
+julia> df = DataFrame(i = 1:4, x = [1, 2, 1, 2])
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> df = vcat(df, df)
+8×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+   5 │     1      1
+   6 │     2      2
+   7 │     3      1
+   8 │     4      2
+
+julia> nonunique(df)
+8-element Array{Bool,1}:
+ 0
+ 0
+ 0
+ 0
+ 1
+ 1
+ 1
+ 1
+
+julia> nonunique(df, 2)
+8-element Array{Bool,1}:
+ 0
+ 0
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
 ```
 """
 function nonunique(df::AbstractDataFrame)
@@ -1261,11 +1296,57 @@ specifying the column(s) to compare.
 
 # Examples
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df = vcat(df, df)
-unique(df)   # doesn't modify df
-unique(df, 1)
-unique!(df)  # modifies df
+julia> df = DataFrame(i = 1:4, x = [1, 2, 1, 2])
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> df = vcat(df, df)
+8×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+   5 │     1      1
+   6 │     2      2
+   7 │     3      1
+   8 │     4      2
+
+julia> unique(df)   # doesn't modify df
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> unique(df, 2)
+2×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+
+julia> unique!(df)  # modifies df
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
 ```
 """
 (unique, unique!)
@@ -1296,27 +1377,32 @@ the corruption of the other object.
 
 # Example
 ```jldoctest
-julia [DataFrame(A=1:3) DataFrame(B=1:3)]
+julia> df1 = DataFrame(A=1:3, B=1:3)
 3×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
 
-julia> df1 = DataFrame(A=1:3, B=1:3);
-
-julia> df2 = DataFrame(A=4:6, B=4:6);
+julia> df2 = DataFrame(A=4:6, B=4:6)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      4
+   2 │     5      5
+   3 │     6      6
 
 julia> df3 = hcat(df1, df2, makeunique=true)
 3×4 DataFrame
-│ Row │ A     │ B     │ A_1   │ B_1   │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 1     │ 4     │ 4     │
-│ 2   │ 2     │ 2     │ 5     │ 5     │
-│ 3   │ 3     │ 3     │ 6     │ 6     │
+ Row │ A      B      A_1    B_1
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      1      4      4
+   2 │     2      2      5      5
+   3 │     3      3      6      6
 
 julia> df3.A === df1.A
 false
@@ -1380,60 +1466,81 @@ data frame at the beginning of a loop and `vcat` onto it.
 
 # Example
 ```jldoctest
-julia> df1 = DataFrame(A=1:3, B=1:3);
+julia> df1 = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
 
-julia> df2 = DataFrame(A=4:6, B=4:6);
+julia> df2 = DataFrame(A=4:6, B=4:6)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      4
+   2 │     5      5
+   3 │     6      6
 
-julia> df3 = DataFrame(A=7:9, C=7:9);
+julia> df3 = DataFrame(A=7:9, C=7:9)
+3×2 DataFrame
+ Row │ A      C
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7      7
+   2 │     8      8
+   3 │     9      9
 
-julia> d4 = DataFrame();
+julia> d4 = DataFrame()
+0×0 DataFrame
 
 julia> vcat(df1, df2)
 6×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 4     │ 4     │
-│ 5   │ 5     │ 5     │
-│ 6   │ 6     │ 6     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     4      4
+   5 │     5      5
+   6 │     6      6
 
 julia> vcat(df1, df3, cols=:union)
 6×3 DataFrame
-│ Row │ A     │ B       │ C       │
-│     │ Int64 │ Int64?  │ Int64?  │
-├─────┼───────┼─────────┼─────────┤
-│ 1   │ 1     │ 1       │ missing │
-│ 2   │ 2     │ 2       │ missing │
-│ 3   │ 3     │ 3       │ missing │
-│ 4   │ 7     │ missing │ 7       │
-│ 5   │ 8     │ missing │ 8       │
-│ 6   │ 9     │ missing │ 9       │
+ Row │ A      B        C
+     │ Int64  Int64?   Int64?
+─────┼─────────────────────────
+   1 │     1        1  missing
+   2 │     2        2  missing
+   3 │     3        3  missing
+   4 │     7  missing        7
+   5 │     8  missing        8
+   6 │     9  missing        9
 
 julia> vcat(df1, df3, cols=:intersect)
 6×1 DataFrame
-│ Row │ A     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
-│ 3   │ 3     │
-│ 4   │ 7     │
-│ 5   │ 8     │
-│ 6   │ 9     │
+ Row │ A
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+   4 │     7
+   5 │     8
+   6 │     9
 
 julia> vcat(d4, df1)
 3×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
 ```
-
 """
 Base.vcat(dfs::AbstractDataFrame...;
           cols::Union{Symbol, AbstractVector{Symbol},
@@ -1538,29 +1645,29 @@ of rows is repeated.
 ```jldoctest
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
 
 julia> repeat(df, inner = 2, outer = 3)
 12×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 1     │ 3     │
-│ 3   │ 2     │ 4     │
-│ 4   │ 2     │ 4     │
-│ 5   │ 1     │ 3     │
-│ 6   │ 1     │ 3     │
-│ 7   │ 2     │ 4     │
-│ 8   │ 2     │ 4     │
-│ 9   │ 1     │ 3     │
-│ 10  │ 1     │ 3     │
-│ 11  │ 2     │ 4     │
-│ 12  │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     1      3
+   3 │     2      4
+   4 │     2      4
+   5 │     1      3
+   6 │     1      3
+   7 │     2      4
+   8 │     2      4
+   9 │     1      3
+  10 │     1      3
+  11 │     2      4
+  12 │     2      4
 ```
 """
 function Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)
@@ -1579,21 +1686,21 @@ specified by `count`.
 ```jldoctest
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
 
 julia> repeat(df, 2)
 4×2 DataFrame
-│ Row │ a     │ b     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 3     │
-│ 2   │ 2     │ 4     │
-│ 3   │ 1     │ 3     │
-│ 4   │ 2     │ 4     │
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+   3 │     1      3
+   4 │     2      4
 ```
 """
 function Base.repeat(df::AbstractDataFrame, count::Integer)
@@ -1670,35 +1777,35 @@ of throwing an error.
 ```jldoctest
 julia> df = DataFrame(a=Union{Int,Missing}[1,2])
 2×1 DataFrame
-│ Row │ a      │
-│     │ Int64? │
-├─────┼────────┤
-│ 1   │ 1      │
-│ 2   │ 2      │
+ Row │ a
+     │ Int64?
+─────┼────────
+   1 │      1
+   2 │      2
 
 julia> disallowmissing(df)
 2×1 DataFrame
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
 
 julia> df = DataFrame(a=[1,missing])
-2×2 DataFrame
-│ Row │ a       │ b      │
-│     │ Int64?  │ Int64? │
-├─────┼─────────┼────────┤
-│ 1   │ 1       │ 1      │
-│ 2   │ missing │ 2      │
+2×1 DataFrame
+ Row │ a
+     │ Int64?
+─────┼─────────
+   1 │       1
+   2 │ missing
 
 julia> disallowmissing(df, error=false)
-2×2 DataFrame
-│ Row │ a       │ b     │
-│     │ Int64?  │ Int64 │
-├─────┼─────────┼───────┤
-│ 1   │ 1       │ 1     │
-│ 2   │ missing │ 2     │
+2×1 DataFrame
+ Row │ a
+     │ Int64?
+─────┼─────────
+   1 │       1
+   2 │ missing
 ```
 """
 function Missings.disallowmissing(df::AbstractDataFrame,
@@ -1737,19 +1844,19 @@ If `cols` is omitted all columns in the data frame are converted.
 ```jldoctest
 julia> df = DataFrame(a=[1,2])
 2×1 DataFrame
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
 
 julia> allowmissing(df)
 2×1 DataFrame
-│ Row │ a      │
-│     │ Int64? │
-├─────┼────────┤
-│ 1   │ 1      │
-│ 2   │ 2      │
+ Row │ a
+     │ Int64?
+─────┼────────
+   1 │      1
+   2 │      2
 ```
 """
 function Missings.allowmissing(df::AbstractDataFrame,
@@ -1788,61 +1895,60 @@ returned `DataFrame` will affect `df`.
 ```
 julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
 2×3 DataFrame
-│ Row │ a     │ b      │ c      │
-│     │ Int64 │ Array… │ Array… │
-├─────┼───────┼────────┼────────┤
-│ 1   │ 1     │ [1, 2] │ [5, 6] │
-│ 2   │ 2     │ [3, 4] │ [7, 8] │
+ Row │ a      b       c
+     │ Int64  Array…  Array…
+─────┼───────────────────────
+   1 │     1  [1, 2]  [5, 6]
+   2 │     2  [3, 4]  [7, 8]
 
 julia> flatten(df1, :b)
 4×3 DataFrame
-│ Row │ a     │ b     │ c      │
-│     │ Int64 │ Int64 │ Array… │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 1     │ 1     │ [5, 6] │
-│ 2   │ 1     │ 2     │ [5, 6] │
-│ 3   │ 2     │ 3     │ [7, 8] │
-│ 4   │ 2     │ 4     │ [7, 8] │
+ Row │ a      b      c
+     │ Int64  Int64  Array…
+─────┼──────────────────────
+   1 │     1      1  [5, 6]
+   2 │     1      2  [5, 6]
+   3 │     2      3  [7, 8]
+   4 │     2      4  [7, 8]
 
 julia> flatten(df1, [:b, :c])
 4×3 DataFrame
-│ Row │ a     │ b     │ c     │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 1     │ 5     │
-│ 2   │ 1     │ 2     │ 6     │
-│ 3   │ 2     │ 3     │ 7     │
-│ 4   │ 2     │ 4     │ 8     │
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      5
+   2 │     1      2      6
+   3 │     2      3      7
+   4 │     2      4      8
 
 julia> df2 = DataFrame(a = [1, 2], b = [("p", "q"), ("r", "s")])
 2×2 DataFrame
-│ Row │ a     │ b          │
-│     │ Int64 │ Tuple…     │
-├─────┼───────┼────────────┤
-│ 1   │ 1     │ ("p", "q") │
-│ 2   │ 2     │ ("r", "s") │
+ Row │ a      b
+     │ Int64  Tuple…
+─────┼───────────────────
+   1 │     1  ("p", "q")
+   2 │     2  ("r", "s")
 
 julia> flatten(df2, :b)
 4×2 DataFrame
-│ Row │ a     │ b      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ p      │
-│ 2   │ 1     │ q      │
-│ 3   │ 2     │ r      │
-│ 4   │ 2     │ s      │
+ Row │ a      b
+     │ Int64  String
+─────┼───────────────
+   1 │     1  p
+   2 │     1  q
+   3 │     2  r
+   4 │     2  s
 
 julia> df3 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
 2×3 DataFrame
-│ Row │ a     │ b      │ c      │
-│     │ Int64 │ Array… │ Array… │
-├─────┼───────┼────────┼────────┤
-│ 1   │ 1     │ [1, 2] │ [5, 6] │
-│ 2   │ 2     │ [3, 4] │ [7]    │
+ Row │ a      b       c
+     │ Int64  Array…  Array…
+─────┼───────────────────────
+   1 │     1  [1, 2]  [5, 6]
+   2 │     2  [3, 4]  [7]
 
 julia> flatten(df3, [:b, :c])
-ERROR: ArgumentError: Lengths of iterables stored in columns :b and :c
-are not the same in row 2
+ERROR: ArgumentError: Lengths of iterables stored in columns :b and :c are not the same in row 2
 ```
 """
 function flatten(df::AbstractDataFrame,
