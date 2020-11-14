@@ -602,7 +602,8 @@ function _show(io::IO,
         crop = :both
     end
 
-    compact_printing::Bool = get(io, :compact, true)
+    # For consistency, if `kwargs` has `compact_printng`, we must use it.
+    compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
 
     num_rows, num_cols = size(df)
 
@@ -614,10 +615,9 @@ function _show(io::IO,
     # the printed numbers will be aligned on the decimal point.
     float_cols = Int[]
 
-    # These vectors contain the number of the row and the padding that must be
-    # applied so that the float number is aligned with on the decimal point
-    indices = Vector{Int}[]
-    padding = Vector{Int}[]
+    # This vector contains the column with respect to the beginning of the cell
+    # that the decimal point must be aligned to.
+    align_col = Int[]
 
     # If the screen is limited, we do not need to process all the numbers.
     dsize = displaysize(io)
@@ -657,13 +657,15 @@ function _show(io::IO,
 
     if Δr*num_float_cols ≤ 200_000
         for i in float_cols
-            # Analyze the order of the number to compute the maximum padding
-            # that must be applied to align the numbers at the decimal
-            # point.
 
-            max_order_i = 0
-            order_i = zeros(Δr)
-            indices_i = zeros(Δr)
+            # This variable stores the column with respect the beginning of the
+            # cell that the decimal point must be aligned to.
+            align_col_i = 0
+
+            # This variable stores the maximum text size we have after the
+            # alignment column. This is used to compute the right padding that
+            # should be necessary to right align the cells.
+            max_size_after_align_col = 0
 
             col = df[!, i]
 
@@ -675,38 +677,43 @@ function _show(io::IO,
 
                 v = col[kr]
 
-                order_v = 0
+                v_str = sprint(print, v, context = :compact => compact_printing)
+                lv_str = textwidth(v_str)
 
-                if v !== missing
-                    abs_v = abs(v)
-                    log_v = !isinf(v) && !isnan(v) && abs_v > 1 ?
-                        floor(Int, log10(abs_v))::Int : 0
+                if ismissing(v)
+                    # For `missing`, we align the string to the right of the
+                    # decimal point.
+                    id_dp = 8
+                else
+                    # We want to align everything at '.'.
+                    id_dp = findfirst('.', v_str)
 
-                    # If the order is higher than 5, then we print using
-                    # scientific notation.
-                    order_v = log_v > 5 ? 0 : floor(Int, log_v)
-
-                    # If the number is negative (including -0.0), we need to add an additional
-                    # padding to print the sign.
-                    isless(v, 0) && (order_v += 1)
+                    # If a decimal point is not found, then assume that the
+                    # entire text should be aligned before the alignment column.
+                    # This can happen with a custom `AbstractFloat` type.
+                    id_dp === nothing && (id_dp = lv_str + 1)
                 end
 
-                order_i[k] = order_v
-                indices_i[k] = kr
+                (align_col_i < id_dp) && (align_col_i = id_dp)
 
-                order_v > max_order_i && (max_order_i = order_v)
+                size_after_align_col = lv_str - id_dp
+
+                if max_size_after_align_col < size_after_align_col
+                    max_size_after_align_col = size_after_align_col
+                end
             end
+
+            # Check if we need additional left padding to right align the values
+            # in the cell. This can happen if the header length is larger than
+            # the values at the cells.
+            header_size = max(names_len[i], textwidth(types_str[i]))
+            lpad = header_size - (align_col_i + max_size_after_align_col)
+            lpad > 0 && (align_col_i += lpad)
+
+            push!(align_col, align_col_i)
 
             # The algorithm requires the cells to be left aligned.
             alignment[i] = :l
-
-            push!(indices, indices_i)
-
-            # `order_i` now contains the padding that must be applied to align
-            # the number in the decimal point.
-            order_i .= max_order_i .- order_i
-
-            push!(padding, order_i)
         end
     else
         empty!(float_cols)
@@ -714,7 +721,7 @@ function _show(io::IO,
 
     # Create the formatter for floating point columns.
     ft_float(v, i, j) = _pretty_tables_float_formatter(v, i, j, float_cols,
-                                                       indices, padding,
+                                                       align_col,
                                                        compact_printing)
 
     # Make sure that `truncate` does not hide the type and the column name.
