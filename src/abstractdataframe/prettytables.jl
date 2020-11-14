@@ -65,8 +65,7 @@ end
 
 function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
                                         float_cols::Vector{Int},
-                                        indices::Vector{Vector{Int}},
-                                        padding::Vector{Vector{Int}},
+                                        align_col::Vector{Int},
                                         compact_printing::Bool)
     isempty(float_cols) && return v
 
@@ -74,15 +73,23 @@ function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
     ind_col = findfirst(==(j), float_cols)
 
     if ind_col !== nothing
-        ind_row = findfirst(==(i), indices[ind_col])
+        align_col_i = align_col[ind_col]
 
-        if ind_row !== nothing
-            pad = padding[ind_col][ind_row]
+        # Convert the value to text.
+        str = sprint(print, v, context = :compact => compact_printing)
 
-            # Return the formatted number.
-            str = sprint(print, v, context = :compact => compact_printing)
-            return " "^pad * str
-        end
+        # We want to align everything at '.'.
+        id_dp = findfirst('.', str)
+
+        # Compute the require padding to align the cell.
+        pad = id_dp !== nothing ? align_col_i - id_dp : align_col_i - 1
+
+        # Pad cannot be negative.
+        # NOTE: This is just a failsafe, `pad` will be negative only if we have
+        # a bug. However, in this case, we can avoid an error when printing.
+        pad < 0 && (pad = 0)
+
+        return " "^pad * str
     end
 
     # The formatter is applied to all tables' cells. Hence, we must return the
