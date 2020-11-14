@@ -603,11 +603,7 @@ function _show(io::IO,
     end
 
     # For consistency, if `kwargs` has `compact_printng`, we must use it.
-    if haskey(kwargs, :compact_printing)
-        compact_printing = kwargs[:compact_printing]
-    else
-        compact_printing::Bool = get(io, :compact, true)
-    end
+        compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
 
     num_rows, num_cols = size(df)
 
@@ -691,8 +687,8 @@ function _show(io::IO,
                     id_dp = findfirst('.', v_str)
 
                     # If a decimal point is not found, then assume that the
-                    # entire should be aligned before the alignment column. This
-                    # can happen with a custom `AbstractFloat` structure.
+                    # entire text should be aligned before the alignment column. This
+                    # can happen with a custom `AbstractFloat` type.
                     id_dp === nothing && (id_dp = lv_str + 1)
 
                     (align_col_i < id_dp) && (align_col_i = id_dp)

@@ -87,8 +87,8 @@ function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
             # Compute the require padding to align the cell.
             #
             # If a decimal point is not found, then assume that the
-            # entire should be aligned before the alignment column. This
-            # can happen with a custom `AbstractFloat` structure.
+            # entire text should be aligned before the alignment column. This
+            # can happen with a custom `AbstractFloat` type.
             pad = id_dp !== nothing ? align_col_i - id_dp :
                                       align_col_i - (textwidth(str) + 1)
         end
