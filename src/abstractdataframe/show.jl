@@ -602,11 +602,11 @@ function _show(io::IO,
         crop = :both
     end
 
-    compact_printing::Bool = get(io, :compact, true)
-
     # For consistency, if `kwargs` has `compact_printng`, we must use it.
     if haskey(kwargs, :compact_printing)
         compact_printing = kwargs[:compact_printing]
+    else
+        compact_printing::Bool = get(io, :compact, true)
     end
 
     num_rows, num_cols = size(df)
@@ -620,7 +620,7 @@ function _show(io::IO,
     float_cols = Int[]
 
     # This vector contains the column with respect to the beginning of the cell
-    # that the decimal point must be aligned.
+    # that the decimal point must be aligned to.
     align_col = Int[]
 
     # If the screen is limited, we do not need to process all the numbers.
@@ -663,7 +663,7 @@ function _show(io::IO,
         for i in float_cols
 
             # This variable stores the column with respect the beginning of the
-            # cell that the decimal point must be aligned.
+            # cell that the decimal point must be aligned to.
             align_col_i = 0
 
             # This variable stores the maximum text size we have after the
@@ -694,8 +694,9 @@ function _show(io::IO,
 
                 size_after_align_col = length(v_str) - id_dp
 
-                max_size_after_align_col < size_after_align_col &&
-                    (max_size_after_align_col = size_after_align_col)
+                if max_size_after_align_col < size_after_align_col
+                    max_size_after_align_col = size_after_align_col
+                end
             end
 
             # Check if we need additional left padding to right align the values
