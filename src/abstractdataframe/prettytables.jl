@@ -79,7 +79,7 @@ function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
         str = sprint(print, v, context = :compact => compact_printing)
 
         if v == "missing"
-            pad = align_col_i - 1
+            pad = align_col_i - 8
         else
             # We want to align everything at '.'.
             id_dp = findfirst('.', str)

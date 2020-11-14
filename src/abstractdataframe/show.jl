@@ -603,7 +603,7 @@ function _show(io::IO,
     end
 
     # For consistency, if `kwargs` has `compact_printng`, we must use it.
-        compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+    compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
 
     num_rows, num_cols = size(df)
 
@@ -681,18 +681,20 @@ function _show(io::IO,
                 lv_str = textwidth(v_str)
 
                 if ismissing(v)
-                    id_dp = 1
+                    # For `missing`, we align the string to the right of the
+                    # decimal point.
+                    id_dp = 8
                 else
                     # We want to align everything at '.'.
                     id_dp = findfirst('.', v_str)
 
                     # If a decimal point is not found, then assume that the
-                    # entire text should be aligned before the alignment column. This
-                    # can happen with a custom `AbstractFloat` type.
+                    # entire text should be aligned before the alignment column.
+                    # This can happen with a custom `AbstractFloat` type.
                     id_dp === nothing && (id_dp = lv_str + 1)
-
-                    (align_col_i < id_dp) && (align_col_i = id_dp)
                 end
+
+                (align_col_i < id_dp) && (align_col_i = id_dp)
 
                 size_after_align_col = lv_str - id_dp
 
