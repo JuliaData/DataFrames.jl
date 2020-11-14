@@ -682,17 +682,23 @@ function _show(io::IO,
                 v = col[kr]
 
                 v_str = sprint(print, v, context = :compact => compact_printing)
+                lv_str = textwidth(v_str)
 
-                # We want to align everything at '.'.
-                id_dp = findfirst('.', v_str)
-
-                if id_dp !== nothing
-                    (align_col_i < id_dp) && (align_col_i = id_dp)
+                if ismissing(v)
+                    id_dp = 1
                 else
-                    id_dp = 0
+                    # We want to align everything at '.'.
+                    id_dp = findfirst('.', v_str)
+
+                    # If a decimal point is not found, then assume that the
+                    # entire should be aligned before the alignment column. This
+                    # can happen with a custom `AbstractFloat` structure.
+                    id_dp === nothing && (id_dp = lv_str + 1)
+
+                    (align_col_i < id_dp) && (align_col_i = id_dp)
                 end
 
-                size_after_align_col = length(v_str) - id_dp
+                size_after_align_col = lv_str - id_dp
 
                 if max_size_after_align_col < size_after_align_col
                     max_size_after_align_col = size_after_align_col

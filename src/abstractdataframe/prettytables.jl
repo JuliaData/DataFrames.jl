@@ -78,11 +78,20 @@ function _pretty_tables_float_formatter(v, i::Integer, j::Integer,
         # Convert the value to text.
         str = sprint(print, v, context = :compact => compact_printing)
 
-        # We want to align everything at '.'.
-        id_dp = findfirst('.', str)
+        if v == "missing"
+            pad = align_col_i - 1
+        else
+            # We want to align everything at '.'.
+            id_dp = findfirst('.', str)
 
-        # Compute the require padding to align the cell.
-        pad = id_dp !== nothing ? align_col_i - id_dp : align_col_i - 1
+            # Compute the require padding to align the cell.
+            #
+            # If a decimal point is not found, then assume that the
+            # entire should be aligned before the alignment column. This
+            # can happen with a custom `AbstractFloat` structure.
+            pad = id_dp !== nothing ? align_col_i - id_dp :
+                                      align_col_i - (textwidth(str) + 1)
+        end
 
         # Pad cannot be negative.
         # NOTE: This is just a failsafe, `pad` will be negative only if we have
