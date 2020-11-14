@@ -1107,9 +1107,9 @@ julia> df2 = DataFrame(A=4.0:6.0, B=4:6)
  Row │ A        B
      │ Float64  Int64
 ─────┼────────────────
-   1 │ 4.0          4
-   2 │ 5.0          5
-   3 │ 6.0          6
+   1 │     4.0      4
+   2 │     5.0      5
+   3 │     6.0      6
 
 julia> append!(df1, df2);
 
@@ -1466,28 +1466,28 @@ julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
 7×3 DataFrame
  Row │ A        B        C
      │ Float64  Int64?   Float64?
-─────┼────────────────────────────
-   1 │ 1.0            1  missing
-   2 │ 2.0            2  missing
-   3 │ 3.0            3  missing
-   4 │ 1.0            0  missing
-   5 │ 1.0            1  missing
-   6 │ 1.0            0  missing
-   7 │ 1.0      missing  1.0
+─────┼─────────────────────────────
+   1 │     1.0        1  missing
+   2 │     2.0        2  missing
+   3 │     3.0        3  missing
+   4 │     1.0        0  missing
+   5 │     1.0        1  missing
+   6 │     1.0        0  missing
+   7 │     1.0  missing        1.0
 
 julia> push!(df, NamedTuple(), cols=:subset)
 8×3 DataFrame
- Row │ A         B        C
-     │ Float64?  Int64?   Float64?
-─────┼─────────────────────────────
-   1 │ 1.0             1  missing
-   2 │ 2.0             2  missing
-   3 │ 3.0             3  missing
-   4 │ 1.0             0  missing
-   5 │ 1.0             1  missing
-   6 │ 1.0             0  missing
-   7 │ 1.0       missing  1.0
-   8 │ missing   missing  missing
+ Row │ A          B        C
+     │ Float64?   Int64?   Float64?
+─────┼───────────────────────────────
+   1 │       1.0        1  missing
+   2 │       2.0        2  missing
+   3 │       3.0        3  missing
+   4 │       1.0        0  missing
+   5 │       1.0        1  missing
+   6 │       1.0        0  missing
+   7 │       1.0  missing        1.0
+   8 │ missing    missing  missing
 ```
 """
 function Base.push!(df::DataFrame, row::Any; promote::Bool=false)

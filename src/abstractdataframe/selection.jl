@@ -699,9 +699,9 @@ julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
  Row │ a      b      a_b_function
      │ Int64  Int64  Float64
 ─────┼────────────────────────────
-   1 │     1      4  0.0
-   2 │     2      5  2.0
-   3 │     3      6  4.0
+   1 │     1      4           0.0
+   2 │     2      5           2.0
+   3 │     3      6           4.0
 
 julia> select(df, names(df) .=> [minimum maximum])
 3×4 DataFrame
@@ -719,9 +719,9 @@ julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
  Row │ a_b
      │ Float64
 ─────┼─────────
-   1 │ 2.5
-   2 │ 3.5
-   3 │ 4.5
+   1 │     2.5
+   2 │     3.5
+   3 │     4.5
 
 julia> select(first, df)
 3×2 DataFrame
@@ -747,9 +747,9 @@ julia> select(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats
  Row │ stats                    mean     std
      │ NamedTup…                Float64  Float64
 ─────┼───────────────────────────────────────────
-   1 │ (mean = 4.0, std = 3.0)  4.0      3.0
-   2 │ (mean = 5.0, std = 3.0)  5.0      3.0
-   3 │ (mean = 6.0, std = 3.0)  6.0      3.0
+   1 │ (mean = 4.0, std = 3.0)      4.0      3.0
+   2 │ (mean = 5.0, std = 3.0)      5.0      3.0
+   3 │ (mean = 6.0, std = 3.0)      6.0      3.0
 
 julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
                       b = repeat([2, 1], outer=[4]),
@@ -769,40 +769,20 @@ julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
 
 julia> gd = groupby(df, :a);
 
-julia> select(gd, :c => sum, nrow, ungroup=false)
-GroupedDataFrame with 2 groups based on key: a
-First Group (5 rows): a = 1
- Row │ a      c_sum  nrow
-     │ Int64  Int64  Int64
-─────┼─────────────────────
-   1 │     1     19      5
-   2 │     1     19      5
-   3 │     1     19      5
-   4 │     1     19      5
-   5 │     1     19      5
-⋮
-Last Group (3 rows): a = 2
- Row │ a      c_sum  nrow
-     │ Int64  Int64  Int64
-─────┼─────────────────────
-   1 │     2     17      3
-   2 │     2     17      3
-   3 │     2     17      3
-
 # specifying a name for target column
 julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 8×2 DataFrame
  Row │ a      sum_log_c
      │ Int64  Float64
 ─────┼──────────────────
-   1 │     1  5.52943
-   2 │     1  5.52943
-   3 │     1  5.52943
-   4 │     2  5.07517
-   5 │     2  5.07517
-   6 │     1  5.52943
-   7 │     1  5.52943
-   8 │     2  5.07517
+   1 │     1    5.52943
+   2 │     1    5.52943
+   3 │     1    5.52943
+   4 │     2    5.07517
+   5 │     2    5.07517
+   6 │     1    5.52943
+   7 │     1    5.52943
+   8 │     2    5.07517
 
 julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
 8×3 DataFrame
@@ -994,9 +974,9 @@ julia> combine(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
  Row │ a      b      a_b_function
      │ Int64  Int64  Float64
 ─────┼────────────────────────────
-   1 │     1      4  0.0
-   2 │     2      5  2.0
-   3 │     3      6  4.0
+   1 │     1      4           0.0
+   2 │     2      5           2.0
+   3 │     3      6           4.0
 
 julia> combine(df, names(df) .=> [minimum maximum])
 1×4 DataFrame
@@ -1012,9 +992,9 @@ julia> combine(df, AsTable(:) => ByRow(mean), renamecols=false)
  Row │ a_b
      │ Float64
 ─────┼─────────
-   1 │ 2.5
-   2 │ 3.5
-   3 │ 4.5
+   1 │     2.5
+   2 │     3.5
+   3 │     4.5
 
 julia> combine(first, df)
 1×2 DataFrame
@@ -1038,9 +1018,9 @@ julia> combine(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stat
  Row │ stats                    mean     std
      │ NamedTup…                Float64  Float64
 ─────┼───────────────────────────────────────────
-   1 │ (mean = 4.0, std = 3.0)  4.0      3.0
-   2 │ (mean = 5.0, std = 3.0)  5.0      3.0
-   3 │ (mean = 6.0, std = 3.0)  6.0      3.0
+   1 │ (mean = 4.0, std = 3.0)      4.0      3.0
+   2 │ (mean = 5.0, std = 3.0)      5.0      3.0
+   3 │ (mean = 6.0, std = 3.0)      6.0      3.0
 
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
@@ -1089,10 +1069,10 @@ julia> combine(gd, :c => (x -> sum(log, x)) => :sum_log_c) # specifying a name f
  Row │ a      sum_log_c
      │ Int64  Float64
 ─────┼──────────────────
-   1 │     1  1.60944
-   2 │     2  2.48491
-   3 │     3  3.04452
-   4 │     4  3.46574
+   1 │     1    1.60944
+   2 │     2    2.48491
+   3 │     3    3.04452
+   4 │     4    3.46574
 
 julia> combine(gd, [:b, :c] .=> sum) # passing a vector of pairs
 4×3 DataFrame

@@ -38,9 +38,9 @@ julia> df = DataFrame(name=["John", "Sally", "Roger"],
  Row │ name    age      children
      │ String  Float64  Int64
 ─────┼───────────────────────────
-   1 │ John    54.0            0
-   2 │ Sally   34.0            2
-   3 │ Roger   79.0            4
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
 
 julia> @linq df |>
            where(:age .> 40) |>
@@ -144,9 +144,9 @@ julia> df = DataFrame(name=["John", "Sally", "Roger"],
  Row │ name    age      children
      │ String  Float64  Int64
 ─────┼───────────────────────────
-   1 │ John    54.0            0
-   2 │ Sally   34.0            2
-   3 │ Roger   79.0            4
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
 
 julia> q1 = @from i in df begin
             @where i.age > 40

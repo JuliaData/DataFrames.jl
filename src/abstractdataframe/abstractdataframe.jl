@@ -553,7 +553,7 @@ julia> describe(df, :min, sum => :sum, cols=:x)
  Row │ variable  min      sum
      │ Symbol    Float64  Float64
 ─────┼────────────────────────────
-   1 │ x         0.1      5.5
+   1 │ x             0.1      5.5
 ```
 """
 function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,

@@ -361,11 +361,12 @@ its columns. For example in this case:
 julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
- Row │ a      b         c     d
-     │ Int64  Float64?  Cat…  Rational…?
-─────┼───────────────────────────────────
-   1 │     1  1.0       a           1//2
-   2 │     2  missing   b        missing
+ Row │ a      b          c     d
+     │ Int64  Float64?   Cat…  Rational…?
+─────┼────────────────────────────────────
+   1 │     1        1.0  a           1//2
+   2 │     2  missing    b        missing
+
 ```
 
 we can observe that:
@@ -838,7 +839,6 @@ julia> transform(df, AsTable(:) => ByRow(argmax) => :prediction)
    8 │ 0.999905    0.0203749  0.848185   a
    9 │ 0.251662    0.287702   0.0856352  b
   10 │ 0.986666    0.859512   0.553206   a
-
 ```
 In the following, most complex, example below we compute row-wise sum, number of elements, and mean,
 while ignoring missing values.
@@ -863,9 +863,9 @@ julia> transform(df, AsTable(:) .=>
  Row │ x        y        sum    n      mean
      │ Int64?   Int64?   Int64  Int64  Float64
 ─────┼─────────────────────────────────────────
-   1 │       1        1      2      2  1.0
-   2 │       2  missing      2      1  2.0
-   3 │ missing  missing      0      0  NaN
+   1 │       1        1      2      2      1.0
+   2 │       2  missing      2      1      2.0
+   3 │ missing  missing      0      0    NaN
 ```
 
 While the DataFrames.jl package provides basic data manipulation capabilities,
@@ -909,7 +909,7 @@ julia> describe(df[!, [:A]])
  Row │ variable  mean     min    median   max    nmissing  eltype
      │ Symbol    Float64  Int64  Float64  Int64  Int64     DataType
 ─────┼──────────────────────────────────────────────────────────────
-   1 │ A         2.5          1  2.5          4         0  Int64
+   1 │ A             2.5      1      2.5      4         0  Int64
 ```
 
 Of course, one can also compute descriptive statistics directly on individual columns:
@@ -927,24 +927,24 @@ julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
  Row │ A      B
      │ Int64  Float64
 ─────┼────────────────
-   1 │     1  4.0
-   2 │     2  3.0
-   3 │     3  2.0
-   4 │     4  1.0
+   1 │     1      4.0
+   2 │     2      3.0
+   3 │     3      2.0
+   4 │     4      1.0
 
 julia> combine(df, names(df) .=> sum)
 1×2 DataFrame
  Row │ A_sum  B_sum
      │ Int64  Float64
 ─────┼────────────────
-   1 │    10  10.0
+   1 │    10     10.0
 
 julia> combine(df, names(df) .=> sum, names(df) .=> prod)
 1×4 DataFrame
  Row │ A_sum  B_sum    A_prod  B_prod
      │ Int64  Float64  Int64   Float64
 ─────┼─────────────────────────────────
-   1 │    10  10.0         24  24.0
+   1 │    10     10.0      24     24.0
 ```
 
 If you would prefer the result to have the same number of rows as the source data
@@ -961,10 +961,10 @@ julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
  Row │ A      B
      │ Int64  Float64
 ─────┼────────────────
-   1 │     1  4.0
-   2 │     2  3.0
-   3 │     3  2.0
-   4 │     4  1.0
+   1 │     1      4.0
+   2 │     2      3.0
+   3 │     3      2.0
+   4 │     4      1.0
 
 julia> df2 = copy(df);
 
