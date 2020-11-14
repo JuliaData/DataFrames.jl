@@ -423,8 +423,13 @@ applied to all pairs of columns stored in `df1` and `df2` returns `true`.
 function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
                        atol::Real=0, rtol::Real=atol>0 ? 0 : √eps(),
                        nans::Bool=false, norm::Function=norm)
-    size(df1) == size(df2) || throw(DimensionMismatch("dimensions must match: a has dims $(size(df1)), b has dims $(size(df2))"))
-    isequal(index(df1), index(df2)) || throw(ArgumentError("column names of passed data frames do not match"))
+    if size(df1) != size(df2)
+        throw(DimensionMismatch("dimensions must match: a has dims " *
+                                "$(size(df1)), b has dims $(size(df2))"))
+    end
+    if !isequal(index(df1), index(df2))
+        throw(ArgumentError("column names of passed data frames do not match"))
+    end
     return all(isapprox.(eachcol(df1), eachcol(df2), atol=atol, rtol=rtol, nans=nans, norm=norm))
 end
 ##############################################################################
@@ -1233,8 +1238,8 @@ julia> nonunique(df, 2)
 """
 function nonunique(df::AbstractDataFrame)
     if ncol(df) == 0
-        throw(ArgumentError("finding duplicate rows in data frame with no" *
-                            " columns is not allowed"))
+        throw(ArgumentError("finding duplicate rows in data frame with no " *
+                            "columns is not allowed"))
     end
     gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
@@ -1959,8 +1964,8 @@ function flatten(df::AbstractDataFrame,
         if any(x -> length(x[1]) != x[2], zip(v, lengths))
             r = findfirst(x -> x != 0, length.(v) .- lengths)
             colnames = _names(df)
-            throw(ArgumentError("Lengths of iterables stored in columns :$(colnames[col1])" *
-                                " and :$(colnames[col]) are not the same in row $r"))
+            throw(ArgumentError("Lengths of iterables stored in columns :$(colnames[col1]) " *
+                                "and :$(colnames[col]) are not the same in row $r"))
         end
     end
 

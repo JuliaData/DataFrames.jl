@@ -395,8 +395,8 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     colref_map = df[col_group_row_idxs, colkey]
 
     if any(ismissing, colref_map) && !allowmissing
-        throw(ArgumentError("Missing value in variable :$(_names(df)[colkey])." *
-                            " Pass `allowmissing=true` to skip missings."))
+        throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
+                            "Pass `allowmissing=true` to skip missings."))
     end
 
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]

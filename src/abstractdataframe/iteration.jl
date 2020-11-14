@@ -21,8 +21,8 @@ Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
 Base.summary(io::IO, dfrs::DataFrameRows) = print(io, summary(dfrs))
 
 Base.iterate(::AbstractDataFrame) =
-    error("AbstractDataFrame is not iterable. Use eachrow(df) to get a row iterator" *
-          " or eachcol(df) to get a column iterator")
+    error("AbstractDataFrame is not iterable. Use eachrow(df) to get a row iterator " *
+          "or eachcol(df) to get a column iterator")
 
 """
     eachrow(df::AbstractDataFrame)

@@ -462,8 +462,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
         if hasproperty(joined, unique_indicator)
             throw(ArgumentError("joined data frame already has column " *
-                                ":$unique_indicator. Pass makeunique=true to" *
-                                " make it unique using a suffix automatically."))
+                                ":$unique_indicator. Pass makeunique=true to " *
+                                "make it unique using a suffix automatically."))
         end
         joined[!, unique_indicator] = indicatorcol
     else
@@ -594,8 +594,8 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
                    renamecols::Pair=identity => identity,
                    matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
                  indicator=nothing, validate=validate,
@@ -731,8 +731,8 @@ function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
                  indicator=indicator, validate=validate,
@@ -860,8 +860,8 @@ function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
                  indicator=indicator, validate=validate,
@@ -1000,8 +1000,8 @@ function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
                  indicator=indicator, validate=validate,

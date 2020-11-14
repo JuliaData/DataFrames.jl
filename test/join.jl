@@ -608,13 +608,13 @@ end
     for special in [NaN, -0.0]
         name_w_special = DataFrame(ID = categorical([1, 2, 3, special]),
                                    Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
-        @test innerjoin(name_w_special, categorical(job, :ID), on=:ID, validate=(true, false)) == inner
+        @test innerjoin(name_w_special, transform(job, :ID => categorical => :ID), on=:ID, validate=(true, false)) == inner
 
         # Make sure duplicated special values still an exception
         name_w_special_dups = DataFrame(ID = categorical([1, 2, 3, special, special]),
                                         Name = ["John Doe", "Jane Doe", "Joe Blogs",
                                                 "Maria Tester", "Jill Jillerson"])
-        @test_throws ArgumentError innerjoin(name_w_special_dups, categorical(name, :ID), on=:ID,
+        @test_throws ArgumentError innerjoin(name_w_special_dups, transform(name, :ID => categorical => :ID), on=:ID,
                                         validate=(true, false))
     end
 

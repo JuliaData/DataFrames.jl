@@ -231,8 +231,8 @@ for T in MULTICOLUMNINDEX_TUPLE
                                   col_inds::$(T))
         idxs = index(df)[col_inds]
         if length(v) != length(idxs)
-            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
-                                    " collection contains $(length(v)) elements"))
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned " *
+                                    "collection contains $(length(v)) elements"))
         end
 
         if v isa AbstractDict
@@ -485,8 +485,8 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     if _names(r1) != _names(r2)
         mismatch = findfirst(i -> _names(r1)[i] != _names(r2)[i], 1:length(r1))
         throw(ArgumentError("compared DataFrameRows must have the same colum " *
-                            "names but they differ in column number $mismatch" *
-                            " where the names are :$(names(r1)[mismatch]) and " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(names(r1)[mismatch]) and " *
                             ":$(_names(r2)[mismatch]) respectively"))
     end
     for (a,b) in zip(r1, r2)
