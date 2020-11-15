@@ -344,7 +344,7 @@ function _show(io::IO,
             # Check if we need additional left padding to right align the values
             # in the cell. This can happen if the header length is larger than
             # the values at the cells.
-            header_size = max(names_len[i], textwidth(types_str[i]))
+            header_size = max(names_len[i], eltypes ? textwidth(types_str[i]) : 0)
             lpad = header_size - (align_col_i + max_size_after_align_col)
             lpad > 0 && (align_col_i += lpad)
 

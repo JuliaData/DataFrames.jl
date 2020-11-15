@@ -536,6 +536,41 @@ end
           14 │       1.0e6      14   true  1.0e6          1.0e6
           15 │       1.0e7      15  false  1.0e7          1.0e7"""
 
+
+    io = IOBuffer()
+    show(io, df, eltypes = false)
+    str = String(take!(io))
+    @test str == """
+        15×5 DataFrame
+         Row │ a             b   c      d         e
+        ─────┼────────────────────────────────────────────────
+           1 │       1.0e-7   1  false  1.0e-7         1.0e-7
+           2 │       1.0e-6   2   true  1.0e-6         1.0e-6
+           3 │       1.0e-5   3  false  1.0e-5         1.0e-5
+           4 │       0.0001   4   true  0.0001         0.0001
+           5 │       0.001    5  false  0.001          0.001
+           6 │       0.01     6   true  0.01           0.01
+           7 │       0.1      7  false  0.1            0.1
+           8 │       1.0      8   true  1.0            1.0
+           9 │      10.0      9  false  10.0          10.0
+          10 │ missing       10   true  test          -0.0
+          11 │    1000.0     11  false  1000.0         0.0
+          12 │   10000.0     12   true  10000.0    10000.0
+          13 │  100000.0     13  false  100000.0  100000.0
+          14 │       1.0e6   14   true  1.0e6          1.0e6
+          15 │       1.0e7   15  false  1.0e7          1.0e7"""
+
+    df = DataFrame(a = 1.0, b = 2.0)
+
+    io = IOBuffer()
+    show(io, df, eltypes = false)
+    str = String(take!(io))
+    @test str == """
+        1×2 DataFrame
+         Row │ a    b
+        ─────┼──────────
+           1 │ 1.0  2.0"""
+
     df = DataFrame(This_is_a_very_big_name = [10.0^i for i = -5:1:5],
                    This_is_smaller = 1.0:2:22,
                    T = 100001:1.:100011)
