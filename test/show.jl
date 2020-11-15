@@ -560,16 +560,16 @@ end
           14 │       1.0e6   14   true  1.0e6          1.0e6
           15 │       1.0e7   15  false  1.0e7          1.0e7"""
 
-    df = DataFrame(a = 1.0, b = 2.0)
+    df = DataFrame(This_is_a_very_big_name = 1.0, b = 2.0, c = 3.0)
 
     io = IOBuffer()
     show(io, df, eltypes = false)
     str = String(take!(io))
     @test str == """
-        1×2 DataFrame
-         Row │ a    b
-        ─────┼──────────
-           1 │ 1.0  2.0"""
+        1×3 DataFrame
+         Row │ This_is_a_very_big_name  b    c
+        ─────┼───────────────────────────────────
+           1 │                     1.0  2.0  3.0"""
 
     df = DataFrame(This_is_a_very_big_name = [10.0^i for i = -5:1:5],
                    This_is_smaller = 1.0:2:22,
