@@ -300,7 +300,7 @@ rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 
 """
-    size(df::AbstractDataFrame, [dim])
+    size(df::AbstractDataFrame[, dim])
 
 Return a tuple containing the number of rows and columns of `df`.
 Optionally a dimension `dim` can be specified, where `1` corresponds to rows
