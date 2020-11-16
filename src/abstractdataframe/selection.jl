@@ -261,7 +261,7 @@ function normalize_selection(idx::AbstractIndex,
 end
 
 function normalize_selection(idx::AbstractIndex,
-                             sel::Pair{<:ColumnIndex,<:Base.Callable}, renamecols::Bool)
+                             sel::Pair{<:ColumnIndex, <:Base.Callable}, renamecols::Bool)
     c = idx[first(sel)]
     fun = last(sel)
     if renamecols
@@ -694,7 +694,7 @@ julia> select(df, :a => ByRow(sin) => :c, :b)
    2 │ 0.909297      5
    3 │ 0.14112       6
 
-julia> select(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
+julia> select(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
  Row │ a      b      a_b_function
      │ Int64  Int64  Float64
@@ -969,7 +969,7 @@ julia> combine(df, :a => ByRow(sin) => :c, :b)
    2 │ 0.909297      5
    3 │ 0.14112       6
 
-julia> combine(df, :, [:a, :b] => (a,b) -> a .+ b .- sum(b)/length(b))
+julia> combine(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
 3×3 DataFrame
  Row │ a      b      a_b_function
      │ Int64  Int64  Float64

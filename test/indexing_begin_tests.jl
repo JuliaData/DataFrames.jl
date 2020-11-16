@@ -19,15 +19,15 @@
     df[end, end] = (103, 104)
     @test df[end, end] == (103, 104)
 
-    df[!, begin] .= [1,2,3]
-    @test df[:, 1] == [1,2,3]
-    df[!, end] .= [11,12,13]
-    @test df[:, 4] == [11,12,13]
+    df[!, begin] .= [1, 2, 3]
+    @test df[:, 1] == [1, 2, 3]
+    df[!, end] .= [11, 12, 13]
+    @test df[:, 4] == [11, 12, 13]
 
-    @test df[begin:end, [begin, end]] == df[:, [1,4]]
+    @test df[begin:end, [begin, end]] == df[:, [1, 4]]
     df[begin:end, [begin, end]] .= [111, 222, 333]
     @test df.x1 == df.x4 == [111, 222, 333]
-    @test df[[begin, end], [begin, end]] == df[[1,3], [1,4]]
+    @test df[[begin, end], [begin, end]] == df[[1, 3], [1, 4]]
     df[[begin, end], [begin, end]] .= 1000
     @test df.x1 == df.x4 == [1000, 222, 1000]
 

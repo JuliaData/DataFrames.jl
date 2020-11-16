@@ -70,21 +70,21 @@ end
 DataFrame(x::AbstractVector{NamedTuple{names, T}}; copycols::Bool=true) where {names, T} =
     fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), collect(names), copycols=false)
 
-Tables.istable(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
-Tables.columnaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
-Tables.rowaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
-Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(parent(itr))
-Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
-Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
-Tables.rowtable(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rowtable(parent(itr))
-Tables.namedtupleiterator(itr::Union{DataFrameRows,DataFrameColumns}) =
+Tables.istable(::Type{<:Union{DataFrameRows, DataFrameColumns}}) = true
+Tables.columnaccess(::Type{<:Union{DataFrameRows, DataFrameColumns}}) = true
+Tables.rowaccess(::Type{<:Union{DataFrameRows, DataFrameColumns}}) = true
+Tables.columns(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.columns(parent(itr))
+Tables.rows(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.rows(parent(itr))
+Tables.schema(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.schema(parent(itr))
+Tables.rowtable(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.rowtable(parent(itr))
+Tables.namedtupleiterator(itr::Union{DataFrameRows, DataFrameColumns}) =
     Tables.namedtupleiterator(parent(itr))
-Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
+Tables.materializer(itr::Union{DataFrameRows, DataFrameColumns}) =
     Tables.materializer(parent(itr))
 
-Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, i::Int) =
+Tables.getcolumn(itr::Union{DataFrameRows, DataFrameColumns}, i::Int) =
     Tables.getcolumn(parent(itr), i)
-Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, nm::Symbol) =
+Tables.getcolumn(itr::Union{DataFrameRows, DataFrameColumns}, nm::Symbol) =
     Tables.getcolumn(parent(itr), nm)
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) =

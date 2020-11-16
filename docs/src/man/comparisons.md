@@ -40,7 +40,7 @@ as row indices rather than a separate `id` column.
 | Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`                     |
 | Row indexing by label      | `df.loc['c']`          | `df[findfirst(==('c'), df.id), :]` |
 | Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`                        |
-| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`                  |
+| Column slicing by label    | `df.loc[:, ['x', 'z']]` | `df[:, [:x, :z]]`                  |
 |                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]`           |
 | Mixed indexing             | `df.loc['c'][1]`       | `df[findfirst(==('c'), df.id), 2]` |
 
@@ -120,7 +120,7 @@ The following table illustrates some common grouping and aggregation usages.
 | Aggregate by groups             | `df.groupby('grp')['x'].mean()`                                                       | `combine(groupby(df, :grp), :x => mean)`             |
 | Rename column after aggregation | `df.groupby('grp')['x'].mean().rename("my_mean")`                                     | `combine(groupby(df, :grp), :x => mean => :my_mean)` |
 | Add aggregated data as column   | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                   | `transform(groupby(df, :grp), :x => mean)`           |
-| ...and select output columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean']]` | `select(groupby(df, :grp), :id, :x => mean)`         |
+| ...and select output columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp', 'x_mean']]` | `select(groupby(df, :grp), :id, :x => mean)`         |
 
 Note that pandas returns a `Series` object for 1-dimensional result unless `reset_index` is called afterwards.
 The corresponding DataFrames.jl examples return an equivalent `DataFrame` object.
@@ -157,11 +157,11 @@ This section includes more complex examples.
 |:---------------------------------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------|
 | Complex Function                       | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`       |
 | Aggregate multiple columns             | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`               |
-|                                        | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                          |
+|                                        | `df[['x', 'y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                          |
 |                                        | `df.filter(regex=("^x")).mean()`                                             | `combine(df, names(df, r"^x") .=> mean)`                  |
-| Apply function over multiple variables | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                          |
+| Apply function over multiple variables | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0, 1])`                          | `transform(df, [:x, :y] => cor)`                          |
 | Row-wise operation                     | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                   |
-|                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`        |
+|                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x, :y]) => ByRow(argmax))`        |
 | DataFrame as input                     | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`            |
 | DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)` |
 

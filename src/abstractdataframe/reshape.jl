@@ -446,7 +446,7 @@ StackedVector(d::AbstractVector)
 
 # Examples
 ```julia
-StackedVector(Any[[1,2], [9,10], [11,12]])  # [1,2,9,10,11,12]
+StackedVector(Any[[1, 2], [9, 10], [11, 12]])  # [1, 2, 9, 10, 11, 12]
 ```
 """
 struct StackedVector{T} <: AbstractVector{T}
@@ -501,9 +501,9 @@ to `repeat`.
 
 # Examples
 ```julia
-RepeatedVector([1,2], 3, 1)   # [1,1,1,2,2,2]
-RepeatedVector([1,2], 1, 3)   # [1,2,1,2,1,2]
-RepeatedVector([1,2], 2, 2)   # [1,2,1,2,1,2,1,2]
+RepeatedVector([1, 2], 3, 1)   # [1, 1, 1, 2, 2, 2]
+RepeatedVector([1, 2], 1, 3)   # [1, 2, 1, 2, 1, 2]
+RepeatedVector([1, 2], 2, 2)   # [1, 2, 1, 2, 1, 2, 1, 2]
 ```
 """
 struct RepeatedVector{T} <: AbstractVector{T}
@@ -516,7 +516,7 @@ Base.parent(v::RepeatedVector) = v.parent
 
 function Base.getindex(v::RepeatedVector, i::Int)
     N = length(parent(v))
-    idx = Base.fld1(mod1(i,v.inner*N),v.inner)
+    idx = Base.fld1(mod1(i, v.inner*N), v.inner)
     parent(v)[idx]
 end
 
@@ -562,7 +562,7 @@ resulting columns will have element type `Float64`. If the source has
 # Examples
 
 ```jldoctest
-julia> df1 = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true,false])
+julia> df1 = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
 2×4 DataFrame
  Row │ a       b        c      d
      │ String  Float64  Int64  Bool

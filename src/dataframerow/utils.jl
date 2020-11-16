@@ -160,8 +160,8 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
 end
 
 # Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
-function row_group_slots(cols::NTuple{N,<:AbstractVector},
-                         refpools::NTuple{N,<:AbstractVector},
+function row_group_slots(cols::NTuple{N, <:AbstractVector},
+                         refpools::NTuple{N, <:AbstractVector},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false,
@@ -211,7 +211,7 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
     end
 
     seen = fill(false, ngroups)
-    strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N,Int}
+    strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N, Int}
     firstinds = map(firstindex, refpools)
     if sort
         nminds = map(refpools, missinginds) do refpool, missingind

@@ -267,7 +267,7 @@ A particular common case of a collection that supports the
 [Tables.jl](https://github.com/JuliaData/Tables.jl) interface is
 a vector of `NamedTuple`s:
 ```
-julia> v = [(a=1,b=2), (a=3,b=4)]
+julia> v = [(a=1, b=2), (a=3, b=4)]
 2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
  (a = 1, b = 2)
  (a = 3, b = 4)

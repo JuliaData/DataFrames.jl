@@ -179,28 +179,28 @@ function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
     return df
 end
 
-function rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol,Symbol}})
+function rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol, Symbol}})
     rename!(index(df), args)
     return df
 end
 
 function rename!(df::AbstractDataFrame,
-                 args::Union{AbstractVector{<:Pair{Symbol,<:AbstractString}},
-                             AbstractVector{<:Pair{<:AbstractString,Symbol}},
-                             AbstractVector{<:Pair{<:AbstractString,<:AbstractString}},
-                             AbstractDict{Symbol,Symbol},
-                             AbstractDict{Symbol,<:AbstractString},
-                             AbstractDict{<:AbstractString,Symbol},
-                             AbstractDict{<:AbstractString,<:AbstractString}})
+                 args::Union{AbstractVector{<:Pair{Symbol, <:AbstractString}},
+                             AbstractVector{<:Pair{<:AbstractString, Symbol}},
+                             AbstractVector{<:Pair{<:AbstractString, <:AbstractString}},
+                             AbstractDict{Symbol, Symbol},
+                             AbstractDict{Symbol, <:AbstractString},
+                             AbstractDict{<:AbstractString, Symbol},
+                             AbstractDict{<:AbstractString, <:AbstractString}})
     rename!(index(df), [Symbol(from) => Symbol(to) for (from, to) in args])
     return df
 end
 
 function rename!(df::AbstractDataFrame,
-                 args::Union{AbstractVector{<:Pair{<:Integer,<:AbstractString}},
-                             AbstractVector{<:Pair{<:Integer,Symbol}},
-                             AbstractDict{<:Integer,<:AbstractString},
-                             AbstractDict{<:Integer,Symbol}})
+                 args::Union{AbstractVector{<:Pair{<:Integer, <:AbstractString}},
+                             AbstractVector{<:Pair{<:Integer, Symbol}},
+                             AbstractDict{<:Integer, <:AbstractString},
+                             AbstractDict{<:Integer, Symbol}})
     rename!(index(df), [_names(df)[from] => Symbol(to) for (from, to) in args])
     return df
 end
@@ -460,7 +460,7 @@ Base.first(df::AbstractDataFrame) = df[1, :]
 
 Get a data frame with the `n` first rows of `df`.
 """
-Base.first(df::AbstractDataFrame, n::Integer) = df[1:min(n,nrow(df)), :]
+Base.first(df::AbstractDataFrame, n::Integer) = df[1:min(n, nrow(df)), :]
 
 """
     last(df::AbstractDataFrame)
@@ -474,7 +474,7 @@ Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 
 Get a data frame with the `n` last rows of `df`.
 """
-Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), :]
+Base.last(df::AbstractDataFrame, n::Integer) = df[max(1, nrow(df)-n+1):nrow(df), :]
 
 
 """
@@ -557,7 +557,7 @@ julia> describe(df, :min, sum => :sum, cols=:x)
 ```
 """
 function DataAPI.describe(df::AbstractDataFrame, stats::Union{Symbol,
-                          Pair{<:Base.Callable,<:SymbolOrString},
+                          Pair{<:Base.Callable, <:SymbolOrString},
                           Pair{<:SymbolOrString}}...; # TODO: remove after deprecation
                  cols=:)
     if any(x -> x isa Pair{<:SymbolOrString}, stats)
@@ -1775,7 +1775,7 @@ of throwing an error.
 **Examples**
 
 ```jldoctest
-julia> df = DataFrame(a=Union{Int,Missing}[1,2])
+julia> df = DataFrame(a=Union{Int, Missing}[1, 2])
 2×1 DataFrame
  Row │ a
      │ Int64?
@@ -1791,7 +1791,7 @@ julia> disallowmissing(df)
    1 │     1
    2 │     2
 
-julia> df = DataFrame(a=[1,missing])
+julia> df = DataFrame(a=[1, missing])
 2×1 DataFrame
  Row │ a
      │ Int64?
@@ -1842,7 +1842,7 @@ If `cols` is omitted all columns in the data frame are converted.
 **Examples**
 
 ```jldoctest
-julia> df = DataFrame(a=[1,2])
+julia> df = DataFrame(a=[1, 2])
 2×1 DataFrame
  Row │ a
      │ Int64

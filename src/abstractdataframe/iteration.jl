@@ -6,14 +6,14 @@
 
 # Iteration by rows
 """
-    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
+    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D, S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame,S} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame, S} <: AbstractVector{DataFrameRow{D, S}}
     df::D
 end
 
@@ -63,7 +63,7 @@ julia> copy.(eachrow(df))
  (x = 3, y = 13)
  (x = 4, y = 14)
 
-julia> eachrow(view(df, [4,3], [2,1]))
+julia> eachrow(view(df, [4, 3], [2, 1]))
 2×2 DataFrameRows
  Row │ y      x
      │ Int64  Int64
@@ -325,7 +325,7 @@ Base.show(dfcs::DataFrameColumns;
          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 """
-    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+    mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
 
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -357,7 +357,7 @@ julia> mapcols(x -> x.^2, df)
    4 │    16    196
 ```
 """
-function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     vs = AbstractVector[]
     seenscalar = false
@@ -382,7 +382,7 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
 end
 
 """
-    mapcols!(f::Union{Function,Type}, df::DataFrame)
+    mapcols!(f::Union{Function, Type}, df::DataFrame)
 
 Update a `DataFrame` in-place where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -415,7 +415,7 @@ julia> df
    4 │    16    196
 ```
 """
-function mapcols!(f::Union{Function,Type}, df::DataFrame)
+function mapcols!(f::Union{Function, Type}, df::DataFrame)
     # note: `f` must return a consistent length
     ncol(df) == 0 && return df # skip if no columns
 

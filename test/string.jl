@@ -145,12 +145,12 @@ end
     @test columnindex(df, :c) == columnindex(df, "c")
 
     @test Tables.schema(df) == Tables.schema(Tables.columntable(df))
-    @test [:a, :b] == Tables.columnnames(df) == Tables.columnnames(df[1,:]) ==
+    @test [:a, :b] == Tables.columnnames(df) == Tables.columnnames(df[1, :]) ==
           Tables.columnnames(eachrow(df)) == Tables.columnnames(eachcol(df))
 end
 
 @testset "split-apply-combine" begin
-    df = DataFrame(g=[1,1,1,2,2], a=1:5)
+    df = DataFrame(g=[1, 1, 1, 2, 2], a=1:5)
 
     # only check if the output is the same in all cases
     gdf = groupby(df, :g)

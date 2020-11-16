@@ -6,7 +6,7 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
-const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
+const OnType = Union{SymbolOrString, NTuple{2, Symbol}, Pair{Symbol, Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
@@ -28,18 +28,18 @@ struct DataFrameJoiner
             if v isa SymbolOrString
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
-            elseif v isa Union{Pair{Symbol,Symbol},
+            elseif v isa Union{Pair{Symbol, Symbol},
                                Pair{<:AbstractString, <:AbstractString}}
                 push!(left_on, Symbol(first(v)))
                 push!(right_on, Symbol(last(v)))
-            elseif v isa NTuple{2,Symbol}
+            elseif v isa NTuple{2, Symbol}
                 # an explicit error is thrown as Tuple{Symbol, Symbol} was supported in the past
                 throw(ArgumentError("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
                                     "such tuples as a value of `on` keyword argument is " *
-                                    "not supported: use `Pair{Symbol,Symbol}` instead."))
+                                    "not supported: use `Pair{Symbol, Symbol}` instead."))
             else
                 throw(ArgumentError("All elements of `on` argument to `join` must be " *
-                                    "Symbol or Pair{Symbol,Symbol}."))
+                                    "Symbol or Pair{Symbol, Symbol}."))
             end
         end
         dfl_on = dfl[!, left_on]

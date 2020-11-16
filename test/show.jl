@@ -68,7 +68,7 @@ end
     df_big = DataFrame(reshape(Int64(10000001):Int64(10000000+25*5), 25, 5),
                        :auto)
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
@@ -81,7 +81,7 @@ end
           25 │ 10000025  10000050  10000075  1
                    2 columns and 23 rows omitted"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
     show(io, df_big, allcols=true)
     str = String(take!(io.io))
     @test str == """
@@ -95,7 +95,7 @@ end
           25 │ 10000025  10000050  10000075  10000100  10000125
                                                  22 rows omitted"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
     show(io, df_big, allrows=true, allcols=true)
     str = String(take!(io.io))
     @test str == """
@@ -129,7 +129,7 @@ end
           24 │ 10000024  10000049  10000074  10000099  10000124
           25 │ 10000025  10000050  10000075  10000100  10000125"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
     show(io, df_big, allrows=true, allcols=false)
     str = String(take!(io.io))
     @test str == """
@@ -177,7 +177,7 @@ end
     @test str1 == str2
 
     Random.seed!(1)
-    df_big = DataFrame(rand(25,5), :auto)
+    df_big = DataFrame(rand(25, 5), :auto)
     str1, size = capture_stdout() do
         show(df_big)
     end
@@ -274,7 +274,7 @@ end
            6 │ 6\\\\6"""
 
     # categorical
-    df = DataFrame(a = categorical([1,2,3]), b = categorical(["a", "b", missing]))
+    df = DataFrame(a = categorical([1, 2, 3]), b = categorical(["a", "b", missing]))
     @test sprint(show, df) == """
         3×2 DataFrame
          Row │ a     b
@@ -421,7 +421,7 @@ end
         ─────┼─────────────
            1 │ 68719476736"""
 
-    @test sprint(show, DataFrame(a=Union{Function,Missing}[missing])) == """
+    @test sprint(show, DataFrame(a=Union{Function, Missing}[missing])) == """
         1×1 DataFrame
          Row │ a
              │ Function?
@@ -482,7 +482,7 @@ end
         ─────┼───────────────────────────────────
            1 │ 01234567890123456789012345678901…"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,10), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(10, 10), :limit=>true)
     show(io, df)
     str = String(take!(io.io))
     @test str === """
