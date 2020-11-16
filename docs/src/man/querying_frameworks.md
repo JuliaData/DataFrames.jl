@@ -32,7 +32,7 @@ names of columns using only their names and that chaining is performed using the
 julia> using DataFrames, DataFramesMeta
 
 julia> df = DataFrame(name=["John", "Sally", "Roger"],
-                      age=[54., 34., 79.],
+                      age=[54.0, 34.0, 79.0],
                       children=[0, 2, 4])
 3×3 DataFrame
  Row │ name    age      children
@@ -138,7 +138,7 @@ A simple example of a query looks like this:
 julia> using DataFrames, Query
 
 julia> df = DataFrame(name=["John", "Sally", "Roger"],
-                      age=[54., 34., 79.],
+                      age=[54.0, 34.0, 79.0],
                       children=[0, 2, 4])
 3×3 DataFrame
  Row │ name    age      children

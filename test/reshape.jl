@@ -625,7 +625,7 @@ end
     @test_throws ArgumentError permutedims(df3[!, [:a]], 1) # single column branch
     @test names(permutedims(df3[!, [:a]], 1, makeunique=true)) == d3pd_names
 
-    df4 = DataFrame(a=rand(2), b=rand(2), c=[1, 2], d=[1., missing],
+    df4 = DataFrame(a=rand(2), b=rand(2), c=[1, 2], d=[1.0, missing],
                     e=["x", "y"], f=[:x, :y], # valid src
                     g=[missing, "y"], h=Union{Missing, String}["x", "y"] # invalid src
                     )
