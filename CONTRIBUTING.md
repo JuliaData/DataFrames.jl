@@ -58,3 +58,5 @@ Thanks for taking the plunge!
 * Don't explicitly parameterize types unless it's necessary
 * Never leave things without type qualifications. Use an explicit `::Any`.
 * Order method definitions from most specific to least specific type constraints
+* Always include a digit after decimal when writing a float, e.g. `[1.0, 2.0]`
+  rather than `[1., 2.]`
