@@ -1,5 +1,5 @@
 """
-    stack(df::AbstractDataFrame, [measure_vars], [id_vars];
+    stack(df::AbstractDataFrame[, measure_vars[, id_vars] ];
           variable_name=:variable, value_name=:value,
           view::Bool=false, variable_eltype::Type=String)
 
