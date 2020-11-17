@@ -506,11 +506,11 @@ end
 end
 
 @testset "Floating point alignment" begin
-    df = DataFrame(a = [i == 2 ? missing : 10^i for i = -7:1.:7],
+    df = DataFrame(a = [i == 2 ? missing : 10^i for i = -7:1.0:7],
                    b = Int64.(1:1:15),
                    c = [i % 2 == 0 for i = 1:15],
-                   d = [i == 2 ? "test" : 10^i for i = -7:1.:7],
-                   e = [i == 2 ? -0.0 : i == 3 ? +0.0 : 10^i for i = -7:1.:7])
+                   d = [i == 2 ? "test" : 10^i for i = -7:1.0:7],
+                   e = [i == 2 ? -0.0 : i == 3 ? +0.0 : 10^i for i = -7:1.0:7])
 
     io = IOBuffer()
     show(io, df)
@@ -573,7 +573,7 @@ end
 
     df = DataFrame(This_is_a_very_big_name = [10.0^i for i = -5:1:5],
                    This_is_smaller = 1.0:2:22,
-                   T = 100001:1.:100011)
+                   T = 100001:1.0:100011)
 
     io = IOBuffer()
     show(io, df)
