@@ -22,15 +22,15 @@ Not meant to be constructed directly, see `groupby`.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
-    cols::Vector{Symbol}                 # column names used for grouping
-    groups::Vector{Int}                  # group indices for each row in 0:ngroups, 0 skipped
-    idx::Union{Vector{Int}, Nothing}      # indexing vector sorting rows into groups
-    starts::Union{Vector{Int}, Nothing}   # starts of groups after permutation by idx
-    ends::Union{Vector{Int}, Nothing}     # ends of groups after permutation by idx
-    ngroups::Int                         # number of groups
+    cols::Vector{Symbol}                   # column names used for grouping
+    groups::Vector{Int}                    # group indices for each row in 0:ngroups, 0 skipped
+    idx::Union{Vector{Int}, Nothing}       # indexing vector sorting rows into groups
+    starts::Union{Vector{Int}, Nothing}    # starts of groups after permutation by idx
+    ends::Union{Vector{Int}, Nothing}      # ends of groups after permutation by idx
+    ngroups::Int                           # number of groups
     keymap::Union{Dict{Any, Int}, Nothing} # mapping of key tuples to group indices
-    lazy_lock::Threads.ReentrantLock     # lock is needed to make lazy operations
-                                         # thread safe
+    lazy_lock::Threads.ReentrantLock       # lock is needed to make lazy operations
+                                           # thread safe
 end
 
 """
@@ -716,7 +716,7 @@ julia> k = keys(gd)[1]
 GroupKey: (a = :foo, b = 2)
 
 julia> keys(k)
-2-element Array{Symbol, 1}:
+2-element Array{Symbol,1}:
  :a
  :b
 
