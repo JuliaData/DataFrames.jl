@@ -22,15 +22,15 @@ Not meant to be constructed directly, see `groupby`.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
-    cols::Vector{Symbol}                 # column names used for grouping
-    groups::Vector{Int}                  # group indices for each row in 0:ngroups, 0 skipped
-    idx::Union{Vector{Int},Nothing}      # indexing vector sorting rows into groups
-    starts::Union{Vector{Int},Nothing}   # starts of groups after permutation by idx
-    ends::Union{Vector{Int},Nothing}     # ends of groups after permutation by idx
-    ngroups::Int                         # number of groups
-    keymap::Union{Dict{Any,Int},Nothing} # mapping of key tuples to group indices
-    lazy_lock::Threads.ReentrantLock     # lock is needed to make lazy operations
-                                         # thread safe
+    cols::Vector{Symbol}                   # column names used for grouping
+    groups::Vector{Int}                    # group indices for each row in 0:ngroups, 0 skipped
+    idx::Union{Vector{Int}, Nothing}       # indexing vector sorting rows into groups
+    starts::Union{Vector{Int}, Nothing}    # starts of groups after permutation by idx
+    ends::Union{Vector{Int}, Nothing}      # ends of groups after permutation by idx
+    ngroups::Int                           # number of groups
+    keymap::Union{Dict{Any, Int}, Nothing} # mapping of key tuples to group indices
+    lazy_lock::Threads.ReentrantLock       # lock is needed to make lazy operations
+                                           # thread safe
 end
 
 """
@@ -220,11 +220,11 @@ function groupby(df::AbstractDataFrame, cols;
 end
 
 function genkeymap(gd, cols)
-    # currently we use Dict{Any,Int} because then field :keymap in GroupedDataFrame
+    # currently we use Dict{Any, Int} because then field :keymap in GroupedDataFrame
     # has a concrete type which makes the access to it faster as we do not have a dynamic
     # dispatch when indexing into it. In the future an optimization of this approach
     # can be investigated (also taking compilation time into account).
-    d = Dict{Any,Int}()
+    d = Dict{Any, Int}()
     gdidx = gd.idx
     sizehint!(d, length(gd.starts))
     for (i, s) in enumerate(gd.starts)
@@ -254,7 +254,7 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
                 end
             end
         end
-        return getfield(gd, f)::Dict{Any,Int}
+        return getfield(gd, f)::Dict{Any, Int}
     else
         return getfield(gd, f)
     end
@@ -295,7 +295,7 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=tru
     gdidx = gd.idx
     idx = similar(gdidx)
     doff = 1
-    for (s,e) in zip(gd.starts, gd.ends)
+    for (s, e) in zip(gd.starts, gd.ends)
         n = e - s + 1
         copyto!(idx, doff, gdidx, s, n)
         doff += n
@@ -463,7 +463,7 @@ Base.propertynames(key::GroupKey, private::Bool=false) = copy(parent(key).cols)
 Base.keys(key::GroupKey) = propertynames(key)
 Base.haskey(key::GroupKey, idx::Symbol) = idx in parent(key).cols
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
-Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
+Base.haskey(key::GroupKey, idx::Union{Signed, Unsigned}) = 1 <= idx <= length(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
 Base.IteratorEltype(::Type{<:GroupKey}) = Base.EltypeUnknown()
 Base.iterate(key::GroupKey, i::Integer=1) =
@@ -593,7 +593,7 @@ function _dict_to_tuple(key::AbstractDict{Symbol}, gd::GroupedDataFrame)
     return ntuple(i -> key[gd.cols[i]], length(gd.cols))
 end
 
-Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}}) =
+Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol}, AbstractDict{<:AbstractString}}) =
     Base.to_index(gd, _dict_to_tuple(key, gd))
 
 # Array of (possibly non-standard) indices
@@ -789,7 +789,7 @@ end
 Base.haskey(gd::GroupedDataFrame, key::AbstractDict{<:Union{Symbol, <:AbstractString}}) =
     haskey(gd, _dict_to_tuple(key, gd))
 
-Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
+Base.haskey(gd::GroupedDataFrame, key::Union{Signed, Unsigned}) =
     1 <= key <= length(gd)
 
 """

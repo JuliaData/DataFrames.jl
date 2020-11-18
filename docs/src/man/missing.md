@@ -102,7 +102,7 @@ julia> dropmissing(df, :x)
 ```
 
 By default the `dropmissing` and `dropmissing!` functions keep the
-`Union{T,Missing}` element type in columns selected for row removal. To remove
+`Union{T, Missing}` element type in columns selected for row removal. To remove
 the `Missing` part, if present, set the `disallowmissing` option to `true` (it
 will become the default behavior in the future).
 

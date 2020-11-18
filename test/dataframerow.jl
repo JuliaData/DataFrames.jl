@@ -62,12 +62,12 @@ end
     @test df.c[2] == "BB"
     @test_throws MethodError r[true]
     @test_throws MethodError view(r, true)
-    @test copy(r[[:c,:a]]) == (c = "BB", a = 2)
+    @test copy(r[[:c, :a]]) == (c = "BB", a = 2)
     @test copy(r[r"[ac]"]) == (a = 2, c = "BB")
     @test copy(r[r"x"]) == NamedTuple()
     @test copy(r[2:1]) == NamedTuple()
     @test copy(r[Symbol[]]) == NamedTuple()
-    @test copy(view(r, [:c,:a])) == (c = "BB", a = 2)
+    @test copy(view(r, [:c, :a])) == (c = "BB", a = 2)
     @test copy(view(r, r"[ac]")) == (a = 2, c = "BB")
     @test copy(view(r, r"x")) == NamedTuple()
     @test copy(view(r, 2:1)) == NamedTuple()
@@ -92,9 +92,9 @@ end
     @test df.c[3] == "CC"
     @test_throws MethodError r[true]
     @test_throws MethodError view(r, true)
-    @test copy(r[[:c,:b]]) == (c = "CC", b = 1.2)
-    @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
-    @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
+    @test copy(r[[:c, :b]]) == (c = "CC", b = 1.2)
+    @test copy(view(r, [:c, :b])) == (c = "CC", b = 1.2)
+    @test copy(view(r, [:c, :b])) == (c = "CC", b = 1.2)
     @test copy(r[[false, true]]) == (c = "CC",)
     @test copy(r[r"[cb]"]) == (b = 1.2, c = "CC")
     @test copy(view(r, r"[cb]")) == (b = 1.2, c = "CC")
@@ -135,8 +135,8 @@ end
     dc_df = deepcopy(df)
     @test DataFrameRow(df, 1, :) == DataFrameRow(dc_df, 1, :)
     @test DataFrameRow(df, 1, 1:2) == DataFrameRow(dc_df, 1, 1:2)
-    @test DataFrameRow(df, 1, [1,2]) != DataFrameRow(dc_df, 1, [2,1])
-    dc_df[1,1] = 2
+    @test DataFrameRow(df, 1, [1, 2]) != DataFrameRow(dc_df, 1, [2, 1])
+    dc_df[1, 1] = 2
     @test DataFrameRow(df, 1, :) != DataFrameRow(dc_df, 1, :)
     @test DataFrameRow(df, 1, 1:2) != DataFrameRow(dc_df, 1, 1:2)
     @test DataFrameRow(df, 1, [2]) == DataFrameRow(dc_df, 1, [2])
@@ -185,7 +185,7 @@ end
     # test RowGroupDict
     Random.seed!(1234)
     df1 = DataFrame(d1=rand(1:2, 1000))
-    df2 = DataFrame(d1=[2,3])
+    df2 = DataFrame(d1=[2, 3])
 
     # test_group("group_rows")
     gd = DataFrames.group_rows(df1)
@@ -201,7 +201,7 @@ end
     @test length(unique(gd.groups)) == 0
 
     # grouping single row
-    gd = DataFrames.group_rows(df1[1:1,:])
+    gd = DataFrames.group_rows(df1[1:1, :])
     @test length(unique(gd.groups)) == 1
 end
 
@@ -212,7 +212,7 @@ end
     @test propertynames(r) == keys(r) == Symbol.(names(df))
     @test r.a === 1
     @test r.b === 2.0
-    @test copy(r[[:a,:b]]) == (a=1, b=2.0)
+    @test copy(r[[:a, :b]]) == (a=1, b=2.0)
 
     r.a = 2
     @test r.a === 2
@@ -235,13 +235,13 @@ end
     @test !haskey(r, 1000)
     @test_throws ArgumentError haskey(r, true)
 
-    x = DataFrame(ones(5,4), :auto)
+    x = DataFrame(ones(5, 4), :auto)
     dfr = view(x, 2, 2:3)
     @test names(dfr) == names(x)[2:3]
-    dfr = view(x, 2, [4,2])
-    @test names(dfr) == names(x)[[4,2]]
+    dfr = view(x, 2, [4, 2])
+    @test names(dfr) == names(x)[[4, 2]]
 
-    x = DataFrame(ones(10,10), :auto)
+    x = DataFrame(ones(10, 10), :auto)
     r = x[3, [8, 5, 1, 3]]
     @test length(r) == 4
     @test lastindex(r) == 4
@@ -258,22 +258,22 @@ end
 
     r = deepcopy(ref_df)[1, :]
     @test map(identity, r[1:3]) == (a = 1, b = 2.0, c = "A")
-    @test map((a,b) -> (a,b), r[1:3], r[1:3]) == (a = (1, 1), b = (2.0, 2.0), c = ("A", "A"))
+    @test map((a, b) -> (a, b), r[1:3], r[1:3]) == (a = (1, 1), b = (2.0, 2.0), c = ("A", "A"))
     @test get(r, 1, 100) == 1
     @test get(r, :a, 100) == 1
     @test get(r, 10, 100) == 100
     @test get(r, :z, 100) == 100
-    @test get(() -> 100,r, 1) == 1
-    @test get(() -> 100,r, :a) == 1
-    @test get(() -> 100,r, 10) == 100
-    @test get(() -> 100,r, :z) == 100
+    @test get(() -> 100, r, 1) == 1
+    @test get(() -> 100, r, :a) == 1
+    @test get(() -> 100, r, 10) == 100
+    @test get(() -> 100, r, :z) == 100
 end
 
 @testset "convert, copy and merge" begin
     df = DataFrame(a=[1, missing, missing], b=[2.0, 3.0, 0.0])
     dfr = DataFrameRow(df, 1, :)
     nt = first(Tables.namedtupleiterator(df))
-    @test copy(dfr) === nt === NamedTuple{(:a, :b),Tuple{Union{Missing, Int},Float64}}((1, 2.0))
+    @test copy(dfr) === nt === NamedTuple{(:a, :b), Tuple{Union{Missing, Int}, Float64}}((1, 2.0))
     @test sum(skipmissing(copy(df[3, :]))) == 0
     @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
@@ -313,12 +313,12 @@ end
     @test parent(df[2, :]) === df
     @test parentindices(df[2, []]) == (2, Int[])
     @test parentindices(df[2, :]) == (2, Base.OneTo(3))
-    @test parentindices(df[2, r""]) == (2, [1,2,3])
-    @test parentindices(df[2, r"[ab]"]) == (2, [1,2])
+    @test parentindices(df[2, r""]) == (2, [1, 2, 3])
+    @test parentindices(df[2, r"[ab]"]) == (2, [1, 2])
     @test parentindices(df[2, r"x"]) == (2, Int[])
     @test parent(df[1, 1:3]) === df
-    @test parentindices(df[1, [3,2]]) == (1, [3, 2])
-    sdf = view(df, [4,3], [:c, :a])
+    @test parentindices(df[1, [3, 2]]) == (1, [3, 2])
+    sdf = view(df, [4, 3], [:c, :a])
     @test parent(sdf[2, :]) === df
     @test parentindices(sdf[2, :]) == (3, [3, 1])
     @test parentindices(sdf[2, r""]) == (3, [3, 1])
@@ -334,8 +334,8 @@ end
     @test parentindices(df[2, r"a"]) == (2, [1])
     @test parentindices(df[2, r"x"]) == (2, Int[])
     @test parent(df[1, 1:3]) === df
-    @test parentindices(df[1, [3,2]]) == (1, [3, 2])
-    sdf = view(df, [4,3], [:c, :a])
+    @test parentindices(df[1, [3, 2]]) == (1, [3, 2])
+    sdf = view(df, [4, 3], [:c, :a])
     @test parent(sdf[2, :]) === df
     @test parent(sdf[2, r""]) === df
     @test parent(sdf[2, r"a"]) === df
@@ -361,15 +361,15 @@ end
     for (i, v) in enumerate(dfr)
         @test v == ref[i]
     end
-    dfr = DataFrame(a=1, b=true, c=1.0)[1,:]
+    dfr = DataFrame(a=1, b=true, c=1.0)[1, :]
     @test eltype(collect(dfr)) === Real
 end
 
 @testset "duplicate column" begin
     df = DataFrame([11:16 21:26 31:36 41:46], :auto)
-    sdf = view(df, [3,1,4], [3,1,4])
-    @test_throws ArgumentError df[2, [2,2,2]]
-    @test_throws ArgumentError sdf[2, [2,2,2]]
+    sdf = view(df, [3, 1, 4], [3, 1, 4])
+    @test_throws ArgumentError df[2, [2, 2, 2]]
+    @test_throws ArgumentError sdf[2, [2, 2, 2]]
 end
 
 @testset "conversion and push!" begin
@@ -379,25 +379,25 @@ end
     df = DataFrame(x=1, y=2)
 
     @test df == DataFrame(df[1, :])
-    @test df[1:1, [2,1]] == DataFrame(df[1, [2,1]])
+    @test df[1:1, [2, 1]] == DataFrame(df[1, [2, 1]])
     @test df[1:1, 1:1] == DataFrame(df[1, 1:1])
-    @test_throws ArgumentError DataFrame(df[1, [1,1]])
+    @test_throws ArgumentError DataFrame(df[1, [1, 1]])
 
     @test_throws ArgumentError push!(df, df[1, 1:1])
     @test df == DataFrame(x=1, y=2)
 
     with_logger(sl) do
-        @test_throws ArgumentError push!(df, df[1, [2,2]])
+        @test_throws ArgumentError push!(df, df[1, [2, 2]])
     end
     @test df == DataFrame(x=1, y=2)
 
-    @test_throws ArgumentError push!(df, df[1, [2,1]], cols=:orderequal)
+    @test_throws ArgumentError push!(df, df[1, [2, 1]], cols=:orderequal)
     @test df == DataFrame(x=1, y=2)
 
     @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
-    @test push!(df, df[1, [2,1]], cols=:setequal) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    @test push!(df, df[1, [2, 1]], cols=:setequal) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
 
-    push!(df, df[1, [2,1]], cols=:intersect)
+    push!(df, df[1, [2, 1]], cols=:intersect)
     @test df == DataFrame(x=[1, 1, 1, 1], y=[2, 2, 2, 2])
 
     df2 = DataFrame()
@@ -428,7 +428,7 @@ end
            1 │              1"""
 
 
-    df = DataFrame(a=1:3, b=["a", "b", "c"], c=Int64[1,0,1])
+    df = DataFrame(a=1:3, b=["a", "b", "c"], c=Int64[1, 0, 1])
     dfr = df[2, 2:3]
 
     @test sprint(show, dfr) == """

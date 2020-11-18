@@ -42,17 +42,17 @@ using DataFrames: Index, SubIndex, fuzzymatch
     @test_throws ArgumentError i[:x]
     @test_throws ArgumentError i["x"]
     @test_throws BoundsError i[1:3]
-    @test_throws ArgumentError i[[1,1]]
-    @test_throws ArgumentError i[[:A,:A]]
-    @test_throws ArgumentError i[["A","A"]]
+    @test_throws ArgumentError i[[1, 1]]
+    @test_throws ArgumentError i[[:A, :A]]
+    @test_throws ArgumentError i[["A", "A"]]
     @test_throws BoundsError i[Not(0)]
     @test_throws BoundsError i[Not(10)]
     @test_throws ArgumentError i[Not(:x)]
     @test_throws ArgumentError i[Not("x")]
     @test_throws BoundsError i[Not(1:3)]
-    @test_throws ArgumentError i[Not([1,1])]
-    @test_throws ArgumentError i[Not([:A,:A])]
-    @test_throws ArgumentError i[Not(["A","A"])]
+    @test_throws ArgumentError i[Not([1, 1])]
+    @test_throws ArgumentError i[Not([:A, :A])]
+    @test_throws ArgumentError i[Not(["A", "A"])]
 
     @test i[1:1] == 1:1
 
@@ -69,21 +69,21 @@ using DataFrames: Index, SubIndex, fuzzymatch
 end
 
 @testset "rename!" begin
-    i = Index([:A,:B])
+    i = Index([:A, :B])
     @test names(i) == ["A", "B"]
-    @test rename!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
-    @test_throws ArgumentError rename!(i, [:a,:a])
-    @test_throws DimensionMismatch rename!(i, [:a,:b,:c])
-    @test rename!(copy(i), [:a,:b]) == Index([:a,:b])
+    @test rename!(i, [:a, :a], makeunique=true) == Index([:a, :a_1])
+    @test_throws ArgumentError rename!(i, [:a, :a])
+    @test_throws DimensionMismatch rename!(i, [:a, :b, :c])
+    @test rename!(copy(i), [:a, :b]) == Index([:a, :b])
     @test names(i) == ["a", "a_1"]
-    @test rename!(i, [:a,:b]) == Index([:a,:b])
-    @test rename!(copy(i), [:a => :A]) == Index([:A,:b])
-    @test rename!(copy(i), [:a => :a]) == Index([:a,:b])
-    @test rename!(copy(i), [:a => :b, :b => :a]) == Index([:b,:a])
-    @test rename!(x -> Symbol(uppercase(string(x))), copy(i)) == Index([:A,:B])
-    @test rename!(x -> Symbol(lowercase(string(x))), copy(i)) == Index([:a,:b])
-    @test rename!(uppercase, copy(i)) == Index([:A,:B])
-    @test rename!(lowercase, copy(i)) == Index([:a,:b])
+    @test rename!(i, [:a, :b]) == Index([:a, :b])
+    @test rename!(copy(i), [:a => :A]) == Index([:A, :b])
+    @test rename!(copy(i), [:a => :a]) == Index([:a, :b])
+    @test rename!(copy(i), [:a => :b, :b => :a]) == Index([:b, :a])
+    @test rename!(x -> Symbol(uppercase(string(x))), copy(i)) == Index([:A, :B])
+    @test rename!(x -> Symbol(lowercase(string(x))), copy(i)) == Index([:a, :b])
+    @test rename!(uppercase, copy(i)) == Index([:A, :B])
+    @test rename!(lowercase, copy(i)) == Index([:a, :b])
 
     @test delete!(i, :a) == Index([:b])
     push!(i, :C)
@@ -108,7 +108,7 @@ end
     i = Index([:A, :B, :C, :D, :E])
     si1 = SubIndex(i, :)
     si2 = SubIndex(i, 3:5)
-    si3 = SubIndex(i, [3,4,5])
+    si3 = SubIndex(i, [3, 4, 5])
     si4 = SubIndex(i, [false, false, true, true, true])
     si5 = SubIndex(i, [:C, :D, :E])
     si6 = SubIndex(i, Not(Not([:C, :D, :E])))
@@ -199,7 +199,7 @@ end
 
 @testset "selector mutation" begin
     df = DataFrame(a=1:5, b=11:15, c=21:25)
-    selector1 = [3,2]
+    selector1 = [3, 2]
     dfv1 = view(df, :, selector1)
     dfr1 = view(df, 2, selector1)
     selector2 = [1]
@@ -369,44 +369,44 @@ end
 
 @testset "Between indexing" begin
     df = DataFrame(a=1, b=2, c=3)
-    @test select(df, Between(1,2)) == df[:, 1:2]
-    @test select(df, Between(1,:b)) == df[:, 1:2]
-    @test select(df, Between(1,"b")) == df[:, 1:2]
-    @test select(df, Between(:a,2)) == df[:, 1:2]
-    @test select(df, Between("a",2)) == df[:, 1:2]
-    @test select(df, Between(:a,:b)) == df[:, 1:2]
-    @test select(df, Between("a","b")) == df[:, 1:2]
-    @test select(df, Between(2,1)) == df[:, 2:1]
-    @test select(df, Between(:b,1)) == df[:, 2:1]
-    @test select(df, Between("b",1)) == df[:, 2:1]
-    @test select(df, Between(2,:a)) == df[:, 2:1]
-    @test select(df, Between(2,"a")) == df[:, 2:1]
-    @test select(df, Between("b","a")) == df[:, 2:1]
-    @test select(df, Between("b","a")) == df[:, 2:1]
+    @test select(df, Between(1, 2)) == df[:, 1:2]
+    @test select(df, Between(1, :b)) == df[:, 1:2]
+    @test select(df, Between(1, "b")) == df[:, 1:2]
+    @test select(df, Between(:a, 2)) == df[:, 1:2]
+    @test select(df, Between("a", 2)) == df[:, 1:2]
+    @test select(df, Between(:a, :b)) == df[:, 1:2]
+    @test select(df, Between("a", "b")) == df[:, 1:2]
+    @test select(df, Between(2, 1)) == df[:, 2:1]
+    @test select(df, Between(:b, 1)) == df[:, 2:1]
+    @test select(df, Between("b", 1)) == df[:, 2:1]
+    @test select(df, Between(2, :a)) == df[:, 2:1]
+    @test select(df, Between(2, "a")) == df[:, 2:1]
+    @test select(df, Between("b", "a")) == df[:, 2:1]
+    @test select(df, Between("b", "a")) == df[:, 2:1]
 
-    @test df[:, Between(1,2)] == df[:, 1:2]
-    @test df[:, Between(1,:b)] == df[:, 1:2]
-    @test df[:, Between(1,"b")] == df[:, 1:2]
-    @test df[:, Between(:a,2)] == df[:, 1:2]
-    @test df[:, Between("a",2)] == df[:, 1:2]
-    @test df[:, Between(:a,:b)] == df[:, 1:2]
-    @test df[:, Between("a","b")] == df[:, 1:2]
-    @test df[:, Between(2,1)] == df[:, 2:1]
-    @test df[:, Between(:b,1)] == df[:, 2:1]
-    @test df[:, Between("b",1)] == df[:, 2:1]
-    @test df[:, Between(2,:a)] == df[:, 2:1]
-    @test df[:, Between(2,"a")] == df[:, 2:1]
-    @test df[:, Between(:b,:a)] == df[:, 2:1]
-    @test df[:, Between("b","a")] == df[:, 2:1]
+    @test df[:, Between(1, 2)] == df[:, 1:2]
+    @test df[:, Between(1, :b)] == df[:, 1:2]
+    @test df[:, Between(1, "b")] == df[:, 1:2]
+    @test df[:, Between(:a, 2)] == df[:, 1:2]
+    @test df[:, Between("a", 2)] == df[:, 1:2]
+    @test df[:, Between(:a, :b)] == df[:, 1:2]
+    @test df[:, Between("a", "b")] == df[:, 1:2]
+    @test df[:, Between(2, 1)] == df[:, 2:1]
+    @test df[:, Between(:b, 1)] == df[:, 2:1]
+    @test df[:, Between("b", 1)] == df[:, 2:1]
+    @test df[:, Between(2, :a)] == df[:, 2:1]
+    @test df[:, Between(2, "a")] == df[:, 2:1]
+    @test df[:, Between(:b, :a)] == df[:, 2:1]
+    @test df[:, Between("b", "a")] == df[:, 2:1]
 
-    @test_throws BoundsError df[:, Between(:b,0)]
-    @test_throws BoundsError df[:, Between(0,:b)]
-    @test_throws ArgumentError df[:, Between(:b,:z)]
-    @test_throws ArgumentError df[:, Between(:z,:b)]
-    @test_throws BoundsError df[:, Between("b",0)]
-    @test_throws BoundsError df[:, Between(0,"b")]
-    @test_throws ArgumentError df[:, Between("b","z")]
-    @test_throws ArgumentError df[:, Between("z","b")]
+    @test_throws BoundsError df[:, Between(:b, 0)]
+    @test_throws BoundsError df[:, Between(0, :b)]
+    @test_throws ArgumentError df[:, Between(:b, :z)]
+    @test_throws ArgumentError df[:, Between(:z, :b)]
+    @test_throws BoundsError df[:, Between("b", 0)]
+    @test_throws BoundsError df[:, Between(0, "b")]
+    @test_throws ArgumentError df[:, Between("b", "z")]
+    @test_throws ArgumentError df[:, Between("z", "b")]
 end
 
 @testset "All indexing" begin
@@ -424,58 +424,58 @@ end
     @test select(df, Cols(:)) == df[:, :]
     @test df[:, Cols(:)] == df[:, :]
 
-    @test select(df, Cols(1,2)) == df[:, 1:2]
-    @test select(df, Cols(1,:b)) == df[:, 1:2]
-    @test select(df, Cols(:a,2)) == df[:, 1:2]
-    @test select(df, Cols(:a,:b)) == df[:, 1:2]
-    @test select(df, Cols(2,1)) == df[:, [2,1]]
-    @test select(df, Cols(:b,1)) == df[:, [2,1]]
-    @test select(df, Cols(2,:a)) == df[:, [2,1]]
-    @test select(df, Cols(:b,:a)) == df[:, [2,1]]
+    @test select(df, Cols(1, 2)) == df[:, 1:2]
+    @test select(df, Cols(1, :b)) == df[:, 1:2]
+    @test select(df, Cols(:a, 2)) == df[:, 1:2]
+    @test select(df, Cols(:a, :b)) == df[:, 1:2]
+    @test select(df, Cols(2, 1)) == df[:, [2, 1]]
+    @test select(df, Cols(:b, 1)) == df[:, [2, 1]]
+    @test select(df, Cols(2, :a)) == df[:, [2, 1]]
+    @test select(df, Cols(:b, :a)) == df[:, [2, 1]]
 
-    @test df[:, Cols(1,2)] == df[:, 1:2]
-    @test df[:, Cols(1,:b)] == df[:, 1:2]
-    @test df[:, Cols(:a,2)] == df[:, 1:2]
-    @test df[:, Cols(:a,:b)] == df[:, 1:2]
-    @test df[:, Cols(2,1)] == df[:, [2,1]]
-    @test df[:, Cols(:b,1)] == df[:, [2,1]]
-    @test df[:, Cols(2,:a)] == df[:, [2,1]]
-    @test df[:, Cols(:b,:a)] == df[:, [2,1]]
+    @test df[:, Cols(1, 2)] == df[:, 1:2]
+    @test df[:, Cols(1, :b)] == df[:, 1:2]
+    @test df[:, Cols(:a, 2)] == df[:, 1:2]
+    @test df[:, Cols(:a, :b)] == df[:, 1:2]
+    @test df[:, Cols(2, 1)] == df[:, [2, 1]]
+    @test df[:, Cols(:b, 1)] == df[:, [2, 1]]
+    @test df[:, Cols(2, :a)] == df[:, [2, 1]]
+    @test df[:, Cols(:b, :a)] == df[:, [2, 1]]
 
-    @test df[:, Cols(1,1,2)] == df[:, 1:2]
-    @test df[:, Cols(:a,1,:b)] == df[:, 1:2]
-    @test df[:, Cols(:a,2,:b)] == df[:, 1:2]
-    @test df[:, Cols(:a,:b,2)] == df[:, 1:2]
-    @test df[:, Cols(2,1,:a)] == df[:, [2,1]]
+    @test df[:, Cols(1, 1, 2)] == df[:, 1:2]
+    @test df[:, Cols(:a, 1, :b)] == df[:, 1:2]
+    @test df[:, Cols(:a, 2, :b)] == df[:, 1:2]
+    @test df[:, Cols(:a, :b, 2)] == df[:, 1:2]
+    @test df[:, Cols(2, 1, :a)] == df[:, [2, 1]]
 
-    @test select(df, Cols(1,"b")) == df[:, 1:2]
-    @test select(df, Cols("a",2)) == df[:, 1:2]
-    @test select(df, Cols("a","b")) == df[:, 1:2]
-    @test select(df, Cols("b",1)) == df[:, [2,1]]
-    @test select(df, Cols(2,"a")) == df[:, [2,1]]
-    @test select(df, Cols("b","a")) == df[:, [2,1]]
+    @test select(df, Cols(1, "b")) == df[:, 1:2]
+    @test select(df, Cols("a", 2)) == df[:, 1:2]
+    @test select(df, Cols("a", "b")) == df[:, 1:2]
+    @test select(df, Cols("b", 1)) == df[:, [2, 1]]
+    @test select(df, Cols(2, "a")) == df[:, [2, 1]]
+    @test select(df, Cols("b", "a")) == df[:, [2, 1]]
 
-    @test df[:, Cols(1,"b")] == df[:, 1:2]
-    @test df[:, Cols("a",2)] == df[:, 1:2]
-    @test df[:, Cols("a","b")] == df[:, 1:2]
-    @test df[:, Cols("b",1)] == df[:, [2,1]]
-    @test df[:, Cols(2,"a")] == df[:, [2,1]]
-    @test df[:, Cols("b","a")] == df[:, [2,1]]
+    @test df[:, Cols(1, "b")] == df[:, 1:2]
+    @test df[:, Cols("a", 2)] == df[:, 1:2]
+    @test df[:, Cols("a", "b")] == df[:, 1:2]
+    @test df[:, Cols("b", 1)] == df[:, [2, 1]]
+    @test df[:, Cols(2, "a")] == df[:, [2, 1]]
+    @test df[:, Cols("b", "a")] == df[:, [2, 1]]
 
-    @test df[:, Cols("a",1,"b")] == df[:, 1:2]
-    @test df[:, Cols("a",2,"b")] == df[:, 1:2]
-    @test df[:, Cols("a","b",2)] == df[:, 1:2]
-    @test df[:, Cols(2,1,"a")] == df[:, [2,1]]
+    @test df[:, Cols("a", 1, "b")] == df[:, 1:2]
+    @test df[:, Cols("a", 2, "b")] == df[:, 1:2]
+    @test df[:, Cols("a", "b", 2)] == df[:, 1:2]
+    @test df[:, Cols(2, 1, "a")] == df[:, [2, 1]]
 
     df = DataFrame(a1=1, a2=2, b1=3, b2=4)
-    @test df[:, Cols(r"a", Not(r"1"))] == df[:, [1,2,4]]
-    @test df[:, Cols(Not(r"1"), r"a")] == df[:, [2,4,1]]
+    @test df[:, Cols(r"a", Not(r"1"))] == df[:, [1, 2, 4]]
+    @test df[:, Cols(Not(r"1"), r"a")] == df[:, [2, 4, 1]]
 end
 
 @testset "views" begin
-    df = DataFrame(a=1,b=2,c=3)
+    df = DataFrame(a=1, b=2, c=3)
     dfv = view(df, 1:1, [:a, :c])
-    @test DataFrames.parentcols(DataFrames.index(dfv)) == [1,3]
+    @test DataFrames.parentcols(DataFrames.index(dfv)) == [1, 3]
     @test DataFrames.parentcols(DataFrames.index(dfv), :c) == 3
     @test DataFrames.parentcols(DataFrames.index(dfv), "c") == 3
     @test DataFrames.parentcols(DataFrames.index(dfv), 2) == 3
@@ -484,8 +484,8 @@ end
     @test DataFrames.parentcols(DataFrames.index(dfv), [2, 2]) == [3, 3]
     @test DataFrames.index(dfv)["c"] == 2
     @test DataFrames.index(dfv)[:c] == 2
-    @test DataFrames.index(dfv)[["a","c"]] == [1, 2]
-    @test DataFrames.index(dfv)[[:a,:c]] == [1, 2]
+    @test DataFrames.index(dfv)[["a", "c"]] == [1, 2]
+    @test DataFrames.index(dfv)[[:a, :c]] == [1, 2]
 end
 
 end # module

@@ -46,7 +46,7 @@ const ≅ = isequal
     @test ai == convert(Matrix{Int}, df)
     @test ai == Matrix{Int}(df)
 
-    df[1,1] = missing
+    df[1, 1] = missing
     @test_throws ArgumentError convert(Matrix{Float64}, df)
     na = convert(Matrix{Union{Float64, Missing}}, df)
     naa = convert(Matrix{Any}, df)
@@ -78,7 +78,7 @@ const ≅ = isequal
     @test ai == convert(Array{Int}, df)
     @test ai == Array{Int}(df)
 
-    df[1,1] = missing
+    df[1, 1] = missing
     @test_throws ArgumentError convert(Array{Float64}, df)
     na = convert(Array{Union{Float64, Missing}}, df)
     naa = convert(Array{Any}, df)
@@ -93,9 +93,9 @@ const ≅ = isequal
     @test nai ≅ convert(Array{Union{Int, Missing}}, df)
     @test nai ≅ Array{Union{Int, Missing}}(df)
 
-    a = Union{Float64, Missing}[1.0,2.0]
-    b = Union{Float64, Missing}[-0.1,3]
-    c = Union{Float64, Missing}[-3.1,7]
+    a = Union{Float64, Missing}[1.0, 2.0]
+    b = Union{Float64, Missing}[-0.1, 3]
+    c = Union{Float64, Missing}[-3.1, 7]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
 
     df = convert(DataFrame, di)
@@ -106,7 +106,7 @@ const ≅ = isequal
     @test df[!, :c] == c
 
     od = OrderedDict("c"=>c, "a"=>a, "b"=>b)
-    df = convert(DataFrame,od)
+    df = convert(DataFrame, od)
     @test isa(df, DataFrame)
     @test names(df) == [x for x in keys(od)]
     @test df[!, :a] == a
@@ -114,7 +114,7 @@ const ≅ = isequal
     @test df[!, :c] == c
 
     sd = SortedDict("c"=>c, "a"=>a, "b"=>b)
-    df = convert(DataFrame,sd)
+    df = convert(DataFrame, sd)
     @test isa(df, DataFrame)
     @test names(df) == [x for x in keys(sd)]
     @test df[!, :a] == a
@@ -123,7 +123,7 @@ const ≅ = isequal
 
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
-    @test_throws DimensionMismatch convert(DataFrame,di)
+    @test_throws DimensionMismatch convert(DataFrame, di)
 end
 
 end # module

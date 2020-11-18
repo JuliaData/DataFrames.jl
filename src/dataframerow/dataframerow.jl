@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:AbstractDataFrame,<:AbstractIndex}
+    DataFrameRow{<:AbstractDataFrame, <:AbstractIndex}
 
 A view of one row of an `AbstractDataFrame`.
 
@@ -73,7 +73,7 @@ julia> Vector(df[1, :])
  1
 ```
 """
-struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
+struct DataFrameRow{D<:AbstractDataFrame, S<:AbstractIndex}
     # although we allow D to be AbstractDataFrame to support extensions
     # in DataFrames.jl it will always be a DataFrame unless an inner constructor
     # is used. In this way we have a fast access to the data frame that
@@ -85,7 +85,7 @@ struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
 
     @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned},
                          rownumber::Union{Signed, Unsigned}) where
-        {D<:AbstractDataFrame,S<:AbstractIndex} = new{D,S}(df, colindex, row, rownumber)
+        {D<:AbstractDataFrame, S<:AbstractIndex} = new{D, S}(df, colindex, row, rownumber)
 end
 
 Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols)
@@ -489,7 +489,7 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
                             "where the names are :$(names(r1)[mismatch]) and " *
                             ":$(_names(r2)[mismatch]) respectively"))
     end
-    for (a,b) in zip(r1, r2)
+    for (a, b) in zip(r1, r2)
         isequal(a, b) || return isless(a, b)
     end
     return false

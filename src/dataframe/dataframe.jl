@@ -89,7 +89,7 @@ extracted from a `DataFrame`.
 
 # Examples
 ```julia
-julia> DataFrame((a=[1,2], b=[3,4])) # Tables.jl table constructor
+julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -211,18 +211,18 @@ end
 
 DataFrame(df::DataFrame; copycols::Bool=true) = copy(df, copycols=copycols)
 
-function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false,
+function DataFrame(pairs::Pair{Symbol, <:Any}...; makeunique::Bool=false,
                    copycols::Bool=true)::DataFrame
-    colnames = [Symbol(k) for (k,v) in pairs]
-    columns = Any[v for (k,v) in pairs]
+    colnames = [Symbol(k) for (k, v) in pairs]
+    columns = Any[v for (k, v) in pairs]
     return DataFrame(columns, Index(colnames, makeunique=makeunique),
                      copycols=copycols)
 end
 
-function DataFrame(pairs::Pair{<:AbstractString,<:Any}...; makeunique::Bool=false,
+function DataFrame(pairs::Pair{<:AbstractString, <:Any}...; makeunique::Bool=false,
                    copycols::Bool=true)::DataFrame
-    colnames = [Symbol(k) for (k,v) in pairs]
-    columns = Any[v for (k,v) in pairs]
+    colnames = [Symbol(k) for (k, v) in pairs]
+    columns = Any[v for (k, v) in pairs]
     return DataFrame(columns, Index(colnames, makeunique=makeunique),
                      copycols=copycols)
 end
@@ -233,11 +233,11 @@ function DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
     if isempty(pairs)
         return DataFrame()
     else
-        if !(all(((k,v),) -> k isa Symbol, pairs) || all(((k,v),) -> k isa AbstractString, pairs))
+        if !(all(((k, v),) -> k isa Symbol, pairs) || all(((k, v),) -> k isa AbstractString, pairs))
             throw(ArgumentError("All column names must be either Symbols or strings (mixing is not allowed)"))
         end
-        colnames = [Symbol(k) for (k,v) in pairs]
-        columns = Any[v for (k,v) in pairs]
+        colnames = [Symbol(k) for (k, v) in pairs]
+        columns = Any[v for (k, v) in pairs]
         return DataFrame(columns, Index(colnames, makeunique=makeunique),
                          copycols=copycols)
     end
@@ -714,7 +714,7 @@ julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
    3 │ c         4      5      3
 ```
 """
-function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol,<:Any}...;
+function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true)
     col_ind = Int(col isa SymbolOrString ? columnindex(df, col) : col)
     if !(0 < col_ind <= ncol(df) + 1)
@@ -804,18 +804,18 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol,<:A
     return df
 end
 
-insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString,<:Any}...;
+insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true) =
-    insertcols!(df, col, (Symbol(n) => v for (n,v) in name_cols)...,
+    insertcols!(df, col, (Symbol(n) => v for (n, v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::DataFrame, name_cols::Pair{Symbol,<:Any}...;
+insertcols!(df::DataFrame, name_cols::Pair{Symbol, <:Any}...;
             makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, ncol(df)+1, name_cols..., makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString,<:Any}...;
+insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
             makeunique::Bool=false, copycols::Bool=true) =
-    insertcols!(df, (Symbol(n) => v for (n,v) in name_cols)...,
+    insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
                 makeunique=makeunique, copycols=copycols)
 
 function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)

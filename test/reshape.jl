@@ -154,7 +154,7 @@ end
     b = unstack(df, :variable, :value)
     @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
 
-    df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
+    df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1, 1])
     @test_throws ArgumentError unstack(df, :variable, :value)
     @test_throws ArgumentError unstack(df, :id, :variable, :value)
     @test unstack(df, :variable, :value, allowduplicates=true) ≅ DataFrame(id=1, x=missing)
@@ -329,13 +329,13 @@ end
     @test d1us3 == unstack(d1s2)
 
     # test unstack with exactly one key column that is not passed
-    df1 = stack(DataFrame(rand(10,10), :auto))
+    df1 = stack(DataFrame(rand(10, 10), :auto))
     df1[!, :id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)
     @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
     # test empty keycol
-    @test_throws ArgumentError unstack(stack(DataFrame(rand(3,2), :auto)), :variable, :value)
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(3, 2), :auto)), :variable, :value)
 end
 
 @testset "column names duplicates" begin
@@ -477,7 +477,7 @@ end
 end
 
 @testset "test stack eltype" begin
-    df = DataFrame(rand(4,5), :auto)
+    df = DataFrame(rand(4, 5), :auto)
     sdf = stack(df)
     @test eltype(sdf.variable) === String
     @test eltype(typeof(sdf.variable)) === String

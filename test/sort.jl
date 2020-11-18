@@ -24,11 +24,11 @@ using DataFrames, Random, Test, CategoricalArrays
 
     @test issorted(sort(df))
     @test issorted(sort(df, rev=true), rev=true)
-    @test issorted(sort(df, [:chrom,:pos])[:, [:chrom,:pos]])
+    @test issorted(sort(df, [:chrom, :pos])[:, [:chrom, :pos]])
     @test issorted(sort(df, ["chrom", "pos"])[:, ["chrom", "pos"]])
 
-    ds = sort(df, [order(:rank, rev=true),:chrom,:pos])
-    @test issorted(ds, [order(:rank, rev=true),:chrom,:pos])
+    ds = sort(df, [order(:rank, rev=true), :chrom, :pos])
+    @test issorted(ds, [order(:rank, rev=true), :chrom, :pos])
     @test issorted(ds, rev=(true, false, false))
 
     ds = sort(df, [order("rank", rev=true), "chrom", "pos"])
@@ -69,30 +69,30 @@ using DataFrames, Random, Test, CategoricalArrays
     @test !issorted(df, "x")
     @test issorted(sort(df, "x"), "x")
 
-    x = DataFrame(a=1:3,b=3:-1:1,c=3:-1:1)
+    x = DataFrame(a=1:3, b=3:-1:1, c=3:-1:1)
     @test issorted(x)
-    @test !issorted(x, [:b,:c])
-    @test !issorted(x[:, 2:3], [:b,:c])
-    @test issorted(sort(x,[2,3]), [:b,:c])
-    @test issorted(sort(x[:, 2:3]), [:b,:c])
+    @test !issorted(x, [:b, :c])
+    @test !issorted(x[:, 2:3], [:b, :c])
+    @test issorted(sort(x, [2, 3]), [:b, :c])
+    @test issorted(sort(x[:, 2:3]), [:b, :c])
 
-    x = DataFrame(a=1:3,b=3:-1:1,c=3:-1:1)
+    x = DataFrame(a=1:3, b=3:-1:1, c=3:-1:1)
     @test issorted(x)
-    @test !issorted(x, ["b","c"])
-    @test !issorted(x[:, 2:3], ["b","c"])
-    @test issorted(sort(x,[2,3]), ["b","c"])
-    @test issorted(sort(x[:, 2:3]), ["b","c"])
+    @test !issorted(x, ["b", "c"])
+    @test !issorted(x[:, 2:3], ["b", "c"])
+    @test issorted(sort(x, [2, 3]), ["b", "c"])
+    @test issorted(sort(x[:, 2:3]), ["b", "c"])
 
     # Check that columns that shares the same underlying array are only permuted once PR#1072
-    df = DataFrame(a=[2,1])
+    df = DataFrame(a=[2, 1])
     df.b = df.a
     sort!(df, :a)
-    @test df == DataFrame(a=[1,2],b=[1,2])
+    @test df == DataFrame(a=[1, 2], b=[1, 2])
 
-    x = DataFrame(x=[1,2,3,4], y=[1,3,2,4])
+    x = DataFrame(x=[1, 2, 3, 4], y=[1, 3, 2, 4])
     sort!(x, :y)
-    @test x.y == [1,2,3,4]
-    @test x.x == [1,3,2,4]
+    @test x.y == [1, 2, 3, 4]
+    @test x.x == [1, 3, 2, 4]
 
     @test_throws ArgumentError sort(x, by=:x)
 
@@ -109,14 +109,14 @@ using DataFrames, Random, Test, CategoricalArrays
         # testing sort
         for n1 in names(df_rand)
             # passing column name
-            @test sort(df_rand, n1) == df_rand[sortperm(df_rand[:, n1]),:]
+            @test sort(df_rand, n1) == df_rand[sortperm(df_rand[:, n1]), :]
             # passing vector with one column name
-            @test sort(df_rand, [n1]) == df_rand[sortperm(df_rand[:, n1]),:]
+            @test sort(df_rand, [n1]) == df_rand[sortperm(df_rand[:, n1]), :]
             # passing vector with two column names
             for n2 in setdiff(names(df_rand), [n1])
-                @test sort(df_rand, [n1,n2]) ==
+                @test sort(df_rand, [n1, n2]) ==
                       df_rand[sortperm(collect(zip(df_rand[:, n1],
-                                                   df_rand[:, n2]))),:]
+                                                   df_rand[:, n2]))), :]
             end
         end
         # testing if sort! is consistent with issorted and sort
@@ -148,7 +148,7 @@ end
 end
 
 @testset "view kwarg test" begin
-    df = DataFrame(rand(3,4), :auto)
+    df = DataFrame(rand(3, 4), :auto)
     @test sort(df) isa DataFrame
     @inferred sort(df)
     @test sort(view(df, 1:2, 1:2)) isa DataFrame

@@ -14,7 +14,7 @@ const ≅ = isequal
     @test isempty(_columns(df))
     @test _columns(df) isa Vector{AbstractVector}
     @test index(df) == Index()
-    @test size(DataFrame(copycols=false)) == (0,0)
+    @test size(DataFrame(copycols=false)) == (0, 0)
 
     vecvec = [CategoricalVector{Union{Float64, Missing}}(zeros(3)),
               CategoricalVector{Union{Float64, Missing}}(ones(3))]
@@ -45,16 +45,16 @@ const ≅ = isequal
 
     @test DataFrame([1:3, 1:3], :auto) == DataFrame(Any[1:3, 1:3], :auto) ==
           DataFrame(UnitRange[1:3, 1:3], :auto) == DataFrame(AbstractVector[1:3, 1:3], :auto) ==
-          DataFrame([[1,2,3], [1,2,3]], :auto) == DataFrame(Any[[1,2,3], [1,2,3]], :auto) ==
-          DataFrame([1:3, [1,2,3]], :auto)
-          DataFrame([:x1=>1:3, :x2=>[1,2,3]]) == DataFrame(["x1"=>1:3, "x2"=>[1,2,3]])
+          DataFrame([[1, 2, 3], [1, 2, 3]], :auto) == DataFrame(Any[[1, 2, 3], [1, 2, 3]], :auto) ==
+          DataFrame([1:3, [1, 2, 3]], :auto)
+          DataFrame([:x1=>1:3, :x2=>[1, 2, 3]]) == DataFrame(["x1"=>1:3, "x2"=>[1, 2, 3]])
 
     @inferred DataFrame([1:3, 1:3], :auto)
     @inferred DataFrame([1:3, 1:3], [:a, :b])
     @inferred DataFrame([1:3, 1:3], ["a", "b"])
 
-    @inferred DataFrame([:x1=>1:3, :x2=>[1,2,3]])
-    @inferred DataFrame(["x1"=>1:3, "x2"=>[1,2,3]])
+    @inferred DataFrame([:x1=>1:3, :x2=>[1, 2, 3]])
+    @inferred DataFrame(["x1"=>1:3, "x2"=>[1, 2, 3]])
 
     @test df !== DataFrame(df)
     @test df == DataFrame(df)
@@ -77,7 +77,7 @@ const ≅ = isequal
     @test view(SubDataFrame(DataFrame(A=1:10), 1:4, :), 2:2, :) == DataFrame(A=2)
     @test view(SubDataFrame(DataFrame(A=1:10), 1:4, :), [true, true, false, false], :) == DataFrame(A=1:2)
 
-    @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
+    @test DataFrame(a=1, b=1:2) == DataFrame(a=[1, 1], b=[1, 2])
 
     @test_throws ArgumentError DataFrame(makeunique=true)
     @test_throws ArgumentError DataFrame(a=1, makeunique=true)
@@ -85,8 +85,8 @@ const ≅ = isequal
 end
 
 @testset "DataFrame keyword argument constructor" begin
-    x = [1,2,3]
-    y = [4,5,6]
+    x = [1, 2, 3]
+    y = [4, 5, 6]
 
     df = DataFrame(x=x, y=y)
     @test size(df) == (3, 2)
@@ -167,7 +167,7 @@ end
     df = DataFrame(:type => [], :begin => [])
     @test propertynames(df) == [:type, :begin]
 
-    a=[1,2,3]
+    a=[1, 2, 3]
     df = DataFrame(:a=>a, :b=>1, :c=>1:3)
     @test propertynames(df) == [:a, :b, :c]
     @test df.a == a
@@ -186,7 +186,7 @@ end
     df = DataFrame("type" => [], "begin" => [])
     @test propertynames(df) == [:type, :begin]
 
-    a=[1,2,3]
+    a=[1, 2, 3]
     df = DataFrame("a"=>a, "b"=>1, "c"=>1:3)
     @test propertynames(df) == [:a, :b, :c]
     @test df."a" == a
@@ -205,7 +205,7 @@ end
     @test df == DataFrame(A = 1:3, B = 4:6)
     @test eltype.(eachcol(df)) == [Int, Int]
 
-    a=[1,2,3]
+    a=[1, 2, 3]
     df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3))
     @test propertynames(df) == [:a, :b, :c]
     @test df.a == a
@@ -220,7 +220,7 @@ end
     @test df == DataFrame(A = 1:3, B = 4:6)
     @test eltype.(eachcol(df)) == [Int, Int]
 
-    a=[1,2,3]
+    a=[1, 2, 3]
     df = DataFrame(Dict("a"=>a, "b"=>1, "c"=>1:3))
     @test propertynames(df) == [:a, :b, :c]
     @test df."a" == a
@@ -231,8 +231,8 @@ end
 end
 
 @testset "vector constructors" begin
-    x = [1,2,3]
-    y = [1,2,3]
+    x = [1, 2, 3]
+    y = [1, 2, 3]
 
     df = DataFrame([x, y], :auto)
     @test propertynames(df) == [:x1, :x2]
@@ -286,12 +286,12 @@ end
     @test df."x2" === y
 
     n = [:x1, :x2]
-    v = AbstractVector[1:3, [1,2,3]]
+    v = AbstractVector[1:3, [1, 2, 3]]
     @test DataFrame(v, n).x1 isa Vector{Int}
     @test v[1] isa AbstractRange
 
     n = ["x1", "x2"]
-    v = AbstractVector[1:3, [1,2,3]]
+    v = AbstractVector[1:3, [1, 2, 3]]
     @test DataFrame(v, n)."x1" isa Vector{Int}
     @test v[1] isa AbstractRange
 end
@@ -306,10 +306,10 @@ end
 @testset "constructor thrown exceptions" begin
     for copycolsarg in (true, false)
         @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]), copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame(A = rand(2,2), copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame(A = rand(2,1), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame(A = rand(2, 2), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame(A = rand(2, 1), copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1, 2, 3], :auto, copycols=copycolsarg)
-        @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1,2]], :auto, copycols=copycolsarg)
+        @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1, 2]], :auto, copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
@@ -320,7 +320,7 @@ end
 
 @testset "column types" begin
     df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
-    answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
+    answer = [Array{Int, 1}, Array{Int, 1}, Array{Int, 1}]
     @test map(typeof, eachcol(df)) == answer
     df[!, :D] = [4, 5, missing]
     push!(answer, Vector{Union{Int, Missing}})
@@ -333,7 +333,7 @@ end
 @testset "expansion of Ref and 0-dimensional arrays" begin
     @test DataFrame(a=Ref(1), b=fill(1)) == DataFrame(a=[1], b=[1])
     @test DataFrame(a=Ref(1), b=fill(1), c=1:3) ==
-          DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+          DataFrame(a=[1, 1, 1], b=[1, 1, 1], c=1:3)
 end
 
 @testset "broadcasting into 0 rows" begin
