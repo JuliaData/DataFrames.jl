@@ -28,7 +28,8 @@ It is intended to be created as a result of a call to the `groupby` function.
 
 `DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference
 to a parent `DataFrame` and information about which row and columns from the parent are selected
-(both as integer indices referring to the parent). The `DataFrameRow` type supports iteration over columns of the row and is similar in functionality to
+(both as integer indices referring to the parent).
+The `DataFrameRow` type supports iteration over columns of the row and is similar in functionality to
 the `NamedTuple` type, but allows for modification of data stored in the parent `DataFrame`
 and reflects changes done to the parent after the creation of the view.
 Typically objects of the `DataFrameRow` type are encountered when returned by the `eachrow` function,
