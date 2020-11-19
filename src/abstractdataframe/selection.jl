@@ -44,7 +44,7 @@ const TRANSFORMATION_COMMON_RULES =
        vectors of `Symbol`s, vectors of strings,
        `All`, `Cols`, `:`, `Between`, `Not` and regular expressions)
     2. a `cols => function` pair indicating that `function` should be called with
-       positional arguments holding columns `cols`, which can be a any valid column selector;
+       positional arguments holding columns `cols`, which can be any valid column selector;
        in this case target column name is automatically generated and it is assumed that
        `function` returns a single value or a vector; the generated name is created by
        concatenating source column name and `function` name by default (see examples below).
