@@ -669,6 +669,7 @@ end
           DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
     @test_throws ArgumentError describe(df, :mean, :all)
+    @test_throws MethodError describe(DataFrame(a=[1, 2]), cols = :a, "max2" => maximum)
 end
 
 @testset "append!" begin

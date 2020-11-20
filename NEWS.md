@@ -1,3 +1,28 @@
+# DataFrames v1.0 Release Notes
+
+## Breaking changes
+
+* No breaking changes are planned for v1.0 release
+
+## Bug fixes
+
+* fixed bug when displaying floating point columns with eltype turned off in
+  text/plain ([2542](https://github.com/JuliaData/DataFrames.jl/pull/2542))
+
+## New functionalities
+
+
+## Deprecated
+
+* all old deprecations now throw an error
+  ([]())
+
+## Dependency changes
+
+
+## Other relevant changes
+
+
 # DataFrames v0.22 Release Notes
 
 ## Breaking changes
