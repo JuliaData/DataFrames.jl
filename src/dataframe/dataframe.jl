@@ -337,6 +337,30 @@ function DataFrame(columns::AbstractMatrix, cnames::Symbol)
     return DataFrame(columns, gennames(size(columns, 2)), makeunique=false)
 end
 
+# Discontinued constructors
+
+DataFrame(matrix::Matrix) =
+    throw(ArgumentError("`DataFrame` constructor from a `Matrix` requires " *
+                        "passing :auto as a second argument to automatically " *
+                        "generate column names: `DataFrame(matrix, :auto)`"))
+
+DataFrame(matrix::Vector{<:AbstractVector}) =
+    throw(ArgumentError("`DataFrame` constructor from a `Vector` of vectors requires " *
+                        "passing :auto as a second argument to automatically " *
+                        "generate column names: `DataFrame(matrix, :auto)`"))
+
+DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+          nrows::Integer=0; makeunique::Bool=false) where T<:Type =
+    throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
+                        "deprecated. Pass explicitly created columns to a " *
+                        "`DataFrame` constructor instead."))
+
+DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:AbstractString},
+          nrows::Integer=0; makeunique::Bool=false) where T<:Type =
+    throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
+                        "deprecated. Pass explicitly created columns to a " *
+                        "`DataFrame` constructor instead."))
+
 
 ##############################################################################
 ##
