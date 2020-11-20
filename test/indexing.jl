@@ -1848,4 +1848,10 @@ end
     @test_throws ArgumentError dfv."a" = 1
 end
 
+@testset "disallowed getindex and setindex! methods" begin
+    df = DataFrame(a=1)
+    @test_throws ArgumentError df[:a]
+    @test_throws ArgumentError df[:a] = [2]
+end
+
 end # module
