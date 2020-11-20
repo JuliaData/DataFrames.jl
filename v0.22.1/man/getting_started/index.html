@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting Started · DataFrames.jl</title><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/getting_started/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">DataFrames.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li class="is-active"><a class="tocitem" href>Getting Started</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#The-DataFrame-Type"><span>The <code>DataFrame</code> Type</span></a></li><li><a class="tocitem" href="#Working-with-Data-Frames"><span>Working with Data Frames</span></a></li><li><a class="tocitem" href="#Replacing-Data"><span>Replacing Data</span></a></li><li><a class="tocitem" href="#Importing-and-Exporting-Data-(I/O)"><span>Importing and Exporting Data (I/O)</span></a></li></ul></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Getting Started</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Getting Started</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/getting_started.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Getting-Started"><a class="docs-heading-anchor" href="#Getting-Started">Getting Started</a><a id="Getting-Started-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Started" title="Permalink"></a></h1><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>The DataFrames package is available through the Julia package system and can be installed using the following commands:</p><pre><code class="language-julia">using Pkg
+Pkg.add(&quot;DataFrames&quot;)</code></pre><p>Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataFrames</code> to bring all of the relevant variables into your current namespace.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly fit the screen size (like in the REPL).</p><p>You can override this behavior by changing the values of the <code>ENV[&quot;COLUMNS&quot;]</code> and <code>ENV[&quot;LINES&quot;]</code> variables to hold the maximum width and height of output in characters respectively.</p><p>Alternatively, you may want to set the maximum number of data frame rows to print to <code>100</code> and the maximum output width in characters to <code>1000</code> for every Julia session using some Jupyter kernel file (numbers <code>100</code> and <code>1000</code> are only examples and can be adjusted). In such case add a <code>&quot;COLUMNS&quot;: &quot;1000&quot;, &quot;LINES&quot;: &quot;100&quot;</code> entry to the <code>&quot;env&quot;</code> variable in this Jupyter kernel file. See <a href="https://jupyter-client.readthedocs.io/en/stable/kernels.html">here</a> for information about location and specification of Jupyter kernels.</p></div></div><h2 id="The-DataFrame-Type"><a class="docs-heading-anchor" href="#The-DataFrame-Type">The <code>DataFrame</code> Type</a><a id="The-DataFrame-Type-1"></a><a class="docs-heading-anchor-permalink" href="#The-DataFrame-Type" title="Permalink"></a></h2><p>Objects of the <code>DataFrame</code> type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a <code>DataFrame</code> is to pass column vectors using keyword arguments or pairs:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+
+julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+4×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+   2 │     2  F
+   3 │     3  F
+   4 │     4  M</code></pre><p>Columns can be directly (i.e. without copying) accessed via <code>df.col</code>, <code>df.&quot;col&quot;</code>, <code>df[!, :col]</code> or <code>df[!, &quot;col&quot;]</code>. The two latter syntaxes are more flexible as they allow passing a variable holding the name of the column, and not only a literal name. Note that column names can be either symbols (written as <code>:col</code>, <code>:var&quot;col&quot;</code> or <code>Symbol(&quot;col&quot;)</code>) or strings (written as <code>&quot;col&quot;</code>). Note that in the forms <code>df.&quot;col&quot;</code> and <code>:var&quot;col&quot;</code> variable interpolation into a string using <code>$</code> does not work. Columns can also be accessed using an integer index specifying their position.</p><p>Since <code>df[!, :col]</code> does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original <code>df</code>. To get a copy of the column use <code>df[:, :col]</code>: changing the vector returned by this syntax does not change <code>df</code>.</p><pre><code class="language-julia-repl">julia&gt; df.A
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia&gt; df.&quot;A&quot;
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia&gt; df.A === df[!, :A]
+true
+
+julia&gt; df.A === df[:, :A]
+false
+
+julia&gt; df.A == df[:, :A]
+true
+
+julia&gt; df.A === df[!, &quot;A&quot;]
+true
+
+julia&gt; df.A === df[:, &quot;A&quot;]
+false
+
+julia&gt; df.A == df[:, &quot;A&quot;]
+true
+
+julia&gt; df.A === df[!, 1]
+true
+
+julia&gt; df.A === df[:, 1]
+false
+
+julia&gt; df.A == df[:, 1]
+true
+
+julia&gt; firstcolumn = :A
+:A
+
+julia&gt; df[!, firstcolumn] === df.A
+true
+
+julia&gt; df[:, firstcolumn] === df.A
+false
+
+julia&gt; df[:, firstcolumn] == df.A
+true</code></pre><p>Column names can be obtained as strings using the <code>names</code> function:</p><pre><code class="language-julia-repl">julia&gt; names(df)
+2-element Array{String,1}:
+ &quot;A&quot;
+ &quot;B&quot;</code></pre><p>To get column names as <code>Symbol</code>s use the <code>propertynames</code> function:</p><pre><code class="language-none">julia&gt; propertynames(df)
+2-element Array{Symbol,1}:
+ :A
+ :B</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>DataFrames.jl allows to use <code>Symbol</code>s (like <code>:A</code>) and strings (like <code>&quot;A&quot;</code>) for all column indexing operations for convenience. However, using <code>Symbol</code>s is slightly faster and should generally be preferred, if not generating them via string manipulation.</p></div></div><h3 id="Constructing-Column-by-Column"><a class="docs-heading-anchor" href="#Constructing-Column-by-Column">Constructing Column by Column</a><a id="Constructing-Column-by-Column-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-Column-by-Column" title="Permalink"></a></h3><p>It is also possible to start with an empty <code>DataFrame</code> and add columns to it one by one:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame()
+0×0 DataFrame
+
+julia&gt; df.A = 1:8
+1:8
+
+julia&gt; df.B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;]
+8-element Array{String,1}:
+ &quot;M&quot;
+ &quot;F&quot;
+ &quot;F&quot;
+ &quot;M&quot;
+ &quot;F&quot;
+ &quot;M&quot;
+ &quot;M&quot;
+ &quot;F&quot;
+
+julia&gt; df
+8×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+   2 │     2  F
+   3 │     3  F
+   4 │     4  M
+   5 │     5  F
+   6 │     6  M
+   7 │     7  M
+   8 │     8  F</code></pre><p>The <code>DataFrame</code> we build in this way has 8 rows and 2 columns. This can be checked using the <code>size</code> function:</p><pre><code class="language-julia-repl">julia&gt; size(df, 1)
+8
+
+julia&gt; size(df, 2)
+2
+
+julia&gt; size(df)
+(8, 2)
+</code></pre><h3 id="Constructing-Row-by-Row"><a class="docs-heading-anchor" href="#Constructing-Row-by-Row">Constructing Row by Row</a><a id="Constructing-Row-by-Row-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-Row-by-Row" title="Permalink"></a></h3><p>It is also possible to fill a <code>DataFrame</code> row by row. Let us construct an empty data frame with two columns (note that the first column can only contain integers and the second one can only contain strings):</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = Int[], B = String[])
+0×2 DataFrame</code></pre><p>Rows can then be added as tuples or vectors, where the order of elements matches that of columns:</p><pre><code class="language-julia-repl">julia&gt; push!(df, (1, &quot;M&quot;))
+1×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+
+julia&gt; push!(df, [2, &quot;N&quot;])
+2×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+   2 │     2  N</code></pre><p>Rows can also be added as <code>Dict</code>s, where the dictionary keys match the column names:</p><pre><code class="language-julia-repl">julia&gt; push!(df, Dict(:B =&gt; &quot;F&quot;, :A =&gt; 3))
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+   2 │     2  N
+   3 │     3  F</code></pre><p>Note that constructing a <code>DataFrame</code> row by row is significantly less performant than constructing it all at once, or column by column. For many use-cases this will not matter, but for very large <code>DataFrame</code>s  this may be a consideration.</p><h3 id="Constructing-from-another-table-type"><a class="docs-heading-anchor" href="#Constructing-from-another-table-type">Constructing from another table type</a><a id="Constructing-from-another-table-type-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-from-another-table-type" title="Permalink"></a></h3><p>DataFrames supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface for interacting with tabular data. This means that a <code>DataFrame</code> can be used as a &quot;source&quot; to any package that expects a Tables.jl interface input, (file format packages, data manipulation packages, etc.). A <code>DataFrame</code> can also be a sink for any Tables.jl interface input. Some example uses are:</p><pre><code class="language-julia">df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
+
+# write DataFrame out to CSV file
+CSV.write(&quot;dataframe.csv&quot;, df)
+
+# store DataFrame in an SQLite database table
+SQLite.load!(df, db, &quot;dataframe_table&quot;)
+
+# transform a DataFrame through Query.jl package
+df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><p>A particular common case of a collection that supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface is a vector of <code>NamedTuple</code>s:</p><pre><code class="language-none">julia&gt; v = [(a=1, b=2), (a=3, b=4)]
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)
+
+julia&gt; df = DataFrame(v)
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     3      4</code></pre><p>You can also easily convert a data frame back to a vector of <code>NamedTuple</code>s:</p><pre><code class="language-none">julia&gt; using Tables
+
+julia&gt; Tables.rowtable(df)
+2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)</code></pre><h2 id="Working-with-Data-Frames"><a class="docs-heading-anchor" href="#Working-with-Data-Frames">Working with Data Frames</a><a id="Working-with-Data-Frames-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Data-Frames" title="Permalink"></a></h2><h3 id="Examining-the-Data"><a class="docs-heading-anchor" href="#Examining-the-Data">Examining the Data</a><a id="Examining-the-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Examining-the-Data" title="Permalink"></a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+500×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     3      1      2
+   3 │     5      1      3
+   4 │     7      1      4
+   5 │     9      1      5
+   6 │    11      1      6
+   7 │    13      1      7
+  ⋮  │   ⋮      ⋮      ⋮
+ 494 │   987     10    494
+ 495 │   989     10    495
+ 496 │   991     10    496
+ 497 │   993     10    497
+ 498 │   995     10    498
+ 499 │   997     10    499
+ 500 │   999     10    500
+           486 rows omitted</code></pre><p>Printing options can be adjusted by calling the <code>show</code> function manually: <code>show(df, allrows=true)</code> prints all rows even if they do not fit on screen and <code>show(df, allcols=true)</code> does the same for columns.</p><p>The <code>first</code> and <code>last</code> functions can be used to look at the first and last rows of a data frame (respectively):</p><pre><code class="language-julia-repl">julia&gt; first(df, 6)
+6×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     3      1      2
+   3 │     5      1      3
+   4 │     7      1      4
+   5 │     9      1      5
+   6 │    11      1      6
+
+julia&gt; last(df, 6)
+6×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │   989     10    495
+   2 │   991     10    496
+   3 │   993     10    497
+   4 │   995     10    498
+   5 │   997     10    499
+   6 │   999     10    500</code></pre><p>Also notice that when <code>DataFrame</code> is printed to the console or rendered in HTML (e.g. in Jupyter Notebook) you get an information about type of elements held in its columns. For example in this case:</p><pre><code class="language-julia-repl">julia&gt; DataFrame(a = 1:2, b = [1.0, missing],
+                 c = categorical(&#39;a&#39;:&#39;b&#39;), d = [1//2, missing])
+2×4 DataFrame
+ Row │ a      b          c     d
+     │ Int64  Float64?   Cat…  Rational…?
+─────┼────────────────────────────────────
+   1 │     1        1.0  a           1//2
+   2 │     2  missing    b        missing
+</code></pre><p>we can observe that:</p><ul><li>the first column <code>:a</code> can hold elements of type <code>Int64</code>;</li><li>the second column <code>:b</code> can hold <code>Float64</code> or <code>Missing</code>, which is indicated by <code>?</code> printed after the name of type;</li><li>the third column <code>:c</code> can hold categorical data; here we notice <code>…</code>, which indicates that the actual name of the type was long and got truncated;</li><li>the type information in fourth column <code>:d</code> presents a situation where the name is both truncated and the type allows <code>Missing</code>.</li></ul><h3 id="Taking-a-Subset"><a class="docs-heading-anchor" href="#Taking-a-Subset">Taking a Subset</a><a id="Taking-a-Subset-1"></a><a class="docs-heading-anchor-permalink" href="#Taking-a-Subset" title="Permalink"></a></h3><h4 id="Indexing-syntax"><a class="docs-heading-anchor" href="#Indexing-syntax">Indexing syntax</a><a id="Indexing-syntax-1"></a><a class="docs-heading-anchor-permalink" href="#Indexing-syntax" title="Permalink"></a></h4><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. In the <a href="../../lib/indexing/#Indexing">Indexing</a> section of the manual you can find all the details about the available options. Here we highlight the basic options.</p><p>The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
+3×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     3      1      2
+   3 │     5      1      3
+
+julia&gt; df[[1, 5, 10], :]
+3×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     9      1      5
+   3 │    19      1     10
+
+julia&gt; df[:, [:A, :B]]
+500×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     3      1
+   3 │     5      1
+   4 │     7      1
+   5 │     9      1
+   6 │    11      1
+   7 │    13      1
+  ⋮  │   ⋮      ⋮
+ 494 │   987     10
+ 495 │   989     10
+ 496 │   991     10
+ 497 │   993     10
+ 498 │   995     10
+ 499 │   997     10
+ 500 │   999     10
+    486 rows omitted
+
+julia&gt; df[1:3, [:B, :A]]
+3×2 DataFrame
+ Row │ B      A
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     1      3
+   3 │     1      5
+
+julia&gt; df[[3, 1], [:C]]
+2×1 DataFrame
+ Row │ C
+     │ Int64
+─────┼───────
+   1 │     3
+   2 │     1</code></pre><p>Do note that <code>df[!, [:A]]</code> and <code>df[:, [:A]]</code> return a <code>DataFrame</code> object, while <code>df[!, :A]</code> and <code>df[:, :A]</code> return a vector:</p><pre><code class="language-julia-repl">julia&gt; df[!, [:A]]
+500×1 DataFrame
+ Row │ A
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     3
+   3 │     5
+   4 │     7
+   5 │     9
+   6 │    11
+   7 │    13
+  ⋮  │   ⋮
+ 494 │   987
+ 495 │   989
+ 496 │   991
+ 497 │   993
+ 498 │   995
+ 499 │   997
+ 500 │   999
+486 rows omitted
+
+julia&gt; df[!, [:A]] == df[:, [:A]]
+true
+
+julia&gt; df[!, :A]
+500-element Array{Int64,1}:
+   1
+   3
+   5
+   7
+   9
+  11
+   ⋮
+ 991
+ 993
+ 995
+ 997
+ 999
+
+julia&gt; df[!, :A] == df[:, :A]
+true</code></pre><p>In the first case, <code>[:A]</code> is a vector, indicating that the resulting object should be a <code>DataFrame</code>. On the other hand, <code>:A</code> is a single symbol, indicating that a single column vector should be extracted. Note that in the first case a vector is required to be passed (not just any iterable), so e.g. <code>df[:, (:x1, :x2)]</code> is not allowed, but <code>df[:, [:x1, :x2]]</code> is valid.</p><p>It is also possible to use a regular expression as a selector of columns matching it:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=1, x2=2, y=3)
+1×3 DataFrame
+ Row │ x1     x2     y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+
+julia&gt; df[!, r&quot;x&quot;]
+1×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2</code></pre><p>A <code>Not</code> selector (from the <a href="https://github.com/mbauman/InvertedIndices.jl">InvertedIndices</a> package) can be used to select all columns excluding a specific subset:</p><pre><code class="language-julia-repl">julia&gt; df[!, Not(:x1)]
+1×2 DataFrame
+ Row │ x2     y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      3</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, <code>Cols</code> and <code>All</code> selectors in more complex column selection scenarios (note that <code>Cols()</code> selects no columns while <code>All()</code> selects all columns therefore <code>Cols</code> is a preferred selector if you write generic code). The following examples move all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="language-none">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
+1×4 DataFrame
+ Row │ r      x1     x2     y
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      3      4
+
+julia&gt; df[:, Cols(r&quot;x&quot;, :)]
+1×4 DataFrame
+ Row │ x1     x2     r      y
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     2      3      1      4
+
+julia&gt; df[:, Cols(Not(r&quot;x&quot;), :)]
+1×4 DataFrame
+ Row │ r      y      x1     x2
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      2      3</code></pre><p>The indexing syntax can also be used to select rows based on conditions on variables:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+500×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     3      1      2
+   3 │     5      1      3
+   4 │     7      1      4
+   5 │     9      1      5
+   6 │    11      1      6
+   7 │    13      1      7
+  ⋮  │   ⋮      ⋮      ⋮
+ 494 │   987     10    494
+ 495 │   989     10    495
+ 496 │   991     10    496
+ 497 │   993     10    497
+ 498 │   995     10    498
+ 499 │   997     10    499
+ 500 │   999     10    500
+           486 rows omitted
+
+julia&gt; df[df.A .&gt; 500, :]
+250×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │   501      6    251
+   2 │   503      6    252
+   3 │   505      6    253
+   4 │   507      6    254
+   5 │   509      6    255
+   6 │   511      6    256
+   7 │   513      6    257
+  ⋮  │   ⋮      ⋮      ⋮
+ 244 │   987     10    494
+ 245 │   989     10    495
+ 246 │   991     10    496
+ 247 │   993     10    497
+ 248 │   995     10    498
+ 249 │   997     10    499
+ 250 │   999     10    500
+           236 rows omitted
+
+julia&gt; df[(df.A .&gt; 500) .&amp; (300 .&lt; df.C .&lt; 400), :]
+99×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │   601      7    301
+   2 │   603      7    302
+   3 │   605      7    303
+   4 │   607      7    304
+   5 │   609      7    305
+   6 │   611      7    306
+   7 │   613      7    307
+  ⋮  │   ⋮      ⋮      ⋮
+  93 │   785      8    393
+  94 │   787      8    394
+  95 │   789      8    395
+  96 │   791      8    396
+  97 │   793      8    397
+  98 │   795      8    398
+  99 │   797      8    399
+            85 rows omitted</code></pre><p>Where a specific subset of values needs to be matched, the <code>in()</code> function can be applied:</p><pre><code class="language-julia-repl">julia&gt; df[in.(df.A, Ref([1, 5, 601])), :]
+3×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     5      1      3
+   3 │   601      7    301</code></pre><p>Equivalently, the <code>in</code> function can be called with a single argument to create a function object that tests whether each value belongs to the subset (partial application of <code>in</code>): <code>df[in([1, 5, 601]).(df.A), :]</code>.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>As with matrices, subsetting from a data frame will usually return a copy of columns, not a view or direct reference.</p><p>The only indexing situations where data frames will <strong>not</strong> return a copy are:</p><ul><li>when a <code>!</code> is placed in the first indexing position (<code>df[!, :A]</code>, or <code>df[!, [:A, :B]]</code>),</li><li>when using <code>.</code> (<code>getpropery</code>) notation (<code>df.A</code>),</li><li>when a single row is selected using an integer (<code>df[1, [:A, :B]]</code>)</li><li>when <code>view</code> or <code>@view</code> is used (e.g. <code>@view df[1:3, :A]</code>).</li></ul><p>More details on copies, views, and references can be found in the <a href="../../lib/indexing/#getindex-and-view"><code>getindex</code> and <code>view</code></a> section.</p></div></div><h4 id="Column-selection-using-select-and-select!,-transform-and-transform!"><a class="docs-heading-anchor" href="#Column-selection-using-select-and-select!,-transform-and-transform!">Column selection using <code>select</code> and <code>select!</code>, <code>transform</code> and <code>transform!</code></a><a id="Column-selection-using-select-and-select!,-transform-and-transform!-1"></a><a class="docs-heading-anchor-permalink" href="#Column-selection-using-select-and-select!,-transform-and-transform!" title="Permalink"></a></h4><p>You can also use the <a href="../../lib/functions/#DataFrames.select"><code>select</code></a> and <a href="../../lib/functions/#DataFrames.select!"><code>select!</code></a> functions to select, rename and transform columns in a data frame.</p><p>The <code>select</code> function creates a new data frame:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
+2×3 DataFrame
+ Row │ x1     x2     y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      3      5
+   2 │     2      4      6
+
+julia&gt; select(df, Not(:x1)) # drop column :x1 in a new data frame
+2×2 DataFrame
+ Row │ x2     y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     3      5
+   2 │     4      6
+
+julia&gt; select(df, r&quot;x&quot;) # select columns containing &#39;x&#39; character
+2×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+
+julia&gt; select(df, :x1 =&gt; :a1, :x2 =&gt; :a2) # rename columns
+2×2 DataFrame
+ Row │ a1     a2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+
+julia&gt; select(df, :x1, :x2 =&gt; (x -&gt; x .- minimum(x)) =&gt; :x2) # transform columns
+2×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      1
+
+julia&gt; select(df, :x2, :x2 =&gt; ByRow(sqrt)) # transform columns by row
+2×2 DataFrame
+ Row │ x2     x2_sqrt
+     │ Int64  Float64
+─────┼────────────────
+   1 │     3  1.73205
+   2 │     4  2.0
+
+julia&gt; select(df, AsTable(:) =&gt; ByRow(extrema) =&gt; [:lo, :hi]) # return multiple columns
+2×2 DataFrame
+ Row │ lo     hi
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6</code></pre><p>It is important to note that <code>select</code> always returns a data frame, even if a single column is selected (as opposed to indexing syntax).</p><pre><code class="language-julia-repl">julia&gt; select(df, :x1)
+2×1 DataFrame
+ Row │ x1
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia&gt; df[:, :x1]
+1-element Array{Int64,1}:
+ 1</code></pre><p>By default <code>select</code> copies columns of a passed source data frame. In order to avoid copying, pass <code>copycols=false</code>:</p><pre><code class="language-none">julia&gt; df2 = select(df, :x1)
+2×1 DataFrame
+ Row │ x1
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia&gt; df2.x1 === df.x1
+false
+
+julia&gt; df2 = select(df, :x1, copycols=false)
+2×1 DataFrame
+ Row │ x1
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia&gt; df2.x1 === df.x1
+true</code></pre><p>To perform the selection operation in-place use <code>select!</code>:</p><pre><code class="language-julia-repl">julia&gt; select!(df, Not(:x1));
+
+julia&gt; df
+2×2 DataFrame
+ Row │ x2     y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     3      5
+   2 │     4      6</code></pre><p><code>transform</code> and <code>transform!</code> functions work identically to <code>select</code> and <code>select!</code> with the only difference that they retain all columns that are present in the source data frame. Here are some more advanced examples.</p><p>First we show how to generate a column that is a sum of all other columns in the data frame using the <code>All()</code> selector:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
+2×3 DataFrame
+ Row │ x1     x2     y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      3      5
+   2 │     2      4      6
+
+julia&gt; transform(df, All() =&gt; +)
+2×4 DataFrame
+ Row │ x1     x2     y      x1_x2_y_+
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────────
+   1 │     1      3      5          9
+   2 │     2      4      6         12</code></pre><p>Using the <code>ByRow</code> wrapper, we can easily compute for each row the name of column with the highest score:</p><pre><code class="language-none">julia&gt; using Random
+
+julia&gt; Random.seed!(1);
+
+julia&gt; df = DataFrame(rand(10, 3), [:a, :b, :c])
+10×3 DataFrame
+ Row │ a           b          c
+     │ Float64     Float64    Float64
+─────┼──────────────────────────────────
+   1 │ 0.236033    0.555751   0.0769509
+   2 │ 0.346517    0.437108   0.640396
+   3 │ 0.312707    0.424718   0.873544
+   4 │ 0.00790928  0.773223   0.278582
+   5 │ 0.488613    0.28119    0.751313
+   6 │ 0.210968    0.209472   0.644883
+   7 │ 0.951916    0.251379   0.0778264
+   8 │ 0.999905    0.0203749  0.848185
+   9 │ 0.251662    0.287702   0.0856352
+  10 │ 0.986666    0.859512   0.553206
+
+julia&gt; transform(df, AsTable(:) =&gt; ByRow(argmax) =&gt; :prediction)
+10×4 DataFrame
+ Row │ a           b          c          prediction
+     │ Float64     Float64    Float64    Symbol
+─────┼──────────────────────────────────────────────
+   1 │ 0.236033    0.555751   0.0769509  b
+   2 │ 0.346517    0.437108   0.640396   c
+   3 │ 0.312707    0.424718   0.873544   c
+   4 │ 0.00790928  0.773223   0.278582   b
+   5 │ 0.488613    0.28119    0.751313   c
+   6 │ 0.210968    0.209472   0.644883   c
+   7 │ 0.951916    0.251379   0.0778264  a
+   8 │ 0.999905    0.0203749  0.848185   a
+   9 │ 0.251662    0.287702   0.0856352  b
+  10 │ 0.986666    0.859512   0.553206   a</code></pre><p>In the following, most complex, example below we compute row-wise sum, number of elements, and mean, while ignoring missing values.</p><pre><code class="language-none">julia&gt; using Statistics
+
+julia&gt; df = DataFrame(x=[1, 2, missing], y=[1, missing, missing])
+3×2 DataFrame
+ Row │ x        y
+     │ Int64?   Int64?
+─────┼──────────────────
+   1 │       1        1
+   2 │       2  missing
+   3 │ missing  missing
+
+julia&gt; transform(df, AsTable(:) .=&gt;
+                     ByRow.([sum∘skipmissing,
+                             x -&gt; count(!ismissing, x),
+                             mean∘skipmissing]) .=&gt;
+                     [:sum, :n, :mean])
+3×5 DataFrame
+ Row │ x        y        sum    n      mean
+     │ Int64?   Int64?   Int64  Int64  Float64
+─────┼─────────────────────────────────────────
+   1 │       1        1      2      2      1.0
+   2 │       2  missing      2      1      2.0
+   3 │ missing  missing      0      0    NaN</code></pre><p>While the DataFrames.jl package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a</li></ul><p><a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</p><ul><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a></li></ul><p>package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></p><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks">Data manipulation frameworks</a> section for more information.</p><h3 id="Summarizing-Data"><a class="docs-heading-anchor" href="#Summarizing-Data">Summarizing Data</a><a id="Summarizing-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Summarizing-Data" title="Permalink"></a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+4×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+   2 │     2  F
+   3 │     3  F
+   4 │     4  M
+
+julia&gt; describe(df)
+2×7 DataFrame
+ Row │ variable  mean    min  median  max  nmissing  eltype
+     │ Symbol    Union…  Any  Union…  Any  Int64     DataType
+─────┼────────────────────────────────────────────────────────
+   1 │ A         2.5     1    2.5     4           0  Int64
+   2 │ B                 F            M           0  String</code></pre><p>If you are interested in describing only a subset of columns then the easiest way to do it is to pass a subset of an original data frame to <code>describe</code> like this:</p><pre><code class="language-julia-repl">julia&gt; describe(df[!, [:A]])
+1×7 DataFrame
+ Row │ variable  mean     min    median   max    nmissing  eltype
+     │ Symbol    Float64  Int64  Float64  Int64  Int64     DataType
+─────┼──────────────────────────────────────────────────────────────
+   1 │ A             2.5      1      2.5      4         0  Int64</code></pre><p>Of course, one can also compute descriptive statistics directly on individual columns:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
+
+julia&gt; mean(df.A)
+2.5</code></pre><p>We can also apply a function to each column of a <code>DataFrame</code> using <code>combine</code>. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrame
+ Row │ A      B
+     │ Int64  Float64
+─────┼────────────────
+   1 │     1      4.0
+   2 │     2      3.0
+   3 │     3      2.0
+   4 │     4      1.0
+
+julia&gt; combine(df, names(df) .=&gt; sum)
+1×2 DataFrame
+ Row │ A_sum  B_sum
+     │ Int64  Float64
+─────┼────────────────
+   1 │    10     10.0
+
+julia&gt; combine(df, names(df) .=&gt; sum, names(df) .=&gt; prod)
+1×4 DataFrame
+ Row │ A_sum  B_sum    A_prod  B_prod
+     │ Int64  Float64  Int64   Float64
+─────┼─────────────────────────────────
+   1 │    10     10.0      24     24.0</code></pre><p>If you would prefer the result to have the same number of rows as the source data frame use <code>select</code> instead of <code>combine</code>.</p><h3 id="Handling-of-Columns-Stored-in-a-DataFrame"><a class="docs-heading-anchor" href="#Handling-of-Columns-Stored-in-a-DataFrame">Handling of Columns Stored in a <code>DataFrame</code></a><a id="Handling-of-Columns-Stored-in-a-DataFrame-1"></a><a class="docs-heading-anchor-permalink" href="#Handling-of-Columns-Stored-in-a-DataFrame" title="Permalink"></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrame
+ Row │ A      B
+     │ Int64  Float64
+─────┼────────────────
+   1 │     1      4.0
+   2 │     2      3.0
+   3 │     3      2.0
+   4 │     4      1.0
+
+julia&gt; df2 = copy(df);
+
+julia&gt; df2.A === df.A
+false</code></pre><p>On the other hand, in-place functions, whose names end with <code>!</code>, may mutate the column vectors of the <code>DataFrame</code> they take as an argument, for example:</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+
+julia&gt; df = DataFrame(x=x)
+3×1 DataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     3
+   2 │     1
+   3 │     2
+
+julia&gt; sort!(df)
+3×1 DataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia&gt; x
+3-element Array{Int64,1}:
+ 3
+ 1
+ 2
+
+julia&gt; df.x[1] = 100
+100
+
+julia&gt; df
+3×1 DataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │   100
+   2 │     2
+   3 │     3
+
+julia&gt; x
+3-element Array{Int64,1}:
+ 3
+ 1
+ 2</code></pre><p>Note, that in the above example the original <code>x</code> vector is not mutated in the process as the <code>DataFrame(x=x)</code> constructor makes a copy by default.</p><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code> <code>df</code> using the syntaxes <code>df.col</code>, <code>df[!, :col]</code>, via the <a href="../../lib/functions/#Base.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code>.</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+
+julia&gt; df = DataFrame(x=x)
+3×1 DataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     3
+   2 │     1
+   3 │     2
+
+julia&gt; df.x == x
+true
+
+julia&gt; df[1] !== x
+true
+
+julia&gt; eachcol(df)[1] === df.x
+true</code></pre><p>Note that a column obtained from a <code>DataFrame</code> using one of these methods should not be mutated without caution.</p><p>The exact rules of handling columns of a <code>DataFrame</code> are explained in <a href="../../lib/types/#man-columnhandling">The design of handling of columns of a <code>DataFrame</code></a> section of the manual.</p><h2 id="Replacing-Data"><a class="docs-heading-anchor" href="#Replacing-Data">Replacing Data</a><a id="Replacing-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Replacing-Data" title="Permalink"></a></h2><p>Several approaches can be used to replace some values with others in a data frame. Some apply the replacement to all values in a data frame, and others to individual columns or subset of columns.</p><p>Do note that in-place replacement requires that the replacement value can be converted to the column&#39;s element type. In particular, this implies that replacing a value with <code>missing</code> requires a call to <code>allowmissing!</code> if the column did not allow for missing values.</p><p>Replacement operations affecting a single column can be performed using <code>replace!</code>:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(a = [&quot;a&quot;, &quot;None&quot;, &quot;b&quot;, &quot;None&quot;], b = 1:4, c = [&quot;None&quot;, &quot;j&quot;, &quot;k&quot;, &quot;h&quot;], d = [&quot;x&quot;, &quot;y&quot;, &quot;None&quot;, &quot;z&quot;])
+4×4 DataFrame
+ Row │ a       b      c       d
+     │ String  Int64  String  String
+─────┼───────────────────────────────
+   1 │ a           1  None    x
+   2 │ None        2  j       y
+   3 │ b           3  k       None
+   4 │ None        4  h       z
+
+julia&gt; replace!(df.a, &quot;None&quot; =&gt; &quot;c&quot;)
+4-element Array{String,1}:
+ &quot;a&quot;
+ &quot;c&quot;
+ &quot;b&quot;
+ &quot;c&quot;
+
+julia&gt; df
+4×4 DataFrame
+ Row │ a       b      c       d
+     │ String  Int64  String  String
+─────┼───────────────────────────────
+   1 │ a           1  None    x
+   2 │ c           2  j       y
+   3 │ b           3  k       None
+   4 │ c           4  h       z</code></pre><p>This is equivalent to <code>df.a = replace(df.a, &quot;None&quot; =&gt; &quot;c&quot;)</code>, but operates in-place, without allocating a new column vector.</p><p>Replacement operations on multiple columns or on the whole data frame can be performed in-place using the broadcasting syntax:</p><pre><code class="language-julia-repl"># replacement on a subset of columns [:c, :d]
+julia&gt; df[:, [:c, :d]] .= ifelse.(df[!, [:c, :d]] .== &quot;None&quot;, &quot;c&quot;, df[!, [:c, :d]])
+4×2 SubDataFrame
+ Row │ c       d
+     │ String  String
+─────┼────────────────
+   1 │ c       x
+   2 │ j       y
+   3 │ k       c
+   4 │ h       z
+
+julia&gt; df
+4×4 DataFrame
+ Row │ a       b      c       d
+     │ String  Int64  String  String
+─────┼───────────────────────────────
+   1 │ a           1  c       x
+   2 │ c           2  j       y
+   3 │ b           3  k       c
+   4 │ c           4  h       z
+
+julia&gt; df .= ifelse.(df .== &quot;c&quot;, &quot;None&quot;, df) # replacement on entire data frame
+
+4×4 DataFrame
+ Row │ a       b      c       d
+     │ String  Int64  String  String
+─────┼───────────────────────────────
+   1 │ a           1  None    x
+   2 │ None        2  j       y
+   3 │ b           3  k       None
+   4 │ None        4  h       z</code></pre><p>Do note that in the above examples, changing <code>.=</code> to just <code>=</code> will allocate new column vectors instead of applying the operation in-place.</p><p>When replacing values with <code>missing</code>, if the columns do not already allow for missing values, one has to either avoid in-place operation and use <code>=</code> instead of <code>.=</code>, or call <code>allowmissing!</code> beforehand:</p><pre><code class="language-julia-repl">julia&gt; df2 = ifelse.(df .== &quot;None&quot;, missing, df) # do not operate in-place (`df = ` would also work)
+4×4 DataFrame
+ Row │ a        b      c        d
+     │ String?  Int64  String?  String?
+─────┼──────────────────────────────────
+   1 │ a            1  missing  x
+   2 │ missing      2  j        y
+   3 │ b            3  k        missing
+   4 │ missing      4  h        z
+
+julia&gt; allowmissing!(df) # operate in-place after allowing for missing
+4×4 DataFrame
+ Row │ a        b       c        d
+     │ String?  Int64?  String?  String?
+─────┼───────────────────────────────────
+   1 │ a             1  None     x
+   2 │ None          2  j        y
+   3 │ b             3  k        None
+   4 │ None          4  h        z
+
+julia&gt; df .= ifelse.(df .== &quot;None&quot;, missing, df)
+4×4 DataFrame
+ Row │ a        b       c        d
+     │ String?  Int64?  String?  String?
+─────┼───────────────────────────────────
+   1 │ a             1  missing  x
+   2 │ missing       2  j        y
+   3 │ b             3  k        missing
+   4 │ missing       4  h        z</code></pre><h2 id="Importing-and-Exporting-Data-(I/O)"><a class="docs-heading-anchor" href="#Importing-and-Exporting-Data-(I/O)">Importing and Exporting Data (I/O)</a><a id="Importing-and-Exporting-Data-(I/O)-1"></a><a class="docs-heading-anchor-permalink" href="#Importing-and-Exporting-Data-(I/O)" title="Permalink"></a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
+Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">DataFrame(CSV.File(input))</code></pre><p>A <code>DataFrame</code> can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
+CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.File</code>, <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><p>For reading and writing tabular data in Apache Arrow format use <a href="https://github.com/JuliaData/Arrow.jl">Arrow.jl</a></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../joins/">Joins »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 20 November 2020 20:25">Friday 20 November 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
