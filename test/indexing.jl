@@ -1747,7 +1747,7 @@ end
         @test_throws MethodError df[r"[ab]"]
         @test_throws MethodError df[Not(3)]
         @test_throws MethodError df[:]
-        @test_throws MethodError df[:a]
+        @test_throws ArgumentError df[:a]
         @test_throws MethodError df["a"]
     end
     @testset "view DataFrame" begin
@@ -1766,7 +1766,7 @@ end
         @test_throws MethodError sdf[1]
         @test_throws MethodError sdf[end]
         @test_throws MethodError sdf["x"]
-        @test_throws MethodError sdf[:x]
+        @test_throws ArgumentError sdf[:x]
         @test_throws MethodError sdf[1:2]
         @test_throws MethodError sdf[r"[ab]"]
         @test_throws MethodError sdf[Not(Not(r"[ab]"))]
@@ -1800,7 +1800,7 @@ end
 
         # Broadcasting assignment of columns
         @test_throws MethodError df[:, 1] = 1
-        @test_throws MethodError df[:x3] = 2
+        @test_throws ArgumentError df[:x3] = 2
 
         # assignment of subtables
         @test_throws MethodError df[1, 1:2] = df[2:2, 2:3]
