@@ -1998,8 +1998,8 @@ end
 
 # Disallowed operations that are a common mistake
 
-Base.getindex(::AbstractDataFrame, ::Symbol) =
+Base.getindex(::AbstractDataFrame, ::Union{Symbol, Integer, AbstractString}) =
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
 
-Base.setindex!(::AbstractDataFrame, ::Any, ::Symbol) =
+Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractString}) =
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))

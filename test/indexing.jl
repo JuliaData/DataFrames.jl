@@ -1852,6 +1852,10 @@ end
     df = DataFrame(a=1)
     @test_throws ArgumentError df[:a]
     @test_throws ArgumentError df[:a] = [2]
+    @test_throws ArgumentError df["a"]
+    @test_throws ArgumentError df["a"] = [2]
+    @test_throws ArgumentError df[1]
+    @test_throws ArgumentError df[1] = [2]
 end
 
 end # module
