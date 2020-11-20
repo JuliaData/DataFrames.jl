@@ -1999,7 +1999,7 @@ end
 # Disallowed operations that are a common mistake
 
 Base.getindex(::AbstractDataFrame, ::Symbol) =
-    ArgumentError("syntax df[column] is not supported use df[!, column] instead")
+    throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
 
 Base.setindex!(::AbstractDataFrame, ::Any, ::Symbol) =
-    ArgumentError("syntax df[column] is not supported use df[!, column] instead")
+    throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
