@@ -508,17 +508,6 @@ Base.getindex(df::DataFrame, row_ind::typeof(!),
 ##
 ##############################################################################
 
-function nextcolname(df::DataFrame)
-    col = Symbol(string("x", ncol(df) + 1))
-    hasproperty(df, col) || return col
-    i = 1
-    while true
-        col = Symbol(string("x", ncol(df) + 1, "_", i))
-        hasproperty(df, col) || return col
-        i += 1
-    end
-end
-
 # Will automatically add a new column if needed
 function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
     if ncol(df) != 0 && nrow(df) != length(v)
@@ -542,18 +531,6 @@ end
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_ind] = v
-        return v
-    else
-        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
-    end
-end
-
-function insert_multiple_entries!(df::DataFrame,
-                                  v::Any,
-                                  row_inds::AbstractVector,
-                                  col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        _columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
     else
         throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
