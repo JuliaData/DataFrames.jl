@@ -15,7 +15,7 @@
 ## Deprecated
 
 * all old deprecations now throw an error
-  ([]())
+  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 
 ## Dependency changes
 
