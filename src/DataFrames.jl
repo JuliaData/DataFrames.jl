@@ -8,6 +8,7 @@ using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
 using Markdown
 using PrettyTables
+import Hwloc
 
 import DataAPI,
        DataAPI.All,

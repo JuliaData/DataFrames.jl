@@ -165,11 +165,12 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     end
     nt = min(nthreads, Threads.nthreads())
     if nt <= 1 || axes(incol) != axes(groups)
-        # Operate on array blocks smaller than 3MB so that they fit in the CPU cache
-        npasses = sizeof(res) ÷ 3_000_000
+        # Operate on array blocks smaller than cache size
+        npasses = max(1, sizeof(res) ÷ l3cachesize())
         for j in 1:npasses
-            start = 1 + ((j - 1) * length(groups)) ÷ npasses
-            stop = (j * length(groups)) ÷ npasses
+            start = 1 + ((j - 1) * n) ÷ npasses
+            stop = (j * n) ÷ npasses
+            @show start:stop
             @inbounds for i in eachindex(incol, groups)
                 gix = groups[i]
                 gix in start:stop || continue

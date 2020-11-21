@@ -83,3 +83,20 @@ else
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
+
+const L3CACHESIZE = Ref{Union{Int, Nothing}}(nothing)
+
+function l3cachesize()
+    if L3CACHESIZE[] === nothing
+        topology = Hwloc.topology_load()
+        caches = [t for t in topology if t.type_ == :L3Cache]
+        if isempty(caches)
+            @info "Could not dermine L3 CPU cache size: assuming 3MB. " *
+                  "Please report this to DataFrames developers."
+            L3CACHESIZE[] = 3_000_000
+        else
+            L3CACHESIZE[] = first(caches).attr.size
+        end
+    end
+    return L3CACHESIZE[]
+end
