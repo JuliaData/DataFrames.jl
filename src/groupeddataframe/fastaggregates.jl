@@ -165,18 +165,25 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     end
     nt = min(nthreads, Threads.nthreads())
     if nt <= 1 || axes(incol) != axes(groups)
-        @inbounds for i in eachindex(incol, groups)
-            gix = groups[i]
-            x = incol[i]
-            if gix > 0 && (condf === nothing || condf(x))
-                # this check should be optimized out if U is not Any
-                if eltype(res) === Any && !isassigned(res, gix)
-                    res[gix] = f(x, gix)
-                else
-                    res[gix] = op(res[gix], f(x, gix))
-                end
-                if adjust !== nothing || checkempty
-                    counts[gix] += 1
+        # Operate on array blocks smaller than 3MB so that they fit in the CPU cache
+        npasses = sizeof(res) ÷ 3_000_000
+        for j in 1:npasses
+            start = 1 + ((j - 1) * length(groups)) ÷ npasses
+            stop = (j * length(groups)) ÷ npasses
+            @inbounds for i in eachindex(incol, groups)
+                gix = groups[i]
+                gix in start:stop || continue
+                x = incol[i]
+                if gix > 0 && (condf === nothing || condf(x))
+                    # this check should be optimized out if U is not Any
+                    if eltype(res) === Any && !isassigned(res, gix)
+                        res[gix] = f(x, gix)
+                    else
+                        res[gix] = op(res[gix], f(x, gix))
+                    end
+                    if adjust !== nothing || checkempty
+                        counts[gix] += 1
+                    end
                 end
             end
         end
