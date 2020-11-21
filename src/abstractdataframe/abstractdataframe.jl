@@ -1741,21 +1741,50 @@ Return the number of rows or columns in an `AbstractDataFrame` `df`.
 
 See also [`size`](@ref).
 
+Additionally the `nrow` function is allowed in `select`, `select!`, `transform`,
+`transform!`, and `combine`, with a non-standard syntax. The additional
+transformation form rule is `nrow` or `nrow => target_col` which efficiently
+computes the number of rows in a group; without `target_col` the new column
+is called `:nrow`, otherwise it must be single name (as a `Symbol` or a
+string).
+
+See also [`proprow`](@ref).
+
 **Examples**
 
 ```jldoctest
-julia> df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10));
+julia> df = DataFrame(id = 1:6, y = repeat(["a", "b", "c"], 2))
 
 julia> size(df)
-(10, 3)
+(6, 2)
 
 julia> nrow(df)
-10
+6
 
 julia> ncol(df)
-3
-```
+2
 
+julia> transform(df, nrow)
+6×3 DataFrame
+ Row │ id     y       nrow
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           6
+   2 │     2  b           6
+   3 │     3  c           6
+   4 │     4  a           6
+   5 │     5  b           6
+   6 │     6  c           6
+
+julia> combine(groupby(df, :y), nrow)
+3×2 DataFrame
+ Row │ y       nrow
+     │ String  Int64
+─────┼───────────────
+   1 │ a           2
+   2 │ b           2
+   3 │ c           2
+```
 """
 (nrow, ncol)
 
