@@ -193,6 +193,79 @@ normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString
 normalize_selection(idx::AbstractIndex, sel::typeof(nrow), renamecols::Bool) =
     normalize_selection(idx, nrow => :nrow, renamecols)
 
+"""
+    proprow
+
+A function allowed to be used only in `select`, `select!`, `transform`,
+`transform!`, and `combine` to specify a transformation calculating row
+proportion.
+
+The allowed transformation form is `proprow` or `proprow => target_col` which
+efficiently computes the proportion of rows in a group; without `target_col`
+the new column is called `:proprow`, otherwise it must be single name (as a
+`Symbol` or a string).
+
+# Examples
+
+```
+julia> df = DataFrame(id=[1, 1, 2])
+3×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     1
+   3 │     2
+
+julia> combine(df, proprow)
+1×1 DataFrame
+ Row │ proprow
+     │ Float64
+─────┼─────────
+   1 │     1.0
+
+julia> transform(df, proprow)
+3×2 DataFrame
+ Row │ id     proprow
+     │ Int64  Float64
+─────┼────────────────
+   1 │     1      1.0
+   2 │     1      1.0
+   3 │     2      1.0
+
+julia> gdf = groupby(df, :id)
+GroupedDataFrame with 2 groups based on key: id
+First Group (2 rows): id = 1
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     1
+⋮
+Last Group (1 row): id = 2
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     2
+
+julia> combine(gdf, proprow)
+2×2 DataFrame
+ Row │ id     proprow
+     │ Int64  Float64
+─────┼─────────────────
+   1 │     1  0.666667
+   2 │     2  0.333333
+
+julia> transform(gdf, proprow)
+3×2 DataFrame
+ Row │ id     proprow
+     │ Int64  Float64
+─────┼─────────────────
+   1 │     1  0.666667
+   2 │     1  0.666667
+   3 │     2  0.333333
+```
+"""
 function proprow end
 
 _proprow() = 0
