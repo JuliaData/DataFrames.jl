@@ -57,7 +57,10 @@ each subset of the `DataFrame`. This specification can be of the following forms
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
    in a group; without `target_cols` the new column is called `:nrow`, otherwise
    it must be single name (as a `Symbol` or a string).
-6. vectors or matrices containing transformations specified by the `Pair` syntax
+6. a `proprow` or `proprow => target_cols` form which efficiently computes the proportion
+   of rows in a group; without `target_cols` the new column is called `:proprow`,
+   otherwise it must be single name (as a `Symbol` or a string).
+7. vectors or matrices containing transformations specified by the `Pair` syntax
    described in points 2 to 5
 8. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
@@ -203,14 +206,14 @@ julia> combine(gdf, :PetalLength => mean)
    2 │ Iris-versicolor             4.26
    3 │ Iris-virginica              5.552
 
-julia> combine(gdf, nrow)
-3×2 DataFrame
- Row │ Species          nrow
-     │ String           Int64
-─────┼────────────────────────
-   1 │ Iris-setosa         50
-   2 │ Iris-versicolor     50
-   3 │ Iris-virginica      50
+julia> combine(gdf, nrow, proprow)
+3×3 DataFrame
+ Row │ Species          nrow   proprow
+     │ String           Int64  Float64
+─────┼──────────────────────────────────
+   1 │ Iris-setosa         50  0.333333
+   2 │ Iris-versicolor     50  0.333333
+   3 │ Iris-virginica      50  0.333333
 
 julia> combine(gdf, nrow, :PetalLength => mean => :mean)
 3×3 DataFrame

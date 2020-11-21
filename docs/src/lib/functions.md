@@ -43,6 +43,7 @@ hcat
 insertcols!
 mapcols
 mapcols!
+proprow
 push!
 repeat
 repeat!

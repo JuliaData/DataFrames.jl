@@ -55,7 +55,10 @@ const TRANSFORMATION_COMMON_RULES =
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
        in a group; without `target_cols` the new column is called `:nrow`, otherwise
        it must be single name (as a `Symbol` or a string).
-    6. vectors or matrices containing transformations specified by the `Pair` syntax
+    6. a `proprow` or `proprow => target_cols` form which efficiently computes the proportion
+       of rows in a group; without `target_cols` the new column is called `:proprow`,
+       otherwise it must be single name (as a `Symbol` or a string).
+    7. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
     8. a function which will be called with a `SubDataFrame` corresponding to each group;
        this form should be avoided due to its poor performance unless a very large
@@ -190,6 +193,21 @@ normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString
 normalize_selection(idx::AbstractIndex, sel::typeof(nrow), renamecols::Bool) =
     normalize_selection(idx, nrow => :nrow, renamecols)
 
+function proprow end
+
+_proprow() = 0
+_proprow(x::AbstractVector) = length(x)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), Symbol},
+                    renamecols::Bool) =
+    length(idx) == 0 ? (Int[] => _proprow => last(sel)) : (1 => _proprow => last(sel))
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(proprow), renamecols::Bool) =
+    normalize_selection(idx, proprow => :proprow, renamecols)
+
+
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, renamecols::Bool)
     c = idx[sel]
     return c => identity => _names(idx)[c]
@@ -321,6 +339,18 @@ end
 
 _transformation_helper(df::AbstractDataFrame, col_idx::Nothing, fun) = fun(df)
 _transformation_helper(df::AbstractDataFrame, col_idx::Int, fun) = fun(df[!, col_idx])
+
+function _transformation_helper(df::AbstractDataFrame, col_idx::Int, fun::typeof(_proprow))
+    @assert col_idx == 1
+    nr = nrow(df)
+    return nr / nr
+end
+
+function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, fun::typeof(_proprow))
+    @assert isempty(col_idx) && isempty(df)
+    nr = nrow(df)
+    return nr / nr
+end
 
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 

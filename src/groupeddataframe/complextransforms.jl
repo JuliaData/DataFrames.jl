@@ -61,7 +61,14 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                                                            f, gd, incols, targetcolnames,
                                                            firstmulticol)
     end
-    return idx, outcols, collect(Symbol, finalcolnames)
+
+    if f === _proprow
+        @assert length(finalcolnames) == 1
+        @assert length(outcols) == 1
+        return idx, (outcols[1] ./ sum(outcols[1]),), (Symbol(finalcolnames[1]),)
+    else
+        return idx, outcols, collect(Symbol, finalcolnames)
+    end
 end
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
