@@ -12,7 +12,7 @@ other packages you can check-out the following resources
 * [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
 * [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
 * [JuliaCon 2019](https://github.com/bkamins/JuliaCon2019-DataFrames-Tutorial), [JuliaCon 2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial), and [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020) tutorials
-* [Showcasing DataFrames.jl](https://gist.github.com/bkamins/c6b7b536aefda6c2be67f133972a62e8) gist
+* [DataFrames.jl showcase](https://github.com/bkamins/DataFrames-Showcase)
 
 ## What is DataFrames.jl?
 
