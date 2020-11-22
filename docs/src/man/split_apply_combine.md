@@ -60,9 +60,12 @@ each subset of the `DataFrame`. This specification can be of the following forms
 6. a `proprow` or `proprow => target_cols` form which efficiently computes the proportion
    of rows in a group; without `target_cols` the new column is called `:proprow`,
    otherwise it must be single name (as a `Symbol` or a string).
-7. vectors or matrices containing transformations specified by the `Pair` syntax
+7. a `rownumber` or `rownumber => target_cols` form which creates a column containing
+   `collect(axes(sdf, 1))` vector per group; without `target_cols` the new column
+   is called `:rownumber`, otherwise it must be single name (as a `Symbol` or a string).
+8. vectors or matrices containing transformations specified by the `Pair` syntax
    described in points 2 to 5
-8. a function which will be called with a `SubDataFrame` corresponding to each group;
+9. a function which will be called with a `SubDataFrame` corresponding to each group;
    this form should be avoided due to its poor performance unless a very large
    number of columns are processed (in which case `SubDataFrame` avoids excessive
    compilation)

@@ -58,9 +58,12 @@ const TRANSFORMATION_COMMON_RULES =
     6. a `proprow` or `proprow => target_cols` form which efficiently computes the proportion
        of rows in a group; without `target_cols` the new column is called `:proprow`,
        otherwise it must be single name (as a `Symbol` or a string).
-    7. vectors or matrices containing transformations specified by the `Pair` syntax
+    7. a `rownumber` or `rownumber => target_cols` form which creates a column containing
+       `collect(axes(sdf, 1))` vector per group; without `target_cols` the new column
+       is called `:rownumber`, otherwise it must be single name (as a `Symbol` or a string).
+    8. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
-    8. a function which will be called with a `SubDataFrame` corresponding to each group;
+    9. a function which will be called with a `SubDataFrame` corresponding to each group;
        this form should be avoided due to its poor performance unless a very large
        number of columns are processed (in which case `SubDataFrame` avoids excessive
        compilation)
@@ -280,6 +283,15 @@ normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractStr
 normalize_selection(idx::AbstractIndex, sel::typeof(proprow), renamecols::Bool) =
     normalize_selection(idx, proprow => :proprow, renamecols)
 
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(rownumber), Symbol},
+                    renamecols::Bool) =
+    length(idx) == 0 ? (Int[] => (x -> Base.OneTo(0)) => last(sel)) :
+                       (1 => (x -> Base.OneTo(length(x))) => last(sel))
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(rownumber), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(rownumber), renamecols::Bool) =
+    normalize_selection(idx, rownumber => :rownumber, renamecols)
 
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, renamecols::Bool)
     c = idx[sel]

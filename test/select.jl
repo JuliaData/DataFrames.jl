@@ -1603,4 +1603,26 @@ end
     @test isequal_coltyped(df2, rename(transform(df, proprow => :a), :a => :proprow))
 end
 
+@testset "handling rownumber" begin
+    df = DataFrame(x = [1, 1, 1, 2, 3, 3], id = 1:6)
+
+    @test combine(df, rownumber) == combine(rownumber, df) ==
+          rename(combine(df, rownumber => :a), :a => :rownumber) ==
+          DataFrame(rownumber = 1:6)
+    @test transform(df, rownumber) == transform(rownumber, df) ==
+          rename(transform(df, rownumber => :a), :a => :rownumber) ==
+          DataFrame(x = df.x, id = df.id, rownumber = 1:6)
+
+    df = view(df, [], :)
+    df2 = combine(df, rownumber)
+    @test isequal_coltyped(df2, DataFrame(rownumber = Int[]))
+    @test isequal_coltyped(df2, combine(rownumber, df))
+    @test isequal_coltyped(df2, rename(combine(df, rownumber => :a), :a => :rownumber))
+
+    df2 = transform(df, rownumber)
+    @test isequal_coltyped(df2, DataFrame(x = Int[], id = Int[], rownumber = Int[]))
+    @test isequal_coltyped(df2, transform(rownumber, df))
+    @test isequal_coltyped(df2, rename(transform(df, rownumber => :a), :a => :rownumber))
+end
+
 end # module

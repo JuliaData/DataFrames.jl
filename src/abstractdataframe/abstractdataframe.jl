@@ -336,6 +336,72 @@ Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 
 """
+    rownumber(df::AbstractDataFrame)
+
+Return `axes(df, 1)`.
+
+See also [`axes`](@ref).
+
+Additionally the `rownumber` function is allowed in `select`, `select!`,
+`transform`, `transform!`, and `combine`, with a non-standard syntax. The
+additional transformation form rule is `rownumber` or `rownumber => target_col`
+which creates a column containing `collect(axes(df, 1))` vector; without
+`target_col` the new column is called `:rownumber`, otherwise it must be single
+name (as a `Symbol` or a string).
+
+
+# Examples
+
+```
+julia> df = DataFrame(id=[1, 1, 2])
+3×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     1
+   3 │     2
+
+julia> rownumber(df)
+Base.OneTo(3)
+
+julia> combine(df, rownumber)
+3×1 DataFrame
+ Row │ rownumber
+     │ Int64
+─────┼───────────
+   1 │         1
+   2 │         2
+   3 │         3
+
+julia> gdf = groupby(df, :id)
+GroupedDataFrame with 2 groups based on key: id
+First Group (2 rows): id = 1
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     1
+⋮
+Last Group (1 row): id = 2
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     2
+
+julia> combine(gdf, rownumber)
+3×2 DataFrame
+ Row │ id     rownumber
+     │ Int64  Int64
+─────┼──────────────────
+   1 │     1          1
+   2 │     1          2
+   3 │     2          1
+```
+"""
+rownumber(df::AbstractDataFrame) = axes(df, 1)
+
+"""
     ndims(::AbstractDataFrame)
     ndims(::Type{<:AbstractDataFrame})
 
