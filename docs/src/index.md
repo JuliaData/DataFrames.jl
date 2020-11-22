@@ -8,13 +8,11 @@ running with tabular data manipulation using the DataFrames.jl package.
 For more illustrations of DataFrames.jl usage, in particular in conjunction with
 other packages you can check-out the following resources
 (they are kept up to date with the released version of DataFrames.jl):
-* the [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/);
-* the [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/);
-* the [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames);
-* the [JuliaCon2019](https://github.com/bkamins/JuliaCon2019-DataFrames-Tutorial),
-  [JuliaCon2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial),
-  and [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020) tutorials;
-* the [Showcasing DataFrames.jl](https://gist.github.com/bkamins/c6b7b536aefda6c2be67f133972a62e8) gist.
+* [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/)
+* [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
+* [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
+* [JuliaCon 2019](https://github.com/bkamins/JuliaCon2019-DataFrames-Tutorial), [JuliaCon 2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial), and [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020) tutorials
+* [Showcasing DataFrames.jl](https://gist.github.com/bkamins/c6b7b536aefda6c2be67f133972a62e8) gist
 
 ## What is DataFrames.jl?
 
