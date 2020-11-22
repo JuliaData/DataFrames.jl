@@ -167,7 +167,7 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     if nt <= 1 || axes(incol) != axes(groups)
         # Operate on array blocks smaller than cache size
         npasses = max(1, sizeof(res) ÷ l3cachesize())
-        for j in 1:npasses
+        for j in 1:1
             start = 1 + ((j - 1) * n) ÷ npasses
             stop = (j * n) ÷ npasses
             @show start:stop
