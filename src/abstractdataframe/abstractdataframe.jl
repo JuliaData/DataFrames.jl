@@ -340,8 +340,6 @@ Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 
 Return `axes(df, 1)`.
 
-See also [`axes`](@ref).
-
 Additionally the `rownumber` function is allowed in `select`, `select!`,
 `transform`, `transform!`, and `combine`, with a non-standard syntax. The
 additional transformation form rule is `rownumber` or `rownumber => target_col`
