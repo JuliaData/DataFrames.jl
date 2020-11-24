@@ -1547,12 +1547,17 @@ Base.vcat(dfs::AbstractDataFrame...;
                       AbstractVector{<:AbstractString}}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
-Base.reduce(::typeof(vcat),
-            dfs::Union{AbstractVector{<:AbstractDataFrame},
-                       Tuple{Vararg{AbstractDataFrame}}};
+function Base.reduce(::typeof(vcat),
+            dfs::Union{AbstractVector{DF},
+                       Tuple{Vararg{DF}}};
             cols::Union{Symbol, AbstractVector{Symbol},
-                        AbstractVector{<:AbstractString}}=:setequal) =
-    _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
+                        AbstractVector{<:AbstractString}}=:setequal) where DF<:AbstractDataFrame
+    if @isdefined(DF) && isconcretetype(DF)
+        return _vcat(DF[df for df in dfs if ncol(df) != 0]; cols=cols)
+    else
+        return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+    end
+end
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
@@ -1586,13 +1591,15 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
 
         if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
-            filter!(u -> !issetequal(u, header), uniqueheaders)
+            let header=header     # julia #15276
+                filter!(u -> !issetequal(u, header), uniqueheaders)
+            end
             estrings = map(enumerate(uniqueheaders)) do (i, head)
                 matching = findall(h -> head == h, allheaders)
                 headerdiff = setdiff(coldiff, head)
-                cols = join(headerdiff, ", ", " and ")
+                badcols = join(headerdiff, ", ", " and ")
                 args = join(matching, ", ", " and ")
-                return "column(s) $cols are missing from argument(s) $args"
+                return "column(s) $badcols are missing from argument(s) $args"
             end
             throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
