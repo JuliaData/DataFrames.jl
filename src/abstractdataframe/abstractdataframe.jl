@@ -1547,24 +1547,18 @@ Base.vcat(dfs::AbstractDataFrame...;
                       AbstractVector{<:AbstractString}}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
-if Base.VERSION >= v"1.5"
-    function Base.reduce(::typeof(vcat),
-                         dfs::Union{AbstractVector{DF},Tuple{Vararg{DF}}};
-                         cols::Union{Symbol, AbstractVector{Symbol},
-                                     AbstractVector{<:AbstractString}}=:setequal) where DF<:AbstractDataFrame
-        if @isdefined(DF) && isconcretetype(DF)
-            return _vcat(DF[df for df in dfs if ncol(df) != 0]; cols=cols)
-        else
-            return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
-        end
+function Base.reduce(::typeof(vcat),
+                     dfs::Union{AbstractVector{<:AbstractDataFrame},
+                                Tuple{Vararg{AbstractDataFrame}}};
+                     cols::Union{Symbol, AbstractVector{Symbol},
+                     AbstractVector{<:AbstractString}}=:setequal)
+    isempty(dfs) && return _vcat(AbstractDataFrame[]; cols=cols)
+    DF = eltype(dfs)
+    if isconcretetype(DF)
+        return _vcat(DF[df for df in dfs if ncol(df) != 0]; cols=cols)
+    else
+        return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
     end
-else
-    Base.reduce(::typeof(vcat),
-                dfs::Union{AbstractVector{<:AbstractDataFrame},
-                           Tuple{Vararg{AbstractDataFrame}}};
-                cols::Union{Symbol, AbstractVector{Symbol},
-                AbstractVector{<:AbstractString}}=:setequal) =
-        _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 end
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
