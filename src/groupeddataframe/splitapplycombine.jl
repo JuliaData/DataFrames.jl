@@ -484,7 +484,7 @@ function prepare_idx_keeprows(idx::AbstractVector{<:Integer},
 end
 
 function _combine(gd::GroupedDataFrame,
-                  @nospecialize(cs_norm::Vector{Any}), optional_transform::Vector{Bool},
+                  cs_norm::Vector{Any}, optional_transform::Vector{Bool},
                   copycols::Bool, keeprows::Bool, renamecols::Bool)
     if isempty(cs_norm)
         if keeprows && nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
