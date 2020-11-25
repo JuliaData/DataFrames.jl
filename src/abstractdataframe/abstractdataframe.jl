@@ -1549,7 +1549,7 @@ Base.vcat(dfs::AbstractDataFrame...;
 
 function Base.reduce(::typeof(vcat),
                      dfs::Union{AbstractVector{<:AbstractDataFrame},
-                                Tuple{Vararg{AbstractDataFrame}}};
+                                Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
                      cols::Union{Symbol, AbstractVector{Symbol},
                      AbstractVector{<:AbstractString}}=:setequal)
     return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
