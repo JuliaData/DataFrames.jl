@@ -1023,7 +1023,7 @@ end
 
 _filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
 
-@inline function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame;
+@inline function Base.filter((cols, f)::Pair{AsTable}, df::AbstractDataFrame;
                              view::Bool=false)
     df_tmp = select(df, cols.cols, copycols=false)
     if ncol(df_tmp) == 0
