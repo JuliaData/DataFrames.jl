@@ -3299,4 +3299,12 @@ end
     end
 end
 
+@testset "invalid nthreads" begin
+    gdf = groupby(DataFrame(x=1:10, y=1:10), :y)
+    @test_throws ArgumentError select(gdf, :x => sum, nthreads=0)
+    @test_throws ArgumentError transform(gdf, :x => sum, nthreads=0)
+    @test_throws ArgumentError select!(gdf, :x => sum, nthreads=0)
+    @test_throws ArgumentError transform!(gdf, :x => sum, nthreads=0)
+end
+
 end # module

@@ -26,6 +26,9 @@ function _combine_prepare(gd::GroupedDataFrame,
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
+    if nthreads <= 0
+        throw(ArgumentError("nthreads must be equal to or greater than 1 (got $nthreads)"))
+    end
 
     cs_vec = []
     for p in cs
