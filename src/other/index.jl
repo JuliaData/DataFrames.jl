@@ -422,7 +422,7 @@ Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
     SubIndex(parent, parent[cols])
 
 Base.length(x::SubIndex) = length(x.cols)
-Base.names(x::SubIndex) = string.(_names(x))
+Base.names(x::SubIndex) = string.(_names(x))::Vector{String}
 _names(x::SubIndex) = view(_names(x.parent), x.cols)
 
 function Base.haskey(x::SubIndex, key::Symbol)
