@@ -22,7 +22,7 @@ function _combine_prepare(gd::GroupedDataFrame,
                           @nospecialize(cs::Union{Pair, Base.Callable,
                                         ColumnIndex, MultiColumnIndex}...);
                           keepkeys::Bool, ungroup::Bool, copycols::Bool,
-                          keeprows::Bool, renamecols::Bool, nthreads::Integer)
+                          keeprows::Bool, renamecols::Bool, nthreads::Int)
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
@@ -196,7 +196,7 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
                               idx_agg::Union{Nothing, AbstractVector{Int}},
-                              nthreads::Integer)
+                              nthreads::Int)
     @assert isagg(cs_i, gd)
     @assert !optional_i
     out_col_name = last(last(cs_i))
@@ -487,7 +487,7 @@ end
 
 function _combine(gd::GroupedDataFrame,
                   @nospecialize(cs_norm::Vector{Any}), optional_transform::Vector{Bool},
-                  copycols::Bool, keeprows::Bool, renamecols::Bool, nthreads::Integer)
+                  copycols::Bool, keeprows::Bool, renamecols::Bool, nthreads::Int)
     if isempty(cs_norm)
         if keeprows && nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
             throw(ArgumentError("select and transform do not support " *
@@ -624,7 +624,7 @@ end
 
 function combine(f::Base.Callable, gd::GroupedDataFrame;
                  keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-                 nthreads::Integer=1)
+                 nthreads::Int=1)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame"))
     end
@@ -634,7 +634,7 @@ end
 
 combine(f::Pair, gd::GroupedDataFrame;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-        nthreads::Integer=1) =
+        nthreads::Int=1) =
     throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame. " *
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
@@ -642,14 +642,14 @@ combine(f::Pair, gd::GroupedDataFrame;
 combine(gd::GroupedDataFrame,
         cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-        nthreads::Integer=1) =
+        nthreads::Int=1) =
     _combine_prepare(gd, cs..., keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols,
                      nthreads=nthreads)
 
 function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-                nthreads::Integer=1)
+                nthreads::Int=1)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -659,14 +659,14 @@ end
 
 
 select(gd::GroupedDataFrame, args...; copycols::Bool=true, keepkeys::Bool=true,
-       ungroup::Bool=true, renamecols::Bool=true, nthreads::Integer=1) =
+       ungroup::Bool=true, renamecols::Bool=true, nthreads::Int=1) =
     _combine_prepare(gd, args..., copycols=copycols, keepkeys=keepkeys,
                      ungroup=ungroup, keeprows=true, renamecols=renamecols,
                      nthreads=nthreads)
 
 function transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
                    keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-                   nthreads::Integer=1)
+                   nthreads::Int=1)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -676,7 +676,7 @@ end
 
 function transform(gd::GroupedDataFrame, args...; copycols::Bool=true,
                    keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-                   nthreads::Integer=1)
+                   nthreads::Int=1)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
                  ungroup=ungroup, renamecols=renamecols, nthreads=nthreads)
     # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
@@ -686,7 +686,7 @@ function transform(gd::GroupedDataFrame, args...; copycols::Bool=true,
 end
 
 function select!(f::Base.Callable, gd::GroupedDataFrame;
-                 ungroup::Bool=true, renamecols::Bool=true, nthreads::Integer=1)
+                 ungroup::Bool=true, renamecols::Bool=true, nthreads::Int=1)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -694,7 +694,7 @@ function select!(f::Base.Callable, gd::GroupedDataFrame;
 end
 
 function select!(gd::GroupedDataFrame{DataFrame}, args...;
-                 ungroup::Bool=true, renamecols::Bool=true, nthreads::Integer=1)
+                 ungroup::Bool=true, renamecols::Bool=true, nthreads::Int=1)
     newdf = select(gd, args..., copycols=false, renamecols=renamecols, nthreads=nthreads)
     df = parent(gd)
     _replace_columns!(df, newdf)
@@ -702,7 +702,7 @@ function select!(gd::GroupedDataFrame{DataFrame}, args...;
 end
 
 function transform!(f::Base.Callable, gd::GroupedDataFrame;
-                    ungroup::Bool=true, renamecols::Bool=true, nthreads::Integer=1)
+                    ungroup::Bool=true, renamecols::Bool=true, nthreads::Int=1)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -710,7 +710,7 @@ function transform!(f::Base.Callable, gd::GroupedDataFrame;
 end
 
 function transform!(gd::GroupedDataFrame{DataFrame}, args...;
-                    ungroup::Bool=true, renamecols::Bool=true, nthreads::Integer=1)
+                    ungroup::Bool=true, renamecols::Bool=true, nthreads::Int=1)
     newdf = select(gd, :, args..., copycols=false, renamecols=renamecols, nthreads=nthreads)
     df = parent(gd)
     select!(newdf, propertynames(df), :)

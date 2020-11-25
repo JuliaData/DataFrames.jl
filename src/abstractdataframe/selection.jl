@@ -644,10 +644,10 @@ end
     select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true)
     select(args::Callable, df::DataFrame; renamecols::Bool=true)
     select(gd::GroupedDataFrame, args...; copycols::Bool=true, keepkeys::Bool=true,
-           ungroup::Bool=true, renamecols::Bool=true, nthreads::Integer=1)
+           ungroup::Bool=true, renamecols::Bool=true, nthreads::Int=1)
     select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
            keepkeys::Bool=true, ungroup::Bool=true,
-           renamecols::Bool=true, nthreads::Integer=1)
+           renamecols::Bool=true, nthreads::Int=1)
 
 Create a new data frame that contains columns from `df` or `gd` specified by
 `args` and return it. The result is guaranteed to have the same number of rows
@@ -665,7 +665,7 @@ $TRANSFORMATION_COMMON_RULES
   data frame.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `nthreads::Integer=1` : the number of CPU threads to use. Passing a value higher than 1
+- `nthreads::Int=1` : the number of CPU threads to use. Passing a value higher than 1
   currently has an effect only for some optimized grouped reductions. Values higher than
   `Threads.nthreads()` will be replaced with that value.
 
@@ -863,10 +863,10 @@ end
     transform(f::Callable, df::DataFrame; renamecols::Bool=true)
     transform(gd::GroupedDataFrame, args...; copycols::Bool=true,
               keepkeys::Bool=true, ungroup::Bool=true,
-              renamecols::Bool=true, nthreads::Integer=1)
+              renamecols::Bool=true, nthreads::Int=1)
     transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
               keepkeys::Bool=true, ungroup::Bool=true,
-              renamecols::Bool=true, nthreads::Integer=1)
+              renamecols::Bool=true, nthreads::Int=1)
 
 Create a new data frame that contains columns from `df` or `gd` plus columns
 specified by `args` and return it. The result is guaranteed to have the same
@@ -883,7 +883,7 @@ $TRANSFORMATION_COMMON_RULES
   data frame.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `nthreads::Integer=1` : the number of CPU threads to use. Passing a value higher than 1
+- `nthreads::Int=1` : the number of CPU threads to use. Passing a value higher than 1
   currently has an effect only for some optimized grouped reductions. Values higher than
   `Threads.nthreads()` will be replaced with that value.
 
@@ -934,10 +934,10 @@ end
     combine(f::Callable, df::AbstractDataFrame; renamecols::Bool=true)
     combine(gd::GroupedDataFrame, args...;
             keepkeys::Bool=true, ungroup::Bool=true,
-            renamecols::Bool=true, nthreads::Integer=1)
+            renamecols::Bool=true, nthreads::Int=1)
     combine(f::Base.Callable, gd::GroupedDataFrame;
             keepkeys::Bool=true, ungroup::Bool=true,
-            renamecols::Bool=true, nthreads::Integer=1)
+            renamecols::Bool=true, nthreads::Int=1)
 
 Create a new data frame that contains columns from `df` or `gd` specified by
 `args` and return it. The result can have any number of rows that is determined
@@ -952,7 +952,7 @@ $TRANSFORMATION_COMMON_RULES
   data frame.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `nthreads::Integer=1` : the number of CPU threads to use. Passing a value higher than 1
+- `nthreads::Int=1` : the number of CPU threads to use. Passing a value higher than 1
   currently has an effect only for some optimized grouped reductions. Values higher than
   `Threads.nthreads()` will be replaced with that value.
 

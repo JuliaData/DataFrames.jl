@@ -157,7 +157,7 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
 end
 
 function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
-                      incol::AbstractVector, gd::GroupedDataFrame, nthreads::Integer)
+                      incol::AbstractVector, gd::GroupedDataFrame, nthreads::Int)
     n = length(gd)
     groups = gd.groups
     if adjust !== nothing || checkempty
@@ -279,18 +279,18 @@ end
 # function barrier works around type instability of groupreduce_init due to applicable
 groupreduce(f, op, condf, adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame,
-            nthreads::Integer) =
+            nthreads::Int) =
     groupreduce!(groupreduce_init(op, condf, adjust, incol, gd),
                  f, op, condf, adjust, checkempty, incol, gd, nthreads)
 # Avoids the overhead due to Missing when computing reduction
 groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
             incol::AbstractVector, gd::GroupedDataFrame,
-            nthreads::Integer) =
+            nthreads::Int) =
     groupreduce!(disallowmissing(groupreduce_init(op, condf, adjust, incol, gd)),
                  f, op, condf, adjust, checkempty, incol, gd, nthreads)
 
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame;
-            nthreads::Integer=1) =
+            nthreads::Int=1) =
     groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd, nthreads)
 
 # this definition is missing in Julia 1.0 LTS and is required by aggregation for var
@@ -300,7 +300,7 @@ if VERSION < v"1.1"
 end
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                       nthreads::Integer=1)
+                                       nthreads::Int=1)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false,
                         incol, gd, nthreads)
     # !ismissing check is purely an optimization to avoid a copy later
@@ -316,7 +316,7 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                       nthreads::Integer=1)
+                                       nthreads::Int=1)
     outcol = Aggregate(var, agg.condf)(incol, gd; nthreads=nthreads)
     if eltype(outcol) <: Union{Missing, Rational}
         return sqrt.(outcol)
@@ -329,7 +329,7 @@ for f in (:first, :last)
     # Without using @eval the presence of a keyword argument triggers a Julia bug
     @eval begin
         function (agg::Aggregate{typeof($f)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                              nthreads::Integer=1)
+                                              nthreads::Int=1)
             n = length(gd)
             outcol = similar(incol, n)
             fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
@@ -343,7 +343,7 @@ for f in (:first, :last)
 end
 
 function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                          nthreads::Integer=1)
+                                          nthreads::Int=1)
     if getfield(gd, :idx) === nothing
         lens = zeros(Int, length(gd))
         @inbounds for gix in gd.groups
