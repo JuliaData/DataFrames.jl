@@ -129,3 +129,9 @@ pairs
 ```@docs
 isapprox
 ```
+
+## Multithreading
+```@docs
+DataFrames.nthreads
+DataFrames.nthreads!
+```

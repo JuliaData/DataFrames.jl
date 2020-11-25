@@ -290,7 +290,7 @@ groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
                  f, op, condf, adjust, checkempty, incol, gd, nthreads)
 
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame;
-            nthreads::Int=1) =
+            nthreads::Int=nthreads()) =
     groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd, nthreads)
 
 # this definition is missing in Julia 1.0 LTS and is required by aggregation for var
@@ -300,7 +300,7 @@ if VERSION < v"1.1"
 end
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                       nthreads::Int=1)
+                                       nthreads::Int=nthreads())
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false,
                         incol, gd, nthreads)
     # !ismissing check is purely an optimization to avoid a copy later
@@ -316,7 +316,7 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                       nthreads::Int=1)
+                                       nthreads::Int=nthreads())
     outcol = Aggregate(var, agg.condf)(incol, gd; nthreads=nthreads)
     if eltype(outcol) <: Union{Missing, Rational}
         return sqrt.(outcol)
@@ -329,7 +329,7 @@ for f in (:first, :last)
     # Without using @eval the presence of a keyword argument triggers a Julia bug
     @eval begin
         function (agg::Aggregate{typeof($f)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                              nthreads::Int=1)
+                                              nthreads::Int=nthreads())
             n = length(gd)
             outcol = similar(incol, n)
             fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
@@ -343,7 +343,7 @@ for f in (:first, :last)
 end
 
 function (agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame;
-                                          nthreads::Int=1)
+                                          nthreads::Int=nthreads())
     if getfield(gd, :idx) === nothing
         lens = zeros(Int, length(gd))
         @inbounds for gix in gd.groups

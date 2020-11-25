@@ -83,3 +83,28 @@ else
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
+
+const NTHREADS = Ref(1)
+
+"""
+    DataFrames.nthreads()
+
+Return the default value for the `nthreads` argument, which determines the number
+of CPU threads used by functions that support it when not specified explicitly.
+
+Defaults to 1. Call [`DataFrames.nthreads!`](@ref) to adjust the value.
+"""
+nthreads() = DataFrames.NTHREADS[]
+
+"""
+    DataFrames.nthreads!(n::Int)
+
+Set to `n` the default value for the `nthreads` argument, which determines the number
+of CPU threads used by functions that support it when not specified explicitly.
+
+Use [`DataFrames.nthreads`](@ref) to access the value.
+"""
+function nthreads!(n::Int)
+    n > 0 || throw(ArgumentError("n must be equal to or greater than 1 (got $n)"))
+    DataFrames.NTHREADS[] = n
+end

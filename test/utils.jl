@@ -94,4 +94,14 @@ end
           :sum_skipmissing_div12
 end
 
+@test "nthreads and nthreads!" begin
+    @test DataFrames.nthreads() == 1
+    @test DataFrames.nthreads!(2) == 2
+    @test DataFrames.nthreads() == 2
+    @test DataFrames.nthreads!(1) == 1 # reset to default
+    @test_throws ArgumentError DataFrames.nthreads!(0)
+    @test DataFrames.nthreads() == 1
+end
+end
+
 end # module
