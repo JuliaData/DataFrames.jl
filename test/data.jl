@@ -195,6 +195,7 @@ end
         @test fun(view(df, 1:2, 1:2), view=true) isa SubDataFrame
         @test fun(view(df, 1:2, 1:2), view=true) == fun(view(df, 1:2, 1:2))
     end
+    @test_throws ArgumentError dropmissing(df, view=true, disallowmissing=true)
 end
 
 @testset "merge" begin

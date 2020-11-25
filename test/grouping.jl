@@ -1060,6 +1060,8 @@ end
 
 @testset "iteration protocol" begin
     gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+    @test IndexStyle(gd) == IndexLinear()
+    @test IndexStyle(typeof(gd)) == IndexLinear()
     count = 0
     for v in gd
         count += 1
@@ -1470,6 +1472,10 @@ end
     gd = groupby_checked(df, [:a, :b])
 
     @test gd[1] == DataFrame(a=[:A, :A], b=[1, 1], c=[1, 4])
+
+    @test gd[Any[Dict("a" => :A, "b" => 1)]] == gd[[Dict("a" => :A, "b" => 1)]] ==
+          gd[[(a=:A, b=1)]]
+    @test haskey(gd, Dict("a" => :A, "b" => 1))
 
     @test map(NamedTuple, keys(gd)) ≅
         [(a=:A, b=1), (a=:B, b=1), (a=missing, b=1), (a=:A, b=2), (a=:B, b=2), (a=missing, b=2)]
@@ -3222,6 +3228,49 @@ end
               DataFrames.hashrows((x1,), true) ==
               DataFrames.hashrows((x2,), true)
     end
+end
+
+@testset "corner cases of wrong transformation" begin
+    df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6)
+    gdf = groupby_checked(df, :id)
+    @test_throws ArgumentError combine(gdf, :x, :x)
+    @test_throws ErrorException combine(gdf, :x => (x -> Dict("a" => [1])) => AsTable)
+    @test_throws ErrorException combine(gdf, :x => (x -> Dict(:a => 1)) => AsTable)
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? Ref(1) : [1])
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 2 ? Ref(1) : [1])
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? (a=1, b=2) : (a=1,))
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? (a=1, b=2) : (a=1, c=2))
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? (a=[1], b=[2]) : (a=[1],))
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? (a=[1], b=[2]) : (a=[1], c=[2]))
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? (a=[1], b=[2]) : (a=1,))
+    @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 2 ? (a=[1], b=[2]) : (a=1,))
+    @test_throws ArgumentError combine(gdf, :id => (x -> x[1] == 1 ? [[1, 2]] : [[1]]) => AsTable)
+    @test_throws ArgumentError combine(gdf, :id => (x -> x[1] == 1 ? [[1]] : [[1]]) => [:a, :b])
+    @test_throws ArgumentError combine(gdf, :x, :id => (x -> fill([1], length(x))) => [:x])
+    @test select(gdf, [:x], :id => (x -> fill([1], length(x))) => [:x]) ==
+          DataFrame(id=df.id, x=1)
+    @test_throws ArgumentError select(gdf, x -> [1, 2])
+
+    df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=categorical(1:6, ordered=true))
+    gdf = groupby_checked(df, :id)
+    @test combine(gdf, :x => minimum => :x) == df[[1, 3, 4], :]
+end
+
+@testset "select and transform! tests with leading function" begin
+    df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6)
+    gdf = groupby_checked(df, :id)
+    df2 = select(sdf -> sdf.id .* sdf.x, gdf)
+    @test df2 == DataFrame(id=df.id, x1=df.id .* df.x)
+    select!(sdf -> sdf.id .* sdf.x, gdf)
+    @test df == df2
+
+    df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6)
+    gdf = groupby_checked(df, :id)
+    df2 = transform(sdf -> sdf.id .* sdf.x, gdf)
+    @test df2 == DataFrame(id=df.id, x=df.x, x1=df.id .* df.x)
+    transform!(sdf -> sdf.id .* sdf.x, gdf)
+    @test df == df2
+
 end
 
 end # module

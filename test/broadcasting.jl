@@ -51,6 +51,9 @@ end
     @test (df1 .- df2) == DataFrame(zeros(size(refdf)), names(refdf))
     @test (df1 .* df2) == refdf .^ 2
     @test (df1 ./ df2) == DataFrame(ones(size(refdf)), names(refdf))
+
+    @test_throws ArgumentError DataFrame(a=1, b=1) .+ DataFrame(b=1, a=1)
+    @test DataFrame() .+ DataFrame() == DataFrame()
 end
 
 @testset "broadcasting of AbstractDataFrame objects thrown exceptions" begin
@@ -133,6 +136,12 @@ end
 end
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
+    df = DataFrame(a=1, b=2)
+    @test_throws ArgumentError df .= DataFrame(b=1, a=2)
+    @test_throws ArgumentError df .= DataFrame(a=1, c=2)
+    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(b=1, a=2)
+    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(a=1, c=2)
+
     df = copy(refdf)
     df[!, 1] .+= 1
     @test df.x1 == [2.5, 3.5, 4.5]

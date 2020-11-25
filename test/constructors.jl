@@ -29,6 +29,9 @@ const ≅ = isequal
     @test df2.x1 === vecvec[1]
     @test df2.x2 === vecvec[2]
 
+    @test_throws ArgumentError DataFrame([[1, 2]], :autos)
+    @test_throws ArgumentError DataFrame([1 2], :autos)
+
     for copycolsarg in (true, false)
         @test df == DataFrame(vecvec, :auto, copycols=copycolsarg)
         @test df == DataFrame(collect(Any, vecvec), :auto, copycols=copycolsarg)
@@ -163,6 +166,11 @@ end
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
     @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
     @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
+    @test_throws DimensionMismatch isapprox(DataFrame(a=1), DataFrame(a=[1,2]))
+    @test_throws ArgumentError isapprox(DataFrame(a=1), DataFrame(b=1))
+    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]))
+    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.09)
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.11)
 
     df = DataFrame(:type => [], :begin => [])
     @test propertynames(df) == [:type, :begin]

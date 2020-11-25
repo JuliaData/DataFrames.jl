@@ -1581,4 +1581,21 @@ end
     end
 end
 
+@testset "selection special cases" begin
+    df = DataFrame(a=1)
+    @test_throws ArgumentError select(df, '1' => sum => "b")
+    @test_throws ArgumentError select(df, '1' => sum)
+    @test select(df, ["a", "a"] => (+) => "b") == DataFrame(b=2)
+    @test_throws ArgumentError combine(df, :a => (x -> (a=1, b=[2])) => AsTable)
+    @test_throws ArgumentError combine(:, df)
+    @test_throws ArgumentError select(:, df)
+    @test_throws ArgumentError select!(:, df)
+    @test_throws ArgumentError transform(:, df)
+    @test_throws ArgumentError transform!(:, df)
+    @test combine(df, :a => (x -> 1) => :x1, :a => (x -> [1, 2]) => :x2) ==
+          DataFrame(x1=1, x2=[1, 2])
+    @test isequal_coltyped(combine(df, :a => (x -> 1) => :x1, :a => (x -> []) => :x2),
+                           DataFrame(x1=Int[], x2=[]))
+end
+
 end # module

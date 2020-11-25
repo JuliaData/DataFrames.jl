@@ -283,4 +283,18 @@ end
     @test view(s2, 1:1:2, :) == view(df, [1, 3], :)
 end
 
+@testset "SubDataFrame corner cases" begin
+    df = DataFrame(a=[1, 2], b=[3, 4])
+    @test_throws ArgumentError SubDataFrame(df, Integer[true], 1)
+    @test_throws ArgumentError SubDataFrame(df, [true], 1)
+
+    sdf = @view df[:, :]
+    @test_throws ArgumentError SubDataFrame(sdf, true, 1)
+    @test_throws ArgumentError SubDataFrame(sdf, true, :)
+    @test_throws ArgumentError SubDataFrame(sdf, Integer[true], 1)
+
+    # this is an error in Julia Base
+    SubDataFrame(sdf, Integer[true, true, true], :) == SubDataFrame(sdf, [1, 1, 1], :)
+end
+
 end # module
