@@ -1552,16 +1552,10 @@ function Base.reduce(::typeof(vcat),
                                 Tuple{Vararg{AbstractDataFrame}}};
                      cols::Union{Symbol, AbstractVector{Symbol},
                      AbstractVector{<:AbstractString}}=:setequal)
-    isempty(dfs) && return _vcat(AbstractDataFrame[]; cols=cols)
-    DF = eltype(dfs)
-    if isconcretetype(DF)
-        return _vcat(DF[df for df in dfs if ncol(df) != 0]; cols=cols)
-    else
-        return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
-    end
+    return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
 end
 
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
+function _vcat(dfs::AbstractVector{AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
                            AbstractVector{<:AbstractString}}=:setequal)
 
