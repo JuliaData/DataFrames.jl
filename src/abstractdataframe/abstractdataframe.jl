@@ -563,7 +563,7 @@ DataAPI.describe(df::AbstractDataFrame,
 
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
     _describe(select(df, cols, copycols=false),
-              Any[:mean, :min, :median, :max, :nmissing, :eltype])
+              [:mean, :min, :median, :max, :nmissing, :eltype])
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
