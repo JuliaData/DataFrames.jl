@@ -652,7 +652,6 @@ end
     sdf = stack(df, [:b, :c], view=true)
     @test reverse(sdf.a) == reverse(copy(sdf.a))
     @test IndexStyle(DataFrames.StackedVector) == IndexLinear()
-    sdf.value
 end
 
 end # module

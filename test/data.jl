@@ -536,4 +536,15 @@ end
     @test eltype(df.b) <: String
 end
 
+@testset "isapprox" begin
+    df = DataFrame([:x1 => zeros(3), :x2 => ones(3)])
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
+    @test_throws DimensionMismatch isapprox(DataFrame(a=1), DataFrame(a=[1,2]))
+    @test_throws ArgumentError isapprox(DataFrame(a=1), DataFrame(b=1))
+    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]))
+    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.09)
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.11)
+end
+
 end # module

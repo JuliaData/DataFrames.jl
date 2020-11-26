@@ -51,9 +51,6 @@ end
     @test (df1 .- df2) == DataFrame(zeros(size(refdf)), names(refdf))
     @test (df1 .* df2) == refdf .^ 2
     @test (df1 ./ df2) == DataFrame(ones(size(refdf)), names(refdf))
-
-    @test_throws ArgumentError DataFrame(a=1, b=1) .+ DataFrame(b=1, a=1)
-    @test DataFrame() .+ DataFrame() == DataFrame()
 end
 
 @testset "broadcasting of AbstractDataFrame objects thrown exceptions" begin
@@ -76,7 +73,7 @@ end
     @test_throws ArgumentError df .+ 1 .+ df2
 end
 
-@testset "broadcasting expansion" begin
+@testset "broadcasting data frames" begin
     df1 = DataFrame(x=1, y=2)
     df2 = DataFrame(x=[1, 11], y=[2, 12])
     @test df1 .+ df2 == DataFrame(x=[2, 12], y=[4, 14])
@@ -94,6 +91,15 @@ end
     dfv = view(df, 1:1, 1:2)
     df .-= dfv
     @test df == DataFrame(x=[0, 10], y=[0, 10])
+
+    @test DataFrame() .+ DataFrame() == DataFrame()
+    @test_throws ArgumentError DataFrame(a=1, b=1) .+ DataFrame(b=1, a=1)
+
+    df = DataFrame(a=1, b=2)
+    @test_throws ArgumentError df .= DataFrame(b=1, a=2)
+    @test_throws ArgumentError df .= DataFrame(a=1, c=2)
+    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(b=1, a=2)
+    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(a=1, c=2)
 end
 
 @testset "broadcasting of AbstractDataFrame objects corner cases" begin
@@ -136,12 +142,6 @@ end
 end
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
-    df = DataFrame(a=1, b=2)
-    @test_throws ArgumentError df .= DataFrame(b=1, a=2)
-    @test_throws ArgumentError df .= DataFrame(a=1, c=2)
-    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(b=1, a=2)
-    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(a=1, c=2)
-
     df = copy(refdf)
     df[!, 1] .+= 1
     @test df.x1 == [2.5, 3.5, 4.5]

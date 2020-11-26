@@ -50,7 +50,6 @@ end
     sdf = view(df, [5, 3], [3, 1, 2])
 
     r = DataFrameRow(df, 2, :)
-    @test_throws ArgumentError r .+ 1
     @test r[:] === r
     @test r[r""] ≅ r
     @test view(r, :) === r
@@ -125,6 +124,7 @@ end
     df2 = DataFrame(a = [1, 2, 3])
 
     @test !isequal(DataFrameRow(df, 1, :), DataFrameRow(df2, 1, :))
+    @test isequal(DataFrame(a=missing)[1, :], DataFrame(a=missing)[1, :])
     @test DataFrameRow(df, 1, :) != DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, big(1), :)
@@ -580,6 +580,11 @@ end
         @test parentindices(r) == (i + 1, 1:3)
         @test parent(r) === df
     end
+end
+
+@testset "broadcasting" begin
+    r = DataFrame(a=1)[1, :]
+    @test_throws ArgumentError r .+ 1
 end
 
 end # module
