@@ -344,10 +344,10 @@ DataFrame(matrix::Matrix) =
                         "passing :auto as a second argument to automatically " *
                         "generate column names: `DataFrame(matrix, :auto)`"))
 
-DataFrame(matrix::Vector{<:AbstractVector}) =
+DataFrame(vecs::Vector{<:AbstractVector}) =
     throw(ArgumentError("`DataFrame` constructor from a `Vector` of vectors requires " *
                         "passing :auto as a second argument to automatically " *
-                        "generate column names: `DataFrame(matrix, :auto)`"))
+                        "generate column names: `DataFrame(vecs, :auto)`"))
 
 DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
           nrows::Integer=0; makeunique::Bool=false) where T<:Type =
