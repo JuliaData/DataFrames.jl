@@ -3,8 +3,8 @@ module TestDeprecated
 using Test, DataFrames
 
 @testset "by and aggregate" begin
-    @test_throws by()
-    @test_throws aggregate()
+    @test_throws ArgumentError by()
+    @test_throws ArgumentError aggregate()
 end
 
 @testset "All indexing" begin
