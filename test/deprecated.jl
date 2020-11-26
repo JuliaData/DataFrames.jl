@@ -2,6 +2,11 @@ module TestDeprecated
 
 using Test, DataFrames
 
+@testset "by and aggregate" begin
+    @test_throws by()
+    @test_throws aggregate()
+end
+
 @testset "All indexing" begin
     df = DataFrame(a=1, b=2, c=3)
 

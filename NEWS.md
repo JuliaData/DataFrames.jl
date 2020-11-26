@@ -6,9 +6,6 @@
 
 ## Bug fixes
 
-* fixed bug when displaying floating point columns with eltype turned off in
-  text/plain ([2542](https://github.com/JuliaData/DataFrames.jl/pull/2542))
-
 ## New functionalities
 
 
