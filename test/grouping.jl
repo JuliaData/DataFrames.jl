@@ -3256,7 +3256,7 @@ end
     @test combine(gdf, :x => minimum => :x) == df[[1, 3, 4], :]
 end
 
-@testset "select and transform! tests with leading function" begin
+@testset "select and transform! tests with function as first argument" begin
     df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6)
     gdf = groupby_checked(df, :id)
     df2 = select(sdf -> sdf.id .* sdf.x, gdf)
@@ -3270,7 +3270,6 @@ end
     @test df2 == DataFrame(id=df.id, x=df.x, x1=df.id .* df.x)
     transform!(sdf -> sdf.id .* sdf.x, gdf)
     @test df == df2
-
 end
 
 end # module
