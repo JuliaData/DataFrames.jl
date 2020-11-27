@@ -30,16 +30,18 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     @test DataFrameRow(sdf, 2, :) == sdf[2, :] == view(sdf, 2, :)
     @test DataFrameRow(df, 3, 2:3) === df[3, 2:3]
     @test view(df, 3, 2:3) === df[3, 2:3]
-    @test_throws ArgumentError DataFrameRow(df, 1, :a)
-    @test_throws ArgumentError DataFrameRow(df, 1, 1)
-    @test_throws BoundsError DataFrameRow(df, 1, 1:10)
-    @test_throws BoundsError DataFrameRow(df, 1, [1:10;])
-    @test_throws BoundsError DataFrameRow(df, 100, 1:2)
-    @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
-    @test_throws BoundsError DataFrameRow(df, 100, :)
-    @test_throws BoundsError DataFrameRow(df, 100)
-    @test_throws ArgumentError DataFrameRow(df, true, 1:2)
-    @test_throws ArgumentError DataFrameRow(df, true)
+    for x in (df, sdf)
+        @test_throws ArgumentError DataFrameRow(x, 1, :a)
+        @test_throws ArgumentError DataFrameRow(x, 1, 1)
+        @test_throws BoundsError DataFrameRow(x, 1, 1:10)
+        @test_throws BoundsError DataFrameRow(x, 1, [1:10;])
+        @test_throws BoundsError DataFrameRow(x, 100, 1:2)
+        @test_throws BoundsError DataFrameRow(x, 100, [1:2;])
+        @test_throws BoundsError DataFrameRow(x, 100, :)
+        @test_throws BoundsError DataFrameRow(x, 100)
+        @test_throws ArgumentError DataFrameRow(x, true, 1:2)
+        @test_throws ArgumentError DataFrameRow(x, true)
+    end
     @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
 end
 
@@ -121,6 +123,8 @@ end
     df = deepcopy(ref_df)
     df2 = DataFrame(a = [1, 2, 3])
 
+    @test !isequal(DataFrameRow(df, 1, :), DataFrameRow(df2, 1, :))
+    @test isequal(DataFrame(a=missing)[1, :], DataFrame(a=missing)[1, :])
     @test DataFrameRow(df, 1, :) != DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, big(1), :)
@@ -396,6 +400,7 @@ end
 
     @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
     @test push!(df, df[1, [2, 1]], cols=:setequal) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    @test_throws ArgumentError push!(df, df[1, [2, 1]], cols=:setequals)
 
     push!(df, df[1, [2, 1]], cols=:intersect)
     @test df == DataFrame(x=[1, 1, 1, 1], y=[2, 2, 2, 2])
@@ -575,6 +580,11 @@ end
         @test parentindices(r) == (i + 1, 1:3)
         @test parent(r) === df
     end
+end
+
+@testset "broadcasting" begin
+    r = DataFrame(a=1)[1, :]
+    @test_throws ArgumentError r .+ 1
 end
 
 end # module

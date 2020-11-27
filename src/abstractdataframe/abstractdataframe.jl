@@ -1018,7 +1018,7 @@ end
 
 _filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
 
-@inline function Base.filter((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame;
+@inline function Base.filter((cols, f)::Pair{AsTable}, df::AbstractDataFrame;
                              view::Bool=false)
     df_tmp = select(df, cols.cols, copycols=false)
     if ncol(df_tmp) == 0
@@ -1542,14 +1542,15 @@ Base.vcat(dfs::AbstractDataFrame...;
                       AbstractVector{<:AbstractString}}=:setequal) =
     reduce(vcat, dfs; cols=cols)
 
-Base.reduce(::typeof(vcat),
-            dfs::Union{AbstractVector{<:AbstractDataFrame},
-                       Tuple{Vararg{AbstractDataFrame}}};
-            cols::Union{Symbol, AbstractVector{Symbol},
-                        AbstractVector{<:AbstractString}}=:setequal) =
-    _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
+function Base.reduce(::typeof(vcat),
+                     dfs::Union{AbstractVector{<:AbstractDataFrame},
+                                Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
+                     cols::Union{Symbol, AbstractVector{Symbol},
+                     AbstractVector{<:AbstractString}}=:setequal)
+    return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+end
 
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
+function _vcat(dfs::AbstractVector{AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
                            AbstractVector{<:AbstractString}}=:setequal)
 
@@ -1581,13 +1582,15 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
 
         if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
-            filter!(u -> !issetequal(u, header), uniqueheaders)
+            let header=header     # julia #15276
+                filter!(u -> !issetequal(u, header), uniqueheaders)
+            end
             estrings = map(enumerate(uniqueheaders)) do (i, head)
                 matching = findall(h -> head == h, allheaders)
                 headerdiff = setdiff(coldiff, head)
-                cols = join(headerdiff, ", ", " and ")
+                badcols = join(headerdiff, ", ", " and ")
                 args = join(matching, ", ", " and ")
-                return "column(s) $cols are missing from argument(s) $args"
+                return "column(s) $badcols are missing from argument(s) $args"
             end
             throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
@@ -1990,3 +1993,11 @@ function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector,
         counter += l
     end
 end
+
+# Disallowed operations that are a common mistake
+
+Base.getindex(::AbstractDataFrame, ::Union{Symbol, Integer, AbstractString}) =
+    throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
+
+Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractString}) =
+    throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))

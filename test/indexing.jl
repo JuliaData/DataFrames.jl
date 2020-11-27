@@ -38,6 +38,7 @@ using Test, DataFrames
     @test parent(df[1, Not([])]) === df
     @test_throws ArgumentError df[true, 1]
     @test_throws ArgumentError df[true, 1:2]
+    @test_throws BoundsError df[5, "a"]
 
     @test df[1:2, 1] == [1, 2]
     @test df[1:2, 1:2] == DataFrame(a=1:2, b=4:5)
@@ -1741,14 +1742,14 @@ end
 @testset "unsupported df[col] and df[col] for getindex, view, and setindex!" begin
     @testset "getindex DataFrame" begin
         df = DataFrame(a=1:3, b=4:6, c=7:9)
-        @test_throws MethodError df[1]
+        @test_throws ArgumentError df[1]
         @test_throws MethodError df[end]
         @test_throws MethodError df[1:2]
         @test_throws MethodError df[r"[ab]"]
         @test_throws MethodError df[Not(3)]
         @test_throws MethodError df[:]
-        @test_throws MethodError df[:a]
-        @test_throws MethodError df["a"]
+        @test_throws ArgumentError df[:a]
+        @test_throws ArgumentError df["a"]
     end
     @testset "view DataFrame" begin
         df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -1763,10 +1764,10 @@ end
     @testset "getindex SubDataFrame" begin
         df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
         sdf = view(df, 2:4, 2:4)
-        @test_throws MethodError sdf[1]
+        @test_throws ArgumentError sdf[1]
         @test_throws MethodError sdf[end]
-        @test_throws MethodError sdf["x"]
-        @test_throws MethodError sdf[:x]
+        @test_throws ArgumentError sdf[:x]
+        @test_throws ArgumentError sdf["x"]
         @test_throws MethodError sdf[1:2]
         @test_throws MethodError sdf[r"[ab]"]
         @test_throws MethodError sdf[Not(Not(r"[ab]"))]
@@ -1800,7 +1801,7 @@ end
 
         # Broadcasting assignment of columns
         @test_throws MethodError df[:, 1] = 1
-        @test_throws MethodError df[:x3] = 2
+        @test_throws ArgumentError df[:x3] = 2
 
         # assignment of subtables
         @test_throws MethodError df[1, 1:2] = df[2:2, 2:3]
@@ -1846,6 +1847,16 @@ end
     @test_throws ArgumentError dfv."a" = [1]
     @test_throws ArgumentError dfv.a = 1
     @test_throws ArgumentError dfv."a" = 1
+end
+
+@testset "disallowed getindex and setindex! methods" begin
+    df = DataFrame(a=1)
+    @test_throws ArgumentError df[:a]
+    @test_throws ArgumentError df[:a] = [2]
+    @test_throws ArgumentError df["a"]
+    @test_throws ArgumentError df["a"] = [2]
+    @test_throws ArgumentError df[1]
+    @test_throws ArgumentError df[1] = [2]
 end
 
 end # module
