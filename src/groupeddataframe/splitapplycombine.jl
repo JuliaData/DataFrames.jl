@@ -37,6 +37,16 @@ function _combine_prepare(gd::GroupedDataFrame,
             push!(cs_vec, p)
         end
     end
+    return _combine_prepare(gd, cs_vec, keepkeys, ungroup, copycols, keeprows, renamecols)
+end
+
+# This is split from the above to reduce the argument type-diversity and thus the need for multiple inference
+# specialization of the bulk of the method. (@nospecialize only directly affects codegen, not the running of inference,
+# although it can indirectly affect inference by eliminating specialization of call sites.)
+function _combine_prepare(gd::GroupedDataFrame,
+                          cs_vec::Vector{Any},
+                          keepkeys::Bool, ungroup::Bool, copycols::Bool,
+                          keeprows::Bool, renamecols::Bool)
     if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
         x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
         # an explicit error is thrown as this was allowed in the past

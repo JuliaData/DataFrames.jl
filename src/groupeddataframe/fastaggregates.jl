@@ -159,6 +159,7 @@ end
 function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
                       incol::AbstractVector, gd::GroupedDataFrame)
     n = length(gd)
+    counts = nothing
     if adjust !== nothing || checkempty
         counts = zeros(Int, n)
     end
@@ -193,6 +194,12 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
             end
         end
     end
+    # Eliminate the argument-type diversity that we no longer need
+    return _groupreduce!(res, counts, n, op === min || op === max, adjust, checkempty, incol)
+end
+
+function _groupreduce!(res::AbstractVector, counts::Union{Nothing,Vector{Int}}, n::Int, opminormax::Bool, adjust, checkempty::Bool,
+                      incol::AbstractVector)
     if adjust !== nothing
         res .= adjust.(res, counts)
     end
@@ -204,7 +211,7 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     resT = typeof(res).name
     if resT.name === :CategoricalArray &&
         nameof(resT.module) === :CategoricalArrays
-        @assert op === min || op === max
+        @assert opminormax
         # we know that CategoricalArray has `pool` field
         @assert res.pool === incol.pool
         res.pool = copy(incol.pool)

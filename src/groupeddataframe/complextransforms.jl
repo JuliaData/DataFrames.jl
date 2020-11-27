@@ -22,6 +22,23 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                              f::Base.Callable, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                              firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
+    first, n, eltys, extrude, idx, initialcols, targetcolnames = _combine_with_first_prelude(first, f, gd, firstmulticol, idx_agg)
+    if !extrude && first isa Union{AbstractDataFrame,
+                                   NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
+        outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
+                                                             f, gd, incols, targetcolnames,
+                                                             firstmulticol)
+    else
+        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, 1, 1,
+                                                           f, gd, incols, targetcolnames,
+                                                           firstmulticol)
+    end
+    return idx, outcols, collect(Symbol, finalcolnames)
+end
+
+function _combine_with_first_prelude(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
+                                     f::Base.Callable, gd::GroupedDataFrame,
+                                     firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
     extrude = false
 
     if first isa AbstractDataFrame
@@ -51,17 +68,8 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
     targetcolnames = tuple(propertynames(first)...)
-    if !extrude && first isa Union{AbstractDataFrame,
-                                   NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
-        outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
-                                                             f, gd, incols, targetcolnames,
-                                                             firstmulticol)
-    else
-        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, 1, 1,
-                                                           f, gd, incols, targetcolnames,
-                                                           firstmulticol)
-    end
-    return idx, outcols, collect(Symbol, finalcolnames)
+
+    return first, n, eltys, extrude, idx, initialcols, targetcolnames
 end
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
@@ -110,7 +118,20 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     # Handle first group
     j = fill_row!(first, outcols, rowstart, colstart, colnames)
     @assert j === nothing # eltype is guaranteed to match
-    # Handle remaining groups
+    # Handle remaining groups (eliminate the argument type-diversity of `first`)
+    _combine_rows_with_first(len, outcols, rowstart, f, gd, incols, colnames, firstmulticol)
+end
+
+function _combine_rows_with_first(len::Int,
+                                  outcols::NTuple{N, AbstractVector},
+                                  rowstart::Integer,
+                                  f::Base.Callable, gd::GroupedDataFrame,
+                                  incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
+                                  colnames::NTuple{N, Symbol},
+                                  firstmulticol::Val) where N
+    gdidx = gd.idx
+    starts = gd.starts
+    ends = gd.ends
     @inbounds for i in rowstart+1:len
         row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
         j = fill_row!(row, outcols, i, 1, colnames)
@@ -188,16 +209,27 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
-    ends = gd.ends
-    # Handle first group
 
+    # Handle first group
     @assert _ncol(first) == N
     if !isempty(colnames) && length(gd) > 0
         j = append_rows!(first, outcols, colstart, colnames)
         @assert j === nothing # eltype is guaranteed to match
         append!(idx, Iterators.repeated(gdidx[starts[rowstart]], _nrow(first)))
     end
-    # Handle remaining groups
+    # Handle remaining groups (eliminate the argument type-diversity of `first`)
+    return _combine_tables_with_first(len, outcols, idx, rowstart, f, gd, incols, colnames, firstmulticol)
+end
+
+function _combine_tables_with_first(len::Int, outcols::NTuple{N, AbstractVector},
+                                    idx::Vector{Int}, rowstart::Integer,
+                                    f::Base.Callable, gd::GroupedDataFrame,
+                                    incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
+                                    colnames::NTuple{N, Symbol},
+                                    firstmulticol::Val) where N
+    gdidx = gd.idx
+    starts = gd.starts
+    ends = gd.ends
     @inbounds for i in rowstart+1:len
         rows = wrap_table(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
         _ncol(rows) == 0 && continue
