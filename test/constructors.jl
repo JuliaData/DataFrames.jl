@@ -356,4 +356,13 @@ end
 
 end
 
+@testset "removed constructors" begin
+    @test_throws ArgumentError DataFrame([1 2; 3 4])
+    @test_throws ArgumentError DataFrame([[1, 2], [3, 4]])
+    @test_throws ArgumentError DataFrame([Int, Float64], [:a, :b])
+    @test_throws ArgumentError DataFrame([Int, Float64], [:a, :b], 2)
+    @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"])
+    @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"], 2)
+end
+
 end # module

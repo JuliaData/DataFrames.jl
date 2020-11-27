@@ -12,7 +12,7 @@ Base.show(io::IO, f::F) = show(io, f.i)
 
 module TestShow
 
-using DataFrames, Dates, Random, Test
+using DataFrames, Dates, Random, Test, CategoricalArrays
 
 import Main: ⛵⛵⛵⛵⛵, F
 

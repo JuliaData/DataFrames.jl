@@ -1,7 +1,3 @@
-# TODO:
-# * add handling of empty ByRow to filter, and select/transform/combine for GroupedDataFrame
-# * add handling of multiple column return rules for select/transform/combine for GroupedDataFrame
-
 # normalize_selection function makes sure that whatever input format of idx is it
 # will end up in one of four canonical forms
 # 1) AbstractVector{Int}

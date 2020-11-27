@@ -1,3 +1,25 @@
+# DataFrames v1.0 Release Notes
+
+## Breaking changes
+
+* No breaking changes are planned for v1.0 release
+
+## Bug fixes
+
+## New functionalities
+
+
+## Deprecated
+
+* all old deprecations now throw an error
+  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
+
+## Dependency changes
+
+
+## Other relevant changes
+
+
 # DataFrames v0.22 Release Notes
 
 ## Breaking changes
