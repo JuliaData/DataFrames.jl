@@ -34,7 +34,7 @@ names of columns using only their names and that chaining is performed using the
 `@linq` macro and the `|>` operator:
 
 ```jldoctest dataframesmeta
-julia> using DataFrames, DataFramesMeta
+julia> using DataFramesMeta
 
 julia> df = DataFrame(name=["John", "Sally", "Roger"],
                       age=[54.0, 34.0, 79.0],
@@ -95,20 +95,20 @@ julia> @linq df |>
            groupby(:key) |>
            transform(value0 = :value .- minimum(:value))
 12×3 DataFrame
- Row │ key    value  value0
-     │ Int64  Int64  Int64
+ Row │ key    value  value0 
+     │ Int64  Int64  Int64  
 ─────┼──────────────────────
    1 │     1      1       0
-   2 │     1      4       3
-   3 │     1      7       6
-   4 │     1     10       9
-   5 │     2      2       0
-   6 │     2      5       3
-   7 │     2      8       6
-   8 │     2     11       9
-   9 │     3      3       0
-  10 │     3      6       3
-  11 │     3      9       6
+   2 │     2      2       0
+   3 │     3      3       0
+   4 │     1      4       3
+   5 │     2      5       3
+   6 │     3      6       3
+   7 │     1      7       6
+   8 │     2      8       6
+   9 │     3      9       6
+  10 │     1     10       9
+  11 │     2     11       9
   12 │     3     12       9
 ```
 
