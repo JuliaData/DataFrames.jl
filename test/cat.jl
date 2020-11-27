@@ -471,6 +471,9 @@ end
 @testset "vcat thrown exceptions" begin
     df1 = DataFrame(A = 1:3, B = 1:3)
     df2 = DataFrame(A = 1:3)
+
+    # wrong cols argument
+    @test_throws ArgumentError vcat(df1, df1, cols=:unions)
     # right missing 1 column
     err = @test_throws ArgumentError vcat(df1, df2)
     @test err.value.msg == "column(s) B are missing from argument(s) 2"
@@ -545,6 +548,34 @@ end
     y = DataFrame(A = 4:5)
     @test vcat(x, y) == DataFrame(A = [2, 4, 5]) ==
           reduce(vcat, [x, y]) == reduce(vcat, (x, y))
+end
+
+@testset "reduce vcat corner cases" begin
+    df = DataFrame(a=1, b=2)
+    df1 = @view df[:, :]
+    df2 = @view df[:, 1:2]
+    @test typeof(df1) != typeof(df2)
+
+    @test_throws ArgumentError reduce(vcat, ())
+    @test reduce(vcat, DataFrame[]) == DataFrame()
+    @test reduce(vcat, SubDataFrame[]) == DataFrame()
+    @test reduce(vcat, AbstractDataFrame[]) == DataFrame()
+
+    @test reduce(vcat, [df]) == df
+    @test reduce(vcat, [df1]) == df
+    @test reduce(vcat, [df2]) == df
+    @test reduce(vcat, [df, df]) == DataFrame(a=[1, 1], b=[2, 2])
+    @test reduce(vcat, [df, df1]) == DataFrame(a=[1, 1], b=[2, 2])
+    @test reduce(vcat, [df, df2]) == DataFrame(a=[1, 1], b=[2, 2])
+    @test reduce(vcat, [df1, df2]) == DataFrame(a=[1, 1], b=[2, 2])
+
+    @test reduce(vcat, (df,)) == df
+    @test reduce(vcat, (df1,)) == df
+    @test reduce(vcat, (df2,)) == df
+    @test reduce(vcat, (df, df)) == DataFrame(a=[1, 1], b=[2, 2])
+    @test reduce(vcat, (df, df1)) == DataFrame(a=[1, 1], b=[2, 2])
+    @test reduce(vcat, (df, df2)) == DataFrame(a=[1, 1], b=[2, 2])
+    @test reduce(vcat, (df1, df2)) == DataFrame(a=[1, 1], b=[2, 2])
 end
 
 end # module
