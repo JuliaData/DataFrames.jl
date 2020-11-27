@@ -9,7 +9,7 @@ DataFramesMeta.jl and Query.jl. They implement a functionality similar to
 
 The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package
 provides a convenient yet fast macro-based interface to work with `DataFrame`s.
-The instructions below are for version 0.5.1 of DataFramesMeta.jl.
+The instructions below are for version 0.6.0 of DataFramesMeta.jl.
 
 First install the DataFramesMeta.jl package:
 
@@ -95,8 +95,8 @@ julia> @linq df |>
            groupby(:key) |>
            transform(value0 = :value .- minimum(:value))
 12×3 DataFrame
- Row │ key    value  value0 
-     │ Int64  Int64  Int64  
+ Row │ key    value  value0
+     │ Int64  Int64  Int64
 ─────┼──────────────────────
    1 │     1      1       0
    2 │     2      2       0
