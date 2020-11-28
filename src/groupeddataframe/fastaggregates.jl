@@ -194,25 +194,27 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
                 counts_vec[i] = zeros(Int, n)
             end
         end
-        Threads.@threads for tid in 1:nt
-            res′ = res_vec[tid]
-            if adjust !== nothing || checkempty
-                counts′ = counts_vec[tid]
-            end
-            start = 1 + ((tid - 1) * length(groups)) ÷ nt
-            stop = (tid * length(groups)) ÷ nt
-            @inbounds for i in start:stop
-                gix = groups[i]
-                x = incol[i]
-                if gix > 0 && (condf === nothing || condf(x))
-                    # this check should be optimized out if eltype is not Any
-                    if eltype(res′) === Any && !isassigned(res′, gix)
-                        res′[gix] = f(x, gix)
-                    else
-                        res′[gix] = op(res′[gix], f(x, gix))
-                    end
-                    if adjust !== nothing || checkempty
-                        counts′[gix] += 1
+        @sync for tid in 1:nt
+            Threads.@spawn begin
+                res′ = res_vec[tid]
+                if adjust !== nothing || checkempty
+                    counts′ = counts_vec[tid]
+                end
+                start = 1 + ((tid - 1) * length(groups)) ÷ nt
+                stop = (tid * length(groups)) ÷ nt
+                @inbounds for i in start:stop
+                    gix = groups[i]
+                    x = incol[i]
+                    if gix > 0 && (condf === nothing || condf(x))
+                        # this check should be optimized out if eltype is not Any
+                        if eltype(res′) === Any && !isassigned(res′, gix)
+                            res′[gix] = f(x, gix)
+                        else
+                            res′[gix] = op(res′[gix], f(x, gix))
+                        end
+                        if adjust !== nothing || checkempty
+                            counts′[gix] += 1
+                        end
                     end
                 end
             end
