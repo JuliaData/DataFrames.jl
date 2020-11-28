@@ -99,8 +99,11 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
 end
 
 function combine_checked(gd::GroupedDataFrame, args...; kwargs...)
-    res1 = combine(gd, args...; nthreads=1, kwargs...)
-    res2 = combine(gd, args...; nthreads=2, kwargs...)
+    @assert DataFrames.NTHREADS[] == 1
+    res1 = combine(gd, args...; kwargs...)
+    DataFrames.NTHREADS[] = 2
+    res2 = combine(gd, args...; kwargs...)
+    DataFrames.NTHREADS[] = 1
     @test names(res1) == names(res2)
     for (c1, c2) in zip(eachcol(res1), eachcol(res2))
         @test typeof(c1) === typeof(c2)
@@ -3301,10 +3304,11 @@ end
 
 @testset "invalid nthreads" begin
     gdf = groupby(DataFrame(x=1:10, y=1:10), :y)
-    @test_throws ArgumentError select(gdf, :x => sum, nthreads=0)
-    @test_throws ArgumentError transform(gdf, :x => sum, nthreads=0)
-    @test_throws ArgumentError select!(gdf, :x => sum, nthreads=0)
-    @test_throws ArgumentError transform!(gdf, :x => sum, nthreads=0)
+    DataFrames.NTHREADS[] = 0
+    @test_throws ArgumentError select(gdf, :x => sum)
+    @test_throws ArgumentError transform(gdf, :x => sum)
+    @test_throws ArgumentError select!(gdf, :x => sum)
+    @test_throws ArgumentError transform!(gdf, :x => sum)
 end
 
 end # module

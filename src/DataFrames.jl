@@ -91,6 +91,8 @@ else
     export only
 end
 
+const NTHREADS = Ref(1)
+
 include("other/utils.jl")
 include("other/index.jl")
 

@@ -2,9 +2,11 @@
 
 ## New functionalities
 
-* `combine`, `select` and `transform` with `GroupedDataFrame` now accept
-  a `nthreads` argument which enables multithreading for some optimized
-  grouped reductions ([#2491](https://github.com/JuliaData/DataFrames.jl/pull/2491)).
+* `combine`, `select` and `transform` with `GroupedDataFrame` now have
+  support multithreading for some optimized  grouped reductions.
+  This can be enabled using an experimental global option via
+  `DataFrames.NTHREADS[] = n` (with n > 1)
+  ([#2491](https://github.com/JuliaData/DataFrames.jl/pull/2491)).
 
 
 # DataFrames v0.22 Release Notes
