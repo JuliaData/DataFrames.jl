@@ -2360,13 +2360,6 @@ end
         @test parent(gdf2).y ≅ df.y
         @test parent(gdf2).g === df.g
 
-        # Test that nthreads argument is accepted
-        # Correctness tests are run by combine_checked
-        @test select(gdf, :x => sum, nthreads=2) ≅
-            select(gdf, :x => sum)
-        @test transform(gdf, :x => sum, nthreads=2) ≅
-            transform(gdf, :x => sum)
-
         gdf = groupby_checked(df, :g, sort=dosort, skipmissing=true)
         @test_throws ArgumentError select(gdf, :x => sum)
         @test_throws ArgumentError select(gdf, :x => sum, ungroup=false)
@@ -2443,15 +2436,6 @@ end
         @test dfc.y === y
         @test dfc.x_first == [1, 2, 2, 4]
         @test propertynames(dfc) == [:g, :x, :y, :x_first]
-
-        # Test that nthreads argument is accepted
-        # Correctness tests are run by combine_checked
-        dfc = copy(df)
-        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
-        @test select(gdf, :x => sum) ≅ select!(gdf, :x => sum, nthreads=2)
-        dfc = copy(df)
-        gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=false)
-        @test transform(gdf, :x => sum) ≅ transform!(gdf, :x => sum, nthreads=2)
 
         dfc = copy(df)
         gdf = groupby_checked(dfc, :g, sort=dosort, skipmissing=true)
@@ -3352,15 +3336,6 @@ end
     @test df2 == DataFrame(id=df.id, x=df.x, x1=df.id .* df.x)
     transform!(sdf -> sdf.id .* sdf.x, gdf)
     @test df == df2
-end
-
-@testset "invalid nthreads" begin
-    gdf = groupby(DataFrame(x=1:10, y=1:10), :y)
-    DataFrames.NTHREADS[] = 0
-    @test_throws ArgumentError select(gdf, :x => sum)
-    @test_throws ArgumentError transform(gdf, :x => sum)
-    @test_throws ArgumentError select!(gdf, :x => sum)
-    @test_throws ArgumentError transform!(gdf, :x => sum)
 end
 
 end # module
