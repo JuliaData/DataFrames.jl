@@ -339,6 +339,9 @@ end
     df = DataFrame(c=1:3)
     insertcols!(df, 1, :a => Ref(1), :b => fill(1))
     @test df == DataFrame(a=[1, 1, 1], b=[1, 1, 1], c=1:3)
+
+    df = DataFrame(a=1)
+    @test insertcols!(df, "a" => 2, makeunique=true) == DataFrame(a=1, a_1=2)
 end
 
 @testset "unsupported insertcols!" begin
@@ -555,6 +558,7 @@ end
 
 @testset "delete!" begin
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test_throws BoundsError delete!(df, [true, true, true])
     @test delete!(df, 1) === df
     @test df == DataFrame(a=[2], b=[4.0])
 
@@ -669,6 +673,9 @@ end
           DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
     @test_throws ArgumentError describe(df, :mean, :all)
+    @test_throws MethodError describe(DataFrame(a=[1, 2]), cols = :a, "max2" => maximum)
+    @test_throws ArgumentError describe(df, :min, :min)
+    @test_throws ArgumentError describe(df, :minimum)
 end
 
 @testset "append!" begin
@@ -924,6 +931,9 @@ end
               DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
                         x=[1:3; missing])
     end
+
+    @test_throws ArgumentError push!(DataFrame(), (a=1, b=2), cols=:unions)
+    @test_throws ArgumentError push!(DataFrame(), Dict('a'=>1, 'b'=>2), cols=:union)
 end
 
 @testset "rename" begin

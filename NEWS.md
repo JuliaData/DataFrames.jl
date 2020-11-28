@@ -1,5 +1,11 @@
 # DataFrames v1.0 Release Notes
 
+## Breaking changes
+
+* No breaking changes are planned for v1.0 release
+
+## Bug fixes
+
 ## New functionalities
 
 * `combine`, `select` and `transform` with `GroupedDataFrame` now have
@@ -7,6 +13,16 @@
   This can be enabled using an experimental global option via
   `DataFrames.NTHREADS[] = n` (with n > 1)
   ([#2491](https://github.com/JuliaData/DataFrames.jl/pull/2491)).
+
+## Deprecated
+
+* all old deprecations now throw an error
+  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
+
+## Dependency changes
+
+
+## Other relevant changes
 
 
 # DataFrames v0.22 Release Notes

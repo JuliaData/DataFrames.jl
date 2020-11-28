@@ -29,6 +29,9 @@ const ≅ = isequal
     @test df2.x1 === vecvec[1]
     @test df2.x2 === vecvec[2]
 
+    @test_throws ArgumentError DataFrame([[1, 2]], :autos)
+    @test_throws ArgumentError DataFrame([1 2], :autos)
+
     for copycolsarg in (true, false)
         @test df == DataFrame(vecvec, :auto, copycols=copycolsarg)
         @test df == DataFrame(collect(Any, vecvec), :auto, copycols=copycolsarg)
@@ -156,13 +159,11 @@ end
           DataFrame("x1" => zeros(3), "x2" => ones(3)) ==
           DataFrame("x1" => zeros(3), "x2" => ones(3))
 
-    df = DataFrame([:x1 => zeros(3), :x2 => ones(3)])
     @inferred DataFrame(:x1 => zeros(3), :x2 => ones(3))
+    df = DataFrame([:x1 => zeros(3), :x2 => ones(3)])
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
-    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
-    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
 
     df = DataFrame(:type => [], :begin => [])
     @test propertynames(df) == [:type, :begin]
@@ -353,6 +354,15 @@ end
           DataFrame([Symbol(c) => i for (i, c) in enumerate('a':'z')])
     @test DataFrame(OrderedDict(:z => 1, :a => 2)) == DataFrame(z=1, a=2)
 
+end
+
+@testset "removed constructors" begin
+    @test_throws ArgumentError DataFrame([1 2; 3 4])
+    @test_throws ArgumentError DataFrame([[1, 2], [3, 4]])
+    @test_throws ArgumentError DataFrame([Int, Float64], [:a, :b])
+    @test_throws ArgumentError DataFrame([Int, Float64], [:a, :b], 2)
+    @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"])
+    @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"], 2)
 end
 
 end # module

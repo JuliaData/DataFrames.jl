@@ -337,6 +337,30 @@ function DataFrame(columns::AbstractMatrix, cnames::Symbol)
     return DataFrame(columns, gennames(size(columns, 2)), makeunique=false)
 end
 
+# Discontinued constructors
+
+DataFrame(matrix::Matrix) =
+    throw(ArgumentError("`DataFrame` constructor from a `Matrix` requires " *
+                        "passing :auto as a second argument to automatically " *
+                        "generate column names: `DataFrame(matrix, :auto)`"))
+
+DataFrame(vecs::Vector{<:AbstractVector}) =
+    throw(ArgumentError("`DataFrame` constructor from a `Vector` of vectors requires " *
+                        "passing :auto as a second argument to automatically " *
+                        "generate column names: `DataFrame(vecs, :auto)`"))
+
+DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+          nrows::Integer=0; makeunique::Bool=false) where T<:Type =
+    throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
+                        "deprecated. Pass explicitly created columns to a " *
+                        "`DataFrame` constructor instead."))
+
+DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:AbstractString},
+          nrows::Integer=0; makeunique::Bool=false) where T<:Type =
+    throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
+                        "deprecated. Pass explicitly created columns to a " *
+                        "`DataFrame` constructor instead."))
+
 
 ##############################################################################
 ##
@@ -484,17 +508,6 @@ Base.getindex(df::DataFrame, row_ind::typeof(!),
 ##
 ##############################################################################
 
-function nextcolname(df::DataFrame)
-    col = Symbol(string("x", ncol(df) + 1))
-    hasproperty(df, col) || return col
-    i = 1
-    while true
-        col = Symbol(string("x", ncol(df) + 1, "_", i))
-        hasproperty(df, col) || return col
-        i += 1
-    end
-end
-
 # Will automatically add a new column if needed
 function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
     if ncol(df) != 0 && nrow(df) != length(v)
@@ -518,18 +531,6 @@ end
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_ind] = v
-        return v
-    else
-        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
-    end
-end
-
-function insert_multiple_entries!(df::DataFrame,
-                                  v::Any,
-                                  row_inds::AbstractVector,
-                                  col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        _columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
     else
         throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))

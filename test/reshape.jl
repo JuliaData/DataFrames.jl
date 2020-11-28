@@ -647,4 +647,11 @@ end
     @test permutedims(DataFrame(a=String[], b=Float64[]), 1) == DataFrame(a=["b"])
 end
 
+@testset "stack view=true additional tests" begin
+    df = DataFrame(a=1:3, b=11:13, c=101:103)
+    sdf = stack(df, [:b, :c], view=true)
+    @test reverse(sdf.a) == reverse(copy(sdf.a))
+    @test IndexStyle(DataFrames.StackedVector) == IndexLinear()
+end
+
 end # module

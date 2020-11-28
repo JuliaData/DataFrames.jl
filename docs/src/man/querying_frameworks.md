@@ -9,7 +9,7 @@ DataFramesMeta.jl and Query.jl. They implement a functionality similar to
 
 The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package
 provides a convenient yet fast macro-based interface to work with `DataFrame`s.
-The instructions below are for version 0.5.1 of DataFramesMeta.jl.
+The instructions below are for version 0.6.0 of DataFramesMeta.jl.
 
 First install the DataFramesMeta.jl package:
 
@@ -24,12 +24,17 @@ The major benefit of the package is that it allows you to refer to columns of a
 expressions. Additionally you can chain a sequence of transformations of a
 `DataFrame` using the `@linq` macro.
 
+When a DataFramesMeta.jl macro such as `@select`, `@transform`, `@by`, `@combine`, 
+`@where`, or `@orderby` is called inside a `@linq` block, you can omit
+the `@`. Therefore `transform` inside `@linq` is not the same as `transform`
+outside of a `@linq` block. 
+
 Here is a minimal example of usage of the package. Observe that we refer to
 names of columns using only their names and that chaining is performed using the
 `@linq` macro and the `|>` operator:
 
 ```jldoctest dataframesmeta
-julia> using DataFrames, DataFramesMeta
+julia> using DataFramesMeta
 
 julia> df = DataFrame(name=["John", "Sally", "Roger"],
                       age=[54.0, 34.0, 79.0],
@@ -94,16 +99,16 @@ julia> @linq df |>
      │ Int64  Int64  Int64
 ─────┼──────────────────────
    1 │     1      1       0
-   2 │     1      4       3
-   3 │     1      7       6
-   4 │     1     10       9
-   5 │     2      2       0
-   6 │     2      5       3
-   7 │     2      8       6
-   8 │     2     11       9
-   9 │     3      3       0
-  10 │     3      6       3
-  11 │     3      9       6
+   2 │     2      2       0
+   3 │     3      3       0
+   4 │     1      4       3
+   5 │     2      5       3
+   6 │     3      6       3
+   7 │     1      7       6
+   8 │     2      8       6
+   9 │     3      9       6
+  10 │     1     10       9
+  11 │     2     11       9
   12 │     3     12       9
 ```
 

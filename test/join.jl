@@ -27,6 +27,7 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
     innerjoin(name, job, on = [:ID])
 
     @test_throws ArgumentError innerjoin(name, job)
+    @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:errors)
 
     @test innerjoin(name, job, on = :ID) == inner
     @test outerjoin(name, job, on = :ID) ≅ outer
@@ -756,6 +757,11 @@ end
 @testset "renamecols tests" begin
     df1 = DataFrame(id1=[1, 2, 3], id2=[1, 2, 3], x=1:3)
     df2 = DataFrame(id1=[1, 2, 4], ID2=[1, 2, 4], x=1:3)
+
+    @test_throws ArgumentError innerjoin(df1, df2, on=:id1, renamecols=1=>1, makeunique=true)
+    @test_throws ArgumentError leftjoin(df1, df2, on=:id1, renamecols=1=>1, makeunique=true)
+    @test_throws ArgumentError rightjoin(df1, df2, on=:id1, renamecols=1=>1, makeunique=true)
+    @test_throws ArgumentError outerjoin(df1, df2, on=:id1, renamecols=1=>1, makeunique=true)
 
     @test_throws ArgumentError innerjoin(df1, df2, on=:id1)
     @test innerjoin(df1, df2, on=:id1, makeunique=true) ==

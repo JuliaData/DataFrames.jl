@@ -38,6 +38,7 @@ using Test, DataFrames
     @test parent(df[1, Not([])]) === df
     @test_throws ArgumentError df[true, 1]
     @test_throws ArgumentError df[true, 1:2]
+    @test_throws BoundsError df[5, "a"]
 
     @test df[1:2, 1] == [1, 2]
     @test df[1:2, 1:2] == DataFrame(a=1:2, b=4:5)
