@@ -91,6 +91,16 @@ else
     export only
 end
 
+"""
+    DataFrames.NTHREADS
+
+The number of CPU threads to use. This option is experimental
+and may be changed in future releases.
+
+Currently defaults to `1`. Passing a value higher than 1 currently
+has an effect only for some optimized grouped reductions.
+Values higher than `Threads.nthreads()` will be replaced with that value.
+"""
 const NTHREADS = Ref(1)
 
 include("other/utils.jl")

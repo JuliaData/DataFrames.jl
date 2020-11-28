@@ -83,3 +83,43 @@ else
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
+
+macro threadsif(cond, ex)
+    quote
+        if $(esc(cond))
+            @threads $ex
+        else
+            $(esc(ex))
+        end
+    end
+end
+
+if VERSION >= v"1.4"
+    const _partition = Iterators.partition
+else
+    function _partition(xs, n)
+        @assert firstindex(xs) == 1
+        m = cld(length(xs), n)
+        return (view(xs, i*n+1:min((i+1)*n, length(xs))) for i in 0:m-1)
+    end
+end
+
+function tforeach(f, xs::AbstractArray; basesize::Integer)
+    nt = min(NTHREADS[], Threads.nthreads())
+    if nt > 1 && length(xs) > basesize
+        # Ensure we don't create more than 10 times more tasks than available threads
+        basesize′ = min(basesize, length(xs) ÷ nt * 10)
+        @sync for p in _partition(xs, basesize′)
+            Threads.@spawn begin
+                for i in p
+                    f(@inbounds xs[i])
+                end
+            end
+        end
+    else
+        for i in eachindex(xs)
+            f(@inbounds xs[i])
+        end
+    end
+    return
+end
