@@ -101,9 +101,13 @@ end
 function combine_checked(gd::GroupedDataFrame, args...; kwargs...)
     @assert DataFrames.NTHREADS[] == 1
     res1 = combine(gd, args...; kwargs...)
-    DataFrames.NTHREADS[] = 2
-    res2 = combine(gd, args...; kwargs...)
-    DataFrames.NTHREADS[] = 1
+    if Base.Threads.nthreads() > 1
+        DataFrames.NTHREADS[] = 2
+        res2 = combine(gd, args...; kwargs...)
+        DataFrames.NTHREADS[] = 1
+    else
+        @warn "Only one thread available: multithreading not tested"
+    end
     @test names(res1) == names(res2)
     for (c1, c2) in zip(eachcol(res1), eachcol(res2))
         @test typeof(c1) === typeof(c2)
