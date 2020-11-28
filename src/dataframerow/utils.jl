@@ -338,46 +338,53 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             end
             refmap
         end
-        @inbounds for i in eachindex(groups)
-            local refs_i
-            let i=i # Workaround for julia#15276
-                refs_i = map(c -> c[i], refarrays)
+        tforeach(eachindex(groups), basesize=1_000_000) do i
+            @inbounds begin
+                local refs_i
+                let i=i # Workaround for julia#15276
+                    refs_i = map(c -> c[i], refarrays)
+                end
+                vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
+                j = sum(vals) + 1
+                # x < 0 happens with -1 in refmap, which corresponds to missing
+                if skipmissing && any(x -> x < 0, vals)
+                    j = 0
+                else
+                    seen[j] = true
+                end
+                groups[i] = j
             end
-            vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
-            j = sum(vals) + 1
-            # x < 0 happens with -1 in refmap, which corresponds to missing
-            if skipmissing && any(x -> x < 0, vals)
-                j = 0
-            else
-                seen[j] = true
-            end
-            groups[i] = j
         end
     else
-        @inbounds for i in eachindex(groups)
-            local refs_i
-            let i=i # Workaround for julia#15276
-                refs_i = map(refarrays, missinginds) do ref, missingind
-                    r = Int(ref[i])
-                    if skipmissing
-                        return r == missingind ? -1 : (r > missingind ? r-1 : r)
-                    else
-                        return r
+        tforeach(eachindex(groups), basesize=1_000_000) do i
+            @inbounds begin
+                local refs_i
+                let i=i # Workaround for julia#15276
+                    refs_i = map(refarrays, missinginds) do ref, missingind
+                        r = Int(ref[i])
+                        if skipmissing
+                            return r == missingind ? -1 : (r > missingind ? r-1 : r)
+                        else
+                            return r
+                        end
                     end
                 end
+                vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
+                j = sum(vals) + 1
+                # x < 0 happens with -1, which corresponds to missing
+                if skipmissing && any(x -> x < 0, vals)
+                    j = 0
+                else
+                    seen[j] = true
+                end
+                groups[i] = j
             end
-            vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
-            j = sum(vals) + 1
-            # x < 0 happens with -1, which corresponds to missing
-            if skipmissing && any(x -> x < 0, vals)
-                j = 0
-            else
-                seen[j] = true
-            end
-            groups[i] = j
         end
     end
-    if !all(seen) # Compress group indices to remove unused ones
+    # If some groups are unused, compress group indices to drop them
+    # sum(seen) is faster than all(seen) when not short-circuiting,
+    # and short-circuit would only happen in the slower case anyway
+    if sum(seen) < length(seen)
         oldngroups = ngroups
         remap = zeros(Int, ngroups)
         ngroups = 0

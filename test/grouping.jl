@@ -3831,4 +3831,22 @@ end
                         ((x, y, z) -> x[1] <= 5 ? unwrap(y[1]) : unwrap(z[1])) => :res)
 end
 
+@testset "groupby multithreading" begin
+    for x in (PooledArray(rand(1:10, 1_100_000)),
+              PooledArray(rand([1:9; missing], 1_100_000))),
+        y in (PooledArray(rand(["a", "b", "c", "d"], 1_100_000)),
+              PooledArray(rand(["a"; "b"; "c"; missing], 1_100_000)))
+        df = DataFrame(x=x, y=y)
+
+        # Checks are done by groupby_checked
+        @test length(groupby_checked(df, :x)) == 10
+        @test length(groupby_checked(df, :x, skipmissing=true)) ==
+            length(unique(skipmissing(x)))
+
+        @test length(groupby_checked(df, [:x, :y])) == 40
+        @test length(groupby_checked(df, [:x, :y], skipmissing=true)) ==
+            length(unique(skipmissing(x))) * length(unique(skipmissing(y)))
+    end
+end
+
 end # module
