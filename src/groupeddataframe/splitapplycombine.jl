@@ -202,16 +202,18 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
     agg = check_aggregate(first(last(cs_i)), incol)
     outcol = agg(incol, gd)
 
-    if haskey(seen_cols, out_col_name)
-        optional, loc = seen_cols[out_col_name]
-        # we have seen this col but it is not allowed to replace it
-        optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
-        @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-        trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
-        seen_cols[out_col_name] = (optional_i, loc)
-    else
-        push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
-        seen_cols[out_col_name] = (optional_i, length(trans_res))
+    Threads.lock(gd.lazy_lock) do
+        if haskey(seen_cols, out_col_name)
+            optional, loc = seen_cols[out_col_name]
+            # we have seen this col but it is not allowed to replace it
+            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+            trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
+            seen_cols[out_col_name] = (optional_i, loc)
+        else
+            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
+        end
     end
 end
 
@@ -231,24 +233,26 @@ function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pai
     end
     outcol = parentdf[!, first(source_cols)]
 
-    if haskey(seen_cols, out_col_name)
-        optional, loc = seen_cols[out_col_name]
-        @assert trans_res[loc].name == out_col_name
-        if optional
-            if !optional_i
-                @assert trans_res[loc].optional
-                trans_res[loc] = TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
-                                                      out_col_name, optional_i)
-                seen_cols[out_col_name] = (optional_i, loc)
+    Threads.lock(gd.lazy_lock) do
+        if haskey(seen_cols, out_col_name)
+            optional, loc = seen_cols[out_col_name]
+            @assert trans_res[loc].name == out_col_name
+            if optional
+                if !optional_i
+                    @assert trans_res[loc].optional
+                    trans_res[loc] = TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
+                                                        out_col_name, optional_i)
+                    seen_cols[out_col_name] = (optional_i, loc)
+                end
+            else
+                # if optional_i is true, then we ignore processing this column
+                optional_i || throw(ArgumentError("duplicate output column name: :$out_col_name"))
             end
         else
-            # if optional_i is true, then we ignore processing this column
-            optional_i || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            push!(trans_res, TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
+                                                out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
-    else
-        push!(trans_res, TransformationResult(idx_keeprows, copycols ? copy(outcol) : outcol,
-                                              out_col_name, optional_i))
-        seen_cols[out_col_name] = (optional_i, length(trans_res))
     end
 end
 
@@ -275,23 +279,25 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
         idx = idx_agg
     end
     @assert length(outcols) == length(nms)
-    for j in eachindex(outcols)
-        outcol = outcols[j]
-        out_col_name = nms[j]
-        if haskey(seen_cols, out_col_name)
-            optional, loc = seen_cols[out_col_name]
-            # if column was seen and it is optional now ignore it
-            if !optional_i
+    Threads.lock(gd.lazy_lock) do
+        for j in eachindex(outcols)
+            outcol = outcols[j]
+            out_col_name = nms[j]
+            if haskey(seen_cols, out_col_name)
                 optional, loc = seen_cols[out_col_name]
-                # we have seen this col but it is not allowed to replace it
-                optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
-                @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
-                seen_cols[out_col_name] = (optional_i, loc)
+                # if column was seen and it is optional now ignore it
+                if !optional_i
+                    optional, loc = seen_cols[out_col_name]
+                    # we have seen this col but it is not allowed to replace it
+                    optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                    @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                    trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
+                    seen_cols[out_col_name] = (optional_i, loc)
+                end
+            else
+                push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
+                seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
-        else
-            push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
-            seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
     end
     return idx_agg
@@ -330,19 +336,21 @@ function _combine_process_pair_symbol(optional_i::Bool,
     @assert length(outcols) == 1
     outcol = outcols[1]
 
-    if haskey(seen_cols, out_col_name)
-        # if column was seen and it is optional now ignore it
-        if !optional_i
-            optional, loc = seen_cols[out_col_name]
-            # we have seen this col but it is not allowed to replace it
-            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
-            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-            trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
-            seen_cols[out_col_name] = (optional_i, loc)
+    Threads.lock(gd.lazy_lock) do
+        if haskey(seen_cols, out_col_name)
+            # if column was seen and it is optional now ignore it
+            if !optional_i
+                optional, loc = seen_cols[out_col_name]
+                # we have seen this col but it is not allowed to replace it
+                optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
+                seen_cols[out_col_name] = (optional_i, loc)
+            end
+        else
+            push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
-    else
-        push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
-        seen_cols[out_col_name] = (optional_i, length(trans_res))
     end
     return idx_agg
 end
@@ -405,23 +413,25 @@ function _combine_process_pair_astable(optional_i::Bool,
             nms = out_col_name
         end
     end
-    for j in eachindex(outcols)
-        outcol = outcols[j]
-        out_col_name = nms[j]
-        if haskey(seen_cols, out_col_name)
-            optional, loc = seen_cols[out_col_name]
-            # if column was seen and it is optional now ignore it
-            if !optional_i
+    Threads.lock(gd.lazy_lock) do
+        for j in eachindex(outcols)
+            outcol = outcols[j]
+            out_col_name = nms[j]
+            if haskey(seen_cols, out_col_name)
                 optional, loc = seen_cols[out_col_name]
-                # we have seen this col but it is not allowed to replace it
-                optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
-                @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
-                seen_cols[out_col_name] = (optional_i, loc)
+                # if column was seen and it is optional now ignore it
+                if !optional_i
+                    optional, loc = seen_cols[out_col_name]
+                    # we have seen this col but it is not allowed to replace it
+                    optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+                    @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+                    trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i)
+                    seen_cols[out_col_name] = (optional_i, loc)
+                end
+            else
+                push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
+                seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
-        else
-            push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
-            seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
     end
     return idx_agg
@@ -523,36 +533,38 @@ function _combine(gd::GroupedDataFrame,
     # and if a given column can be replaced in the future
     seen_cols = Dict{Symbol, Tuple{Bool, Int}}()
 
+    tasks = similar(cs_norm, Task)
+
     parentdf = parent(gd)
-    for i in eachindex(cs_norm, optional_transform)
+    for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
 
-        if length(gd) > 0 && isagg(cs_i, gd)
+        tasks[i] = Threads.@spawn if length(gd) > 0 && isagg(cs_i, gd)
             _combine_process_agg(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
             # this is a fast path used when we pass a column or rename a column in select or transform
             _combine_process_noop(cs_i, optional_i, parentdf, seen_cols, trans_res, idx_keeprows, copycols)
         elseif cs_i isa Base.Callable
-            idx_callable = _combine_process_callable(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
-            if idx_callable !== nothing
-                if idx_agg === nothing
-                    idx_agg = idx_callable
-                else
-                    @assert idx_agg === idx_callable
-                end
-            end
+            _combine_process_callable(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         else
             @assert cs_i isa Pair
-            idx_pair = _combine_process_pair(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
-            if idx_pair !== nothing
-                if idx_agg === nothing
-                    idx_agg = idx_pair
-                else
-                    @assert idx_agg === idx_pair
-                end
+            _combine_process_pair(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+        end
+    end
+    for t in tasks
+        try
+            idx = fetch(t)
+        catch e
+            if e isa TaskFailedException
+                rethrow(t.exception)
+            else
+                rethrow(e)
             end
+        end
+        if idx_agg === nothing && idx !== nothing
+            idx_agg = idx
         end
     end
 

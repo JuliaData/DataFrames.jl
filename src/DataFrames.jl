@@ -3,7 +3,7 @@ module DataFrames
 using Statistics, Printf, REPL
 using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using Missings, InvertedIndices
-using Base.Sort, Base.Order, Base.Iterators
+using Base.Sort, Base.Order, Base.Iterators, Base.Threads
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
 using Markdown
