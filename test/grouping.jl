@@ -1200,7 +1200,7 @@ end
     show(io, gd)
     str = String(take!(io.io))
     summary_str = summary(gd)
-    @test summary_str == "$GroupedDataFrame with 4 groups based on key: A"
+    @test summary_str == "GroupedDataFrame with 4 groups based on key: A"
     @test str == """
         $summary_str
         First Group (1 row): A = 1
@@ -1250,7 +1250,7 @@ end
 
 
     @test sprint(show, "text/html", gd) ==
-        "<p><b>$GroupedDataFrame with 4 groups based on key: A</b></p>" *
+        "<p><b>GroupedDataFrame with 4 groups based on key: A</b></p>" *
         "<p><i>First Group (1 row): A = 1</i></p><table class=\"data-frame\">" *
         "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
         "<th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
@@ -1261,7 +1261,7 @@ end
         "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
 
     @test sprint(show, "text/latex", gd) == """
-        $GroupedDataFrame with 4 groups based on key: A
+        GroupedDataFrame with 4 groups based on key: A
 
         First Group (1 row): A = 1
 
@@ -1288,7 +1288,7 @@ end
 
     gd = groupby_checked(DataFrame(a=[Symbol("&")], b=["&"]), [1, 2])
     summary_str = summary(gd)
-    @test summary_str == "$GroupedDataFrame with 1 group based on keys: a, b"
+    @test summary_str == "GroupedDataFrame with 1 group based on keys: a, b"
     @test sprint(show, gd) === """
         $summary_str
         Group 1 (1 row): a = :&, b = "&"
