@@ -222,7 +222,7 @@ end
                            "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
         ]
     )
-    if VERSION > v"1.6.0"
+    if VERSION < v"1.6.0"
         @test sprint(show, "text/plain", df) ==
             """
             8×2 DataFrame
