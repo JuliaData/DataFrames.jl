@@ -194,7 +194,7 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
-                              idx_agg::Union{Nothing, AbstractVector{Int}})
+                              idx_agg::Ref{Union{Nothing, Vector{Int}}})
     @assert isagg(cs_i, gd)
     @assert !optional_i
     out_col_name = last(last(cs_i))
@@ -202,18 +202,19 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
     agg = check_aggregate(first(last(cs_i)), incol)
     outcol = agg(incol, gd)
 
-    Threads.lock(gd.lazy_lock) do
+    return function()
         if haskey(seen_cols, out_col_name)
             optional, loc = seen_cols[out_col_name]
             # we have seen this col but it is not allowed to replace it
             optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
             @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-            trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
+            trans_res[loc] = TransformationResult(idx_agg[], outcol, out_col_name, optional_i)
             seen_cols[out_col_name] = (optional_i, loc)
         else
-            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
+            push!(trans_res, TransformationResult(idx_agg[], outcol, out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
+        return nothing
     end
 end
 
@@ -233,7 +234,7 @@ function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pai
     end
     outcol = parentdf[!, first(source_cols)]
 
-    Threads.lock(gd.lazy_lock) do
+    return function()
         if haskey(seen_cols, out_col_name)
             optional, loc = seen_cols[out_col_name]
             @assert trans_res[loc].name == out_col_name
@@ -253,6 +254,7 @@ function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pai
                                                 out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
+        return nothing
     end
 end
 
@@ -263,23 +265,25 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
                                    gd::GroupedDataFrame,
                                    seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                    trans_res::Vector{TransformationResult},
-                                   idx_agg::Union{Nothing, AbstractVector{Int}})
+                                   idx_agg::Ref{Union{Nothing, Vector{Int}}})
     firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parentdf, 0))
     idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
 
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-        # if idx_agg was not computed yet it is nothing
-        # in this case if we are not passed a vector compute it.
-        if isnothing(idx_agg)
-            idx_agg = Vector{Int}(undef, length(gd))
-            fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+        lock(gd.lazy_lock) do
+            # if idx_agg was not computed yet it is nothing
+            # in this case if we are not passed a vector compute it.
+            if isnothing(idx_agg[])
+                idx_agg[] = Vector{Int}(undef, length(gd))
+                fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
+            end
+            @assert idx == idx_agg[]
+            idx = idx_agg[]
         end
-        @assert idx == idx_agg
-        idx = idx_agg
     end
     @assert length(outcols) == length(nms)
-    Threads.lock(gd.lazy_lock) do
+    return function()
         for j in eachindex(outcols)
             outcol = outcols[j]
             out_col_name = nms[j]
@@ -299,8 +303,8 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
                 seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
         end
+        return idx_agg[]
     end
-    return idx_agg
 end
 
 # perform a transformation specified using the Pair notation with a single output column
@@ -308,7 +312,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
                                       gd::GroupedDataFrame,
                                       seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                       trans_res::Vector{TransformationResult},
-                                      idx_agg::Union{Nothing, AbstractVector{Int}},
+                                      idx_agg::Ref{Union{Nothing, Vector{Int}}},
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
                                       firstres::Any,
@@ -319,9 +323,11 @@ function _combine_process_pair_symbol(optional_i::Bool,
     end
     # if idx_agg was not computed yet it is nothing
     # in this case if we are not passed a vector compute it.
-    if !(firstres isa AbstractVector) && isnothing(idx_agg)
-        idx_agg = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+    lock(gd.lazy_lock) do
+        if !(firstres isa AbstractVector) && isnothing(idx_agg[])
+            idx_agg[] = Vector{Int}(undef, length(gd))
+            fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
+        end
     end
     # TODO: if firstres is a vector we recompute idx for every function
     # this could be avoided - it could be computed only the first time
@@ -332,11 +338,11 @@ function _combine_process_pair_symbol(optional_i::Bool,
     # nothing to signal that idx has to be computed in _combine_with_first
     idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
                                           Val(firstmulticol),
-                                          firstres isa AbstractVector ? nothing : idx_agg)
+                                          firstres isa AbstractVector ? nothing : idx_agg[])
     @assert length(outcols) == 1
     outcol = outcols[1]
 
-    Threads.lock(gd.lazy_lock) do
+    return function()
         if haskey(seen_cols, out_col_name)
             # if column was seen and it is optional now ignore it
             if !optional_i
@@ -351,8 +357,8 @@ function _combine_process_pair_symbol(optional_i::Bool,
             push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
+        return idx_agg[]
     end
-    return idx_agg
 end
 
 # perform a transformation specified using the Pair notation with multiple output columns
@@ -360,7 +366,7 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        gd::GroupedDataFrame,
                                        seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                        trans_res::Vector{TransformationResult},
-                                       idx_agg::Union{Nothing, AbstractVector{Int}},
+                                       idx_agg::Ref{Union{Nothing, Vector{Int}}},
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
                                        firstres::Any,
@@ -394,14 +400,16 @@ function _combine_process_pair_astable(optional_i::Bool,
 
         if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-            # if idx_agg was not computed yet it is nothing
-            # in this case if we are not passed a vector compute it.
-            if isnothing(idx_agg)
-                idx_agg = Vector{Int}(undef, length(gd))
-                fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+            lock(gd.lazy_lock) do
+                # if idx_agg was not computed yet it is nothing
+                # in this case if we are not passed a vector compute it.
+                if isnothing(idx_agg[])
+                    idx_agg[] = Vector{Int}(undef, length(gd))
+                    fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
+                end
+                @assert idx == idx_agg[]
+                idx = idx_agg[]
             end
-            @assert idx == idx_agg
-            idx = idx_agg
         end
         @assert length(outcols) == length(nms)
     end
@@ -413,7 +421,7 @@ function _combine_process_pair_astable(optional_i::Bool,
             nms = out_col_name
         end
     end
-    Threads.lock(gd.lazy_lock) do
+    return function()
         for j in eachindex(outcols)
             outcol = outcols[j]
             out_col_name = nms[j]
@@ -433,8 +441,8 @@ function _combine_process_pair_astable(optional_i::Bool,
                 seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
         end
+        return idx_agg[]
     end
-    return idx_agg
 end
 
 # perform a transformation specified using the Pair notation
@@ -446,7 +454,7 @@ function _combine_process_pair(@nospecialize(cs_i::Pair),
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                trans_res::Vector{TransformationResult},
-                               idx_agg::Union{Nothing, AbstractVector{Int}})
+                               idx_agg::Ref{Union{Nothing, Vector{Int}}})
     source_cols, (fun, out_col_name) = cs_i
 
     if source_cols isa Int
@@ -516,11 +524,11 @@ function _combine(gd::GroupedDataFrame,
         idx_keeprows = nothing
     end
 
-    idx_agg = nothing
+    idx_agg = Ref{Union{Nothing, Vector{Int}}}(nothing)
     if length(gd) > 0 && any(x -> isagg(x, gd), cs_norm)
         # Compute indices of representative rows only once for all AbstractAggregates
-        idx_agg = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
+        idx_agg[] = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
     elseif length(gd) == 0 || !all(x -> isagg(x, gd), cs_norm)
         # Trigger computation of indices
         # This can speed up some aggregates that would not trigger this on their own
@@ -554,39 +562,45 @@ function _combine(gd::GroupedDataFrame,
         end
     end
     for t in tasks
+        local postprocessf
         try
-            idx = fetch(t)
+            postprocessf = fetch(t)
         catch e
             if e isa TaskFailedException
                 rethrow(t.exception)
             else
-                rethrow(e)
+                rethrow()
             end
         end
-        if idx_agg === nothing && idx !== nothing
-            idx_agg = idx
+        idx = postprocessf()
+        if idx !== nothing
+            if idx_agg[] === nothing
+                idx_agg[] = idx
+            else
+                @assert idx_agg[] === idx
+            end
         end
     end
 
     isempty(trans_res) && return Int[], DataFrame()
     # idx_agg === nothing then we have only functions that
     # returned multiple rows and idx_loc = 1
-    idx_loc = findfirst(x -> x.col_idx !== idx_agg, trans_res)
+    idx_loc = findfirst(x -> x.col_idx !== idx_agg[], trans_res)
     if !keeprows && isnothing(idx_loc)
-        @assert !isnothing(idx_agg)
-        idx = idx_agg
+        @assert !isnothing(idx_agg[])
+        idx = idx_agg[]
     else
         idx = keeprows ? idx_keeprows : trans_res[idx_loc].col_idx
         agg2idx_map = nothing
         for i in 1:length(trans_res)
             if trans_res[i].col_idx !== idx
-                if trans_res[i].col_idx === idx_agg
+                if trans_res[i].col_idx === idx_agg[]
                     # we perform pseudo broadcasting here
                     # keep -1 as a sentinel for errors
                     if isnothing(agg2idx_map)
-                        agg2idx_map = _agg2idx_map_helper(idx, idx_agg)
+                        agg2idx_map = _agg2idx_map_helper(idx, idx_agg[])
                     end
-                    trans_res[i] = TransformationResult(idx_agg, trans_res[i].col[agg2idx_map],
+                    trans_res[i] = TransformationResult(idx_agg[], trans_res[i].col[agg2idx_map],
                                                         trans_res[i].name, trans_res[i].optional)
                 elseif idx != trans_res[i].col_idx
                     if keeprows
