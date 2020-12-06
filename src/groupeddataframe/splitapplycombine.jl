@@ -617,23 +617,25 @@ function _combine(gd::GroupedDataFrame,
     # here first field in trans_res[i] is used to keep track how the column was generated
     # a correct index is stored in idx variable
 
-    for i in eachindex(trans_res)
-        col_idx = trans_res[i].col_idx
-        col = trans_res[i].col
-        if keeprows && col_idx !== idx_keeprows # we need to reorder the column
-            newcol = similar(col)
-            # we can probably make it more efficient, but I leave it as an optimization for the future
-            gd_idx = gd.idx
-            k = 0
-            # consider adding @inbounds later
-            for (s, e) in zip(gd.starts, gd.ends)
-                for j in s:e
-                    k += 1
-                    newcol[gd_idx[j]] = col[k]
+    @sync for i in eachindex(trans_res)
+        Threads.@spawn begin
+            col_idx = trans_res[i].col_idx
+            col = trans_res[i].col
+            if keeprows && col_idx !== idx_keeprows # we need to reorder the column
+                newcol = similar(col)
+                # we can probably make it more efficient, but I leave it as an optimization for the future
+                gd_idx = gd.idx
+                k = 0
+                # consider adding @inbounds later
+                for (s, e) in zip(gd.starts, gd.ends)
+                    for j in s:e
+                        k += 1
+                        newcol[gd_idx[j]] = col[k]
+                    end
                 end
+                @assert k == length(gd_idx)
+                trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
             end
-            @assert k == length(gd_idx)
-            trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
         end
     end
 
