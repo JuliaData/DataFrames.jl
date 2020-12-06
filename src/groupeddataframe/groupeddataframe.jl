@@ -380,7 +380,19 @@ function Base.iterate(gd::GroupedDataFrame, i=1)
     end
 end
 
-Compat.lastindex(gd::GroupedDataFrame) = gd.ngroups
+Base.size(gd::GroupedDataFrame) = (length(gd),)
+Base.size(gd::GroupedDataFrame, i::Integer) = size(gd)[i]
+
+Base.ndims(::GroupedDataFrame) = 1
+Base.ndims(::Type{<:GroupedDataFrame}) = 1
+
+Base.firstindex(gd::GroupedDataFrame) = 1
+Base.lastindex(gd::GroupedDataFrame) = gd.ngroups
+
+Base.firstindex(gd::GroupedDataFrame, i::Integer) = first(axes(gd, i))
+Base.lastindex(gd::GroupedDataFrame, i::Integer) = last(axes(gd, i))
+Base.axes(gd::GroupedDataFrame, i::Integer) = Base.OneTo(size(gd, i))
+
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 

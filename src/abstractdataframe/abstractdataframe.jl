@@ -332,6 +332,7 @@ end
 
 Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
+Base.firstindex(df::AbstractDataFrame, i::Integer) = first(axes(df, i))
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 

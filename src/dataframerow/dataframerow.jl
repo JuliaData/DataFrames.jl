@@ -376,7 +376,12 @@ Return the number of dimensions of a data frame row, which is always `1`.
 Base.ndims(::DataFrameRow) = 1
 Base.ndims(::Type{<:DataFrameRow}) = 1
 
+Base.firstindex(r::DataFrameRow) = 1
 Base.lastindex(r::DataFrameRow) = length(r)
+
+Base.firstindex(r::DataFrameRow, i::Integer) = first(axes(r, i))
+Base.lastindex(r::DataFrameRow, i::Integer) = last(axes(r, i))
+Base.axes(r::DataFrameRow, i::Integer) = Base.OneTo(size(r, i))
 
 Base.iterate(r::DataFrameRow) = iterate(r, 1)
 
