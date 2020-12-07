@@ -222,20 +222,37 @@ end
                            "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
         ]
     )
-    @test sprint(show, "text/plain", df) ==
-        """
-        8×2 DataFrame
-         Row │ A      B
-             │ Int64  MD…
-        ─────┼──────────────────────────────────────────
-           1 │     1    DataFrames.jl (http://juliadat…
-           2 │     4    \\frac{x^2}{x^2+y^2}
-           3 │     9    Header\\n  ≡≡≡≡≡≡≡≡
-           4 │    16    This is very, very, very, very…
-           5 │    25
-           6 │    36    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…
-           7 │    49    ∫αγ∞1∫αγ∞\\n\\n    •    2∫αγ∞3∫α…
-           8 │    64    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…"""
+    if VERSION < v"1.6.0-DEV"
+        @test sprint(show, "text/plain", df) ==
+            """
+            8×2 DataFrame
+             Row │ A      B
+                 │ Int64  MD…
+            ─────┼──────────────────────────────────────────
+               1 │     1    DataFrames.jl (http://juliadat…
+               2 │     4    \\frac{x^2}{x^2+y^2}
+               3 │     9    Header\\n  ≡≡≡≡≡≡≡≡
+               4 │    16    This is very, very, very, very…
+               5 │    25
+               6 │    36    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…
+               7 │    49    ∫αγ∞1∫αγ∞\\n\\n    •    2∫αγ∞3∫α…
+               8 │    64    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…"""
+    else
+        @test sprint(show, "text/plain", df) ==
+            """
+            8×2 DataFrame
+             Row │ A      B
+                 │ Int64  MD…
+            ─────┼──────────────────────────────────────────
+               1 │     1    DataFrames.jl (http://juliadat…
+               2 │     4    \\frac{x^2}{x^2+y^2}
+               3 │     9    Header\\n  ≡≡≡≡≡≡≡≡
+               4 │    16    This is very, very, very, very…
+               5 │    25
+               6 │    36    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…
+               7 │    49    ∫αγ∞1∫αγ∞\\n\\n    •  2∫αγ∞3∫αγ∞…
+               8 │    64    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…"""
+    end
 
     @test sprint(show, "text/csv", df) ==
         """
