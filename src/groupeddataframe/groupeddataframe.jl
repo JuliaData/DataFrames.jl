@@ -469,6 +469,20 @@ end
 
 Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
+
+Base.size(key::GroupKey) = (length(key),)
+Base.size(key::GroupKey, i::Integer) = size(key)[i]
+
+Base.ndims(::GroupKey) = 1
+Base.ndims(::Type{<:GroupKey}) = 1
+
+Base.firstindex(key::GroupKey) = 1
+Base.lastindex(key::GroupKey) = length(key)
+
+Base.firstindex(key::GroupKey, i::Integer) = first(axes(key, i))
+Base.lastindex(key::GroupKey, i::Integer) = last(axes(key, i))
+Base.axes(key::GroupKey, i::Integer) = Base.OneTo(size(key, i))
+
 Base.names(key::GroupKey) = string.(parent(key).cols)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = copy(parent(key).cols)

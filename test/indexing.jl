@@ -1859,4 +1859,150 @@ end
     @test_throws ArgumentError df[1] = [2]
 end
 
+@testset "array interface tests for all types" begin
+    df = DataFrame(reshape(1:12, 3, 4), :auto)
+    @test_throws MethodError length(df)
+    @test ndims(df) == 2
+    @test size(df) == (3, 4)
+    @test size(df, 1) == 3
+    @test size(df, 2) == 4
+    @test_throws ArgumentError size(df, 3)
+    @test_throws ArgumentError size(df, 0)
+    @test axes(df) == (1:3, 1:4)
+    @test axes(df, 1) == 1:3
+    @test axes(df, 2) == 1:4
+    @test_throws ArgumentError axes(df, 3)
+    @test_throws ArgumentError axes(df, 0)
+    @test_throws MethodError firstindex(df)
+    @test firstindex(df, 1) == 1
+    @test firstindex(df, 2) == 1
+    @test_throws ArgumentError firstindex(df, 3)
+    @test_throws ArgumentError firstindex(df, 0)
+    @test_throws MethodError lastindex(df)
+    @test lastindex(df, 1) == 3
+    @test lastindex(df, 2) == 4
+    @test_throws ArgumentError lastindex(df, 3)
+    @test_throws ArgumentError lastindex(df, 0)
+
+    dfr = df[1, 1:3]
+    @test length(dfr) == 3
+    @test ndims(dfr) == 1
+    @test size(dfr) == (3,)
+    @test size(dfr, 1) == 3
+    @test_throws BoundsError size(dfr, 2)
+    @test_throws BoundsError size(dfr, 0)
+    @test axes(dfr) == (1:3,)
+    @test axes(dfr, 1) == 1:3
+    @test_throws BoundsError axes(dfr, 2)
+    @test_throws BoundsError axes(dfr, 0)
+    @test firstindex(dfr) == 1
+    @test firstindex(dfr, 1) == 1
+    @test_throws BoundsError firstindex(dfr, 2)
+    @test_throws BoundsError firstindex(dfr, 0)
+    @test lastindex(dfr) == 3
+    @test lastindex(dfr, 1) == 3
+    @test_throws BoundsError lastindex(dfr, 2)
+    @test_throws BoundsError lastindex(dfr, 0)
+
+    er = eachrow(df)
+    @test length(er) == 3
+    @test ndims(er) == 1
+    @test size(er) == (3,)
+    @test size(er, 1) == 3
+    @test size(er, 2) == 1
+    @test_throws BoundsError size(er, 0)
+    @test axes(er) == (1:3,)
+    @test axes(er, 1) == 1:3
+    @test axes(er, 2) == 1:1
+    @test_throws BoundsError axes(er, 0)
+    @test firstindex(er) == 1
+    @test firstindex(er, 1) == 1
+    @test firstindex(er, 2) == 1
+    @test_throws BoundsError firstindex(er, 0)
+    @test lastindex(er) == 3
+    @test lastindex(er, 1) == 3
+    @test lastindex(er, 2) == 1
+    @test_throws BoundsError lastindex(er, 0)
+
+    ec = eachcol(df)
+    @test length(ec) == 4
+    @test ndims(ec) == 1
+    @test size(ec) == (4,)
+    @test size(ec, 1) == 4
+    @test_throws ArgumentError size(ec, 2)
+    @test_throws ArgumentError size(ec, 0)
+    @test axes(ec) == (1:4,)
+    @test axes(ec, 1) == 1:4
+    @test_throws ArgumentError axes(ec, 2)
+    @test_throws ArgumentError axes(ec, 0)
+    @test firstindex(ec) == 1
+    @test firstindex(ec, 1) == 1
+    @test_throws ArgumentError firstindex(ec, 2)
+    @test_throws ArgumentError firstindex(ec, 0)
+    @test lastindex(ec) == 4
+    @test lastindex(ec, 1) == 4
+    @test_throws ArgumentError lastindex(ec, 2)
+    @test_throws ArgumentError lastindex(ec, 0)
+
+    gdf = groupby(df, [:x1, :x2, :x3])
+    @test length(gdf) == 3
+    @test ndims(gdf) == 1
+    @test size(gdf) == (3,)
+    @test size(gdf, 1) == 3
+    @test_throws BoundsError size(gdf, 2)
+    @test_throws BoundsError size(gdf, 0)
+    @test axes(gdf) == (1:3,)
+    @test axes(gdf, 1) == 1:3
+    @test_throws BoundsError axes(gdf, 2)
+    @test_throws BoundsError axes(gdf, 0)
+    @test firstindex(gdf) == 1
+    @test firstindex(gdf, 1) == 1
+    @test_throws BoundsError firstindex(gdf, 2)
+    @test_throws BoundsError firstindex(gdf, 0)
+    @test lastindex(gdf) == 3
+    @test lastindex(gdf, 1) == 3
+    @test_throws BoundsError lastindex(gdf, 2)
+    @test_throws BoundsError lastindex(gdf, 0)
+
+    kgdf = keys(gdf)
+    @test length(kgdf) == 3
+    @test ndims(kgdf) == 1
+    @test size(kgdf) == (3,)
+    @test size(kgdf, 1) == 3
+    @test size(kgdf, 2) == 1
+    @test_throws BoundsError size(kgdf, 0)
+    @test axes(kgdf) == (1:3,)
+    @test axes(kgdf, 1) == 1:3
+    @test axes(kgdf, 2) == 1:1
+    @test_throws BoundsError axes(kgdf, 0)
+    @test firstindex(kgdf) == 1
+    @test firstindex(kgdf, 1) == 1
+    @test firstindex(kgdf, 2) == 1
+    @test_throws BoundsError firstindex(kgdf, 0)
+    @test lastindex(kgdf) == 3
+    @test lastindex(kgdf, 1) == 3
+    @test lastindex(kgdf, 2) == 1
+    @test_throws BoundsError lastindex(kgdf, 0)
+
+    gk = kgdf[1]
+    @test length(gk) == 3
+    @test ndims(gk) == 1
+    @test size(gk) == (3,)
+    @test size(gk, 1) == 3
+    @test_throws BoundsError size(gk, 2)
+    @test_throws BoundsError size(gk, 0)
+    @test axes(gk) == (1:3,)
+    @test axes(gk, 1) == 1:3
+    @test_throws BoundsError axes(gk, 2)
+    @test_throws BoundsError axes(gk, 0)
+    @test firstindex(gk) == 1
+    @test firstindex(gk, 1) == 1
+    @test_throws BoundsError firstindex(gk, 2)
+    @test_throws BoundsError firstindex(gk, 0)
+    @test lastindex(gk) == 3
+    @test lastindex(gk, 1) == 3
+    @test_throws BoundsError lastindex(gk, 2)
+    @test_throws BoundsError lastindex(gk, 0)
+end
+
 end # module
