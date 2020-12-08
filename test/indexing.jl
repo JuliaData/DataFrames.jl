@@ -1946,7 +1946,7 @@ end
 
     gdf = groupby(df, [:x1, :x2, :x3])
     @test length(gdf) == 3
-    @test ndims(gdf) == == ndims(typeof(gdf)) == 1
+    @test ndims(gdf) == ndims(typeof(gdf)) == 1
     @test size(gdf) == (3,)
     @test size(gdf, 1) == 3
     @test_throws BoundsError size(gdf, 2)
