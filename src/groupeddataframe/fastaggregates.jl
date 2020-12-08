@@ -163,18 +163,80 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
         counts = zeros(Int, n)
     end
     groups = gd.groups
-    @inbounds for i in eachindex(incol, groups)
-        gix = groups[i]
-        x = incol[i]
-        if gix > 0 && (condf === nothing || condf(x))
-            # this check should be optimized out if U is not Any
-            if eltype(res) === Any && !isassigned(res, gix)
-                res[gix] = f(x, gix)
-            else
-                res[gix] = op(res[gix], f(x, gix))
+    nt = min(NTHREADS[], Threads.nthreads())
+    if nt <= 1 || axes(incol) != axes(groups)
+        @inbounds for i in eachindex(incol, groups)
+            gix = groups[i]
+            x = incol[i]
+            if gix > 0 && (condf === nothing || condf(x))
+                # this check should be optimized out if eltype is not Any
+                if eltype(res) === Any && !isassigned(res, gix)
+                    res[gix] = f(x, gix)
+                else
+                    res[gix] = op(res[gix], f(x, gix))
+                end
+                if adjust !== nothing || checkempty
+                    counts[gix] += 1
+                end
             end
+        end
+    else
+        res_vec = Vector{typeof(res)}(undef, nt)
+        # needs to be always allocated to fix type instability with @threads
+        counts_vec = Vector{Vector{Int}}(undef, nt)
+        res_vec[1] = res
+        if adjust !== nothing || checkempty
+            counts_vec[1] = counts
+        end
+        for i in 2:nt
+            res_vec[i] = copy(res)
             if adjust !== nothing || checkempty
-                counts[gix] += 1
+                counts_vec[i] = zeros(Int, n)
+            end
+        end
+        @sync for tid in 1:nt
+            Threads.@spawn begin
+                res′ = res_vec[tid]
+                if adjust !== nothing || checkempty
+                    counts′ = counts_vec[tid]
+                end
+                start = 1 + ((tid - 1) * length(groups)) ÷ nt
+                stop = (tid * length(groups)) ÷ nt
+                @inbounds for i in start:stop
+                    gix = groups[i]
+                    x = incol[i]
+                    if gix > 0 && (condf === nothing || condf(x))
+                        # this check should be optimized out if eltype is not Any
+                        if eltype(res′) === Any && !isassigned(res′, gix)
+                            res′[gix] = f(x, gix)
+                        else
+                            res′[gix] = op(res′[gix], f(x, gix))
+                        end
+                        if adjust !== nothing || checkempty
+                            counts′[gix] += 1
+                        end
+                    end
+                end
+            end
+        end
+        for i in 2:length(res_vec)
+            resi = res_vec[i]
+            @inbounds @simd for j in eachindex(res)
+                # this check should be optimized out if eltype is not Any
+                if eltype(res) === Any
+                    if isassigned(resi, j) && isassigned(res, j)
+                        res[j] = op(res[j], resi[j])
+                    elseif isassigned(resi, j)
+                        res[j] = resi[j]
+                    end
+                else
+                    res[j] = op(res[j], resi[j])
+                end
+            end
+        end
+        if adjust !== nothing || checkempty
+            for i in 2:length(counts_vec)
+                counts .+= counts_vec[i]
             end
         end
     end
