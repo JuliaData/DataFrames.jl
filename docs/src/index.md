@@ -120,10 +120,9 @@ integrated they are with DataFrames.jl.
 - **IO**:
     - DataFrames.jl work well with a range of formats, including
       CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
-      Stata, SPSS, and SAS files (using
-      [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
-      and reading and writing parquet files
-      (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
+      Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
+      Stata, SPSS, and SAS files (using [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
+      and reading and writing parquet files (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
