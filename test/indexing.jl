@@ -1862,7 +1862,7 @@ end
 @testset "array interface tests for all types" begin
     df = DataFrame(reshape(1:12, 3, 4), :auto)
     @test_throws MethodError length(df)
-    @test ndims(df) == 2
+    @test ndims(df) == ndims(typeof(df)) == 2
     @test size(df) == (3, 4)
     @test size(df, 1) == 3
     @test size(df, 2) == 4
@@ -1886,7 +1886,7 @@ end
 
     dfr = df[1, 1:3]
     @test length(dfr) == 3
-    @test ndims(dfr) == 1
+    @test ndims(dfr) == ndims(typeof(dfr)) == 1
     @test size(dfr) == (3,)
     @test size(dfr, 1) == 3
     @test_throws BoundsError size(dfr, 2)
@@ -1906,7 +1906,7 @@ end
 
     er = eachrow(df)
     @test length(er) == 3
-    @test ndims(er) == 1
+    @test ndims(er) == ndims(typeof(er)) == 1
     @test size(er) == (3,)
     @test size(er, 1) == 3
     @test size(er, 2) == 1
@@ -1926,7 +1926,7 @@ end
 
     ec = eachcol(df)
     @test length(ec) == 4
-    @test ndims(ec) == 1
+    @test ndims(ec) == ndims(typeof(ec)) == 1
     @test size(ec) == (4,)
     @test size(ec, 1) == 4
     @test_throws ArgumentError size(ec, 2)
@@ -1946,7 +1946,7 @@ end
 
     gdf = groupby(df, [:x1, :x2, :x3])
     @test length(gdf) == 3
-    @test ndims(gdf) == 1
+    @test ndims(gdf) == == ndims(typeof(gdf)) == 1
     @test size(gdf) == (3,)
     @test size(gdf, 1) == 3
     @test_throws BoundsError size(gdf, 2)
@@ -1966,7 +1966,7 @@ end
 
     kgdf = keys(gdf)
     @test length(kgdf) == 3
-    @test ndims(kgdf) == 1
+    @test ndims(kgdf) == ndims(typeof(kgdf)) == 1
     @test size(kgdf) == (3,)
     @test size(kgdf, 1) == 3
     @test size(kgdf, 2) == 1
@@ -1986,7 +1986,7 @@ end
 
     gk = kgdf[1]
     @test length(gk) == 3
-    @test ndims(gk) == 1
+    @test ndims(gk) == ndims(typeof(gk)) == 1
     @test size(gk) == (3,)
     @test size(gk, 1) == 3
     @test_throws BoundsError size(gk, 2)
