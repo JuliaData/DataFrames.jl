@@ -253,7 +253,9 @@ Additionally the above types `T` (i.e. `AbstractDataFrame`, `DataFrameRow`, `Dat
 * `size(::T)` returning a `Tuple` of `Int`.
 * `size(::T, ::Integer)` returning an `Int`.
 * `axes(::T)` returning a `Tuple` of `Int` vectors.
-* `axes(::T, ::Integer)` returning an `Int` vector.
+* `axes(::T, ::Integer)` returning an `Int` vector for a valid dimension (except
+   `DataFrameRows` and `GroupKeys` for which `Base.OneTo(1)` is also returned for
+   a dimension higher than a valid one because they are `AbstractVector`)..
 * `firstindex(::T)` returning `1` (except `AbstractDataFrame` for which it is undefined).
 * `firstindex(::T, ::Integer)` returning `1` for a valid dimension (except `DataFrameRows`
    and `GroupKeys` for which `1` is also returned for a dimension higher than a valid one

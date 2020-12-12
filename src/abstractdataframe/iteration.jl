@@ -189,8 +189,10 @@ Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
 Base.firstindex(itr::DataFrameColumns) = 1
 Base.lastindex(itr::DataFrameColumns) = length(itr)
 
-Base.firstindex(itr::DataFrameColumns, i::Integer) = first(axes(itr, i))
-Base.lastindex(itr::DataFrameColumns, i::Integer) = last(axes(itr, i))
+if VERSION < v"1.6"
+    Base.firstindex(itr::DataFrameColumns, i::Integer) = first(axes(itr, i))
+    Base.lastindex(itr::DataFrameColumns, i::Integer) = last(axes(itr, i))
+end
 Base.axes(itr::DataFrameColumns, i::Integer) = Base.OneTo(size(itr, i))
 
 Base.iterate(itr::DataFrameColumns, i::Integer=1) =
