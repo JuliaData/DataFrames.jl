@@ -543,7 +543,7 @@ function _combine(gd::GroupedDataFrame,
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
 
-        tasks[i] = Threads.@spawn if length(gd) > 0 && isagg(cs_i, gd)
+        tasks[i] = @spawn if length(gd) > 0 && isagg(cs_i, gd)
             _combine_process_agg(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)

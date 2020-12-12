@@ -91,6 +91,14 @@ else
     export only
 end
 
+if VERSION >= v"1.3"
+    using Base.Threads: @spawn
+else
+    macro spawn(expr)
+        :(@task $expr)
+    end
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 
