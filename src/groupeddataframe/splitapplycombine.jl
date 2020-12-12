@@ -561,7 +561,7 @@ function _combine(gd::GroupedDataFrame,
         try
             postprocessf = fetch(t)
         catch e
-            if e isa TaskFailedException
+            if VERSION >= v"1.3" && e isa TaskFailedException
                 rethrow(t.exception)
             else
                 rethrow()
@@ -606,7 +606,7 @@ function _combine(gd::GroupedDataFrame,
     # a correct index is stored in idx variable
 
     @sync for i in eachindex(trans_res)
-        Threads.@spawn begin
+        @spawn begin
             col_idx = trans_res[i].col_idx
             col = trans_res[i].col
             if keeprows && col_idx !== idx_keeprows # we need to reorder the column

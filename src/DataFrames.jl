@@ -94,8 +94,17 @@ end
 if VERSION >= v"1.3"
     using Base.Threads: @spawn
 else
+    # This is the definition of @async in Base
     macro spawn(expr)
-        :(@task $expr)
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            local task = Task($thunk)
+            if $(Expr(:isdefined, var))
+                push!($var, task)
+            end
+            schedule(task)
+        end
     end
 end
 
