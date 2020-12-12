@@ -194,7 +194,7 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
-                              idx_agg::Ref{Union{Nothing, Vector{Int}}})
+                              idx_agg::AbstractVector{Int})
     @assert isagg(cs_i, gd)
     @assert !optional_i
     out_col_name = last(last(cs_i))
@@ -208,10 +208,10 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
             # we have seen this col but it is not allowed to replace it
             optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
             @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-            trans_res[loc] = TransformationResult(idx_agg[], outcol, out_col_name, optional_i)
+            trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
             seen_cols[out_col_name] = (optional_i, loc)
         else
-            push!(trans_res, TransformationResult(idx_agg[], outcol, out_col_name, optional_i))
+            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
     end
@@ -544,7 +544,7 @@ function _combine(gd::GroupedDataFrame,
         optional_i = optional_transform[i]
 
         tasks[i] = @spawn if length(gd) > 0 && isagg(cs_i, gd)
-            _combine_process_agg(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            _combine_process_agg(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
             # this is a fast path used when we pass a column or rename a column in select or transform
