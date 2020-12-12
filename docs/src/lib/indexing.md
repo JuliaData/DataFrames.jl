@@ -235,7 +235,7 @@ The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
 
 # Common API for types defined in DataFrames.jl
 
-This table presents return value types of calling `names`, `propertynames` and `keys`
+This table presents return value types of calling `names`, `propertynames`, `keys`, `length` and `ndims`
 on types exposed to the user by DataFrames.jl:
 
 | Type                | `names`          | `propertynames`  | `keys`           | `length`  | `ndims` |
