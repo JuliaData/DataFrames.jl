@@ -214,7 +214,6 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
             push!(trans_res, TransformationResult(idx_agg[], outcol, out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
-        return nothing
     end
 end
 
@@ -254,7 +253,6 @@ function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pai
                                                 out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
-        return nothing
     end
 end
 
@@ -303,7 +301,6 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
                 seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
         end
-        return idx_agg[]
     end
 end
 
@@ -357,7 +354,6 @@ function _combine_process_pair_symbol(optional_i::Bool,
             push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
-        return idx_agg[]
     end
 end
 
@@ -441,7 +437,6 @@ function _combine_process_pair_astable(optional_i::Bool,
                 seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
         end
-        return idx_agg[]
     end
 end
 
@@ -475,7 +470,7 @@ function _combine_process_pair(@nospecialize(cs_i::Pair),
 
     if out_col_name isa Symbol
         return _combine_process_pair_symbol(optional_i, gd, seen_cols, trans_res, idx_agg,
-                                           out_col_name, firstmulticol, firstres, fun, incols)
+                                            out_col_name, firstmulticol, firstres, fun, incols)
     end
     if out_col_name == AsTable || out_col_name isa AbstractVector{Symbol}
         return _combine_process_pair_astable(optional_i, gd, seen_cols, trans_res, idx_agg,
@@ -572,14 +567,7 @@ function _combine(gd::GroupedDataFrame,
                 rethrow()
             end
         end
-        idx = postprocessf()
-        if idx !== nothing
-            if idx_agg[] === nothing
-                idx_agg[] = idx
-            else
-                @assert idx_agg[] === idx
-            end
-        end
+        postprocessf()
     end
 
     isempty(trans_res) && return Int[], DataFrame()
