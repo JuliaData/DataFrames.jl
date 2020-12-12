@@ -556,17 +556,10 @@ function _combine(gd::GroupedDataFrame,
             _combine_process_pair(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         end
     end
+    # Post-processing has to be run sequentially
+    # since the order of operations determines that of columns
     for t in tasks
-        local postprocessf
-        try
-            postprocessf = fetch(t)
-        catch e
-            if VERSION >= v"1.3" && e isa TaskFailedException
-                rethrow(t.exception)
-            else
-                rethrow()
-            end
-        end
+        postprocessf = fetch(t)
         postprocessf()
     end
 
