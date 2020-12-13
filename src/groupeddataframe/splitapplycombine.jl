@@ -539,7 +539,7 @@ function _combine(gd::GroupedDataFrame,
     tasks = similar(cs_norm, Task)
 
     parentdf = parent(gd)
-    for i in eachindex(cs_norm, optional_transform, tasks)
+    @sync for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
 
