@@ -39,6 +39,7 @@ TableTraits = "0.4, 1"
 Tables = "1.2"
 
 [extras]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DataValues = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -47,4 +48,4 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DataStructures", "DataValues", "Dates", "Logging", "Random", "Test"]
+test = ["Combinatorics", "DataStructures", "DataValues", "Dates", "Logging", "Random", "Test"]
