@@ -3272,4 +3272,166 @@ end
     @test df == df2
 end
 
+@testset "subset and subset!" begin
+    refdf = DataFrame(x = repeat([true, false], 4),
+                      y = repeat([true, false, missing, missing], 2),
+                      z = repeat([1, 2, 3, 3], 2),
+                      id = 1:8)
+
+    for df in (copy(refdf), @view copy(refdf)[1:end-1, :])
+        @test subset(df, :x) ≅ filter(:x => identity, df)
+        @test subset(df, :x) isa DataFrame
+        @test subset(df, :x, view=true) ≅ filter(:x => identity, df)
+        @test subset(df, :x, view=true) isa SubDataFrame
+        @test_throws ArgumentError subset(df, :y)
+        @test subset(df, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(df, :y, skipmissing=true, view=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(df, :x, :y, skipmissing=true) ≅
+              filter([:x, :y] => (x, y) -> x && y === true, df)
+        @test subset(df, :x, :y, skipmissing=true, view=true) ≅
+              filter([:x, :y] => (x, y) -> x && y === true, df)
+        @test subset(df, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅
+              filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, df)
+        @test subset(df, :x, :y, :id => ByRow(<(4)), skipmissing=true, view=true) ≅
+              filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, df)
+        @test subset(df, :x, :id => ByRow(<(4))) ≅
+              filter([:x, :id] => (x, id) -> x && id < 4, df)
+        @test subset(df, :x, :id => ByRow(<(4)), view=true) ≅
+              filter([:x, :id] => (x, id) -> x && id < 4, df)
+        @test_throws ArgumentError subset(df)
+        @test isempty(subset(df, :x, :x => ByRow(!)))
+    end
+
+    for df in (copy(refdf), @view copy(refdf)[1:end-1, :]),
+        gdf in (groupby_checked(df, :z), groupby_checked(df, :z)[[3, 2, 1]])
+        @test subset(gdf, :x) ≅ filter(:x => identity, df)
+        @test subset(gdf, :x) isa DataFrame
+        @test subset(gdf, :x, view=true) ≅ filter(:x => identity, df)
+        @test subset(gdf, :x, view=true) isa SubDataFrame
+        @test_throws ArgumentError subset(gdf, :y)
+        @test subset(gdf, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(gdf, :y, skipmissing=true, view=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(gdf, :x, :y, skipmissing=true) ≅
+              filter([:x, :y] => (x, y) -> x && y === true, df)
+        @test subset(gdf, :x, :y, skipmissing=true, view=true) ≅
+              filter([:x, :y] => (x, y) -> x && y === true, df)
+        @test subset(gdf, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅
+              filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, df)
+        @test subset(gdf, :x, :y, :id => ByRow(<(4)), skipmissing=true, view=true) ≅
+              filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, df)
+        @test subset(gdf, :x, :id => ByRow(<(4))) ≅
+              filter([:x, :id] => (x, id) -> x && id < 4, df)
+        @test subset(gdf, :x, :id => ByRow(<(4)), view=true) ≅
+              filter([:x, :id] => (x, id) -> x && id < 4, df)
+        @test_throws ArgumentError subset(gdf)
+        @test isempty(subset(gdf, :x, :x => ByRow(!)))
+    end
+
+    df = copy(refdf)
+    @test subset!(df, :x) ≅ df ≅ filter(:x => identity, refdf)
+    df = copy(refdf)
+    @test_throws ArgumentError subset!(df, :y)
+    @test df ≅ refdf
+    df = copy(refdf)
+    @test subset!(df, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
+    df = copy(refdf)
+    @test subset!(df, :x, :y, skipmissing=true) ≅ df ≅
+          filter([:x, :y] => (x, y) -> x && y === true, refdf)
+    df = copy(refdf)
+    @test subset!(df, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅ df ≅
+          filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, refdf)
+    df = copy(refdf)
+    @test subset!(df, :x, :id => ByRow(<(4))) ≅ df ≅
+          filter([:x, :id] => (x, id) -> x && id < 4, refdf)
+    df = copy(refdf)
+    @test_throws ArgumentError subset!(df)
+    df = copy(refdf)
+    @test isempty(subset!(df, :x, :x => ByRow(!)))
+    @test isempty(df)
+
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :x) ≅ df ≅ filter(:x => identity, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test_throws ArgumentError subset!(gdf, :y)
+    @test df ≅ refdf
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :x, :y, skipmissing=true) ≅ df ≅
+          filter([:x, :y] => (x, y) -> x && y === true, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅ df ≅
+          filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :x, :id => ByRow(<(4))) ≅ df ≅
+          filter([:x, :id] => (x, id) -> x && id < 4, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test_throws ArgumentError subset!(gdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test isempty(subset!(gdf, :x, :x => ByRow(!)))
+    @test isempty(df)
+
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test subset!(gdf, :x) ≅ df ≅ filter(:x => identity, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test_throws ArgumentError subset!(gdf, :y)
+    @test df ≅ refdf
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test subset!(gdf, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test subset!(gdf, :x, :y, skipmissing=true) ≅ df ≅
+          filter([:x, :y] => (x, y) -> x && y === true, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test subset!(gdf, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅ df ≅
+          filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test subset!(gdf, :x, :id => ByRow(<(4))) ≅ df ≅
+          filter([:x, :id] => (x, id) -> x && id < 4, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test_throws ArgumentError subset!(gdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test isempty(subset!(gdf, :x, :x => ByRow(!)))
+    @test isempty(df)
+
+    @test_throws ArgumentError subset!(view(refdf, :, :), :x)
+    @test_throws ArgumentError subset!(groupby_checked(view(refdf, :, :), :z), :x)
+
+    df = DataFrame(g=[2, 2, 1, 1, 1, 1, 3, 3, 3], x = 1:9)
+    @test subset(df, :x => x -> x .< mean(x)) == DataFrame(g=[2, 2, 1, 1], x = 1:4)
+    @test subset(groupby_checked(df, :g), :x => x -> x .< mean(x)) ==
+          DataFrame(g=[2, 1, 1, 3], x=[1, 3, 4, 7])
+
+    @test_throws ArgumentError subset(df, :x => x -> missing)
+    @test isempty(subset(df, :x => x -> missing, skipmissing=true))
+    @test isempty(subset(df, :x => x -> false))
+    @test subset(df, :x => x -> true) ≅ df
+    @test_throws ArgumentError subset(df, :x => x -> (a=x,))
+    @test_throws ArgumentError subset(df, :x => x -> (a=x,) => AsTable)
+end
+
+@testset "make sure we handle idx correctly when groups are reordered" begin
+    df = DataFrame(g=[2, 2, 1, 1, 1], id = 1:5)
+    @test select(df, :g, :id, :id => ByRow(identity) => :id2) ==
+          select(groupby_checked(df, :g), :id, :id => ByRow(identity) => :id2) ==
+          select(groupby_checked(df, :g, sort=true), :id, :id => ByRow(identity) => :id2) ==
+          select(groupby_checked(df, :g)[[2,1]], :id, :id => ByRow(identity) => :id2) ==
+          [df DataFrame(id2=df.id)]
+end
+
 end # module

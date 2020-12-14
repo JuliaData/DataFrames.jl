@@ -8,6 +8,8 @@
 
 ## New functionalities
 
+* add `subset` and `subset!` functions that allow to subset rows
+  ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 
 ## Deprecated
 

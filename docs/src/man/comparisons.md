@@ -204,7 +204,7 @@ df <- tibble(grp = rep(1:2, 3), x = 6:1, y = 4:9,
 | Rename columns           | `rename(df, x_new = x)`        | `rename(df, :x => :x_new)`             |
 | Pick columns             | `select(df, x, y)`             | `select(df, :x, :y)`                   |
 | Pick & transform columns | `transmute(df, mean(x), y)`    | `select(df, :x => mean, :y)`           |
-| Pick rows                | `filter(df, x >= 1)`           | `filter(:x => >=(1), df)`              |
+| Pick rows                | `filter(df, x >= 1)`           | `subset(df, :x => ByRow(>=(1)))`       |
 | Sort rows                | `arrange(df, x)`               | `sort(df, :x)`                         |
 
 As in dplyr, some of these functions can be applied to grouped data frames, in which case they operate by group:
@@ -240,7 +240,7 @@ The following table compares the main functions of DataFrames.jl with Stata:
 | Add new columns        | `egen x_mean = mean(x)` | `transform!(df, :x => mean => :x_mean)` |
 | Rename columns         | `rename x x_new`        | `rename!(df, :x => :x_new)`             |
 | Pick columns           | `keep x y`              | `select!(df, :x, :y)`                   |
-| Pick rows              | `keep if x >= 1`        | `filter!(:x => >=(1), df)`              |
+| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(>=(1))`        |
 | Sort rows              | `sort x`                | `sort!(df, :x)`                         |
 
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
