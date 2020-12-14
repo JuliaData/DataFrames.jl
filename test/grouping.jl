@@ -3422,7 +3422,7 @@ end
     @test isempty(subset(df, :x => x -> false))
     @test subset(df, :x => x -> true) ≅ df
     @test_throws ArgumentError subset(df, :x => x -> (a=x,))
-    @test_throws ArgumentError subset(df, :x => x -> (a=x,) => AsTable)
+    @test_throws ArgumentError subset(df, :x => (x -> (a=x,)) => AsTable)
 end
 
 @testset "make sure we handle idx correctly when groups are reordered" begin
