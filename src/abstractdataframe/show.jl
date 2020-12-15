@@ -363,8 +363,8 @@ function _show(io::IO,
                                                        compact_printing)
 
     # Make sure that `truncate` does not hide the type and the column name.
-    maximum_columns_width = [truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
-                             for (l, t) in zip(names_len, types_str)]
+    maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+                                for (l, t) in zip(names_len, types_str)]
 
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
