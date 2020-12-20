@@ -539,7 +539,7 @@ function _combine(gd::GroupedDataFrame,
     tasks = similar(cs_norm, Task)
 
     parentdf = parent(gd)
-    @sync for i in eachindex(cs_norm, optional_transform, tasks)
+    for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
 
@@ -554,6 +554,16 @@ function _combine(gd::GroupedDataFrame,
         else
             @assert cs_i isa Pair
             _combine_process_pair(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+        end
+    end
+    # Workaround JuliaLang/julia#38931:
+    # we want to preserve the exception type thrown in user code,
+    # and print the backtrace corresponding to it
+    for t in tasks
+        try
+            wait(t)
+        catch e
+            throw(t.exception)
         end
     end
     # Post-processing has to be run sequentially
