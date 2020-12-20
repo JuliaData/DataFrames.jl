@@ -7,7 +7,7 @@ _process_subset_pair(i::Int, a) =
     throw(ArgumentError("condition specifier $a is not supported by `subset`"))
 
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
-                               @nospecialize(args), skipmissing::Bool)
+                                @nospecialize(args), skipmissing::Bool)
     conditions = Any[_process_subset_pair(i, a) for (i, a) in enumerate(args)]
 
     isempty(conditions) && throw(ArgumentError("at least one condition must be passed"))
@@ -38,9 +38,9 @@ end
     subset(gdf::GroupedDataFrame, args...; skipmissing::Bool=false, view::Bool=false)
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
-which all values produced by transformation(s) `args` for a given row is `true`.
+which all values produced by transformation(s) `args` for a given row are `true`.
 
-If `skipmissing=true` returing `missing` in `args` is allowed and these rows are
+If `skipmissing=true`, returning `missing` in `args` is allowed and corresponding rows are
 dropped. If `skipmissing=false` (the default) an error is thrown if `missing` is
 present.
 
@@ -50,14 +50,14 @@ described for [`select`](@ref).
 
 Note that as opposed to [`filter`](@ref) the `subset` function works on whole
 columns (or all rows in groups for `GroupedDataFrame`) and by default drops rows
-for which contition is false.
+for which condition is false.
 
 If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 
-If `GroupedDataFrame` is subsetted then it must include all groups present in the
+If a `GroupedDataFrame` is passed then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
 
-See also: [`subset!`](@ref), [`filter`](@ref), [`filter!`](@ref)
+See also: [`subset!`](@ref), [`filter`](@ref), [`filter!`](@ref),  [`select`](@ref)
 
 # Examples
 
@@ -190,7 +190,7 @@ julia> df
 │ 2   │ 4     │ 0    │ 12    │
 
 julia> df = DataFrame(id=1:4, x=[true, false, true, false],
-                             z=[true, true, missing, missing], v=1:4);
+                      z=[true, true, missing, missing], v=1:4);
 
 julia> subset!(df, :x, :z)
 ERROR: ArgumentError: each transformation must return a vector whose eltype is subtype of Bool
@@ -205,7 +205,7 @@ julia> df
 │ 1   │ 1     │ 1    │ 1     │ 1     │
 
 julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false],
-                             z=[true, true, missing, missing], v=[1, 2, 11, 12]);
+                      z=[true, true, missing, missing], v=[1, 2, 11, 12]);
 
 julia> subset!(groupby(df, :y), :v => x -> x .> minimum(x));
 
@@ -223,8 +223,7 @@ function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Boo
     return delete!(df, findall(!, row_selector))
 end
 
-function subset!(gdf::GroupedDataFrame, @nospecialize(args...);
-                skipmissing::Bool=false)
+function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false)
     row_selector = _get_subset_conditions(gdf, args, skipmissing)
     df = parent(gdf)
     return delete!(df, findall(!, row_selector))
