@@ -6,7 +6,7 @@ _process_subset_pair(i::Int, @nospecialize(a::Pair{<:Any, <:Base.Callable})) =
 _process_subset_pair(i::Int, a) =
     throw(ArgumentError("condition specifier $a is not supported by `subset`"))
 
-function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
+@noinline function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 @nospecialize(args), skipmissing::Bool)
     conditions = Any[_process_subset_pair(i, a) for (i, a) in enumerate(args)]
 
@@ -18,14 +18,42 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
         df_conditions = select(df, conditions...,
                                copycols=!(parent(df) isa DataFrame), keepkeys=false)
     end
-    test_type = skipmissing ? Union{Missing, Bool} : Bool
     for col in eachcol(df_conditions)
-        if !(eltype(col) <: test_type)
+        if !(eltype(col) <: Union{Missing, Bool})
             throw(ArgumentError("each transformation must produce a vector whose " *
-                                "eltype is subtype of $test_type"))
+                                "eltype is subtype of Union{Missing, Bool}"))
         end
     end
+
     @assert ncol(df_conditions) == length(conditions)
+
+    if ncol(df_conditions) == 1
+        cond = df_conditions[!, 1]
+    else
+        cond = .&(eachcol(df_conditions)...)
+    end
+
+    @assert eltype(cond) <: Union{Bool, Missing}
+
+    if skipmissing
+        return coalesce.(cond, false)
+    else
+        # actually currently the inner condition is only evaluated if actually
+        # we have some missings in cond, but it might change in the future so
+        # I leave this check
+        if Missing <: eltype(cond)
+            pos = findfirst(ismissing, cond)
+            if pos !== nothing
+                # note that the user might have passed a GroupedDataFrame but we
+                # then referer to the parent data frame of this GroupedDataFrame
+                throw(ArgumentError("skipmissing=false and in row $pos of the" *
+                                    " passed conditions were evaluated to" *
+                                    " missing value"))
+            end
+        end
+        return cond
+    end
+
     if ncol(df_conditions) == 1
         return .===(df_conditions[!, 1], true)
     else
@@ -40,9 +68,9 @@ end
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are `true`.
 
-If `skipmissing=true`, returning `missing` in `args` is allowed and corresponding rows are
-dropped. If `skipmissing=false` (the default) an error is thrown if `missing` is
-present.
+If `skipmissing=true`, producing `missing` in conjunction of results produced by
+`args` is allowed and corresponding rows are dropped. If `skipmissing=false`
+(the default) an error is thrown if `missing` is produced.
 
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
@@ -65,54 +93,54 @@ See also: [`subset!`](@ref), [`filter`](@ref), [`filter!`](@ref),  [`select`](@r
 julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false],
                       z=[true, true, missing, missing], v=[1, 2, 11, 12])
 4×5 DataFrame
-│ Row │ id    │ x    │ y    │ z       │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool?   │ Int64 │
-├─────┼───────┼──────┼──────┼─────────┼───────┤
-│ 1   │ 1     │ 1    │ 1    │ 1       │ 1     │
-│ 2   │ 2     │ 0    │ 1    │ 1       │ 2     │
-│ 3   │ 3     │ 1    │ 0    │ missing │ 11    │
-│ 4   │ 4     │ 0    │ 0    │ missing │ 12    │
+ Row │ id     x      y      z        v
+     │ Int64  Bool   Bool   Bool?    Int64
+─────┼─────────────────────────────────────
+   1 │     1   true   true     true      1
+   2 │     2  false   true     true      2
+   3 │     3   true  false  missing     11
+   4 │     4  false  false  missing     12
 
 julia> subset(df, :x)
 2×5 DataFrame
-│ Row │ id    │ x    │ y    │ z       │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool?   │ Int64 │
-├─────┼───────┼──────┼──────┼─────────┼───────┤
-│ 1   │ 1     │ 1    │ 1    │ 1       │ 1     │
-│ 2   │ 3     │ 1    │ 0    │ missing │ 11    │
+ Row │ id     x     y      z        v
+     │ Int64  Bool  Bool   Bool?    Int64
+─────┼────────────────────────────────────
+   1 │     1  true   true     true      1
+   2 │     3  true  false  missing     11
 
 julia> subset(df, :v => x -> x .> 3)
 2×5 DataFrame
-│ Row │ id    │ x    │ y    │ z       │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool?   │ Int64 │
-├─────┼───────┼──────┼──────┼─────────┼───────┤
-│ 1   │ 3     │ 1    │ 0    │ missing │ 11    │
-│ 2   │ 4     │ 0    │ 0    │ missing │ 12    │
+ Row │ id     x      y      z        v
+     │ Int64  Bool   Bool   Bool?    Int64
+─────┼─────────────────────────────────────
+   1 │     3   true  false  missing     11
+   2 │     4  false  false  missing     12
 
 julia> subset(df, :x, :y => ByRow(!))
 1×5 DataFrame
-│ Row │ id    │ x    │ y    │ z       │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool?   │ Int64 │
-├─────┼───────┼──────┼──────┼─────────┼───────┤
-│ 1   │ 3     │ 1    │ 0    │ missing │ 11    │
+ Row │ id     x     y      z        v
+     │ Int64  Bool  Bool   Bool?    Int64
+─────┼────────────────────────────────────
+   1 │     3  true  false  missing     11
 
 julia> subset(df, :x, :z, skipmissing=true)
 1×5 DataFrame
-│ Row │ id    │ x    │ y    │ z     │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool? │ Int64 │
-├─────┼───────┼──────┼──────┼───────┼───────┤
-│ 1   │ 1     │ 1    │ 1    │ 1     │ 1     │
+ Row │ id     x     y     z      v
+     │ Int64  Bool  Bool  Bool?  Int64
+─────┼─────────────────────────────────
+   1 │     1  true  true   true      1
 
 julia> subset(df, :x, :z)
-ERROR: ArgumentError: each transformation must return a vector whose eltype is subtype of Bool
+ERROR: ArgumentError: skipmissing=false and in row 3 of the passed conditions were evaluated to missing value
 
 julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 2×5 DataFrame
-│ Row │ id    │ x    │ y    │ z       │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool?   │ Int64 │
-├─────┼───────┼──────┼──────┼─────────┼───────┤
-│ 1   │ 2     │ 0    │ 1    │ 1       │ 2     │
-│ 2   │ 4     │ 0    │ 0    │ missing │ 12    │
+ Row │ id     x      y      z        v
+     │ Int64  Bool   Bool   Bool?    Int64
+─────┼─────────────────────────────────────
+   1 │     2  false   true     true      2
+   2 │     4  false  false  missing     12
 ```
 """
 @inline function subset(df::AbstractDataFrame, @nospecialize(args...);
@@ -135,9 +163,9 @@ end
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
 
-If `skipmissing=true` returing `missing` in `args` is allowed and these rows are
-dropped. If `skipmissing=false` (the default) an error is thrown if `missing` is
-present.
+If `skipmissing=true`, producing `missing` in conjunction of results produced by
+`args` is allowed and corresponding rows are dropped. If `skipmissing=false`
+(the default) an error is thrown if `missing` is produced.
 
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
@@ -157,25 +185,22 @@ See also: [`subset`](@ref), [`filter`](@ref), [`filter!`](@ref)
 ```
 julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false])
 4×3 DataFrame
-│ Row │ id    │ x    │ y    │
-│     │ Int64 │ Bool │ Bool │
-├─────┼───────┼──────┼──────┤
-│ 1   │ 1     │ 1    │ 1    │
-│ 2   │ 2     │ 0    │ 1    │
-│ 3   │ 3     │ 1    │ 0    │
-│ 4   │ 4     │ 0    │ 0    │
+ Row │ id     x      y
+     │ Int64  Bool   Bool
+─────┼─────────────────────
+   1 │     1   true   true
+   2 │     2  false   true
+   3 │     3   true  false
+   4 │     4  false  false
 
-julia> subset!(copy(df), :x, :y => ByRow(!));
+julia> subset!(df, :x, :y => ByRow(!));
 
 julia> df
-4×3 DataFrame
-│ Row │ id    │ x    │ y    │
-│     │ Int64 │ Bool │ Bool │
-├─────┼───────┼──────┼──────┤
-│ 1   │ 1     │ 1    │ 1    │
-│ 2   │ 2     │ 0    │ 1    │
-│ 3   │ 3     │ 1    │ 0    │
-│ 4   │ 4     │ 0    │ 0    │
+1×3 DataFrame
+ Row │ id     x     y
+     │ Int64  Bool  Bool
+─────┼────────────────────
+   1 │     3  true  false
 
 julia> df = DataFrame(id=1:4, y=[true, true, false, false], v=[1, 2, 11, 12]);
 
@@ -183,26 +208,34 @@ julia> subset!(groupby(df, :y), :v => x -> x .> minimum(x));
 
 julia> df
 2×3 DataFrame
-│ Row │ id    │ y    │ v     │
-│     │ Int64 │ Bool │ Int64 │
-├─────┼───────┼──────┼───────┤
-│ 1   │ 2     │ 1    │ 2     │
-│ 2   │ 4     │ 0    │ 12    │
+ Row │ id     y      v
+     │ Int64  Bool   Int64
+─────┼─────────────────────
+   1 │     2   true      2
+   2 │     4  false     12
 
 julia> df = DataFrame(id=1:4, x=[true, false, true, false],
-                      z=[true, true, missing, missing], v=1:4);
+                      z=[true, true, missing, missing], v=1:4)
+4×4 DataFrame
+ Row │ id     x      z        v
+     │ Int64  Bool   Bool?    Int64
+─────┼──────────────────────────────
+   1 │     1   true     true      1
+   2 │     2  false     true      2
+   3 │     3   true  missing      3
+   4 │     4  false  missing      4
 
 julia> subset!(df, :x, :z)
-ERROR: ArgumentError: each transformation must return a vector whose eltype is subtype of Bool
+ERROR: ArgumentError: skipmissing=false and in row 3 of the passed conditions were evaluated to missing value
 
 julia> subset!(df, :x, :z, skipmissing=true);
 
 julia> df
 1×4 DataFrame
-│ Row │ id    │ x    │ z     │ v     │
-│     │ Int64 │ Bool │ Bool? │ Int64 │
-├─────┼───────┼──────┼───────┼───────┤
-│ 1   │ 1     │ 1    │ 1     │ 1     │
+ Row │ id     x     z      v
+     │ Int64  Bool  Bool?  Int64
+─────┼───────────────────────────
+   1 │     1  true   true      1
 
 julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false],
                       z=[true, true, missing, missing], v=[1, 2, 11, 12]);
@@ -211,11 +244,11 @@ julia> subset!(groupby(df, :y), :v => x -> x .> minimum(x));
 
 julia> df
 2×5 DataFrame
-│ Row │ id    │ x    │ y    │ z       │ v     │
-│     │ Int64 │ Bool │ Bool │ Bool?   │ Int64 │
-├─────┼───────┼──────┼──────┼─────────┼───────┤
-│ 1   │ 2     │ 0    │ 1    │ 1       │ 2     │
-│ 2   │ 4     │ 0    │ 0    │ missing │ 12    │
+ Row │ id     x      y      z        v
+     │ Int64  Bool   Bool   Bool?    Int64
+─────┼─────────────────────────────────────
+   1 │     2  false   true     true      2
+   2 │     4  false  false  missing     12
 ```
 """
 function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Bool=false)

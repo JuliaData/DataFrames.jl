@@ -204,8 +204,13 @@ df <- tibble(grp = rep(1:2, 3), x = 6:1, y = 4:9,
 | Rename columns           | `rename(df, x_new = x)`        | `rename(df, :x => :x_new)`             |
 | Pick columns             | `select(df, x, y)`             | `select(df, :x, :y)`                   |
 | Pick & transform columns | `transmute(df, mean(x), y)`    | `select(df, :x => mean, :y)`           |
-| Pick rows                | `filter(df, x >= 1)`           | `subset(df, :x => ByRow(>=(1)))`       |
+| Pick rows                | `filter(df, x >= 1)`           | `subset(df, :x => ByRow(x -> x >= 1))` |
 | Sort rows                | `arrange(df, x)`               | `sort(df, :x)`                         |
+
+Note that in the table above the `x -> x >= 1` predicate can be more compactly
+written as `=>(1)`. The latter form has an additional benefit that it is
+compiled only once per Julia session (as opposed to `x -> x >= 1` which defines
+a new anonymous function every time it is introduced).
 
 As in dplyr, some of these functions can be applied to grouped data frames, in which case they operate by group:
 

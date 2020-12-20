@@ -3300,6 +3300,9 @@ end
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test_throws ArgumentError subset(df)
         @test isempty(subset(df, :x, :x => ByRow(!)))
+        @test isempty(subset(df, :x => x -> false, :x => x -> missing))
+        @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> missing)
+        @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> 2)
     end
 
     for df in (copy(refdf), @view copy(refdf)[1:end-1, :]),
@@ -3325,16 +3328,22 @@ end
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test_throws ArgumentError subset(gdf)
         @test isempty(subset(gdf, :x, :x => ByRow(!)))
+        @test isempty(subset(gdf, :x => x -> false, :x => x -> missing))
+        @test_throws ArgumentError subset(gdf, :x => x -> true, :x => x -> missing)
+        @test_throws ArgumentError subset(gdf, :x => x -> true, :x => x -> 2)
     end
 
     df = copy(refdf)
+    @test subset!(df, :x) === df
     @test subset!(df, :x) ≅ df ≅ filter(:x => identity, refdf)
     df = copy(refdf)
     @test_throws ArgumentError subset!(df, :y)
     @test df ≅ refdf
     df = copy(refdf)
+    @test subset!(df, :y, skipmissing=true) === df
     @test subset!(df, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
     df = copy(refdf)
+    @test subset!(df, :x, :y, skipmissing=true) === df
     @test subset!(df, :x, :y, skipmissing=true) ≅ df ≅
           filter([:x, :y] => (x, y) -> x && y === true, refdf)
     df = copy(refdf)
@@ -3350,6 +3359,15 @@ end
     @test isempty(df)
 
     df = copy(refdf)
+    @test isempty(subset!(df, :x => x -> false, :x => x -> missing))
+    df = copy(refdf)
+    @test_throws ArgumentError subset!(df, :x => x -> true, :x => x -> missing)
+    @test_throws ArgumentError subset!(df, :x => x -> true, :x => x -> 2)
+
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :x) === df
+    df = copy(refdf)
     gdf = groupby(df, :z)
     @test subset!(gdf, :x) ≅ df ≅ filter(:x => identity, refdf)
     df = copy(refdf)
@@ -3358,7 +3376,13 @@ end
     @test df ≅ refdf
     df = copy(refdf)
     gdf = groupby(df, :z)
+    @test subset!(gdf, :y, skipmissing=true) === df
+    df = copy(refdf)
+    gdf = groupby(df, :z)
     @test subset!(gdf, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test subset!(gdf, :x, :y, skipmissing=true) === df
     df = copy(refdf)
     gdf = groupby(df, :z)
     @test subset!(gdf, :x, :y, skipmissing=true) ≅ df ≅
@@ -3378,6 +3402,13 @@ end
     gdf = groupby(df, :z)
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
     @test isempty(df)
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test isempty(subset!(gdf, :x => x -> false, :x => x -> missing))
+    df = copy(refdf)
+    gdf = groupby(df, :z)
+    @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> missing)
+    @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> 2)
 
     df = copy(refdf)
     gdf = groupby(df, :z)[[3, 2, 1]]
@@ -3408,6 +3439,14 @@ end
     gdf = groupby(df, :z)[[3, 2, 1]]
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
     @test isempty(df)
+
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test isempty(subset!(gdf, :x => x -> false, :x => x -> missing))
+    df = copy(refdf)
+    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> missing)
+    @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> 2)
 
     @test_throws ArgumentError subset!(view(refdf, :, :), :x)
     @test_throws ArgumentError subset!(groupby_checked(view(refdf, :, :), :z), :x)
