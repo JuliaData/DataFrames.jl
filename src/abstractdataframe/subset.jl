@@ -53,12 +53,6 @@ _process_subset_pair(i::Int, a) =
         end
         return cond
     end
-
-    if ncol(df_conditions) == 1
-        return .===(df_conditions[!, 1], true)
-    else
-        return .===(.&(eachcol(df_conditions)...), true)
-    end
 end
 
 """
