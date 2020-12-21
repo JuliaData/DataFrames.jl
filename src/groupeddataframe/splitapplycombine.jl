@@ -563,7 +563,11 @@ function _combine(gd::GroupedDataFrame,
         try
             wait(t)
         catch e
-            throw(t.exception)
+            if e isa TaskFailedException
+                throw(t.exception)
+            else
+                rethrow(e)
+            end
         end
     end
     # Post-processing has to be run sequentially
