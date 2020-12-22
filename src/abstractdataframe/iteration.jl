@@ -176,14 +176,25 @@ Base.IteratorSize(::Type{<:DataFrameColumns}) = Base.HasShape{1}()
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
 
 function Base.size(itr::DataFrameColumns, d::Integer)
-    d < 1 && throw(ArgumentError("dimension out of range"))
-    return d == 1 ? size(itr)[1] : 1
+    d != 1 && throw(ArgumentError("dimension out of range"))
+    return size(itr)[1]
 end
+
+Base.ndims(::DataFrameColumns) = 1
+Base.ndims(::Type{<:DataFrameColumns}) = 1
 
 Base.length(itr::DataFrameColumns) = size(itr)[1]
 Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
+
 Base.firstindex(itr::DataFrameColumns) = 1
 Base.lastindex(itr::DataFrameColumns) = length(itr)
+
+if VERSION < v"1.6"
+    Base.firstindex(itr::DataFrameColumns, i::Integer) = first(axes(itr, i))
+    Base.lastindex(itr::DataFrameColumns, i::Integer) = last(axes(itr, i))
+end
+Base.axes(itr::DataFrameColumns, i::Integer) = Base.OneTo(size(itr, i))
+
 Base.iterate(itr::DataFrameColumns, i::Integer=1) =
     i <= length(itr) ? (itr[i], i + 1) : nothing
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =

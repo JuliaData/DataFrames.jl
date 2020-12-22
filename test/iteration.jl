@@ -28,7 +28,7 @@ using Test, DataFrames
     @test length(eachcol(df)) == size(df, 2)
     @test size(eachcol(df)) == (size(df, 2),)
     @test size(eachcol(df), 1) == size(df, 2)
-    @test size(eachcol(df), 2) == 1
+    @test_throws ArgumentError size(eachcol(df), 2)
     @test_throws ArgumentError size(eachcol(df), 0)
     @test eachcol(df)[1] == df[:, 1]
     @test eachcol(df)[:A] === df[!, :A]
