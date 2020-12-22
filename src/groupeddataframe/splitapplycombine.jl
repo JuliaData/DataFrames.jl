@@ -563,7 +563,7 @@ function _combine(gd::GroupedDataFrame,
         try
             wait(t)
         catch e
-            @static if VERSION > "v1.3"
+            @static if VERSION > v"1.3"
                 if e isa TaskFailedException
                     throw(t.exception)
                 else
