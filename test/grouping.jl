@@ -3245,7 +3245,7 @@ end
     @test_throws ArgumentError combine(gdf, :x => :y, :y)
 
     @test select(gdf, :x) == select(df, :id, :x)
-    @test select(gdf, :x => :y ) == select(df, :id, :x => :y)
+    @test select(gdf, :x => :y) == select(df, :id, :x => :y)
     @test select(gdf, [:x, :y]) == select(df, :id, [:x, :y])
     @test select(gdf, [:x, :y], :z) == select(df, :id, [:x, :y], :z)
     @test_throws ArgumentError select(gdf, :x, :x)
