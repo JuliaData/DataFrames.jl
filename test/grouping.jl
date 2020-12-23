@@ -3230,6 +3230,28 @@ end
     end
 end
 
+@testset "column selection and renaming" begin
+    df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6, y=11:16, z=21:26)
+    gdf = groupby_checked(df, :id)
+
+    @test combine(gdf, :x) == DataFrame(id=[1, 1, 1, 2, 3, 3], x=[1, 2, 6, 3, 4, 5])
+    @test combine(gdf, :x => :y ) == DataFrame(id=[1, 1, 1, 2, 3, 3], y=[1, 2, 6, 3, 4, 5])
+    @test combine(gdf, [:x, :y]) ==
+          DataFrame(id=[1, 1, 1, 2, 3, 3], x=[1, 2, 6, 3, 4, 5], y=[11, 12, 16, 13, 14, 15])
+    @test combine(gdf, [:x, :y], :z) ==
+          DataFrame(id=[1, 1, 1, 2, 3, 3], x=[1, 2, 6, 3, 4, 5],
+                    y=[11, 12, 16, 13, 14, 15], z=[21, 22, 26, 23, 24, 25])
+    @test_throws ArgumentError combine(gdf, :x, :x)
+    @test_throws ArgumentError combine(gdf, :x => :y, :y)
+
+    @test select(gdf, :x) == select(df, :id, :x)
+    @test select(gdf, :x => :y ) == select(df, :id, :x => :y)
+    @test select(gdf, [:x, :y]) == select(df, :id, [:x, :y])
+    @test select(gdf, [:x, :y], :z) == select(df, :id, [:x, :y], :z)
+    @test_throws ArgumentError select(gdf, :x, :x)
+    @test_throws ArgumentError select(gdf, :x => :y, :y)
+end
+
 @testset "corner cases of wrong transformation" begin
     df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6)
     gdf = groupby_checked(df, :id)
