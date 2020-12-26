@@ -24,7 +24,6 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [compat]
-julia = "1"
 CategoricalArrays = "0.8.3, 0.9"
 Compat = "3.17"
 DataAPI = "1.4"
@@ -33,10 +32,11 @@ IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = "0.4.2"
 PooledArrays = "0.5"
 PrettyTables = "0.10"
-Reexport = "0.1, 0.2"
+Reexport = "0.1, 0.2, 1.0"
 SortingAlgorithms = "0.1, 0.2, 0.3"
 TableTraits = "0.4, 1"
 Tables = "1.2"
+julia = "1"
 
 [extras]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
