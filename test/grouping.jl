@@ -3284,9 +3284,14 @@ end
         @test subset(df, :x, view=true) ≅ filter(:x => identity, df)
         @test subset(df, :x, view=true) isa SubDataFrame
         @test_throws ArgumentError subset(df, :y)
+        @test_throws ArgumentError subset(df, :y, :x)
         @test subset(df, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
         @test subset(df, :y, skipmissing=true, view=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(df, :y, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(df, :y, :y, skipmissing=true, view=true) ≅ filter(:y => x -> x === true, df)
         @test subset(df, :x, :y, skipmissing=true) ≅
+              filter([:x, :y] => (x, y) -> x && y === true, df)
+        @test subset(df, :y, :x, skipmissing=true) ≅
               filter([:x, :y] => (x, y) -> x && y === true, df)
         @test subset(df, :x, :y, skipmissing=true, view=true) ≅
               filter([:x, :y] => (x, y) -> x && y === true, df)
@@ -3312,9 +3317,14 @@ end
         @test subset(gdf, :x, view=true) ≅ filter(:x => identity, df)
         @test subset(gdf, :x, view=true) isa SubDataFrame
         @test_throws ArgumentError subset(gdf, :y)
+        @test_throws ArgumentError subset(gdf, :y, :x)
         @test subset(gdf, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
         @test subset(gdf, :y, skipmissing=true, view=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(gdf, :y, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
+        @test subset(gdf, :y, :y, skipmissing=true, view=true) ≅ filter(:y => x -> x === true, df)
         @test subset(gdf, :x, :y, skipmissing=true) ≅
+              filter([:x, :y] => (x, y) -> x && y === true, df)
+        @test subset(gdf, :y, :x, skipmissing=true) ≅
               filter([:x, :y] => (x, y) -> x && y === true, df)
         @test subset(gdf, :x, :y, skipmissing=true, view=true) ≅
               filter([:x, :y] => (x, y) -> x && y === true, df)
@@ -3460,9 +3470,11 @@ end
 
     @test_throws ArgumentError subset(DataFrame(x=false, y=missing), :x, :y)
     @test_throws ArgumentError subset(DataFrame(x=missing, y=false), :x, :y)
+    @test_throws ArgumentError subset(DataFrame(x=missing, y=false), :x)
     @test_throws ArgumentError subset(DataFrame(x=false, y=missing), :y)
     @test_throws ArgumentError subset(DataFrame(x=false, y=1), :x, :y)
     @test_throws ArgumentError subset(DataFrame(x=1, y=false), :x, :y)
+    @test_throws ArgumentError subset(DataFrame(x=1, y=false), :y, :x)
     @test_throws ArgumentError subset(DataFrame(x=false, y=1), :y)
 end
 
