@@ -57,9 +57,10 @@ Note that as opposed to [`filter`](@ref) the `subset` function works on whole
 columns (or all rows in groups for `GroupedDataFrame`) and by default skips rows
 for which condition is false.
 
-If `skipmissing=false` (the default) vectors containing only `Bool` values are
-allowed to be produced by `args`. If `skipmissing=true`, additionally `missing`
-is allowed and it is treated as `false` (corresponding rows are skipped).
+If `skipmissing=false` (the default) `args` are required to produce vectors containing
+only `Bool` values.
+If `skipmissing=true`, additionally `missing` is allowed and it is treated as `false`
+(i.e. rows for which one of the conditions returns `missing` are skipped).
 
 If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 
