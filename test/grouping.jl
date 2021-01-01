@@ -3273,7 +3273,7 @@ end
 end
 
 @testset "subset and subset!" begin
-    refdf = DataFrame(x = repeat([true, false], 4),
+    refdf = DataFrame(x = repeat(Any[true, false], 4),
                       y = repeat([true, false, missing, missing], 2),
                       z = repeat([1, 2, 3, 3], 2),
                       id = 1:8)
@@ -3300,7 +3300,7 @@ end
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test_throws ArgumentError subset(df)
         @test isempty(subset(df, :x, :x => ByRow(!)))
-        @test isempty(subset(df, :x => x -> false, :x => x -> missing))
+        @test_throws ArgumentError subset(df, :x => x -> false, :x => x -> missing)
         @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> missing)
         @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> 2)
     end
@@ -3328,7 +3328,7 @@ end
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test_throws ArgumentError subset(gdf)
         @test isempty(subset(gdf, :x, :x => ByRow(!)))
-        @test isempty(subset(gdf, :x => x -> false, :x => x -> missing))
+        @test_throws ArgumentError subset(gdf, :x => x -> false, :x => x -> missing)
         @test_throws ArgumentError subset(gdf, :x => x -> true, :x => x -> missing)
         @test_throws ArgumentError subset(gdf, :x => x -> true, :x => x -> 2)
     end
@@ -3359,8 +3359,7 @@ end
     @test isempty(df)
 
     df = copy(refdf)
-    @test isempty(subset!(df, :x => x -> false, :x => x -> missing))
-    df = copy(refdf)
+    @test_throws ArgumentError subset!(df, :x => x -> false, :x => x -> missing)
     @test_throws ArgumentError subset!(df, :x => x -> true, :x => x -> missing)
     @test_throws ArgumentError subset!(df, :x => x -> true, :x => x -> 2)
 
@@ -3404,9 +3403,7 @@ end
     @test isempty(df)
     df = copy(refdf)
     gdf = groupby(df, :z)
-    @test isempty(subset!(gdf, :x => x -> false, :x => x -> missing))
-    df = copy(refdf)
-    gdf = groupby(df, :z)
+    @test_throws ArgumentError subset!(gdf, :x => x -> false, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> 2)
 
@@ -3442,9 +3439,7 @@ end
 
     df = copy(refdf)
     gdf = groupby(df, :z)[[3, 2, 1]]
-    @test isempty(subset!(gdf, :x => x -> false, :x => x -> missing))
-    df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    @test_throws ArgumentError subset!(gdf, :x => x -> false, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> 2)
 
@@ -3462,6 +3457,13 @@ end
     @test subset(df, :x => x -> true) ≅ df
     @test_throws ArgumentError subset(df, :x => x -> (a=x,))
     @test_throws ArgumentError subset(df, :x => (x -> (a=x,)) => AsTable)
+
+    @test_throws ArgumentError subset(DataFrame(x=false, y=missing), :x, :y)
+    @test_throws ArgumentError subset(DataFrame(x=missing, y=false), :x, :y)
+    @test_throws ArgumentError subset(DataFrame(x=false, y=missing), :y)
+    @test_throws ArgumentError subset(DataFrame(x=false, y=1), :x, :y)
+    @test_throws ArgumentError subset(DataFrame(x=1, y=false), :x, :y)
+    @test_throws ArgumentError subset(DataFrame(x=false, y=1), :y)
 end
 
 @testset "make sure we handle idx correctly when groups are reordered" begin

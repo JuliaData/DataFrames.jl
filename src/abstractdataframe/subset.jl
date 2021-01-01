@@ -6,6 +6,17 @@ _process_subset_pair(i::Int, @nospecialize(a::Pair{<:Any, <:Base.Callable})) =
 _process_subset_pair(i::Int, a) =
     throw(ArgumentError("condition specifier $a is not supported by `subset`"))
 
+_and(x::Bool) = x
+_and(x::Bool, y::Bool...) = x && _and(y...)
+_and(x::Any...) =
+    throw(ArgumentError("set of non-boolean values $x passed in boolean context"))
+
+_and_missing(x::Bool) = x
+_and_missing(x::Bool, y::Union{Bool, Missing}...) = x && _and_missing(y...)
+_and_missing(x::Missing, y::Union{Bool, Missing}...) = false
+_and_missing(x::Any...) =
+    throw(ArgumentError("set of non-boolean values $x passed in boolean context"))
+
 @noinline function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 @nospecialize(args), skipmissing::Bool)
     conditions = Any[_process_subset_pair(i, a) for (i, a) in enumerate(args)]
@@ -18,41 +29,17 @@ _process_subset_pair(i::Int, a) =
         df_conditions = select(df, conditions...,
                                copycols=!(parent(df) isa DataFrame), keepkeys=false)
     end
-    for col in eachcol(df_conditions)
-        if !(eltype(col) <: Union{Missing, Bool})
-            throw(ArgumentError("each transformation must produce a vector whose " *
-                                "eltype is subtype of Union{Missing, Bool}"))
-        end
-    end
 
     @assert ncol(df_conditions) == length(conditions)
 
-    if ncol(df_conditions) == 1
-        cond = df_conditions[!, 1]
-    else
-        cond = .&(eachcol(df_conditions)...)
-    end
-
-    @assert eltype(cond) <: Union{Bool, Missing}
-
     if skipmissing
-        return coalesce.(cond, false)
+        cond = _and_missing.(eachcol(df_conditions)...)
     else
-        # currently the inner condition is only evaluated if actually
-        # we have some missings in cond, but it might change in the future so
-        # I leave this check
-        if Missing <: eltype(cond)
-            pos = findfirst(ismissing, cond)
-            if pos !== nothing
-                # note that the user might have passed a GroupedDataFrame but we
-                # then refer to the parent data frame of this GroupedDataFrame
-                throw(ArgumentError("skipmissing=false but at row $pos the" *
-                                    " passed conditions were evaluated to" *
-                                    " a missing value"))
-            end
-        end
-        return cond
+        cond = _and.(eachcol(df_conditions)...)
     end
+
+    @assert eltype(cond) === Bool
+    return cond
 end
 
 """
@@ -62,25 +49,25 @@ end
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are `true`.
 
-If `skipmissing=false` (the default), an error is thrown if the conjunction (i.e. `&`)
-of results produced by `args` is `missing`. If `skipmissing=true`, `missing`
-is allowed and corresponding rows are dropped. Note that if some transformations
-in `args` return `false` and others `missing` for a given row, the conjunction is `false`,
-but that if some return `true` and others `missing`, the conjunction is `missing`
-([three-valued logic](https://en.wikipedia.org/wiki/Three-valued_logic)).
-
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
 described for [`select`](@ref).
 
 Note that as opposed to [`filter`](@ref) the `subset` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`) and by default drops rows
+columns (or all rows in groups for `GroupedDataFrame`) and by default skips rows
 for which condition is false.
+
+If `skipmissing=false` (the default) vectors containing only `Bool` values are
+allowed to be produced by `args`. If `skipmissing=true`, additionally `missing`
+is allowed and it is treated as `false` (corresponding rows are skipped).
 
 If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 
 If a `GroupedDataFrame` is passed then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
+
+Note that this function will have a large compilation time if more than 32
+conditions are passed as `args`.
 
 See also: [`subset!`](@ref), [`filter`](@ref), [`filter!`](@ref),  [`select`](@ref)
 
@@ -129,7 +116,7 @@ julia> subset(df, :x, :z, skipmissing=true)
    1 │     1  true  true   true      1
 
 julia> subset(df, :x, :z)
-ERROR: ArgumentError: skipmissing=false but at row 3 the passed conditions were evaluated to a missing value
+ERROR: ArgumentError: set of non-boolean values (true, missing) passed in boolean context
 
 julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 2×5 DataFrame
@@ -160,20 +147,23 @@ end
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
 
-If `skipmissing=true`, producing `missing` in conjunction of results produced by
-`args` is allowed and corresponding rows are dropped. If `skipmissing=false`
-(the default) an error is thrown if `missing` is produced.
-
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
 described for [`select`](@ref).
 
 Note that as opposed to [`filter!`](@ref) the `subset!` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`) and by default drops rows
+columns (or all rows in groups for `GroupedDataFrame`) and by default skips rows
 for which contition is false.
+
+If `skipmissing=false` (the default) vectors containing only `Bool` values are
+allowed to be produced by `args`. If `skipmissing=true`, additionally `missing`
+is allowed and it is treated as `false` (corresponding rows are skipped).
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
+
+Note that this function will have a large compilation time if more than 32
+conditions are passed as `args`.
 
 See also: [`subset`](@ref), [`filter`](@ref), [`filter!`](@ref)
 
@@ -223,7 +213,7 @@ julia> df = DataFrame(id=1:4, x=[true, false, true, false],
    4 │     4  false  missing      4
 
 julia> subset!(df, :x, :z)
-ERROR: ArgumentError: skipmissing=false but at row 3 the passed conditions were evaluated to a missing value
+ERROR: ArgumentError: set of non-boolean values (true, missing) passed in boolean context
 
 julia> subset!(df, :x, :z, skipmissing=true);
 
