@@ -3577,4 +3577,16 @@ end
     end
 end
 
+@testset "result eltype widening from different tasks" begin
+    for df in (DataFrame(x=1:5, y=Any[1, missing, nothing, 2.0, 'a']),
+               DataFrame(x=1:9, y=Any[1, 1, missing, 1, nothing, 1, 2.0, 1, 'a']),
+               DataFrame(x=1:9, y=Any[1, 2, 3, 4, 5, 6, 2.0, missing, 'a']))
+        gd = groupby(df, :x)
+        @test combine(gd, :y => (y -> y[1]) => :y) ≅ df
+        # sleep ensures one task will widen the result after the other is done,
+        # so that data has to be copied at the end
+        @test combine(gd, [:x, :y] => ((x, y) -> (sleep(x == [5]); y[1])) => :y) ≅ df
+    end
+end
+
 end # module

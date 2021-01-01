@@ -118,31 +118,30 @@ function _combine_rows_with_first_task!(tid::Integer,
             lock(widen_type_lock)
             try
                 newoutcols = outcolsref[]
-                # If another thread widened outcols, try again
-                # to see whether new eltype is wide enough
-                if newoutcols !== outcols
-                    j = fill_row!(row, newoutcols, i, j, colnames)
-                end
-                while j !== nothing
-                    # Workaround for julia#15276
-                    newoutcols = let i=i, j=j, outcols=outcols, row=row, idx=idx
-                        ntuple(length(outcols)) do k
-                            S = typeof(row[k])
-                            T = eltype(outcols[k])
-                            U = promote_type(S, T)
-                            if S <: T || U <: T
-                                outcols[k]
-                            else
-                                copyto!(Tables.allocatecolumn(U, length(outcols[k])),
-                                        idx[1], outcols[k], idx[1], i - idx[1] + (k < j))
-                            end
+                # Workaround for julia#15276
+                newoutcols = let i=i, j=j, newoutcols=newoutcols, row=row, idx=idx
+                    ntuple(length(newoutcols)) do k
+                        S = typeof(row[k])
+                        T = eltype(newoutcols[k])
+                        U = promote_type(S, T)
+                        if S <: T || U <: T
+                            newoutcols[k]
+                        else
+                            Tables.allocatecolumn(U, length(newoutcols[k]))
                         end
                     end
-                    outcolsref[] = newoutcols
-                    j = fill_row!(row, newoutcols, i, j, colnames)
-                    type_widened .= true
-                    type_widened[tid] = false
                 end
+                j = fill_row!(row, newoutcols, i, j, colnames)
+                @assert j === nothing # eltype is guaranteed to match
+                for k in 1:length(outcols)
+                    if outcols[k] !== newoutcols[k]
+                        copyto!(newoutcols[k], idx[1],
+                                outcols[k], idx[1], i - idx[1] + 1)
+                    end
+                end
+                outcolsref[] = newoutcols
+                type_widened .= true
+                type_widened[tid] = false
             finally
                 unlock(widen_type_lock)
             end
@@ -159,12 +158,15 @@ function _combine_rows_with_first_task!(tid::Integer,
                 type_widened[tid] = false
                 newoutcols = outcolsref[]
                 for k in 1:length(outcols)
-                    copyto!(newoutcols[k], idx[1], outcols[k], idx[1], i - idx[1] + 1)
+                    if outcols[k] !== newoutcols[k]
+                        copyto!(newoutcols[k], idx[1],
+                                outcols[k], idx[1], i - idx[1] + 1)
+                    end
                 end
             end
             return _combine_rows_with_first_task!(tid, idx, newoutcols, outcolsref,
                                                   type_widened, widen_type_lock,
-                                                  i, f, gd, starts, ends,
+                                                  i+1, f, gd, starts, ends,
                                                   incols, colnames, firstmulticol)
         end
     end
