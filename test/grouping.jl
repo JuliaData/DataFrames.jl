@@ -3476,6 +3476,14 @@ end
     @test_throws ArgumentError subset(DataFrame(x=1, y=false), :x, :y)
     @test_throws ArgumentError subset(DataFrame(x=1, y=false), :y, :x)
     @test_throws ArgumentError subset(DataFrame(x=false, y=1), :y)
+
+    @test_throws ArgumentError subset(DataFrame(x=false, y=1), :x, :y, skipmissing=true)
+    @test_throws ArgumentError subset(DataFrame(x=1, y=false), :x, :y, skipmissing=true)
+    @test_throws ArgumentError subset(DataFrame(x=1, y=false), :y, :x, skipmissing=true)
+    @test_throws ArgumentError subset(DataFrame(x=false, y=1), :y, skipmissing=true)
+
+    @test_throws ArgumentError DataFrames._and()
+    @test_throws ArgumentError DataFrames._and_missing()
 end
 
 @testset "make sure we handle idx correctly when groups are reordered" begin
