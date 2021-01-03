@@ -69,7 +69,8 @@ end
 
 """
     subset(df::AbstractDataFrame, args...; skipmissing::Bool=false, view::Bool=false)
-    subset(gdf::GroupedDataFrame, args...; skipmissing::Bool=false, view::Bool=false)
+    subset(gdf::GroupedDataFrame, args...; skipmissing::Bool=false, view::Bool=false,
+           ungroup::Bool=true)
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are `true`.
@@ -79,8 +80,7 @@ Each argument passed in `args` can be either a single column selector or a
 described for [`select`](@ref).
 
 Note that as opposed to [`filter`](@ref) the `subset` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`) and by default skips rows
-for which condition is false.
+columns (or all rows in groups for `GroupedDataFrame`).
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -88,6 +88,9 @@ allowed and it is treated as `false` (i.e. rows for which one of the conditions
 returns `missing` are skipped).
 
 If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
+
+If `ungroup=false` the return value of the operation on `gdf` is re-grouped
+based on the same grouping columns and `GroupedDataFrame` is returned.
 
 If a `GroupedDataFrame` is passed then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
@@ -157,15 +160,18 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 end
 
 @inline function subset(gdf::GroupedDataFrame, @nospecialize(args...);
-                        skipmissing::Bool=false, view::Bool=false)
+                        skipmissing::Bool=false, view::Bool=false,
+                        ungroup::Bool=true)
     row_selector = _get_subset_conditions(gdf, args, skipmissing)
     df = parent(gdf)
-    return view ? Base.view(df, row_selector, :) : df[row_selector, :]
+    res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
+    return ungroup ? res : groupby(res, groupcols(gdf))
 end
 
 """
     subset!(df::AbstractDataFrame, args...; skipmissing::Bool=false)
-    subset!(gdf::GroupedDataFrame{DataFrame}, args..., skipmissing::Bool=false)
+    subset!(gdf::GroupedDataFrame{DataFrame}, args..., skipmissing::Bool=false,
+            ungroup::Bool=true)
 
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
@@ -175,13 +181,15 @@ Each argument passed in `args` can be either a single column selector or a
 described for [`select`](@ref).
 
 Note that as opposed to [`filter!`](@ref) the `subset!` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`) and by default skips rows
-for which contition is false.
+columns (or all rows in groups for `GroupedDataFrame`).
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
 allowed and it is treated as `false` (i.e. rows for which one of the conditions
 returns `missing` are skipped).
+
+If `ungroup=false` the return value of the operation on `gdf` is re-grouped
+based on the same grouping columns and `GroupedDataFrame` is returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
@@ -264,8 +272,10 @@ function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Boo
     return delete!(df, findall(!, row_selector))
 end
 
-function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false)
+function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
+                 ungroup::Bool=true)
     row_selector = _get_subset_conditions(gdf, args, skipmissing)
     df = parent(gdf)
-    return delete!(df, findall(!, row_selector))
+    res = delete!(df, findall(!, row_selector))
+    return ungroup ? res : groupby(res, groupcols(gdf))
 end

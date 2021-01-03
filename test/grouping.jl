@@ -3279,7 +3279,9 @@ end
                       id = 1:8)
 
     for df in (copy(refdf), @view copy(refdf)[1:end-1, :])
+        df2 = copy(df)
         @test subset(df, :x) ≅ filter(:x => identity, df)
+        @test df ≅ df2
         @test subset(df, :x) isa DataFrame
         @test subset(df, :x, view=true) ≅ filter(:x => identity, df)
         @test subset(df, :x, view=true) isa SubDataFrame
@@ -3312,10 +3314,18 @@ end
 
     for df in (copy(refdf), @view copy(refdf)[1:end-1, :]),
         gdf in (groupby_checked(df, :z), groupby_checked(df, :z)[[3, 2, 1]])
+        df2 = copy(df)
         @test subset(gdf, :x) ≅ filter(:x => identity, df)
+        @test df ≅ df2
         @test subset(gdf, :x) isa DataFrame
+        @test subset(gdf, :x, ungroup=false) ≅
+              groupby_checked(filter(:x => identity, df), :z)
+        @test subset(gdf, :x, ungroup=false) isa GroupedDataFrame{DataFrame}
         @test subset(gdf, :x, view=true) ≅ filter(:x => identity, df)
         @test subset(gdf, :x, view=true) isa SubDataFrame
+        @test subset(gdf, :x, view=true, ungroup=false) ≅
+              groupby_checked(filter(:x => identity, df), :z)
+        @test subset(gdf, :x, view=true, ungroup=false) isa GroupedDataFrame{<:SubDataFrame}
         @test_throws ArgumentError subset(gdf, :y)
         @test_throws ArgumentError subset(gdf, :y, :x)
         @test subset(gdf, :y, skipmissing=true) ≅ filter(:y => x -> x === true, df)
@@ -3374,81 +3384,89 @@ end
     @test_throws ArgumentError subset!(df, :x => x -> true, :x => x -> 2)
 
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :x) === df
+
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
+    gdf2 = subset!(gdf, :x, ungroup=false)
+    @test gdf2 isa GroupedDataFrame{DataFrame}
+    @test parent(gdf2) === df
+    @test gdf2 ≅ groupby_checked(df, :z) ≅ groupby_checked(filter(:x => identity, refdf), :z)
+
+    df = copy(refdf)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :x) ≅ df ≅ filter(:x => identity, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test_throws ArgumentError subset!(gdf, :y)
     @test df ≅ refdf
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :y, skipmissing=true) === df
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :x, :y, skipmissing=true) === df
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :x, :y, skipmissing=true) ≅ df ≅
           filter([:x, :y] => (x, y) -> x && y === true, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅ df ≅
           filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test subset!(gdf, :x, :id => ByRow(<(4))) ≅ df ≅
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test_throws ArgumentError subset!(gdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
     @test isempty(df)
     df = copy(refdf)
-    gdf = groupby(df, :z)
+    gdf = groupby_checked(df, :z)
     @test_throws ArgumentError subset!(gdf, :x => x -> false, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> 2)
 
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test subset!(gdf, :x) ≅ df ≅ filter(:x => identity, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test_throws ArgumentError subset!(gdf, :y)
     @test df ≅ refdf
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test subset!(gdf, :y, skipmissing=true) ≅ df ≅ filter(:y => x -> x === true, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test subset!(gdf, :x, :y, skipmissing=true) ≅ df ≅
           filter([:x, :y] => (x, y) -> x && y === true, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test subset!(gdf, :x, :y, :id => ByRow(<(4)), skipmissing=true) ≅ df ≅
           filter([:x, :y, :id] => (x, y, id) -> x && y === true && id < 4, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test subset!(gdf, :x, :id => ByRow(<(4))) ≅ df ≅
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test_throws ArgumentError subset!(gdf)
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
     @test isempty(df)
 
     df = copy(refdf)
-    gdf = groupby(df, :z)[[3, 2, 1]]
+    gdf = groupby_checked(df, :z)[[3, 2, 1]]
     @test_throws ArgumentError subset!(gdf, :x => x -> false, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> missing)
     @test_throws ArgumentError subset!(gdf, :x => x -> true, :x => x -> 2)
