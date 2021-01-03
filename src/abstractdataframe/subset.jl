@@ -42,7 +42,7 @@ end
 
 # Note that _get_subset_conditions will have a large compilation time
 # if more than 32 conditions are passed as `args`.
-@noinline function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
+function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 @nospecialize(args), skipmissing::Bool)
     conditions = Any[_process_subset_pair(i, a) for (i, a) in enumerate(args)]
 
@@ -92,7 +92,7 @@ If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 If a `GroupedDataFrame` is passed then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
 
-See also: [`subset!`](@ref), [`filter`](@ref), [`filter!`](@ref),  [`select`](@ref)
+See also: [`subset!`](@ref), [`filter`](@ref), [`select`](@ref)
 
 # Examples
 
@@ -186,7 +186,7 @@ returns `missing` are skipped).
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
 
-See also: [`subset`](@ref), [`filter`](@ref), [`filter!`](@ref)
+See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 
 # Examples
 
