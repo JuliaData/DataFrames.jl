@@ -188,8 +188,8 @@ containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
 allowed and it is treated as `false` (i.e. rows for which one of the conditions
 returns `missing` are skipped).
 
-If `ungroup=false` the return value of the operation on `gdf` is re-grouped
-based on the same grouping columns and `GroupedDataFrame` is returned.
+If `ungroup=false` the resulting data frame is re-grouped based on the same
+grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
