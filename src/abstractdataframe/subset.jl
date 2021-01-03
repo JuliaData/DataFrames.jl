@@ -165,6 +165,7 @@ end
     row_selector = _get_subset_conditions(gdf, args, skipmissing)
     df = parent(gdf)
     res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
+    # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
     return ungroup ? res : groupby(res, groupcols(gdf))
 end
 
@@ -277,5 +278,6 @@ function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Boo
     row_selector = _get_subset_conditions(gdf, args, skipmissing)
     df = parent(gdf)
     res = delete!(df, findall(!, row_selector))
+    # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
     return ungroup ? res : groupby(res, groupcols(gdf))
 end
