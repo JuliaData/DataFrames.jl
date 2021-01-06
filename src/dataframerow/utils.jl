@@ -123,7 +123,7 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     # but using open addressing with a table with at least 5/4 as many slots as rows
     # (rounded up to nearest power of 2) to avoid performance degradation
     # in a corner case of groups having exactly one row
-    sz = max((5 * length(rhashes)) >> 2, 16)
+    sz = max(1 + ((5 * length(rhashes)) >> 2), 16)
     sz = 1 << (8 * sizeof(sz) - leading_zeros(sz - 1))
     @assert 4 * sz >= 5 * length(rhashes)
     szm1 = sz-1
