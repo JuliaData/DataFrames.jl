@@ -122,7 +122,8 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
     # but using open addressing with a table with 5/4 as many slots as rows to avoid performance degradation
     # in a corner case of groups having exactly one row
-    sz = Base._tablesz((length(rhashes) * 5) >> 2)
+    sz = max((5 * length(rhashes)) >> 4, 16)
+    sz = 1 << (8 * sizeof(sz) - leading_zeros(sz - 1))
     @assert sz >= length(rhashes)
     szm1 = sz-1
     gslots = zeros(Int, sz)
