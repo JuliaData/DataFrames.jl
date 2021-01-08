@@ -571,6 +571,10 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                if firstindex(newcol) != 1
+                    throw(ArgumentError("Currently DataFrames.jl supports only columns " *
+                                    "that use 1-based indexing"))
+                end
                 _columns(df)[i] = newcol
             end
         end
@@ -625,6 +629,10 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                if firstindex(newcol) != 1
+                    throw(ArgumentError("Currently DataFrames.jl supports only columns " *
+                                    "that use 1-based indexing"))
+                end
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end

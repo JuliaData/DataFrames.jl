@@ -205,6 +205,15 @@ struct DataFrame <: AbstractDataFrame
             end
         end
 
+        for (i, col) in enumerate(columns)
+            fic = firstindex(col)
+            if fic != 1
+                throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                    "columns that use 1-based indexing and " *
+                                    "column $i has starting index equal to $fic"))
+            end
+        end
+
         new(convert(Vector{AbstractVector}, columns), colindex)
     end
 end
@@ -390,6 +399,16 @@ corrupt_msg(df::DataFrame, i::Integer) =
 
 function _check_consistency(df::DataFrame)
     cols, idx = _columns(df), index(df)
+
+    for (i, col) in enumerate(cols)
+        fic = firstindex(col)
+        if fic != 1
+            throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                "columns that use 1-based indexing and " *
+                                "column $i has starting index equal to $fic"))
+        end
+    end
+
     ncols = length(cols)
     @assert length(idx.names) == length(idx.lookup) == ncols
     ncols == 0 && return nothing
@@ -514,6 +533,12 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
     dv = isa(v, AbstractRange) ? collect(v) : v
+
+    if firstindex(dv) != 1
+        throw(ArgumentError("Currently DataFrames.jl supports only columns " *
+                        "that use 1-based indexing"))
+    end
+
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
         _columns(df)[j] = dv
@@ -781,6 +806,12 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:
         else
             item_new = item
         end
+
+        if firstindex(item_new) != 1
+            throw(ArgumentError("Currently DataFrames.jl supports only columns " *
+                            "that use 1-based indexing"))
+        end
+
         if ncol(df) == 0
             df[!, name] = item_new
         else
@@ -796,7 +827,6 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:
                     k += 1
                 end
             end
-
             insert!(index(df), col_ind, name)
             insert!(_columns(df), col_ind, item_new)
         end
@@ -1197,6 +1227,10 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                     newcol = similar(df1_c, promote_type(S, T), targetrows)
                     copyto!(newcol, 1, df1_c, 1, nrows)
                     copyto!(newcol, nrows+1, df2_c, 1, targetrows - nrows)
+                    if firstindex(newcol) != 1
+                        throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                            "columns that use 1-based indexing"))
+                    end
                     _columns(df1)[j] = newcol
                 end
             else
@@ -1208,6 +1242,10 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                                      targetrows)
                     copyto!(newcol, 1, df1[!, j], 1, nrows)
                     newcol[nrows+1:targetrows] .= missing
+                    if firstindex(newcol) != 1
+                        throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                            "columns that use 1-based indexing"))
+                    end
                     _columns(df1)[j] = newcol
                 else
                     throw(ArgumentError("promote=false and source data frame does " *
@@ -1300,6 +1338,10 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                if firstindex(newcol) != 1
+                    throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                        "columns that use 1-based indexing"))
+                end
                 _columns(df)[i] = newcol
             end
         end
@@ -1362,6 +1404,10 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                if firstindex(newcol) != 1
+                    throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                        "columns that use 1-based indexing"))
+                end
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end
@@ -1517,6 +1563,10 @@ function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                if firstindex(newcol) != 1
+                    throw(ArgumentError("Currently DataFrames.jl supports only " *
+                                        "columns that use 1-based indexing"))
+                end
                 _columns(df)[i] = newcol
             end
         end
