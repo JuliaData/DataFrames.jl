@@ -126,7 +126,10 @@ include("deprecated.jl")
 
 include("other/tables.jl")
 
+include("despecialize.jl")
+
 include("other/precompile.jl")
 precompile()
+
 
 end # module DataFrames
