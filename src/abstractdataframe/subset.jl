@@ -153,14 +153,14 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
    2 │     4  false  false  missing     12
 ```
 """
-@inline function subset(df::AbstractDataFrame, @nospecialize(args...);
-                        skipmissing::Bool=false, view::Bool=false)
+function subset(df::AbstractDataFrame, @nospecialize(args...);
+                skipmissing::Bool=false, view::Bool=false)
     row_selector = _get_subset_conditions(df, args, skipmissing)
     return view ? Base.view(df, row_selector, :) : df[row_selector, :]
 end
 
-@inline function subset(gdf::GroupedDataFrame, @nospecialize(args...);
-                        skipmissing::Bool=false, view::Bool=false,
+function subset(gdf::GroupedDataFrame, @nospecialize(args...);
+                skipmissing::Bool=false, view::Bool=false,
                         ungroup::Bool=true)
     row_selector = _get_subset_conditions(gdf, args, skipmissing)
     df = parent(gdf)
