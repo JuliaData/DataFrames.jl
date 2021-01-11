@@ -12,6 +12,11 @@ df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id
 df2 = DataFrame(grp = [1, 3], w = [10, 11])
 ```
 
+Note that in the comparisons presented below predicates like `x -> x >= 1` can
+be more compactly written as `=>(1)`. The latter form has an additional benefit
+that it is compiled only once per Julia session (as opposed to `x -> x >= 1`
+which defines a new anonymous function every time it is introduced).
+
 ## Comparison with the Python package pandas
 
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
@@ -204,7 +209,7 @@ df <- tibble(grp = rep(1:2, 3), x = 6:1, y = 4:9,
 | Rename columns           | `rename(df, x_new = x)`        | `rename(df, :x => :x_new)`             |
 | Pick columns             | `select(df, x, y)`             | `select(df, :x, :y)`                   |
 | Pick & transform columns | `transmute(df, mean(x), y)`    | `select(df, :x => mean, :y)`           |
-| Pick rows                | `filter(df, x >= 1)`           | `filter(:x => >=(1), df)`              |
+| Pick rows                | `filter(df, x >= 1)`           | `subset(df, :x => ByRow(x -> x >= 1))` |
 | Sort rows                | `arrange(df, x)`               | `sort(df, :x)`                         |
 
 As in dplyr, some of these functions can be applied to grouped data frames, in which case they operate by group:
@@ -240,7 +245,7 @@ The following table compares the main functions of DataFrames.jl with Stata:
 | Add new columns        | `egen x_mean = mean(x)` | `transform!(df, :x => mean => :x_mean)` |
 | Rename columns         | `rename x x_new`        | `rename!(df, :x => :x_new)`             |
 | Pick columns           | `keep x y`              | `select!(df, :x, :y)`                   |
-| Pick rows              | `keep if x >= 1`        | `filter!(:x => >=(1), df)`              |
+| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1)`        |
 | Sort rows              | `sort x`                | `sort!(df, :x)`                         |
 
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
