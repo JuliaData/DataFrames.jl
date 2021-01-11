@@ -645,6 +645,41 @@ Equivalently, the `in` function can be called with a single argument to create
 a function object that tests whether each value belongs to the subset
 (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
+#### Selecting Rows with `filter`
+
+We have seen above how to subset a `DataFrame` to several criteria, involving multiple columns, by supplying a logical vector to the first dimension. For instance, in the following we want to subset to all rows where `x > 2` and where `a == 'c'`:
+
+```jldoctest dataframe
+julia> df = DataFrame(:x => 1:4, :y => "a", :a => 'a':'d', :b => exp(1))
+4×4 DataFrame
+│ Row │ x     │ y      │ a    │ b       │
+│     │ Int64 │ String │ Char │ Float64 │
+├─────┼───────┼────────┼──────┼─────────┤
+│ 1   │ 1     │ a      │ 'a'  │ 2.71828 │
+│ 2   │ 2     │ a      │ 'b'  │ 2.71828 │
+│ 3   │ 3     │ a      │ 'c'  │ 2.71828 │
+│ 4   │ 4     │ a      │ 'd'  │ 2.71828 │
+
+julia> df[(df.x .> 2) .& (df.a .== 'c'), : ]
+1×4 DataFrame
+│ Row │ x     │ y      │ a    │ b       │
+│     │ Int64 │ String │ Char │ Float64 │
+├─────┼───────┼────────┼──────┼─────────┤
+│ 1   │ 3     │ a      │ 'c'  │ 2.71828 │
+```
+
+An alternative formulation, which notably saves on the need to use
+broadcasting syntax via `.` prefixes, uses [`filter`](@ref) or [`filter!`](@ref):
+
+```jldoctest dataframe
+julia> filter([:x, :a] => (x1, x2) -> x1 > 2 && x2 == 'c', df)
+1×4 DataFrame
+│ Row │ x     │ y      │ a    │ b       │
+│     │ Int64 │ String │ Char │ Float64 │
+├─────┼───────┼────────┼──────┼─────────┤
+│ 1   │ 3     │ a      │ 'c'  │ 2.71828 │
+```
+
 !!! note
 
     As with matrices, subsetting from a data frame will usually return a copy of
