@@ -645,42 +645,6 @@ Equivalently, the `in` function can be called with a single argument to create
 a function object that tests whether each value belongs to the subset
 (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
 
-#### Selecting rows with `filter`
-
-We have seen above how to subset a `DataFrame` to several criteria, involving multiple columns, by supplying a logical vector to the first dimension. For instance, in the following we want to subset to all rows where `x > 2` and where `a == 'c'`:
-
-```jldoctest dataframe
-julia> df = DataFrame(:x => 1:4, :y => rand(4), :a => 'a':'d')
-4×3 DataFrame
- Row │ x      y         a    
-     │ Int64  Float64   Char 
-─────┼───────────────────────
-   1 │     1  0.830964  a
-   2 │     2  0.478479  b
-   3 │     3  0.939474  c
-   4 │     4  0.742664  d
-
-julia> df[(df.x .> 2) .& (df.a .== 'c'), : ]
-1×3 DataFrame
- Row │ x      y         a    
-     │ Int64  Float64   Char 
-─────┼───────────────────────
-   1 │     3  0.939474  c
-
-```
-
-An alternative formulation, which notably saves on the need to use
-broadcasting syntax via `.` prefixes, uses [`filter`](@ref) or [`filter!`](@ref):
-
-```jldoctest dataframe
-julia> filter([:x, :a] => (x1, x2) -> x1 > 2 && x2 == 'c', df)
-1×3 DataFrame
- Row │ x      y         a    
-     │ Int64  Float64   Char 
-─────┼───────────────────────
-   1 │     3  0.939474  c
-```
-
 !!! note
 
     As with matrices, subsetting from a data frame will usually return a copy of
@@ -695,6 +659,56 @@ julia> filter([:x, :a] => (x1, x2) -> x1 > 2 && x2 == 'c', df)
 
     More details on copies, views, and references can be found
     in the [`getindex` and `view`](@ref) section.
+
+#### Selecting rows with `filter` and `subset`
+
+We have seen above how to subset a `DataFrame` to several criteria, involving multiple columns,
+by supplying a logical vector to the first dimension.
+For instance, in the following we want to subset to all rows where `x > 2` and where `a == 'c'`:
+
+```jldoctest dataframe
+julia> df = DataFrame(x=1:4, y=["Alice", "Bob", "Claire", "Dylan"], a='a':'d')
+4×3 DataFrame
+ Row │ x      y       a    
+     │ Int64  String  Char 
+─────┼─────────────────────
+   1 │     1  Alice   a
+   2 │     2  Bob     b
+   3 │     3  Claire  c
+   4 │     4  Dylan   d
+
+julia> df[(df.x .> 2) .& (df.a .== 'c'), : ]
+1×3 DataFrame
+ Row │ x      y       a    
+     │ Int64  String  Char 
+─────┼─────────────────────
+   1 │     3  Claire  c
+```
+
+An alternative formulation, which notably saves on the need to use
+broadcasting syntax via `.` prefixes, uses [`filter`](@ref) or [`filter!`](@ref):
+
+```jldoctest dataframe
+julia> filter([:x, :a] => (x, a) -> x > 2 && a == 'c', df)
+1×3 DataFrame
+ Row │ x      y       a    
+     │ Int64  String  Char 
+─────┼─────────────────────
+   1 │     3  Claire  c
+```
+
+You can also use the [`subset`](@ref) or [`subset!`](@ref) functions that provied a more
+flexible syntax (similar to e.g. [`select`](@ref) that is discussed in more detail
+in the next section):
+
+```jldoctest dataframe
+julia> subset(df, :x => ByRow(>(2)), :a => ByRow(==('c')))
+1×3 DataFrame
+ Row │ x      y       a    
+     │ Int64  String  Char 
+─────┼─────────────────────
+   1 │     3  Claire  c
+```
 
 #### Column selection using `select` and `select!`, `transform` and `transform!`
 
