@@ -54,9 +54,9 @@ const TRANSFORMATION_COMMON_RULES =
     6. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
     8. a function which will be called with a `SubDataFrame` corresponding to each group;
-       this form should be avoided due to its poor performance unless a very large
-       number of columns are processed (in which case `SubDataFrame` avoids excessive
-       compilation)
+       this form should be avoided due to its poor performance unless the number of groups
+       is small or a very large number of columns are processed
+       (in which case `SubDataFrame` avoids excessive compilation)
 
     All functions have two types of signatures. One of them takes a `GroupedDataFrame`
     as the first argument and an arbitrary number of transformations described above
