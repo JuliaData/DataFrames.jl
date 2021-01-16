@@ -251,12 +251,11 @@ end
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
+    z = zero(eltype(incol))
+    S = typeof((abs2(z) + abs2(z))/2)
     # !ismissing check is purely an optimization to avoid a copy later
-    if eltype(means) >: Missing && agg.condf !== !ismissing
-        T = Union{Missing, real(eltype(means))}
-    else
-        T = real(eltype(means))
-    end
+    T = eltype(incol) >: Missing && agg.condf !== !ismissing ?
+        T = Union{Missing, S} : S
     res = zeros(T, length(gd))
     return groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
                         (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
@@ -265,10 +264,10 @@ end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
     outcol = Aggregate(var, agg.condf)(incol, gd)
-    if eltype(outcol) <: Union{Missing, Rational}
-        return sqrt.(outcol)
-    else
+    if typeof(sqrt(zero(eltype(outcol)))) === eltype(outcol)
         return map!(sqrt, outcol, outcol)
+    else
+        return map(sqrt, outcol)
     end
 end
 
