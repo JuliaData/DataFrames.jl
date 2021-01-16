@@ -905,8 +905,10 @@ Base.isless(::TestType, ::TestType) = false
 @testset "combine with aggregation functions (skipmissing=$skip, sort=$sort, indices=$indices)" for
     skip in (false, true), sort in (false, true), indices in (false, true)
     Random.seed!(1)
-    df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(1:100, 20),
-                   x2 = rand(1:100, 20) +im*rand(1:100, 20),
+    # 5 is there to ensure we test a single-row group
+    df = DataFrame(a = [rand([1:4;missing], 19); 5],
+                   x1 = rand(1:100, 20),
+                   x2 = rand(1:100, 20) + im*rand(1:100, 20),
                    x4 = rand(1:100, 20) .* u"m")
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)

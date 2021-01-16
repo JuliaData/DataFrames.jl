@@ -258,7 +258,7 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
         T = Union{Missing, S} : S
     res = zeros(T, length(gd))
     return groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
-                        (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
+                        (x, l) -> l <= 1 ? x/0 : x/(l-1),
                         false, incol, gd)
 end
 
