@@ -36,6 +36,7 @@ Reexport = "0.1, 0.2, 1.0"
 SortingAlgorithms = "0.1, 0.2, 0.3"
 TableTraits = "0.4, 1"
 Tables = "1.2"
+Unitful = "1"
 julia = "1"
 
 [extras]
@@ -46,6 +47,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Combinatorics", "DataStructures", "DataValues", "Dates", "Logging", "Random", "Test"]
+test = ["Combinatorics", "DataStructures", "DataValues", "Dates", "Logging", "Random", "Test", "Unitful"]

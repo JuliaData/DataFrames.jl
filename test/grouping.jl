@@ -1,7 +1,7 @@
 module TestGrouping
 
 using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI,
-    Combinatorics
+    Combinatorics, Unitful
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
@@ -906,7 +906,8 @@ Base.isless(::TestType, ::TestType) = false
     skip in (false, true), sort in (false, true), indices in (false, true)
     Random.seed!(1)
     df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(1:100, 20),
-                   x2 = rand(1:100, 20) +im*rand(1:100, 20))
+                   x2 = rand(1:100, 20) +im*rand(1:100, 20),
+                   x4 = rand(1:100, 20) .* u"m")
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
@@ -963,6 +964,16 @@ Base.isless(::TestType, ::TestType) = false
 
         res = combine(gd, :x2 => f => :y)
         expected = combine(gd, :x2 => (x -> f(x)) => :y)
+        @test res ≅ expected
+        @test typeof(res.y) == typeof(expected.y)
+    end
+    # Test Unitful numbers
+    for f in (sum, mean, minimum, maximum, var, std, first, last, length)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+
+        res = combine(gd, :x4 => f => :y)
+        expected = combine(gd, :x4 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
     end
