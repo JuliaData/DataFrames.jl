@@ -251,7 +251,7 @@ end
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
-    z = zero(eltype(incol))
+    z = zero(eltype(incol)) - zero(eltype(means))
     S = typeof((abs2(z) + abs2(z))/2)
     # !ismissing check is purely an optimization to avoid a copy later
     T = eltype(incol) >: Missing && agg.condf !== !ismissing ?
