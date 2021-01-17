@@ -3274,19 +3274,40 @@ end
 end
 
 @testset "permutations of operations with combine" begin
+    Random.seed!(1)
     df = DataFrame(id=rand(1:10, 20))
-    gd = groupby(df, :id)
+    gd = groupby_checked(df, :id)
+
     trans = [:id => (y -> sum(y)) => :v1,
              :id => (y -> 10maximum(y)) => :v2,
-             y -> (v3=100y.id[1],),
-             y -> (v4=fill(1000y.id[1],y.id[1]+1),)]
+             :id => sum => :v3,
+             y -> (v4=100y.id[1],),
+             y -> (v5=fill(1000y.id[1],y.id[1]+1),)]
 
-    for p in permutations(1:4), i in 1:4
+    for p in permutations(1:length(trans)), i in 1:length(trans)
         res = combine(gd, trans[p[1:i]]...)
         for j in 1:i
             expected = nrow(res) <= 10 ? combine(gd, trans[p[j]]) :
                 # Second operation is there only to generate as many rows as in res
                 combine(gd, trans[p[j]], y -> (xxx=fill(1000y.id[1],y.id[1]+1),))
+            nms = intersect(names(expected), names(res))
+            @test res[!, nms] == expected[!, nms]
+        end
+    end
+
+    trans = [:id => (y -> sum(y)) => :v1,
+             :id => (y -> 10maximum(y)) => :v2,
+             :id => sum => :v3,
+             y -> (v4=100y.id[1],),
+             y -> (v5=1000 .* y.id[1],),
+             :id => :v6]
+
+    for p in permutations(1:length(trans)), i in 1:length(trans)
+        res = combine(gd, trans[p[1:i]]...)
+        for j in 1:i
+            expected = nrow(res) <= 10 ? combine(gd, trans[p[j]]) :
+                # Second operation is there only to generate as many rows as in res
+                combine(gd, trans[p[j]], y -> (xxx=1000 .* y.id,))
             nms = intersect(names(expected), names(res))
             @test res[!, nms] == expected[!, nms]
         end
