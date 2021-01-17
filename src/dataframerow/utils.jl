@@ -120,9 +120,12 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
-    # but using open addressing with a table with as many slots as rows
-    sz = Base._tablesz(length(rhashes))
-    @assert sz >= length(rhashes)
+    # but using open addressing with a table with at least 5/4 as many slots as rows
+    # (rounded up to nearest power of 2) to avoid performance degradation
+    # in a corner case of groups having exactly one row
+    sz = max(1 + ((5 * length(rhashes)) >> 2), 16)
+    sz = 1 << (8 * sizeof(sz) - leading_zeros(sz - 1))
+    @assert 4 * sz >= 5 * length(rhashes)
     szm1 = sz-1
     gslots = zeros(Int, sz)
     # If missings are to be skipped, they will all go to group 0,

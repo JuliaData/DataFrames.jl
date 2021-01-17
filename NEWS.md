@@ -8,6 +8,12 @@
 
 ## New functionalities
 
+* `firstindex`, `lastindex`, `size`, `ndims`, and `axes` are now consistently defined
+  and documented in the manual for `AbstractDataFrame`, `DataFrameRow`,
+  `DataFrameRows`, `DataFrameColumns`, `GroupedDataFrame`, `GroupKeys`, and `GroupKey`
+  ([#2573](https://github.com/JuliaData/DataFrames.jl/pull/2573))
+* add `subset` and `subset!` functions that allow to subset rows
+  ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 
 ## Deprecated
 

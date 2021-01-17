@@ -64,6 +64,8 @@ export AbstractDataFrame,
        select,
        semijoin,
        stack,
+       subset,
+       subset!,
        transform,
        transform!,
        unique!,
@@ -121,6 +123,7 @@ include("dataframerow/utils.jl")
 include("other/broadcasting.jl")
 
 include("abstractdataframe/selection.jl")
+include("abstractdataframe/subset.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
