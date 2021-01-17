@@ -918,7 +918,7 @@ You can also use the [`subset`](@ref) or [`subset!`](@ref) functions that are mo
 flexible. They use the same syntax as [`select`](@ref) that was discussed in
 the previous section). The requirement is that each column transformation
 must produce a vector of `Bool` and only the rows from the source data frame
-for which all transformations produce `true` are inluded in the result:
+for which all transformations produce `true` are included in the result:
 
 ```jldoctest dataframe
 julia> subset(df, :x => ByRow(>(2)), :a => ByRow(==('c')))
