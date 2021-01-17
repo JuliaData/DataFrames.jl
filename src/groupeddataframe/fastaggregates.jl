@@ -163,12 +163,13 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
         counts = zeros(Int, n)
     end
     groups = gd.groups
-    if VERSION >= v"1.4" && Threads.nthreads() > 1
-        batchsize = 100_000
+    @static if VERSION >= v"1.4"
+        batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
+        batches = Iterators.partition(eachindex(incol, groups), batchsize)
     else
-        batchsize = typemax(Int)
+        batches = (eachindex(incol, groups),)
     end
-    for batch in Iterators.partition(eachindex(incol, groups), batchsize)
+    for batch in batches
         # Allow other tasks to do garbage collection while this one runs
         @static if VERSION >= v"1.4"
             GC.safepoint()
