@@ -31,6 +31,7 @@ makedocs(
             "Data manipulation frameworks" => "man/querying_frameworks.md",
             "Comparison with Python/R/Stata" => "man/comparisons.md"
         ],
+        "Gallery" => "gallery.md",
         "API" => Any[
             "Types" => "lib/types.md",
             "Functions" => "lib/functions.md",
