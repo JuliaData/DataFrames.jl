@@ -135,28 +135,28 @@ table.steel tfoot .links a{
 }
 </style>
 "
-function show(df::DataFrame; style = "")
+"""
+# show(df::DataFrame; style)
+The show() method can be used to display a DataFrame in IJulia notebooks. The
+style key-word argument can be used to change the appearance of the DataFrame
+output.
+### Styles
+- classic
+- minimalist
+"""
+function show(df::DataFrame; style = "classic")
     thead = "<thead>
 <tr>"
-    tfoot = """<tfoot>
-<tr>
-<td colspan="4">
-<div class="links"><a href="#">&laquo;</a> <a class="active" href="#">1</a>
- <a href="#">2</a> <a href="#">3</a> <a href="#">4</a> <a href="#">&raquo;</a>
- </div>
-</td>
-</tr>
-</tfoot>"""
     tbody = "<tbody>"
-    for col in zip(names(df), eachcol(df))
-        thead = string(thead, "<th>", string(col[1]), "</th>")
+    [thead = string(thead, "<th>", string(name), "</th>") for name in names(df)]
+    thead = string(thead, "</thead>")
+    for row in eachrow(df)
         tbody = string(tbody, "<tr>")
-        for i in col[2]
-            tbody = string(tbody, "<td>", i, "</td>")
-        end
+        [tbody = string(tbody, "<td>", observation, "</td>") for observation in row]
         tbody = string(tbody, "</tr>")
     end
+    tbody = string(tbody, "</tbody>")
     compisition = string(_css,"<table class = \"", style, "\">",
-     thead, tbody, tfoot, "</table>")
+     thead, tbody,"</table>")
     display("text/html", compisition)
 end
