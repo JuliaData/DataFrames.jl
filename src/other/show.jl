@@ -32,9 +32,12 @@ table.classic tfoot {
   font-weight: bold;
   color: #FFFFFF;
   background: #D0E4F5;
-  background: -moz-linear-gradient(top, #dcebf7 0%, #d4e6f6 66%, #D0E4F5 100%);
-  background: -webkit-linear-gradient(top, #dcebf7 0%, #d4e6f6 66%, #D0E4F5 100%);
-  background: linear-gradient(to bottom, #dcebf7 0%, #d4e6f6 66%, #D0E4F5 100%);
+  background: -moz-linear-gradient(top, #dcebf7 0%,
+   #d4e6f6 66%, #D0E4F5 100%);
+  background: -webkit-linear-gradient(top, #dcebf7 0%,
+   #d4e6f6 66%, #D0E4F5 100%);
+  background: linear-gradient(to bottom, #dcebf7 0%,
+   #d4e6f6 66%, #D0E4F5 100%);
   border-top: 2px solid #444444;
 }
 table.classic tfoot td {
@@ -66,9 +69,12 @@ table.minimalist tbody td {
 }
 table.minimalist thead {
   background: #CFCFCF;
-  background: -moz-linear-gradient(top, #dbdbdb 0%, #d3d3d3 66%, #CFCFCF 100%);
-  background: -webkit-linear-gradient(top, #dbdbdb 0%, #d3d3d3 66%, #CFCFCF 100%);
-  background: linear-gradient(to bottom, #dbdbdb 0%, #d3d3d3 66%, #CFCFCF 100%);
+  background: -moz-linear-gradient(top, #dbdbdb 0%,
+   #d3d3d3 66%, #CFCFCF 100%);
+  background: -webkit-linear-gradient(top, #dbdbdb 0%,
+   #d3d3d3 66%, #CFCFCF 100%);
+  background: linear-gradient(to bottom, #dbdbdb 0%,
+   #d3d3d3 66%, #CFCFCF 100%);
   border-bottom: 3px solid #000000;
 }
 table.minimalist thead th {
