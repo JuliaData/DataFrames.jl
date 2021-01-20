@@ -124,7 +124,9 @@ of columns specified by returned vectors.
 
 A separate task is spawned for each specified transformation, allowing for
 parallel operation when several transformations are requested and Julia was
-started with more than one thread.
+started with more than one thread. Passed transformation functions should
+therefore not modify global variables (i.e. they should be pure), or use
+locks to control parallel accesses.
 
 To apply `function` to each row instead of whole columns, it can be wrapped in a
 `ByRow` struct. `cols` can be any column indexing syntax, in which case
