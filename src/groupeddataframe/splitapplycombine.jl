@@ -539,6 +539,11 @@ function _combine(gd::GroupedDataFrame,
     tasks = similar(cs_norm, Task)
 
     parentdf = parent(gd)
+    # Operations are run in separate tasks, except two parts:
+    # - the first task that needs idx_agg computes it;
+    #   a lock ensures others wait for it to complete
+    # - once all tasks are done, they need sequential postprocessing
+    #   since their order affects that of columns
     for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
