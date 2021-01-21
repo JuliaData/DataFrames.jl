@@ -2006,7 +2006,7 @@ end
 end
 
 if VERSION >= v"1.5"
-    include("indexing_offest.jl")
+    include("indexing_offset.jl")
 end
 
 end # module
