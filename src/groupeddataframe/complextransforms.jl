@@ -191,14 +191,17 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     # Create up to one task per thread
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
-    basesize = max(1, (len - 1) ÷ Threads.nthreads())
-    partitions = collect(_partition(2:len, basesize))
+    @static if VERSION >= v"1.4"
+        basesize = max(1, (len - 1) ÷ Threads.nthreads())
+        partitions = Iterators.partition(2:len, basesize)
+    else
+        partitions = (2:len,)
+    end
     widen_type_lock = ReentrantLock()
     outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols)
     type_widened = fill(false, length(partitions))
-    tasks = similar(partitions, Task)
-    for tid in 1:length(partitions)
-        idx = partitions[tid]
+    tasks = Vector{Task}(undef, length(partitions))
+    for (tid, idx) in enumerate(partitions)
         tasks[tid] =
             @spawn _combine_rows_with_first_task!(tid, idx, outcols, outcolsref,
                                                   type_widened, widen_type_lock,
@@ -219,9 +222,8 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
 
     # Copy data for any tasks that finished before others widened columns
     outcols = outcolsref[]
-    for tid in 1:length(partitions)
+    for (tid, idx) in enumerate(partitions)
         if type_widened[tid]
-            idx = partitions[tid]
             oldoutcols = fetch(tasks[tid])
             for k in 1:length(outcols)
                 if oldoutcols[k] !== outcols[k]
