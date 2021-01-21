@@ -1,6 +1,6 @@
 module TestIndexing
 
-using Test, DataFrames. OffsetArrays
+using Test, DataFrames, OffsetArrays
 
 @testset "getindex DataFrame" begin
     df = DataFrame(a=1:3, b=4:6, c=7:9)
