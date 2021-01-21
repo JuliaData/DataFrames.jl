@@ -457,14 +457,14 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
 
     for (i, col) in enumerate(vs)
         fic = firstindex(col)
-        if fic != 1
-            throw(ArgumentError("Currently DataFrames.jl supports only " *
-                                "columns that use 1-based indexing and " *
-                                "column $i has starting index equal to $fic"))
-        end
+        fic != 1 && _onebased_check_error(i, fic)
     end
 
-    _columns(df) .= vs
+    @assert length(vs) == ncol(df)
+    raw_columns = _columns(df)
+    for i in 1:ncol(df)
+        raw_columns[i] = vs[i]
+    end
 
     return df
 end
