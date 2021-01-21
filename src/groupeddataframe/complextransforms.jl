@@ -93,12 +93,13 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
 end
 
 function _combine_rows_with_first_task!(tid::Integer,
-                                        idx::AbstractVector{<:Integer},
+                                        rowstart::Integer,
+                                        rowend::Integer,
+                                        i::Integer,
                                         outcols::NTuple{<:Any, AbstractVector},
                                         outcolsref::Ref{NTuple{<:Any, AbstractVector}},
                                         type_widened::AbstractVector{Bool},
                                         widen_type_lock::ReentrantLock,
-                                        i::Integer,
                                         f::Base.Callable,
                                         gd::GroupedDataFrame,
                                         starts::AbstractVector{<:Integer},
@@ -110,7 +111,7 @@ function _combine_rows_with_first_task!(tid::Integer,
     j = nothing
     gdidx = gd.idx
     local newoutcols
-    for i in idx
+    for i in i:rowend
         row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column
@@ -119,7 +120,7 @@ function _combine_rows_with_first_task!(tid::Integer,
             try
                 newoutcols = outcolsref[]
                 # Workaround for julia#15276
-                newoutcols = let i=i, j=j, newoutcols=newoutcols, row=row, idx=idx
+                newoutcols = let i=i, j=j, newoutcols=newoutcols, row=row
                     ntuple(length(newoutcols)) do k
                         S = typeof(row[k])
                         T = eltype(newoutcols[k])
@@ -131,23 +132,24 @@ function _combine_rows_with_first_task!(tid::Integer,
                         end
                     end
                 end
-                j = fill_row!(row, newoutcols, i, j, colnames)
-                @assert j === nothing # eltype is guaranteed to match
                 for k in 1:length(outcols)
                     if outcols[k] !== newoutcols[k]
-                        copyto!(newoutcols[k], idx[1],
-                                outcols[k], idx[1], i - idx[1] + 1)
+                        copyto!(newoutcols[k], rowstart,
+                                outcols[k], rowstart, i - rowstart + (k < j))
                     end
                 end
+                j = fill_row!(row, newoutcols, i, j, colnames)
+                @assert j === nothing # eltype is guaranteed to match
+
                 outcolsref[] = newoutcols
                 type_widened .= true
                 type_widened[tid] = false
             finally
                 unlock(widen_type_lock)
             end
-            return _combine_rows_with_first_task!(tid, idx, newoutcols, outcolsref,
+            return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
                                                   type_widened, widen_type_lock,
-                                                  i+1, f, gd, starts, ends,
+                                                  f, gd, starts, ends,
                                                   incols, colnames, firstmulticol)
         end
         # If other thread widened columns, copy already processed data to new vectors
@@ -159,21 +161,21 @@ function _combine_rows_with_first_task!(tid::Integer,
                 newoutcols = outcolsref[]
                 for k in 1:length(outcols)
                     if outcols[k] !== newoutcols[k]
-                        copyto!(newoutcols[k], idx[1],
-                                outcols[k], idx[1], i - idx[1] + 1)
+                        copyto!(newoutcols[k], rowstart,
+                                outcols[k], rowstart, i - rowstart + 1)
                     end
                 end
             end
-            return _combine_rows_with_first_task!(tid, idx, newoutcols, outcolsref,
+            return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
                                                   type_widened, widen_type_lock,
-                                                  i+1, f, gd, starts, ends,
+                                                  f, gd, starts, ends,
                                                   incols, colnames, firstmulticol)
         end
     end
     return outcols
 end
 
-function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
+function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    f::Base.Callable, gd::GroupedDataFrame,
                                    incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
@@ -203,9 +205,10 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     tasks = Vector{Task}(undef, length(partitions))
     for (tid, idx) in enumerate(partitions)
         tasks[tid] =
-            @spawn _combine_rows_with_first_task!(tid, idx, outcols, outcolsref,
+            @spawn _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
+                                                  outcols, outcolsref,
                                                   type_widened, widen_type_lock,
-                                                  1, f, gd, starts, ends, incols, colnames,
+                                                  f, gd, starts, ends, incols, colnames,
                                                   firstmulticol)
     end
 
@@ -227,8 +230,8 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
             oldoutcols = fetch(tasks[tid])
             for k in 1:length(outcols)
                 if oldoutcols[k] !== outcols[k]
-                    copyto!(outcols[k], idx[1], oldoutcols[k], idx[1],
-                            idx[end] - idx[1] + 1)
+                    copyto!(outcols[k], first(idx), oldoutcols[k], first(idx),
+                            last(idx) - first(idx) + 1)
                 end
             end
         end
@@ -236,7 +239,7 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
 
     # Handle first group
     # This is done at the end to write directly to the final outcols
-    j1 = fill_row!(first, outcols, 1, 1, colnames)
+    j1 = fill_row!(firstrow, outcols, 1, 1, colnames)
     @assert j1 === nothing # eltype is guaranteed to match
 
     return outcols, colnames

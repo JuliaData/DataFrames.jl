@@ -3578,14 +3578,37 @@ end
 end
 
 @testset "result eltype widening from different tasks" begin
-    for df in (DataFrame(x=1:5, y=Any[1, missing, nothing, 2.0, 'a']),
-               DataFrame(x=1:9, y=Any[1, 1, missing, 1, nothing, 1, 2.0, 1, 'a']),
-               DataFrame(x=1:9, y=Any[1, 2, 3, 4, 5, 6, 2.0, missing, 'a']))
+    if VERSION < v"1.5"
+        Base.convert(::Type{Union{Missing, Nothing, Float64}}, x::Int) = float(x)
+    end
+    Random.seed!(1)
+    for y in (Any[1, missing, missing, 2, 4],
+              Any[1, missing, nothing, 2.1, 'a'],
+              Any[1, 1, missing, 1, nothing, 1, 2.1, 1, 'a'],
+              Any[1, 2, 3, 4, 5, 6, 2.1, missing, 'a'],
+              Any[1, 2, 3.1, 4, 5, 6, 2.1, missing, 'a']),
+        x in (1:length(y), rand(1:2, length(y)), rand(1:3, length(y)))
+        df = DataFrame(x=x, y=y)
         gd = groupby(df, :x)
-        @test combine(gd, :y => (y -> y[1]) => :y) ≅ df
+        res = combine(gd, :y => (y -> y[1]) => :y)
         # sleep ensures one task will widen the result after the other is done,
         # so that data has to be copied at the end
-        @test combine(gd, [:x, :y] => ((x, y) -> (sleep(x == [5]); y[1])) => :y) ≅ df
+        @test res ≅
+              combine(gd, [:x, :y] => ((x, y) -> (sleep((x == [5])/10); y[1])) => :y) ≅
+              combine(gd, [:x, :y] => ((x, y) -> (sleep(x[1]/100); y[1])) => :y) ≅
+              combine(gd, [:x, :y] => ((x, y) -> (sleep(rand()/10); y[1])) => :y)
+
+        if df.x == 1:nrow(df)
+            @test res ≅ df
+        end
+
+        res = combine(gd, :y => (y -> (y1=y[1], y2=last(y))) => AsTable)
+        # sleep ensures one task will widen the result after the other is done,
+        # so that data has to be copied at the end
+        @test res ≅
+              combine(gd, [:x, :y] => ((x, y) -> (sleep((x == [5])/10); (y1=y[1], y2=last(y)))) => AsTable) ≅
+              combine(gd, [:x, :y] => ((x, y) -> (sleep(x[1]/100); (y1=y[1], y2=last(y)))) => AsTable) ≅
+              combine(gd, [:x, :y] => ((x, y) -> (sleep(rand()/10); (y1=y[1], y2=last(y)))) => AsTable)
     end
 end
 
