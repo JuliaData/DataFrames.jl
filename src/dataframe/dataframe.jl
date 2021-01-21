@@ -79,6 +79,9 @@ always collected to a `Vector` (even if `copycols=false`). As a general rule
 `AbstractRange` values are always materialized to a `Vector` by all functions in
 DataFrames.jl before being stored in a `DataFrame`.
 
+`DataFrame` can store only columns that use 1-based indexing. Attempting
+to store a vector using non-standard indexing raises an error.
+
 The `DataFrame` type is designed to allow column types to vary and to be
 dynamically changed also after it is constructed. Therefore `DataFrame`s are not
 type stable. For performance-critical code that requires type-stability either

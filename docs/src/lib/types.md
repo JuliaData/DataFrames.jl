@@ -16,7 +16,9 @@ It is not intended as a fully generic interface for working with tabular data, w
 interfaces defined by [Tables.jl](https://github.com/JuliaData/Tables.jl/) instead.
 
 `DataFrame` is the most fundamental subtype of `AbstractDataFrame`, which stores a set of columns
-as `AbstractVector` objects.
+as `AbstractVector` objects. Indexing of all stored columns must be 1-based. Also, all functions
+exposed by DataFrames.jl API make sure to `collect` passed `AbstractRange` source columns before
+storing them in a `DataFrame`.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
