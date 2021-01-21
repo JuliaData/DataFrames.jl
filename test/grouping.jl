@@ -1,6 +1,7 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI
+using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI,
+    Unitful
 const ≅ = isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
@@ -904,8 +905,11 @@ Base.isless(::TestType, ::TestType) = false
 @testset "combine with aggregation functions (skipmissing=$skip, sort=$sort, indices=$indices)" for
     skip in (false, true), sort in (false, true), indices in (false, true)
     Random.seed!(1)
-    df = DataFrame(a = rand([1:5;missing], 20), x1 = rand(1:100, 20),
-                   x2 = rand(1:100, 20) +im*rand(1:100, 20))
+    # 5 is there to ensure we test a single-row group
+    df = DataFrame(a = [rand([1:4;missing], 19); 5],
+                   x1 = rand(1:100, 20),
+                   x2 = rand(1:100, 20) + im*rand(1:100, 20),
+                   x3 = rand(1:100, 20) .* u"m")
 
     for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
@@ -918,39 +922,39 @@ Base.isless(::TestType, ::TestType) = false
 
         for T in (Union{Missing, Int}, Union{Int, Int8},
                   Union{Missing, Int, Int8})
-            df.x3 = Vector{T}(df.x1)
+            df.x1u = Vector{T}(df.x1)
             gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
             indices && @test gd.idx !== nothing # Trigger computation of indices
-            res = combine(gd, :x3 => f => :y)
-            expected = combine(gd, :x3 => (x -> f(x)) => :y)
+            res = combine(gd, :x1u => f => :y)
+            expected = combine(gd, :x1u => (x -> f(x)) => :y)
             @test res ≅ expected
             @test typeof(res.y) == typeof(expected.y)
         end
 
         f === length && continue
 
-        df.x3 = allowmissing(df.x1)
-        df.x3[1] = missing
+        df.x1m = allowmissing(df.x1)
+        df.x1m[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
-        res = combine(gd, :x3 => f => :y)
-        expected = combine(gd, :x3 => (x -> f(x)) => :y)
+        res = combine(gd, :x1m => f => :y)
+        expected = combine(gd, :x1m => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
-        res = combine(gd, :x3 => f∘skipmissing => :y)
-        expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
+        res = combine(gd, :x1m => f∘skipmissing => :y)
+        expected = combine(gd, :x1m => (x -> f(collect(skipmissing(x)))) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
 
         # Test reduction over group with only missing values
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
-        gd[1][:, :x3] .= missing
+        gd[1][:, :x1m] .= missing
         if f in (maximum, minimum, first, last)
-            @test_throws ArgumentError combine(gd, :x3 => f∘skipmissing => :y)
+            @test_throws ArgumentError combine(gd, :x1m => f∘skipmissing => :y)
         else
-            res = combine(gd, :x3 => f∘skipmissing => :y)
-            expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
+            res = combine(gd, :x1m => f∘skipmissing => :y)
+            expected = combine(gd, :x1m => (x -> f(collect(skipmissing(x)))) => :y)
             @test res ≅ expected
             @test typeof(res.y) == typeof(expected.y)
         end
@@ -964,15 +968,40 @@ Base.isless(::TestType, ::TestType) = false
         expected = combine(gd, :x2 => (x -> f(x)) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
-    end
-    # Test CategoricalArray
-    for f in (maximum, minimum, first, last, length),
-        (T, m) in ((Int, false),
-                   (Union{Missing, Int}, false), (Union{Missing, Int}, true))
-        df.x3 = CategoricalVector{T}(df.x1)
-        m && (df.x3[1] = missing)
+
+        f === length && continue
+
+        df.x2m = allowmissing(df.x1)
+        df.x2m[1] = missing
         gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
         indices && @test gd.idx !== nothing # Trigger computation of indices
+        res = combine(gd, :x2m => f => :y)
+        expected = combine(gd, :x2m => (x -> f(x)) => :y)
+        @test res ≅ expected
+        @test typeof(res.y) == typeof(expected.y)
+        res = combine(gd, :x2m => f∘skipmissing => :y)
+        expected = combine(gd, :x2m => (x -> f(collect(skipmissing(x)))) => :y)
+        @test res ≅ expected
+        @test typeof(res.y) == typeof(expected.y)
+
+        # Test reduction over group with only missing values
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+        gd[1][:, :x2m] .= missing
+        if f in (maximum, minimum, first, last)
+            @test_throws ArgumentError combine(gd, :x2m => f∘skipmissing => :y)
+        else
+            res = combine(gd, :x2m => f∘skipmissing => :y)
+            expected = combine(gd, :x2m => (x -> f(collect(skipmissing(x)))) => :y)
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
+    end
+    # Test Unitful numbers
+    for f in (sum, mean, minimum, maximum, var, std, first, last, length)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+
         res = combine(gd, :x3 => f => :y)
         expected = combine(gd, :x3 => (x -> f(x)) => :y)
         @test res ≅ expected
@@ -980,13 +1009,54 @@ Base.isless(::TestType, ::TestType) = false
 
         f === length && continue
 
-        res = combine(gd, :x3 => f∘skipmissing => :y)
-        expected = combine(gd, :x3 => (x -> f(collect(skipmissing(x)))) => :y)
+        df.x3m = allowmissing(df.x1)
+        df.x3m[1] = missing
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+        res = combine(gd, :x3m => f => :y)
+        expected = combine(gd, :x3m => (x -> f(x)) => :y)
+        @test res ≅ expected
+        @test typeof(res.y) == typeof(expected.y)
+        res = combine(gd, :x3m => f∘skipmissing => :y)
+        expected = combine(gd, :x3m => (x -> f(collect(skipmissing(x)))) => :y)
+        @test res ≅ expected
+        @test typeof(res.y) == typeof(expected.y)
+
+        # Test reduction over group with only missing values
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+        gd[1][:, :x3m] .= missing
+        if f in (maximum, minimum, first, last)
+            @test_throws ArgumentError combine(gd, :x3m => f∘skipmissing => :y)
+        else
+            res = combine(gd, :x3m => f∘skipmissing => :y)
+            expected = combine(gd, :x3m => (x -> f(collect(skipmissing(x)))) => :y)
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
+    end
+    # Test CategoricalArray
+    for f in (maximum, minimum, first, last, length),
+        (T, m) in ((Int, false),
+                   (Union{Missing, Int}, false), (Union{Missing, Int}, true))
+        df.x1c = CategoricalVector{T}(df.x1)
+        m && (df.x1c[1] = missing)
+        gd = groupby_checked(df, :a, skipmissing=skip, sort=sort)
+        indices && @test gd.idx !== nothing # Trigger computation of indices
+        res = combine(gd, :x1c => f => :y)
+        expected = combine(gd, :x1c => (x -> f(x)) => :y)
+        @test res ≅ expected
+        @test typeof(res.y) == typeof(expected.y)
+
+        f === length && continue
+
+        res = combine(gd, :x1c => f∘skipmissing => :y)
+        expected = combine(gd, :x1c => (x -> f(collect(skipmissing(x)))) => :y)
         @test res ≅ expected
         @test typeof(res.y) == typeof(expected.y)
         if m
-            gd[1][:, :x3] .= missing
-            @test_throws ArgumentError combine(gd, :x3 => f∘skipmissing => :y)
+            gd[1][:, :x1c] .= missing
+            @test_throws ArgumentError combine(gd, :x1c => f∘skipmissing => :y)
         end
     end
     @test combine(gd, :x1 => maximum => :y, :x2 => sum => :z) ≅
