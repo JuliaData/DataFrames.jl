@@ -163,18 +163,31 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
         counts = zeros(Int, n)
     end
     groups = gd.groups
-    @inbounds for i in eachindex(incol, groups)
-        gix = groups[i]
-        x = incol[i]
-        if gix > 0 && (condf === nothing || condf(x))
-            # this check should be optimized out if U is not Any
-            if eltype(res) === Any && !isassigned(res, gix)
-                res[gix] = f(x, gix)
-            else
-                res[gix] = op(res[gix], f(x, gix))
-            end
-            if adjust !== nothing || checkempty
-                counts[gix] += 1
+    @static if VERSION >= v"1.4"
+        batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
+        batches = Iterators.partition(eachindex(incol, groups), batchsize)
+    else
+        batches = (eachindex(incol, groups),)
+    end
+    for batch in batches
+        # Allow other tasks to do garbage collection while this one runs
+        @static if VERSION >= v"1.4"
+            GC.safepoint()
+        end
+
+        @inbounds for i in batch
+            gix = groups[i]
+            x = incol[i]
+            if gix > 0 && (condf === nothing || condf(x))
+                # this check should be optimized out if U is not Any
+                if eltype(res) === Any && !isassigned(res, gix)
+                    res[gix] = f(x, gix)
+                else
+                    res[gix] = op(res[gix], f(x, gix))
+                end
+                if adjust !== nothing || checkempty
+                    counts[gix] += 1
+                end
             end
         end
     end

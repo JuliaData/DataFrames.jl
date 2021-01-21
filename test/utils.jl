@@ -94,4 +94,12 @@ end
           :sum_skipmissing_div12
 end
 
+@testset "pre-Julia 1.3 @spawn replacement" begin
+    t = @sync DataFrames.@spawn begin
+        sleep(1)
+        true
+    end
+    @test fetch(t) === true
+end
+
 end # module

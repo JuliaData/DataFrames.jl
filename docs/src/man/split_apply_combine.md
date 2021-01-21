@@ -122,6 +122,12 @@ It is allowed to mix single values and vectors if multiple transformations
 are requested. In this case single value will be repeated to match the length
 of columns specified by returned vectors.
 
+A separate task is spawned for each specified transformation, allowing for
+parallel operation when several transformations are requested and Julia was
+started with more than one thread. Passed transformation functions should
+therefore not modify global variables (i.e. they should be pure), or use
+locks to control parallel accesses.
+
 To apply `function` to each row instead of whole columns, it can be wrapped in a
 `ByRow` struct. `cols` can be any column indexing syntax, in which case
 `function` will be passed one argument for each of the columns specified by
@@ -130,7 +136,7 @@ If `ByRow` is used it is allowed for `cols` to select an empty set of columns,
 in which case `function` is called for each row without any arguments and an
 empty `NamedTuple` is passed if empty set of columns is wrapped in `AsTable`.
 
-There the following keyword arguments are supported by the transformation functions
+The following keyword arguments are supported by the transformation functions
 (not all keyword arguments are supported in all cases; in general they are allowed
 in situations when they are meaningful, see the documentation of the specific functions
 for details):

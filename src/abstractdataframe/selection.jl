@@ -143,6 +143,14 @@ const TRANSFORMATION_COMMON_RULES =
     returned and the same copying rules apply as for a `DataFrame` input: this
     means in particular that selected columns will be copied. If
     `copycols=false`, a `SubDataFrame` is returned without copying columns.
+
+    If a `GroupedDataFrame` is passed, a separate task is spawned for each
+    specified transformation, allowing for parallel operation when several
+    transformations are requested and Julia was started with more than one thread.
+    Passed transformation functions should therefore not modify global variables
+    (i.e. they should be pure), or use locks to control parallel accesses.
+    In the future, parallelism may be extended to other cases, so this requirement
+    also holds for `DataFrame` inputs.
     """
 
 """

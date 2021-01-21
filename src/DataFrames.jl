@@ -3,7 +3,7 @@ module DataFrames
 using Statistics, Printf, REPL
 using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using Missings, InvertedIndices
-using Base.Sort, Base.Order, Base.Iterators
+using Base.Sort, Base.Order, Base.Iterators, Base.Threads
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
 using Markdown
@@ -91,6 +91,23 @@ if isdefined(Base, :only)  # Introduced in 1.4.0
 else
     import Compat.only
     export only
+end
+
+if VERSION >= v"1.3"
+    using Base.Threads: @spawn
+else
+    # This is the definition of @async in Base
+    macro spawn(expr)
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            local task = Task($thunk)
+            if $(Expr(:isdefined, var))
+                push!($var, task)
+            end
+            schedule(task)
+        end
+    end
 end
 
 include("other/utils.jl")
