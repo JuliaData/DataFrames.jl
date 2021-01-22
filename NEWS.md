@@ -7,8 +7,9 @@
 ## Bug fixes
 
 * DataFrames.jl now checks that passed columns are 1-based as this is a current
-  design assumption; `mapcols!` makes sure not to create columns being
-  `AbstractRange` consistently with other methods that add columns to a `DataFrame`
+  design assumption ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+* `mapcols!` makes sure not to create columns being `AbstractRange` consistently
+  with other methods that add columns to a `DataFrame`
   ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
 
 ## New functionalities

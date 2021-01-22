@@ -52,4 +52,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
 test = ["Combinatorics", "DataStructures", "DataValues", "Dates", "Logging",
-        "OffsetArrays", Random", "Test", "Unitful"]
+        "OffsetArrays", "Random", "Test", "Unitful"]
