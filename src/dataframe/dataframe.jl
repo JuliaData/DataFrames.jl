@@ -383,7 +383,7 @@ index(df::DataFrame) = getfield(df, :colindex)
 # make sure that:
 # 1. `AbstractRange` columns are not added to a `DataFrame`
 # 2. all inserted columns use 1-based indexing
-# 3. that after several mutating operations on the vector are performed
+# 3. after several mutating operations on the vector are performed
 #    each element (column) has the same length
 # 4. if length of the vector is changed that the index of the `DataFrame`
 #    is adjusted appropriately
@@ -394,7 +394,7 @@ _onebased_check_error() =
                         "that use 1-based indexing"))
 _onebased_check_error(i, fic) =
     throw(ArgumentError("Currently DataFrames.jl supports only " *
-                        "columns that use 1-based indexing and " *
+                        "columns that use 1-based indexing, but " *
                         "column $i has starting index equal to $fic"))
 
 # note: these type assertions are required to pass tests

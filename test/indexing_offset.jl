@@ -25,7 +25,7 @@ using Test, DataFrames, OffsetArrays
     # this is consequence of the fact that OffsetArrays wrap AbstractRange in this case
     @test_throws ErrorException df[:, :a] = ov1
 
-    # this inconsistency is the consequence how setindex! for vector is deifned in Base
+    # this inconsistency is the consequence how setindex! for vector is defined in Base
     df = DataFrame(a=5:-1:1)
     @test_throws ArgumentError df[:, :b] = ov1
     df[:, :a] = ov1
