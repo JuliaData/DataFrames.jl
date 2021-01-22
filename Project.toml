@@ -35,7 +35,7 @@ PrettyTables = "0.10"
 Reexport = "0.1, 0.2, 1.0"
 SortingAlgorithms = "0.1, 0.2, 0.3"
 TableTraits = "0.4, 1"
-Tables = "1.3"
+Tables = "1.2, 1.3"
 Unitful = "1"
 julia = "1"
 
