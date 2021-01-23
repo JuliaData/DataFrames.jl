@@ -717,6 +717,32 @@ end
     end
 end
 
+@testset "grouping on integer columns" begin
+    Random.seed!(6)
+
+    # Check optimized approach based on refpool method
+    df = DataFrame(x=rand(1:10, 1000), y=rand(-3:10, 1000), z=rand(1000))
+    df.x2 = string.(df.x)
+    df.y2 = string.(df.y)
+    gd = groupby_checked(df, :x)
+    @test issorted(combine(gd, :x)) # Test that optimized method is used
+    @test isequal_unordered(gd, [groupby(df, :x2)...])
+    gd = groupby(df, [:x, :y])
+    @test issorted(combine(gd, :x)) # Test that optimized method is used
+    @test isequal_unordered(gd, [groupby(df, [:x2, :y2])...])
+
+    # Check fallback to hash table method when range is too wide
+    df = DataFrame(x=rand(1:100_000, 100), y=rand(-50:110_000, 100), z=rand(100))
+    df.x2 = string.(df.x)
+    df.y2 = string.(df.y)
+    gd = groupby_checked(df, :x)
+    @test !issorted(combine(gd, :x)) # Test that optimized method is not used
+    @test isequal_unordered(gd, [groupby(df, :x2)...])
+    gd = groupby(df, [:x, :y])
+    @test !issorted(combine(gd, :x)) # Test that optimized method is not used
+    @test isequal_unordered(gd, [groupby(df, [:x2, :y2])...])
+end
+
 @testset "grouping with three keys" begin
     # We need many rows so that optimized CategoricalArray method is used
     xv = rand(["A", "B", missing], 100)
@@ -2066,13 +2092,12 @@ end
 end
 
 @testset "correct dropping of groups" begin
-    df = DataFrame(g = 10:-1:1)
+    df = DataFrame(g = 1:10)
     gdf = groupby_checked(df, :g)
     sgdf = groupby_checked(df, :g, sort=true)
     for keep in [[3, 2, 1], [5, 3, 1], [9], Int[]]
-        @test combine(gdf, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
-              DataFrame(g=keep, keep=keep, g_function=keep)
-        @test combine(sgdf, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
+        @test sort(combine(gdf, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[])) ==
+              combine(sgdf, :g => first => :keep, :g => x -> x[1] in keep ? x : Int[]) ==
               sort(DataFrame(g=keep, keep=keep, g_function=keep))
     end
 end
@@ -2356,8 +2381,7 @@ end
         @test res1.x_mean + res1.x_function ≈ df.x
 
         res2 = combine(gdf, :x => mean, :x => x -> x .- mean(x), :id)
-        @test unique(res2.g) ==
-              (dosort || df.g isa CategoricalVector ? sort! : identity)(unique(df.g))
+        @test unique(res2.g) == sort(unique(df.g))
         for i in unique(res2.g)
             @test issorted(filter(:g => x -> x == i, res2).id)
         end
@@ -3084,11 +3108,12 @@ end
     @test transform(df, :x => x -> 2x) == transform(gdf, :x => x -> 2x)
     @test transform(df, identity) == transform(gdf, identity)
     @test transform(df, x -> (a=x.x, b=x.x)) == transform(gdf, x -> (a=x.x, b=x.x))
-    @test combine(gdf, :x => x -> 2x) ==
-          DataFrame(id=[1, 1, 3, 3, 2, 2], x_function=[6, 10, 2, 8, 4, 12])
-    @test combine(gdf, identity) == DataFrame(id=[1, 1, 3, 3, 2, 2], x=[3, 5, 1, 4, 2, 6])
-    @test combine(gdf, x -> (a=x.x, b=x.x)) ==
-          DataFrame(id=[1, 1, 3, 3, 2, 2], a=[3, 5, 1, 4, 2, 6], b=[3, 5, 1, 4, 2, 6])
+    @test sort(combine(gdf, :x => x -> 2x)) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], x_function=[6, 10, 4, 12, 2, 8])
+    @test sort(combine(gdf, identity)) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], x=[3, 5, 2, 6, 1, 4])
+    @test sort(combine(gdf, x -> (a=x.x, b=x.x))) ==
+          DataFrame(id=[1, 1, 2, 2, 3, 3], a=[3, 5, 2, 6, 1, 4], b=[3, 5, 2, 6, 1, 4])
 end
 
 @testset "basic tests of advanced rules with multicolumn output" begin

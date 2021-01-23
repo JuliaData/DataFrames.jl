@@ -94,6 +94,43 @@ isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
     isequal(cols1[1][r1], cols2[1][r2]) &&
         isequal_row(Base.tail(cols1), r1, Base.tail(cols2), r2)
 
+# Simple vector type for internal use which represents a virtual DataAPI.refpool
+# so that an integer vector can be its own DataAPI.refarray:
+# this just allows telling the generic row_group_slots method for generic refpools
+# what is the minimum index and the number of (potential) groups
+struct IntegerRefpool{T} <: AbstractVector{T}
+    min::Int
+    max::Int
+end
+
+Base.size(x::IntegerRefpool) = (x.max - x.min + 1,)
+Base.axes(x::IntegerRefpool) = (x.min:x.max,)
+Base.IndexStyle(::Type{<:IntegerRefpool}) = Base.IndexLinear()
+@inline function Base.getindex(x::IntegerRefpool, i::Integer)
+    @boundscheck checkbounds(x, i)
+    return i - x.min + 1
+end
+Base.allunique(::IntegerRefpool) = true
+Base.issorted(::IntegerRefpool) = true
+
+function _refpool(x::AbstractArray)
+    refpool = DataAPI.refpool(x)
+    if refpool !== nothing
+        return refpool
+    elseif x isa AbstractArray{<:Real} && all(isinteger, x)
+        minval, maxval = extrema(x)
+        # Threshold chosen with the same rationale as the row_group_slots refpool method:
+        # refpool approach is faster but we should not allocate too much memory either
+        if maxval - minval + 1 <= 2 * length(x)
+            return IntegerRefpool{eltype(x)}(minval, maxval)
+        else
+            return nothing
+        end
+    else
+        return nothing
+    end
+end
+
 # Helper function for RowGroupDict.
 # Returns a tuple:
 # 1) the highest group index in the `groups` vector
@@ -108,11 +145,13 @@ row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                 groups::Union{Vector{Int}, Nothing} = nothing,
                 skipmissing::Bool = false,
                 sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} =
-    row_group_slots(cols, DataAPI.refpool.(cols), hash, groups, skipmissing, sort)
+    row_group_slots(cols, _refpool.(cols), DataAPI.refarray.(cols),
+                    hash, groups, skipmissing, sort)
 
 # Generic fallback method based on open adressing hash table
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          refpools::Any,
+                         refs::Any,
                          hash::Val = Val(true),
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false,
@@ -165,6 +204,7 @@ end
 # Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
 function row_group_slots(cols::NTuple{N, <:AbstractVector},
                          refpools::NTuple{N, <:AbstractVector},
+                         refs::NTuple{N, <:AbstractVector},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false,
@@ -173,7 +213,6 @@ function row_group_slots(cols::NTuple{N, <:AbstractVector},
     # and this method needs to allocate a groups vector anyway
     @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
 
-    refs = map(DataAPI.refarray, cols)
     missinginds = map(refpools) do refpool
         eltype(refpool) >: Missing ?
             something(findfirst(ismissing, refpool), lastindex(refpool)+1) : lastindex(refpool)+1
@@ -208,9 +247,9 @@ function row_group_slots(cols::NTuple{N, <:AbstractVector},
                   sort ||
                   anydups ? cols : refs
         return invoke(row_group_slots,
-                      Tuple{Tuple{Vararg{AbstractVector}}, Any, Val,
+                      Tuple{Tuple{Vararg{AbstractVector}}, Any, Any, Val,
                             Union{Vector{Int}, Nothing}, Bool, Bool},
-                      newcols, refpools, hash, groups, skipmissing, sort)
+                      newcols, refpools, refs, hash, groups, skipmissing, sort)
     end
 
     seen = fill(false, ngroups)
