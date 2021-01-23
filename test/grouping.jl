@@ -741,6 +741,8 @@ end
     gd = groupby(df, [:x, :y])
     @test !issorted(combine(gd, :x)) # Test that optimized method is not used
     @test isequal_unordered(gd, [groupby(df, [:x2, :y2])...])
+
+    @test isempty(groupby(DataFrame(x=Int[]), :x))
 end
 
 @testset "grouping with three keys" begin

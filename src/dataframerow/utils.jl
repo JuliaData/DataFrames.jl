@@ -117,7 +117,7 @@ function _refpool(x::AbstractArray)
     refpool = DataAPI.refpool(x)
     if refpool !== nothing
         return refpool
-    elseif x isa AbstractArray{<:Real} && all(isinteger, x)
+    elseif x isa AbstractArray{<:Real} && !isempty(x) && all(isinteger, x)
         minval, maxval = extrema(x)
         # Threshold chosen with the same rationale as the row_group_slots refpool method:
         # refpool approach is faster but we should not allocate too much memory either
