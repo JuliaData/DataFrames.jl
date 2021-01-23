@@ -249,118 +249,21 @@ function _show(io::IO,
     # which is checked in the following.
     alignment = fill(:l, num_cols)
 
-    # This vector stores the column indices that are only floats. In this case,
-    # the printed numbers will be aligned on the decimal point.
-    float_cols = Int[]
-
-    # This vector contains the column with respect to the beginning of the cell
-    # that the decimal point must be aligned to.
-    align_col = Int[]
-
-    # If the screen is limited, we do not need to process all the numbers.
-    dsize = displaysize(io)
-
-    if !allcols
-        # Given the spacing, there is no way to fit more than W/9 rows of
-        # floating numbers in the screen, where W is the display width.
-        Δc = clamp(div(dsize[2], 9), 0, num_cols)
-    else
-        Δc = num_cols
-    end
-
-    if !allrows
-        # Get the maximum number of lines that we can display given the screen size.
-        Δr = clamp(dsize[1] - 4, 0, num_rows)
-    else
-        Δr = num_rows
-    end
-
-    Δr_lim = cld(Δr, 2)
+    # Create the dictionary with the anchor regex that is used to align the
+    # floating points.
+    alignment_anchor_regex = Dict{Int, Vector{Regex}}()
 
     # Columns composed of numbers are printed aligned to the right.
-    for i = 1:Δc
+    alignment_regex_vec = [r"\."]
+
+    for i = 1:num_cols
         type_i = nonmissingtype(types[i])
 
-        if type_i <: AbstractFloat
-            alignment[i] = :r
-            push!(float_cols, i)
-        elseif type_i <: Number
+        if type_i <: Number
+            alignment_anchor_regex[i] = alignment_regex_vec
             alignment[i] = :r
         end
     end
-
-    # Check if the quantity of data to be printed allows the alignment of
-    # floats without taking too long.
-    num_float_cols = length(float_cols)
-
-    if Δr*num_float_cols ≤ 200_000
-        for i in float_cols
-
-            # This variable stores the column with respect the beginning of the
-            # cell that the decimal point must be aligned to.
-            align_col_i = 0
-
-            # This variable stores the maximum text size we have after the
-            # alignment column. This is used to compute the right padding that
-            # should be necessary to right align the cells.
-            max_size_after_align_col = 0
-
-            col = df[!, i]
-
-            for k = 1:Δr
-                # We need to process the top and bottom of the table because
-                # we are cropping in the middle.
-
-                kr = k ≤ Δr_lim ? k : num_rows - (k - Δr_lim) + 1
-
-                v = col[kr]
-
-                v_str = sprint(print, v, context = :compact => compact_printing)
-                lv_str = textwidth(v_str)
-
-                if ismissing(v)
-                    # For `missing`, we align the string to the right of the
-                    # decimal point.
-                    id_dp = 8
-                else
-                    # We want to align everything at '.'.
-                    id_dp = findfirst('.', v_str)
-
-                    # If a decimal point is not found, then assume that the
-                    # entire text should be aligned before the alignment column.
-                    # This can happen with a custom `AbstractFloat` type.
-                    id_dp === nothing && (id_dp = lv_str + 1)
-                end
-
-                (align_col_i < id_dp) && (align_col_i = id_dp)
-
-                size_after_align_col = lv_str - id_dp
-
-                if max_size_after_align_col < size_after_align_col
-                    max_size_after_align_col = size_after_align_col
-                end
-            end
-
-            # Check if we need additional left padding to right align the values
-            # in the cell. This can happen if the header length is larger than
-            # the values at the cells.
-            header_size = max(names_len[i], eltypes ? textwidth(types_str[i]) : 0)
-            lpad = header_size - (align_col_i + max_size_after_align_col)
-            lpad > 0 && (align_col_i += lpad)
-
-            push!(align_col, align_col_i)
-
-            # The algorithm requires the cells to be left aligned.
-            alignment[i] = :l
-        end
-    else
-        empty!(float_cols)
-    end
-
-    # Create the formatter for floating point columns.
-    ft_float(v, i, j) = _pretty_tables_float_formatter(v, i, j, float_cols,
-                                                       align_col,
-                                                       compact_printing)
 
     # Make sure that `truncate` does not hide the type and the column name.
     maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
@@ -387,12 +290,13 @@ function _show(io::IO,
     # Print the table with the selected options.
     pretty_table(io, df, vcat(names_mat, types_str);
                  alignment                   = alignment,
+                 alignment_anchor_fallback   = :r,
+                 alignment_anchor_regex      = alignment_anchor_regex,
                  compact_printing            = compact_printing,
                  crop                        = crop,
                  crop_num_lines_at_beginning = 2,
                  ellipsis_line_skip          = 3,
-                 formatters                  = (_pretty_tables_general_formatter,
-                                                ft_float),
+                 formatters                  = (_pretty_tables_general_formatter,),
                  header_alignment            = :l,
                  hlines                      = [:header],
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
