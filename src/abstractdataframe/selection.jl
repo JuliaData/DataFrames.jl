@@ -414,7 +414,9 @@ function _fix_existing_columns_for_vector(newdf::DataFrame, df::AbstractDataFram
     if allow_resizing_newdf[] && nrow(newdf) == 1
         newdfcols = _columns(newdf)
         for (i, col) in enumerate(newdfcols)
-            newdfcols[i] = fill!(similar(col, lr), first(col))
+            newcol = fill!(similar(col, lr), first(col))
+            firstindex(newcol) != 1 && _onebased_check_error()
+            newdfcols[i] = newcol
         end
     end
     # !allow_resizing_newdf[] && ncol(newdf) == 0
@@ -1271,7 +1273,9 @@ function _manipulate(df::AbstractDataFrame, @nospecialize(normalized_cs), copyco
                     if allow_resizing_newdf[] && nrow(newdf) == 1
                         newdfcols = _columns(newdf)
                         for (i, col) in enumerate(newdfcols)
-                            newdfcols[i] = fill!(similar(col, nrow(df)), first(col))
+                            newcol = fill!(similar(col, nrow(df)), first(col))
+                            firstindex(newcol) != 1 && _onebased_check_error()
+                            newdfcols[i] = newcol
                         end
                     end
                     # here even if keeprows is true all is OK

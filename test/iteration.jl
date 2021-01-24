@@ -69,6 +69,11 @@ end
     @test df_mapcols2 == df_mapcols
     @test df_mapcols2.a !== df_mapcols.a
     @test df_mapcols2.b !== df_mapcols.b
+
+    df = DataFrame(a=1)
+    df = mapcols(x -> 2:2, df)
+    @test df == DataFrame(a=2)
+    @test df.a isa Vector{Int}
 end
 
 @testset "mapcols!" begin
@@ -95,6 +100,11 @@ end
     mapcols!(x -> x, df_mapcols)
     @test a === df_mapcols.a
     @test b === df_mapcols.b
+
+    df = DataFrame(a=1)
+    mapcols!(x -> 2:2, df)
+    @test df == DataFrame(a=2)
+    @test df.a isa Vector{Int}
 end
 
 @testset "SubDataFrame" begin

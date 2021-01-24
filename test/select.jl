@@ -1598,4 +1598,14 @@ end
                            DataFrame(x1=Int[], x2=[]))
 end
 
+@testset "test resizing via a vector of columns after scalars" begin
+    df = DataFrame(a=1:2)
+    @test combine(df, :a => (x -> 1) => :a1, :a => (x -> 2) => :a2, [:a]) ==
+          DataFrame(a1=1, a2=2, a=1:2)
+    @test select(df, :a => (x -> 1) => :a1, :a => (x -> 2) => :a2, [:a]) ==
+          DataFrame(a1=1, a2=2, a=1:2)
+    @test_throws ArgumentError combine(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
+    @test_throws ArgumentError select(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
+end
+
 end # module
