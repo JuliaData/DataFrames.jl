@@ -209,8 +209,7 @@ struct DataFrame <: AbstractDataFrame
         end
 
         for (i, col) in enumerate(columns)
-            fic = firstindex(col)
-            fic != 1 && _onebased_check_error(i, fic)
+            firstindex(col) != 1 && _onebased_check_error(i, col)
         end
 
         new(convert(Vector{AbstractVector}, columns), colindex)
@@ -392,10 +391,10 @@ _columns(df::DataFrame) = getfield(df, :columns)
 _onebased_check_error() =
     throw(ArgumentError("Currently DataFrames.jl supports only columns " *
                         "that use 1-based indexing"))
-_onebased_check_error(i, fic) =
+_onebased_check_error(i, col) =
     throw(ArgumentError("Currently DataFrames.jl supports only " *
                         "columns that use 1-based indexing, but " *
-                        "column $i has starting index equal to $fic"))
+                        "column $i has starting index equal to $(firstindex(col))"))
 
 # note: these type assertions are required to pass tests
 nrow(df::DataFrame) = ncol(df) > 0 ? length(_columns(df)[1])::Int : 0
@@ -418,8 +417,7 @@ function _check_consistency(df::DataFrame)
     cols, idx = _columns(df), index(df)
 
     for (i, col) in enumerate(cols)
-        fic = firstindex(col)
-        fic != 1 && _onebased_check_error(i, fic)
+        firstindex(col) != 1 && _onebased_check_error(i, col)
     end
 
     ncols = length(cols)

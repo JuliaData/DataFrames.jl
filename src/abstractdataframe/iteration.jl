@@ -456,8 +456,7 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
     end
 
     for (i, col) in enumerate(vs)
-        fic = firstindex(col)
-        fic != 1 && _onebased_check_error(i, fic)
+        firstindex(col) != 1 && _onebased_check_error(i, col)
     end
 
     @assert length(vs) == ncol(df)
