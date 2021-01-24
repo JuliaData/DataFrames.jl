@@ -166,12 +166,12 @@ end
         res4 = df[:, cols]
         res4.x2 = df.x.^2
         shcatdf = sort(hcatdf, colssym)
-        sres = sort(res, colssym)
-        sres2 = sort(res2, colssym)
-        sres3 = sort(res3, colssym)
-        sres4 = sort(res4, colssym)
 
         # groupby_checked() without groups sorting
+        sres = sort(res)
+        sres2 = sort(res2)
+        sres3 = sort(res3)
+        sres4 = sort(res4)
         gd = groupby_checked(df, cols)
         @test names(parent(gd), gd.cols) == string.(colssym)
         df_comb = combine(identity, gd)
@@ -181,16 +181,20 @@ end
         df_ref = DataFrame(gd)
         @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
-        @test combine(f1, gd) == res
-        @test combine(f2, gd) == res
-        @test rename(combine(f3, gd), :x1 => :xmax) == res
-        @test combine(f4, gd) == res2
-        @test combine(f5, gd) == res2
-        @test combine(f6, gd) == res3
-        @test sort(combine(f7, gd), colssym) == sort(res4, colssym)
-        @test sort(combine(f8, gd), colssym) == sort(res4, colssym)
+        @test sort(combine(f1, gd)) == sres
+        @test sort(combine(f2, gd)) == sres
+        @test sort(rename(combine(f3, gd), :x1 => :xmax)) == sres
+        @test sort(combine(f4, gd)) == sres2
+        @test sort(combine(f5, gd)) == sres2
+        @test sort(combine(f6, gd)) == sres3
+        @test sort(combine(f7, gd)) == sres4
+        @test sort(combine(f8, gd)) == sres4
 
         # groupby_checked() with groups sorting
+        sres = sort(res, colssym)
+        sres2 = sort(res2, colssym)
+        sres3 = sort(res3, colssym)
+        sres4 = sort(res4, colssym)
         gd = groupby_checked(df, cols, sort=true)
         @test names(parent(gd), gd.cols) == string.(colssym)
         for i in 1:length(gd)
@@ -721,28 +725,48 @@ end
     Random.seed!(6)
 
     # Check optimized approach based on refpool method
-    df = DataFrame(x=rand(1:10, 1000), y=rand(-3:10, 1000), z=rand(1000))
-    df.x2 = string.(df.x)
-    df.y2 = string.(df.y)
-    gd = groupby_checked(df, :x)
-    @test issorted(combine(gd, :x)) # Test that optimized method is used
-    @test isequal_unordered(gd, [groupby(df, :x2)...])
-    gd = groupby(df, [:x, :y])
-    @test issorted(combine(gd, :x)) # Test that optimized method is used
-    @test isequal_unordered(gd, [groupby(df, [:x2, :y2])...])
+    for sm in (false, true),
+        S in (Int, Float64),
+        T in (Int, Float64),
+        df in (DataFrame(x=rand(1:10, 1000), y=rand(-3:10, 1000), z=rand(1000)),
+               DataFrame(x=rand([1:10; missing], 1000), y=rand([1:10; missing], 1000), z=rand(1000)),
+               DataFrame(x=rand([1:10; missing], 1000), y=rand(-3:10, 1000), z=rand(1000)))
+        df.x = convert.(Union{S, Missing}, df.x)
+        df.y = convert.(Union{T, Missing}, df.y)
+        df.x2 = passmissing(string).(df.x)
+        df.y2 = passmissing(string).(df.y)
+        gd = groupby_checked(df, :x, skipmissing=sm)
+        @test issorted(combine(gd, :x)) # Test that optimized method is used
+        @test isequal_unordered(gd, [groupby(df, :x2, skipmissing=sm)...])
+        gd = groupby(df, [:x, :y], skipmissing=sm)
+        @test issorted(combine(gd, :x, :y)) # Test that optimized method is used
+        @test isequal_unordered(gd, [groupby(df, [:x2, :y2], skipmissing=sm)...])
+    end
 
     # Check fallback to hash table method when range is too wide
-    df = DataFrame(x=rand(1:100_000, 100), y=rand(-50:110_000, 100), z=rand(100))
-    df.x2 = string.(df.x)
-    df.y2 = string.(df.y)
-    gd = groupby_checked(df, :x)
-    @test !issorted(combine(gd, :x)) # Test that optimized method is not used
-    @test isequal_unordered(gd, [groupby(df, :x2)...])
-    gd = groupby(df, [:x, :y])
-    @test !issorted(combine(gd, :x)) # Test that optimized method is not used
-    @test isequal_unordered(gd, [groupby(df, [:x2, :y2])...])
+    for sm in (false, true),
+        S in (Int, Float64),
+        T in (Int, Float64),
+        df in (DataFrame(x=rand(1:100_000, 100), y=rand(-50:110_000, 100), z=rand(100)),
+               DataFrame(x=rand([1:100_000; missing], 100), y=rand([-50:110_000; missing], 100), z=rand(100)),
+               DataFrame(x=rand([1:100_000; missing], 100), y=rand(-50:110_000, 100), z=rand(100)))
+        df.x = convert.(Union{S, Missing}, df.x)
+        df.y = convert.(Union{T, Missing}, df.y)
+        df.x2 = passmissing(string).(df.x)
+        df.y2 = passmissing(string).(df.y)
+        gd = groupby_checked(df, :x, skipmissing=sm)
+        @test !issorted(combine(gd, :x)) # Test that optimized method is not used
+        @test isequal_unordered(gd, [groupby(df, :x2, skipmissing=sm)...])
+        gd = groupby(df, [:x, :y], skipmissing=sm)
+        @test !issorted(combine(gd, :x, :y)) # Test that optimized method is not used
+        @test isequal_unordered(gd, [groupby(df, [:x2, :y2], skipmissing=sm)...])
+    end
 
     @test isempty(groupby(DataFrame(x=Int[]), :x))
+    @test isempty(groupby(DataFrame(x=Union{Int, Missing}[]), :x))
+    @test groupby(DataFrame(x=Union{Int, Missing}[missing]), :x) ≅
+        groupby(DataFrame(x=Union{String, Missing}[missing]), :x)
+    @test isempty(groupby(DataFrame(x=Union{Int, Missing}[missing]), skipmissing=true, :x))
 end
 
 @testset "grouping with three keys" begin
@@ -2158,69 +2182,63 @@ end
         if !(df.g isa CategoricalVector)
             gdf = groupby_checked(df, :g, sort=false, skipmissing=false)
 
+            @test sort(combine(gdf, :x => sum, keepkeys=true, ungroup=true)) ≅
+                  DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
             @test combine(gdf, :x => sum, keepkeys=false, ungroup=true) ==
-                  DataFrame(x_sum = [1, 5, 4])
+                select(combine(gdf, :x => sum, keepkeys=true, ungroup=true), :x_sum)
             @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, ungroup=false)
-            @test combine(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
-                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
             gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
             @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:3
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
-            @test DataFrame(gdf2, keepkeys=false) == DataFrame(x_sum = [1, 5, 4])
+            @test sort(DataFrame(gdf2)) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+            @test DataFrame(gdf2, keepkeys=false) == select(DataFrame(gdf2), :x_sum)
 
-            @test combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
-                  DataFrame(x_sum = [1, 5, 5, 4], g = [3, 1, 1, missing])
-            @test combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
-                  DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
+            @test sort(combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true)) ≅
+                  DataFrame(x_sum = [1, 4, 5, 5], g = [3, missing, 1, 1])
+            @test sort(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true)) ≅
+                  DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
             gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
             @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == [1, 2, 2, 3]
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1, missing], x_sum = [1, 5, 5, 4])
-            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 5, 4])
+            @test sort(DataFrame(gdf2)) ≅ DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
+            @test DataFrame(gdf2, keepkeys=false) ≅ select(DataFrame(gdf2), :x_sum)
 
+            @test sort(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true)) ≅
+                  DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
             @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ==
-                  DataFrame(x_sum = [1, 5, 4])
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true) ≅
-                  DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
+                select(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true), :x_sum)
             gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
             @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:3
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, missing], x_sum = [1, 5, 4])
-            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 4])
+            @test sort(DataFrame(gdf2)) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
+            @test DataFrame(gdf2, keepkeys=false) ≅ select(DataFrame(gdf2), :x_sum)
 
             gdf = groupby_checked(df, :g, sort=false, skipmissing=true)
 
-            @test combine(gdf, :x => sum, keepkeys=false, ungroup=true) ==
+            @test sort(combine(gdf, :x => sum, keepkeys=false, ungroup=true)) ≅
                   DataFrame(x_sum = [1, 5])
             @test_throws ArgumentError combine(gdf, :x => sum, keepkeys=false, ungroup=false)
-            @test combine(gdf, :x => sum, keepkeys=true, ungroup=true) ≅
-                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            @test sort(combine(gdf, :x => sum, keepkeys=true, ungroup=true)) ≅
+                  DataFrame(g = [1, 3], x_sum = [5, 1])
             gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
             @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:2
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
-            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5])
+            @test sort(DataFrame(gdf2)) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+            @test DataFrame(gdf2, keepkeys=false) ≅ select(DataFrame(gdf2), :x_sum)
 
-            @test combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true) ≅
+            @test sort(combine(gdf, :x => sum, :g, keepkeys=false, ungroup=true)) ≅
                   DataFrame(x_sum = [1, 5, 5], g = [3, 1, 1])
-            @test combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true) ≅
-                  DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
+            @test sort(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=true)) ≅
+                  DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
             gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
             @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == [1, 2, 2]
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1, 1], x_sum = [1, 5, 5])
-            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5, 5])
+            @test sort(DataFrame(gdf2)) ≅ DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
+            @test DataFrame(gdf2, keepkeys=false) ≅ select(DataFrame(gdf2), :x_sum)
 
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ==
-                  DataFrame(x_sum = [1, 5])
-            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true) ≅
-                  DataFrame(g = [3, 1], x_sum = [1, 5])
+            @test sort(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true)) ≅
+                  DataFrame(g = [1, 3], x_sum = [5, 1])
+            @test combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=false, ungroup=true) ≅
+                select(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=true), :x_sum)
             gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
             @test gdf2 isa GroupedDataFrame{DataFrame}
-            @test gdf2.groups == 1:2
-            @test DataFrame(gdf2) ≅ DataFrame(g = [3, 1], x_sum = [1, 5])
-            @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [1, 5])
+            @test sort(DataFrame(gdf2)) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
+            @test DataFrame(gdf2, keepkeys=false) ≅ select(DataFrame(gdf2), :x_sum)
         end
 
         gdf = groupby_checked(df, :g, sort=true, skipmissing=false)
@@ -2232,7 +2250,6 @@ end
               DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
         gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
         @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:3
         @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
         @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1, 4])
 
@@ -2242,7 +2259,6 @@ end
               DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
         gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
         @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == [1, 1, 2, 3]
         @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3, missing], x_sum = [5, 5, 1, 4])
         @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 5, 1, 4])
 
@@ -2252,7 +2268,6 @@ end
               DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
         gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
         @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:3
         @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3, missing], x_sum = [5, 1, 4])
         @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1, 4])
 
@@ -2265,7 +2280,6 @@ end
               DataFrame(g = [1, 3], x_sum = [5, 1])
         gdf2 = validate_gdf(combine(gdf, :x => sum, keepkeys=true, ungroup=false))
         @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:2
         @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
         @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1])
 
@@ -2275,7 +2289,6 @@ end
               DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
         gdf2 = validate_gdf(combine(gdf, :x => sum, :g, keepkeys=true, ungroup=false))
         @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == [1, 1, 2]
         @test DataFrame(gdf2) ≅ DataFrame(g = [1, 1, 3], x_sum = [5, 5, 1])
         @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 5, 1])
 
@@ -2285,7 +2298,6 @@ end
               DataFrame(g = [1, 3], x_sum = [5, 1])
         gdf2 = validate_gdf(combine(x -> (x_sum = sum(x.x),), gdf, keepkeys=true, ungroup=false))
         @test gdf2 isa GroupedDataFrame{DataFrame}
-        @test gdf2.groups == 1:2
         @test DataFrame(gdf2) ≅ DataFrame(g = [1, 3], x_sum = [5, 1])
         @test DataFrame(gdf2, keepkeys=false) ≅ DataFrame(x_sum = [5, 1])
     end
