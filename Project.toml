@@ -1,6 +1,6 @@
 name = "DataFrames"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "0.22.3"
+version = "0.22.4"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
@@ -31,7 +31,7 @@ InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = "0.4.2"
 PooledArrays = "0.5"
-PrettyTables = "0.10"
+PrettyTables = "0.10, 0.11"
 Reexport = "0.1, 0.2, 1.0"
 SortingAlgorithms = "0.1, 0.2, 0.3"
 TableTraits = "0.4, 1"
