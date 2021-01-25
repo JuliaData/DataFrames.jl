@@ -52,7 +52,7 @@ function validate_gdf(ogd::GroupedDataFrame)
     else
         @assert length(gd.starts) == length(gd.ends) == 0
     end
-    @assert isperm(gd.idx)
+    @assert isempty(gd.idx) || isperm(gd.idx)
     @assert length(gd.idx) == length(gd.groups) == nrow(parent(gd))
 
     # checking that groups field is consistent with other fields
@@ -603,6 +603,17 @@ end
             @test issorted(vcat(gd...), [:Key1, :Key2])
         end
     end
+
+    @test groupby_checked(DataFrame(x=[missing]), :x).groups ==
+        groupby_checked(DataFrame(x=Union{Int, Missing}[missing]), :x).groups ==
+        groupby_checked(DataFrame(x=Union{String, Missing}[missing]), :x).groups ==
+        groupby_checked(DataFrame(x=Any[missing]), :x).groups == [1]
+    @test isempty(groupby_checked(DataFrame(x=[missing]), :x, skipmissing=true))
+    @test isempty(groupby_checked(DataFrame(x=Union{Int, Missing}[missing]),
+                                  :x, skipmissing=true))
+    @test isempty(groupby_checked(DataFrame(x=Union{String, Missing}[missing]),
+                                  :x, skipmissing=true))
+    @test isempty(groupby_checked(DataFrame(x=Any[missing]), :x, skipmissing=true))
 end
 
 @testset "grouping arrays that allow missing without missings" begin
@@ -737,10 +748,10 @@ end
         df.y2 = passmissing(string).(df.y)
         gd = groupby_checked(df, :x, skipmissing=sm)
         @test issorted(combine(gd, :x)) # Test that optimized method is used
-        @test isequal_unordered(gd, [groupby(df, :x2, skipmissing=sm)...])
-        gd = groupby(df, [:x, :y], skipmissing=sm)
+        @test isequal_unordered(gd, [groupby_checked(df, :x2, skipmissing=sm)...])
+        gd = groupby_checked(df, [:x, :y], skipmissing=sm)
         @test issorted(combine(gd, :x, :y)) # Test that optimized method is used
-        @test isequal_unordered(gd, [groupby(df, [:x2, :y2], skipmissing=sm)...])
+        @test isequal_unordered(gd, [groupby_checked(df, [:x2, :y2], skipmissing=sm)...])
     end
 
     # Check fallback to hash table method when range is too wide
@@ -756,17 +767,37 @@ end
         df.y2 = passmissing(string).(df.y)
         gd = groupby_checked(df, :x, skipmissing=sm)
         @test !issorted(combine(gd, :x)) # Test that optimized method is not used
-        @test isequal_unordered(gd, [groupby(df, :x2, skipmissing=sm)...])
-        gd = groupby(df, [:x, :y], skipmissing=sm)
+        @test isequal_unordered(gd, [groupby_checked(df, :x2, skipmissing=sm)...])
+        gd = groupby_checked(df, [:x, :y], skipmissing=sm)
         @test !issorted(combine(gd, :x, :y)) # Test that optimized method is not used
-        @test isequal_unordered(gd, [groupby(df, [:x2, :y2], skipmissing=sm)...])
+        @test isequal_unordered(gd, [groupby_checked(df, [:x2, :y2], skipmissing=sm)...])
     end
 
-    @test isempty(groupby(DataFrame(x=Int[]), :x))
-    @test isempty(groupby(DataFrame(x=Union{Int, Missing}[]), :x))
-    @test groupby(DataFrame(x=Union{Int, Missing}[missing]), :x) ≅
-        groupby(DataFrame(x=Union{String, Missing}[missing]), :x)
-    @test isempty(groupby(DataFrame(x=Union{Int, Missing}[missing]), skipmissing=true, :x))
+    @test isempty(groupby_checked(DataFrame(x=Int[]), :x))
+    @test isempty(groupby_checked(DataFrame(x=Union{}[]), :x))
+    @test isempty(groupby_checked(DataFrame(x=Union{Int, Missing}[]), :x))
+    @test groupby_checked(DataFrame(x=Union{Int, Missing}[missing]), :x) ≅
+        groupby_checked(DataFrame(x=Union{String, Missing}[missing]), :x) ≅
+        groupby_checked(DataFrame(x=[missing]), :x)
+    @test isempty(groupby_checked(DataFrame(x=Union{Int, Missing}[missing]), skipmissing=true, :x))
+    @test isempty(groupby_checked(DataFrame(x=[missing]), skipmissing=true, :x))
+
+    # Check Int overflow
+    groups = rand(1:3, 100)
+    for v in (big(0), missing)
+        @test groupby_checked(DataFrame(x=[big(typemax(Int))+10, v,
+                                        big(typemin(Int))-1][groups]), :x) ≅
+            groupby_checked(DataFrame(x=Any[big(typemax(Int))+10, v,
+                                            big(typemin(Int))-1][groups]), :x)
+        @test groupby_checked(DataFrame(x=[big(typemax(Int))-10, v,
+                                        big(typemin(Int))+10][groups]), :x) ≅
+            groupby_checked(DataFrame(x=Any[big(typemax(Int))-10, v,
+                                            big(typemin(Int))+10][groups]), :x)
+    end
+    @test groupby_checked(DataFrame(x=fill(big(typemax(Int))+10, 100)), :x).groups ==
+        fill(1, 100)
+    @test groupby_checked(DataFrame(x=fill(big(typemin(Int))-10, 100)), :x).groups ==
+        fill(1, 100)
 end
 
 @testset "grouping with three keys" begin

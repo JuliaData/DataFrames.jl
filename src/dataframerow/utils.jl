@@ -98,21 +98,26 @@ isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
 # so that a vector of reals can be its own DataAPI.refarray:
 # this just allows telling the generic row_group_slots method for generic refpools
 # what is the minimum index and the number of (potential) groups
-# missing values are supported and represented used index max+1
-struct IntegerRefpool{T<:Union{Real, Missing}} <: AbstractVector{T}
+# missing values are represented using index max+1
+struct IntegerRefpool{T<:Union{Int, Missing}} <: AbstractVector{T}
     min::Int
     max::Int
+    function IntegerRefpool{T}(min::Real, max::Real) where T<:Union{Int, Missing}
+        @assert max < typemax(Int) - 1
+        @assert typemin(Int) <= widen(max) - widen(min) + 1 < typemax(Int)
+        new{T}(min, max)
+    end
 end
 
 Base.size(x::IntegerRefpool{T}) where {T} = (x.max - x.min + 1 + (T >: Missing),)
 Base.axes(x::IntegerRefpool{T}) where {T} = (x.min:(x.max + (T >: Missing)),)
 Base.IndexStyle(::Type{<:IntegerRefpool}) = Base.IndexLinear()
-@inline function Base.getindex(x::IntegerRefpool{T}, i::Integer) where T
+@inline function Base.getindex(x::IntegerRefpool{T}, i::Real) where T
     @boundscheck checkbounds(x, i)
-    if T >: Missing && i == x.max+1
+    if T >: Missing && i == x.max + 1
         return missing
     else
-        return i - x.min + 1
+        return Int(i - x.min + 1)
     end
 end
 Base.allunique(::IntegerRefpool) = true
@@ -130,12 +135,16 @@ function refpool_and_array(x::AbstractArray)
         minval, maxval = extrema(skipmissing(x))
         # Threshold chosen with the same rationale as the row_group_slots refpool method:
         # refpool approach is faster but we should not allocate too much memory either
-        if maxval - minval + 1 <= 2 * length(x)
-            refpool′ = IntegerRefpool{eltype(x)}(minval, maxval)
+        # We also have to avoid overflow
+        if typemin(Int) <= maxval + 1 < typemax(Int) &&
+            typemin(Int) <= minval <= typemax(Int) &&
+            widen(maxval) - widen(minval) + 1 <= 2 * length(x) < typemax(Int)
             if eltype(x) >: Missing
+                refpool′ = IntegerRefpool{Union{Int, Missing}}(minval, maxval)
                 # Missing values go to last group with code maxval+1
                 refarray′ = Missings.replace(x, maxval+1)
             else
+                refpool′ = IntegerRefpool{Int}(minval, maxval)
                 refarray′ = x
             end
             return refpool′, refarray′
@@ -223,9 +232,10 @@ end
 # Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
 function row_group_slots(cols::NTuple{N, AbstractVector},
                          refpools::NTuple{N, AbstractVector},
-                         refs::NTuple{N, Union{AbstractVector{<:Real},
-                                               Missings.EachReplaceMissing{
-                                                   <:AbstractVector{<:Union{Real, Missing}}}}},
+                         refarrays::NTuple{N,
+                             Union{AbstractVector{<:Real},
+                                   Missings.EachReplaceMissing{
+                                       <:AbstractVector{<:Union{Real, Missing}}}}},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false,
@@ -266,11 +276,11 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         # In the simplest case, we can work directly with the reference codes
         newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
                   sort ||
-                  anydups ? cols : refs
+                  anydups ? cols : refarrays
         return invoke(row_group_slots,
                       Tuple{Tuple{Vararg{AbstractVector}}, Any, Any, Val,
                             Union{Vector{Int}, Nothing}, Bool, Bool},
-                      newcols, refpools, refs, hash, groups, skipmissing, sort)
+                      newcols, refpools, refarrays, hash, groups, skipmissing, sort)
     end
 
     seen = fill(false, ngroups)
@@ -313,7 +323,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         @inbounds for i in eachindex(groups)
             local refs_i
             let i=i # Workaround for julia#15276
-                refs_i = map(c -> c[i], refs)
+                refs_i = map(c -> c[i], refarrays)
             end
             vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
             j = sum(vals) + 1
@@ -329,7 +339,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         @inbounds for i in eachindex(groups)
             local refs_i
             let i=i # Workaround for julia#15276
-                refs_i = map(refs, missinginds) do ref, missingind
+                refs_i = map(refarrays, missinginds) do ref, missingind
                     r = Int(ref[i])
                     if skipmissing
                         return r == missingind ? -1 : (r > missingind ? r-1 : r)
@@ -382,7 +392,7 @@ function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
 
     # group start positions in a sorted table
     starts = Vector{Int}(undef, ngroups+1)
-    if length(starts) > 1
+    if length(starts) > 0
         starts[1] = 1
         @inbounds for i in 1:ngroups
             starts[i+1] = starts[i] + stops[i]
