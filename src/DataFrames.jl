@@ -10,7 +10,6 @@ import DataAPI,
        DataAPI.All,
        DataAPI.Between,
        DataAPI.describe,
-       SplitApplyCombine,
        Tables,
        Tables.columnindex,
        Future.copy!

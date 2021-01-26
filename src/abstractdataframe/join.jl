@@ -69,23 +69,23 @@ _rename_cols(old_names::AbstractVector{Symbol},
            (rename isa Function ? Symbol(rename(string(n))) : Symbol(n, rename))
            for n in old_names]
 
-@inline getrow_tuple(r::Int, v::AbstractVector) = @inbounds (v[r],)
-@inline getrow_tuple(r::Int, v::AbstractVector, vs::AbstractVector...) =
-    @inbounds (v[r], getrow_tuple(r, vs...)...)
-
-function innerjoin_rows(left, right)
-    res = SplitApplyCombine.innerjoin(x->getrow_tuple(x, left...), x->getrow_tuple(x, right...),
-                                tuple, 1:length(left[1]), 1:length(right[1]))
-    return getindex.(res, 1), getindex.(res, 2)
-end
+prepare_on_col() = throw(ArgumentError("at least one on column required when joining"))
+prepare_on_col(c::AbstractVector) = c
+prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 
 function compose_inner_table(joiner::DataFrameJoiner,
-                             left_ixs::Vector{Int},
-                             right_ixs::Vector{Int},
                              makeunique::Bool,
                              left_rename::Union{Function, AbstractString, Symbol},
                              right_rename::Union{Function, AbstractString, Symbol})
-    @assert length(left_ixs) == length(right_ixs)
+
+    left_col = prepare_on_col(eachcol(joiner.dfl_on)...)
+    right_col = prepare_on_col(eachcol(joiner.dfr_on)...)
+
+    if length(right_col) <= length(left_col)
+        left_ixs, right_ixs = _innerjoin(left_col, right_col)
+    else
+        right_ixs, left_ixs = _innerjoin(right_col, left_col)
+    end
 
     dfl = joiner.dfl[left_ixs, :]
     dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
@@ -107,6 +107,50 @@ function compose_inner_table(joiner::DataFrameJoiner,
     return res, nothing, nothing
 end
 
+
+function _innerjoin(left::AbstractArray, right::AbstractArray{T}) where {T}
+    left_ixs = Int[]
+    right_ixs = Int[]
+    dict = Dict{T, Int}()
+
+    for (idx_r, val_r) in enumerate(right)
+        dict_index = Base.ht_keyindex2!(dict, val_r)
+        dict_index > 0 && return _innerjoin_dup(left, right)
+        Base._setindex!(dict, idx_r, val_r, -dict_index)
+    end
+
+    for (idx_l, val_l) in enumerate(left)
+        dict_index = Base.ht_keyindex(dict, val_l)
+        if dict_index > 0 # -1 if key not found
+            @inbounds idx_r = dict.vals[dict_index]
+            push!(left_ixs, idx_l)
+            push!(right_ixs, idx_r)
+        end
+    end
+    return left_ixs, right_ixs
+end
+
+# we fall back to original code if we have duplicates
+function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}) where {T}
+    left_ixs = Int[]
+    right_ixs = Int[]
+    dict = Dict{T, Vector{Int}}()
+
+    for (idx_r, val_r) in enumerate(right)
+        push!(get!(Vector{Int}, dict, val_r), idx_r)
+    end
+
+    @inbounds for (idx_l, val_l) in enumerate(left)
+        dict_index = Base.ht_keyindex(dict, val_l)
+        if dict_index > 0 # -1 if key not found
+            @inbounds idxs_r = dict.vals[dict_index]
+            append!(left_ixs, Iterators.repeated(idx_l, length(idxs_r)))
+            append!(right_ixs, idxs_r)
+        end
+    end
+
+    return left_ixs, right_ixs
+end
 
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
@@ -397,11 +441,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     left_indicator, right_indicator = nothing, nothing
     if kind == :inner
-        inner_row_maps = innerjoin_rows(Tuple(eachcol(joiner.dfl_on)),
-                                        Tuple(eachcol(joiner.dfr_on)))
         joined, left_indicator, right_indicator =
-            compose_inner_table(joiner, inner_row_maps...,
-                                makeunique, left_rename, right_rename)
+            compose_inner_table(joiner, makeunique, left_rename, right_rename)
     elseif kind == :left
         left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                          group_rows(joiner.dfr_on),
