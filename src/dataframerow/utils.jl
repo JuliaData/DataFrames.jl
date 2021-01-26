@@ -275,6 +275,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
        anydups
         # In the simplest case, we can work directly with the reference codes
         newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
+                  !(refarrays isa NTuple{<:Any, AbstractVector}) ||
                   sort ||
                   anydups ? cols : refarrays
         return invoke(row_group_slots,

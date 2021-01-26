@@ -52,7 +52,7 @@ function validate_gdf(ogd::GroupedDataFrame)
     else
         @assert length(gd.starts) == length(gd.ends) == 0
     end
-    @assert isempty(gd.idx) || isperm(gd.idx)
+    @assert isperm(gd.idx)
     @assert length(gd.idx) == length(gd.groups) == nrow(parent(gd))
 
     # checking that groups field is consistent with other fields
@@ -786,11 +786,11 @@ end
     groups = rand(1:3, 100)
     for v in (big(0), missing)
         @test groupby_checked(DataFrame(x=[big(typemax(Int))+10, v,
-                                        big(typemin(Int))-1][groups]), :x) ≅
+                                           big(typemin(Int))-1][groups]), :x) ≅
             groupby_checked(DataFrame(x=Any[big(typemax(Int))+10, v,
                                             big(typemin(Int))-1][groups]), :x)
         @test groupby_checked(DataFrame(x=[big(typemax(Int))-10, v,
-                                        big(typemin(Int))+10][groups]), :x) ≅
+                                           big(typemin(Int))+10][groups]), :x) ≅
             groupby_checked(DataFrame(x=Any[big(typemax(Int))-10, v,
                                             big(typemin(Int))+10][groups]), :x)
     end
