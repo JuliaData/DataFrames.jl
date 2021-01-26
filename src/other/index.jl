@@ -15,8 +15,8 @@ const MultiColumnIndex = Union{AbstractVector, Regex, Not, Between, All, Cols, C
 const MULTICOLUMNINDEX_TUPLE = (:AbstractVector, :Regex, :Not, :Between, :All, :Cols, :Colon)
 
 const COLUMNINDEX_STR = "`Symbol`, string or integer"
-const MULTICOLUMNINDEX_STR = "`:`, `Cols`, `All`, `Between`, `Not`, a regular expression," *
-                          " or a vector of `Symbol`s, strings or integers"
+const MULTICOLUMNINDEX_STR = "`:`, `Cols`, `All`, `Between`, `Not`, a regular expression, " *
+                             "or a vector of `Symbol`s, strings or integers"
 
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
@@ -46,8 +46,8 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
         if length(unique(nms)) != length(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
             dupstr = join(string.(':', dup), ", ", " and ")
-            msg = "Duplicate variable names: $dupstr. Pass makeunique=true" *
-                  " to make them unique using a suffix automatically."
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
+                  "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
     end
@@ -66,7 +66,7 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     xbackup = copy(x)
     processedfrom = Set{Symbol}()
     processedto = Set{Symbol}()
-    toholder = Dict{Symbol,Int}()
+    toholder = Dict{Symbol, Int}()
     for (from, to) in nms
         if from ∈ processedfrom
             copy!(x.lookup, xbackup.lookup)
@@ -224,8 +224,8 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
-        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not" *
-                            " allowed for column indexing"))
+        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not " *
+                            "allowed for column indexing"))
     end
     return getindex(x, Vector{Int}(idx))
 end
@@ -318,8 +318,8 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     if length(dups) > 0
         if !makeunique
             dupstr = join(string.(':', unique(u[dups])), ", ", " and ")
-            msg = "Duplicate variable names: $dupstr. Pass makeunique=true" *
-                  " to make them unique using a suffix automatically."
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
+                  "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
     end
@@ -345,7 +345,7 @@ end
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
-struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} <: AbstractIndex
+struct SubIndex{I<:AbstractIndex, S<:AbstractVector{Int}, T<:AbstractVector{Int}} <: AbstractIndex
     parent::I
     cols::S # columns from idx selected in SubIndex
     remap::T # reverse mapping from cols to their position in the SubIndex
@@ -357,7 +357,7 @@ Base.copy(x::SubIndex) = Index(_names(x))
 
 @inline parentcols(ind::SubIndex) = ind.cols
 
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer,AbstractVector{<:Integer}}) =
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer, AbstractVector{<:Integer}}) =
     ind.cols[idx]
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Bool) =
     throw(ArgumentError("column indexing with Bool is not allowed"))
@@ -422,7 +422,7 @@ Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
     SubIndex(parent, parent[cols])
 
 Base.length(x::SubIndex) = length(x.cols)
-Base.names(x::SubIndex) = string.(_names(x))
+Base.names(x::SubIndex) = string.(_names(x))::Vector{String}
 _names(x::SubIndex) = view(_names(x.parent), x.cols)
 
 function Base.haskey(x::SubIndex, key::Symbol)

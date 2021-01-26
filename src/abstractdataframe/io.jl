@@ -47,15 +47,8 @@ Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = ',')
 Base.show(io::IO, mime::MIME"text/tab-separated-values", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = '\t')
-Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
-          rowlabel::Symbol = :Row,
-          summary::Bool = true,
-          eltypes::Bool = true) =
-    show(io, df, allrows=allrows, allcols=allcols,
-         splitcols=splitcols, rowlabel=rowlabel, summary=summary, eltypes=eltypes)
+Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame; kwargs...) =
+    show(io, df; kwargs...)
 
 ##############################################################################
 #
@@ -80,7 +73,7 @@ function html_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               summary::Bool=true, eltypes::Bool=true, rowid::Union{Int,Nothing}=nothing)
+               summary::Bool=true, eltypes::Bool=true, rowid::Union{Int, Nothing}=nothing)
     _check_consistency(df)
 
     # we will pass around this buffer to avoid its reallocation in ourstrwidth
@@ -248,7 +241,7 @@ function latex_char_escape(char::Char)
 end
 
 function latex_escape(cell::AbstractString)
-    replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
+    replace(cell, ['\\','~', '#', '$', '%', '&', '_', '^', '{', '}']=>latex_char_escape)
 end
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
@@ -303,7 +296,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
             if !isassigned(df[!, col], row)
                 print(io, "\\emph{\\#undef}")
             else
-                cell = df[row,col]
+                cell = df[row, col]
                 if ismissing(cell)
                     print(io, "\\emph{missing}")
                 elseif cell isa Markdown.MD

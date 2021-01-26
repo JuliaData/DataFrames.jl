@@ -12,6 +12,11 @@ df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id
 df2 = DataFrame(grp = [1, 3], w = [10, 11])
 ```
 
+Note that in the comparisons presented below predicates like `x -> x >= 1` can
+be more compactly written as `=>(1)`. The latter form has an additional benefit
+that it is compiled only once per Julia session (as opposed to `x -> x >= 1`
+which defines a new anonymous function every time it is introduced).
+
 ## Comparison with the Python package pandas
 
 The following table compares the main functions of DataFrames.jl with the Python package pandas (version 1.1.0):
@@ -33,16 +38,16 @@ as row indices rather than a separate `id` column.
 
 ### Accessing data
 
-| Operation                  | pandas                 | DataFrames.jl                      |
-|:---------------------------|:-----------------------|:-----------------------------------|
-| Cell indexing by location  | `df.iloc[1, 1]`        | `df[2, 2]`                         |
-| Row slicing by location    | `df.iloc[1:3]`         | `df[2:3, :]`                       |
-| Column slicing by location | `df.iloc[:, 1:]`       | `df[:, 2:end]`                     |
-| Row indexing by label      | `df.loc['c']`          | `df[findfirst(==('c'), df.id), :]` |
-| Column indexing by label   | `df.loc[:, 'x']`       | `df[:, :x]`                        |
-| Column slicing by label    | `df.loc[:, ['x','z']]` | `df[:, [:x, :z]]`                  |
-|                            | `df.loc[:, 'x':'z']`   | `df[:, Between(:x, :z)]`           |
-| Mixed indexing             | `df.loc['c'][1]`       | `df[findfirst(==('c'), df.id), 2]` |
+| Operation                  | pandas                  | DataFrames.jl                      |
+|:---------------------------|:------------------------|:-----------------------------------|
+| Cell indexing by location  | `df.iloc[1, 1]`         | `df[2, 2]`                         |
+| Row slicing by location    | `df.iloc[1:3]`          | `df[2:3, :]`                       |
+| Column slicing by location | `df.iloc[:, 1:]`        | `df[:, 2:end]`                     |
+| Row indexing by label      | `df.loc['c']`           | `df[findfirst(==('c'), df.id), :]` |
+| Column indexing by label   | `df.loc[:, 'x']`        | `df[:, :x]`                        |
+| Column slicing by label    | `df.loc[:, ['x', 'z']]` | `df[:, [:x, :z]]`                  |
+|                            | `df.loc[:, 'x':'z']`    | `df[:, Between(:x, :z)]`           |
+| Mixed indexing             | `df.loc['c'][1]`        | `df[findfirst(==('c'), df.id), 2]` |
 
 Note that Julia uses 1-based indexing, inclusive on both ends. A special keyword `end` can be used to
 indicate the last index. Likewise, the `begin` keyword can be used to indicate the first index.
@@ -96,7 +101,7 @@ examples above do not synchronize the column names between pandas and DataFrames
 ### Mutating operations
 
 | Operation          | pandas                                                | DataFrames.jl                                |
-| :----------------- | :---------------------------------------------------- | :------------------------------------------- |
+|:-------------------|:------------------------------------------------------|:---------------------------------------------|
 | Add new columns    | `df['z1'] = df['z'] + 1`                              | `df.z1 = df.z .+ 1`                          |
 |                    |                                                       | `transform!(df, :z => (x -> x .+ 1) => :z1)` |
 |                    | `df.insert(1, 'const', 10)`                           | `insertcols!(df, 2, :const => 10)`           |
@@ -115,12 +120,12 @@ over each group independently. The result of `groupby` is a `GroupedDataFrame` o
 which may be processed using the `combine`, `transform`, or `select` functions.
 The following table illustrates some common grouping and aggregation usages.
 
-| Operation                       | pandas                                                                                | DataFrames.jl                                        |
-|:--------------------------------|:--------------------------------------------------------------------------------------|:-----------------------------------------------------|
-| Aggregate by groups             | `df.groupby('grp')['x'].mean()`                                                       | `combine(groupby(df, :grp), :x => mean)`             |
-| Rename column after aggregation | `df.groupby('grp')['x'].mean().rename("my_mean")`                                     | `combine(groupby(df, :grp), :x => mean => :my_mean)` |
-| Add aggregated data as column   | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                   | `transform(groupby(df, :grp), :x => mean)`           |
-| ...and select output columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp','x_mean']]` | `select(groupby(df, :grp), :id, :x => mean)`         |
+| Operation                       | pandas                                                                                 | DataFrames.jl                                        |
+|:--------------------------------|:---------------------------------------------------------------------------------------|:-----------------------------------------------------|
+| Aggregate by groups             | `df.groupby('grp')['x'].mean()`                                                        | `combine(groupby(df, :grp), :x => mean)`             |
+| Rename column after aggregation | `df.groupby('grp')['x'].mean().rename("my_mean")`                                      | `combine(groupby(df, :grp), :x => mean => :my_mean)` |
+| Add aggregated data as column   | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')`                    | `transform(groupby(df, :grp), :x => mean)`           |
+| ...and select output columns    | `df.join(df.groupby('grp')['x'].mean(), on='grp', rsuffix='_mean')[['grp', 'x_mean']]` | `select(groupby(df, :grp), :id, :x => mean)`         |
 
 Note that pandas returns a `Series` object for 1-dimensional result unless `reset_index` is called afterwards.
 The corresponding DataFrames.jl examples return an equivalent `DataFrame` object.
@@ -157,11 +162,11 @@ This section includes more complex examples.
 |:---------------------------------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------|
 | Complex Function                       | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`       |
 | Aggregate multiple columns             | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`               |
-|                                        | `df[['x','y']].mean()`                                                       | `combine(df, [:x, :y] .=> mean)`                          |
+|                                        | `df[['x', 'y']].mean()`                                                      | `combine(df, [:x, :y] .=> mean)`                          |
 |                                        | `df.filter(regex=("^x")).mean()`                                             | `combine(df, names(df, r"^x") .=> mean)`                  |
-| Apply function over multiple variables | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0,1])`                          | `transform(df, [:x, :y] => cor)`                          |
+| Apply function over multiple variables | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0, 1])`                         | `transform(df, [:x, :y] => cor)`                          |
 | Row-wise operation                     | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                   |
-|                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x,:y]) => ByRow(argmax))`        |
+|                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x, :y]) => ByRow(argmax))`       |
 | DataFrame as input                     | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`            |
 | DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)` |
 
@@ -174,7 +179,7 @@ but `select` and `transform` retain an original row ordering.
 DataFrames.jl supports join operations similar to a relational database.
 
 | Operation             | pandas                                         | DataFrames.jl                   |
-| :-------------------- | :--------------------------------------------- | :------------------------------ |
+|:----------------------|:-----------------------------------------------|:--------------------------------|
 | Inner join            | `pd.merge(df, df2, how = 'inner', on = 'grp')` | `innerjoin(df, df2, on = :grp)` |
 | Outer join            | `pd.merge(df, df2, how = 'outer', on = 'grp')` | `outerjoin(df, df2, on = :grp)` |
 | Left join             | `pd.merge(df, df2, how = 'left', on = 'grp')`  | `leftjoin(df, df2, on = :grp)`  |
@@ -198,19 +203,19 @@ df <- tibble(grp = rep(1:2, 3), x = 6:1, y = 4:9,
 ```
 
 | Operation                | dplyr                          | DataFrames.jl                          |
-| :----------------------- | :----------------------------- | :------------------------------------- |
+|:-------------------------|:-------------------------------|:---------------------------------------|
 | Reduce multiple values   | `summarize(df, mean(x))`       | `combine(df, :x => mean)`              |
 | Add new columns          | `mutate(df, x_mean = mean(x))` | `transform(df, :x => mean => :x_mean)` |
 | Rename columns           | `rename(df, x_new = x)`        | `rename(df, :x => :x_new)`             |
 | Pick columns             | `select(df, x, y)`             | `select(df, :x, :y)`                   |
 | Pick & transform columns | `transmute(df, mean(x), y)`    | `select(df, :x => mean, :y)`           |
-| Pick rows                | `filter(df, x >= 1)`           | `filter(:x => >=(1), df)`              |
+| Pick rows                | `filter(df, x >= 1)`           | `subset(df, :x => ByRow(x -> x >= 1))` |
 | Sort rows                | `arrange(df, x)`               | `sort(df, :x)`                         |
 
 As in dplyr, some of these functions can be applied to grouped data frames, in which case they operate by group:
 
 | Operation                | dplyr                                      | DataFrames.jl                               |
-| :----------------------- | :----------------------------------------- | :------------------------------------------ |
+|:-------------------------|:-------------------------------------------|:--------------------------------------------|
 | Reduce multiple values   | `summarize(group_by(df, grp), mean(x))`    | `combine(groupby(df, :grp), :x => mean)`    |
 | Add new columns          | `mutate(group_by(df, grp), mean(x))`       | `transform(groupby(df, :grp), :x => mean)`  |
 | Pick & transform columns | `transmute(group_by(df, grp), mean(x), y)` | `select(groupby(df, :grp), :x => mean, :y)` |
@@ -218,7 +223,7 @@ As in dplyr, some of these functions can be applied to grouped data frames, in w
 The table below compares more advanced commands:
 
 | Operation                 | dplyr                                                     | DataFrames.jl                                                 |
-| :------------------------ | :-------------------------------------------------------- | :------------------------------------------------------------ |
+|:--------------------------|:----------------------------------------------------------|:--------------------------------------------------------------|
 | Complex Function          | `summarize(df, mean(x, na.rm = T))`                       | `combine(df, :x => x -> mean(skipmissing(x)))`                |
 | Transform several columns | `summarize(df, max(x), min(y))`                           | `combine(df, :x => maximum,  :y => minimum)`                  |
 |                           | `summarize(df, across(c(x, y), mean))`                    | `combine(df, [:x, :y] .=> mean)`                              |
@@ -235,12 +240,12 @@ The table below compares more advanced commands:
 The following table compares the main functions of DataFrames.jl with Stata:
 
 | Operation              | Stata                   | DataFrames.jl                           |
-| :--------------------- | :---------------------- | :-------------------------------------- |
+|:-----------------------|:------------------------|:----------------------------------------|
 | Reduce multiple values | `collapse (mean) x`     | `combine(df, :x => mean)`               |
 | Add new columns        | `egen x_mean = mean(x)` | `transform!(df, :x => mean => :x_mean)` |
 | Rename columns         | `rename x x_new`        | `rename!(df, :x => :x_new)`             |
 | Pick columns           | `keep x y`              | `select!(df, :x, :y)`                   |
-| Pick rows              | `keep if x >= 1`        | `filter!(:x => >=(1), df)`              |
+| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1)`        |
 | Sort rows              | `sort x`                | `sort!(df, :x)`                         |
 
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
@@ -248,14 +253,14 @@ Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the op
 Some of these functions can be applied to grouped data frames, in which case they operate by group:
 
 | Operation              | Stata                            | DataFrames.jl                               |
-| :--------------------- | :------------------------------- | :------------------------------------------ |
+|:-----------------------|:---------------------------------|:--------------------------------------------|
 | Add new columns        | `egen x_mean = mean(x), by(grp)` | `transform!(groupby(df, :grp), :x => mean)` |
 | Reduce multiple values | `collapse (mean) x, by(grp)`     | `combine(groupby(df, :grp), :x => mean)`    |
 
 The table below compares more advanced commands:
 
 | Operation                 | Stata                          | DataFrames.jl                                              |
-| :------------------------ | :----------------------------- | :--------------------------------------------------------- |
+|:--------------------------|:-------------------------------|:-----------------------------------------------------------|
 | Transform certain rows    | `replace x = 0 if x <= 0`      | `transform(df, :x => (x -> ifelse.(x .<= 0, 0, x)) => :x)` |
 | Transform several columns | `collapse (max) x (min) y`     | `combine(df, :x => maximum,  :y => minimum)`               |
 |                           | `collapse (mean) x y`          | `combine(df, [:x, :y] .=> mean)`                           |

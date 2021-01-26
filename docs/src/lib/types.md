@@ -16,7 +16,9 @@ It is not intended as a fully generic interface for working with tabular data, w
 interfaces defined by [Tables.jl](https://github.com/JuliaData/Tables.jl/) instead.
 
 `DataFrame` is the most fundamental subtype of `AbstractDataFrame`, which stores a set of columns
-as `AbstractVector` objects.
+as `AbstractVector` objects. Indexing of all stored columns must be 1-based. Also, all functions
+exposed by DataFrames.jl API make sure to `collect` passed `AbstractRange` source columns before
+storing them in a `DataFrame`.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
@@ -28,7 +30,7 @@ It is intended to be created as a result of a call to the `groupby` function.
 
 `DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference
 to a parent `DataFrame` and information about which row and columns from the parent are selected
-(both as integer indices referring to the parent)
+(both as integer indices referring to the parent).
 The `DataFrameRow` type supports iteration over columns of the row and is similar in functionality to
 the `NamedTuple` type, but allows for modification of data stored in the parent `DataFrame`
 and reflects changes done to the parent after the creation of the view.

@@ -207,427 +207,133 @@ function getmaxwidths(df::AbstractDataFrame,
     return maxwidths
 end
 
-"""
-    DataFrames.getprintedwidth(maxwidths::Vector{Int})
-
-Given the maximum widths required to render each column of an
-`AbstractDataFrame`, return the total number of characters
-that would be required to render an entire row to an I/O stream.
-
-NOTE: This width includes the whitespace and special characters used to
-pretty print the `AbstractDataFrame`.
-
-# Arguments
-- `maxwidths::Vector{Int}`: The maximum width needed to render each
-  column of an `AbstractDataFrame`.
-```
-"""
-function getprintedwidth(maxwidths::Vector{Int})
-    # Include length of line-initial |
-    totalwidth = 1
-    for i in 1:length(maxwidths)
-        # Include length of field + 2 spaces + trailing |
-        totalwidth += maxwidths[i] + 3
-    end
-    return totalwidth
-end
-
-"""
-    getchunkbounds(maxwidths::Vector{Int},
-                   splitcols::Bool,
-                   availablewidth::Int)
-
-When rendering an `AbstractDataFrame` to a REPL window in chunks, each of
-which will fit within the width of the REPL window, this function will
-return the indices of the columns that should be included in each chunk.
-
-NOTE: The resulting bounds should be interpreted as follows: the
-i-th chunk bound is the index MINUS 1 of the first column in the
-i-th chunk. The (i + 1)-th chunk bound is the EXACT index of the
-last column in the i-th chunk. For example, the bounds [0, 3, 5]
-imply that the first chunk contains columns 1-3 and the second chunk
-contains columns 4-5.
-
-# Arguments
-- `maxwidths::Vector{Int}`: The maximum width needed to render each
-  column of an AbstractDataFrame.
-- `splitcols::Bool`: Whether to split printing in chunks of columns
-  fitting the screen width rather than printing all columns in the same block.
-- `availablewidth::Int`: The available width in the REPL.
-```
-"""
-function getchunkbounds(maxwidths::Vector{Int},
-                        splitcols::Bool,
-                        availablewidth::Int)
-    ncols = length(maxwidths) - 1
-    rowmaxwidth = maxwidths[ncols + 1]
-    if splitcols
-        chunkbounds = [0]
-        # Include 2 spaces + 2 | characters for row/col label
-        totalwidth = rowmaxwidth + 4
-        for j in 1:ncols
-            # Include 2 spaces + | character in per-column character count
-            totalwidth += maxwidths[j] + 3
-            if totalwidth > availablewidth
-                push!(chunkbounds, j - 1)
-                totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
-            end
-        end
-        push!(chunkbounds, ncols)
-    else
-        chunkbounds = [0, ncols]
-    end
-    return chunkbounds
-end
-
-"""
-    showrowindices(io::IO,
-                   df::AbstractDataFrame,
-                   rowindices::AbstractVector{Int},
-                   maxwidths::Vector{Int},
-                   leftcol::Int,
-                   rightcol::Int,
-                   rowid::Union{Int,Nothing},
-                   buffer::IOBuffer)
-
-Render a subset of rows and columns of an `AbstractDataFrame` to an
-I/O stream. For chunked printing, this function is used to print a
-single chunk, starting from the first indicated column and ending with
-the last indicated column. Assumes that the maximum string widths
-required for printing have been precomputed.
-
-# Arguments
-- `io::IO`: The I/O stream to which `df` will be printed.
-- `df::AbstractDataFrame`: An AbstractDataFrame.
-- `rowindices::AbstractVector{Int}`: The indices of the subset of rows
-  that will be rendered to `io`.
-- `maxwidths::Vector{Int}`: The pre-computed maximum string width
-  required to render each column.
-- `leftcol::Int`: The index of the first column in a chunk to be rendered.
-- `rightcol::Int`: The index of the last column in a chunk to be rendered.
-- `rowid`: Used to handle showing `DataFrameRow`.
-- `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
-
-# Examples
-```jldoctest
-julia> using DataFrames
-
-julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
-
-julia> DataFrames.showrowindices(stdout, df, 1:2, [1, 1, 5], 1, 2)
-│ 1     │ 1 │ x │
-│ 2     │ 2 │ y │
-```
-"""
-function showrowindices(io::IO,
-                        df::AbstractDataFrame,
-                        rowindices::AbstractVector{Int},
-                        maxwidths::Vector{Int},
-                        leftcol::Int,
-                        rightcol::Int,
-                        rowid::Union{Integer, Nothing},
-                        buffer::IOBuffer,
-                        truncstring::Int)
-    rowmaxwidth = maxwidths[end]
-
-    for i in rowindices
-        # Print row ID
-        if rowid isa Nothing
-            @printf io "│ %d" i
-        else
-            @printf io "│ %d" rowid
-        end
-        padding = rowmaxwidth - ndigits(rowid isa Nothing ? i : rowid)
-        for _ in 1:padding
-            write(io, ' ')
-        end
-        print(io, " │ ")
-        # Print DataFrame entry
-        for j in leftcol:rightcol
-            strlen = 0
-            if isassigned(df[!, j], i)
-                s = df[i, j]
-                strlen = ourstrwidth(io, s, buffer, truncstring)
-                if ismissing(s) || s isa SHOW_TABULAR_TYPES
-                    ourshow(io, s, truncstring, styled=true)
-                else
-                    ourshow(io, s, truncstring)
-                end
-            else
-                strlen = ourstrwidth(io, "#undef", buffer, truncstring)
-                ourshow(io, "#undef", truncstring, styled=true)
-            end
-            padding = maxwidths[j] - strlen
-            for _ in 1:padding
-                write(io, ' ')
-            end
-            if j == rightcol
-                if i == rowindices[end]
-                    print(io, " │")
-                else
-                    print(io, " │\n")
-                end
-            else
-                print(io, " │ ")
-            end
-        end
-    end
-    return
-end
-
-"""
-    showrows(io::IO,
-             df::AbstractDataFrame,
-             rowindices1::AbstractVector{Int},
-             rowindices2::AbstractVector{Int},
-             maxwidths::Vector{Int},
-             splitcols::Bool,
-             allcols::Bool,
-             rowlabel::Symbol,
-             displaysummary::Bool,
-             eltypes::Bool,
-             rowid::Union{Integer, Nothing},
-             buffer::IOBuffer)
-
-Render a subset of rows (possibly in chunks) of an `AbstractDataFrame` to an
-I/O stream.
-
-NOTE: The value of `maxwidths[end]` must be the string width of
-`rowlabel`.
-
-# Arguments
-- `io::IO`: The I/O stream to which `df` will be printed.
-- `df::AbstractDataFrame`: An AbstractDataFrame.
-- `rowindices1::AbstractVector{Int}`: The indices of the first subset
-  of rows to be rendered.
-- `rowindices2::AbstractVector{Int}`: The indices of the second subset
-  of rows to be rendered. An ellipsis will be printed before
-  rendering this second subset of rows.
-- `maxwidths::Vector{Int}`: The pre-computed maximum string width
-  required to render each column.
-- `allcols::Bool = false`: Whether to print all columns, rather than
-  a subset that fits the device width.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
-  screen width rather than printing all columns in the same block.
-- `rowlabel::Symbol`: What label should be printed when rendering the
-  numeric ID's of each row? Defaults to `:Row`.
-- `displaysummary::Bool`: Should a brief string summary of the
-  AbstractDataFrame be rendered to the I/O stream before printing the
-  contents of the renderable rows? Defaults to `true`.
-- `eltypes::Bool = true`: Whether to print the column type
-   under the column name in the heading. Defaults to `true`.
-- `rowid::Union{Integer, Nothing} = nothing`: Used to handle showing `DataFrameRow`
-- `buffer::IOBuffer`: buffer passed around to avoid reallocations in `ourstrwidth`
-
-# Examples
-
-```jldoctest
-julia> using DataFrames
-
-julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
-
-julia> DataFrames.showrows(stdout, df, 1:2, 3:3, [5, 6, 3], false, true, :Row, true)
-3×2 DataFrame
-│ Row │ A     │ B      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ x      │
-│ 2   │ 2     │ y      │
-⋮
-│ 3   │ 3     │ z      │
-```
-"""
-function showrows(io::IO,
-                  df::AbstractDataFrame,
-                  rowindices1::AbstractVector{Int},
-                  rowindices2::AbstractVector{Int},
-                  maxwidths::Vector{Int},
-                  splitcols::Bool,
-                  allcols::Bool,
-                  rowlabel::Symbol,
-                  displaysummary::Bool,
-                  eltypes::Bool,
-                  rowid::Union{Integer, Nothing},
-                  buffer::IOBuffer,
-                  truncstring::Int)
-
-    ncols = size(df, 2)
-
-    if isempty(rowindices1)
-        if displaysummary
-            println(io, summary(df))
-        end
-        return
-    end
-
-    rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, splitcols, displaysize(io)[2])
-    nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
-
-    header = displaysummary ? summary(df) : ""
-    cols_other_chunks = chunkbounds[end] - chunkbounds[2]
-    if !allcols && length(chunkbounds) > 2
-        # if we print only one chunk and it does not fit the screen give up
-        if cols_other_chunks == ncols
-            print(io, header * ". Omitted printing of all columns as they do " *
-                  "not fit the display size")
-            return
-        end
-        header *= ". Omitted printing of $cols_other_chunks columns"
-    end
-
-    println(io, header)
-
-    for chunkindex in 1:nchunks
-        leftcol = chunkbounds[chunkindex] + 1
-        rightcol = chunkbounds[chunkindex + 1]
-
-        # nothing to print in this chunk
-        leftcol > rightcol && continue
-
-        # Print column names
-        @printf io "│ %s" rowlabel
-        # do not truncate rowlabel
-        padding = rowmaxwidth - ourstrwidth(io, rowlabel, buffer, 0)
-        for itr in 1:padding
-            write(io, ' ')
-        end
-        print(io, " │ ")
-        for j in leftcol:rightcol
-            s = _names(df)[j]
-            # do not truncate column names
-            ourshow(io, s, 0)
-            padding = maxwidths[j] - ourstrwidth(io, s, buffer, 0)
-            for itr in 1:padding
-                write(io, ' ')
-            end
-            if j == rightcol
-                print(io, " │\n")
-            else
-                print(io, " │ ")
-            end
-        end
-
-        # Print column types
-        if eltypes
-            print(io, "│ ")
-            padding = rowmaxwidth
-            for itr in 1:padding
-                write(io, ' ')
-            end
-            print(io, " │ ")
-            for j in leftcol:rightcol
-                s = compacttype(eltype(df[!, j]), maxwidths[j], false)
-                printstyled(io, s, color=:light_black)
-                # do not truncate eltype
-                padding = maxwidths[j] - ourstrwidth(io, s, buffer, 0)
-                for itr in 1:padding
-                    write(io, ' ')
-                end
-                if j == rightcol
-                    print(io, " │\n")
-                else
-                    print(io, " │ ")
-                end
-            end
-        end
-
-        # Print table bounding line
-        write(io, '├')
-        for itr in 1:(rowmaxwidth + 2)
-            write(io, '─')
-        end
-        write(io, '┼')
-        for j in leftcol:rightcol
-            for itr in 1:(maxwidths[j] + 2)
-                write(io, '─')
-            end
-            if j < rightcol
-                write(io, '┼')
-            else
-                write(io, '┤')
-            end
-        end
-        write(io, '\n')
-
-        # Print main table body, potentially in two abbreviated sections
-        showrowindices(io, df, rowindices1, maxwidths, leftcol, rightcol,
-                       rowid, buffer, truncstring)
-
-        if !isempty(rowindices2)
-            print(io, "\n⋮\n")
-            showrowindices(io, df, rowindices2, maxwidths, leftcol, rightcol,
-                           rowid, buffer, truncstring)
-        end
-
-        # Print newlines to separate chunks
-        if chunkindex < nchunks
-            print(io, "\n\n")
-        end
-    end
-
-    return
-end
-
 function _show(io::IO,
                df::AbstractDataFrame;
                allrows::Bool = !get(io, :limit, false),
                allcols::Bool = !get(io, :limit, false),
-               splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
-               rowid=nothing,
-               truncstring::Int)
+               rowid = nothing,
+               truncate::Int = 32,
+               kwargs...)
+
     _check_consistency(df)
 
-    # we will pass around this buffer to avoid its reallocation in ourstrwidth
-    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+    aux = names(df)
+    names_len = textwidth.(aux)
+    maxwidth = max.(9, names_len)
+    names_mat = permutedims(aux)
+    types = eltype.(eachcol(df))
 
-    nrows = size(df, 1)
-    if rowid !== nothing
-        if size(df, 2) == 0
-            rowid = nothing
-        elseif nrows != 1
-            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    # NOTE: If we reuse `types` here, the time to print the first table is 2x more.
+    # This should be something related to type inference.
+    types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
+
+    if allcols && allrows
+        crop = :none
+    elseif allcols
+        crop = :vertical
+    elseif allrows
+        crop = :horizontal
+    else
+        crop = :both
+    end
+
+    # For consistency, if `kwargs` has `compact_printng`, we must use it.
+    compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+
+    num_rows, num_cols = size(df)
+
+    # By default, we align the columns to the left unless they are numbers,
+    # which is checked in the following.
+    alignment = fill(:l, num_cols)
+
+    # Create the dictionary with the anchor regex that is used to align the
+    # floating points.
+    alignment_anchor_regex = Dict{Int, Vector{Regex}}()
+
+    # Columns composed of numbers are printed aligned to the right.
+    alignment_regex_vec = [r"\."]
+
+    for i = 1:num_cols
+        type_i = nonmissingtype(types[i])
+
+        if type_i <: Number
+            alignment_anchor_regex[i] = alignment_regex_vec
+            alignment[i] = :r
         end
     end
-    dsize = displaysize(io)
-    availableheight = dsize[1] - 7
-    nrowssubset = fld(availableheight, 2)
-    bound = min(nrowssubset - 1, nrows)
-    if allrows || nrows <= availableheight
-        rowindices1 = 1:nrows
-        rowindices2 = 1:0
+
+    # Make sure that `truncate` does not hide the type and the column name.
+    maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+                                for (l, t) in zip(names_len, types_str)]
+
+    # Check if the user wants to display a summary about the DataFrame that is
+    # being printed. This will be shown using the `title` option of
+    # `pretty_table`.
+    title = summary ? Base.summary(df) : ""
+
+    # If `rowid` is not `nothing`, then we are printing a data row. In this
+    # case, we will add this information using the row name column of
+    # PrettyTables.jl. Otherwise, we can just use the row number column.
+    if (rowid === nothing) || (ncol(df) == 0)
+        show_row_number = true
+        row_names = nothing
     else
-        rowindices1 = 1:bound
-        rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
+        nrow(df) != 1 &&
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        show_row_number = false
+        row_names = [string(rowid)]
     end
-    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid,
-                             eltypes, buffer, truncstring)
-    width = getprintedwidth(maxwidths)
-    showrows(io, df, rowindices1, rowindices2, maxwidths, splitcols, allcols,
-             rowlabel, summary, eltypes, rowid, buffer, truncstring)
-    return
+
+    # Print the table with the selected options.
+    pretty_table(io, df, vcat(names_mat, types_str);
+                 alignment                   = alignment,
+                 alignment_anchor_fallback   = :r,
+                 alignment_anchor_regex      = alignment_anchor_regex,
+                 compact_printing            = compact_printing,
+                 crop                        = crop,
+                 crop_num_lines_at_beginning = 2,
+                 ellipsis_line_skip          = 3,
+                 formatters                  = (_pretty_tables_general_formatter,),
+                 header_alignment            = :l,
+                 hlines                      = [:header],
+                 highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
+                 maximum_columns_width       = maximum_columns_width,
+                 newline_at_end              = false,
+                 nosubheader                 = !eltypes,
+                 row_name_alignment          = :r,
+                 row_name_crayon             = Crayon(),
+                 row_name_column_title       = string(rowlabel),
+                 row_names                   = row_names,
+                 row_number_alignment        = :r,
+                 row_number_column_title     = string(rowlabel),
+                 show_row_number             = show_row_number,
+                 title                       = title,
+                 vcrop_mode                  = :middle,
+                 vlines                      = [1],
+                 kwargs...)
+
+    return nothing
 end
 
 """
-    show([io::IO,] df::AbstractDataFrame;
+    show([io::IO, ]df::AbstractDataFrame;
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
          allgroups::Bool = !get(io, :limit, false),
-         splitcols::Bool = get(io, :limit, false),
          rowlabel::Symbol = :Row,
          summary::Bool = true,
          eltypes::Bool = true,
-         truncate::Int = 32)
+         truncate::Int = 32,
+         kwargs...)
 
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
 
 If `io` is omitted, the result is printed to `stdout`,
-and `allrows`, `allcols` and `allgroups` default to `false`
-while `splitcols` defaults to `true`.
+and `allrows`, `allcols` and `allgroups` default to `false`.
 
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
@@ -642,16 +348,14 @@ while `splitcols` defaults to `true`.
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` does not have the `IOContext` property
   `limit` set.
-- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the
-  screen width rather than printing all columns in the same block. Only applies
-  if `allcols` is `true`.
-  By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 - `eltypes::Bool = true`: Whether to print the column types under column names.
 - `truncate::Int = 32`: the maximal display width the output can use before
   being truncated (in the `textwidth` sense, excluding `…`).
   If `truncate` is 0 or less, no truncation is applied.
+- `kwargs...`: Any keyword argument supported by the function `pretty_table` of
+  PrettyTables.jl can be passed here to customize the output.
 
 # Examples
 ```jldoctest
@@ -659,36 +363,36 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
-julia> show(df, allcols=true)
+julia> show(df, show_row_number=false)
 3×2 DataFrame
-│ Row │ A     │ B      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ x      │
-│ 2   │ 2     │ y      │
-│ 3   │ 3     │ z      │
+ A     │ B
+ Int64 │ String
+───────┼────────
+     1 │ x
+     2 │ y
+     3 │ z
 ```
 """
 Base.show(io::IO,
           df::AbstractDataFrame;
           allrows::Bool = !get(io, :limit, false),
           allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncstring=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
-          splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, df,
-         allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, df;
+         allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary,
+         eltypes=eltypes, truncate=truncate, kwargs...)

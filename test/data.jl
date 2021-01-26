@@ -5,8 +5,8 @@ const ≅ = isequal
 
 @testset "constructors" begin
     df1 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
-    df2 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]])
-    df3 = DataFrame([[1, 2, missing, 4]])
+    df2 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]], :auto)
+    df3 = DataFrame([[1, 2, missing, 4]], :auto)
     df6 = DataFrame([[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
@@ -25,21 +25,21 @@ const ≅ = isequal
     @test ismissing(df6[3, 3])
     @test df6[2, :C] == "two"
     @test df6[!, :B] ≅ [1, 2, missing, 4]
-    @test size(df6[:, [2,3]], 2) == 2
-    @test size(df6[2,:], 1) == ncol(df6) # this is a DataFrameRow
-    @test size(df6[2:2,:], 1) == 1
+    @test size(df6[:, [2, 3]], 2) == 2
+    @test size(df6[2, :], 1) == ncol(df6) # this is a DataFrameRow
+    @test size(df6[2:2, :], 1) == 1
     @test size(df6[[1, 3], [1, 3]]) == (2, 2)
     @test size(df6[1:2, 1:2]) == (2, 2)
-    @test size(first(df6,2)) == (2, 3)
+    @test size(first(df6, 2)) == (2, 3)
     # lots more to do
 
     #test_group("assign")
     df6[!, 3] = ["un", "deux", "trois", "quatre"]
     @test df6[1, 3] == "un"
     df6[!, :B] = [4, 3, 2, 1]
-    @test df6[1,2] == 4
+    @test df6[1, 2] == 4
     df6[!, :D] = [true, false, true, false]
-    @test df6[1,4]
+    @test df6[1, 4]
     select!(df6, Not(:D))
     @test propertynames(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
@@ -51,19 +51,19 @@ const ≅ = isequal
     sdf6a = view(df6, 1:1, :)
     sdf6b = view(df6, 2:3, :)
     sdf6c = view(df6, [true, false, true, false], :)
-    @test size(sdf6a) == (1,3)
-    sdf6d = view(df6, [1,3], [:B])
-    @test size(sdf6d) == (2,1)
+    @test size(sdf6a) == (1, 3)
+    sdf6d = view(df6, [1, 3], [:B])
+    @test size(sdf6d) == (2, 1)
     sdf6e = view(df6, [0x01], :)
-    @test size(sdf6e) == (1,3)
+    @test size(sdf6e) == (1, 3)
     sdf6f = view(df6, UInt64[1, 2], :)
-    @test size(sdf6f) == (2,3)
-    sdf6g = view(df6, [1,3], :B)
+    @test size(sdf6f) == (2, 3)
+    sdf6g = view(df6, [1, 3], :B)
     sdf6h = view(df6, 1, :B)
     sdf6i = view(df6, 1, [:B])
 
     #test_group("ref")
-    @test sdf6a[1,2] == 4
+    @test sdf6a[1, 2] == 4
 
     #test_context("Within")
     #test_group("Associative")
@@ -111,8 +111,10 @@ const ≅ = isequal
 end
 
 @testset "completecases and dropmissing" begin
-    df1 = DataFrame([Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
-    df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
+    df1 = DataFrame([Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)],
+                    :auto)
+    df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]],
+                    :auto)
 
     @test df2[completecases(df2), :] == df2[[1, 2, 4], :]
     @test dropmissing(df2) == df2[[1, 2, 4], :]
@@ -164,7 +166,7 @@ end
     @test eltype(df2.a) == Union{Int, Missing}
     @test df.a == df2.a == [1, 3]
 
-    a = [1,2]
+    a = [1, 2]
     df = DataFrame(a=a, copycols=false)
     @test dropmissing!(df) === df
     @test a === df.a
@@ -181,7 +183,7 @@ end
 end
 
 @testset "dropmissing and unique view kwarg test" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(rand(3, 4), :auto)
     for fun in (dropmissing, unique)
         @test fun(df) isa DataFrame
         @inferred fun(df)
@@ -193,16 +195,17 @@ end
         @test fun(view(df, 1:2, 1:2), view=true) isa SubDataFrame
         @test fun(view(df, 1:2, 1:2), view=true) == fun(view(df, 1:2, 1:2))
     end
+    @test_throws ArgumentError dropmissing(df, view=true, disallowmissing=true)
 end
 
 @testset "merge" begin
     Random.seed!(1)
     df1 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:10)),
-                    b = rand(Union{Symbol, Missing}[:A,:B], 10),
+                    b = rand(Union{Symbol, Missing}[:A, :B], 10),
                     v1 = Vector{Union{Float64, Missing}}(randn(10)))
 
     df2 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:5)),
-                    b2 = rand(Union{Symbol, Missing}[:A,:B,:C], 5),
+                    b2 = rand(Union{Symbol, Missing}[:A, :B, :C], 5),
                     v2 = Vector{Union{Float64, Missing}}(randn(5)))
 
     m1 = innerjoin(df1, df2, on = :a)
@@ -243,35 +246,37 @@ end
     df2[!, :A] = ["a", missing, "c"]
     df2[!, :C] = Union{Int, Missing}[1, 2, 4]
 
-    m1 = innerjoin(df1, df2, on = :A)
-    @test size(m1) == (3,3)
-    @test m1[!, :A] ≅ ["a","a", missing]
+    @test_throws ArgumentError innerjoin(df1, df2, on = :A)
+    m1 = innerjoin(df1, df2, on = :A, matchmissing=:equal)
+    @test size(m1) == (3, 3)
+    @test m1[!, :A] ≅ ["a", "a", missing]
 
-    m2 = outerjoin(df1, df2, on = :A)
-    @test size(m2) == (5,3)
+    @test_throws ArgumentError outerjoin(df1, df2, on = :A)
+    m2 = outerjoin(df1, df2, on = :A, matchmissing=:equal)
+    @test size(m2) == (5, 3)
     @test m2[!, :A] ≅ ["a", "b", "a", missing, "c"]
 end
 
 @testset "join tests" begin
-    df1 = DataFrame(a = Union{Symbol, Missing}[:x,:y][[1,1,1,2,1,1]],
-                    b = Union{Symbol, Missing}[:A,:B,:D][[1,1,2,2,1,3]],
+    df1 = DataFrame(a = Union{Symbol, Missing}[:x, :y][[1, 1, 1, 2, 1, 1]],
+                    b = Union{Symbol, Missing}[:A, :B, :D][[1, 1, 2, 2, 1, 3]],
                     v1 = 1:6)
 
-    df2 = DataFrame(a = Union{Symbol, Missing}[:x,:y][[2,2,1,1,1,1]],
-                    b = Union{Symbol, Missing}[:A,:B,:C][[1,2,1,2,3,1]],
+    df2 = DataFrame(a = Union{Symbol, Missing}[:x, :y][[2, 2, 1, 1, 1, 1]],
+                    b = Union{Symbol, Missing}[:A, :B, :C][[1, 2, 1, 2, 3, 1]],
                     v2 = 1:6)
-    df2[1,:a] = missing
+    df2[1, :a] = missing
 
-    m1 = innerjoin(df1, df2, on = [:a,:b])
-    @test m1 == DataFrame(a=[:x,:x,:x,:x,:x,:y,:x,:x],
-                          b=[:A,:A,:A,:A,:B,:B,:A,:A],
-                          v1=[1,1,2,2,3,4,5,5],
-                          v2=[3,6,3,6,4,2,3,6])
-    m2 = outerjoin(df1, df2, on = [:a,:b])
-    @test m2 ≅ DataFrame(a=[:x,:x,:x,:x,:x,:y,:x,:x,:x,missing,:x],
-                         b=[:A,:A,:A,:A,:B,:B,:A,:A,:D,:A,:C],
-                         v1=[1,1,2,2,3,4,5,5,6,missing,missing],
-                         v2=[3,6,3,6,4,2,3,6,missing,1,5])
+    m1 = innerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
+    @test m1 == DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x],
+                          b=[:A, :A, :A, :A, :B, :B, :A, :A],
+                          v1=[1, 1, 2, 2, 3, 4, 5, 5],
+                          v2=[3, 6, 3, 6, 4, 2, 3, 6])
+    m2 = outerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
+    @test m2 ≅ DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x, :x, missing, :x],
+                         b=[:A, :A, :A, :A, :B, :B, :A, :A, :D, :A, :C],
+                         v1=[1, 1, 2, 2, 3, 4, 5, 5, 6, missing, missing],
+                         v2=[3, 6, 3, 6, 4, 2, 3, 6, missing, 1, 5])
 
     Random.seed!(1)
     function spltdf(d)
@@ -281,7 +286,7 @@ end
         d
     end
     df1 = DataFrame(a = ["abc", "abx", "axz", "def", "dfr"], v1 = randn(5))
-    df2 = DataFrame(a = ["def", "abc","abx", "axz", "xyz"], v2 = randn(5))
+    df2 = DataFrame(a = ["def", "abc", "abx", "axz", "xyz"], v2 = randn(5))
     spltdf(df1)
     spltdf(df2)
 
@@ -315,7 +320,7 @@ end
     @test unique(df, :) == df1
     @test unique(df, Colon()) == df1
     @test unique(df, 2:3) == df1
-    @test unique(df, 3) == df1[1:3,:]
+    @test unique(df, 3) == df1[1:3, :]
     @test unique(df, [1, 3]) == df1
     @test unique(df, [:a, :c]) == df1
     @test unique(df, ["a", "c"]) == df1
@@ -325,8 +330,8 @@ end
     @test unique(df, Not(:b)) == df1
     @test unique(df, Not([:b])) == df1
     @test unique(df, Not([false, true, false])) == df1
-    @test unique(df, :a) == df1[1:2,:]
-    @test unique(df, "a") == df1[1:2,:]
+    @test unique(df, :a) == df1[1:2, :]
+    @test unique(df, "a") == df1[1:2, :]
     @test_throws ArgumentError unique(DataFrame())
     @test_throws ArgumentError nonunique(DataFrame())
 
@@ -383,7 +388,7 @@ end
     @test filter([2, 2] => !=, df) == DataFrame(x=Int[], y=String[])
     @test filter!([2, 2] => !=, df) === df == DataFrame(x=Int[], y=String[])
 
-    for sel in [r"x", [1,2], [:x1, :x2], ["x1", "x2"], :, Not(r"y")]
+    for sel in [r"x", [1, 2], [:x1, :x2], ["x1", "x2"], :, Not(r"y")]
         df = DataFrame(x1 = [3, 1, 2, 1], x2 = ["b", "c", "aa", "bbb"])
         @test filter(sel => (a, b) -> a == length(b), df) ==
               DataFrame(x1=[1, 2], x2=["c", "aa"])
@@ -409,7 +414,7 @@ end
 end
 
 @testset "filter view kwarg test" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(rand(3, 4), :auto)
     for fun in (row -> row.x1 > 0, :x1 => x -> x > 0, "x1" => x -> x > 0,
                 [:x1] => x -> x > 0, ["x1"] => x -> x > 0,
                 r"1" => x -> x > 0, AsTable(:) => x -> x.x1 > 0)
@@ -473,24 +478,24 @@ end
         x -> (state = !state)
     end
 
-    @test filter([] => flipflop0, df) == df[[1,3], :]
-    @test filter(Int[] => flipflop0, df) == df[[1,3], :]
-    @test filter(String[] => flipflop0, df) == df[[1,3], :]
-    @test filter(Symbol[] => flipflop0, df) == df[[1,3], :]
-    @test filter(r"z" => flipflop0, df) == df[[1,3], :]
-    @test filter(Not(All()) => flipflop0, df) == df[[1,3], :]
-    @test filter(Cols() => flipflop0, df) == df[[1,3], :]
-    @test filter(AsTable(r"z") => flipflop1, df) == df[[1,3], :]
-    @test filter(AsTable([]) => flipflop1, df) == df[[1,3], :]
-    @test filter!([] => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(Int[] => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(String[] => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(Symbol[] => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(r"z" => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(Not(All()) => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(Cols() => flipflop0, copy(df)) == df[[1,3], :]
-    @test filter!(AsTable(r"z") => flipflop1, copy(df)) == df[[1,3], :]
-    @test filter!(AsTable([]) => flipflop1, copy(df)) == df[[1,3], :]
+    @test filter([] => flipflop0, df) == df[[1, 3], :]
+    @test filter(Int[] => flipflop0, df) == df[[1, 3], :]
+    @test filter(String[] => flipflop0, df) == df[[1, 3], :]
+    @test filter(Symbol[] => flipflop0, df) == df[[1, 3], :]
+    @test filter(r"z" => flipflop0, df) == df[[1, 3], :]
+    @test filter(Not(All()) => flipflop0, df) == df[[1, 3], :]
+    @test filter(Cols() => flipflop0, df) == df[[1, 3], :]
+    @test filter(AsTable(r"z") => flipflop1, df) == df[[1, 3], :]
+    @test filter(AsTable([]) => flipflop1, df) == df[[1, 3], :]
+    @test filter!([] => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(Int[] => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(String[] => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(Symbol[] => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(r"z" => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(Not(All()) => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(Cols() => flipflop0, copy(df)) == df[[1, 3], :]
+    @test filter!(AsTable(r"z") => flipflop1, copy(df)) == df[[1, 3], :]
+    @test filter!(AsTable([]) => flipflop1, copy(df)) == df[[1, 3], :]
 
     @test_throws MethodError filter([] => flipflop1, df)
     @test_throws MethodError filter(AsTable([]) => flipflop0, df)
@@ -507,7 +512,7 @@ end
         @test names(v, Cols()) == names(v, Cols()) == []
     end
 
-    for v in [view(df, :, [4,3,2,1]), groupby(view(df, :, [4,3,2,1]), 1), view(df, 1, [4,3,2,1])]
+    for v in [view(df, :, [4, 3, 2, 1]), groupby(view(df, :, [4, 3, 2, 1]), 1), view(df, 1, [4, 3, 2, 1])]
         @test names(v, All()) == names(v, :) == names(v) ==  ["x3", "x2", "x1", "a"]
         @test names(v, Between(:x2, :x1)) == ["x2", "x1"]
         @test names(v, Not(:a)) == names(v, r"x") == ["x3", "x2", "x1"]
@@ -529,6 +534,17 @@ end
     @test nrow(df) == 0
     @test eltype(df.a) <: Int
     @test eltype(df.b) <: String
+end
+
+@testset "isapprox" begin
+    df = DataFrame([:x1 => zeros(3), :x2 => ones(3)])
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
+    @test_throws DimensionMismatch isapprox(DataFrame(a=1), DataFrame(a=[1,2]))
+    @test_throws ArgumentError isapprox(DataFrame(a=1), DataFrame(b=1))
+    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]))
+    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.09)
+    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.11)
 end
 
 end # module

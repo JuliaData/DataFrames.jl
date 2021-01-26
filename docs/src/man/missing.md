@@ -69,14 +69,23 @@ The functions `dropmissing` and `dropmissing!` can be used to remove the rows co
 julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
+5×3 DataFrame
+ Row │ i      x        y
+     │ Int64  Int64?   String?
+─────┼─────────────────────────
+   1 │     1  missing  missing
+   2 │     2        4  missing
+   3 │     3  missing  c
+   4 │     4        2  d
+   5 │     5        1  e
 
 julia> dropmissing(df)
 2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64? │ String? │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
+ Row │ i      x      y
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     4      2  d
+   2 │     5      1  e
 ```
 
 One can specify the column(s) in which to search for rows containing `missing` values to be removed.
@@ -84,30 +93,34 @@ One can specify the column(s) in which to search for rows containing `missing` v
 ```jldoctest missings
 julia> dropmissing(df, :x)
 3×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64? │ String? │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 2     │ 4      │ missing │
-│ 2   │ 4     │ 2      │ d       │
-│ 3   │ 5     │ 1      │ e       │
+ Row │ i      x      y
+     │ Int64  Int64  String?
+─────┼───────────────────────
+   1 │     2      4  missing
+   2 │     4      2  d
+   3 │     5      1  e
 ```
 
-By default the `dropmissing` and `dropmissing!` functions keep the `Union{T,Missing}` element type in columns selected for row removal. To remove the `Missing` part, if present, set the `disallowmissing` option to `true` (it will become the default behavior in the future).
+By default the `dropmissing` and `dropmissing!` functions keep the
+`Union{T, Missing}` element type in columns selected for row removal. To remove
+the `Missing` part, if present, set the `disallowmissing` option to `true` (it
+will become the default behavior in the future).
 
 ```jldoctest missings
 julia> dropmissing(df, disallowmissing=true)
 2×3 DataFrame
-│ Row │ i     │ x     │ y      │
-│     │ Int64 │ Int64 │ String │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 4     │ 2     │ d      │
-│ 2   │ 5     │ 1     │ e      │
+ Row │ i      x      y
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     4      2  d
+   2 │     5      1  e
 ```
 
+The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a
+few convenience functions to work with missing values.
 
-The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a few convenience functions to work with missing values.
-
-The function `Missings.replace` returns an iterator which replaces `missing` elements with another value:
+The function `Missings.replace` returns an iterator which replaces `missing`
+elements with another value:
 
 ```jldoctest missings
 julia> using Missings
@@ -137,7 +150,8 @@ Int64
 
 ```
 
-The `missings` function constructs `Vector`s and `Array`s supporting missing values, using the optional first argument to specify the element-type.
+The `missings` function constructs `Vector`s and `Array`s supporting missing
+values, using the optional first argument to specify the element-type.
 
 ```jldoctest missings
 julia> missings(1)

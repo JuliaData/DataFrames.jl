@@ -43,11 +43,11 @@ fromcolumns(x, names; copycols::Bool=true) =
               copycols=copycols)
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
-    if !Tables.istable(x)
-        if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
-            return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
-        elseif (x isa AbstractVector || x isa Tuple) &&
-            all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
+    if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
+        # here we handle eltypes not specific enough to be dispatched
+        # to other DataFrames constructors taking vector of `Pair`s
+        if all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
+            all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
                              copycols=copycols)
         end
@@ -70,21 +70,21 @@ end
 DataFrame(x::AbstractVector{NamedTuple{names, T}}; copycols::Bool=true) where {names, T} =
     fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), collect(names), copycols=false)
 
-Tables.istable(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
-Tables.columnaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
-Tables.rowaccess(::Type{<:Union{DataFrameRows,DataFrameColumns}}) = true
-Tables.columns(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.columns(parent(itr))
-Tables.rows(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rows(parent(itr))
-Tables.schema(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.schema(parent(itr))
-Tables.rowtable(itr::Union{DataFrameRows,DataFrameColumns}) = Tables.rowtable(parent(itr))
-Tables.namedtupleiterator(itr::Union{DataFrameRows,DataFrameColumns}) =
+Tables.istable(::Type{<:Union{DataFrameRows, DataFrameColumns}}) = true
+Tables.columnaccess(::Type{<:Union{DataFrameRows, DataFrameColumns}}) = true
+Tables.rowaccess(::Type{<:Union{DataFrameRows, DataFrameColumns}}) = true
+Tables.columns(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.columns(parent(itr))
+Tables.rows(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.rows(parent(itr))
+Tables.schema(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.schema(parent(itr))
+Tables.rowtable(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.rowtable(parent(itr))
+Tables.namedtupleiterator(itr::Union{DataFrameRows, DataFrameColumns}) =
     Tables.namedtupleiterator(parent(itr))
-Tables.materializer(itr::Union{DataFrameRows,DataFrameColumns}) =
+Tables.materializer(itr::Union{DataFrameRows, DataFrameColumns}) =
     Tables.materializer(parent(itr))
 
-Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, i::Int) =
+Tables.getcolumn(itr::Union{DataFrameRows, DataFrameColumns}, i::Int) =
     Tables.getcolumn(parent(itr), i)
-Tables.getcolumn(itr::Union{DataFrameRows,DataFrameColumns}, nm::Symbol) =
+Tables.getcolumn(itr::Union{DataFrameRows, DataFrameColumns}, nm::Symbol) =
     Tables.getcolumn(parent(itr), nm)
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) =

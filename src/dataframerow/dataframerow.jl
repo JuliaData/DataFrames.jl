@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:AbstractDataFrame,<:AbstractIndex}
+    DataFrameRow{<:AbstractDataFrame, <:AbstractIndex}
 
 A view of one row of an `AbstractDataFrame`.
 
@@ -31,34 +31,34 @@ julia> df = DataFrame(a = repeat([1, 2], outer=[2]),
                       b = repeat(["a", "b"], inner=[2]),
                       c = 1:4)
 4×3 DataFrame
-│ Row │ a     │ b      │ c     │
-│     │ Int64 │ String │ Int64 │
-├─────┼───────┼────────┼───────┤
-│ 1   │ 1     │ a      │ 1     │
-│ 2   │ 2     │ a      │ 2     │
-│ 3   │ 1     │ b      │ 3     │
-│ 4   │ 2     │ b      │ 4     │
+ Row │ a      b       c
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           1
+   2 │     2  a           2
+   3 │     1  b           3
+   4 │     2  b           4
 
 julia> df[1, :]
 DataFrameRow
-│ Row │ a     │ b      │ c     │
-│     │ Int64 │ String │ Int64 │
-├─────┼───────┼────────┼───────┤
-│ 1   │ 1     │ a      │ 1     │
+ Row │ a      b       c
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           1
 
 julia> @view df[end, [:a]]
 DataFrameRow
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 4   │ 2     │
+ Row │ a
+     │ Int64
+─────┼───────
+   4 │     2
 
 julia> eachrow(df)[1]
 DataFrameRow
-│ Row │ a     │ b      │ c     │
-│     │ Int64 │ String │ Int64 │
-├─────┼───────┼────────┼───────┤
-│ 1   │ 1     │ a      │ 1     │
+ Row │ a      b       c
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  a           1
 
 julia> Tuple(df[1, :])
 (1, "a", 1)
@@ -73,7 +73,7 @@ julia> Vector(df[1, :])
  1
 ```
 """
-struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
+struct DataFrameRow{D<:AbstractDataFrame, S<:AbstractIndex}
     # although we allow D to be AbstractDataFrame to support extensions
     # in DataFrames.jl it will always be a DataFrame unless an inner constructor
     # is used. In this way we have a fast access to the data frame that
@@ -85,7 +85,7 @@ struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
 
     @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned},
                          rownumber::Union{Signed, Unsigned}) where
-        {D<:AbstractDataFrame,S<:AbstractIndex} = new{D,S}(df, colindex, row, rownumber)
+        {D<:AbstractDataFrame, S<:AbstractIndex} = new{D, S}(df, colindex, row, rownumber)
 end
 
 Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols)
@@ -131,19 +131,19 @@ the source `DataFrame` where data that `dfr` gives access to is stored.
 ```julia
 julia> df = DataFrame(reshape(1:12, 3, 4))
 3×4 DataFrame
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │ 10    │
-│ 2   │ 2     │ 5     │ 8     │ 11    │
-│ 3   │ 3     │ 6     │ 9     │ 12    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      7     10
+   2 │     2      5      8     11
+   3 │     3      6      9     12
 
 julia> dfr = df[2, :]
 DataFrameRow
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 2   │ 2     │ 5     │ 8     │ 11    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   2 │     2      5      8     11
 
 julia> rownumber(dfr)
 2
@@ -153,27 +153,27 @@ julia> parentindices(dfr)
 
 julia> parent(dfr)
 3×4 DataFrame
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │ 10    │
-│ 2   │ 2     │ 5     │ 8     │ 11    │
-│ 3   │ 3     │ 6     │ 9     │ 12    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      7     10
+   2 │     2      5      8     11
+   3 │     3      6      9     12
 
 julia> dfv = @view df[2:3, 1:3]
 2×3 SubDataFrame
-│ Row │ x1    │ x2    │ x3    │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 1   │ 2     │ 5     │ 8     │
-│ 2   │ 3     │ 6     │ 9     │
+ Row │ x1     x2     x3
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      5      8
+   2 │     3      6      9
 
 julia> dfrv = dfv[2, :]
 DataFrameRow
-│ Row │ x1    │ x2    │ x3    │
-│     │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┤
-│ 3   │ 3     │ 6     │ 9     │
+ Row │ x1     x2     x3
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   3 │     3      6      9
 
 julia> rownumber(dfrv)
 2
@@ -183,12 +183,12 @@ julia> parentindices(dfrv)
 
 julia> parent(dfrv)
 3×4 DataFrame
-│ Row │ x1    │ x2    │ x3    │ x4    │
-│     │ Int64 │ Int64 │ Int64 │ Int64 │
-├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 1     │ 4     │ 7     │ 10    │
-│ 2   │ 2     │ 5     │ 8     │ 11    │
-│ 3   │ 3     │ 6     │ 9     │ 12    │
+ Row │ x1     x2     x3     x4
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4      7     10
+   2 │     2      5      8     11
+   3 │     3      6      9     12
 ```
 """
 rownumber(r::DataFrameRow) = getfield(r, :rownumber)
@@ -231,8 +231,8 @@ for T in MULTICOLUMNINDEX_TUPLE
                                   col_inds::$(T))
         idxs = index(df)[col_inds]
         if length(v) != length(idxs)
-            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned" *
-                                    " collection contains $(length(v)) elements"))
+            throw(DimensionMismatch("$(length(idxs)) columns were selected but the assigned " *
+                                    "collection contains $(length(v)) elements"))
         end
 
         if v isa AbstractDict
@@ -322,7 +322,7 @@ end
 Base.view(r::DataFrameRow, ::Colon) = r
 
 """
-    size(dfr::DataFrameRow, [dim])
+    size(dfr::DataFrameRow[, dim])
 
 Return a 1-tuple containing the number of elements of `dfr`.
 If an optional dimension `dim` is specified, it must be `1`, and the number of
@@ -332,7 +332,12 @@ See also: [`length`](@ref)
 
 # Examples
 ```julia
-julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :];
+julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :]
+DataFrameRow
+ Row │ a      b
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 
 julia> size(dfr)
 (2,)
@@ -353,7 +358,12 @@ See also: [`size`](@ref)
 
 # Examples
 ```julia
-julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :];
+julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :]
+DataFrameRow
+ Row │ a      b
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 
 julia> length(dfr)
 2
@@ -370,7 +380,14 @@ Return the number of dimensions of a data frame row, which is always `1`.
 Base.ndims(::DataFrameRow) = 1
 Base.ndims(::Type{<:DataFrameRow}) = 1
 
+Base.firstindex(r::DataFrameRow) = 1
 Base.lastindex(r::DataFrameRow) = length(r)
+
+if VERSION < v"1.6"
+    Base.firstindex(r::DataFrameRow, i::Integer) = first(axes(r, i))
+    Base.lastindex(r::DataFrameRow, i::Integer) = last(axes(r, i))
+end
+Base.axes(r::DataFrameRow, i::Integer) = Base.OneTo(size(r, i))
 
 Base.iterate(r::DataFrameRow) = iterate(r, 1)
 
@@ -479,11 +496,11 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     if _names(r1) != _names(r2)
         mismatch = findfirst(i -> _names(r1)[i] != _names(r2)[i], 1:length(r1))
         throw(ArgumentError("compared DataFrameRows must have the same colum " *
-                            "names but they differ in column number $mismatch" *
-                            " where the names are :$(names(r1)[mismatch]) and " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(names(r1)[mismatch]) and " *
                             ":$(_names(r2)[mismatch]) respectively"))
     end
-    for (a,b) in zip(r1, r2)
+    for (a, b) in zip(r1, r2)
         isequal(a, b) || return isless(a, b)
     end
     return false
@@ -558,6 +575,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                firstindex(newcol) != 1 && _onebased_check_error()
                 _columns(df)[i] = newcol
             end
         end
@@ -612,6 +630,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                firstindex(newcol) != 1 && _onebased_check_error()
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end

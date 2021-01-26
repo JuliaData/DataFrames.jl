@@ -1,3 +1,37 @@
+# DataFrames v1.0 Release Notes
+
+## Breaking changes
+
+* No breaking changes are planned for v1.0 release
+
+## Bug fixes
+
+* DataFrames.jl now checks that passed columns are 1-based as this is a current
+  design assumption ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+* `mapcols!` makes sure not to create columns being `AbstractRange` consistently
+  with other methods that add columns to a `DataFrame`
+  ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+
+## New functionalities
+
+* `firstindex`, `lastindex`, `size`, `ndims`, and `axes` are now consistently defined
+  and documented in the manual for `AbstractDataFrame`, `DataFrameRow`,
+  `DataFrameRows`, `DataFrameColumns`, `GroupedDataFrame`, `GroupKeys`, and `GroupKey`
+  ([#2573](https://github.com/JuliaData/DataFrames.jl/pull/2573))
+* add `subset` and `subset!` functions that allow to subset rows
+  ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
+
+## Deprecated
+
+* all old deprecations now throw an error
+  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
+
+## Dependency changes
+
+
+## Other relevant changes
+
+
 # DataFrames v0.22 Release Notes
 
 ## Breaking changes
@@ -5,7 +39,8 @@
 * the rules for transformations passed to `select`/`select!`, `transform`/`transform!`,
   and `combine` have been made more flexible; in particular now it is allowed to
   return multiple columns from a transformation function
-  [#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461)
+  ([#2461](https://github.com/JuliaData/DataFrames.jl/pull/2461) and
+  [#2481](https://github.com/JuliaData/DataFrames.jl/pull/2481))
 * CategoricalArrays.jl is no longer reexported: call `using CategoricalArrays`
   to use it [#2404]((https://github.com/JuliaData/DataFrames.jl/pull/2404)).
   In the same vein, the `categorical` and `categorical!` functions
@@ -43,9 +78,16 @@
 * in `describe` the specification of custom aggregation is now `function => name`;
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
+* in joins passing `NaN` or real or imaginary `-0.0` in `on` column now throws an
+  error; passing `missing` thows an error unless `matchmissing=:equal` keyword argument
+  is passed ([#2504](https://github.com/JuliaData/DataFrames.jl/pull/2504))
 * `unstack` now produces row and column keys in the order of their first appearance
    and has two new keyword arguments `allowmissing` and `allowduplicates`
   ([#2494](https://github.com/JuliaData/DataFrames.jl/pull/2494))
+* [PrettyTables.jl](https://github.com/ronisbr/PrettyTables.jl) is now the
+  default back-end to print DataFrames to text/plain; the print option
+  `splitcols` was removed and the output format was changed
+  ([#2429](https://github.com/JuliaData/DataFrames.jl/pull/2429))
 
 ## New functionalities
 
@@ -87,10 +129,16 @@
 ## Deprecated
 
 * `DataFrame!` is now deprecated ([#2338](https://github.com/JuliaData/DataFrames.jl/pull/2338))
+* several in-standard `DataFrame` constructors are now deprecated
+  ([#2464](https://github.com/JuliaData/DataFrames.jl/pull/2464))
 * all old deprecations now throw an error
   ([#2350](https://github.com/JuliaData/DataFrames.jl/pull/2350))
 
 ## Dependency changes
+
+* Tables.jl version 1.2 is now required.
+* DataAPI.jl version 1.4 is now required. It implies that `All(args...)` is
+  deprecated and `Cols(args...)` is recommended instead. `All()` is still supported.
 
 ## Other relevant changes
 
@@ -101,4 +149,8 @@
 * limit the maximal display width the output can use in `text/plain` before
   being truncated (in the `textwidth` sense, excluding `…`) to `32` per column
   by default and fix a corner case when no columns are printed in situations when
-  they are too wide ([2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))
+  they are too wide ([#2403](https://github.com/JuliaData/DataFrames.jl/pull/2403))
+* Common methods are now precompiled to improve responsiveness the first time a method
+  is called in a Julia session. Precompilation takes up to 30 seconds
+  after installing the package
+  ([#2456](https://github.com/JuliaData/DataFrames.jl/pull/2456)).

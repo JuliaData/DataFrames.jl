@@ -1,5 +1,5 @@
 """
-    SubDataFrame{<:AbstractDataFrame,<:AbstractIndex,<:AbstractVector{Int}} <: AbstractDataFrame
+    SubDataFrame{<:AbstractDataFrame, <:AbstractIndex, <:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of an `AbstractDataFrame`. It is returned by a call to the `view` function
 on an `AbstractDataFrame` if a collections of rows and columns are specified.
@@ -14,15 +14,64 @@ even if they are added or removed after its creation.
 
 # Examples
 ```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-sdf1 = view(df, 2:3) # column subsetting
-sdf2 = @view df[end:-1:1, [1,3]]  # row and column subsetting
-sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
+julia> using Random
+
+julia> Random.seed!(1234);
+
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = randn(8))
+8×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Float64
+─────┼─────────────────────────
+   1 │     1      2   0.867347
+   2 │     2      1  -0.901744
+   3 │     3      2  -0.494479
+   4 │     4      1  -0.902914
+   5 │     1      2   0.864401
+   6 │     2      1   2.21188
+   7 │     3      2   0.532813
+   8 │     4      1  -0.271735
+
+julia> sdf1 = view(df, :, 2:3) # column subsetting
+8×2 SubDataFrame
+ Row │ b      c
+     │ Int64  Float64
+─────┼──────────────────
+   1 │     2   0.867347
+   2 │     1  -0.901744
+   3 │     2  -0.494479
+   4 │     1  -0.902914
+   5 │     2   0.864401
+   6 │     1   2.21188
+   7 │     2   0.532813
+   8 │     1  -0.271735
+
+julia> sdf2 = @view df[end:-1:1, [1, 3]]  # row and column subsetting
+8×2 SubDataFrame
+ Row │ a      c
+     │ Int64  Float64
+─────┼──────────────────
+   1 │     4  -0.271735
+   2 │     3   0.532813
+   3 │     2   2.21188
+   4 │     1   0.864401
+   5 │     4  -0.902914
+   6 │     3  -0.494479
+   7 │     2  -0.901744
+   8 │     1   0.867347
+
+julia> sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Float64
+─────┼────────────────────────
+   1 │     1      2  0.867347
+   2 │     1      2  0.864401
 ```
 """
-struct SubDataFrame{D<:AbstractDataFrame,S<:AbstractIndex,T<:AbstractVector{Int}} <: AbstractDataFrame
+struct SubDataFrame{D<:AbstractDataFrame, S<:AbstractIndex, T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::D
     colindex::S
     rows::T # maps from subdf row indexes to parent row indexes
@@ -48,8 +97,8 @@ end
 
 Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool}, cols)
     if length(rows) != nrow(parent)
-        throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index" *
-                            " (got $(length(rows)), expected $(nrow(parent)))"))
+        throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index " *
+                            "(got $(length(rows)), expected $(nrow(parent)))"))
     end
     return SubDataFrame(parent, findall(rows), cols)
 end
@@ -150,11 +199,11 @@ Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bo
     throw(ArgumentError("invalid row index of type Bool"))
 
 Base.setproperty!(::SubDataFrame, ::Symbol, ::Any) =
-    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed." *
+    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed. " *
                         "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
                         "to perform an in-place assignment."))
 Base.setproperty!(::SubDataFrame, ::AbstractString, ::Any) =
-    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed." *
+    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed. " *
                         "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
                         "to perform an in-place assignment."))
 

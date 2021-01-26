@@ -12,7 +12,7 @@ const ≇ = !isequal
     Random.seed!(1234)
     for k in 1:20
         sn = shuffle(n)
-        df = DataFrame(zeros(1,26), n)
+        df = DataFrame(zeros(1, 26), n)
         p = Dict(Pair.(n, sn))
         cyclelength = Int[]
         for x in n
@@ -32,7 +32,7 @@ const ≇ = !isequal
             @test sort(names(df)) == string.(n)
             @test sort(collect(keys(index(df).lookup))) == n
             @test sort(collect(values(index(df).lookup))) == 1:26
-            @test all(index(df).lookup[x] == i for (i,x) in enumerate(propertynames(df)))
+            @test all(index(df).lookup[x] == i for (i, x) in enumerate(propertynames(df)))
             i -= 1
             propertynames(df) == n && break
         end
@@ -247,14 +247,14 @@ end
     @test insertcols!(df, 1, "c3" => x, copycols=false) === df
     @test df.c3 === x
 
-    df = DataFrame(a=[1,2], a_1=[3,4])
-    @test_throws ArgumentError insertcols!(df, 1, :a => [11,12])
-    @test df == DataFrame(a=[1,2], a_1=[3,4])
-    insertcols!(df, 1, :a => [11,12], makeunique=true)
+    df = DataFrame(a=[1, 2], a_1=[3, 4])
+    @test_throws ArgumentError insertcols!(df, 1, :a => [11, 12])
+    @test df == DataFrame(a=[1, 2], a_1=[3, 4])
+    insertcols!(df, 1, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1]
-    insertcols!(df, 4, :a => [11,12], makeunique=true)
+    insertcols!(df, 4, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
-    @test_throws ArgumentError insertcols!(df, 10, :a => [11,12], makeunique=true)
+    @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], makeunique=true)
 
     dfc = copy(df)
     @test insertcols!(df, 2) == dfc
@@ -278,8 +278,8 @@ end
 
     df = DataFrame()
     v1 = 1:2
-    v2 = [3,4]
-    v3 = [5,6]
+    v2 = [3, 4]
+    v3 = [5, 6]
     @test insertcols!(df, 1, :a=>v1, :b=>v2, :c=>v3, copycols=false) == DataFrame(a=v1, b=v2, c=v3)
     @test df.a isa Vector{Int}
     @test df.b === v2
@@ -299,15 +299,15 @@ end
     @test df.a_1 === v2
     @test df.a_2 === v3
 
-    df = DataFrame(p='a':'b',q='r':'s')
+    df = DataFrame(p='a':'b', q='r':'s')
     @test insertcols!(df, 2, :a=>v1, :b=>v2, :c=>v3) ==
           DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
 
-    df = DataFrame(p='a':'b',q='r':'s')
+    df = DataFrame(p='a':'b', q='r':'s')
     @test insertcols!(df, 2, "a"=>v1, "b"=>v2, "c"=>v3) ==
           DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
 
-    df = DataFrame(p='a':'b',q='r':'s')
+    df = DataFrame(p='a':'b', q='r':'s')
     @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
     @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, makeunique=true, copycols=true) ==
           DataFrame(p='a':'b', p_1=v1, q_1=v2, p_2=v3, q='r':'s')
@@ -320,7 +320,7 @@ end
     df = DataFrame()
     @test insertcols!(df, :a=>1:3) == DataFrame(a=1:3)
 
-    df = DataFrame(a=[1,2], a_1=[3,4])
+    df = DataFrame(a=[1, 2], a_1=[3, 4])
     insertcols!(df, 1, :a => 11, makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1]
     @test df[!, 1] == [11, 11]
@@ -335,10 +335,13 @@ end
     @test df == DataFrame(a=[1], b=[1])
     df = DataFrame()
     insertcols!(df, :a => Ref(1), :b => fill(1), :c => 1:3)
-    @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+    @test df == DataFrame(a=[1, 1, 1], b=[1, 1, 1], c=1:3)
     df = DataFrame(c=1:3)
     insertcols!(df, 1, :a => Ref(1), :b => fill(1))
-    @test df == DataFrame(a=[1,1,1], b=[1,1,1], c=1:3)
+    @test df == DataFrame(a=[1, 1, 1], b=[1, 1, 1], c=1:3)
+
+    df = DataFrame(a=1)
+    @test insertcols!(df, "a" => 2, makeunique=true) == DataFrame(a=1, a_1=2)
 end
 
 @testset "unsupported insertcols!" begin
@@ -347,24 +350,6 @@ end
 end
 
 @testset "DataFrame constructors" begin
-    df = convert(DataFrame, zeros(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[!, 1]) == Vector{Float64}
-    @test typeof(df[:, 1]) == Vector{Float64}
-
-    df = convert(DataFrame, ones(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[!, 1]) == Vector{Float64}
-    @test typeof(df[:, 1]) == Vector{Float64}
-
-    df = convert(DataFrame, Matrix{Float64}(undef, 10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[!, 1]) == Vector{Float64}
-    @test typeof(df[:, 1]) == Vector{Float64}
-
     @test DataFrame([Union{Int, Missing}[1, 2, 3], Union{Float64, Missing}[2.5, 4.5, 6.5]],
                     [:A, :B]) ==
         DataFrame(A = Union{Int, Missing}[1, 2, 3], B = Union{Float64, Missing}[2.5, 4.5, 6.5])
@@ -384,106 +369,106 @@ end
     df = DataFrame(x=categorical(["a"])[1])
     @test df.x isa CategoricalVector{String}
 
-    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
-    @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
-    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]), zero(UInt))
+    @test hash(DataFrame([1 2; 3 4], :auto)) == hash(DataFrame([1 2; 3 4], :auto))
+    @test hash(DataFrame([1 2; 3 4], :auto)) != hash(DataFrame([1 3; 2 4], :auto))
+    @test hash(DataFrame([1 2; 3 4], :auto)) == hash(DataFrame([1 2; 3 4], :auto), zero(UInt))
 end
 
 @testset "push!(df, row)" begin
     buf = IOBuffer()
     sl = SimpleLogger(buf)
 
-    df = DataFrame(first=[1,2,3], second=["apple","orange","pear"])
+    df = DataFrame(first=[1, 2, 3], second=["apple", "orange", "pear"])
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    dfc = DataFrame(first=[1,2], second=["apple","orange"])
-    push!(dfb, Any[3,"pear"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
+    dfc = DataFrame(first=[1, 2], second=["apple", "orange"])
+    push!(dfb, Any[3, "pear"])
     @test df == dfb
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    push!(dfb, (3,"pear"))
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
+    push!(dfb, (3, "pear"))
     @test df == dfb
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     with_logger(sl) do
-        @test_throws InexactError push!(dfb, (33.33,"pear"))
+        @test_throws InexactError push!(dfb, (33.33, "pear"))
     end
     @test dfc == dfb
     @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
-    @test_throws DimensionMismatch push!(dfb, (1,"2",3))
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
+    @test_throws DimensionMismatch push!(dfb, (1, "2", 3))
     @test dfc == dfb
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     with_logger(sl) do
-        @test_throws MethodError push!(dfb, ("coconut",22))
+        @test_throws MethodError push!(dfb, ("coconut", 22))
     end
     @test dfc == dfb
     @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     with_logger(sl) do
-        @test_throws MethodError push!(dfb, (11,22))
+        @test_throws MethodError push!(dfb, (11, 22))
     end
     @test dfc == dfb
     @test occursin("Error adding value to column :second", String(take!(buf)))
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     push!(dfb, Dict(:first=>3, :second=>"pear"))
     @test df == dfb
 
-    df = DataFrame(first=[1,2,3], second=["apple","orange","banana"])
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    df = DataFrame(first=[1, 2, 3], second=["apple", "orange", "banana"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     push!(dfb, Dict(:first=>3, :second=>"banana"))
     @test df == dfb
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     push!(dfb, (first=3, second="banana"))
     @test df == dfb
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     push!(dfb, (second="banana", first=3))
     @test df == dfb
 
-    df0 = DataFrame(first=[1,2], second=["apple","orange"])
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    df0 = DataFrame(first=[1, 2], second=["apple", "orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     with_logger(sl) do
         @test_throws MethodError push!(dfb, (second=3, first=3))
     end
     @test df0 == dfb
     @test occursin("Error adding value to column :second", String(take!(buf)))
 
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     push!(dfb, (second="banana", first=3))
     @test df == dfb
 
-    df0 = DataFrame(first=[1,2], second=["apple","orange"])
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    df0 = DataFrame(first=[1, 2], second=["apple", "orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     with_logger(sl) do
         @test_throws MethodError push!(dfb, Dict(:first=>true, :second=>false))
     end
     @test df0 == dfb
     @test occursin("Error adding value to column :second", String(take!(buf)))
 
-    df0 = DataFrame(first=[1,2], second=["apple","orange"])
-    dfb = DataFrame(first=[1,2], second=["apple","orange"])
+    df0 = DataFrame(first=[1, 2], second=["apple", "orange"])
+    dfb = DataFrame(first=[1, 2], second=["apple", "orange"])
     with_logger(sl) do
         @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
     end
     @test df0 == dfb
     @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    df0 = DataFrame(first=[1,2,3], second=["apple","orange","pear"])
-    dfb = DataFrame(first=[1,2,3], second=["apple","orange","pear"])
+    df0 = DataFrame(first=[1, 2, 3], second=["apple", "orange", "pear"])
+    dfb = DataFrame(first=[1, 2, 3], second=["apple", "orange", "pear"])
     with_logger(sl) do
         @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
     end
     @test df0 == dfb
     @test occursin("Error adding value to column :first", String(take!(buf)))
 
-    df0 = DataFrame(first=["1","2","3"], second=["apple","orange","pear"])
-    dfb = DataFrame(first=["1","2","3"], second=["apple","orange","pear"])
+    df0 = DataFrame(first=["1", "2", "3"], second=["apple", "orange", "pear"])
+    dfb = DataFrame(first=["1", "2", "3"], second=["apple", "orange", "pear"])
     with_logger(sl) do
         @test_throws MethodError push!(dfb, Dict(:first=>"chicken", :second=>1))
     end
@@ -492,7 +477,7 @@ end
 
     df = DataFrame(x=1)
     push!(df, Dict(:x=>2), Dict(:x=>3))
-    @test df[!, :x] == [1,2,3]
+    @test df[!, :x] == [1, 2, 3]
 
     df = DataFrame(x=1, y=2)
     push!(df, [3, 4], [5, 6])
@@ -510,16 +495,16 @@ end
     @test df == DataFrame(a=1, b=true)
 
     df = DataFrame()
-    df.a = [1,2,3]
+    df.a = [1, 2, 3]
     df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
-        @test_throws AssertionError push!(df, [1,2])
+        @test_throws AssertionError push!(df, [1, 2])
     end
     @test df == dfc
     @test occursin("Error adding value to column :a", String(take!(buf)))
     with_logger(sl) do
-        @test_throws AssertionError push!(df, (a=1,b=2))
+        @test_throws AssertionError push!(df, (a=1, b=2))
     end
     @test df == dfc
     @test occursin("Error adding value to column :a", String(take!(buf)))
@@ -536,17 +521,17 @@ end
     @test df == dfc
 
     df = DataFrame()
-    df.a = [1,2,3,4]
+    df.a = [1, 2, 3, 4]
     df.b = df.a
-    df.c = [1,2,3,4]
+    df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
-        @test_throws AssertionError push!(df, [1,2,3])
+        @test_throws AssertionError push!(df, [1, 2, 3])
     end
     @test df == dfc
     @test occursin("Error adding value to column :a", String(take!(buf)))
     with_logger(sl) do
-        @test_throws AssertionError push!(df, (a=1,b=2,c=3))
+        @test_throws AssertionError push!(df, (a=1, b=2, c=3))
     end
     @test df == dfc
     @test occursin("Error adding value to column :a", String(take!(buf)))
@@ -573,6 +558,7 @@ end
 
 @testset "delete!" begin
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test_throws BoundsError delete!(df, [true, true, true])
     @test delete!(df, 1) === df
     @test df == DataFrame(a=[2], b=[4.0])
 
@@ -609,8 +595,8 @@ end
     @test_throws Exception delete!(df, [10])
 
     df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
-    @test_throws ArgumentError delete!(df, [3,2])
-    @test_throws ArgumentError delete!(df, [2,2])
+    @test_throws ArgumentError delete!(df, [3, 2])
+    @test_throws ArgumentError delete!(df, [2, 2])
     @test delete!(df, [false, true, false]) === df
     @test df == DataFrame(a=[1, 3], b=[3, 1])
 
@@ -621,7 +607,7 @@ end
         @test x == [1, 2, 3]
     end
 
-    for v in (1, [1], 1:1, [true, false, false], Not(2,3), Not([false, true, true]))
+    for v in (1, [1], 1:1, [true, false, false], Not(2, 3), Not([false, true, true]))
         x = [1, 2, 3]
         df = DataFrame(x=x, copycols=false)
         @test delete!(df, v) == DataFrame(x=[2, 3])
@@ -632,11 +618,11 @@ end
 @testset "describe" begin
     # Construct the test dataframe
     df = DataFrame(number = [1, 2, 3, 4],
-                   number_missing = [1,2, 3, missing],
+                   number_missing = [1, 2, 3, missing],
                    string = ["a", "b", "c", "d"],
                    string_missing = ["a", "b", "c", missing],
                    dates  = Date.([2000, 2001, 2003, 2004]),
-                   catarray = CategoricalArray([1,2,1,2]))
+                   catarray = CategoricalArray([1, 2, 1, 2]))
 
     describe_output = DataFrame(variable = [:number, :number_missing, :string,
                                             :string_missing, :dates, :catarray],
@@ -683,10 +669,13 @@ end
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
     @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
 
-    @test describe(DataFrame(a=[1,2]), cols = :a, :min, minimum => :min2, maximum => "max2", :max) ==
+    @test describe(DataFrame(a=[1, 2]), cols = :a, :min, minimum => :min2, maximum => "max2", :max) ==
           DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
     @test_throws ArgumentError describe(df, :mean, :all)
+    @test_throws MethodError describe(DataFrame(a=[1, 2]), cols = :a, "max2" => maximum)
+    @test_throws ArgumentError describe(df, :min, :min)
+    @test_throws ArgumentError describe(df, :minimum)
 end
 
 @testset "append!" begin
@@ -720,7 +709,7 @@ end
     @test df4 == df
 
     df = DataFrame()
-    df.a = [1,2,3]
+    df.a = [1, 2, 3]
     df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
@@ -730,9 +719,9 @@ end
     @test occursin("Error adding value to column :a", String(take!(buf)))
 
     df = DataFrame()
-    df.a = [1,2,3,4]
+    df.a = [1, 2, 3, 4]
     df.b = df.a
-    df.c = [1,2,3,4]
+    df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
         @test_throws AssertionError append!(df, dfc)
@@ -846,7 +835,7 @@ end
                                       z=[missing; missing; missing; 11:13])
                 @test eltype(df1.x) == Int
                 @test eltype(df1.y) == Int
-                @test eltype(df1.z) == Union{Missing,Int}
+                @test eltype(df1.z) == Union{Missing, Int}
             else
                 append!(df1, df2, cols=cols, promote=promote)
                 @test df1 == DataFrame(x=[1:3;1:3], y=1:6)
@@ -860,7 +849,7 @@ end
                 append!(df1, df2, cols=cols, promote=true)
                 @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing])
                 @test eltype(df1.x) == Int
-                @test eltype(df1.y) == Union{Missing,Int}
+                @test eltype(df1.y) == Union{Missing, Int}
             else
                 with_logger(sl) do
                     @test_throws MethodError append!(df1, df2, cols=cols, promote=promote)
@@ -880,13 +869,13 @@ end
                 @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing],
                                       z=[missing; missing; missing; 11:13])
                 @test eltype(df1.x) == Int
-                @test eltype(df1.y) == Union{Missing,Int}
-                @test eltype(df1.z) == Union{Missing,Int}
+                @test eltype(df1.y) == Union{Missing, Int}
+                @test eltype(df1.z) == Union{Missing, Int}
             else
                 append!(df1, df2, cols=cols, promote=true)
                 @test df1 ≅ DataFrame(x=[1:3;1:3], y=[1:3; missing; missing; missing])
                 @test eltype(df1.x) == Int
-                @test eltype(df1.y) == Union{Missing,Int}
+                @test eltype(df1.y) == Union{Missing, Int}
             end
         end
     end
@@ -942,6 +931,9 @@ end
               DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
                         x=[1:3; missing])
     end
+
+    @test_throws ArgumentError push!(DataFrame(), (a=1, b=2), cols=:unions)
+    @test_throws ArgumentError push!(DataFrame(), Dict('a'=>1, 'b'=>2), cols=:union)
 end
 
 @testset "rename" begin
@@ -1006,14 +998,14 @@ end
         @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
     end
 
-    sdf = view(DataFrame(ones(2,3)), 1:2, 1:3)
+    sdf = view(DataFrame(ones(2, 3), :auto), 1:2, 1:3)
     @test_throws ArgumentError rename!(uppercase, sdf)
     @test_throws ArgumentError rename!(sdf, :x1 => :y1)
     @test_throws ArgumentError rename!(sdf, [:a, :b, :c])
 end
 
 @testset "flexible rename arguments" begin
-    df = DataFrame(x=1,y=2,z=3)
+    df = DataFrame(x=1, y=2, z=3)
     for ren in ([:a, :b, :c], ["a", "b", "c"],
                 ["x"=>:a, "y"=>:b, "z"=>:c],
                 [:x=>"a", :y=>"b", :z=>"c"],
@@ -1023,19 +1015,19 @@ end
                 Dict([:x=>"a", :y=>"b", :z=>"c"]),
                 Dict(["x"=>"a", "y"=>"b", "z"=>"c"]),
                 Dict([:x=>:a, :y=>:b, :z=>:c]))
-        @test rename(df, ren) == DataFrame(a=1,b=2,c=3)
-        df == DataFrame(x=1,y=2,z=3)
+        @test rename(df, ren) == DataFrame(a=1, b=2, c=3)
+        df == DataFrame(x=1, y=2, z=3)
         if eltype(ren) isa Pair
-            @test rename(df, ren...) == DataFrame(a=1,b=2,c=3)
-            @test df == DataFrame(x=1,y=2,z=3)
+            @test rename(df, ren...) == DataFrame(a=1, b=2, c=3)
+            @test df == DataFrame(x=1, y=2, z=3)
         end
         df2 = copy(df)
-        @test rename!(df2, ren) == DataFrame(a=1,b=2,c=3)
-        @test df2 == DataFrame(a=1,b=2,c=3)
+        @test rename!(df2, ren) == DataFrame(a=1, b=2, c=3)
+        @test df2 == DataFrame(a=1, b=2, c=3)
         df2 = copy(df)
         if eltype(ren) isa Pair
-            @test rename!(df2, ren...) == DataFrame(a=1,b=2,c=3)
-            @test df2 == DataFrame(a=1,b=2,c=3)
+            @test rename!(df2, ren...) == DataFrame(a=1, b=2, c=3)
+            @test df2 == DataFrame(a=1, b=2, c=3)
         end
     end
 end
@@ -1071,74 +1063,74 @@ end
 end
 
 @testset "column conversions" begin
-    df = DataFrame([collect(1:10), collect(1:10)])
+    df = DataFrame([collect(1:10), collect(1:10)], :auto)
     @test !isa(df[!, 1], Vector{Union{Int, Missing}})
     @test allowmissing!(df, 1) === df
     @test isa(df[!, 1], Vector{Union{Int, Missing}})
     @test !isa(df[!, 2], Vector{Union{Int, Missing}})
-    df[1,1] = missing
+    df[1, 1] = missing
     @test_throws MethodError disallowmissing!(df, 1)
     tmpcol = df[!, 1]
     disallowmissing!(df, 1, error=false)
     @test df[!, 1] === tmpcol
-    df[1,1] = 1
+    df[1, 1] = 1
     @test disallowmissing!(df, 1) === df
     @test isa(df[!, 1], Vector{Int})
 
-    df = DataFrame([collect(1:10), collect(1:10)])
+    df = DataFrame([collect(1:10), collect(1:10)], :auto)
     @test !isa(df[!, 1], Vector{Union{Int, Missing}})
     @test allowmissing!(df, Not(Not(1))) === df
     @test isa(df[!, 1], Vector{Union{Int, Missing}})
     @test !isa(df[!, 2], Vector{Union{Int, Missing}})
-    df[1,1] = missing
+    df[1, 1] = missing
     @test_throws MethodError disallowmissing!(df, Not(Not(1)))
     tmpcol = df[!, 1]
     disallowmissing!(df, Not(Not(1)), error=false)
     @test df[!, 1] === tmpcol
-    df[1,1] = 1
+    df[1, 1] = 1
     @test disallowmissing!(df, Not(Not(1))) === df
     @test isa(df[!, 1], Vector{Int})
 
     for em in [true, false]
-        df = DataFrame([collect(1:10), collect(1:10)])
-        @test allowmissing!(df, [1,2]) === df
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
+        @test allowmissing!(df, [1, 2]) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-        @test disallowmissing!(df, [1,2], error=em) === df
+        @test disallowmissing!(df, [1, 2], error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
-        @test allowmissing!(df, Not(Not([1,2]))) === df
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
+        @test allowmissing!(df, Not(Not([1, 2]))) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
-        @test disallowmissing!(df, Not(Not([1,2])), error=em) === df
+        @test disallowmissing!(df, Not(Not([1, 2])), error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
         @test_throws BoundsError allowmissing!(df, [true])
         @test allowmissing!(df, [true, true]) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test_throws BoundsError disallowmissing!(df, [true], error=em)
-        @test disallowmissing!(df, [true,true], error=em) === df
+        @test disallowmissing!(df, [true, true], error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
         @test allowmissing!(df) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
         @test allowmissing!(df, :) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, :, error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
         @test allowmissing!(df, r"") === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, r"", error=em) === df
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
 
-        df = DataFrame([collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)], :auto)
         @test allowmissing!(df, Not(1:0)) === df
         @test isa(df[!, 1], Vector{Union{Int, Missing}}) && isa(df[!, 2], Vector{Union{Int, Missing}})
         @test disallowmissing!(df, Not(1:0), error=em) === df
@@ -1146,24 +1138,24 @@ end
     end
 
     df = DataFrame([CategoricalArray(1:10),
-                    CategoricalArray(string.('a':'j'))])
+                    CategoricalArray(string.('a':'j'))], :auto)
     @test allowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: Union{CategoricalValue{Int}, Missing}
     @test eltype(df[!, 2]) <: Union{CategoricalValue{String}, Missing}
-    df[1,2] = missing
+    df[1, 2] = missing
     @test_throws MissingException disallowmissing!(df)
     tmpcol =df[!, 2]
     disallowmissing!(df, error=false)
     @test df[!, 2] === tmpcol
-    df[1,2] = "a"
+    df[1, 2] = "a"
     @test disallowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: CategoricalValue{Int}
     @test eltype(df[!, 2]) <: CategoricalValue{String}
 
     for em in [true, false]
-        df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+        df = DataFrame(b=[1, 2], c=[1, 2], d=[1, 2])
         @test allowmissing!(df, [:b, :c]) === df
         @test eltype(df.b) == Union{Int, Missing}
         @test eltype(df.c) == Union{Int, Missing}
@@ -1191,7 +1183,7 @@ end
     end
 
     for em in [true, false]
-        df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+        df = DataFrame(b=[1, 2], c=[1, 2], d=[1, 2])
         @test allowmissing!(df, ["b", "c"]) === df
         @test eltype(df.b) == Union{Int, Missing}
         @test eltype(df.c) == Union{Int, Missing}
@@ -1210,13 +1202,13 @@ end
         @test eltype(df.d) == Int
     end
 
-    df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
+    df = DataFrame(x=[1], y = Union{Int, Missing}[1], z=[missing])
     disallowmissing!(df, error=false)
     @test eltype(df.x) == Int
     @test eltype(df.y) == Int
     @test eltype(df.z) == Missing
 
-    df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
+    df = DataFrame(x=[1], y = Union{Int, Missing}[1], z=[missing])
     disallowmissing!(df, 2:3, error=false)
     @test eltype(df.x) == Int
     @test eltype(df.y) == Int
@@ -1224,9 +1216,9 @@ end
 end
 
 @testset "test disallowmissing" begin
-    df = DataFrame(x=Union{Int,Missing}[1,2,3],
-                   y=Union{Int,Missing}[1,2,3],
-                   z=[1,2,3])
+    df = DataFrame(x=Union{Int, Missing}[1, 2, 3],
+                   y=Union{Int, Missing}[1, 2, 3],
+                   z=[1, 2, 3])
     for x in [df, view(df, :, :)], em in [true, false]
         y = disallowmissing(x, error=em)
         @test y isa DataFrame
@@ -1236,7 +1228,7 @@ end
         @test x.z !== y.z
         @test eltype.(eachcol(y)) == [Int, Int, Int]
 
-        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+        for colsel in [:, names(x), [1, 2, 3], [true, true, true], r"", Not(r"a")]
             y = disallowmissing(x, colsel, error=em)
             @test y isa DataFrame
             @test x == y
@@ -1282,7 +1274,7 @@ end
     @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
     @test disallowmissing(DataFrame(x=[1, missing]), error=false) ≅ DataFrame(x=[1, missing])
 
-    df = DataFrame(x=[1], y = Union{Int,Missing}[1], z=[missing])
+    df = DataFrame(x=[1], y = Union{Int, Missing}[1], z=[missing])
     df2 = disallowmissing(df, error=false)
     @test eltype(df2.x) == Int
     @test eltype(df2.y) == Int
@@ -1295,9 +1287,9 @@ end
 end
 
 @testset "test allowmissing" begin
-    df = DataFrame(x=Union{Int,Missing}[1,2,3],
-                   y=[1,2,3],
-                   z=[1,2,3])
+    df = DataFrame(x=Union{Int, Missing}[1, 2, 3],
+                   y=[1, 2, 3],
+                   z=[1, 2, 3])
     for x in [df, view(df, :, :)]
         y = allowmissing(x)
         @test y isa DataFrame
@@ -1307,7 +1299,7 @@ end
         @test x.z !== y.z
         @test eltype.(eachcol(y)) == fill(Union{Missing, Int}, 3)
 
-        for colsel in [:, names(x), [1,2,3], [true,true,true], r"", Not(r"a")]
+        for colsel in [:, names(x), [1, 2, 3], [true, true, true], r"", Not(r"a")]
             y = allowmissing(x, colsel)
             @test y isa DataFrame
             @test x == y
@@ -1392,8 +1384,8 @@ end
     @test df[:, r""][!, :y] !== y
     @test df[:, :][!, :x] == x
     @test df[:, :][!, :x] !== x
-    @test df[:, [:y,:x]][!, :x] == x
-    @test df[:, [:y,:x]][!, :x] !== x
+    @test df[:, [:y, :x]][!, :x] == x
+    @test df[:, [:y, :x]][!, :x] !== x
 end
 
 @testset "test corner case of getindex" begin
@@ -1416,15 +1408,15 @@ end
 end
 
 @testset "handling of end in indexing" begin
-    z = DataFrame(rand(4,5))
+    z = DataFrame(rand(4, 5), :auto)
     x = z
     y = deepcopy(x)
     @test x[:, end] == x[:, 5]
     @test x[:, end:end] == x[:, 5:5]
     @test x[end, :] == x[4, :]
     @test x[end:end, :] == x[4:4, :]
-    @test x[end, end] == x[4,5]
-    @test x[2:end, 2:end] == x[2:4,2:5]
+    @test x[end, end] == x[4, 5]
+    @test x[2:end, 2:end] == x[2:4, 2:5]
     x[!, end] = 1:4
     y[!, 5] = 1:4
     @test x == y
@@ -1435,8 +1427,8 @@ end
     x[end, :] .= 111
     y[4, :] .= 111
     @test x == y
-    x[end,end] = 1000
-    y[4,5] = 1000
+    x[end, end] = 1000
+    y[4, 5] = 1000
     @test x == y
     x[2:end, 2:end] .= 0
     y[2:4, 2:5] .= 0
@@ -1448,8 +1440,8 @@ end
     @test x[:, end:end] == x[:, 5:5]
     @test x[end, :] == x[4, :]
     @test x[end:end, :] == x[4:4, :]
-    @test x[end, end] == x[4,5]
-    @test x[2:end, 2:end] == x[2:4,2:5]
+    @test x[end, end] == x[4, 5]
+    @test x[2:end, 2:end] == x[2:4, 2:5]
     x[:, end] = 1:4
     y[:, 5] = 1:4
     @test x == y
@@ -1460,8 +1452,8 @@ end
     x[end, :] .= 111
     y[4, :] .= 111
     @test x == y
-    x[end,end] = 1000
-    y[4,5] = 1000
+    x[end, end] = 1000
+    y[4, 5] = 1000
     @test x == y
     x[2:end, 2:end] .= 0
     y[2:4, 2:5] .= 0
@@ -1525,7 +1517,7 @@ end
     x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
     @test parent(x) === x
     @test parentindices(x) === (Base.OneTo(3), Base.OneTo(2))
-    @test size(x) == (3,2)
+    @test size(x) == (3, 2)
     @test size(x, 1) == 3
     @test size(x, 2) == 2
     @test_throws ArgumentError size(x, 3)
@@ -1533,7 +1525,7 @@ end
     @test axes(x, 1) === Base.OneTo(3)
     @test axes(x, 2) === Base.OneTo(2)
     @test_throws ArgumentError axes(x, 3)
-    @test size(DataFrame()) == (0,0)
+    @test size(DataFrame()) == (0, 0)
 end
 
 @testset "0-row DataFrame corner cases" begin
@@ -1569,135 +1561,135 @@ end
 
     df[1, All()]
     df[1, Cols(:)]
-    df[1, Between(1,2)]
+    df[1, Between(1, 2)]
     df[1:1, All()]
     df[1:1, Cols(:)]
-    df[1:1, Between(1,2)]
+    df[1:1, Between(1, 2)]
     df[Not(1), All()]
     df[Not(1), Cols(:)]
-    df[Not(1), Between(1,2)]
+    df[Not(1), Between(1, 2)]
     df[:, All()]
     df[:, Cols(:)]
-    df[:, Between(1,2)]
+    df[:, Between(1, 2)]
     df[!, All()]
     df[!, Cols(:)]
-    df[!, Between(1,2)]
+    df[!, Between(1, 2)]
 
     @view df[1, All()]
     @view df[1, Cols(:)]
-    @view df[1, Between(1,2)]
+    @view df[1, Between(1, 2)]
     @view df[1:1, All()]
     @view df[1:1, Cols(:)]
-    @view df[1:1, Between(1,2)]
+    @view df[1:1, Between(1, 2)]
     @view df[Not(1), All()]
     @view df[Not(1), Cols(:)]
-    @view df[Not(1), Between(1,2)]
+    @view df[Not(1), Between(1, 2)]
     @view df[:, All()]
     @view df[:, Cols(:)]
-    @view df[:, Between(1,2)]
+    @view df[:, Between(1, 2)]
     @view df[!, All()]
     @view df[!, Cols(:)]
-    @view df[!, Between(1,2)]
+    @view df[!, Between(1, 2)]
 
     df[1, All()] = (a=1, b=2, c=3)
     df[1, Cols(:)] = (a=1, b=2, c=3)
-    df[1, Between(1,2)] = (a=1, b=2)
+    df[1, Between(1, 2)] = (a=1, b=2)
     df[1:1, All()] = df
     df[1:1, Cols(:)] = df
-    df[1:1, Between(1,2)] = df[!, 1:2]
+    df[1:1, Between(1, 2)] = df[!, 1:2]
     df[:, All()] = df
     df[:, Cols(:)] = df
-    df[:, Between(1,2)] = df[!, 1:2]
+    df[:, Between(1, 2)] = df[!, 1:2]
     df[1:1, All()] = Matrix(df)
     df[1:1, Cols(:)] = Matrix(df)
-    df[1:1, Between(1,2)] = Matrix(df[!, 1:2])
+    df[1:1, Between(1, 2)] = Matrix(df[!, 1:2])
     df[:, All()] = Matrix(df)
     df[:, Cols(:)] = Matrix(df)
-    df[:, Between(1,2)] = Matrix(df[!, 1:2])
+    df[:, Between(1, 2)] = Matrix(df[!, 1:2])
 
     df2 = vcat(df, df)
     df2[Not(1), All()] = df
     df2[Not(1), Cols(:)] = df
-    df2[Not(1), Between(1,2)] = df[!, 1:2]
+    df2[Not(1), Between(1, 2)] = df[!, 1:2]
     df2[Not(1), All()] = Matrix(df)
     df2[Not(1), Cols(:)] = Matrix(df)
-    df2[Not(1), Between(1,2)] = Matrix(df[!,1:2])
+    df2[Not(1), Between(1, 2)] = Matrix(df[!, 1:2])
 
     allowmissing!(df2, All())
     allowmissing!(df2, Cols(:))
-    allowmissing!(df2, Between(1,2))
+    allowmissing!(df2, Between(1, 2))
     disallowmissing!(df2, All())
     disallowmissing!(df2, Cols(:))
-    disallowmissing!(df2, Between(1,2))
+    disallowmissing!(df2, Between(1, 2))
 
     dfr = df[1, :]
     dfr[All()]
     dfr[Cols(:)]
-    dfr[Between(1,2)]
+    dfr[Between(1, 2)]
     dfr[All()] = (a=1, b=2, c=3)
     dfr[Cols(:)] = (a=1, b=2, c=3)
-    dfr[Between(1,2)] = (a=1, b=2)
+    dfr[Between(1, 2)] = (a=1, b=2)
     @view dfr[All()]
     @view dfr[Cols(:)]
-    @view dfr[Between(1,2)]
+    @view dfr[Between(1, 2)]
 
     dfv = view(df, :, :)
 
     dfv[1, All()]
     dfv[1, Cols(:)]
-    dfv[1, Between(1,2)]
+    dfv[1, Between(1, 2)]
     dfv[1:1, All()]
     dfv[1:1, Cols(:)]
-    dfv[1:1, Between(1,2)]
+    dfv[1:1, Between(1, 2)]
     dfv[Not(1), All()]
     dfv[Not(1), Cols(:)]
-    dfv[Not(1), Between(1,2)]
+    dfv[Not(1), Between(1, 2)]
     dfv[:, All()]
     dfv[:, Cols(:)]
-    dfv[:, Between(1,2)]
+    dfv[:, Between(1, 2)]
     dfv[!, All()]
     dfv[!, Cols(:)]
-    dfv[!, Between(1,2)]
+    dfv[!, Between(1, 2)]
 
     @view dfv[1, All()]
     @view dfv[1, Cols(:)]
-    @view dfv[1, Between(1,2)]
+    @view dfv[1, Between(1, 2)]
     @view dfv[1:1, All()]
     @view dfv[1:1, Cols(:)]
-    @view dfv[1:1, Between(1,2)]
+    @view dfv[1:1, Between(1, 2)]
     @view dfv[Not(1), All()]
     @view dfv[Not(1), Cols(:)]
-    @view dfv[Not(1), Between(1,2)]
+    @view dfv[Not(1), Between(1, 2)]
     @view dfv[:, All()]
     @view dfv[:, Cols(:)]
-    @view dfv[:, Between(1,2)]
+    @view dfv[:, Between(1, 2)]
     @view dfv[!, All()]
     @view dfv[!, Cols(:)]
-    @view dfv[!, Between(1,2)]
+    @view dfv[!, Between(1, 2)]
 
     dfv[1, All()] = (a=1, b=2, c=3)
     dfv[1, Cols(:)] = (a=1, b=2, c=3)
-    dfv[1, Between(1,2)] = (a=1, b=2)
+    dfv[1, Between(1, 2)] = (a=1, b=2)
     dfv[1:1, All()] = df
     dfv[1:1, Cols(:)] = df
-    dfv[1:1, Between(1,2)] = df[!, 1:2]
+    dfv[1:1, Between(1, 2)] = df[!, 1:2]
     dfv[:, All()] = df
     dfv[:, Cols(:)] = df
-    dfv[:, Between(1,2)] = df[!, 1:2]
+    dfv[:, Between(1, 2)] = df[!, 1:2]
     dfv[1:1, All()] = Matrix(df)
     dfv[1:1, Cols(:)] = Matrix(df)
-    dfv[1:1, Between(1,2)] = Matrix(df[!, 1:2])
+    dfv[1:1, Between(1, 2)] = Matrix(df[!, 1:2])
     dfv[:, All()] = Matrix(df)
     dfv[:, Cols(:)] = Matrix(df)
-    dfv[:, Between(1,2)] = Matrix(df[!, 1:2])
+    dfv[:, Between(1, 2)] = Matrix(df[!, 1:2])
 
     df2v = view(vcat(df, df), :, :)
     df2v[Not(1), All()] = df
     df2v[Not(1), Cols(:)] = df
-    df2v[Not(1), Between(1,2)] = df[!, 1:2]
+    df2v[Not(1), Between(1, 2)] = df[!, 1:2]
     df2v[Not(1), All()] = Matrix(df)
     df2v[Not(1), Cols(:)] = Matrix(df)
-    df2v[Not(1), Between(1,2)] = Matrix(df[!, 1:2])
+    df2v[Not(1), Between(1, 2)] = Matrix(df[!, 1:2])
 end
 
 @testset "vcat and push! with :orderequal" begin
@@ -1706,7 +1698,7 @@ end
               OrderedDict(:a=>10, :b=>20, :c=>30))
         df = DataFrame(a=1, b=2, c=3)
         push!(df, v, cols=:orderequal)
-        @test df == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+        @test df == DataFrame(a=[1, 10], b=[2, 20], c=[3, 30])
     end
 
     for v in ((a=10, b=20, d=30), (a=10, c=20, b=30),
@@ -1720,7 +1712,7 @@ end
     end
 
     @test vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
-               cols=:orderequal) == DataFrame(a=[1,10], b=[2,20], c=[3,30])
+               cols=:orderequal) == DataFrame(a=[1, 10], b=[2, 20], c=[3, 30])
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, b=20, c=30),
                                     cols=:equal)
     @test_throws ArgumentError vcat(DataFrame(a=1, b=2, c=3), DataFrame(a=10, c=20, b=30),
@@ -1745,14 +1737,14 @@ end
         df = DataFrame(a=1, b=2, c=3)
         allowmissing!(df, :c)
         push!(df, v, cols=:subset, promote=false)
-        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
+        @test df ≅ DataFrame(a=[1, 10], b=[2, 20], c=[3, missing])
         old_logger = global_logger(NullLogger())
         @test_throws MethodError push!(df, Dict(), cols=:subset, promote=false)
         global_logger(old_logger)
-        @test df ≅ DataFrame(a=[1,10], b=[2,20], c=[3,missing])
+        @test df ≅ DataFrame(a=[1, 10], b=[2, 20], c=[3, missing])
         allowmissing!(df, [:a, :b])
         push!(df, Dict(), cols=:subset)
-        @test df ≅ DataFrame(a=[1,10, missing], b=[2,20, missing], c=[3,missing, missing])
+        @test df ≅ DataFrame(a=[1, 10, missing], b=[2, 20, missing], c=[3, missing, missing])
     end
 end
 
@@ -1783,7 +1775,7 @@ end
     push!(df, (a=1, b=2))
     a = df.a
     push!(df, (a=1, c=2), cols=:union)
-    @test df ≅ DataFrame(a=[1,1], b=[2, missing], c=[missing, 2])
+    @test df ≅ DataFrame(a=[1, 1], b=[2, missing], c=[missing, 2])
     @test df.a === a
     @test eltype(df.a) === Int
 
@@ -1836,7 +1828,7 @@ end
     # as we eventually reallocate column :b to a correct length
     # and aliasing does not affect rows that already existed in df
     push!(df, (a=1, b=2.0, c=3), cols=:union)
-    @test df ≅ DataFrame(a=[1,1], b=[1.0, 2.0], c=[missing, 3], copycols=false)
+    @test df ≅ DataFrame(a=[1, 1], b=[1.0, 2.0], c=[missing, 3], copycols=false)
     @test df.a === x
     @test eltype(df.b) === Float64
 
@@ -1844,7 +1836,7 @@ end
     push!(df, DataFrame(a=1, b=2)[1, :])
     a = df.a
     push!(df, DataFrame(a=1, c=2)[1, :], cols=:union)
-    @test df ≅ DataFrame(a=[1,1], b=[2, missing], c=[missing, 2])
+    @test df ≅ DataFrame(a=[1, 1], b=[2, missing], c=[missing, 2])
     @test df.a === a
     @test eltype(df.a) === Int
 
@@ -1897,7 +1889,7 @@ end
     # as we eventually reallocate column :b to a correct length
     # and aliasing does not affect rows that already existed in df
     push!(df, DataFrame(a=1, b=2.0, c=3)[1, :], cols=:union)
-    @test df ≅ DataFrame(a=[1,1], b=[1.0, 2.0], c=[missing, 3], copycols=false)
+    @test df ≅ DataFrame(a=[1, 1], b=[1.0, 2.0], c=[missing, 3], copycols=false)
     @test df.a === x
     @test eltype(df.b) === Float64
 end
@@ -1922,7 +1914,7 @@ end
             with_logger(SimpleLogger(IOBuffer())) do
                 @test_throws MethodError push!(df, v, cols=cols, promote=false)
             end
-            @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1,missing])
+            @test push!(df, v, cols=cols) ≅ DataFrame(a=[1, "a"], b=[1, missing])
         end
     end
 end

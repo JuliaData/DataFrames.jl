@@ -102,6 +102,8 @@ first
 last
 only
 nonunique
+subset
+subset!
 unique
 unique!
 ```

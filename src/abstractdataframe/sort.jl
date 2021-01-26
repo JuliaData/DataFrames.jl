@@ -12,7 +12,7 @@
 
 # UserColOrdering: user ordering of a column; this is just a convenience container
 #                  which allows a user to specify column specific orderings
-#                  with "order(column, rev=true,...)"
+#                  with "order(column, rev=true, ...)"
 
 struct UserColOrdering{T<:ColumnIndex}
     col::T
@@ -32,36 +32,36 @@ See also: [`sort!`](@ref), [`sort`](@ref)
 ```jldoctest
 julia> df = DataFrame(x = [-3, -1, 0, 2, 4], y = 1:5)
 5×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ -3    │ 1     │
-│ 2   │ -1    │ 2     │
-│ 3   │ 0     │ 3     │
-│ 4   │ 2     │ 4     │
-│ 5   │ 4     │ 5     │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │    -3      1
+   2 │    -1      2
+   3 │     0      3
+   4 │     2      4
+   5 │     4      5
 
 julia> sort(df, order(:x, rev=true))
 5×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 4     │ 5     │
-│ 2   │ 2     │ 4     │
-│ 3   │ 0     │ 3     │
-│ 4   │ -1    │ 2     │
-│ 5   │ -3    │ 1     │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      5
+   2 │     2      4
+   3 │     0      3
+   4 │    -1      2
+   5 │    -3      1
 
 julia> sort(df, order(:x, by=abs))
 5×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 0     │ 3     │
-│ 2   │ -1    │ 2     │
-│ 3   │ 2     │ 4     │
-│ 4   │ -3    │ 1     │
-│ 5   │ 4     │ 5     │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     0      3
+   2 │    -1      2
+   3 │     2      4
+   4 │    -3      1
+   5 │     4      5
 ```
 """
 order(col::T; kwargs...) where {T<:ColumnIndex} = UserColOrdering{T}(col, kwargs)
@@ -75,7 +75,7 @@ _getcol(x) = x
 ###
 function ordering(col_ord::UserColOrdering, lt::Function, by::Function,
                   rev::Bool, order::Ordering)
-    for (k,v) in pairs(col_ord.kwargs)
+    for (k, v) in pairs(col_ord.kwargs)
         if     k == :lt;    lt    = v
         elseif k == :by;    by    = v
         elseif k == :rev;   rev   = v
@@ -85,11 +85,11 @@ function ordering(col_ord::UserColOrdering, lt::Function, by::Function,
         end
     end
 
-    Order.ord(lt,by,rev,order)
+    Order.ord(lt, by, rev, order)
 end
 
 ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    Order.ord(lt,by,rev,order)
+    Order.ord(lt, by, rev, order)
 
 # DFPerm: defines a permutation on a particular DataFrame, using
 #         a single ordering (O<:Ordering) or a list of column orderings
@@ -150,7 +150,7 @@ function ordering(df::AbstractDataFrame,
                   lt::AbstractVector{S}, by::AbstractVector{T},
                   rev::AbstractVector{Bool},
                   order::AbstractVector) where {S<:Function, T<:Function}
-    if !(length(lt) == length(by) == length(rev) == length(order) == size(df,2))
+    if !(length(lt) == length(by) == length(rev) == length(order) == size(df, 2))
         throw(ArgumentError("Orderings must be specified for all DataFrame columns"))
     end
     DFPerm([Order.ord(_lt, _by, _rev, _order) for
@@ -257,7 +257,7 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt, by, rev, orde
     to_array(src::Tuple, dims) = [src...]
     to_array(src, dims) = fill(src, dims)
 
-    dims = length(cols) > 0 ? length(cols) : size(df,2)
+    dims = length(cols) > 0 ? length(cols) : size(df, 2)
     ordering(df, cols,
              to_array(lt, dims),
              to_array(by, dims),
@@ -357,53 +357,53 @@ See [`sort!`](@ref) for a description of other keyword arguments.
 ```jldoctest
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 2     │ a      │
-│ 4   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     2  a
+   4 │     1  b
 
 julia> sort(df, :x)
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ c      │
-│ 2   │ 1     │ b      │
-│ 3   │ 2     │ a      │
-│ 4   │ 3     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     1  c
+   2 │     1  b
+   3 │     2  a
+   4 │     3  b
 
 julia> sort(df, [:x, :y])
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 2     │ a      │
-│ 4   │ 3     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     1  b
+   2 │     1  c
+   3 │     2  a
+   4 │     3  b
 
 julia> sort(df, [:x, :y], rev=true)
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 2     │ a      │
-│ 3   │ 1     │ c      │
-│ 4   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a
+   3 │     1  c
+   4 │     1  b
 
 julia> sort(df, [:x, order(:y, rev=true)])
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ c      │
-│ 2   │ 1     │ b      │
-│ 3   │ 2     │ a      │
-│ 4   │ 3     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     1  c
+   2 │     1  b
+   3 │     2  a
+   4 │     3  b
 ```
 """
 @inline function Base.sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
@@ -434,13 +434,13 @@ See other methods for a description of other keyword arguments.
 ```jldoctest
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 2     │ a      │
-│ 4   │ 1     │ b      │
+ Row │ x      y
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     1  c
+   3 │     2  a
+   4 │     1  b
 
 julia> sortperm(df, :x)
 4-element Array{Int64,1}:
@@ -487,7 +487,7 @@ function Base.sortperm(df::AbstractDataFrame, cols=[];
     return _sortperm(df, _alg, ord)
 end
 
-_sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) =
+_sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm, DFPerm}) =
     sort!([1:size(df, 1);], a, o)
 _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
-    sortperm(df, a, DFPerm(o,df))
+    sortperm(df, a, DFPerm(o, df))

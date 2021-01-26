@@ -6,7 +6,7 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
-const OnType = Union{SymbolOrString, NTuple{2,Symbol}, Pair{Symbol,Symbol},
+const OnType = Union{SymbolOrString, NTuple{2, Symbol}, Pair{Symbol, Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
 # helper structure for DataFrames joining
@@ -19,7 +19,8 @@ struct DataFrameJoiner
     right_on::Vector{Symbol}
 
     function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame,
-                             on::Union{<:OnType, AbstractVector})
+                             on::Union{<:OnType, AbstractVector},
+                             matchmissing::Symbol)
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
@@ -27,21 +28,46 @@ struct DataFrameJoiner
             if v isa SymbolOrString
                 push!(left_on, Symbol(v))
                 push!(right_on, Symbol(v))
-            elseif v isa Union{Pair{Symbol,Symbol},
+            elseif v isa Union{Pair{Symbol, Symbol},
                                Pair{<:AbstractString, <:AbstractString}}
                 push!(left_on, Symbol(first(v)))
                 push!(right_on, Symbol(last(v)))
-            elseif v isa NTuple{2,Symbol}
+            elseif v isa NTuple{2, Symbol}
                 # an explicit error is thrown as Tuple{Symbol, Symbol} was supported in the past
                 throw(ArgumentError("Using a `Tuple{Symbol, Symbol}` or a vector containing " *
                                     "such tuples as a value of `on` keyword argument is " *
-                                    "not supported: use `Pair{Symbol,Symbol}` instead."))
+                                    "not supported: use `Pair{Symbol, Symbol}` instead."))
             else
                 throw(ArgumentError("All elements of `on` argument to `join` must be " *
-                                    "Symbol or Pair{Symbol,Symbol}."))
+                                    "Symbol or Pair{Symbol, Symbol}."))
             end
         end
-        new(dfl, dfr, dfl[!, left_on], dfr[!, right_on], left_on, right_on)
+        dfl_on = dfl[!, left_on]
+        dfr_on = dfr[!, right_on]
+
+        if matchmissing === :error
+            for df in (dfl_on, dfr_on), col in eachcol(df)
+                if any(ismissing, col)
+                    throw(ArgumentError("missing values in key columns are not allowed " *
+                                        "when matchmissing == :error"))
+                end
+            end
+        elseif matchmissing !== :equal
+            throw(ArgumentError("matchmissing allows only :error or :equal"))
+        end
+
+        for df in (dfl_on, dfr_on), col in eachcol(df)
+            if any(x -> (x isa Union{Complex, Real}) &&
+                        (isnan(x) || isequal(real(x), -0.0) || isequal(imag(x), -0.0)), col)
+                throw(ArgumentError("currently for numeric values NaN and `-0.0` " *
+                                    "in their real or imaginary components are not " *
+                                    "allowed. Use CategoricalArrays.jl to wrap " *
+                                    "these values in a CategoricalVector to perform " *
+                                    "the requested join."))
+            end
+        end
+
+        new(dfl, dfr, dfl_on, dfr_on, left_on, right_on)
     end
 end
 
@@ -267,7 +293,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                indicator::Union{Nothing, Symbol, AbstractString},
                validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}},
                left_rename::Union{Function, AbstractString, Symbol},
-               right_rename::Union{Function, AbstractString, Symbol})
+               right_rename::Union{Function, AbstractString, Symbol},
+               matchmissing::Symbol)
     _check_consistency(df1)
     _check_consistency(df2)
 
@@ -275,7 +302,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    joiner = DataFrameJoiner(df1, df2, on)
+    joiner = DataFrameJoiner(df1, df2, on, matchmissing)
 
     # Check merge key validity
     left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
@@ -435,8 +462,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
         if hasproperty(joined, unique_indicator)
             throw(ArgumentError("joined data frame already has column " *
-                                ":$unique_indicator. Pass makeunique=true to" *
-                                " make it unique using a suffix automatically."))
+                                ":$unique_indicator. Pass makeunique=true to " *
+                                "make it unique using a suffix automatically."))
         end
         joined[!, unique_indicator] = indicatorcol
     else
@@ -448,10 +475,10 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 """
-    innerjoin(df1, df2; on, makeunique = false,
-              validate = (false, false), renamecols = identity => identity)
-    innerjoin(df1, df2, dfs...; on, makeunique = false,
-              validate = (false, false))
+    innerjoin(df1, df2; on, makeunique=false, validate=(false, false),
+              renamecols=(identity => identity), matchmissing=:error)
+    innerjoin(df1, df2, dfs...; on, makeunique=false,
+              validate=(false, false), matchmissing=:error)
 
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
@@ -486,6 +513,14 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -502,80 +537,84 @@ See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> innerjoin(name, job, on = :ID)
 2×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
-│     │ Int64 │ String   │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
+ Row │ ID     Name      Job
+     │ Int64  String    String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> innerjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 2×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String    │ String    │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String     String
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
 
 julia> innerjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 2×3 DataFrame
-│ Row │ ID    │ NAME     │ job    │
-│     │ Int64 │ String   │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
+ Row │ ID     NAME      job
+     │ Int64  String    String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
 ```
 """
 function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
                    on::Union{<:OnType, AbstractVector} = Symbol[],
                    makeunique::Bool=false,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-                   renamecols::Pair=identity => identity)
+                   renamecols::Pair=identity => identity,
+                   matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
                  indicator=nothing, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          matchmissing::Symbol=:error) =
     innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+              dfs..., on=on, makeunique=makeunique, validate=validate,
+              matchmissing=matchmissing)
 
 """
-    leftjoin(df1, df2; on, makeunique = false, indicator = nothing,
-             validate = (false, false), renamecols = identity => identity)
+    leftjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+             renamecols=(identity => identity), matchmissing=:error)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
@@ -611,8 +650,16 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -625,76 +672,78 @@ See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> leftjoin(name, job, on = :ID)
 3×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String    │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
+ Row │ ID     Name       Job
+     │ Int64  String     String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> leftjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String    │ String?   │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
-│ 3   │ 3     │ Joe Blogs │ missing   │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String     String?
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
 
 julia> leftjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ NAME      │ job     │
-│     │ Int64 │ String    │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
+ Row │ ID     NAME       job
+     │ Int64  String     String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
 ```
 """
 function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[],
          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-         renamecols::Pair=identity => identity)
+         renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
                  indicator=indicator, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 """
-    rightjoin(df1, df2; on, makeunique = false, indicator = nothing,
-              validate = (false, false), renamecols = identity => identity)
+    rightjoin(df1, df2; on, makeunique=false, indicator = nothing,
+              validate=(false, false), renamecols=(identity => identity),
+              matchmissing=:error)
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
@@ -730,8 +779,16 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -744,78 +801,79 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> rightjoin(name, job, on = :ID)
 3×3 DataFrame
-│ Row │ ID    │ Name     │ Job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+ Row │ ID     Name      Job
+     │ Int64  String?   String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
+   3 │     4  missing   Farmer
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> rightjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String?   │ String    │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
-│ 3   │ 4     │ missing   │ Farmer    │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String?    String
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     4  missing    Farmer
 
 julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ NAME     │ job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+ Row │ ID     NAME      job
+     │ Int64  String?   String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
+   3 │     4  missing   Farmer
 ```
 """
 function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           indicator::Union{Nothing, Symbol, AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          renamecols::Pair=identity => identity)
+          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
                  indicator=indicator, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 """
-    outerjoin(df1, df2; on, makeunique = false, indicator = nothing,
-              validate = (false, false), renamecols = identity => identity)
+    outerjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+              renamecols=(identity => identity), matchmissing=:error)
     outerjoin(df1, df2, dfs...; on, makeunique = false,
-              validate = (false, false))
+              validate = (false, false), matchmissing=:error)
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
@@ -855,9 +913,16 @@ The order of rows in the result is undefined and may change in the future releas
   to each column name, which is passed to it as a `String`. Note that `renamecols`
   does not affect `on` columns, whose names are always taken from the left
   data frame and left unchanged.
-
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -875,82 +940,85 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> outerjoin(name, job, on = :ID)
 4×3 DataFrame
-│ Row │ ID    │ Name      │ Job     │
-│     │ Int64 │ String?   │ String? │
-├─────┼───────┼───────────┼─────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer  │
-│ 2   │ 2     │ Jane Doe  │ Doctor  │
-│ 3   │ 3     │ Joe Blogs │ missing │
-│ 4   │ 4     │ missing   │ Farmer  │
+ Row │ ID     Name       Job
+     │ Int64  String?    String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
+   4 │     4  missing    Farmer
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> rightjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
 3×3 DataFrame
-│ Row │ ID    │ Name_left │ Job_right │
-│     │ Int64 │ String?   │ String    │
-├─────┼───────┼───────────┼───────────┤
-│ 1   │ 1     │ John Doe  │ Lawyer    │
-│ 2   │ 2     │ Jane Doe  │ Doctor    │
-│ 3   │ 4     │ missing   │ Farmer    │
+ Row │ ID     Name_left  Job_right
+     │ Int64  String?    String
+─────┼─────────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     4  missing    Farmer
 
 julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
 3×3 DataFrame
-│ Row │ ID    │ NAME     │ job    │
-│     │ Int64 │ String?  │ String │
-├─────┼───────┼──────────┼────────┤
-│ 1   │ 1     │ John Doe │ Lawyer │
-│ 2   │ 2     │ Jane Doe │ Doctor │
-│ 3   │ 4     │ missing  │ Farmer │
+ Row │ ID     NAME      job
+     │ Int64  String?   String
+─────┼─────────────────────────
+   1 │     1  John Doe  Lawyer
+   2 │     2  Jane Doe  Doctor
+   3 │     4  missing   Farmer
 ```
 """
 function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          renamecols::Pair=identity => identity)
+          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
-        throw(ArgumentError("renamecols keyword argument must be a `Pair`" *
-                            " containing functions, strings, or `Symbol`s"))
+        throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
+                            "containing functions, strings, or `Symbol`s"))
     end
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
                  indicator=indicator, validate=validate,
-                 left_rename=first(renamecols), right_rename=last(renamecols))
+                 left_rename=first(renamecols), right_rename=last(renamecols),
+                 matchmissing=matchmissing)
 end
 
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+          matchmissing::Symbol=:error) =
     outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
-              dfs..., on=on, makeunique=makeunique, validate=validate)
+              dfs..., on=on, makeunique=makeunique, validate=validate,
+              matchmissing=matchmissing)
 
 """
-    semijoin(df1, df2; on, makeunique = false, validate = (false, false))
+    semijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
 
 Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
@@ -980,6 +1048,14 @@ The order of rows in the result is undefined and may change in the future releas
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -992,65 +1068,66 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> semijoin(name, job, on = :ID)
 2×2 DataFrame
-│ Row │ ID    │ Name     │
-│     │ Int64 │ String   │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ John Doe │
-│ 2   │ 2     │ Jane Doe │
+ Row │ ID     Name
+     │ Int64  String
+─────┼─────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> semijoin(name, job2, on = :ID => :identifier)
 2×2 DataFrame
-│ Row │ ID    │ Name     │
-│     │ Int64 │ String   │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ John Doe │
-│ 2   │ 2     │ Jane Doe │
+ Row │ ID     Name
+     │ Int64  String
+─────┼─────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
 
 julia> semijoin(name, job2, on = [:ID => :identifier])
 2×2 DataFrame
-│ Row │ ID    │ Name     │
-│     │ Int64 │ String   │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ John Doe │
-│ 2   │ 2     │ Jane Doe │
+ Row │ ID     Name
+     │ Int64  String
+─────┼─────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
 ```
 """
 semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+         matchmissing::Symbol=:error) =
     _join(df1, df2, on=on, kind=:semi, makeunique=makeunique,
           indicator=nothing, validate=validate,
-          left_rename=identity, right_rename=identity)
+          left_rename=identity, right_rename=identity, matchmissing=matchmissing)
 
 """
-    antijoin(df1, df2; on, makeunique = false, validate = (false, false))
+    antijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
 
 Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
@@ -1076,6 +1153,14 @@ The order of rows in the result is undefined and may change in the future releas
    Can be a tuple or a pair, with the first element indicating whether to
    run check for `df1` and the second element for `df2`.
    By default no check is performed.
+- `matchmissing` : if equal to `:error` throw an error if `missing` is present
+  in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
+  matched (`isequal` is used for comparisons of rows for equality)
+
+It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
+imaginary part of the number. If you need to perform a join on such values use
+CategoricalArrays.jl and transform a column containing such values into a
+`CategoricalVector`.
 
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
@@ -1088,59 +1173,61 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ John Doe  │
-│ 2   │ 2     │ Jane Doe  │
-│ 3   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     1  John Doe
+   2 │     2  Jane Doe
+   3 │     3  Joe Blogs
 
 julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ Lawyer │
-│ 2   │ 2     │ Doctor │
-│ 3   │ 4     │ Farmer │
+ Row │ ID     Job
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Lawyer
+   2 │     2  Doctor
+   3 │     4  Farmer
 
 julia> antijoin(name, job, on = :ID)
 1×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     3  Joe Blogs
 
 julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
-│ Row │ identifier │ Job    │
-│     │ Int64      │ String │
-├─────┼────────────┼────────┤
-│ 1   │ 1          │ Lawyer │
-│ 2   │ 2          │ Doctor │
-│ 3   │ 4          │ Farmer │
+ Row │ identifier  Job
+     │ Int64       String
+─────┼────────────────────
+   1 │          1  Lawyer
+   2 │          2  Doctor
+   3 │          4  Farmer
 
 julia> antijoin(name, job2, on = :ID => :identifier)
 1×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     3  Joe Blogs
 
 julia> antijoin(name, job2, on = [:ID => :identifier])
 1×2 DataFrame
-│ Row │ ID    │ Name      │
-│     │ Int64 │ String    │
-├─────┼───────┼───────────┤
-│ 1   │ 3     │ Joe Blogs │
+ Row │ ID     Name
+     │ Int64  String
+─────┼──────────────────
+   1 │     3  Joe Blogs
 ```
 """
 antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false)) =
+         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+         matchmissing::Symbol=:error) =
     _join(df1, df2, on=on, kind=:anti, makeunique=makeunique,
           indicator=nothing, validate=validate,
-          left_rename=identity, right_rename=identity)
+          left_rename=identity, right_rename=identity,
+          matchmissing=matchmissing)
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)
@@ -1170,32 +1257,32 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 ```julia
 julia> df1 = DataFrame(X=1:3)
 3×1 DataFrame
-│ Row │ X     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
-│ 3   │ 3     │
+ Row │ X
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
 
 julia> df2 = DataFrame(Y=["a", "b"])
 2×1 DataFrame
-│ Row │ Y      │
-│     │ String │
-├─────┼────────┤
-│ 1   │ a      │
-│ 2   │ b      │
+ Row │ Y
+     │ String
+─────┼────────
+   1 │ a
+   2 │ b
 
 julia> crossjoin(df1, df2)
 6×2 DataFrame
-│ Row │ X     │ Y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ a      │
-│ 2   │ 1     │ b      │
-│ 3   │ 2     │ a      │
-│ 4   │ 2     │ b      │
-│ 5   │ 3     │ a      │
-│ 6   │ 3     │ b      │
+ Row │ X      Y
+     │ Int64  String
+─────┼───────────────
+   1 │     1  a
+   2 │     1  b
+   3 │     2  a
+   4 │     2  b
+   5 │     3  a
+   6 │     3  b
 ```
 """
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)

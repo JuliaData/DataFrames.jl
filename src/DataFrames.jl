@@ -1,12 +1,13 @@
 module DataFrames
 
 using Statistics, Printf, REPL
-using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays, CategoricalArrays
+using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using Missings, InvertedIndices
-using Base.Sort, Base.Order, Base.Iterators
+using Base.Sort, Base.Order, Base.Iterators, Base.Threads
 using TableTraits, IteratorInterfaceExtensions
 import LinearAlgebra: norm
 using Markdown
+using PrettyTables
 
 import DataAPI,
        DataAPI.All,
@@ -53,6 +54,7 @@ export AbstractDataFrame,
        nrow,
        order,
        outerjoin,
+       PrettyTables,
        rename!,
        rename,
        repeat!,
@@ -62,6 +64,8 @@ export AbstractDataFrame,
        select,
        semijoin,
        stack,
+       subset,
+       subset!,
        transform,
        transform!,
        unique!,
@@ -89,6 +93,23 @@ else
     export only
 end
 
+if VERSION >= v"1.3"
+    using Base.Threads: @spawn
+else
+    # This is the definition of @async in Base
+    macro spawn(expr)
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            local task = Task($thunk)
+            if $(Expr(:isdefined, var))
+                push!($var, task)
+            end
+            schedule(task)
+        end
+    end
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 
@@ -102,12 +123,17 @@ include("dataframerow/utils.jl")
 include("other/broadcasting.jl")
 
 include("abstractdataframe/selection.jl")
+include("abstractdataframe/subset.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
+include("groupeddataframe/callprocessing.jl")
+include("groupeddataframe/fastaggregates.jl")
+include("groupeddataframe/complextransforms.jl")
 
+include("abstractdataframe/prettytables.jl")
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
@@ -119,5 +145,8 @@ include("dataframe/sort.jl")
 include("deprecated.jl")
 
 include("other/tables.jl")
+
+include("other/precompile.jl")
+precompile()
 
 end # module DataFrames

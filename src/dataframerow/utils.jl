@@ -23,6 +23,7 @@ end
 function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
                        v::AbstractVector{T},
+                       rp::Nothing,
                        firstcol::Bool) where T
     @inbounds for i in eachindex(h)
         el = v[i]
@@ -37,17 +38,24 @@ end
 # should give the same hash as AbstractVector{T}
 function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
-                       v::AbstractCategoricalVector,
+                       v::AbstractVector,
+                       rp::Any,
                        firstcol::Bool)
-    levs = levels(v)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
-    if firstcol
-        hashes = Vector{UInt}(undef, length(levs)+1)
-        hashes[1] = hash(missing)
-        hashes[2:end] .= hash.(levs)
-        @inbounds for (i, ref) in enumerate(v.refs)
-            h[i] = hashes[ref+1]
+    # also when the number of values in the pool is more than half the length
+    # of the vector avoid using this path. 50% is roughly based on benchmarks
+    if firstcol && 2 * length(rp) < length(v)
+        hashes = Vector{UInt}(undef, length(rp))
+        @inbounds for (i, v) in zip(eachindex(hashes), rp)
+            hashes[i] = hash(v)
+        end
+
+        fi = firstindex(rp)
+        # here we rely on the fact that `DataAPI.refpool` has a continuous
+        # block of indices
+        @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
+            h[i] = hashes[ref+1-fi]
         end
     else
         @inbounds for (i, x) in enumerate(v)
@@ -67,7 +75,8 @@ function hashrows(cols::Tuple{Vararg{AbstractVector}}, skipmissing::Bool)
     rhashes = zeros(UInt, len)
     missings = fill(false, skipmissing ? len : 0)
     for (i, col) in enumerate(cols)
-        hashrows_col!(rhashes, missings, col, i == 1)
+        rp = DataAPI.refpool(col)
+        hashrows_col!(rhashes, missings, col, rp, i == 1)
     end
     return (rhashes, missings)
 end
@@ -111,9 +120,12 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
-    # but using open addressing with a table with as many slots as rows
-    sz = Base._tablesz(length(rhashes))
-    @assert sz >= length(rhashes)
+    # but using open addressing with a table with at least 5/4 as many slots as rows
+    # (rounded up to nearest power of 2) to avoid performance degradation
+    # in a corner case of groups having exactly one row
+    sz = max(1 + ((5 * length(rhashes)) >> 2), 16)
+    sz = 1 << (8 * sizeof(sz) - leading_zeros(sz - 1))
+    @assert 4 * sz >= 5 * length(rhashes)
     szm1 = sz-1
     gslots = zeros(Int, sz)
     # If missings are to be skipped, they will all go to group 0,
@@ -151,8 +163,8 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
 end
 
 # Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
-function row_group_slots(cols::NTuple{N,<:AbstractVector},
-                         refpools::NTuple{N,<:AbstractVector},
+function row_group_slots(cols::NTuple{N, <:AbstractVector},
+                         refpools::NTuple{N, <:AbstractVector},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false,
@@ -202,7 +214,7 @@ function row_group_slots(cols::NTuple{N,<:AbstractVector},
     end
 
     seen = fill(false, ngroups)
-    strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N,Int}
+    strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N, Int}
     firstinds = map(firstindex, refpools)
     if sort
         nminds = map(refpools, missinginds) do refpool, missingind

@@ -6,14 +6,14 @@
 
 # Iteration by rows
 """
-    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D,S}}
+    DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow{D, S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame,S} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame, S} <: AbstractVector{DataFrameRow{D, S}}
     df::D
 end
 
@@ -21,8 +21,8 @@ Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
 Base.summary(io::IO, dfrs::DataFrameRows) = print(io, summary(dfrs))
 
 Base.iterate(::AbstractDataFrame) =
-    error("AbstractDataFrame is not iterable. Use eachrow(df) to get a row iterator" *
-          " or eachcol(df) to get a column iterator")
+    error("AbstractDataFrame is not iterable. Use eachrow(df) to get a row iterator " *
+          "or eachcol(df) to get a column iterator")
 
 """
     eachrow(df::AbstractDataFrame)
@@ -38,28 +38,23 @@ but also passes information on the `eltypes` of the columns of `df`.
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> eachrow(df)
-4-element DataFrameRows:
- DataFrameRow (row 1)
-x  1
-y  11
- DataFrameRow (row 2)
-x  2
-y  12
- DataFrameRow (row 3)
-x  3
-y  13
- DataFrameRow (row 4)
-x  4
-y  14
+4×2 DataFrameRows
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> copy.(eachrow(df))
 4-element Array{NamedTuple{(:x, :y),Tuple{Int64,Int64}},1}:
@@ -68,14 +63,13 @@ julia> copy.(eachrow(df))
  (x = 3, y = 13)
  (x = 4, y = 14)
 
-julia> eachrow(view(df, [4,3], [2,1]))
-2-element DataFrameRows:
- DataFrameRow (row 4)
-y  14
-x  4
- DataFrameRow (row 3)
-y  13
-x  3
+julia> eachrow(view(df, [4, 3], [2, 1]))
+2×2 DataFrameRows
+ Row │ y      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │    14      4
+   2 │    13      3
 ```
 """
 eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df)
@@ -140,13 +134,23 @@ $DATAFRAMECOLUMNS_DOCSTR
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
+
+julia> eachcol(df)
+4×2 DataFrameColumns
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> collect(eachcol(df))
 2-element Array{AbstractArray{T,1} where T,1}:
@@ -172,14 +176,25 @@ Base.IteratorSize(::Type{<:DataFrameColumns}) = Base.HasShape{1}()
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
 
 function Base.size(itr::DataFrameColumns, d::Integer)
-    d < 1 && throw(ArgumentError("dimension out of range"))
-    return d == 1 ? size(itr)[1] : 1
+    d != 1 && throw(ArgumentError("dimension out of range"))
+    return size(itr)[1]
 end
+
+Base.ndims(::DataFrameColumns) = 1
+Base.ndims(::Type{<:DataFrameColumns}) = 1
 
 Base.length(itr::DataFrameColumns) = size(itr)[1]
 Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
+
 Base.firstindex(itr::DataFrameColumns) = 1
 Base.lastindex(itr::DataFrameColumns) = length(itr)
+
+if VERSION < v"1.6"
+    Base.firstindex(itr::DataFrameColumns, i::Integer) = first(axes(itr, i))
+    Base.lastindex(itr::DataFrameColumns, i::Integer) = last(axes(itr, i))
+end
+Base.axes(itr::DataFrameColumns, i::Integer) = Base.OneTo(size(itr, i))
+
 Base.iterate(itr::DataFrameColumns, i::Integer=1) =
     i <= length(itr) ? (itr[i], i + 1) : nothing
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =
@@ -249,77 +264,79 @@ Base.names(itr::Union{DataFrameRows, DataFrameColumns}, cols) = names(parent(itr
 function Base.show(io::IO, dfrs::DataFrameRows;
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
-                   splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
                    eltypes::Bool = true,
-                   truncate::Int = 32)
+                   truncate::Int = 32,
+                   kwargs...)
     df = parent(dfrs)
-    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameRows")
-    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false, eltypes=eltypes, truncstring=truncate)
+    title = summary ? "$(nrow(df))×$(ncol(df)) DataFrameRows" : ""
+    _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=false, eltypes=eltypes, truncate=truncate, title=title,
+          kwargs...)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfrs::DataFrameRows;
           allrows::Bool = !get(io, :limit, false),
           allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(io, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(io, dfrs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(dfrs::DataFrameRows;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
-          splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, dfrs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, dfrs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 function Base.show(io::IO, dfcs::DataFrameColumns;
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
-                   splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
                    eltypes::Bool = true,
-                   truncate::Int = 32)
+                   truncate::Int = 32,
+                   kwargs...)
     df = parent(dfcs)
-    summary && print(io, "$(nrow(df))×$(ncol(df)) DataFrameColumns")
-    _show(io, parent(dfcs), allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=false, eltypes=eltypes, truncstring=truncate)
+    title = summary ? "$(nrow(df))×$(ncol(df)) DataFrameColumns" : ""
+    _show(io, parent(dfcs); allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+          summary=false, eltypes=eltypes, truncate=truncate, title=title,
+          kwargs...)
 end
 
 Base.show(io::IO, mime::MIME"text/plain", dfcs::DataFrameColumns;
           allrows::Bool = !get(io, :limit, false),
           allcols::Bool = !get(io, :limit, false),
-          splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(io, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(io, dfcs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(dfcs::DataFrameColumns;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
-          splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
-          truncate::Int = 32) =
-    show(stdout, dfcs, allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary, eltypes=eltypes, truncate=truncate)
+          truncate::Int = 32,
+          kwargs...) =
+    show(stdout, dfcs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+         summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 """
-    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+    mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
 
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -332,26 +349,26 @@ Note that `mapcols` guarantees not to reuse the columns from `df` in the returne
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> mapcols(x -> x.^2, df)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 121   │
-│ 2   │ 4     │ 144   │
-│ 3   │ 9     │ 169   │
-│ 4   │ 16    │ 196   │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1    121
+   2 │     4    144
+   3 │     9    169
+   4 │    16    196
 ```
 """
-function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     vs = AbstractVector[]
     seenscalar = false
@@ -376,7 +393,7 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
 end
 
 """
-    mapcols!(f::Union{Function,Type}, df::DataFrame)
+    mapcols!(f::Union{Function, Type}, df::DataFrame)
 
 Update a `DataFrame` in-place where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -388,28 +405,28 @@ Note that `mapcols!` reuses the columns from `df` if they are returned by `f`.
 ```jldoctest
 julia> df = DataFrame(x=1:4, y=11:14)
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     11
+   2 │     2     12
+   3 │     3     13
+   4 │     4     14
 
 julia> mapcols!(x -> x.^2, df);
 
 julia> df
 4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 121   │
-│ 2   │ 4     │ 144   │
-│ 3   │ 9     │ 169   │
-│ 4   │ 16    │ 196   │
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1    121
+   2 │     4    144
+   3 │     9    169
+   4 │    16    196
 ```
 """
-function mapcols!(f::Union{Function,Type}, df::DataFrame)
+function mapcols!(f::Union{Function, Type}, df::DataFrame)
     # note: `f` must return a consistent length
     ncol(df) == 0 && return df # skip if no columns
 
@@ -423,7 +440,7 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame)
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
             end
             seenvector = true
-            push!(vs, fv)
+            push!(vs, fv isa AbstractRange ? collect(fv) : fv)
         else
             if seenvector
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
@@ -437,7 +454,16 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame)
     if len_min != len_max
         throw(DimensionMismatch("lengths of returned vectors must be identical"))
     end
-    _columns(df) .= vs
+
+    for (i, col) in enumerate(vs)
+        firstindex(col) != 1 && _onebased_check_error(i, col)
+    end
+
+    @assert length(vs) == ncol(df)
+    raw_columns = _columns(df)
+    for i in 1:ncol(df)
+        raw_columns[i] = vs[i]
+    end
 
     return df
 end

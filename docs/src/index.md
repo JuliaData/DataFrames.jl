@@ -3,11 +3,16 @@
 Welcome to the DataFrames.jl documentation!
 
 This resource aims to teach you everything you need to know to get up and
-running with tabular data manipulation using the DataFrames.jl package. For more
-illustrations of its usage in conjunction with other packages, the [DataFrames
-Tutorial using Jupyter
-Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/) is a good
-complementary resource.
+running with tabular data manipulation using the DataFrames.jl package.
+
+For more illustrations of DataFrames.jl usage, in particular in conjunction with
+other packages you can check-out the following resources
+(they are kept up to date with the released version of DataFrames.jl):
+* [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/)
+* [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
+* [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
+* [JuliaCon 2019](https://github.com/bkamins/JuliaCon2019-DataFrames-Tutorial), [JuliaCon 2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial), and [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020) tutorials
+* [DataFrames.jl showcase](https://github.com/bkamins/DataFrames-Showcase)
 
 ## What is DataFrames.jl?
 
@@ -35,6 +40,9 @@ integrated they are with DataFrames.jl.
 
 
 - **Statistics**
+    - [StatsKit.jl](https://github.com/JuliaStats/StatsKit.jl): A convenience
+      meta-package which loads a set of essential packages for statistics,
+      including those mentioned below in this section and DataFrames.jl itself.
     - [Statistics](https://docs.julialang.org/en/v1/stdlib/Statistics/):
       The Julia standard library comes with a wide range of statistics functionality,
       but to gain access to these functions you must call `using Statistics`.
@@ -112,10 +120,9 @@ integrated they are with DataFrames.jl.
 - **IO**:
     - DataFrames.jl work well with a range of formats, including
       CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
-      Stata, SPSS, and SAS files (using
-      [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
-      and reading and writing parquet files
-      (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
+      Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
+      Stata, SPSS, and SAS files (using [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
+      and reading and writing parquet files (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it

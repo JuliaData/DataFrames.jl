@@ -22,23 +22,209 @@ Not meant to be constructed directly, see `groupby`.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
-    cols::Vector{Symbol}                 # column names used for grouping
-    groups::Vector{Int}                  # group indices for each row in 0:ngroups, 0 skipped
-    idx::Union{Vector{Int},Nothing}      # indexing vector sorting rows into groups
-    starts::Union{Vector{Int},Nothing}   # starts of groups after permutation by idx
-    ends::Union{Vector{Int},Nothing}     # ends of groups after permutation by idx
-    ngroups::Int                         # number of groups
-    keymap::Union{Dict{Any,Int},Nothing} # mapping of key tuples to group indices
-    lazy_lock::Threads.ReentrantLock     # lock is needed to make lazy operations
-                                         # thread safe
+    cols::Vector{Symbol}                   # column names used for grouping
+    groups::Vector{Int}                    # group indices for each row in 0:ngroups, 0 skipped
+    idx::Union{Vector{Int}, Nothing}       # indexing vector sorting rows into groups
+    starts::Union{Vector{Int}, Nothing}    # starts of groups after permutation by idx
+    ends::Union{Vector{Int}, Nothing}      # ends of groups after permutation by idx
+    ngroups::Int                           # number of groups
+    keymap::Union{Dict{Any, Int}, Nothing} # mapping of key tuples to group indices
+    lazy_lock::Threads.ReentrantLock       # lock is needed to make lazy operations
+                                           # thread safe
+end
+
+"""
+    groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
+
+Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
+into row groups.
+
+# Arguments
+- `df` : an `AbstractDataFrame` to split
+- `cols` : data frame columns to group by. Can be any column selector
+  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `sort` : whether to sort groups according to the values of the grouping columns
+  `cols`; if `sort=false` then the order of groups in the result is undefined
+  and may change in future releases. In the current implementation
+  groups are ordered following the order of appearance of values in the grouping
+  columns, except when all grouping columns provide non-`nothing`
+  `DataAPI.refpool` in which case the order of groups follows the order of
+  values returned by `DataAPI.refpool`. As a particular application of this rule
+  if all `cols` are `CategoricalVector`s then groups are always sorted
+  irrespective of the value of `sort`.
+- `skipmissing` : whether to skip groups with `missing` values in one of the
+  grouping columns `cols`
+
+# Details
+An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
+for each grouping into `df`.
+Within each group, the order of rows in `df` is preserved.
+
+`cols` can be any valid data frame indexing expression.
+In particular if it is an empty vector then a single-group `GroupedDataFrame`
+is created.
+
+A `GroupedDataFrame` also supports
+indexing by groups, `map` (which applies a function to each group)
+and `combine` (which applies a function to each group
+and combines the result into a data frame).
+
+`GroupedDataFrame` also supports the dictionary interface. The keys are
+[`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
+which can also be used to get the values of the grouping columns for each group.
+`Tuples` and `NamedTuple`s containing the values of the grouping columns (in the
+same order as the `cols` argument) are also accepted as indices. Finally,
+an `AbstractDict` can be used to index into a grouped data frame where
+the keys are column names of the data frame. The order of the keys does
+not matter in this case.
+
+# See also
+
+[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
+
+# Examples
+```julia
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a)
+GroupedDataFrame with 4 groups based on key: a
+First Group (2 rows): a = 1
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
+⋮
+Last Group (2 rows): a = 4
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4      1      4
+   2 │     4      1      8
+
+julia> gd[1]
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
+
+julia> last(gd)
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4      1      4
+   2 │     4      1      8
+
+julia> gd[(a=3,)]
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
+
+julia> gd[Dict("a" => 3)]
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
+
+julia> gd[(3,)]
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
+
+julia> k = first(keys(gd))
+GroupKey: (a = 1,)
+
+julia> gd[k]
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
+
+julia> for g in gd
+           println(g)
+       end
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      2
+   2 │     2      1      6
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     3      2      3
+   2 │     3      2      7
+2×3 SubDataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     4      1      4
+   2 │     4      1      8
+```
+"""
+function groupby(df::AbstractDataFrame, cols;
+                 sort::Bool=false, skipmissing::Bool=false)
+    _check_consistency(df)
+    idxcols = index(df)[cols]
+    if isempty(idxcols)
+        return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
+                                nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
+                                nothing, Threads.ReentrantLock())
+    end
+    sdf = select(df, idxcols, copycols=false)
+
+    groups = Vector{Int}(undef, nrow(df))
+    ngroups, rhashes, gslots, sorted =
+        row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
+                        groups, skipmissing, sort)
+
+    gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
+                          Threads.ReentrantLock())
+
+    # sort groups if row_group_slots hasn't already done that
+    if sort && !sorted
+        # Find index of representative row for each group
+        idx = Vector{Int}(undef, length(gd))
+        fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
+        group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
+        groups = gd.groups
+        @inbounds for i in eachindex(groups)
+            gix = groups[i]
+            groups[i] = gix == 0 ? 0 : group_invperm[gix]
+        end
+    end
+
+    return gd
 end
 
 function genkeymap(gd, cols)
-    # currently we use Dict{Any,Int} because then field :keymap in GroupedDataFrame
+    # currently we use Dict{Any, Int} because then field :keymap in GroupedDataFrame
     # has a concrete type which makes the access to it faster as we do not have a dynamic
     # dispatch when indexing into it. In the future an optimization of this approach
     # can be investigated (also taking compilation time into account).
-    d = Dict{Any,Int}()
+    d = Dict{Any, Int}()
     gdidx = gd.idx
     sizehint!(d, length(gd.starts))
     for (i, s) in enumerate(gd.starts)
@@ -68,7 +254,7 @@ function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
                 end
             end
         end
-        return getfield(gd, f)::Dict{Any,Int}
+        return getfield(gd, f)::Dict{Any, Int}
     else
         return getfield(gd, f)
     end
@@ -109,7 +295,7 @@ function DataFrame(gd::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=tru
     gdidx = gd.idx
     idx = similar(gdidx)
     doff = 1
-    for (s,e) in zip(gd.starts, gd.ends)
+    for (s, e) in zip(gd.starts, gd.ends)
         n = e - s + 1
         copyto!(idx, doff, gdidx, s, n)
         doff += n
@@ -194,7 +380,21 @@ function Base.iterate(gd::GroupedDataFrame, i=1)
     end
 end
 
-Compat.lastindex(gd::GroupedDataFrame) = gd.ngroups
+Base.size(gd::GroupedDataFrame) = (length(gd),)
+Base.size(gd::GroupedDataFrame, i::Integer) = size(gd)[i]
+
+Base.ndims(::GroupedDataFrame) = 1
+Base.ndims(::Type{<:GroupedDataFrame}) = 1
+
+Base.firstindex(gd::GroupedDataFrame) = 1
+Base.lastindex(gd::GroupedDataFrame) = gd.ngroups
+
+if VERSION < v"1.6"
+    Base.firstindex(gd::GroupedDataFrame, i::Integer) = first(axes(gd, i))
+    Base.lastindex(gd::GroupedDataFrame, i::Integer) = last(axes(gd, i))
+end
+Base.axes(gd::GroupedDataFrame, i::Integer) = Base.OneTo(size(gd, i))
+
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
@@ -271,13 +471,29 @@ end
 
 Base.parent(key::GroupKey) = getfield(key, :parent)
 Base.length(key::GroupKey) = length(parent(key).cols)
+
+Base.size(key::GroupKey) = (length(key),)
+Base.size(key::GroupKey, i::Integer) = size(key)[i]
+
+Base.ndims(::GroupKey) = 1
+Base.ndims(::Type{<:GroupKey}) = 1
+
+Base.firstindex(key::GroupKey) = 1
+Base.lastindex(key::GroupKey) = length(key)
+
+if VERSION < v"1.6"
+    Base.firstindex(key::GroupKey, i::Integer) = first(axes(key, i))
+    Base.lastindex(key::GroupKey, i::Integer) = last(axes(key, i))
+end
+Base.axes(key::GroupKey, i::Integer) = Base.OneTo(size(key, i))
+
 Base.names(key::GroupKey) = string.(parent(key).cols)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = copy(parent(key).cols)
 Base.keys(key::GroupKey) = propertynames(key)
 Base.haskey(key::GroupKey, idx::Symbol) = idx in parent(key).cols
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
-Base.haskey(key::GroupKey, idx::Union{Signed,Unsigned}) = 1 <= idx <= length(key)
+Base.haskey(key::GroupKey, idx::Union{Signed, Unsigned}) = 1 <= idx <= length(key)
 Base.values(key::GroupKey) = Tuple(_groupvalues(parent(key), getfield(key, :idx)))
 Base.IteratorEltype(::Type{<:GroupKey}) = Base.EltypeUnknown()
 Base.iterate(key::GroupKey, i::Integer=1) =
@@ -407,7 +623,7 @@ function _dict_to_tuple(key::AbstractDict{Symbol}, gd::GroupedDataFrame)
     return ntuple(i -> key[gd.cols[i]], length(gd.cols))
 end
 
-Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol},AbstractDict{<:AbstractString}}) =
+Base.to_index(gd::GroupedDataFrame, key::Union{AbstractDict{Symbol}, AbstractDict{<:AbstractString}}) =
     Base.to_index(gd, _dict_to_tuple(key, gd))
 
 # Array of (possibly non-standard) indices
@@ -504,18 +720,18 @@ julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
 julia> gd = groupby(df, [:a, :b])
 GroupedDataFrame with 6 groups based on keys: a, b
 First Group (2 rows): a = :foo, b = 2
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 2     │ 7     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ foo         2      1
+   2 │ foo         2      7
 ⋮
 Last Group (2 rows): a = :baz, b = 1
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 1     │ 6     │
-│ 2   │ baz    │ 1     │ 12    │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ baz         1      6
+   2 │ baz         1     12
 
 julia> keys(gd)
 6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
@@ -525,16 +741,14 @@ julia> keys(gd)
  GroupKey: (a = :foo, b = 1)
  GroupKey: (a = :bar, b = 2)
  GroupKey: (a = :baz, b = 1)
-```
 
-`GroupKey` objects behave similarly to `NamedTuple`s:
-
-```jldoctest groupkeys
 julia> k = keys(gd)[1]
 GroupKey: (a = :foo, b = 2)
 
 julia> keys(k)
-(:a, :b)
+2-element Array{Symbol,1}:
+ :a
+ :b
 
 julia> values(k)  # Same as Tuple(k)
 (:foo, 2)
@@ -558,11 +772,11 @@ Keys can be used as indices to retrieve the corresponding group from their
 ```jldoctest groupkeys
 julia> gd[k]
 2×3 SubDataFrame
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 2     │ 7     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ foo         2      1
+   2 │ foo         2      7
 
 julia> gd[keys(gd)[1]] == gd[1]
 true
@@ -605,7 +819,7 @@ end
 Base.haskey(gd::GroupedDataFrame, key::AbstractDict{<:Union{Symbol, <:AbstractString}}) =
     haskey(gd, _dict_to_tuple(key, gd))
 
-Base.haskey(gd::GroupedDataFrame, key::Union{Signed,Unsigned}) =
+Base.haskey(gd::GroupedDataFrame, key::Union{Signed, Unsigned}) =
     1 <= key <= length(gd)
 
 """
@@ -627,34 +841,34 @@ julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[2]),
 julia> gd = groupby(df, :a)
 GroupedDataFrame with 3 groups based on key: a
 First Group (2 rows): a = :foo
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ foo    │ 2     │ 1     │
-│ 2   │ foo    │ 1     │ 4     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ foo         2      1
+   2 │ foo         1      4
 ⋮
 Last Group (2 rows): a = :baz
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 2     │ 3     │
-│ 2   │ baz    │ 1     │ 6     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ baz         2      3
+   2 │ baz         1      6
 
 julia> get(gd, (a=:bar,), nothing)
 2×3 SubDataFrame
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ bar    │ 1     │ 2     │
-│ 2   │ bar    │ 2     │ 5     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ bar         1      2
+   2 │ bar         2      5
 
 julia> get(gd, (:baz,), nothing)
 2×3 SubDataFrame
-│ Row │ a      │ b     │ c     │
-│     │ Symbol │ Int64 │ Int64 │
-├─────┼────────┼───────┼───────┤
-│ 1   │ baz    │ 2     │ 3     │
-│ 2   │ baz    │ 1     │ 6     │
+ Row │ a       b      c
+     │ Symbol  Int64  Int64
+─────┼──────────────────────
+   1 │ baz         2      3
+   2 │ baz         1      6
 
 julia> get(gd, (:qux,), nothing)
 ```
@@ -691,33 +905,32 @@ julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
 julia> gd = groupby(df, :g)
 GroupedDataFrame with 2 groups based on key: g
 First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 ⋮
 Last Group (1 row): g = 2
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 2     │ 'b'  │
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     2  b
 
 julia> filter(x -> x.x[1] == 'a', gd)
 GroupedDataFrame with 1 group based on key: g
 First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 
 julia> filter(:x => x -> x[1] == 'a', gd)
 GroupedDataFrame with 1 group based on key: g
 First Group (1 row): g = 1
-│ Row │ g     │ x    │
-│     │ Int64 │ Char │
-├─────┼───────┼──────┤
-│ 1   │ 1     │ 'a'  │
-
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 ```
 """
 Base.filter(f, gdf::GroupedDataFrame) =

@@ -59,7 +59,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 
 `getindex` on `DataFrame`:
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[!, col][row]`;
-* `df[CartesianIndex(row, col)]` -> the same as `df[row,col]`;
+* `df[CartesianIndex(row, col)]` -> the same as `df[row, col]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df`;
 * `df[rows, col]` -> a copy of the vector `df[!, col]` with only the entries corresponding to `rows` selected,
                      the same as `df[!, col][rows]`;
@@ -79,7 +79,7 @@ a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a
 
 `getindex` on `SubDataFrame`:
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
-* `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row,col]`;
+* `sdf[CartesianIndex(row, col)]` -> the same as `sdf[row, col]`;
 * `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)`;
 * `sdf[rows, col]` -> a copy of `sdf[!, col]` with only rows `rows` selected, the same as `sdf[!, col][rows]`;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `sdf[rows, col]` as a vector for each `col` in `cols`;
@@ -235,15 +235,32 @@ The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
 
 # Common API for types defined in DataFrames.jl
 
-This table presents return value types of calling `names`, `propertynames` and `keys`
+This table presents return value types of calling `names`, `propertynames`, `keys`, `length` and `ndims`
 on types exposed to the user by DataFrames.jl:
 
-| Type                | `names`          | `propertynames`  | `keys`           |
-|---------------------|------------------|------------------|------------------|
-| `AbstractDataFrame` | `Vector{String}` | `Vector{Symbol}` | undefined        |
-| `DataFrameRow`      | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` |
-| `DataFrameRows`     | `Vector{String}` | `Vector{Symbol}` | vector of `Int`  |
-| `DataFrameColumns`  | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` |
-| `GroupedDataFrame`  | `Vector{String}` | tuple of fields  | `GroupKeys`      |
-| `GroupKeys`         | undefined        | tuple of fields  | vector of `Int`  |
-| `GroupKey`          | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` |
+| Type                | `names`          | `propertynames`  | `keys`           | `length`  | `ndims` |
+|---------------------|------------------|------------------|------------------|-----------|---------|
+| `AbstractDataFrame` | `Vector{String}` | `Vector{Symbol}` | undefined        | undefined | `2`     |
+| `DataFrameRow`      | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` | `Int`     | `1`     |
+| `DataFrameRows`     | `Vector{String}` | `Vector{Symbol}` | vector of `Int`  | `Int`     | `1`     |
+| `DataFrameColumns`  | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` | `Int`     | `1`     |
+| `GroupedDataFrame`  | `Vector{String}` | tuple of fields  | `GroupKeys`      | `Int`     | `1`     |
+| `GroupKeys`         | undefined        | tuple of fields  | vector of `Int`  | `Int`     | `1`     |
+| `GroupKey`          | `Vector{String}` | `Vector{Symbol}` | `Vector{Symbol}` | `Int`     | `1`     |
+
+Additionally the above types `T` (i.e. `AbstractDataFrame`, `DataFrameRow`, `DataFrameRows`,
+`DataFrameColumns`, `GroupedDataFrame`, `GroupKeys`, `GroupKey`) the following methods are defined:
+* `size(::T)` returning a `Tuple` of `Int`.
+* `size(::T, ::Integer)` returning an `Int`.
+* `axes(::T)` returning a `Tuple` of `Int` vectors.
+* `axes(::T, ::Integer)` returning an `Int` vector for a valid dimension (except
+   `DataFrameRows` and `GroupKeys` for which `Base.OneTo(1)` is also returned for
+   a dimension higher than a valid one because they are `AbstractVector`).
+* `firstindex(::T)` returning `1` (except `AbstractDataFrame` for which it is undefined).
+* `firstindex(::T, ::Integer)` returning `1` for a valid dimension (except `DataFrameRows`
+   and `GroupKeys` for which `1` is also returned for a dimension higher than a valid one
+   because they are `AbstractVector`).
+* `lastindex(::T)` returning `Int` (except `AbstractDataFrame` for which it is undefined).
+* `lastindex(::T, ::Integer)` returning `Int` for a valid dimension  (except `DataFrameRows`
+   and `GroupKeys` for which `1` is also returned for a dimension higher than a valid one
+   because they are `AbstractVector`).

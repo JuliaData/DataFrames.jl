@@ -187,7 +187,7 @@ end
     @test Tables.columntable(df3) == nt
     @test Tables.columntable(df3) !== nt
 
-    v = [(a=1,b=2), (a=3, b=4)]
+    v = [(a=1, b=2), (a=3, b=4)]
     df = DataFrame(v)
     @test size(df) == (2, 2)
     @test df.a == [1, 3]
@@ -196,7 +196,7 @@ end
 end
 
 @testset "columnindex" begin
-    df = DataFrame(rand(3,4))
+    df = DataFrame(rand(3, 4), :auto)
 
     for x in (df, view(df, 1, :), view(df, 1:1, :))
         @test columnindex.(Ref(x), names(df)) == 1:4
@@ -217,32 +217,32 @@ end
 end
 
 @testset "eachrow and eachcol integration" begin
-    df = DataFrame(rand(3,4), [:a, :b, :c, :d])
+    df = DataFrame(rand(3, 4), [:a, :b, :c, :d])
 
     df2 = DataFrame(eachrow(df))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachrow(df), copycols=false)
     @test df == df2
-    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test all(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(pairs(eachcol(df)))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(pairs(eachcol(df)), copycols=false)
     @test df == df2
-    @test all(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test all(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
     @test df == df2
-    @test all(((a,b),) -> a == b, zip(eachcol(df), eachcol(df2)))
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test all(((a, b),) -> a == b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     df2 = DataFrame(eachcol(df))
     @test df == df2
-    @test !any(((a,b),) -> a === b, zip(eachcol(df), eachcol(df2)))
+    @test !any(((a, b),) -> a === b, zip(eachcol(df), eachcol(df2)))
 
     @test Tables.rowtable(df) == Tables.rowtable(eachrow(df))
     @test Tables.rowtable(df) == Tables.rowtable(eachcol(df))
@@ -262,6 +262,29 @@ end
     @test Tables.getcolumn(eachrow(df), 1) == Tables.getcolumn(df, 1)
     @test Tables.getcolumn(eachrow(df), :a) == Tables.getcolumn(df, :a)
     @test Tables.columnnames(eachrow(df)) == Tables.columnnames(df)
+end
+
+@testset "test constructor with vectors" begin
+    @test DataFrame(Any[]) == DataFrame()
+    df = DataFrame(typeof((1, 1))[])
+    @test names(df) == ["Column1", "Column2"]
+    @test size(df) == (0, 2)
+    @test eltype(df.Column1) == Int
+    df = DataFrame(typeof((a=1, b=1))[])
+    @test names(df) == ["a", "b"]
+    @test size(df) == (0, 2)
+    @test eltype(df.a) == Int
+    @test DataFrame(Vector[], :auto) == DataFrame()
+    @test DataFrame(Pair{Symbol, Vector}[], :auto) == DataFrame()
+    @test DataFrame(Pair[]) == DataFrame()
+    @test DataFrame([[1]], :auto) == DataFrame(x1=1)
+    @test DataFrame(Any[[1]], :auto) == DataFrame(x1=1)
+    @test DataFrame([:a => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any[:a => [1]]) == DataFrame(a=1)
+    @test DataFrame(["a" => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any["a" => [1]]) == DataFrame(a=1)
+    @test DataFrame([SubString("a", 1) => [1]]) == DataFrame(a=1)
+    @test DataFrame(Any[SubString("a", 1) => [1]]) == DataFrame(a=1)
 end
 
 end # module

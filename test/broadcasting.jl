@@ -4,29 +4,29 @@ using Test, DataFrames, PooledArrays, Random, CategoricalArrays
 
 const ≅ = isequal
 
-refdf = DataFrame(reshape(1.5:15.5, (3,5)))
+refdf = DataFrame(reshape(1.5:15.5, (3, 5)), :auto)
 
 @testset "CartesianIndex" begin
-    df = DataFrame(rand(2, 3))
+    df = DataFrame(rand(2, 3), :auto)
     for i in axes(df, 1), j in axes(df, 2)
-        @test df[i,j] == df[CartesianIndex(i,j)]
+        @test df[i, j] == df[CartesianIndex(i, j)]
         r = rand()
-        df[CartesianIndex(i,j)] = r
-        @test df[i,j] == r
+        df[CartesianIndex(i, j)] = r
+        @test df[i, j] == r
     end
-    @test_throws BoundsError df[CartesianIndex(0,1)]
-    @test_throws BoundsError df[CartesianIndex(0,0)]
-    @test_throws BoundsError df[CartesianIndex(1,0)]
-    @test_throws BoundsError df[CartesianIndex(5,1)]
-    @test_throws BoundsError df[CartesianIndex(5,5)]
-    @test_throws BoundsError df[CartesianIndex(1,5)]
+    @test_throws BoundsError df[CartesianIndex(0, 1)]
+    @test_throws BoundsError df[CartesianIndex(0, 0)]
+    @test_throws BoundsError df[CartesianIndex(1, 0)]
+    @test_throws BoundsError df[CartesianIndex(5, 1)]
+    @test_throws BoundsError df[CartesianIndex(5, 5)]
+    @test_throws BoundsError df[CartesianIndex(1, 5)]
 
-    @test_throws BoundsError df[CartesianIndex(0,1)] = 1
-    @test_throws ArgumentError df[CartesianIndex(0,0)] = 1
-    @test_throws ArgumentError df[CartesianIndex(1,0)] = 1
-    @test_throws BoundsError df[CartesianIndex(5,1)] = 1
-    @test_throws ArgumentError df[CartesianIndex(5,5)] = 1
-    @test_throws ArgumentError df[CartesianIndex(1,5)] = 1
+    @test_throws BoundsError df[CartesianIndex(0, 1)] = 1
+    @test_throws ArgumentError df[CartesianIndex(0, 0)] = 1
+    @test_throws ArgumentError df[CartesianIndex(1, 0)] = 1
+    @test_throws BoundsError df[CartesianIndex(5, 1)] = 1
+    @test_throws ArgumentError df[CartesianIndex(5, 5)] = 1
+    @test_throws ArgumentError df[CartesianIndex(1, 5)] = 1
 end
 
 @testset "broadcasting of AbstractDataFrame objects" begin
@@ -48,9 +48,9 @@ end
     df1 = copy(refdf)
     df2 = view(copy(refdf), :, :)
     @test (df1 .+ df2) ./ 2 == refdf
-    @test (df1 .- df2) == DataFrame(zeros(size(refdf)))
+    @test (df1 .- df2) == DataFrame(zeros(size(refdf)), names(refdf))
     @test (df1 .* df2) == refdf .^ 2
-    @test (df1 ./ df2) == DataFrame(ones(size(refdf)))
+    @test (df1 ./ df2) == DataFrame(ones(size(refdf)), names(refdf))
 end
 
 @testset "broadcasting of AbstractDataFrame objects thrown exceptions" begin
@@ -62,10 +62,10 @@ end
 
     @test_throws DimensionMismatch df .+ [1, 2]
     @test_throws DimensionMismatch df .+ [1 2]
-    @test_throws DimensionMismatch df .+ rand(2,2)
+    @test_throws DimensionMismatch df .+ rand(2, 2)
     @test_throws DimensionMismatch dfv .+ [1, 2]
     @test_throws DimensionMismatch dfv .+ [1 2]
-    @test_throws DimensionMismatch dfv .+ rand(2,2)
+    @test_throws DimensionMismatch dfv .+ rand(2, 2)
 
     df2 = copy(df)
     rename!(df2, [:x1, :x2, :x3, :x4, :y])
@@ -73,24 +73,33 @@ end
     @test_throws ArgumentError df .+ 1 .+ df2
 end
 
-@testset "broadcasting expansion" begin
+@testset "broadcasting data frames" begin
     df1 = DataFrame(x=1, y=2)
-    df2 = DataFrame(x=[1,11], y=[2,12])
-    @test df1 .+ df2 == DataFrame(x=[2,12], y=[4,14])
+    df2 = DataFrame(x=[1, 11], y=[2, 12])
+    @test df1 .+ df2 == DataFrame(x=[2, 12], y=[4, 14])
 
     df1 = DataFrame(x=1, y=2)
-    df2 = DataFrame(x=[1,11], y=[2,12])
+    df2 = DataFrame(x=[1, 11], y=[2, 12])
     x = df2.x
     y = df2.y
     df2 .+= df1
     @test df2.x === x
     @test df2.y === y
-    @test df2 == DataFrame(x=[2,12], y=[4,14])
+    @test df2 == DataFrame(x=[2, 12], y=[4, 14])
 
-    df = DataFrame(x=[1,11], y=[2,12])
+    df = DataFrame(x=[1, 11], y=[2, 12])
     dfv = view(df, 1:1, 1:2)
     df .-= dfv
-    @test df == DataFrame(x=[0,10], y=[0,10])
+    @test df == DataFrame(x=[0, 10], y=[0, 10])
+
+    @test DataFrame() .+ DataFrame() == DataFrame()
+    @test_throws ArgumentError DataFrame(a=1, b=1) .+ DataFrame(b=1, a=1)
+
+    df = DataFrame(a=1, b=2)
+    @test_throws ArgumentError df .= DataFrame(b=1, a=2)
+    @test_throws ArgumentError df .= DataFrame(a=1, c=2)
+    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(b=1, a=2)
+    @test_throws ArgumentError df[!, [:a, :b]] .= DataFrame(a=1, c=2)
 end
 
 @testset "broadcasting of AbstractDataFrame objects corner cases" begin
@@ -118,7 +127,7 @@ end
     for i in axes(df, 2)
         @test typeof(df2[!, i]) == typeof(df3[!, i])
     end
-    df4 = (x -> df[1,1]).(df)
+    df4 = (x -> df[1, 1]).(df)
     @test names(df4) == names(df)
     @test all(isa.(eachcol(df4), Ref(CategoricalArray)))
     @test all(eachcol(df4) .== Ref(categorical(["a", "a"])))
@@ -423,13 +432,13 @@ end
 
 @testset "normal data frame and data frame view in broadcasted assignment - two columns" begin
     df = copy(refdf)
-    df[:, [1,2]] .= Matrix(df[:, [1,2]]) .+ 1
+    df[:, [1, 2]] .= Matrix(df[:, [1, 2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [1,2]] .= Matrix(dfv[:, [1,2]]) .+ 1
+    dfv[:, [1, 2]] .= Matrix(dfv[:, [1, 2]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -438,13 +447,13 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [1,2]] .= Matrix(df[:, [1,2]]) .+ 1
+    df[:, [1, 2]] .= Matrix(df[:, [1, 2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [1,2]] .= Matrix(dfv[:, [1,2]]) .+ 1
+    dfv[:, [1, 2]] .= Matrix(dfv[:, [1, 2]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -453,15 +462,15 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [1,2]] .= Matrix(df[:, [1,2]]) .+ [1 4
-                                             2 5
-                                             3 6]
+    df[:, [1, 2]] .= Matrix(df[:, [1, 2]]) .+ [1 4
+                                               2 5
+                                               3 6]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df.x2 == [8.5, 10.5, 12.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [1,2]] .= Matrix(dfv[:, [1,2]]) .+ [1 3
+    dfv[:, [1, 2]] .= Matrix(dfv[:, [1, 2]]) .+ [1 3
                                                2 4]
     @test dfv.x3 == [8.5, 10.5]
     @test dfv.x4 == [13.5, 15.5]
@@ -471,15 +480,15 @@ end
                          6.5  12.5   9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [1,2]] .= Matrix(df[:, [1,2]]) .+ [1 4
-                                             2 5
-                                             3 6]
+    df[:, [1, 2]] .= Matrix(df[:, [1, 2]]) .+ [1 4
+                                               2 5
+                                               3 6]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df.x2 == [8.5, 10.5, 12.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [1,2]] .= Matrix(dfv[:, [1,2]]) .+ [1 3
+    dfv[:, [1, 2]] .= Matrix(dfv[:, [1, 2]]) .+ [1 3
                                                2 4]
     @test dfv.x3 == [8.5, 10.5]
     @test dfv.x4 == [13.5, 15.5]
@@ -490,19 +499,19 @@ end
 
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
-    @test_throws DimensionMismatch df[:, [1,2]] .= rand(3, 10)
-    @test_throws DimensionMismatch dfv[:, [1,2]] .= rand(2, 10)
-    @test_throws DimensionMismatch df[:, [1,2]] .= rand(3, 10)
-    @test_throws DimensionMismatch dfv[:, [1,2]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, [1, 2]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, [1, 2]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, [1, 2]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, [1, 2]] .= rand(2, 10)
 
     df = copy(refdf)
-    df[:, [:x1,:x2]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
+    df[:, [:x1, :x2]] .= Matrix(df[:, [:x1, :x2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [:x3,:x4]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
+    dfv[:, [:x3, :x4]] .= Matrix(dfv[:, [:x3, :x4]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -511,13 +520,13 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, ["x1","x2"]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
+    df[:, ["x1", "x2"]] .= Matrix(df[:, [:x1, :x2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
+    dfv[:, ["x3", "x4"]] .= Matrix(dfv[:, [:x3, :x4]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -526,13 +535,13 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [:x1,:x2]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
+    df[:, [:x1, :x2]] .= Matrix(df[:, [:x1, :x2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [:x3,:x4]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
+    dfv[:, [:x3, :x4]] .= Matrix(dfv[:, [:x3, :x4]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -541,13 +550,13 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, ["x1","x2"]] .= Matrix(df[:, [:x1,:x2]]) .+ 1
+    df[:, ["x1", "x2"]] .= Matrix(df[:, [:x1, :x2]]) .+ 1
     @test df.x1 == [2.5, 3.5, 4.5]
     @test df.x2 == [5.5, 6.5, 7.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, [:x3,:x4]]) .+ 1
+    dfv[:, ["x3", "x4"]] .= Matrix(dfv[:, [:x3, :x4]]) .+ 1
     @test dfv.x3 == [8.5, 9.5]
     @test dfv.x4 == [11.5, 12.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -556,16 +565,16 @@ end
                          4.5  7.5  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [:x1,:x2]] .= Matrix(df[:, [:x1,:x2]]) .+ [1 4
-                                                     2 5
-                                                     3 6]
+    df[:, [:x1, :x2]] .= Matrix(df[:, [:x1, :x2]]) .+ [1 4
+                                                       2 5
+                                                       3 6]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df.x2 == [8.5, 10.5, 12.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [:x3,:x4]] .= Matrix(dfv[:, [:x3,:x4]]) .+ [1 3
-                                                       2 4]
+    dfv[:, [:x3, :x4]] .= Matrix(dfv[:, [:x3, :x4]]) .+ [1 3
+                                                         2 4]
     @test dfv.x3 == [8.5, 10.5]
     @test dfv.x4 == [13.5, 15.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -574,16 +583,16 @@ end
                          6.5  12.5   9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, ["x1","x2"]] .= Matrix(df[:, ["x1","x2"]]) .+ [1 4
-                                                         2 5
-                                                         3 6]
+    df[:, ["x1", "x2"]] .= Matrix(df[:, ["x1", "x2"]]) .+ [1 4
+                                                           2 5
+                                                           3 6]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df.x2 == [8.5, 10.5, 12.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, ["x3","x4"]]) .+ [1 3
-                                                           2 4]
+    dfv[:, ["x3", "x4"]] .= Matrix(dfv[:, ["x3", "x4"]]) .+ [1 3
+                                                             2 4]
     @test dfv.x3 == [8.5, 10.5]
     @test dfv.x4 == [13.5, 15.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -592,16 +601,16 @@ end
                          6.5  12.5   9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [:x1,:x2]] .= Matrix(df[:, [:x1,:x2]]) .+ [1 4
-                                                     2 5
-                                                     3 6]
+    df[:, [:x1, :x2]] .= Matrix(df[:, [:x1, :x2]]) .+ [1 4
+                                                       2 5
+                                                       3 6]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df.x2 == [8.5, 10.5, 12.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, [:x3,:x4]] .= Matrix(dfv[:, [:x3,:x4]]) .+ [1 3
-                                                       2 4]
+    dfv[:, [:x3, :x4]] .= Matrix(dfv[:, [:x3, :x4]]) .+ [1 3
+                                                         2 4]
     @test dfv.x3 == [8.5, 10.5]
     @test dfv.x4 == [13.5, 15.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -610,16 +619,16 @@ end
                          6.5  12.5   9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, ["x1","x2"]] .= Matrix(df[:, ["x1","x2"]]) .+ [1 4
-                                                         2 5
-                                                         3 6]
+    df[:, ["x1", "x2"]] .= Matrix(df[:, ["x1", "x2"]]) .+ [1 4
+                                                           2 5
+                                                           3 6]
     @test df.x1 == [2.5, 4.5, 6.5]
     @test df.x2 == [8.5, 10.5, 12.5]
     @test df[:, 3:end] == refdf[:, 3:end]
 
     dfv = @view df[1:2, 3:end]
-    dfv[:, ["x3","x4"]] .= Matrix(dfv[:, ["x3","x4"]]) .+ [1 3
-                                                           2 4]
+    dfv[:, ["x3", "x4"]] .= Matrix(dfv[:, ["x3", "x4"]]) .+ [1 3
+                                                             2 4]
     @test dfv.x3 == [8.5, 10.5]
     @test dfv.x4 == [13.5, 15.5]
     @test dfv[:, 3:end] == refdf[1:2, 5:end]
@@ -629,66 +638,66 @@ end
 
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
-    @test_throws DimensionMismatch df[:, [:x1,:x2]] .= rand(3, 10)
-    @test_throws DimensionMismatch dfv[:, [:x3,:x4]] .= rand(2, 10)
-    @test_throws DimensionMismatch df[:, [:x1,:x2]] .= rand(3, 10)
-    @test_throws DimensionMismatch dfv[:, [:x3,:x4]] .= rand(2, 10)
-    @test_throws DimensionMismatch df[:, ["x1","x2"]] .= rand(3, 10)
-    @test_throws DimensionMismatch dfv[:, ["x3","x4"]] .= rand(2, 10)
-    @test_throws DimensionMismatch df[:, ["x1","x2"]] .= rand(3, 10)
-    @test_throws DimensionMismatch dfv[:, ["x3","x4"]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, [:x1, :x2]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, [:x3, :x4]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, [:x1, :x2]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, [:x3, :x4]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, ["x1", "x2"]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, ["x3", "x4"]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, ["x1", "x2"]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, ["x3", "x4"]] .= rand(2, 10)
 
     df = copy(refdf)
-    df[:, [1,2]] .= [1 2
-                     3 4
-                     5 6]
+    df[:, [1, 2]] .= [1 2
+                      3 4
+                      5 6]
     @test Matrix(df) == [1.0  2.0  7.5  10.5  13.5
                          3.0  4.0  8.5  11.5  14.5
                          5.0  6.0  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [1,2]] .= [1, 3, 5]
+    df[:, [1, 2]] .= [1, 3, 5]
     @test Matrix(df) == [1.0  1.0  7.5  10.5  13.5
                          3.0  3.0  8.5  11.5  14.5
                          5.0  5.0  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [1,2]] .= reshape([1, 3, 5], 3, 1)
+    df[:, [1, 2]] .= reshape([1, 3, 5], 3, 1)
     @test Matrix(df) == [1.0  1.0  7.5  10.5  13.5
                          3.0  3.0  8.5  11.5  14.5
                          5.0  5.0  9.5  12.5  15.5]
 
     df = copy(refdf)
-    df[:, [1,2]] .= 1
+    df[:, [1, 2]] .= 1
     @test Matrix(df) == [1.0  1.0  7.5  10.5  13.5
                          1.0  1.0  8.5  11.5  14.5
                          1.0  1.0  9.5  12.5  15.5]
 
     df = copy(refdf)
     dfv = view(df, 2:3, 2:4)
-    dfv[:, [1,2]] .= [1 2
-                   3 4]
+    dfv[:, [1, 2]] .= [1 2
+                       3 4]
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5
                          2.5  1.0  2.0  11.5  14.5
                          3.5  3.0  4.0  12.5  15.5]
 
     df = copy(refdf)
     dfv = view(df, 2:3, 2:4)
-    dfv[:, [1,2]] .= [1, 3]
+    dfv[:, [1, 2]] .= [1, 3]
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5
                          2.5  1.0  1.0  11.5  14.5
                          3.5  3.0  3.0  12.5  15.5]
 
     df = copy(refdf)
     dfv = view(df, 2:3, 2:4)
-    dfv[:, [1,2]] .= reshape([1, 3], 2, 1)
+    dfv[:, [1, 2]] .= reshape([1, 3], 2, 1)
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5
                          2.5  1.0  1.0  11.5  14.5
                          3.5  3.0  3.0  12.5  15.5]
 
     df = copy(refdf)
     dfv = view(df, 2:3, 2:4)
-    dfv[:, [1,2]] .= 1
+    dfv[:, [1, 2]] .= 1
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5
                          2.5  1.0  1.0  11.5  14.5
                          3.5  1.0  1.0  12.5  15.5]
@@ -707,7 +716,7 @@ end
     dfr .= 1000
     @test Matrix(df) == [1000.0  1000.0  100.0  100.0  10.0
                          100.0   100.0  100.0  100.0  10.0
-                          10.0    10.0   10.0   10.0  10.0]
+                         10.0    10.0   10.0   10.0  10.0]
 
     df = copy(refdf)
     df[:, :] .= 10
@@ -715,21 +724,21 @@ end
     dfv = view(df, 1:2, 1:4)
     dfv[:, :] .= 100
     @test Matrix(df) == [100.0  100.0  100.0  100.0  10.0
-                        100.0  100.0  100.0  100.0  10.0
+                         100.0  100.0  100.0  100.0  10.0
                          10.0   10.0   10.0   10.0  10.0]
     dfr = df[1, 1:2]
     dfr[:] .= 1000
     @test Matrix(df) == [1000.0  1000.0  100.0  100.0  10.0
-                         100.0   100.0  100.0  100.0  10.0
-                          10.0    10.0   10.0   10.0  10.0]
+                         100.0   100.0   100.0  100.0  10.0
+                         10.0    10.0    10.0   10.0   10.0]
 
     df = copy(refdf)
-    df[:,:] .= 10
+    df[:, :] .= 10
     @test all(Matrix(df) .== 10)
     dfv = view(df, 1:2, 1:4)
     dfv[:, :] .= 100
     @test Matrix(df) == [100.0  100.0  100.0  100.0  10.0
-                        100.0  100.0  100.0  100.0  10.0
+                         100.0  100.0  100.0  100.0  10.0
                          10.0   10.0   10.0   10.0  10.0]
 end
 
@@ -909,10 +918,10 @@ end
     @test df == DataFrame()
     df .= [1]
     @test df == DataFrame()
-    df .= ones(1,1)
+    df .= ones(1, 1)
     @test df == DataFrame()
-    @test_throws DimensionMismatch df .= ones(1,2)
-    @test_throws DimensionMismatch df .= ones(1,1,1)
+    @test_throws DimensionMismatch df .= ones(1, 2)
+    @test_throws DimensionMismatch df .= ones(1, 1, 1)
 
     df = DataFrame(a=[])
     df[!, :b] .= sin.(1)
@@ -950,10 +959,10 @@ end
 end
 
 @testset "test categorical values" begin
-    for v in [categorical([1,2,3]), categorical([1,2, missing]),
-              categorical([missing, 1,2]),
-              categorical(["1","2","3"]), categorical(["1","2", missing]),
-              categorical([missing, "1","2"])]
+    for v in [categorical([1, 2, 3]), categorical([1, 2, missing]),
+              categorical([missing, 1, 2]),
+              categorical(["1", "2", "3"]), categorical(["1", "2", missing]),
+              categorical([missing, "1", "2"])]
         df = copy(refdf)
         df[!, :c1] .= v
         @test df.c1 ≅ v
@@ -995,32 +1004,32 @@ end
 end
 
 @testset "tuple broadcasting" begin
-    X = DataFrame(zeros(2, 3))
+    X = DataFrame(zeros(2, 3), :auto)
     X .= (1, 2)
-    @test X == DataFrame([1 1 1; 2 2 2])
+    @test X == DataFrame([1 1 1; 2 2 2], :auto)
 
-    X = DataFrame(zeros(2, 3))
+    X = DataFrame(zeros(2, 3), :auto)
     X .= (1, 2) .+ 10 .- X
-    @test X == DataFrame([11 11 11; 12 12 12])
+    @test X == DataFrame([11 11 11; 12 12 12], :auto)
 
-    X = DataFrame(zeros(2, 3))
+    X = DataFrame(zeros(2, 3), :auto)
     X .+= (1, 2) .+ 10
-    @test X == DataFrame([11 11 11; 12 12 12])
+    @test X == DataFrame([11 11 11; 12 12 12], :auto)
 
-    df = DataFrame(rand(2, 3))
-    @test floor.(Int, df ./ (1,)) == DataFrame(zeros(Int, 2, 3))
+    df = DataFrame(rand(2, 3), :auto)
+    @test floor.(Int, df ./ (1,)) == DataFrame(zeros(Int, 2, 3), :auto)
     df .= floor.(Int, df ./ (1,))
-    @test df == DataFrame(zeros(2, 3))
+    @test df == DataFrame(zeros(2, 3), :auto)
 
-    df = DataFrame(rand(2, 3))
+    df = DataFrame(rand(2, 3), :auto)
     @test_throws InexactError convert.(Int, df)
     df2 = convert.(Int, floor.(df))
-    @test df2 == DataFrame(zeros(Int, 2, 3))
+    @test df2 == DataFrame(zeros(Int, 2, 3), :auto)
     @test eltype.(eachcol(df2)) == [Int, Int, Int]
 end
 
 @testset "scalar on assignment side" begin
-    df = DataFrame(rand(2, 3))
+    df = DataFrame(rand(2, 3), :auto)
     @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
     df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
@@ -1030,17 +1039,17 @@ end
 end
 
 @testset "nothing test" begin
-    X = DataFrame(Any[1 2; 3 4])
+    X = DataFrame(Any[1 2; 3 4], :auto)
     X .= nothing
-    @test (X .== nothing) == DataFrame(trues(2, 2))
+    @test (X .== nothing) == DataFrame(trues(2, 2), :auto)
 
-    X = DataFrame([1 2; 3 4])
+    X = DataFrame([1 2; 3 4], :auto)
     @test_throws MethodError X .= nothing
-    @test X == DataFrame([1 2; 3 4])
+    @test X == DataFrame([1 2; 3 4], :auto)
 
-    X = DataFrame([1 2; 3 4])
+    X = DataFrame([1 2; 3 4], :auto)
     foreach(i -> X[!, i] .= nothing, axes(X, 2))
-    @test (X .== nothing) == DataFrame(trues(2, 2))
+    @test (X .== nothing) == DataFrame(trues(2, 2), :auto)
 end
 
 @testset "aliasing test" begin
@@ -1061,7 +1070,7 @@ end
     dfr .= 2 .* y
     @test Vector(dfr) == [4, 4, 4]
 
-    df = DataFrame(x=[1, 2], y=[11,12])
+    df = DataFrame(x=[1, 2], y=[11, 12])
     df2 = DataFrame()
     df2.x = [-1, -2]
     df2.y = df.x
@@ -1071,7 +1080,7 @@ end
 
     Random.seed!(1234)
     for i in 1:10
-        df1 = DataFrame(rand(100, 100))
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
             df2[!, rand(1:100)] = df1[!, i]
@@ -1083,7 +1092,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100))
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
             df2[!, rand(1:100)] = df1[!, i]
@@ -1095,7 +1104,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100))
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
             df2[!, rand(1:100)] = df1[!, i]
@@ -1107,7 +1116,7 @@ end
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100))
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
@@ -1116,16 +1125,16 @@ end
         end
         df6 = copy(df2)
         df7 = copy(df3)
-        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[!, 1]) .+ Matrix(df2) ./ Matrix(df3)))
-        df5 = sin.(view(df1,1,1) .+ df1[!, 1] .+ df2 ./ df3)
-        df1 .= sin.(view(df1,1,1) .+ df1[!, 1] .+ df2 ./ df3)
+        df4 = DataFrame(sin.(df1[1, 1] .+ copy(df1[!, 1]) .+ Matrix(df2) ./ Matrix(df3)), names(df3))
+        df5 = sin.(view(df1, 1, 1) .+ df1[!, 1] .+ df2 ./ df3)
+        df1 .= sin.(view(df1, 1, 1) .+ df1[!, 1] .+ df2 ./ df3)
         @test df1 == df4 == df5
         @test df2 != df6
         @test df3 != df7
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100))
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
@@ -1134,16 +1143,16 @@ end
         end
         df6 = copy(df2)
         df7 = copy(df3)
-        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[!, 1]) .+ Matrix(df2) ./ Matrix(df3)))
-        df5 = sin.(view(df1,1,1) .+ df1[!, 1] .+ view(df2, :, :) ./ df3)
-        df1 .= sin.(view(df1[!, 1],1) .+ view(df1[!, 1], :) .+ df2 ./ view(df3, :, :))
+        df4 = DataFrame(sin.(df1[1, 1] .+ copy(df1[!, 1]) .+ Matrix(df2) ./ Matrix(df3)), names(df3))
+        df5 = sin.(view(df1, 1, 1) .+ df1[!, 1] .+ view(df2, :, :) ./ df3)
+        df1 .= sin.(view(df1[!, 1], 1) .+ view(df1[!, 1], :) .+ df2 ./ view(df3, :, :))
         @test df1 == df4 == df5
         @test df2 != df6
         @test df3 != df7
     end
 
     for i in 1:10
-        df1 = DataFrame(rand(100, 100))
+        df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
@@ -1152,9 +1161,9 @@ end
         end
         df6 = copy(df2)
         df7 = copy(df3)
-        df4 = DataFrame(sin.(df1[1,1] .+ copy(df1[!, 1]) .+ Matrix(df2) ./ Matrix(df3)))
-        df5 = sin.(view(df1,1,1) .+ df1[!, 1] .+ view(df2, :, :) ./ df3)
-        view(df1, :, :) .= sin.(view(df1[!, 1],1) .+ view(df1[!, 1], :) .+ df2 ./ view(df3, :, :))
+        df4 = DataFrame(sin.(df1[1, 1] .+ copy(df1[!, 1]) .+ Matrix(df2) ./ Matrix(df3)), names(df3))
+        df5 = sin.(view(df1, 1, 1) .+ df1[!, 1] .+ view(df2, :, :) ./ df3)
+        view(df1, :, :) .= sin.(view(df1[!, 1], 1) .+ view(df1[!, 1], :) .+ df2 ./ view(df3, :, :))
         @test df1 == df4 == df5
         @test df2 != df6
         @test df3 != df7
@@ -1162,53 +1171,52 @@ end
 end
 
 @testset "@. test" begin
-    df = DataFrame(rand(2, 3))
+    df = DataFrame(rand(2, 3), :auto)
     sdf = view(df, 1:1, :)
     dfm = Matrix(df)
     sdfm = Matrix(sdf)
 
     r1 = @. (df + sdf + 5) / sdf
-    r2 = @. (df + sdf + 5) / sdf
-    @test r1 == DataFrame(r2)
+    @test r1 isa DataFrame
 
     @. df = sin(sdf / (df + 1))
     @. dfm = sin(sdfm / (dfm + 1))
-    @test df == DataFrame(dfm)
+    @test df == DataFrame(dfm, names(df))
 end
 
 @testset "test common cases" begin
     m = rand(1000, 10)
-    df = DataFrame(m)
-    @test df .+ 1 == DataFrame(m .+ 1)
-    @test df .+ transpose(1:10) == DataFrame(m .+ transpose(1:10))
-    @test df .+ (1:1000) == DataFrame(m .+ (1:1000))
-    @test df .+ m == DataFrame(m .+ m)
-    @test m .+ df == DataFrame(m .+ m)
-    @test df .+ df == DataFrame(m .+ m)
+    df = DataFrame(m, :auto)
+    @test df .+ 1 == DataFrame(m .+ 1, names(df))
+    @test df .+ transpose(1:10) == DataFrame(m .+ transpose(1:10), names(df))
+    @test df .+ (1:1000) == DataFrame(m .+ (1:1000), names(df))
+    @test df .+ m == DataFrame(m .+ m, names(df))
+    @test m .+ df == DataFrame(m .+ m, names(df))
+    @test df .+ df == DataFrame(m .+ m, names(df))
 
     df .+= 1
     m .+= 1
-    @test df == DataFrame(m)
+    @test df == DataFrame(m, names(df))
     df .+= transpose(1:10)
     m .+= transpose(1:10)
-    @test df == DataFrame(m)
+    @test df == DataFrame(m, names(df))
     df .+= (1:1000)
     m .+= (1:1000)
-    @test df == DataFrame(m)
+    @test df == DataFrame(m, names(df))
     df .+= df
     m .+= m
-    @test df == DataFrame(m)
+    @test df == DataFrame(m, names(df))
     df2 = copy(df)
     m2 = copy(m)
     df .+= df .+ df2 .+ m2 .+ 1
     m .+= m .+ df2 .+ m2 .+ 1
-    @test df == DataFrame(m)
+    @test df == DataFrame(m, names(df))
 end
 
 @testset "data frame only on left hand side broadcasting assignment" begin
     Random.seed!(1234)
 
-    m = rand(3,4);
+    m = rand(3, 4);
     m2 = copy(m);
     m3 = copy(m);
     df = DataFrame(a=view(m, :, 1), b=view(m, :, 1),
@@ -1231,12 +1239,12 @@ end
         @test col == m3[:, 1]
     end
 
-    m = rand(3,4);
+    m = rand(3, 4);
     m2 = copy(m);
     m3 = copy(m);
     df = view(DataFrame(a=view(m, :, 1), b=view(m, :, 1),
                         c=view(m, :, 1), d=view(m, :, 1), copycols=false),
-              [3,2,1], :)
+              [3, 2, 1], :)
     df2 = copy(df)
     mdf = Matrix(df)
 
@@ -1257,13 +1265,13 @@ end
 end
 
 @testset "broadcasting with 3-dimensional object" begin
-    y = zeros(4,3,2)
-    df = DataFrame(ones(4,3))
+    y = zeros(4, 3, 2)
+    df = DataFrame(ones(4, 3), :auto)
     @test_throws DimensionMismatch df .+ y
     @test_throws DimensionMismatch y .+ df
     @test_throws DimensionMismatch df .+= y
     y .+= df
-    @test y == ones(4,3,2)
+    @test y == ones(4, 3, 2)
 end
 
 @testset "additional checks of post-! broadcasting rules" begin
@@ -1271,7 +1279,7 @@ end
     v1 = df[!, 1]
     @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
+    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
@@ -1429,7 +1437,7 @@ end
     df = copy(refdf)
     @test_throws ArgumentError df[!, 10] .= 'a'
     @test df == refdf
-    @test_throws ArgumentError df[!, 10] .= [1,2,3]
+    @test_throws ArgumentError df[!, 10] .= [1, 2, 3]
     @test df == refdf
     @test_throws ArgumentError df[!, 10] .= [1 2 3]
     @test df == refdf
@@ -1457,7 +1465,7 @@ end
     v1 = df[!, 1]
     @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
     @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1,2]
+    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
@@ -1567,7 +1575,7 @@ end
     df = view(copy(refdf), :, :)
     @test_throws ArgumentError df[!, 10] .= 'a'
     @test df == refdf
-    @test_throws ArgumentError df[!, 10] .= [1,2,3]
+    @test_throws ArgumentError df[!, 10] .= [1, 2, 3]
     @test df == refdf
     @test_throws ArgumentError df[!, 10] .= [1 2 3]
     @test df == refdf
@@ -1591,28 +1599,28 @@ end
 end
 
 @testset "DataFrameRow getproperty broadcasted assignment" begin
-    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    df = DataFrame(a=[[1, 2], [3, 4]], b=[[5, 6], [7, 8]])
     dfr = df[1, :]
     dfr.a .= 10
-    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test df == DataFrame(a=[[10, 10], [3, 4]], b=[[5, 6], [7, 8]])
     @test_throws MethodError dfr.a .= ["a", "b"]
 
-    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    df = DataFrame(a=[[1, 2], [3, 4]], b=[[5, 6], [7, 8]])
     dfr = df[1, 1:1]
     dfr.a .= 10
-    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test df == DataFrame(a=[[10, 10], [3, 4]], b=[[5, 6], [7, 8]])
     @test_throws MethodError dfr.a .= ["a", "b"]
 
-    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    df = DataFrame(a=[[1, 2], [3, 4]], b=[[5, 6], [7, 8]])
     dfr = df[1, :]
     dfr."a" .= 10
-    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test df == DataFrame(a=[[10, 10], [3, 4]], b=[[5, 6], [7, 8]])
     @test_throws MethodError dfr."a" .= ["a", "b"]
 
-    df = DataFrame(a=[[1,2],[3,4]], b=[[5,6],[7,8]])
+    df = DataFrame(a=[[1, 2], [3, 4]], b=[[5, 6], [7, 8]])
     dfr = df[1, 1:1]
     dfr."a" .= 10
-    @test df == DataFrame(a=[[10,10],[3,4]], b=[[5,6],[7,8]])
+    @test df == DataFrame(a=[[10, 10], [3, 4]], b=[[5, 6], [7, 8]])
     @test_throws MethodError dfr."a" .= ["a", "b"]
 end
 
@@ -1641,16 +1649,16 @@ end
 @testset "add new correct rules for df[row, col] .= v broadcasting" begin
     for v in [:a, "a"]
         df = DataFrame(a=1)
-        @test_throws MethodError df[1,1] .= 10
+        @test_throws MethodError df[1, 1] .= 10
         @test_throws MethodError df[1, v] .= 10
-        @test_throws MethodError df[CartesianIndex(1,1)] .= 10
-        df = DataFrame(a=[[1,2,3]])
-        df[1,1] .= 10
-        @test df == DataFrame(a=[[10,10,10]])
+        @test_throws MethodError df[CartesianIndex(1, 1)] .= 10
+        df = DataFrame(a=[[1, 2, 3]])
+        df[1, 1] .= 10
+        @test df == DataFrame(a=[[10, 10, 10]])
         df[1, v] .= 100
-        @test df == DataFrame(a=[[100,100,100]])
-        df[CartesianIndex(1,1)] .= 1000
-        @test df == DataFrame(a=[[1000,1000,1000]])
+        @test df == DataFrame(a=[[100, 100, 100]])
+        df[CartesianIndex(1, 1)] .= 1000
+        @test df == DataFrame(a=[[1000, 1000, 1000]])
     end
 end
 
@@ -1659,51 +1667,51 @@ end
                      ["x1", "x2"], Between("x1", "x2")]
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= "a"
-        @test df == DataFrame(fill("a", 3, 2))
+        @test df == DataFrame(fill("a", 3, 2), :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
-        df[!, selector] .= Ref((a=1,b=2))
-        @test df == DataFrame(fill((a=1, b=2), 3, 2))
+        df[!, selector] .= Ref((a=1, b=2))
+        @test df == DataFrame(fill((a=1, b=2), 3, 2), :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= ["a" "b"]
         @test df == DataFrame(["a" "b"
                                "a" "b"
-                               "a" "b"])
+                               "a" "b"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= ["a", "b", "c"]
         @test df == DataFrame(["a" "a"
                                "b" "b"
-                               "c" "c"])
+                               "c" "c"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= categorical(["a"])
         @test df == DataFrame(["a" "a"
                                "a" "a"
-                               "a" "a"])
+                               "a" "a"], :auto)
         @test df.x1 isa CategoricalVector
         @test df.x2 isa CategoricalVector
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
-        df[!, selector] .= DataFrame(["a" "b"])
+        df[!, selector] .= DataFrame(["a" "b"], :auto)
         @test df == DataFrame(["a" "b"
                                "a" "b"
-                               "a" "b"])
+                               "a" "b"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
         df[!, selector] .= DataFrame(["a" "d"
                                       "b" "e"
-                                      "c" "f"])
+                                      "c" "f"], :auto)
         @test df == DataFrame(["a" "d"
                                "b" "e"
-                               "c" "f"])
+                               "c" "f"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6)
@@ -1712,19 +1720,19 @@ end
                             "c" "f"]
         @test df == DataFrame(["a" "d"
                                "b" "e"
-                               "c" "f"])
+                               "c" "f"], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= "a"
         @test df == DataFrame(["a" "a" 1
                                "a" "a" 1
-                               "a" "a" 1])
+                               "a" "a" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
-        df[!, selector] .= Ref((a=1,b=2))
-        @test df[:, 1:2] == DataFrame(fill((a=1, b=2), 3, 2))
+        df[!, selector] .= Ref((a=1, b=2))
+        @test df[:, 1:2] == DataFrame(fill((a=1, b=2), 3, 2), :auto)
         @test df[:, 3] == [1, 1, 1]
         @test df.x1 !== df.x2
 
@@ -1732,39 +1740,39 @@ end
         df[!, selector] .= ["a" "b"]
         @test df == DataFrame(["a" "b" 1
                                "a" "b" 1
-                               "a" "b" 1])
+                               "a" "b" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= ["a", "b", "c"]
         @test df == DataFrame(["a" "a" 1
                                "b" "b" 1
-                               "c" "c" 1])
+                               "c" "c" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= categorical(["a"])
         @test df == DataFrame(["a" "a" 1
                                "a" "a" 1
-                               "a" "a" 1])
+                               "a" "a" 1], :auto)
         @test df.x1 isa CategoricalVector
         @test df.x2 isa CategoricalVector
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
-        df[!, selector] .= DataFrame(["a" "b"])
+        df[!, selector] .= DataFrame(["a" "b"], :auto)
         @test df == DataFrame(["a" "b" 1
                                "a" "b" 1
-                               "a" "b" 1])
+                               "a" "b" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
         df[!, selector] .= DataFrame(["a" "d"
                                       "b" "e"
-                                      "c" "f"])
+                                      "c" "f"], :auto)
         @test df == DataFrame(["a" "d" 1
                                "b" "e" 1
-                               "c" "f" 1])
+                               "c" "f" 1], :auto)
         @test df.x1 !== df.x2
 
         df = DataFrame(x1=1:3, x2=4:6, x3=1)
@@ -1773,7 +1781,7 @@ end
                             "c" "f"]
         @test df == DataFrame(["a" "d" 1
                                "b" "e" 1
-                               "c" "f" 1])
+                               "c" "f" 1], :auto)
         @test df.x1 !== df.x2
     end
 
@@ -1788,7 +1796,7 @@ end
 end
 
 @testset "@views on df[!, col]" begin
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     @views df[!, 1] .+= 1
     @test df[!, 1] == [2.0, 2.0, 2.0]
     @views df[:, 2] .= df[!, 4] .+ df[!, 3]
@@ -1799,7 +1807,7 @@ end
 end
 
 @testset "broadcasting of df[:, col] = value" begin
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     z = ["a", "b", "c"]
     df[:, :z] .= z
     @test df.z == z
@@ -1807,29 +1815,29 @@ end
     @test_throws ArgumentError df[:, 6] .= z
     @test_throws MethodError df[:, 1] .= z
 
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     z = "abc"
     df[:, :z] .= z
     @test df.z == fill("abc", 3)
     @test_throws ArgumentError df[:, 6] .= z
     @test_throws MethodError df[:, 1] .= z
 
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 1)
     @test_throws DimensionMismatch df[:, :z] .= z
 
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     z = ["a", "b", "c"]
     df[:, "z"] .= z
     @test df.z == z
     @test df.z !== z
 
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     z = "abc"
     df[:, "z"] .= z
     @test df.z == fill("abc", 3)
 
-    df = DataFrame(ones(3, 4))
+    df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 1)
     @test_throws DimensionMismatch df[:, "z"] .= z
 end
