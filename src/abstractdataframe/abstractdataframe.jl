@@ -63,7 +63,6 @@ abstract type AbstractDataFrame end
 """
     names(df::AbstractDataFrame)
     names(df::AbstractDataFrame, cols)
-    names(df::AbstractDataFrame, T::Type, unionmissing::Bool=true)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
@@ -72,8 +71,7 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
 `cols` can be:
 * any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
 * a `Type`, in which case names of columns whose `eltype` is a subtype of `T`
-  are returned if `unionmissing=false` or if `unionmissing=true` then `eltype`
-  must be subtype of `Union{T, Missing}` other than `Missing` except if `T` is `Missing`
+  are returned
 * a `Function` predicate, in which case names of columns for which the predicate, taking a
   `String` containg column name, returns `true`
 
@@ -88,8 +86,8 @@ function Base.names(df::AbstractDataFrame, cols)
     return [String(nms[i]) for i in idxs]
 end
 
-Base.names(df::AbstractDataFrame, T::Type; unionmissing::Bool=true) =
-    [String(n) for (n, c) in pairs(eachcol(df)) if testtype(T, eltype(c), unionmissing)]
+Base.names(df::AbstractDataFrame, T::Type) =
+    [String(n) for (n, c) in pairs(eachcol(df)) if eltype(c) <: T]
 Base.names(df::AbstractDataFrame, fun::Function) = filter(fun, names(df))
 
 # _names returns Vector{Symbol} without copying

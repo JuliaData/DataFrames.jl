@@ -98,8 +98,6 @@ end
 
 Base.names(gd::GroupedDataFrame) = names(parent(gd))
 Base.names(gd::GroupedDataFrame, cols) = names(parent(gd), cols)
-Base.names(gd::GroupedDataFrame, cols::Type; unionmissing::Bool=true) =
-    names(parent(gd), cols, unionmissing=unionmissing)
 _names(gd::GroupedDataFrame) = _names(parent(gd))
 
 function DataFrame(gd::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=true)
