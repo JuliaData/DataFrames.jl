@@ -20,6 +20,8 @@
   ([#2573](https://github.com/JuliaData/DataFrames.jl/pull/2573))
 * add `subset` and `subset!` functions that allow to subset rows
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
+* `names` now allows passing a predicate as a column selector
+  ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
 
 ## Deprecated
 
