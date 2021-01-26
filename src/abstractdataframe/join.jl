@@ -91,6 +91,89 @@ _rename_cols(old_names::AbstractVector{Symbol},
            (renamecols isa Function ? Symbol(renamecols(string(n))) : Symbol(n, renamecols))
            for n in old_names]
 
+prepare_on_col() = throw(ArgumentError("at least one on column required when joining"))
+prepare_on_col(c::AbstractVector) = c
+prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
+
+function compose_inner_table(joiner::DataFrameJoiner,
+                             makeunique::Bool,
+                             left_rename::Union{Function, AbstractString, Symbol},
+                             right_rename::Union{Function, AbstractString, Symbol})
+
+    left_col = prepare_on_col(eachcol(joiner.dfl_on)...)
+    right_col = prepare_on_col(eachcol(joiner.dfr_on)...)
+
+    if length(right_col) <= length(left_col)
+        left_ixs, right_ixs = _innerjoin(left_col, right_col)
+    else
+        right_ixs, left_ixs = _innerjoin(right_col, left_col)
+    end
+
+    dfl = joiner.dfl[left_ixs, :]
+    dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+
+    ncleft = ncol(dfl)
+    cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
+
+    for (i, col) in enumerate(eachcol(dfl))
+        cols[i] = col
+    end
+    for (i, col) in enumerate(eachcol(dfr_noon))
+        cols[i+ncleft] = col
+    end
+
+    new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
+                     _rename_cols(_names(dfr_noon), right_rename))
+    res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
+
+    return res, nothing, nothing
+end
+
+# optimistically assume that shorter table does not have duplicates in on column
+function _innerjoin(left::AbstractArray, right::AbstractArray{T}) where {T}
+    left_ixs = Int[]
+    right_ixs = Int[]
+    dict = Dict{T, Int}()
+
+    for (idx_r, val_r) in enumerate(right)
+        dict_index = Base.ht_keyindex2!(dict, val_r)
+        dict_index > 0 && return _innerjoin_dup(left, right)
+        Base._setindex!(dict, idx_r, val_r, -dict_index)
+    end
+
+    for (idx_l, val_l) in enumerate(left)
+        dict_index = Base.ht_keyindex(dict, val_l)
+        if dict_index > 0 # -1 if key not found
+            @inbounds idx_r = dict.vals[dict_index]
+            push!(left_ixs, idx_l)
+            push!(right_ixs, idx_r)
+        end
+    end
+    return left_ixs, right_ixs
+end
+
+# we fall back to general case if we have duplicates
+function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}) where {T}
+    left_ixs = Int[]
+    right_ixs = Int[]
+    dict = Dict{T, Vector{Int}}()
+
+    for (idx_r, val_r) in enumerate(right)
+        push!(get!(Vector{Int}, dict, val_r), idx_r)
+    end
+
+    @inbounds for (idx_l, val_l) in enumerate(left)
+        dict_index = Base.ht_keyindex(dict, val_l)
+        if dict_index > 0 # -1 if key not found
+            @inbounds idxs_r = dict.vals[dict_index]
+            append!(left_ixs, Iterators.repeated(idx_l, length(idxs_r)))
+            append!(right_ixs, idxs_r)
+        end
+    end
+
+    return left_ixs, right_ixs
+end
+
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
                               right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap,
@@ -383,12 +466,8 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     left_indicator, right_indicator = nothing, nothing
     if kind == :inner
-        inner_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                          group_rows(joiner.dfr_on),
-                                          true, false, true, false)
         joined, left_indicator, right_indicator =
-            compose_joined_table(joiner, kind, inner_row_maps...,
-                                 makeunique, left_rename, right_rename, nothing)
+            compose_inner_table(joiner, makeunique, left_rename, right_rename)
     elseif kind == :left
         left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                          group_rows(joiner.dfr_on),
