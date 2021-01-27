@@ -114,7 +114,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
             # the problem that some entries are not comparable
             isequal(left_col[1], right_col[1])
             isless(left_col[1], right_col[1])
-            if isconcretetype(left_col) && isconcretetype(right_col) &&
+            if isconcretetype(eltype(left_col)) && isconcretetype(eltype(right_col)) &&
                issorted(left_col) && issorted(right_col)
                 both_sorted = true
             end
