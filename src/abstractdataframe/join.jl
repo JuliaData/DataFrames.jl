@@ -103,10 +103,32 @@ function compose_inner_table(joiner::DataFrameJoiner,
     left_col = prepare_on_col(eachcol(joiner.dfl_on)...)
     right_col = prepare_on_col(eachcol(joiner.dfr_on)...)
 
-    if length(right_col) <= length(left_col)
-        left_ixs, right_ixs = _innerjoin(left_col, right_col)
+    if isempty(left_col) || isempty(right_col)
+        # we treat this case separately so we know we have at least one element later
+        left_ixs, right_ixs = Int[], Int[]
     else
-        right_ixs, left_ixs = _innerjoin(right_col, left_col)
+        both_sorted = false
+        try
+            # the isless, isequal and isconcretetype tests are to make sure
+            # that if we use the fast path for sorted vectors we do not hit
+            # the problem that some entries are not comparable
+            isequal(left_col[1], right_col[1])
+            isless(left_col[1], right_col[1])
+            if isconcretetype(left_col) && isconcretetype(right_col) &&
+               issorted(left_col) && issorted(right_col)
+                both_sorted = true
+            end
+        catch
+            # nothing to do - one of the columns is not sortable
+        end
+
+        if both_sorted
+            left_ixs, right_ixs = _innerjoin_sorted(left_col, right_col)
+        elseif length(right_col) <= length(left_col)
+            left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
+        else
+            right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
+        end
     end
 
     dfl = joiner.dfl[left_ixs, :]
@@ -129,8 +151,72 @@ function compose_inner_table(joiner::DataFrameJoiner,
     return res, nothing, nothing
 end
 
+@inline function find_next_range(x::AbstractArray, start::Int, start_value)
+    local stop_value
+    n = length(x)
+    stop = start + 1
+    while stop <= n
+        stop_value = x[stop]
+        if isequal(start_value, stop_value)
+            stop += 1
+        else
+            return stop, stop_value
+        end
+    end
+    return stop, start_value
+end
+
+function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
+    left_n = length(left)
+    right_n = length(right)
+
+    left_ixs = Int[]
+    right_ixs = Int[]
+
+    (left_n == 0 || right_n == 0) && return left_ixs, right_ixs
+
+    # lower bound assuming we get matches
+    sizehint!(left_ixs, min(left_n, right_n))
+    sizehint!(right_ixs, min(left_n, right_n))
+
+    left_cur = 1
+    left_val = left[left_cur]
+    left_new, left_tmp = find_next_range(left, left_cur, left_val)
+
+    right_cur = 1
+    right_val = right[right_cur]
+    right_new, right_tmp = find_next_range(right, right_cur, right_val)
+
+    while left_cur <= left_n && right_cur <= right_n
+        if isequal(left_val, right_val)
+            if left_new - left_cur == right_new - right_cur == 2
+                push!(left_ixs, left_cur)
+                push!(right_ixs, right_cur)
+            else
+                for (left_i, right_i) in Iterators.product(left_cur:left_new - 1,
+                                                           right_cur:right_new - 1)
+                    push!(left_ixs, left_i)
+                    push!(right_ixs, right_i)
+                end
+            end
+            left_cur, left_val = left_new, left_tmp
+            left_new, left_tmp = find_next_range(left, left_cur, left_val)
+            right_cur, right_val = right_new, right_tmp
+            right_new, right_tmp = find_next_range(right, right_cur, right_val)
+        elseif isless(left_val, right_val)
+            left_cur, left_val = left_new, left_tmp
+            left_new, left_tmp = find_next_range(left, left_cur, left_val)
+        else
+            right_cur, right_val = right_new, right_tmp
+            right_new, right_tmp = find_next_range(right, right_cur, right_val)
+        end
+    end
+
+    return left_ixs, right_ixs
+end
+
 # optimistically assume that shorter table does not have duplicates in on column
-function _innerjoin(left::AbstractArray, right::AbstractArray{T}) where {T}
+function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
     left_ixs = Int[]
     right_ixs = Int[]
     dict = Dict{T, Int}()
@@ -153,21 +239,37 @@ function _innerjoin(left::AbstractArray, right::AbstractArray{T}) where {T}
 end
 
 # we fall back to general case if we have duplicates
+# normally it should happen fast
 function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}) where {T}
     left_ixs = Int[]
     right_ixs = Int[]
+
+    # lower bound assuming we get matches
+    sizehint!(left_ixs, length(right))
+    sizehint!(right_ixs, length(right))
+
     dict = Dict{T, Vector{Int}}()
 
     for (idx_r, val_r) in enumerate(right)
         push!(get!(Vector{Int}, dict, val_r), idx_r)
     end
 
+    n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
             @inbounds idxs_r = dict.vals[dict_index]
-            append!(left_ixs, Iterators.repeated(idx_l, length(idxs_r)))
-            append!(right_ixs, idxs_r)
+            l = length(idxs_r)
+            newn = n + l
+            resize!(left_ixs, newn)
+            @simd for i in n+1:n+l
+                @inbounds left_ixs[i] = idx_l
+            end
+            resize!(right_ixs, newn)
+            @simd for i in 1:l
+                @inbounds right_ixs[n+i] = idxs_r[i]
+            end
+            n = newn
         end
     end
 
