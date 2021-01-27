@@ -94,30 +94,52 @@ isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
     isequal(cols1[1][r1], cols2[1][r2]) &&
         isequal_row(Base.tail(cols1), r1, Base.tail(cols2), r2)
 
-# Simple vector type for internal use which represents a virtual DataAPI.refpool
-# so that a vector of reals can be its own DataAPI.refarray:
-# this just allows telling the generic row_group_slots method for generic refpools
-# what is the minimum index and the number of (potential) groups
-# missing values are represented using index max+1
-struct IntegerRefpool{T<:Union{Int, Missing}} <: AbstractVector{T}
-    min::Int
-    max::Int
-    function IntegerRefpool{T}(min::Real, max::Real) where T<:Union{Int, Missing}
-        @assert max < typemax(Int) - 1
-        @assert typemin(Int) <= widen(max) - widen(min) + 1 < typemax(Int)
-        new{T}(min, max)
+# IntegerRefarray and IntegerRefPool are two complementary view types that allow
+# wrapping arrays with Union{Real, Missing} eltype to satisfy the DataAPI.refpool
+# and DataAPI.refarray API when calling row_group_slots.
+# IntegerRefarray converts values to Int and replaces missing with an integer
+# (set by the caller to the maximum value + 1)
+# IntegerRefPool subtracts the minimum value - 1 and replaces back the maximum
+# value + 1 to missing. This ensures all values are in 1:length(refpool), while
+# row_group_slots knows the number of (potential) groups via length(refpool)
+# and is able to skip missing values when skipmissing=true
+
+struct IntegerRefarray{T<:AbstractArray} <: AbstractVector{Int}
+    x::T
+    offset::Int
+    replacement::Int
+end
+
+Base.size(x::IntegerRefarray) = size(x.x)
+Base.axes(x::IntegerRefarray) = axes(x.x)
+Base.IndexStyle(::Type{<:IntegerRefarray{T}}) where {T} = Base.IndexStyle(T)
+@inline function Base.getindex(x::IntegerRefarray, i)
+    @boundscheck checkbounds(x.x, i)
+    @inbounds v = x.x[i]
+    if eltype(x.x) >: Missing && v === missing
+        return x.replacement
+    else
+        return Int(v - x.offset)
     end
 end
 
-Base.size(x::IntegerRefpool{T}) where {T} = (x.max - x.min + 1 + (T >: Missing),)
-Base.axes(x::IntegerRefpool{T}) where {T} = (x.min:(x.max + (T >: Missing)),)
+struct IntegerRefpool{T<:Union{Int, Missing}} <: AbstractVector{T}
+    max::Int
+    function IntegerRefpool{T}(max::Integer) where T<:Union{Int, Missing}
+        @assert max < typemax(Int) # to store missing values as max + 1
+        new{T}(max)
+    end
+end
+
+Base.size(x::IntegerRefpool{T}) where {T} = (x.max + (T >: Missing),)
+Base.axes(x::IntegerRefpool{T}) where {T} = (Base.OneTo(x.max + (T >: Missing)),)
 Base.IndexStyle(::Type{<:IntegerRefpool}) = Base.IndexLinear()
 @inline function Base.getindex(x::IntegerRefpool{T}, i::Real) where T
     @boundscheck checkbounds(x, i)
     if T >: Missing && i == x.max + 1
         return missing
     else
-        return Int(i - x.min + 1)
+        return Int(i)
     end
 end
 Base.allunique(::IntegerRefpool) = true
@@ -130,30 +152,24 @@ function refpool_and_array(x::AbstractArray)
     if refpool !== nothing
         return refpool, refarray
     elseif x isa AbstractArray{<:Union{Real, Missing}} &&
-        all(v -> ismissing(v) | isinteger(v), x)
-        isempty(skipmissing(x)) && return nothing, nothing
+        all(v -> ismissing(v) | isinteger(v), x) &&
+        !isempty(skipmissing(x))
         minval, maxval = extrema(skipmissing(x))
+        ngroups = big(maxval) - big(minval) + 1
         # Threshold chosen with the same rationale as the row_group_slots refpool method:
         # refpool approach is faster but we should not allocate too much memory either
-        # We also have to avoid overflow
-        if typemin(Int) <= maxval + 1 < typemax(Int) &&
-            typemin(Int) <= minval <= typemax(Int) &&
-            widen(maxval) - widen(minval) + 1 <= 2 * length(x) < typemax(Int)
-            if eltype(x) >: Missing
-                refpool′ = IntegerRefpool{Union{Int, Missing}}(minval, maxval)
-                # Missing values go to last group with code maxval+1
-                refarray′ = Missings.replace(x, maxval+1)
-            else
-                refpool′ = IntegerRefpool{Int}(minval, maxval)
-                refarray′ = x
-            end
+        # We also have to avoid overflow, including with ngroups + 1 for missing values
+        # (note that it would be possible to allow minval and maxval to be outside of the
+        # range supported by Int by adding a type parameter for minval to IntegerRefarray)
+        if typemin(Int) < minval <= maxval < typemax(Int) &&
+            ngroups + 1 <= 2 * length(x) <= typemax(Int)
+            T = eltype(x) >: Missing ? Union{Int, Missing} : Int
+            refpool′ = IntegerRefpool{T}(Int(ngroups))
+            refarray′ = IntegerRefarray(x, Int(minval) - 1, Int(ngroups) + 1)
             return refpool′, refarray′
-        else
-            return nothing, nothing
         end
-    else
-        return nothing, nothing
     end
+    return nothing, nothing
 end
 
 # Helper function for RowGroupDict.

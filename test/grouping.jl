@@ -739,11 +739,33 @@ end
     for sm in (false, true),
         S in (Int, Float64),
         T in (Int, Float64),
-        df in (DataFrame(x=rand(1:10, 1000), y=rand(-3:10, 1000), z=rand(1000)),
-               DataFrame(x=rand([1:10; missing], 1000), y=rand([1:10; missing], 1000), z=rand(1000)),
-               DataFrame(x=rand([1:10; missing], 1000), y=rand(-3:10, 1000), z=rand(1000)))
+        df in (DataFrame(x=rand(1:10, 1000),
+                         y=rand(-3:10, 1000), z=rand(1000)),
+               DataFrame(x=rand([1:10; missing], 1000),
+                         y=rand([1:10; missing], 1000), z=rand(1000)),
+               DataFrame(x=rand([1:10; missing], 1000),
+                         y=rand(-3:10, 1000), z=rand(1000)))
         df.x = convert.(Union{S, Missing}, df.x)
         df.y = convert.(Union{T, Missing}, df.y)
+        df.x2 = passmissing(string).(df.x)
+        df.y2 = passmissing(string).(df.y)
+        gd = groupby_checked(df, :x, skipmissing=sm)
+        @test issorted(combine(gd, :x)) # Test that optimized method is used
+        @test isequal_unordered(gd, [groupby_checked(df, :x2, skipmissing=sm)...])
+        gd = groupby_checked(df, [:x, :y], skipmissing=sm)
+        @test issorted(combine(gd, :x, :y)) # Test that optimized method is used
+        @test isequal_unordered(gd, [groupby_checked(df, [:x2, :y2], skipmissing=sm)...])
+    end
+    for sm in (false, true),
+        v in (typemin(Int), typemax(Int) - 11),
+        df in (DataFrame(x=rand((1:10) .+ v, 1000),
+                         y=rand(-3:10, 1000), z=rand(1000)),
+               DataFrame(x=rand([1:10; missing] .+ v, 1000),
+                         y=rand([1:10; missing], 1000), z=rand(1000)),
+               DataFrame(x=rand([1:10; missing] .+ v, 1000),
+                         y=rand(-3:10, 1000), z=rand(1000)))
+        df.x = allowmissing(df.x)
+        df.y = allowmissing(df.y)
         df.x2 = passmissing(string).(df.x)
         df.y2 = passmissing(string).(df.y)
         gd = groupby_checked(df, :x, skipmissing=sm)
@@ -758,9 +780,12 @@ end
     for sm in (false, true),
         S in (Int, Float64),
         T in (Int, Float64),
-        df in (DataFrame(x=rand(1:100_000, 100), y=rand(-50:110_000, 100), z=rand(100)),
-               DataFrame(x=rand([1:100_000; missing], 100), y=rand([-50:110_000; missing], 100), z=rand(100)),
-               DataFrame(x=rand([1:100_000; missing], 100), y=rand(-50:110_000, 100), z=rand(100)))
+        df in (DataFrame(x=rand(1:100_000, 100),
+                         y=rand(-50:110_000, 100), z=rand(100)),
+               DataFrame(x=rand([1:100_000; missing], 100),
+                         y=rand([-50:110_000; missing], 100), z=rand(100)),
+               DataFrame(x=rand([1:100_000; missing], 100),
+                         y=rand(-50:110_000, 100), z=rand(100)))
         df.x = convert.(Union{S, Missing}, df.x)
         df.y = convert.(Union{T, Missing}, df.y)
         df.x2 = passmissing(string).(df.x)
@@ -779,25 +804,45 @@ end
     @test groupby_checked(DataFrame(x=Union{Int, Missing}[missing]), :x) ≅
         groupby_checked(DataFrame(x=Union{String, Missing}[missing]), :x) ≅
         groupby_checked(DataFrame(x=[missing]), :x)
-    @test isempty(groupby_checked(DataFrame(x=Union{Int, Missing}[missing]), skipmissing=true, :x))
+    @test isempty(groupby_checked(DataFrame(x=Union{Int, Missing}[missing]),
+                                  skipmissing=true, :x))
     @test isempty(groupby_checked(DataFrame(x=[missing]), skipmissing=true, :x))
 
     # Check Int overflow
     groups = rand(1:3, 100)
-    for v in (big(0), missing)
-        @test groupby_checked(DataFrame(x=[big(typemax(Int))+10, v,
-                                           big(typemin(Int))-1][groups]), :x) ≅
-            groupby_checked(DataFrame(x=Any[big(typemax(Int))+10, v,
-                                            big(typemin(Int))-1][groups]), :x)
-        @test groupby_checked(DataFrame(x=[big(typemax(Int))-10, v,
-                                           big(typemin(Int))+10][groups]), :x) ≅
-            groupby_checked(DataFrame(x=Any[big(typemax(Int))-10, v,
-                                            big(typemin(Int))+10][groups]), :x)
+    for i in (0, 1, 2, 10), j in (0, 1, 2, 10),
+        v in (big(0), missing)
+        @test groupby_checked(DataFrame(x=[big(typemax(Int)) + i, v,
+                                           big(typemin(Int)) - j][groups]), :x) ≅
+            groupby_checked(DataFrame(x=Any[big(typemax(Int)) + i, v,
+                                            big(typemin(Int)) - j][groups]), :x)
     end
-    @test groupby_checked(DataFrame(x=fill(big(typemax(Int))+10, 100)), :x).groups ==
-        fill(1, 100)
-    @test groupby_checked(DataFrame(x=fill(big(typemin(Int))-10, 100)), :x).groups ==
-        fill(1, 100)
+    # Corner cases where overflow could happen due to additional missing values group
+    for i in (0, 1, 2), j in (0, 1, 2),
+        v in (0, missing)
+        @test groupby_checked(DataFrame(x=[typemax(Int) - i, v,
+                                           typemin(Int) + j][groups]), :x) ≅
+            groupby_checked(DataFrame(x=Any[typemax(Int) - i, v,
+                                            typemin(Int) + j][groups]), :x)
+        @test groupby_checked(DataFrame(x=[typemax(Int) ÷ 2 - i, v,
+                                           typemin(Int) ÷ 2 - j][groups]), :x) ≅
+            groupby_checked(DataFrame(x=Any[typemax(Int) ÷ 2 - i, v,
+                                            typemin(Int) ÷ 2 - j][groups]), :x)
+    end
+    for i in (0, 1, -1, 2, -2, 10, -10)
+        @test groupby_checked(DataFrame(x=fill(big(typemax(Int)) + i, 100)), :x).groups ==
+            fill(1, 100)
+    end
+
+    # Check special case of Bool
+    for sm in (false, true),
+        df in (DataFrame(x=rand(Bool, 1000), y=rand(1000)),
+               DataFrame(x=rand([true, false, missing], 1000), y=rand(1000)))
+        df.x2 = passmissing(string).(df.x)
+        gd = groupby_checked(df, :x, skipmissing=sm)
+        @test issorted(combine(gd, :x)) # Test that optimized method is used
+        @test isequal_unordered(gd, [groupby_checked(df, :x2, skipmissing=sm)...])
+    end
 end
 
 @testset "grouping with three keys" begin
