@@ -3588,27 +3588,34 @@ end
               Any[1, 2, 3, 4, 5, 6, 2.1, missing, 'a'],
               Any[1, 2, 3.1, 4, 5, 6, 2.1, missing, 'a']),
         x in (1:length(y), rand(1:2, length(y)), rand(1:3, length(y)))
-        df = DataFrame(x=x, y=y)
+        df = DataFrame(x=x, y1=y, y2=y)
         gd = groupby(df, :x)
-        res = combine(gd, :y => (y -> y[1]) => :y)
+        res = combine(gd, :y1 => (y -> y[1]) => :y1, :y2 => (y -> y[end]) => :y2)
         # sleep ensures one task will widen the result after the other is done,
         # so that data has to be copied at the end
         @test res ≅
-              combine(gd, [:x, :y] => ((x, y) -> (sleep((x == [5])/10); y[1])) => :y) ≅
-              combine(gd, [:x, :y] => ((x, y) -> (sleep(x[1]/100); y[1])) => :y) ≅
-              combine(gd, [:x, :y] => ((x, y) -> (sleep(rand()/10); y[1])) => :y)
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep((x == [5])/10); y[1])) => :y1,
+                          [:x, :y2] => ((x, y) -> (sleep((x == [5])/10); y[end])) => :y2) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(x[1]/100); y[1])) => :y1,
+                          [:x, :y2] => ((x, y) -> (sleep(x[1]/100); y[end])) => :y2) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(rand()/10); y[1])) => :y1,
+                          [:x, :y2] => ((x, y) -> (sleep(rand()/10); y[end])) => :y2)
 
         if df.x == 1:nrow(df)
             @test res ≅ df
         end
 
-        res = combine(gd, :y => (y -> (y1=y[1], y2=last(y))) => AsTable)
+        res = combine(gd, :y1 => (y -> (y1=y[1], y2=y[end])) => AsTable,
+                          :y2 => (y -> (y3=y[1], y4=y[end])) => AsTable)
         # sleep ensures one task will widen the result after the other is done,
         # so that data has to be copied at the end
         @test res ≅
-              combine(gd, [:x, :y] => ((x, y) -> (sleep((x == [5])/10); (y1=y[1], y2=last(y)))) => AsTable) ≅
-              combine(gd, [:x, :y] => ((x, y) -> (sleep(x[1]/100); (y1=y[1], y2=last(y)))) => AsTable) ≅
-              combine(gd, [:x, :y] => ((x, y) -> (sleep(rand()/10); (y1=y[1], y2=last(y)))) => AsTable)
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep((x == [5])/10); (y1=y[1], y2=y[end]))) => AsTable,
+                          [:x, :y2] => ((x, y) -> (sleep((x == [5])/10); (y3=y[1], y4=y[end]))) => AsTable) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(x[1]/100); (y1=y[1], y2=y[end]))) => AsTable,
+                          [:x, :y2] => ((x, y) -> (sleep(x[1]/100); (y3=y[1], y4=y[end]))) => AsTable) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(rand()/10); (y1=y[1], y2=y[end]))) => AsTable,
+                          [:x, :y2] => ((x, y) -> (sleep(rand()/10); (y3=y[1], y4=y[end]))) => AsTable)
     end
 end
 

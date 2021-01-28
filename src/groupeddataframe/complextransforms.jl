@@ -95,7 +95,7 @@ end
 function _combine_rows_with_first_task!(tid::Integer,
                                         rowstart::Integer,
                                         rowend::Integer,
-                                        i::Integer,
+                                        rownext::Integer,
                                         outcols::NTuple{<:Any, AbstractVector},
                                         outcolsref::Ref{NTuple{<:Any, AbstractVector}},
                                         type_widened::AbstractVector{Bool},
@@ -111,7 +111,7 @@ function _combine_rows_with_first_task!(tid::Integer,
     j = nothing
     gdidx = gd.idx
     local newoutcols
-    for i in i:rowend
+    for i in rownext:rowend
         row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column
@@ -128,6 +128,7 @@ function _combine_rows_with_first_task!(tid::Integer,
                         if S <: T || U <: T
                             newoutcols[k]
                         else
+                            type_widened .= true
                             Tables.allocatecolumn(U, length(newoutcols[k]))
                         end
                     end
@@ -142,7 +143,6 @@ function _combine_rows_with_first_task!(tid::Integer,
                 @assert j === nothing # eltype is guaranteed to match
 
                 outcolsref[] = newoutcols
-                type_widened .= true
                 type_widened[tid] = false
             finally
                 unlock(widen_type_lock)
@@ -160,6 +160,7 @@ function _combine_rows_with_first_task!(tid::Integer,
                 type_widened[tid] = false
                 newoutcols = outcolsref[]
                 for k in 1:length(outcols)
+                    # Check whether this particular column has been widened
                     if outcols[k] !== newoutcols[k]
                         copyto!(newoutcols[k], rowstart,
                                 outcols[k], rowstart, i - rowstart + 1)
@@ -194,7 +195,7 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
     @static if VERSION >= v"1.4"
-        basesize = max(1, (len - 1) ÷ Threads.nthreads())
+        basesize = max(1, cld(len - 1, Threads.nthreads()))
         partitions = Iterators.partition(2:len, basesize)
     else
         partitions = (2:len,)
@@ -229,6 +230,7 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
         if type_widened[tid]
             oldoutcols = fetch(tasks[tid])
             for k in 1:length(outcols)
+                # Check whether this particular column has been widened
                 if oldoutcols[k] !== outcols[k]
                     copyto!(outcols[k], first(idx), oldoutcols[k], first(idx),
                             last(idx) - first(idx) + 1)
