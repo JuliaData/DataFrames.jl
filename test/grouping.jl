@@ -3588,7 +3588,7 @@ end
               Any[1, 2, 3, 4, 5, 6, 2.1, missing, 'a'],
               Any[1, 2, 3.1, 4, 5, 6, 2.1, missing, 'a']),
         x in (1:length(y), rand(1:2, length(y)), rand(1:3, length(y)))
-        df = DataFrame(x=x, y1=y, y2=y)
+        df = DataFrame(x=x, y1=y, y2=reverse(y))
         gd = groupby(df, :x)
         res = combine(gd, :y1 => (y -> y[1]) => :y1, :y2 => (y -> y[end]) => :y2)
         # sleep ensures one task will widen the result after the other is done,
