@@ -217,15 +217,16 @@ end
 
 # optimistically assume that shorter table does not have duplicates in on column
 function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
-    left_ixs = Int[]
-    right_ixs = Int[]
     dict = Dict{T, Int}()
 
     for (idx_r, val_r) in enumerate(right)
         dict_index = Base.ht_keyindex2!(dict, val_r)
-        dict_index > 0 && return _innerjoin_dup(left, right)
+        dict_index > 0 && return _innerjoin_dup(left, right, dict, idx_r)
         Base._setindex!(dict, idx_r, val_r, -dict_index)
     end
+
+    left_ixs = Int[]
+    right_ixs = Int[]
 
     for (idx_l, val_l) in enumerate(left)
         dict_index = Base.ht_keyindex(dict, val_l)
@@ -240,26 +241,65 @@ end
 
 # we fall back to general case if we have duplicates
 # normally it should happen fast
-function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}) where {T}
+function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict{T, Int}, idx_r_start::Int) where {T}
+    ngroups = idx_r_start - 1
+    right_len = length(right)
+    groups = Vector{Int}(undef, right_len)
+    groups[1:ngroups] = 1:ngroups
+
+    for idx_r in idx_r_start:right_len
+        @inbounds val_r = right[idx_r]
+        dict_index = Base.ht_keyindex(dict, val_r)
+        if dict_index > 0
+            @inbounds groups[idx_r] = dict.vals[dict_index]
+        else
+            ngroups += 1
+            @inbounds groups[idx_r] = ngroups
+            Base._setindex!(dict, idx_r, val_r, -dict_index)
+        end
+    end
+
+    @assert ngroups > 0 # we should not get here with 0-length right
+    return _innerjoin_postprocess(left, dict, groups, ngroups, right_len)
+end
+
+function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
+                               starts::Vector, rperm::Vector)
+    @inbounds for gix in groups
+        starts[gix] += 1
+    end
+
+    cumsum!(starts, starts)
+
+    @inbounds for (i, gix) in enumerate(groups)
+        rperm[starts[gix]] = i
+        starts[gix] -= 1
+    end
+    push!(starts, length(groups))
+    return nothing
+end
+
+function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
+                                groups::Vector{Int}, ngroups::Int, right_len::Int) where {T}
+    starts = zeros(Int, ngroups)
+    rperm = Vector{Int}(undef, right_len)
+
     left_ixs = Int[]
     right_ixs = Int[]
 
     # lower bound assuming we get matches
-    sizehint!(left_ixs, length(right))
-    sizehint!(right_ixs, length(right))
+    sizehint!(left_ixs, right_len)
+    sizehint!(right_ixs, right_len)
 
-    dict = Dict{T, Vector{Int}}()
-
-    for (idx_r, val_r) in enumerate(right)
-        push!(get!(Vector{Int}, dict, val_r), idx_r)
-    end
+    compute_join_indices!(groups, ngroups, starts, rperm)
 
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
-            @inbounds idxs_r = dict.vals[dict_index]
-            l = length(idxs_r)
+            @inbounds group_id = dict.vals[dict_index]
+            @inbounds ref_stop = starts[group_id + 1]
+            @inbounds l = ref_stop - starts[group_id]
             newn = n + l
             resize!(left_ixs, newn)
             @simd for i in n+1:n+l
@@ -267,7 +307,7 @@ function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}) where {T}
             end
             resize!(right_ixs, newn)
             @simd for i in 1:l
-                @inbounds right_ixs[n+i] = idxs_r[i]
+                @inbounds right_ixs[n + i] = rperm[ref_stop - i + 1]
             end
             n = newn
         end
