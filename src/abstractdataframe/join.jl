@@ -95,13 +95,50 @@ prepare_on_col() = throw(ArgumentError("at least one on column required when joi
 prepare_on_col(c::AbstractVector) = c
 prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 
+# in map2refs zero(V) is PooledArray.jl specific
+function map2refs(x::AbstractVector{T}, ref::PooledArray{T,V,1}) where {T, V}
+    refip = ref.invpool
+    return [get(refip, v, zero(V)) for v in x]
+end
+
+function map2refs(x::PooledArray{1, T}, ref::PooledArray{T,V,1}) where {T, V}
+    refip = ref.invpool
+    mapping = [get(refip, v, zero(V)) for v in x.pool]
+    return @inbounds [mapping[r] for r in x.refs]
+end
+
 function compose_inner_table(joiner::DataFrameJoiner,
                              makeunique::Bool,
                              left_rename::Union{Function, AbstractString, Symbol},
                              right_rename::Union{Function, AbstractString, Symbol})
 
-    left_col = prepare_on_col(eachcol(joiner.dfl_on)...)
-    right_col = prepare_on_col(eachcol(joiner.dfr_on)...)
+    right_shorter = length(joiner.dfr_on[!, 1]) <= length(joiner.dfl_on[!, 1])
+
+    left_cols = collect(eachcol(joiner.dfl_on))
+    right_cols = collect(eachcol(joiner.dfr_on))
+
+    if right_shorter
+        for i in eachindex(left_cols, right_cols)
+            rc = right_cols[i]
+            lc = left_cols[i]
+            if lc isa PooledArray && eltype(lc) == eltype(rc)
+                right_cols[i] = map2refs(rc, lc)
+                left_cols[i] = lc.refs
+            end
+        end
+    else
+        for i in eachindex(left_cols, right_cols)
+            rc = right_cols[i]
+            lc = left_cols[i]
+            if rc isa PooledArray && eltype(lc) == eltype(rc)
+                left_cols[i] = map2refs(lc, rc)
+                right_cols[i] = rc.refs
+            end
+        end
+    end
+
+    left_col = prepare_on_col(left_cols...)
+    right_col = prepare_on_col(right_cols...)
 
     if isempty(left_col) || isempty(right_col)
         # we treat this case separately so we know we have at least one element later
@@ -124,7 +161,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
 
         if both_sorted
             left_ixs, right_ixs = _innerjoin_sorted(left_col, right_col)
-        elseif length(right_col) <= length(left_col)
+        elseif right_shorter
             left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
         else
             right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
