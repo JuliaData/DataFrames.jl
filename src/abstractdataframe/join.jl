@@ -189,7 +189,7 @@ function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
 
     while left_cur <= left_n && right_cur <= right_n
         if isequal(left_val, right_val)
-            if left_new - left_cur == right_new - right_cur == 2
+            if left_new - left_cur == right_new - right_cur == 1
                 push!(left_ixs, left_cur)
                 push!(right_ixs, right_cur)
             else
@@ -249,13 +249,13 @@ function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict
 
     for idx_r in idx_r_start:right_len
         @inbounds val_r = right[idx_r]
-        dict_index = Base.ht_keyindex(dict, val_r)
+        dict_index = Base.ht_keyindex2!(dict, val_r)
         if dict_index > 0
             @inbounds groups[idx_r] = dict.vals[dict_index]
         else
             ngroups += 1
             @inbounds groups[idx_r] = ngroups
-            Base._setindex!(dict, idx_r, val_r, -dict_index)
+            Base._setindex!(dict, ngroups, val_r, -dict_index)
         end
     end
 

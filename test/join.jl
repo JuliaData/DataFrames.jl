@@ -936,4 +936,29 @@ end
           innerjoin(df1_view2, df2, on=:a)
 end
 
+@testset "innerjoin correctness tests" begin
+    function test_innerjoin(df1, df2)
+        @assert names(df1) == ["id", "x"]
+        @assert names(df2) == ["id", "y"]
+
+        dfres = DataFrame(id=[], x=[], y=[])
+        for i in axes(df1, 1), j in axes(df2, 1)
+            if isequal(df1.id[i], df2.id[j])
+                push!(dfres, (id=df1.id[i], x=df1.x[i], y=df2.y[j]))
+            end
+        end
+        return sort(dfres) == sort(innerjoin(df1, df2, on=:id))
+    end
+
+    for i in 1:20, j in 1:10
+        for df1 in [DataFrame(id=rand(1:i+j, i+j), x=1:i+j), DataFrame(id=rand(1:i, i), x=1:i)],
+            df2 in [DataFrame(id=rand(1:i+j, i+j), y=1:i+j), DataFrame(id=rand(1:i, i), y=1:i)]
+            for opleft = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))],
+                opright = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))]
+                @test test_innerjoin(opleft(df1), opright(df2))
+            end
+        end
+    end
+end
+
 end # module
