@@ -96,12 +96,12 @@ prepare_on_col(c::AbstractVector) = c
 prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 
 # in map2refs zero(V) is PooledArray.jl specific
-function map2refs(x::AbstractVector{T}, ref::PooledArray{T,V,1}) where {T, V}
+function map2refs(x::AbstractVector, ref::PooledArray{T,V,1}) where {T, V}
     refip = ref.invpool
     return [get(refip, v, zero(V)) for v in x]
 end
 
-function map2refs(x::PooledArray{1, T}, ref::PooledArray{T,V,1}) where {T, V}
+function map2refs(x::PooledVector, ref::PooledArray{T,V,1}) where {T, V}
     refip = ref.invpool
     mapping = [get(refip, v, zero(V)) for v in x.pool]
     return @inbounds [mapping[r] for r in x.refs]
@@ -117,11 +117,13 @@ function compose_inner_table(joiner::DataFrameJoiner,
     left_cols = collect(eachcol(joiner.dfl_on))
     right_cols = collect(eachcol(joiner.dfr_on))
 
+    disallow_sorted = false
+
     if right_shorter
         for i in eachindex(left_cols, right_cols)
             rc = right_cols[i]
             lc = left_cols[i]
-            if lc isa PooledArray && eltype(lc) == eltype(rc)
+            if lc isa PooledArray
                 right_cols[i] = map2refs(rc, lc)
                 left_cols[i] = lc.refs
             end
@@ -130,12 +132,31 @@ function compose_inner_table(joiner::DataFrameJoiner,
         for i in eachindex(left_cols, right_cols)
             rc = right_cols[i]
             lc = left_cols[i]
-            if rc isa PooledArray && eltype(lc) == eltype(rc)
-                left_cols[i] = map2refs(lc, rc)
+            if rc isa PooledArray
                 right_cols[i] = rc.refs
+                left_cols[i] = map2refs(lc, rc)
             end
+
+            # this is a workaround for https://github.com/JuliaData/CategoricalArrays.jl/issues/319
+            rct = typeof(right_cols[i])
+            lct = typeof(left_cols[i])
+            rcat = rct.name === :CategoricalArray && nameof(rct.module) === :CategoricalArrays
+            lcat = lct.name === :CategoricalArray && nameof(lct.module) === :CategoricalArrays
+            disallow_sorted |= rcat ⊻ lcat
         end
     end
+
+    # TODO: if PooledArrays are found potentially the following optimizations can be done:
+    # 1. identify rows in shorter table that should be dropped
+    # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that
+    #    drop rows from shorter table that do not match rows from longer table based on
+    #    PooledArray refpool check
+    # this optimization significantly complicates the code (especially sorted path).
+    # It should be added if in practice we find that the use case is often enough
+    # and that the benefits are significant. The two cases when the benefits should
+    # be expected are:
+    # 1. Shorter table is sorted when we drop rows not matching longer table rows
+    # 2. Shorter table does not have duplicates when we drop rows not matching longer table rows
 
     left_col = prepare_on_col(left_cols...)
     right_col = prepare_on_col(right_cols...)
@@ -145,18 +166,20 @@ function compose_inner_table(joiner::DataFrameJoiner,
         left_ixs, right_ixs = Int[], Int[]
     else
         both_sorted = false
-        try
-            # the isless, isequal and isconcretetype tests are to make sure
-            # that if we use the fast path for sorted vectors we do not hit
-            # the problem that some entries are not comparable
-            isequal(left_col[1], right_col[1])
-            isless(left_col[1], right_col[1])
-            if isconcretetype(eltype(left_col)) && isconcretetype(eltype(right_col)) &&
-               issorted(left_col) && issorted(right_col)
-                both_sorted = true
+        if disallow_sorted
+            try
+                # the isless, isequal and isconcretetype tests are to make sure
+                # that if we use the fast path for sorted vectors we do not hit
+                # the problem that some entries are not comparable
+                isequal(left_col[1], right_col[1])
+                isless(left_col[1], right_col[1])
+                if isconcretetype(eltype(left_col)) && isconcretetype(eltype(right_col)) &&
+                   issorted(left_col) && issorted(right_col)
+                    both_sorted = true
+                end
+            catch
+                # nothing to do - one of the columns is not sortable
             end
-        catch
-            # nothing to do - one of the columns is not sortable
         end
 
         if both_sorted

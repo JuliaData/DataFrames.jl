@@ -1,6 +1,6 @@
 module TestJoin
 
-using Test, DataFrames, Random, CategoricalArrays
+using Test, DataFrames, Random, CategoricalArrays, PooledArrays
 using DataFrames: similar_missing
 const ≅ = isequal
 
@@ -956,6 +956,25 @@ end
             for opleft = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))],
                 opright = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))]
                 @test test_innerjoin(opleft(df1), opright(df2))
+                @test test_innerjoin(opleft(df1), opright(rename(df1, :x => :y)))
+
+                df1p = copy(opleft(df1))
+                df1p[!, 1] = PooledArray(df1p[!, 1])
+                df2p = copy(opleft(df2))
+                df2p[!, 1] = PooledArray(df2p[!, 1])
+                @test test_innerjoin(df1, df2p)
+                @test test_innerjoin(df1p, df2)
+                @test test_innerjoin(df1p, df2p)
+                @test test_innerjoin(df1p, rename(df1p, :x => :y))
+
+                df1c = copy(opleft(df1))
+                df1c[!, 1] = categorical(df1c[!, 1])
+                df2c = copy(opleft(df2))
+                df2c[!, 1] = categorical(df2c[!, 1])
+                @test test_innerjoin(df1, df2c)
+                @test test_innerjoin(df1c, df2c)
+                @test test_innerjoin(df1c, df2)
+                @test test_innerjoin(df1c, rename(df1c, :x => :y))
             end
         end
     end
