@@ -72,8 +72,8 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
 * any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
 * a `Type`, in which case names of columns whose `eltype` is a subtype of `T`
   are returned
-* a `Function` predicate, in which case names of columns for which the predicate, taking a
-  `String` containg column name, returns `true`
+* a `Function` predicate taking the column name as a string and returning `true`
+  for columns that should be kept
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 """
@@ -88,7 +88,7 @@ end
 
 Base.names(df::AbstractDataFrame, T::Type) =
     [String(n) for (n, c) in pairs(eachcol(df)) if eltype(c) <: T]
-Base.names(df::AbstractDataFrame, fun::Function) = filter(fun, names(df))
+Base.names(df::AbstractDataFrame, fun::Function) = filter!(fun, names(df))
 
 # _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))

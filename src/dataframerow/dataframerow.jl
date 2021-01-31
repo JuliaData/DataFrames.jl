@@ -274,7 +274,7 @@ end
 
 Base.names(r::DataFrameRow, T::Type) =
     [String(n) for n in _names(r) if eltype(parent(r)[!, n]) <: T]
-Base.names(r::DataFrameRow, fun::Function) = filter(fun, names(r))
+Base.names(r::DataFrameRow, fun::Function) = filter!(fun, names(r))
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
