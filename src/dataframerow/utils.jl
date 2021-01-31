@@ -45,7 +45,7 @@ function hashrows_col!(h::Vector{UInt},
     # which is always zero
     # also when the number of values in the pool is more than half the length
     # of the vector avoid using this path. 50% is roughly based on benchmarks
-    if firstcol && 2 * length(rp) < length(v)
+    if firstcol && Int64(2) * length(rp) < length(v)
         hashes = Vector{UInt}(undef, length(rp))
         @inbounds for (i, v) in zip(eachindex(hashes), rp)
             hashes[i] = hash(v)
@@ -119,6 +119,7 @@ Base.IndexStyle(::Type{<:IntegerRefarray{T}}) where {T} = Base.IndexStyle(T)
     if eltype(x.x) >: Missing && v === missing
         return x.replacement
     else
+        # Overflow is guaranteed not to happen by checks before calling the constructor
         return Int(v - x.offset)
     end
 end
@@ -162,7 +163,7 @@ function refpool_and_array(x::AbstractArray)
         # (note that it would be possible to allow minval and maxval to be outside of the
         # range supported by Int by adding a type parameter for minval to IntegerRefarray)
         if typemin(Int) < minval <= maxval < typemax(Int) &&
-            ngroups + 1 <= 2 * length(x) <= typemax(Int)
+            ngroups + 1 <= Int64(2) * length(x) <= typemax(Int)
             T = eltype(x) >: Missing ? Union{Int, Missing} : Int
             refpool′ = IntegerRefpool{T}(Int(ngroups))
             refarray′ = IntegerRefarray(x, Int(minval) - 1, Int(ngroups) + 1)
@@ -287,7 +288,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     # but it needs to remain reasonable compared with the size of the data frame.
     anydups = !all(allunique, refpools)
     if prod(big.(ngroupstup)) > typemax(Int) ||
-       ngroups > 2 * length(groups) ||
+       ngroups > Int64(2) * length(groups) ||
        anydups
         # In the simplest case, we can work directly with the reference codes
         newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
