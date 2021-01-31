@@ -936,7 +936,7 @@ end
           innerjoin(df1_view2, df2, on=:a)
 end
 
-@testset "innerjoin correctness tests" begin
+@time @testset "innerjoin correctness tests" begin
     function test_innerjoin(df1, df2)
         @assert names(df1) == ["id", "x"]
         @assert names(df2) == ["id", "y"]
@@ -947,12 +947,28 @@ end
                 push!(dfres, (id=df1.id[i], x=df1.x[i], y=df2.y[j]))
             end
         end
-        return sort(dfres) == sort(innerjoin(df1, df2, on=:id))
+
+        df1x = copy(df1)
+        df1x.id2 = copy(df1x.id)
+        df2x = copy(df2)
+        df2x.id2 = copy(df2x.id)
+
+        sort!(dfres)
+        dfres2 = copy(dfres)
+        insertcols!(dfres2, 3, :id2 => dfres2.id)
+
+        return dfres ≅ sort(innerjoin(df1, df2, on=:id, matchmissing=:equal)) &&
+               dfres2 ≅ sort(innerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal))
     end
 
-    for i in 1:20, j in 1:10
-        for df1 in [DataFrame(id=rand(1:i+j, i+j), x=1:i+j), DataFrame(id=rand(1:i, i), x=1:i)],
-            df2 in [DataFrame(id=rand(1:i+j, i+j), y=1:i+j), DataFrame(id=rand(1:i, i), y=1:i)]
+    Random.seed!(1234)
+    for i in 1:10, j in 0:3
+        for df1 in [DataFrame(id=rand(1:i+j, i+j), x=1:i+j), DataFrame(id=rand(1:i, i), x=1:i),
+                    DataFrame(id=[rand(1:i+j, i+j); missing], x=1:i+j+1),
+                    DataFrame(id=[rand(1:i, i); missing], x=1:i+1)],
+            df2 in [DataFrame(id=rand(1:i+j, i+j), y=1:i+j), DataFrame(id=rand(1:i, i), y=1:i),
+                    DataFrame(id=[rand(1:i+j, i+j); missing], y=1:i+j+1),
+                    DataFrame(id=[rand(1:i, i); missing], y=1:i+1)]
             for opleft = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))],
                 opright = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))]
                 @test test_innerjoin(opleft(df1), opright(df2))
@@ -978,6 +994,12 @@ end
             end
         end
     end
+
+    @test innerjoin(DataFrame(id=[]), DataFrame(id=[]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id) == DataFrame(id=[])
 end
 
 end # module
