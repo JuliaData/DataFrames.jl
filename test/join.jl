@@ -936,7 +936,7 @@ end
           innerjoin(df1_view2, df2, on=:a)
 end
 
-@time @testset "innerjoin correctness tests" begin
+@testset "innerjoin correctness tests" begin
     function test_innerjoin(df1, df2)
         @assert names(df1) == ["id", "x"]
         @assert names(df2) == ["id", "y"]

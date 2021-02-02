@@ -216,12 +216,9 @@ end
     n = length(x)
     stop = start + 1
     while stop <= n
-        stop_value = x[stop]
-        if isequal(start_value, stop_value)
-            stop += 1
-        else
-            return stop, stop_value
-        end
+        @inbounds stop_value = x[stop]
+        isequal(start_value, stop_value) || break
+        stop += 1
     end
     return stop, start_value
 end
@@ -357,7 +354,7 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
     @inbounds for (idx_l, val_l) in enumerate(left)
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
-            @inbounds group_id = dict.vals[dict_index]
+            group_id = dict.vals[dict_index]
             @inbounds ref_stop = starts[group_id + 1]
             @inbounds l = ref_stop - starts[group_id]
             newn = n + l
