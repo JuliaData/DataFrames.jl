@@ -214,7 +214,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
 end
 
 @inline function find_next_range(x::AbstractArray, start::Int, start_value)
-    local stop_value
+    stop_value = start_value
     n = length(x)
     stop = start + 1
     while stop <= n
@@ -222,7 +222,7 @@ end
         isequal(start_value, stop_value) || break
         stop += 1
     end
-    return stop, start_value
+    return stop, stop_value
 end
 
 function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
