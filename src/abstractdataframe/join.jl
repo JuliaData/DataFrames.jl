@@ -372,16 +372,16 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
             group_id = dict.vals[dict_index]
-            @inbounds ref_stop = starts[group_id + 1]
-            @inbounds l = ref_stop - starts[group_id]
+            ref_stop = starts[group_id + 1]
+            l = ref_stop - starts[group_id]
             newn = n + l
             resize!(left_ixs, newn)
-            @simd for i in n+1:n+l
-                @inbounds left_ixs[i] = idx_l
+            for i in n+1:n+l
+                left_ixs[i] = idx_l
             end
             resize!(right_ixs, newn)
-            @simd for i in 1:l
-                @inbounds right_ixs[n + i] = rperm[ref_stop - i + 1]
+            for i in 1:l
+                right_ixs[n + i] = rperm[ref_stop - i + 1]
             end
             n = newn
         end
