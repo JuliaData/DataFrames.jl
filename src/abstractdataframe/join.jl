@@ -161,33 +161,35 @@ function compose_inner_table(joiner::DataFrameJoiner,
     left_col = prepare_on_col(left_cols...)
     right_col = prepare_on_col(right_cols...)
 
+    local left_ixs
+    local right_ixs
+    local already_joined
+
     if isempty(left_col) || isempty(right_col)
         # we treat this case separately so we know we have at least one element later
         left_ixs, right_ixs = Int[], Int[]
     else
-        both_sorted = false
-        if disallow_sorted
+        already_joined = false
+        # if sorting is not disallowed try using a fast algorithm that works
+        # on sorted columns; if it is not run or errors fall back to the unsorted case
+        # the try-catch is used to handle the case when columns on which we join
+        # contain values that are not comparable
+        if !disallow_sorted
             try
-                # the isless, isequal and isconcretetype tests are to make sure
-                # that if we use the fast path for sorted vectors we do not hit
-                # the problem that some entries are not comparable
-                isequal(left_col[1], right_col[1])
-                isless(left_col[1], right_col[1])
-                if isconcretetype(eltype(left_col)) && isconcretetype(eltype(right_col)) &&
-                   issorted(left_col) && issorted(right_col)
-                    both_sorted = true
+                if issorted(left_col) && issorted(right_col)
+                    left_ixs, right_ixs = _innerjoin_sorted(left_col, right_col)
+                    already_joined = true
                 end
             catch
                 # nothing to do - one of the columns is not sortable
             end
         end
-
-        if both_sorted
-            left_ixs, right_ixs = _innerjoin_sorted(left_col, right_col)
-        elseif right_shorter
-            left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
-        else
-            right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
+        if !already_joined
+            if right_shorter
+                left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
+            else
+                right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
+            end
         end
     end
 
@@ -273,10 +275,16 @@ function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
 end
 
 # optimistically assume that shorter table does not have duplicates in on column
+# if this is not the case we call _innerjoin_dup
+# which efficiently uses the work already done and continues with the more
+# memory expensive algorithm that allows for duplicates
 function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
     dict = Dict{T, Int}()
 
     for (idx_r, val_r) in enumerate(right)
+        # we use dict_index to make sure the following two operations are fast:
+        # - if index is found - fall back to algorithm allowing duplicates
+        # - if index is not found - add it
         dict_index = Base.ht_keyindex2!(dict, val_r)
         dict_index > 0 && return _innerjoin_dup(left, right, dict, idx_r)
         Base._setindex!(dict, idx_r, val_r, -dict_index)
@@ -286,6 +294,9 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     right_ixs = Int[]
 
     for (idx_l, val_l) in enumerate(left)
+        # we use dict_index to make sure the following two operations are fast:
+        # - if index is found - get it and process it
+        # - if index is not found - do nothing
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
             @inbounds idx_r = dict.vals[dict_index]
@@ -297,7 +308,7 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
 end
 
 # we fall back to general case if we have duplicates
-# normally it should happen fast
+# normally it should happen fast as we reuse work already done
 function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict{T, Int}, idx_r_start::Int) where {T}
     ngroups = idx_r_start - 1
     right_len = length(right)
@@ -306,6 +317,9 @@ function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict
 
     for idx_r in idx_r_start:right_len
         @inbounds val_r = right[idx_r]
+        # we use dict_index to make sure the following two operations are fast:
+        # - if index is found - process the row with existing group number
+        # - if index is not found - add a new group
         dict_index = Base.ht_keyindex2!(dict, val_r)
         if dict_index > 0
             @inbounds groups[idx_r] = dict.vals[dict_index]
@@ -352,6 +366,9 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
 
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
+        # we use dict_index to make sure the following two operations are fast:
+        # - if index is found - get it and process it
+        # - if index is not found - do nothing
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
             group_id = dict.vals[dict_index]
