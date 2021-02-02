@@ -104,7 +104,7 @@ end
 function map2refs(x::PooledVector, ref::PooledArray{T,V,1}) where {T, V}
     refip = ref.invpool
     mapping = [get(refip, v, zero(V)) for v in x.pool]
-    return @inbounds [mapping[r] for r in x.refs]
+    return [@inbounds mapping[r] for r in x.refs]
 end
 
 function compose_inner_table(joiner::DataFrameJoiner,
