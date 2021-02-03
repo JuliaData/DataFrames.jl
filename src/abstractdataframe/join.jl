@@ -95,16 +95,43 @@ prepare_on_col() = throw(ArgumentError("at least one on column required when joi
 prepare_on_col(c::AbstractVector) = c
 prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 
-# in map2refs zero(V) is PooledArray.jl specific
-function map2refs(x::AbstractVector, ref::PooledArray{T,V,1}) where {T, V}
-    refip = ref.invpool
-    return [get(refip, v, zero(V)) for v in x]
+# Return if it is allowed to use refpool instead of the original array for joining.
+# There are multiple conditions that must be met to allow for this.
+# In particular we must be able to find a sentinel value that will be used
+# in mapping to signal that the mapping to the longer column is not present
+# in some rare cases it is impossible to find such a sentinel (e.g. for
+# CategoricalArray with missing and having number of levels exactly equal
+# to the typemax of element type of ref pool)
+function check_mapping_allowed(short, long)
+    isempty(short) && return false, nothing
+    isnothing(DataAPI.refpool(long)) && return false, nothing
+    isnothing(DataAPI.invrefpool(long)) && return false, nothing
+
+    T = typeof(DataAPI.refarray(long))
+    T isa Union{Signed, Unsigned} || return false, nothing
+    sentinel = zero(T)
+    haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
+    try
+        sentinel = typemin(T)
+        haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
+        sentinel = typemax(T)
+        haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
+    catch
+        # nothing to do - we could not find an appropriate sentinel
+    end
+    return false, nothing
 end
 
-function map2refs(x::PooledVector, ref::PooledArray{T,V,1}) where {T, V}
-    refip = ref.invpool
-    mapping = [get(refip, v, zero(V)) for v in x.pool]
-    return [@inbounds mapping[r] for r in x.refs]
+# in map2refs zero(V) is PooledArray.jl specific
+function map2refs(x::AbstractVector, invrefpool, sentinel)
+    x_refpool = DataAPI.refpool(x)
+
+    if isnothing(x_refpool)
+        return [get(invrefpool, v, sentinel) for v in x]
+    else
+        mapping = [get(invrefpool, v, sentinel) for v in x.pool]
+        return [@inbounds mapping[r] for r in x.refs]
+    end
 end
 
 function compose_inner_table(joiner::DataFrameJoiner,
@@ -117,41 +144,55 @@ function compose_inner_table(joiner::DataFrameJoiner,
     left_cols = collect(eachcol(joiner.dfl_on))
     right_cols = collect(eachcol(joiner.dfr_on))
 
-    disallow_sorted = false
-
+    # if column of a longer table supports DataAPI.refpool and DataAPI.invrefpool
+    # remap matching left and right columns to use refs
     if right_shorter
         for i in eachindex(left_cols, right_cols)
             rc = right_cols[i]
             lc = left_cols[i]
-            if lc isa PooledArray
-                right_cols[i] = map2refs(rc, lc)
-                left_cols[i] = lc.refs
+            mappingallowed, sentinel = check_mapping_allowed(rc, lc)
+            lc_refpool = DataAPI.refpool(lc)
+            lc_invrefpool = DataAPI.invrefpool(lc)
+            if mappingallowed
+                right_cols[i] = map2refs(rc, lc_invrefpool, sentinel)
+                left_cols[i] = lc_refpool
             end
         end
     else
         for i in eachindex(left_cols, right_cols)
             rc = right_cols[i]
             lc = left_cols[i]
-            if rc isa PooledArray
-                right_cols[i] = rc.refs
-                left_cols[i] = map2refs(lc, rc)
+            mappingallowed, sentinel = check_mapping_allowed(lc, rc)
+            rc_refpool = DataAPI.refpool(rc)
+            rc_invrefpool = DataAPI.invrefpool(rc)
+            if mappingallowed
+                right_cols[i] = rc_refpool
+                left_cols[i] = map2refs(lc, rc_invrefpool, sentinel)
             end
-
-            # this is a workaround for https://github.com/JuliaData/CategoricalArrays.jl/issues/319
-            rct = typeof(right_cols[i])
-            lct = typeof(left_cols[i])
-            rcat = rct.name === :CategoricalArray && nameof(rct.module) === :CategoricalArrays
-            lcat = lct.name === :CategoricalArray && nameof(lct.module) === :CategoricalArrays
-            disallow_sorted |= rcat ⊻ lcat
         end
     end
 
-    # TODO: if PooledArrays are found potentially the following optimizations can be done:
+    # this is a workaround for https://github.com/JuliaData/CategoricalArrays.jl/issues/319
+    # this path will be triggered only in rare cases when the refpool code above
+    # fails to convert CategoricalArray into refpool
+    disallow_sorted = false
+
+    for (lc, rc) in zip(left_cols, right_cols)
+        lct = typeof(lc)
+        rct = typeof(rc)
+        rcat = rct.name === :CategoricalArray && nameof(rct.module) === :CategoricalArrays
+        lcat = lct.name === :CategoricalArray && nameof(lct.module) === :CategoricalArrays
+        disallow_sorted |= rcat ⊻ lcat
+    end
+
+    # TODO:
+    # If DataAPI.invrefpool vectors are found in the "on" columns
+    # then potentially the following optimizations can be done:
     # 1. identify rows in shorter table that should be dropped
     # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that
     #    drop rows from shorter table that do not match rows from longer table based on
     #    PooledArray refpool check
-    # this optimization significantly complicates the code (especially sorted path).
+    # This optimization significantly complicates the code (especially sorted path).
     # It should be added if in practice we find that the use case is often enough
     # and that the benefits are significant. The two cases when the benefits should
     # be expected are:
