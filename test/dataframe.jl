@@ -1925,16 +1925,34 @@ end
     @test_throws ArgumentError push!(df, "a")
 end
 
-@testset "names for Type" begin
-    df = DataFrame(a1 = 1:3, a2 = [1, missing, 3],
-                   b1 = 1.0:3.0, b2 = [1.0, missing, 3.0],
-                   c1 = '1':'3', c2 = ['1', missing, '3'])
-    @test names(df, Int) == ["a1"]
-    @test names(df, Union{Missing, Int}) == ["a1", "a2"]
-    @test names(df, Real) == ["a1", "b1"]
-    @test names(df, Union{Missing, Real}) == ["a1", "a2", "b1", "b2"]
-    @test names(df, Any) == names(df)
-    @test names(df, Union{Char, Float64, Missing}) == ["b1", "b2", "c1", "c2"]
+@testset "names for Type, predicate + standard tests of cols" begin
+    df_long = DataFrame(a1 = 1:3, a2 = [1, missing, 3],
+                        b1 = 1.0:3.0, b2 = [1.0, missing, 3.0],
+                        c1 = '1':'3', c2 = ['1', missing, '3'], x=1:3)
+    for x in (df_long[:, Not(end)], @view(df_long[:, Not(end)]),
+              groupby(df_long[:, Not(end)], :a1), groupby(@view(df_long[:, Not(end)]), :a1),
+              eachrow(df_long[:, Not(end)]), eachrow(@view(df_long[:, Not(end)])),
+              eachcol(df_long[:, Not(end)]), eachcol(@view(df_long[:, Not(end)])),
+              df_long[1, Not(end)])
+        @test names(x, 1) == ["a1"]
+        @test names(x, "a1") == ["a1"]
+        @test names(x, :a1) == ["a1"]
+        @test names(x, [2, 1]) == ["a2", "a1"]
+        @test names(x, ["a2", "a1"]) == ["a2", "a1"]
+        @test names(x, [:a2, :a1]) == ["a2", "a1"]
+        @test names(x, Int) == ["a1"]
+        @test names(x, Union{Missing, Int}) == ["a1", "a2"]
+        @test names(x, Real) == ["a1", "b1"]
+        @test names(x, Union{Missing, Real}) == ["a1", "a2", "b1", "b2"]
+        @test names(x, Any) == names(x)
+        @test isempty(names(x, BigInt))
+        @test names(x, Union{Char, Float64, Missing}) == ["b1", "b2", "c1", "c2"]
+        @test names(x, startswith("a")) == ["a1", "a2"]
+        @test names(x, :) == names(x)
+        @test names(x, <("a2")) == ["a1"]
+
+        @test_throws TypeError names(x, x -> 1)
+    end
 end
 
 end # module

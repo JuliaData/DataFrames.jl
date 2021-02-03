@@ -660,10 +660,11 @@ a function object that tests whether each value belongs to the subset
     More details on copies, views, and references can be found
     in the [`getindex` and `view`](@ref) section.
 
-#### Column selection using `select` and `select!`, `transform` and `transform!`
+#### Selecting and transforming columns
 
-You can also use the [`select`](@ref) and [`select!`](@ref) functions to select,
-rename and transform columns in a data frame.
+You can also use the [`select`](@ref)/[`select!`](@ref) and
+[`transform`](@ref)/[`transform!`](@ref) functions to select, rename and transform
+columns in a data frame.
 
 The `select` function creates a new data frame:
 ```jldoctest dataframe
