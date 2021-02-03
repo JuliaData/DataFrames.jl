@@ -95,18 +95,10 @@ prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 # Return if it is allowed to use refpool instead of the original array for joining.
 # There are multiple conditions that must be met to allow for this.
 # If it is allowed we are sure that nothing can be used as a sentinel
-function check_mapping_allowed(short::AbstractVector,
-                               refarray_long::AbstractVector,
-                               refpool_long, invrefpool_long)
-    if isempty(short) ||
-       isnothing(refpool_long) ||
-       isnothing(invrefpool_long) ||
-       eltype(refarray_long) isa Union{Signed, Unsigned}
-        return false
-    else
-        return true
-    end
-end
+check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
+                      refpool_long, invrefpool_long) =
+    !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
+        eltype(refarray_long) <: Union{Signed, Unsigned}
 
 @noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector) =
     [@inbounds mapping[r] for r in refarray]
@@ -118,7 +110,6 @@ function map2refs(x::PooledVector, invrefpool)
     mapping = [get(invrefpool, v, nothing) for v in x.pool]
     # use function barrier as mapping is type unstable
     return map_refarray(mapping, DataAPI.refarray(x))
-
 end
 
 function compose_inner_table(joiner::DataFrameJoiner,
