@@ -81,9 +81,6 @@ end
 
 Base.length(x::RowIndexMap) = length(x.orig)
 
-# composes the joined data table using the maps between the left and right
-# table rows and the indices of rows in the result
-
 _rename_cols(old_names::AbstractVector{Symbol},
              renamecols::Union{Function, Symbol, AbstractString},
              exclude::AbstractVector{Symbol} = Symbol[]) =
@@ -97,41 +94,31 @@ prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 
 # Return if it is allowed to use refpool instead of the original array for joining.
 # There are multiple conditions that must be met to allow for this.
-# In particular we must be able to find a sentinel value that will be used
-# in mapping to signal that the mapping to the longer column is not present.
-# In some rare cases it is impossible to find such a sentinel (e.g. for
-# CategoricalArray with missing and having number of levels exactly equal
-# to the typemax of element type of ref pool)
-function check_mapping_allowed(short::AbstractVector, long::AbstractVector)
-    isempty(short) && return false, nothing
-    isnothing(DataAPI.refpool(long)) && return false, nothing
-    isnothing(DataAPI.invrefpool(long)) && return false, nothing
-
-    T = eltype(DataAPI.refarray(long))
-    T isa Union{Signed, Unsigned} || return false, nothing
-    sentinel = zero(T)
-    haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
-    try
-        sentinel = typemin(T)
-        haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
-        sentinel = typemax(T)
-        haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
-    catch
-        # nothing to do - we could not find an appropriate sentinel
+# If it is allowed we are sure that nothing can be used as a sentinel
+function check_mapping_allowed(short::AbstractVector,
+                               refarray_long::AbstractVector,
+                               refpool_long, invrefpool_long)
+    if isempty(short) ||
+       isnothing(refpool_long) ||
+       isnothing(invrefpool_long) ||
+       eltype(refarray_long) isa Union{Signed, Unsigned}
+        return false
+    else
+        return true
     end
-    return false, nothing
 end
 
-# in map2refs zero(V) is PooledArray.jl specific
-function map2refs(x::AbstractVector, invrefpool, sentinel)
-    x_refpool = DataAPI.refpool(x)
+@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector) =
+    [@inbounds mapping[r] for r in refarray]
 
-    if isnothing(x_refpool)
-        return [get(invrefpool, v, sentinel) for v in x]
-    else
-        mapping = [get(invrefpool, v, sentinel) for v in x_refpool]
-        return [@inbounds mapping[r] for r in x.refs]
-    end
+map2refs(x::AbstractVector, invrefpool) = [get(invrefpool, v, nothing) for v in x]
+
+# this is PooledArrays.jl specific optimization as its pool is a 1-based vector
+function map2refs(x::PooledVector, invrefpool)
+    mapping = [get(invrefpool, v, nothing) for v in x.pool]
+    # use function barrier as mapping is type unstable
+    return map_refarray(mapping, DataAPI.refarray(x))
+
 end
 
 function compose_inner_table(joiner::DataFrameJoiner,
@@ -139,7 +126,9 @@ function compose_inner_table(joiner::DataFrameJoiner,
                              left_rename::Union{Function, AbstractString, Symbol},
                              right_rename::Union{Function, AbstractString, Symbol})
 
-    right_shorter = length(joiner.dfr_on[!, 1]) <= length(joiner.dfl_on[!, 1])
+    right_len = length(joiner.dfr_on[!, 1])
+    left_len = length(joiner.dfl_on[!, 1])
+    right_shorter = right_len <= left_len
 
     left_cols = collect(eachcol(joiner.dfl_on))
     right_cols = collect(eachcol(joiner.dfr_on))
@@ -150,24 +139,26 @@ function compose_inner_table(joiner::DataFrameJoiner,
         for i in eachindex(left_cols, right_cols)
             rc = right_cols[i]
             lc = left_cols[i]
-            mappingallowed, sentinel = check_mapping_allowed(rc, lc)
+
+            lc_refs = DataAPI.refarray(lc)
             lc_refpool = DataAPI.refpool(lc)
             lc_invrefpool = DataAPI.invrefpool(lc)
-            if mappingallowed
-                right_cols[i] = map2refs(rc, lc_invrefpool, sentinel)
-                left_cols[i] = lc_refpool
+            if check_mapping_allowed(rc, lc_refs, lc_refpool, lc_invrefpool)
+                right_cols[i] = map2refs(rc, lc_invrefpool)
+                left_cols[i] = lc_refs
             end
         end
     else
         for i in eachindex(left_cols, right_cols)
             rc = right_cols[i]
             lc = left_cols[i]
-            mappingallowed, sentinel = check_mapping_allowed(lc, rc)
+
+            rc_refs = DataAPI.refarray(rc)
             rc_refpool = DataAPI.refpool(rc)
             rc_invrefpool = DataAPI.invrefpool(rc)
-            if mappingallowed
-                right_cols[i] = rc_refpool
-                left_cols[i] = map2refs(lc, rc_invrefpool, sentinel)
+            if check_mapping_allowed(lc, rc_refs, rc_refpool, rc_invrefpool)
+                right_cols[i] = rc_refs
+                left_cols[i] = map2refs(lc, rc_invrefpool)
             end
         end
     end
@@ -178,6 +169,8 @@ function compose_inner_table(joiner::DataFrameJoiner,
     disallow_sorted = false
 
     for (lc, rc) in zip(left_cols, right_cols)
+        @assert length(lc) == left_len
+        @assert length(rc) == right_len
         lct = typeof(lc)
         rct = typeof(rc)
         rcat = rct.name === :CategoricalArray && nameof(rct.module) === :CategoricalArrays
