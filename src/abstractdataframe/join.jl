@@ -98,16 +98,16 @@ prepare_on_col(cs::AbstractVector...) = tuple.(cs...)
 # Return if it is allowed to use refpool instead of the original array for joining.
 # There are multiple conditions that must be met to allow for this.
 # In particular we must be able to find a sentinel value that will be used
-# in mapping to signal that the mapping to the longer column is not present
-# in some rare cases it is impossible to find such a sentinel (e.g. for
+# in mapping to signal that the mapping to the longer column is not present.
+# In some rare cases it is impossible to find such a sentinel (e.g. for
 # CategoricalArray with missing and having number of levels exactly equal
 # to the typemax of element type of ref pool)
-function check_mapping_allowed(short, long)
+function check_mapping_allowed(short::AbstractVector, long::AbstractVector)
     isempty(short) && return false, nothing
     isnothing(DataAPI.refpool(long)) && return false, nothing
     isnothing(DataAPI.invrefpool(long)) && return false, nothing
 
-    T = typeof(DataAPI.refarray(long))
+    T = eltype(DataAPI.refarray(long))
     T isa Union{Signed, Unsigned} || return false, nothing
     sentinel = zero(T)
     haskey(DataAPI.invrefpool(long), sentinel) || return true, sentinel
@@ -129,7 +129,7 @@ function map2refs(x::AbstractVector, invrefpool, sentinel)
     if isnothing(x_refpool)
         return [get(invrefpool, v, sentinel) for v in x]
     else
-        mapping = [get(invrefpool, v, sentinel) for v in x.pool]
+        mapping = [get(invrefpool, v, sentinel) for v in x_refpool]
         return [@inbounds mapping[r] for r in x.refs]
     end
 end
