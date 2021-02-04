@@ -108,24 +108,17 @@ check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
 
 function map2refs(x::AbstractVector, invrefpool)
     x_refpool = DataAPI.refpool(x)
-    x_refarray = DataAPI.refarray(x)
     if x_refpool isa AbstractVector{<:Integer} && 0 <= firstindex(x_refpool) <= 1
-        return [get(invrefpool, v, nothing) for v in x]
-    else
         # here we know that x_refpool is AbstractVector that allows integer indexing
         # and its firstindex must be an integer
-        fi = firstindex(x_refpool)
-        # if fi is not 0 or 1 then we fallback to slow path for safety reasons
+        # if firstindex is not 0 or 1 then we fallback to slow path for safety reasons
         # all refpool we currently know have firstindex 0 or 1
         # if there is some very strange firstindex we might run into overflow issues
-        if 0 <= fi <= 1
-            mapping = [get(invrefpool, v, nothing) for v in x_refpool]
-            # use function barrier as mapping is type unstable
-            return map_refarray(mapping, x_refarray, Val(fi == 0))
-        else
-            return [get(invrefpool, v, nothing) for v in x]
-        end
-
+        # below use function barrier as mapping is not type stable
+        mapping = [get(invrefpool, v, nothing) for v in x_refpool]
+        return map_refarray(mapping, DataAPI.refarray(x), Val(firstindex(x_refpool) == 0))
+    else
+        return [get(invrefpool, v, nothing) for v in x]
     end
 end
 
