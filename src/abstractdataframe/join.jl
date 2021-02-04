@@ -100,11 +100,8 @@ check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
     !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
         eltype(refarray_long) <: Union{Signed, Unsigned}
 
-@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{true}) =
-    [@inbounds mapping[r + 1] for r in refarray]
-
-@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{false}) =
-    [@inbounds mapping[r] for r in refarray]
+@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{fi})  where {fi} =
+    [@inbounds mapping[r - fi + 1] for r in refarray]
 
 function map2refs(x::AbstractVector, invrefpool)
     x_refpool = DataAPI.refpool(x)
@@ -116,7 +113,7 @@ function map2refs(x::AbstractVector, invrefpool)
         # if there is some very strange firstindex we might run into overflow issues
         # below use function barrier as mapping is not type stable
         mapping = [get(invrefpool, v, nothing) for v in x_refpool]
-        return map_refarray(mapping, DataAPI.refarray(x), Val(firstindex(x_refpool) == 0))
+        return map_refarray(mapping, DataAPI.refarray(x), Val(Int(firstindex(x_refpool))))
     else
         return [get(invrefpool, v, nothing) for v in x]
     end
