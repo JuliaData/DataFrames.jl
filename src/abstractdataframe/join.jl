@@ -100,16 +100,33 @@ check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
     !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
         eltype(refarray_long) <: Union{Signed, Unsigned}
 
-@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector) =
+@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{true}) =
+    [@inbounds mapping[r + 1] for r in refarray]
+
+@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{false}) =
     [@inbounds mapping[r] for r in refarray]
 
-map2refs(x::AbstractVector, invrefpool) = [get(invrefpool, v, nothing) for v in x]
+function map2refs(x::AbstractVector, invrefpool)
+    x_refpool = DataAPI.refpool(x)
+    x_refarray = DataAPI.refarray(x)
+    if isnothing(x_refpool) || !(x_refpool isa AbstractVector) || !(eltype(x_refarray) <: Integer)
+        return [get(invrefpool, v, nothing) for v in x]
+    else
+        # here we know that x_refpool is AbstractVector that allows integer indexing
+        # and its firstindex must be an integer
+        fi = firstindex(x_refpool)
+        # if fi is not 0 or 1 then we fallback to slow path for safety reasons
+        # all refpool we currently know have firstindex 0 or 1
+        # if there is some very strange firstindex we might run into oveflow issues
+        if 0 <= fi <= 1
+            mapping = [get(invrefpool, v, nothing) for v in x_refpool]
+            # use function barrier as mapping is type unstable
+            return map_refarray(mapping, x_refarray, Val(fi == 0))
+        else
+            return [get(invrefpool, v, nothing) for v in x]
+        end
 
-# this is PooledArrays.jl specific optimization as its pool is a 1-based vector
-function map2refs(x::PooledVector, invrefpool)
-    mapping = [get(invrefpool, v, nothing) for v in x.pool]
-    # use function barrier as mapping is type unstable
-    return map_refarray(mapping, DataAPI.refarray(x))
+    end
 end
 
 function compose_inner_table(joiner::DataFrameJoiner,
