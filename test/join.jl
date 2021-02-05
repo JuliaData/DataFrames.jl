@@ -1,7 +1,7 @@
 module TestJoin
 
 using Test, DataFrames, Random, CategoricalArrays, PooledArrays
-using DataFrames: similar_missing
+using DataFrames: similar_missing, OnCol
 const ≅ = isequal
 
 name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
@@ -936,6 +936,67 @@ end
           innerjoin(df1_view2, df2, on=:a)
 end
 
+@testset "OnCol correcntess tests" begin
+    Random.seed!(1234)
+    c1 = collect(1:10^2)
+    c2 = collect(Float64, 1:10^2)
+    c3 = collect(sort(string.(1:10^2)))
+    c4 = repeat(1:10, inner=10)
+    c5 = collect(Float64, repeat(1:50, inner=2))
+    c6 = sort(string.(repeat(1:25,inner=4)))
+    c7 = repeat(20:-1:1, inner=5)
+
+    @test_throws AssertionError OnCol()
+    @test_throws AssertionError OnCol(c1)
+    @test_throws AssertionError OnCol(c1, [1])
+    @test_throws MethodError OnCol(c1, 1)
+
+    oncols = [OnCol(c1, c2), OnCol(c3, c4), OnCol(c5, c6), OnCol(c1, c2, c3),
+              OnCol(c2, c3, c4), OnCol(c4, c5, c6), OnCol(c1, c2, c3, c4),
+              OnCol(c2, c3, c4, c5), OnCol(c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5),
+              OnCol(c2, c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5, c6),
+              OnCol(c4, c7), OnCol(c4, c5, c7), OnCol(c4, c5, c6, c7)]
+   tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
+              tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+              tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+              tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+              tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+
+    for (oncol, tupcol) in zip(oncols, tupcols)
+        @test issorted(oncol) == issorted(tupcol)
+    end
+
+    for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        @test hash(oncols[j][i]) == hash(tupcols[j][i])
+        @test hash(oncols[j][i], UInt(10)) == hash(tupcols[j][i], UInt(10))
+        for k in eachindex(c1)
+            @test isequal(oncols[j][i], oncols[j][k]) == isequal(tupcols[j][i], tupcols[j][k])
+            @test isequal(oncols[j][k], oncols[j][i]) == isequal(tupcols[j][k], tupcols[j][i])
+            @test isless(oncols[j][i], oncols[j][k]) == isless(tupcols[j][i], tupcols[j][k])
+            @test isless(oncols[j][k], oncols[j][i]) == isless(tupcols[j][k], tupcols[j][i])
+        end
+    end
+
+    foreach(shuffle!, [c1, c2, c3, c4, c5, c6])
+
+    tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
+              tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+              tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+              tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+              tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+
+    for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        @test hash(oncols[j][i]) == hash(tupcols[j][i])
+        @test hash(oncols[j][i], UInt(10)) == hash(tupcols[j][i], UInt(10))
+        for k in eachindex(c1)
+            @test isequal(oncols[j][i], oncols[j][k]) == isequal(tupcols[j][i], tupcols[j][k])
+            @test isequal(oncols[j][k], oncols[j][i]) == isequal(tupcols[j][k], tupcols[j][i])
+            @test isless(oncols[j][i], oncols[j][k]) == isless(tupcols[j][i], tupcols[j][k])
+            @test isless(oncols[j][k], oncols[j][i]) == isless(tupcols[j][k], tupcols[j][i])
+        end
+    end
+end
+
 @testset "innerjoin correctness tests" begin
     function test_innerjoin(df1, df2)
         @assert names(df1) == ["id", "x"]
@@ -962,7 +1023,7 @@ end
     end
 
     Random.seed!(1234)
-    for i in 1:10, j in 0:3
+    for i in 1:5, j in 0:2
         for df1 in [DataFrame(id=rand(1:i+j, i+j), x=1:i+j), DataFrame(id=rand(1:i, i), x=1:i),
                     DataFrame(id=[rand(1:i+j, i+j); missing], x=1:i+j+1),
                     DataFrame(id=[rand(1:i, i); missing], x=1:i+1)],
@@ -991,6 +1052,8 @@ end
                 @test test_innerjoin(df1c, df2c)
                 @test test_innerjoin(df1c, df2)
                 @test test_innerjoin(df1c, rename(df1c, :x => :y))
+                @test test_innerjoin(df1p, df2c)
+                @test test_innerjoin(df1c, df2p)
             end
         end
     end
