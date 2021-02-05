@@ -234,7 +234,7 @@ prepare_on_col(cs::AbstractVector...) = OnCol(cs...)
 
 # Return if it is allowed to use refpool instead of the original array for joining.
 # There are multiple conditions that must be met to allow for this.
-# If it is allowed we are sure that nothing can be used as a sentinel
+# If it is allowed we are sure that missing can be used as a sentinel
 check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
                       refpool_long, invrefpool_long) =
     !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
@@ -504,8 +504,9 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
                                  right::AbstractVector{<:Union{Integer, Missing}})
     minv, maxv = extrema_missing(right)
 
-    if (maxv - minv) > 128 && (maxv - minv) ÷ 2 > length(right) &&
-       (minv < typemin(Int) + 2 || maxv > typemax(Int) - 3)
+    val_range = big(maxv) - big(minv)
+    if (val_range > 128 && val_range ÷ 2 > length(right)) ||
+       minv < typemin(Int) + 2 || maxv > typemax(Int) - 3
        return _innerjoin_unsorted(left, right)
     end
 
