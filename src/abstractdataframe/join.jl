@@ -252,10 +252,10 @@ function map2refs(x::AbstractVector, invrefpool)
         # all refpool we currently know have firstindex 0 or 1
         # if there is some very strange firstindex we might run into overflow issues
         # below use function barrier as mapping is not type stable
-        mapping = [get(invrefpool, v, nothing) for v in x_refpool]
+        mapping = [get(invrefpool, v, missing) for v in x_refpool]
         return map_refarray(mapping, DataAPI.refarray(x), Val(Int(firstindex(x_refpool))))
     else
-        return [get(invrefpool, v, nothing) for v in x]
+        return [get(invrefpool, v, missing) for v in x]
     end
 end
 
@@ -358,9 +358,19 @@ function compose_inner_table(joiner::DataFrameJoiner,
         end
         if !already_joined
             if right_shorter
-                left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
+                if left_col isa AbstractVector{<:Union{Integer, Missing}} &&
+                   right_col isa AbstractVector{<:Union{Integer, Missing}}
+                    left_ixs, right_ixs = _innerjoin_unsorted_int(left_col, right_col)
+                else
+                    left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
+                end
             else
-                right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
+                if left_col isa AbstractVector{<:Union{Integer, Missing}} &&
+                   right_col isa AbstractVector{<:Union{Integer, Missing}}
+                    right_ixs, left_ixs = _innerjoin_unsorted_int(right_col, left_col)
+                else
+                    right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
+                end
             end
         end
     end
@@ -479,6 +489,62 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     return left_ixs, right_ixs
 end
 
+extrema_missing(x::AbstractVector{Missing}) = 1, 0
+
+function extrema_missing(x::AbstractVector{T}) where {T<:Union{Integer, Missing}}
+    try
+        return extrema(skipmissing(x))
+    catch
+        S = nonmissingtype(T)
+        return S(1), S(0)
+    end
+end
+
+function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}},
+                                 right::AbstractVector{<:Union{Integer, Missing}})
+    minv, maxv = extrema_missing(right)
+
+    if (maxv - minv) > 128 && (maxv - minv) ÷ 2 > length(right) &&
+       (minv < typemin(Int) + 2 || maxv > typemax(Int) - 3)
+       return _innerjoin_unsorted(left, right)
+    end
+
+    offset = 1 - Int(minv) # we are now sure it does not overflow
+    len = Int(maxv) - Int(minv) + 2
+    dict = zeros(Int, len)
+
+    @inbounds for (idx_r, val_r) in enumerate(right)
+        i = ismissing(val_r) ? length(dict) : Int(val_r) + offset
+        if dict[i] > 0
+            return _innerjoin_dup_int(left, right, dict, idx_r, offset, Int(minv), Int(maxv))
+        end
+        dict[i] = idx_r
+    end
+
+    left_ixs = Int[]
+    right_ixs = Int[]
+
+    @inbounds for (idx_l, val_l) in enumerate(left)
+        # we use dict_index to make sure the following two operations are fast:
+        # - if index is found - get it and process it
+        # - if index is not found - do nothing
+        if ismissing(val_l)
+            idx_r = dict[end]
+            if idx_r > 0
+                push!(left_ixs, idx_l)
+                push!(right_ixs, idx_r)
+            end
+        elseif (minv <= val_l <= maxv)
+            idx_r = dict[Int(val_l) + offset]
+            if idx_r > 0
+                push!(left_ixs, idx_l)
+                push!(right_ixs, idx_r)
+            end
+        end
+    end
+    return left_ixs, right_ixs
+end
+
 # we fall back to general case if we have duplicates
 # normally it should happen fast as we reuse work already done
 function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict{T, Int}, idx_r_start::Int) where {T}
@@ -504,6 +570,31 @@ function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict
 
     @assert ngroups > 0 # we should not get here with 0-length right
     return _innerjoin_postprocess(left, dict, groups, ngroups, right_len)
+end
+
+function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
+                            right::AbstractVector{<:Union{Integer, Missing}},
+                            dict::Vector{Int}, idx_r_start::Int, offset::Int, minv::Int, maxv::Int)
+    ngroups = idx_r_start - 1
+    right_len = length(right)
+    groups = Vector{Int}(undef, right_len)
+    groups[1:ngroups] = 1:ngroups
+
+    @inbounds for idx_r in idx_r_start:right_len
+        val_r = right[idx_r]
+        i = ismissing(val_r) ? length(dict) : Int(val_r) + offset
+        dict_val = dict[i]
+        if dict_val > 0
+            groups[idx_r] = dict_val
+        else
+            ngroups += 1
+            groups[idx_r] = ngroups
+            dict[i] = ngroups
+        end
+    end
+
+    @assert ngroups > 0 # we should not get here with 0-length right
+    return _innerjoin_postprocess_int(left, dict, groups, ngroups, right_len, offset, minv, maxv)
 end
 
 function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
@@ -544,6 +635,50 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
         dict_index = Base.ht_keyindex(dict, val_l)
         if dict_index > 0 # -1 if key not found
             group_id = dict.vals[dict_index]
+            ref_stop = starts[group_id + 1]
+            l = ref_stop - starts[group_id]
+            newn = n + l
+            resize!(left_ixs, newn)
+            for i in n+1:n+l
+                left_ixs[i] = idx_l
+            end
+            resize!(right_ixs, newn)
+            for i in 1:l
+                right_ixs[n + i] = rperm[ref_stop - i + 1]
+            end
+            n = newn
+        end
+    end
+
+    return left_ixs, right_ixs
+end
+
+function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
+                                    dict::Vector{Int},
+                                    groups::Vector{Int}, ngroups::Int, right_len::Int,
+                                    offset::Int, minv::Int, maxv::Int)
+    starts = zeros(Int, ngroups)
+    rperm = Vector{Int}(undef, right_len)
+
+    left_ixs = Int[]
+    right_ixs = Int[]
+
+    sizehint!(left_ixs, right_len)
+    sizehint!(right_ixs, right_len)
+
+    compute_join_indices!(groups, ngroups, starts, rperm)
+
+    n = 0
+    @inbounds for (idx_l, val_l) in enumerate(left)
+        if ismissing(val_l)
+            group_id = dict[end]
+        elseif (minv <= val_l <= maxv)
+            group_id = dict[Int(val_l) + offset]
+        else
+            group_id = 0
+        end
+
+        if group_id > 0
             ref_stop = starts[group_id + 1]
             l = ref_stop - starts[group_id]
             newn = n + l
