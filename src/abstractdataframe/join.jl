@@ -94,7 +94,7 @@ struct OnColRow{T}
     h::Vector{UInt}
 
     OnColRow(row::Union{Signed,Unsigned},
-             cols::NTuple{N, AbstractVector}, h::Vector{UInt})  where {N} =
+             cols::NTuple{<:Any, AbstractVector}, h::Vector{UInt}) =
         new{typeof(cols)}(Int(row), cols, h)
 end
 
@@ -124,6 +124,7 @@ end
 Base.hash(ocr1::OnColRow, h::UInt) = throw(MethodError(hash, (ocr1, h)))
 @inline Base.hash(ocr1::OnColRow) = @inbounds ocr1.h[ocr1.row]
 
+# Hashing one column at a time is faster since it can use SIMD
 function _prehash(oc::OnCol)
     h = oc.h
     resize!(h, oc.len)
@@ -492,7 +493,7 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     return left_ixs, right_ixs
 end
 
-extrema_missing(x::AbstractVector{Missing}) = 1, 0
+extrema_missing(x::AbstractVector{Missing}) = (1, 0)
 
 function extrema_missing(x::AbstractVector{T}) where {T<:Union{Integer, Missing}}
     try
@@ -538,7 +539,7 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
                 push!(left_ixs, idx_l)
                 push!(right_ixs, idx_r)
             end
-        elseif (minv <= val_l <= maxv)
+        elseif minv <= val_l <= maxv
             idx_r = dict[Int(val_l) + offset]
             if idx_r > 0
                 push!(left_ixs, idx_l)
@@ -678,7 +679,7 @@ function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missin
     @inbounds for (idx_l, val_l) in enumerate(left)
         if ismissing(val_l)
             group_id = dict[end]
-        elseif (minv <= val_l <= maxv)
+        elseif minv <= val_l <= maxv
             group_id = dict[Int(val_l) + offset]
         else
             group_id = 0
