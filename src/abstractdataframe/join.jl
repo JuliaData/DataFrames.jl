@@ -342,15 +342,12 @@ function compose_inner_table(joiner::DataFrameJoiner,
     left_col = prepare_on_col(left_cols...)
     right_col = prepare_on_col(right_cols...)
 
-    local left_ixs
-    local right_ixs
-    local already_joined
+    left_ixs = Int[]
+    right_ixs = Int[]
+    already_joined = false
 
-    if isempty(left_col) || isempty(right_col)
-        # we treat this case separately so we know we have at least one element later
-        left_ixs, right_ixs = Int[], Int[]
-    else
-        already_joined = false
+    # here we know that we have at least one element later
+    if !(isempty(left_col) || isempty(right_col))
         # if sorting is not disallowed try using a fast algorithm that works
         # on sorted columns; if it is not run or errors fall back to the unsorted case
         # the try-catch is used to handle the case when columns on which we join
