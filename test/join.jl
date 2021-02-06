@@ -956,14 +956,16 @@ end
               OnCol(c2, c3, c4, c5), OnCol(c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5),
               OnCol(c2, c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5, c6),
               OnCol(c4, c7), OnCol(c4, c5, c7), OnCol(c4, c5, c6, c7)]
-   tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
-              tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
-              tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
-              tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
-              tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+    tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
+               tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+               tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+               tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+               tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
 
     for (oncol, tupcol) in zip(oncols, tupcols)
         @test issorted(oncol) == issorted(tupcol)
+        @test IndexStyle(oncol) === IndexLinear()
+        @test_throws MethodError oncol[1] == oncol[2]
     end
 
     for i in eachindex(c1), j in eachindex(oncols, tupcols)
@@ -980,10 +982,10 @@ end
     foreach(shuffle!, [c1, c2, c3, c4, c5, c6])
 
     tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
-              tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
-              tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
-              tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
-              tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+               tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+               tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+               tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+               tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
 
     for i in eachindex(c1), j in eachindex(oncols, tupcols)
         @test hash(oncols[j][i]) == hash(tupcols[j][i])
@@ -998,6 +1000,9 @@ end
 end
 
 @testset "innerjoin correctness tests" begin
+
+    @test_throws ArgumentError DataFrames.prepare_on_col()
+
     function test_innerjoin(df1, df2)
         @assert names(df1) == ["id", "x"]
         @assert names(df2) == ["id", "y"]
@@ -1058,11 +1063,32 @@ end
         end
     end
 
+    # some special cases
     @test innerjoin(DataFrame(id=[]), DataFrame(id=[]), on=:id) == DataFrame(id=[])
     @test innerjoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id) == DataFrame(id=[])
     @test innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id) == DataFrame(id=[])
     @test innerjoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id) == DataFrame(id=[])
     @test innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id) == DataFrame(id=[])
+
+    @test innerjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
+                    on=:id, matchmissing=:equal) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
+                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
+
+    @test innerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
+          DataFrame(id=[typemin(Int)])
+    @test innerjoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id) ==
+          DataFrame(id=[typemax(Int)])
+    @test innerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
+          DataFrame(id=[2000, 100])
 end
 
 end # module
