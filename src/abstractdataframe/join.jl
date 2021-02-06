@@ -119,6 +119,9 @@ Base.IndexStyle(::Type{<:OnCol}) = Base.IndexLinear()
     return OnColRow(i, oc.cols)
 end
 
+# TODO: rewrite hash, isequal and isless to use @generated
+# or some other approach that would keep them efficient and avoid code duplication
+
 @inline function Base.hash(ocr1::OnColRow{<:NTuple{2, AbstractVector}}, h::UInt)
     r1 = ocr1.row
     c11, c12 = ocr1.cols
@@ -143,7 +146,8 @@ end
 
 Base.:(==)(x::OnColRow, y::OnColRow) = MethodError(==, (x, y))
 
-@inline function Base.isequal(ocr1::OnColRow{<:NTuple{2, AbstractVector}}, ocr2::OnColRow{<:NTuple{2, AbstractVector}})
+@inline function Base.isequal(ocr1::OnColRow{<:NTuple{2, AbstractVector}},
+                              ocr2::OnColRow{<:NTuple{2, AbstractVector}})
     r1 = ocr1.row
     c11, c12 = ocr1.cols
     r2 = ocr2.row
@@ -152,7 +156,8 @@ Base.:(==)(x::OnColRow, y::OnColRow) = MethodError(==, (x, y))
     return @inbounds isequal(c11[r1], c21[r2]) && isequal(c12[r1], c22[r2])
 end
 
-@inline function Base.isequal(ocr1::OnColRow{<:NTuple{3,AbstractVector}}, ocr2::OnColRow{<:NTuple{3,AbstractVector}})
+@inline function Base.isequal(ocr1::OnColRow{<:NTuple{3,AbstractVector}},
+                              ocr2::OnColRow{<:NTuple{3,AbstractVector}})
     r1 = ocr1.row
     c11, c12, c13 = ocr1.cols
     r2 = ocr2.row
@@ -162,7 +167,8 @@ end
                      isequal(c12[r1], c22[r2]) && isequal(c13[r1], c23[r2])
 end
 
-@inline function Base.isequal(ocr1::OnColRow{<:NTuple{N,AbstractVector}}, ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N}
+@inline function Base.isequal(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
+                              ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N}
     r1 = ocr1.row
     cols1 = ocr1.cols
     r2 = ocr2.row
@@ -174,7 +180,8 @@ end
     return true
 end
 
-@inline function Base.isless(ocr1::OnColRow{<:NTuple{2, AbstractVector}}, ocr2::OnColRow{<:NTuple{2, AbstractVector}})
+@inline function Base.isless(ocr1::OnColRow{<:NTuple{2, AbstractVector}},
+                             ocr2::OnColRow{<:NTuple{2, AbstractVector}})
     r1 = ocr1.row
     c11, c12 = ocr1.cols
     r2 = ocr2.row
@@ -190,7 +197,8 @@ end
     return isless(c12r, c22r)
 end
 
-@inline function Base.isless(ocr1::OnColRow{<:NTuple{3,AbstractVector}}, ocr2::OnColRow{<:NTuple{3,AbstractVector}})
+@inline function Base.isless(ocr1::OnColRow{<:NTuple{3,AbstractVector}},
+                             ocr2::OnColRow{<:NTuple{3,AbstractVector}})
     r1 = ocr1.row
     c11, c12, c13 = ocr1.cols
     r2 = ocr2.row
@@ -210,7 +218,8 @@ end
     return isless(c13r, c23r)
 end
 
-@inline function Base.isless(ocr1::OnColRow{<:NTuple{N,AbstractVector}}, ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {T1, T2, N}
+@inline function Base.isless(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
+                             ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {T1, T2, N}
     r1 = ocr1.row
     cols1 = ocr1.cols
     r2 = ocr2.row
@@ -505,7 +514,7 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
     minv, maxv = extrema_missing(right)
 
     val_range = big(maxv) - big(minv)
-    if (val_range > 128 && val_range ÷ 2 > length(right)) ||
+    if val_range ÷ 2 > max(64, length(right)) ||
        minv < typemin(Int) + 2 || maxv > typemax(Int) - 3
        return _innerjoin_unsorted(left, right)
     end
@@ -548,7 +557,8 @@ end
 
 # we fall back to general case if we have duplicates
 # normally it should happen fast as we reuse work already done
-function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T}, dict::Dict{T, Int}, idx_r_start::Int) where {T}
+function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T},
+                        dict::Dict{T, Int}, idx_r_start::Int) where {T}
     ngroups = idx_r_start - 1
     right_len = length(right)
     groups = Vector{Int}(undef, right_len)
@@ -575,7 +585,8 @@ end
 
 function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
                             right::AbstractVector{<:Union{Integer, Missing}},
-                            dict::Vector{Int}, idx_r_start::Int, offset::Int, minv::Int, maxv::Int)
+                            dict::Vector{Int}, idx_r_start::Int, offset::Int,
+                            minv::Int, maxv::Int)
     ngroups = idx_r_start - 1
     right_len = length(right)
     groups = Vector{Int}(undef, right_len)
