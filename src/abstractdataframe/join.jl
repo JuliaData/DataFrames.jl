@@ -463,8 +463,8 @@ end
 function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
     dict = Dict{T, Int}()
 
-    right <: OnCol && _prehash(right)
-    left <: OnCol && _prehash(left)
+    right isa OnCol && _prehash(right)
+    left isa OnCol && _prehash(left)
 
     for (idx_r, val_r) in enumerate(right)
         # we use dict_index to make sure the following two operations are fast:
