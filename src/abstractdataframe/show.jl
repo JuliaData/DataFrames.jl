@@ -91,9 +91,7 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
 
     maxwidth -= 1 # we will add "…" at the end
 
-    # This is only type display shortening so we
-    # are OK with any T whose name starts with CategoricalValue here
-    if startswith(sT, "CategoricalValue") || startswith(sT, "CategoricalArrays.CategoricalValue")
+    if nameof(T) === :CategoricalValue && nameof(parentmodule(T)) === :CategoricalArrays
         sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
             return sT * "…" * suffix

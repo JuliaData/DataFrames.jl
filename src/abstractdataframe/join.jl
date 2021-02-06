@@ -311,9 +311,9 @@ function compose_inner_table(joiner::DataFrameJoiner,
         @assert length(lc) == left_len
         @assert length(rc) == right_len
         lct = typeof(lc)
+        lcat = nameof(lct) === :CategoricalArray && nameof(parentmodule(lct)) === :CategoricalArrays
         rct = typeof(rc)
-        rcat = rct.name === :CategoricalArray && nameof(rct.module) === :CategoricalArrays
-        lcat = lct.name === :CategoricalArray && nameof(lct.module) === :CategoricalArrays
+        rcat = nameof(rct) === :CategoricalArray && nameof(parentmodule(rct)) === :CategoricalArrays
         disallow_sorted |= rcat ⊻ lcat
     end
 
