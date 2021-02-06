@@ -144,7 +144,7 @@ end
     return return hv
 end
 
-Base.:(==)(x::OnColRow, y::OnColRow) = MethodError(==, (x, y))
+Base.:(==)(x::OnColRow, y::OnColRow) = throw(MethodError(==, (x, y)))
 
 @inline function Base.isequal(ocr1::OnColRow{<:NTuple{2, AbstractVector}},
                               ocr2::OnColRow{<:NTuple{2, AbstractVector}})
