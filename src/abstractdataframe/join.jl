@@ -344,7 +344,6 @@ function compose_inner_table(joiner::DataFrameJoiner,
 
     local left_ixs
     local right_ixs
-    already_joined = false
 
     if isempty(left_col) || isempty(right_col)
         # we treat this case separately so we know we have at least one element later
@@ -354,6 +353,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
         # on sorted columns; if it is not run or errors fall back to the unsorted case
         # the try-catch is used to handle the case when columns on which we join
         # contain values that are not comparable
+        already_joined = false
         if !disallow_sorted
             try
                 if issorted(left_col) && issorted(right_col)
