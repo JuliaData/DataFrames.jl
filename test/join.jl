@@ -969,8 +969,8 @@ end
     end
 
     for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        DataFrames._prehash(oncols[j])
         @test hash(oncols[j][i]) == hash(tupcols[j][i])
-        @test hash(oncols[j][i], UInt(10)) == hash(tupcols[j][i], UInt(10))
         for k in eachindex(c1)
             @test isequal(oncols[j][i], oncols[j][k]) == isequal(tupcols[j][i], tupcols[j][k])
             @test isequal(oncols[j][k], oncols[j][i]) == isequal(tupcols[j][k], tupcols[j][i])
@@ -988,8 +988,8 @@ end
                tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
 
     for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        DataFrames._prehash(oncols[j])
         @test hash(oncols[j][i]) == hash(tupcols[j][i])
-        @test hash(oncols[j][i], UInt(10)) == hash(tupcols[j][i], UInt(10))
         for k in eachindex(c1)
             @test isequal(oncols[j][i], oncols[j][k]) == isequal(tupcols[j][i], tupcols[j][k])
             @test isequal(oncols[j][k], oncols[j][i]) == isequal(tupcols[j][k], tupcols[j][i])
