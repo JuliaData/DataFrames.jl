@@ -91,22 +91,24 @@ _rename_cols(old_names::AbstractVector{Symbol},
 struct OnColRow{T}
     row::Int
     cols::T
+    h::Vector{UInt}
 
     OnColRow(row::Union{Signed,Unsigned},
-             cols::NTuple{N, AbstractVector})  where {N} =
-        new{typeof(cols)}(Int(row), cols)
+             cols::NTuple{N, AbstractVector}, h::Vector{UInt})  where {N} =
+        new{typeof(cols)}(Int(row), cols, h)
 end
 
 struct OnCol{T,N} <: AbstractVector{OnColRow{T}}
     len::Int
     cols::T
+    h::Vector{UInt}
 
     function OnCol(cs::AbstractVector...)
         @assert length(cs) > 1
         len = length(cs[1])
         @assert all(x -> firstindex(x) == 1, cs)
         @assert all(x -> lastindex(x) == len, cs)
-        new{typeof(cs), length(cs)}(len, cs)
+        new{typeof(cs), length(cs)}(len, cs, UInt[])
     end
 end
 
@@ -116,33 +118,23 @@ Base.IndexStyle(::Type{<:OnCol}) = Base.IndexLinear()
 
 @inline function Base.getindex(oc::OnCol, i::Int)
     @boundscheck checkbounds(oc, i)
-    return OnColRow(i, oc.cols)
+    return OnColRow(i, oc.cols, oc.h)
 end
 
-# TODO: rewrite hash, isequal and isless to use @generated
-# or some other approach that would keep them efficient and avoid code duplication
+Base.hash(ocr1::OnColRow, h::UInt) = throw(MethodError(hash, (ocr1, h)))
+@inline Base.hash(ocr1::OnColRow) = @inbounds ocr1.h[ocr1.row]
 
-@inline function Base.hash(ocr1::OnColRow{<:NTuple{2, AbstractVector}}, h::UInt)
-    r1 = ocr1.row
-    c11, c12 = ocr1.cols
-    return @inbounds hash(c11[r1], hash((c12[r1],), h))
-end
-
-@inline function Base.hash(ocr1::OnColRow{<:NTuple{3,AbstractVector}}, h::UInt)
-    r1 = ocr1.row
-    c11, c12, c13 = ocr1.cols
-    return @inbounds hash(c11[r1], hash(c12[r1], hash((c13[r1],), h)))
-end
-
-@inline function Base.hash(ocr1::OnColRow{<:NTuple{N,AbstractVector}}, h::UInt) where {N}
-    r1 = ocr1.row
-    cols1 = ocr1.cols
-    @inbounds hv = hash((cols1[end][r1],), h)
-    for i in N-1:-1:1
-        hv = @inbounds hash(cols1[i][r1], hv)
+function _prehash(oc::OnCol)
+    h = oc.h
+    resize!(h, oc.len)
+    fill!(h, Base.tuplehash_seed)
+    for col in reverse(oc.cols)
+        h .= hash.(col, h)
     end
-    return return hv
 end
+
+# TODO: rewrite isequal and isless to use @generated
+# or some other approach that would keep them efficient and avoid code duplication
 
 Base.:(==)(x::OnColRow, y::OnColRow) = throw(MethodError(==, (x, y)))
 
@@ -470,6 +462,9 @@ end
 # memory expensive algorithm that allows for duplicates
 function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
     dict = Dict{T, Int}()
+
+    right <: OnCol && _prehash(right)
+    left <: OnCol && _prehash(left)
 
     for (idx_r, val_r) in enumerate(right)
         # we use dict_index to make sure the following two operations are fast:
