@@ -122,7 +122,7 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             # !ismissing check is purely an optimization to avoid a copy later
             outcol = similar(incol, condf === !ismissing ? S : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
-            resT = typeof(outcol).name
+            resT = typeof(outcol)
             if nameof(resT) === :CategoricalArray && nameof(parentmodule(resT)) === :CategoricalArrays
                 # we know that CategoricalArray has `pool` field
                 outcol.pool = incol.pool
