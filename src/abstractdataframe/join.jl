@@ -149,29 +149,10 @@ Base.:(==)(x::OnColRow, y::OnColRow) = throw(MethodError(==, (x, y)))
     return @inbounds isequal(c11[r1], c21[r2]) && isequal(c12[r1], c22[r2])
 end
 
-@inline function Base.isequal(ocr1::OnColRow{<:NTuple{3,AbstractVector}},
-                              ocr2::OnColRow{<:NTuple{3,AbstractVector}})
-    r1 = ocr1.row
-    c11, c12, c13 = ocr1.cols
-    r2 = ocr2.row
-    c21, c22, c23 = ocr2.cols
-
-    return @inbounds isequal(c11[r1], c21[r2]) &&
-                     isequal(c12[r1], c22[r2]) && isequal(c13[r1], c23[r2])
-end
-
-@inline function Base.isequal(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
-                              ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N}
-    r1 = ocr1.row
-    cols1 = ocr1.cols
-    r2 = ocr2.row
-    cols2 = ocr2.cols
-
-    @inbounds for i in 1:N
-        isequal(cols1[i][r1], cols2[i][r2]) || return false
-    end
-    return true
-end
+Base.isequal(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
+             ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N} =
+    isequal(ntuple(i -> @inbounds(ocr1.cols[i][ocr1.row]), N),
+            ntuple(i -> @inbounds(ocr2.cols[i][ocr2.row]), N))
 
 @inline function Base.isless(ocr1::OnColRow{<:NTuple{2, AbstractVector}},
                              ocr2::OnColRow{<:NTuple{2, AbstractVector}})
@@ -185,50 +166,13 @@ end
     c21r = @inbounds c21[r2]
     c22r = @inbounds c22[r2]
 
-    isless(c11r, c21r) && return true
-    isequal(c11r, c21r) || return false
-    return isless(c12r, c22r)
+    isless(c11r, c21r) || (isequal(c11r, c21r) && isless(c12r, c22r))
 end
 
-@inline function Base.isless(ocr1::OnColRow{<:NTuple{3,AbstractVector}},
-                             ocr2::OnColRow{<:NTuple{3,AbstractVector}})
-    r1 = ocr1.row
-    c11, c12, c13 = ocr1.cols
-    r2 = ocr2.row
-    c21, c22, c23 = ocr2.cols
-
-    c11r = @inbounds c11[r1]
-    c12r = @inbounds c12[r1]
-    c13r = @inbounds c13[r1]
-    c21r = @inbounds c21[r2]
-    c22r = @inbounds c22[r2]
-    c23r = @inbounds c23[r2]
-
-    isless(c11r, c21r) && return true
-    isequal(c11r, c21r) || return false
-    isless(c12r, c22r) && return true
-    isequal(c12r, c22r) || return false
-    return isless(c13r, c23r)
-end
-
-@inline function Base.isless(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
-                             ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {T1, T2, N}
-    r1 = ocr1.row
-    cols1 = ocr1.cols
-    r2 = ocr2.row
-    cols2 = ocr2.cols
-
-    lastcols1 = @inbounds cols1[1][r1]
-    lastcols2 = @inbounds cols2[1][r2]
-    isless(lastcols1, lastcols2) && return true
-    @inbounds for i in 2:N
-        isequal(lastcols1, lastcols2) || return false
-        lastcols1 = cols1[i][r1]
-        lastcols2 = cols2[i][r2]
-        isless(lastcols1, lastcols2) && return true
-    end
-    return false
-end
+@inline Base.isless(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
+                    ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N} =
+    isless(ntuple(i -> @inbounds(ocr1.cols[i][ocr1.row]), N),
+           ntuple(i -> @inbounds(ocr2.cols[i][ocr2.row]), N))
 
 prepare_on_col() = throw(ArgumentError("at least one on column required when joining"))
 prepare_on_col(c::AbstractVector) = c
