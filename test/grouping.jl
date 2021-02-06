@@ -3619,4 +3619,32 @@ end
     end
 end
 
+@testset "CategoricalArray thread safety" begin
+    Random.seed!(35)
+    df = DataFrame(x=rand(1:10, 100),
+                   y=categorical(rand(1:10, 100)),
+                   z=categorical(rand(100:200, 100)))
+    gd = groupby(df, :x)
+
+    @test combine(gd, :y => (y -> first(y)) => :y) ==
+        combine(gd, [:y, :z] => ((y, z) -> first(y)) => :y) ==
+        combine(gd, :y => (y -> get(first(y))) => :y)
+
+    @test combine(gd, [:x, :y, :z] =>
+                          ((x, y, z) -> first(x) <= 5 ? first(y) : first(z)) => :y) ==
+        combine(gd, [:x, :y, :z] =>
+                        ((x, y, z) -> first(x) <= 5 ? get(first(y)) : get(first(z))) => :y)
+
+    # Check that assigning CategoricalValue never mutates the target pool
+    # We rely on this behavior to avoid corruption when multiple threads call
+    # getindex and setindex! on the same array, possibly with CategoricalValues
+    # with different pools
+    x = categorical([1, 2, 3])
+    y = categorical([1, 2, 4])
+    pool = x.pool
+    x[1] = y[1]
+    @test x.pool !== pool
+    @test levels(pool) == 1:3
+end
+
 end # module
