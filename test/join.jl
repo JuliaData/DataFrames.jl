@@ -969,6 +969,7 @@ end
     end
 
     for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        @test_throws MethodError hash(oncols[j][1], zero(UInt))
         DataFrames._prehash(oncols[j])
         @test hash(oncols[j][i]) == hash(tupcols[j][i])
         for k in eachindex(c1)
