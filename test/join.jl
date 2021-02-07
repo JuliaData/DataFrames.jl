@@ -936,7 +936,7 @@ end
           innerjoin(df1_view2, df2, on=:a)
 end
 
-@testset "OnCol correcntess tests" begin
+@testset "OnCol correctness tests" begin
     Random.seed!(1234)
     c1 = collect(1:10^2)
     c2 = collect(Float64, 1:10^2)
