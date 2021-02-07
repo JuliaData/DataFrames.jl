@@ -176,6 +176,40 @@ function _combine_rows_with_first_task!(tid::Integer,
     return outcols
 end
 
+# CategoricalArray is thread-safe only when input and output levels are equal
+# since then all values are added upfront. Otherwise, if the function returns
+# CategoricalValues mixed from different pools, one thread may add values,
+# which may put the invpool in an invalid state while the other one is reading from it
+function isthreadsafe(outcols::NTuple{<:Any, AbstractVector},
+                      incols::Union{Tuple, NamedTuple})
+    anycat = any(outcols) do col
+        T = typeof(col)
+        # If the first result is missing, widening can give a CategoricalArray
+        # if later results are CategoricalValues
+        eltype(col) === Missing ||
+            (nameof(T) === :CategoricalArray &&
+             nameof(parentmodule(T)) === :CategoricalArrays)
+    end
+    if anycat
+        levs = nothing
+        for col in incols
+            T = typeof(col)
+            if nameof(T) === :CategoricalArray &&
+                nameof(parentmodule(T)) === :CategoricalArrays
+                if levs !== nothing
+                    levs == levels(col) || return false
+                else
+                    levs = levels(col)
+                end
+            end
+        end
+    end
+    return true
+end
+isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::AbstractVector) =
+    isthreadsafe(outcols, (incols,))
+isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::Nothing) = true
+
 function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    f::Base.Callable, gd::GroupedDataFrame,
@@ -190,11 +224,15 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
     # handle empty GroupedDataFrame
     len == 0 && return outcols, colnames
 
-    # Handle groups other than the first one (which is handled below)
+    # Handle first group
+    j1 = fill_row!(firstrow, outcols, 1, 1, colnames)
+    @assert j1 === nothing # eltype is guaranteed to match
+
+    # Handle groups other than the first one
     # Create up to one task per thread
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
-    @static if VERSION >= v"1.4"
+    if VERSION >= v"1.4" && isthreadsafe(outcols, incols)
         basesize = max(1, cld(len - 1, Threads.nthreads()))
         partitions = Iterators.partition(2:len, basesize)
     else
@@ -225,7 +263,13 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
     end
 
     # Copy data for any tasks that finished before others widened columns
+    oldoutcols = outcols
     outcols = outcolsref[]
+    if outcols !== oldoutcols # first group
+        for k in 1:length(outcols)
+            outcols[k][1] = oldoutcols[k][1]
+        end
+    end
     for (tid, idx) in enumerate(partitions)
         if type_widened[tid]
             oldoutcols = fetch(tasks[tid])
@@ -238,11 +282,6 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
             end
         end
     end
-
-    # Handle first group
-    # This is done at the end to write directly to the final outcols
-    j1 = fill_row!(firstrow, outcols, 1, 1, colnames)
-    @assert j1 === nothing # eltype is guaranteed to match
 
     return outcols, colnames
 end

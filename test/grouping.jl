@@ -3620,31 +3620,31 @@ end
 end
 
 @testset "CategoricalArray thread safety" begin
+    # These tests do not actually trigger multithreading bugs,
+    # but at least they check that the code that disables multithreading
+    # with CategoricalArray when levels are different works
     Random.seed!(35)
     df = DataFrame(x=rand(1:10, 100),
-                   y=categorical(rand(1:10, 100)),
-                   z=categorical(rand(100:200, 100)))
+                   y=categorical(rand(10:15, 100)),
+                   z=categorical(rand(0:20, 100)))
+    df.y2 = reverse(df.y) # Same levels
     gd = groupby(df, :x)
 
-    @test combine(gd, :y => (y -> first(y)) => :y) ==
-        combine(gd, [:y, :z] => ((y, z) -> first(y)) => :y) ==
-        combine(gd, :y => (y -> get(first(y))) => :y)
+    @test combine(gd, :y => (y -> y[1]) => :res) ==
+        combine(gd, [:y, :y2] => ((y, x) -> y[1]) => :res) ==
+        combine(gd, [:y, :x] => ((y, x) -> y[1]) => :res) ==
+        combine(gd, [:y, :z] => ((y, z) -> y[1]) => :res) ==
+        combine(gd, :y => (y -> get(y[1])) => :res)
+
+    @test combine(gd, [:x, :y, :y2] =>
+                          ((x, y, y2) -> x[1] <= 5 ? y[1] : y2[1]) => :res) ==
+        combine(gd, [:x, :y, :y2] =>
+                        ((x, y, y2) -> x[1] <= 5 ? get(y[1]) : get(y2[1])) => :res)
 
     @test combine(gd, [:x, :y, :z] =>
-                          ((x, y, z) -> first(x) <= 5 ? first(y) : first(z)) => :y) ==
+                          ((x, y, z) -> x[1] <= 5 ? y[1] : z[1]) => :res) ==
         combine(gd, [:x, :y, :z] =>
-                        ((x, y, z) -> first(x) <= 5 ? get(first(y)) : get(first(z))) => :y)
-
-    # Check that assigning CategoricalValue never mutates the target pool
-    # We rely on this behavior to avoid corruption when multiple threads call
-    # getindex and setindex! on the same array, possibly with CategoricalValues
-    # with different pools
-    x = categorical([1, 2, 3])
-    y = categorical([1, 2, 4])
-    pool = x.pool
-    x[1] = y[1]
-    @test x.pool !== pool
-    @test levels(pool) == 1:3
+                        ((x, y, z) -> x[1] <= 5 ? get(y[1]) : get(z[1])) => :res)
 end
 
 end # module
