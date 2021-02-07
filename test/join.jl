@@ -1046,48 +1046,62 @@ end
                     DataFrame(id=[rand(1:i, i); missing], y=1:i+1)]
             for opleft = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))],
                 opright = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))]
+
+                # integers
                 @test test_innerjoin(opleft(df1), opright(df2))
                 @test test_innerjoin(opleft(df1), opright(rename(df1, :x => :y)))
 
-                df1p = copy(opleft(df1))
-                df1p[!, 1] = PooledArray(df1p[!, 1])
-                df2p = copy(opleft(df2))
-                df2p[!, 1] = PooledArray(df2p[!, 1])
-                @test test_innerjoin(df1, df2p)
-                @test test_innerjoin(df1p, df2)
-                @test test_innerjoin(df1p, df2p)
-                @test test_innerjoin(df1p, rename(df1p, :x => :y))
+                # strings
+                df1s = copy(df1)
+                df1s[!, 1] = passmissing(string).(df1s[!, 1])
+                df2s = copy(df2)
+                df2s[!, 1] = passmissing(string).(df2s[!, 1])
+                @test test_innerjoin(opleft(df1s), opright(df2s))
+                @test test_innerjoin(opleft(df1s), opright(rename(df1s, :x => :y)))
 
+                # PooledArrays
+                df1p = copy(df1)
+                df1p[!, 1] = PooledArray(df1p[!, 1])
+                df2p = copy(df2)
+                df2p[!, 1] = PooledArray(df2p[!, 1])
+                @test test_innerjoin(opleft(df1), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(df2))
+                @test test_innerjoin(opleft(df1p), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(rename(df1p, :x => :y)))
+
+                # add unused level
                 df1p[1, 1] = 0
                 df2p[1, 1] = 0
                 df1p[1, 1] = 1
                 df2p[1, 1] = 1
-                @test test_innerjoin(df1, df2p)
-                @test test_innerjoin(df1p, df2)
-                @test test_innerjoin(df1p, df2p)
-                @test test_innerjoin(df1p, rename(df1p, :x => :y))
+                @test test_innerjoin(opleft(df1), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(df2))
+                @test test_innerjoin(opleft(df1p), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(rename(df1p, :x => :y)))
 
-                df1c = copy(opleft(df1))
+                # CategoricalArrays
+                df1c = copy(df1)
                 df1c[!, 1] = categorical(df1c[!, 1])
-                df2c = copy(opleft(df2))
+                df2c = copy(df2)
                 df2c[!, 1] = categorical(df2c[!, 1])
-                @test test_innerjoin(df1, df2c)
-                @test test_innerjoin(df1c, df2c)
-                @test test_innerjoin(df1c, df2)
-                @test test_innerjoin(df1c, rename(df1c, :x => :y))
-                @test test_innerjoin(df1p, df2c)
-                @test test_innerjoin(df1c, df2p)
+                @test test_innerjoin(opleft(df1), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2))
+                @test test_innerjoin(opleft(df1c), opright(rename(df1c, :x => :y)))
+                @test test_innerjoin(opleft(df1p), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2p))
 
+                # add unused level
                 df1c[1, 1] = 0
                 df2c[1, 1] = 0
                 df1c[1, 1] = 1
                 df2c[1, 1] = 1
-                @test test_innerjoin(df1, df2c)
-                @test test_innerjoin(df1c, df2c)
-                @test test_innerjoin(df1c, df2)
-                @test test_innerjoin(df1c, rename(df1c, :x => :y))
-                @test test_innerjoin(df1p, df2c)
-                @test test_innerjoin(df1c, df2p)
+                @test test_innerjoin(opleft(df1), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2))
+                @test test_innerjoin(opleft(df1c), opright(rename(df1c, :x => :y)))
+                @test test_innerjoin(opleft(df1p), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2p))
             end
         end
     end
