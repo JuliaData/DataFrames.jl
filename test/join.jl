@@ -1020,12 +1020,20 @@ end
         df2x = copy(df2)
         df2x.id2 = copy(df2x.id)
 
+        df1x2 = copy(df1x)
+        df1x2.id3 = copy(df1x2.id)
+        df2x2 = copy(df2x)
+        df2x2.id3 = copy(df2x2.id)
+
         sort!(dfres)
         dfres2 = copy(dfres)
         insertcols!(dfres2, 3, :id2 => dfres2.id)
+        dfres3 = copy(dfres2)
+        insertcols!(dfres3, 4, :id3 => dfres3.id)
 
         return dfres ≅ sort(innerjoin(df1, df2, on=:id, matchmissing=:equal)) &&
-               dfres2 ≅ sort(innerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal))
+               dfres2 ≅ sort(innerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal)) &&
+               dfres3 ≅ sort(innerjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal))
     end
 
     Random.seed!(1234)
