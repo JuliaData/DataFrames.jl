@@ -1058,10 +1058,30 @@ end
                 @test test_innerjoin(df1p, df2p)
                 @test test_innerjoin(df1p, rename(df1p, :x => :y))
 
+                df1p[1, 1] = 0
+                df2p[1, 1] = 0
+                df1p[1, 1] = 1
+                df2p[1, 1] = 1
+                @test test_innerjoin(df1, df2p)
+                @test test_innerjoin(df1p, df2)
+                @test test_innerjoin(df1p, df2p)
+                @test test_innerjoin(df1p, rename(df1p, :x => :y))
+
                 df1c = copy(opleft(df1))
                 df1c[!, 1] = categorical(df1c[!, 1])
                 df2c = copy(opleft(df2))
                 df2c[!, 1] = categorical(df2c[!, 1])
+                @test test_innerjoin(df1, df2c)
+                @test test_innerjoin(df1c, df2c)
+                @test test_innerjoin(df1c, df2)
+                @test test_innerjoin(df1c, rename(df1c, :x => :y))
+                @test test_innerjoin(df1p, df2c)
+                @test test_innerjoin(df1c, df2p)
+
+                df1c[1, 1] = 0
+                df2c[1, 1] = 0
+                df1c[1, 1] = 1
+                df2c[1, 1] = 1
                 @test test_innerjoin(df1, df2c)
                 @test test_innerjoin(df1c, df2c)
                 @test test_innerjoin(df1c, df2)
