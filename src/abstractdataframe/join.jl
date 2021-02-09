@@ -382,9 +382,9 @@ function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
                 idx = length(left_ixs)
                 left_range = left_cur:left_new - 1
                 right_range = right_cur:right_new - 1
-                to_grow = Base.checked_mul(length(left_range), length(right_range))
-                Base._growend!(left_ixs, to_grow)
-                Base._growend!(right_ixs, to_grow)
+                to_grow = Base.checked_add(idx, Base.checked_mul(length(left_range), length(right_range)))
+                resize!(left_ixs, to_grow)
+                resize!(right_ixs, to_grow)
                 @inbounds for right_i in right_range, left_i in left_range
                     idx += 1
                     left_ixs[idx] = left_i
