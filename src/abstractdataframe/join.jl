@@ -379,10 +379,16 @@ function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
                 push!(left_ixs, left_cur)
                 push!(right_ixs, right_cur)
             else
-                for (left_i, right_i) in Iterators.product(left_cur:left_new - 1,
-                                                           right_cur:right_new - 1)
-                    push!(left_ixs, left_i)
-                    push!(right_ixs, right_i)
+                idx = length(left_ixs)
+                left_range = left_cur:left_new - 1
+                right_range = right_cur:right_new - 1
+                to_grow = Base.checked_mul(length(left_range), length(right_range))
+                Base._growend!(left_ixs, to_grow)
+                Base._growend!(right_ixs, to_grow)
+                @inbounds for right_i in right_range, left_i in left_range
+                    idx += 1
+                    left_ixs[idx] = left_i
+                    right_ixs[idx] = right_i
                 end
             end
             left_cur, left_val = left_new, left_tmp
