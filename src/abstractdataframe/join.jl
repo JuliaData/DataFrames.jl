@@ -414,6 +414,9 @@ end
 function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
     dict = Dict{T, Int}()
 
+    right_len = length(right)
+    sizehint!(dict, right_len)
+
     right isa OnCol && _prehash(right)
     left isa OnCol && _prehash(left)
 
@@ -428,6 +431,10 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
 
     left_ixs = Int[]
     right_ixs = Int[]
+
+    # lower bound assuming we get matches
+    sizehint!(left_ixs, right_len)
+    sizehint!(right_ixs, right_len)
 
     for (idx_l, val_l) in enumerate(left)
         # we use dict_index to make sure the following two operations are fast:
@@ -478,6 +485,10 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
 
     left_ixs = Int[]
     right_ixs = Int[]
+
+    right_len = length(right)
+    sizehint!(left_ixs, right_len)
+    sizehint!(right_ixs, right_len)
 
     @inbounds for (idx_l, val_l) in enumerate(left)
         # we use dict_index to make sure the following two operations are fast:
