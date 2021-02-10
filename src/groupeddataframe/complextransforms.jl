@@ -57,7 +57,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
                                                              f, gd, incols, targetcolnames,
                                                              firstmulticol)
     else
-        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols, 1, 1,
+        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols,
                                                            f, gd, incols, targetcolnames,
                                                            firstmulticol)
     end
@@ -92,9 +92,126 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
+function _combine_rows_with_first_task!(tid::Integer,
+                                        rowstart::Integer,
+                                        rowend::Integer,
+                                        rownext::Integer,
+                                        outcols::NTuple{<:Any, AbstractVector},
+                                        outcolsref::Ref{NTuple{<:Any, AbstractVector}},
+                                        type_widened::AbstractVector{Bool},
+                                        widen_type_lock::ReentrantLock,
+                                        f::Base.Callable,
+                                        gd::GroupedDataFrame,
+                                        starts::AbstractVector{<:Integer},
+                                        ends::AbstractVector{<:Integer},
+                                        incols::Union{Nothing, AbstractVector,
+                                                      Tuple, NamedTuple},
+                                        colnames::NTuple{<:Any, Symbol},
+                                        firstmulticol::Val)
+    j = nothing
+    gdidx = gd.idx
+    local newoutcols
+    for i in rownext:rowend
+        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
+        j = fill_row!(row, outcols, i, 1, colnames)
+        if j !== nothing # Need to widen column
+            # If another thread is already widening outcols, wait until it's done
+            lock(widen_type_lock)
+            try
+                newoutcols = outcolsref[]
+                # Workaround for julia#15276
+                newoutcols = let i=i, j=j, newoutcols=newoutcols, row=row
+                    ntuple(length(newoutcols)) do k
+                        S = typeof(row[k])
+                        T = eltype(newoutcols[k])
+                        U = promote_type(S, T)
+                        if S <: T || U <: T
+                            newoutcols[k]
+                        else
+                            type_widened .= true
+                            Tables.allocatecolumn(U, length(newoutcols[k]))
+                        end
+                    end
+                end
+                for k in 1:length(outcols)
+                    if outcols[k] !== newoutcols[k]
+                        copyto!(newoutcols[k], rowstart,
+                                outcols[k], rowstart, i - rowstart + (k < j))
+                    end
+                end
+                j = fill_row!(row, newoutcols, i, j, colnames)
+                @assert j === nothing # eltype is guaranteed to match
+
+                outcolsref[] = newoutcols
+                type_widened[tid] = false
+            finally
+                unlock(widen_type_lock)
+            end
+            return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
+                                                  type_widened, widen_type_lock,
+                                                  f, gd, starts, ends,
+                                                  incols, colnames, firstmulticol)
+        end
+        # If other thread widened columns, copy already processed data to new vectors
+        # This doesn't have to happen immediately (hence type_widened isn't atomic),
+        # but the more we wait the more data will have to be copied
+        if type_widened[tid]
+            lock(widen_type_lock) do
+                type_widened[tid] = false
+                newoutcols = outcolsref[]
+                for k in 1:length(outcols)
+                    # Check whether this particular column has been widened
+                    if outcols[k] !== newoutcols[k]
+                        copyto!(newoutcols[k], rowstart,
+                                outcols[k], rowstart, i - rowstart + 1)
+                    end
+                end
+            end
+            return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
+                                                  type_widened, widen_type_lock,
+                                                  f, gd, starts, ends,
+                                                  incols, colnames, firstmulticol)
+        end
+    end
+    return outcols
+end
+
+# CategoricalArray is thread-safe only when input and output levels are equal
+# since then all values are added upfront. Otherwise, if the function returns
+# CategoricalValues mixed from different pools, one thread may add values,
+# which may put the invpool in an invalid state while the other one is reading from it
+function isthreadsafe(outcols::NTuple{<:Any, AbstractVector},
+                      incols::Union{Tuple, NamedTuple})
+    anycat = any(outcols) do col
+        T = typeof(col)
+        # If the first result is missing, widening can give a CategoricalArray
+        # if later results are CategoricalValues
+        eltype(col) === Missing ||
+            (nameof(T) === :CategoricalArray &&
+             nameof(parentmodule(T)) === :CategoricalArrays)
+    end
+    if anycat
+        levs = nothing
+        for col in incols
+            T = typeof(col)
+            if nameof(T) === :CategoricalArray &&
+                nameof(parentmodule(T)) === :CategoricalArrays
+                if levs !== nothing
+                    levs == levels(col) || return false
+                else
+                    levs = levels(col)
+                end
+            end
+        end
+    end
+    return true
+end
+isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::AbstractVector) =
+    isthreadsafe(outcols, (incols,))
+isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::Nothing) = true
+
+function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
-                                   rowstart::Integer, colstart::Integer,
                                    f::Base.Callable, gd::GroupedDataFrame,
                                    incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                    colnames::NTuple{N, Symbol},
@@ -108,31 +225,64 @@ function _combine_rows_with_first!(first::Union{NamedTuple, DataFrameRow},
     len == 0 && return outcols, colnames
 
     # Handle first group
-    j = fill_row!(first, outcols, rowstart, colstart, colnames)
-    @assert j === nothing # eltype is guaranteed to match
-    # Handle remaining groups
-    @inbounds for i in rowstart+1:len
-        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
-        j = fill_row!(row, outcols, i, 1, colnames)
-        if j !== nothing # Need to widen column type
-            local newcols
-            let i = i, j = j, outcols=outcols, row=row # Workaround for julia#15276
-                newcols = ntuple(length(outcols)) do k
-                    S = typeof(row[k])
-                    T = eltype(outcols[k])
-                    U = promote_type(S, T)
-                    if S <: T || U <: T
-                        outcols[k]
-                    else
-                        copyto!(Tables.allocatecolumn(U, length(outcols[k])),
-                                1, outcols[k], 1, k >= j ? i-1 : i)
-                    end
-                end
-            end
-            return _combine_rows_with_first!(row, newcols, i, j,
-                                             f, gd, incols, colnames, firstmulticol)
+    j1 = fill_row!(firstrow, outcols, 1, 1, colnames)
+    @assert j1 === nothing # eltype is guaranteed to match
+
+    # Handle groups other than the first one
+    # Create up to one task per thread
+    # This has lower overhead than creating one task per group,
+    # but is optimal only if operations take roughly the same time for all groups
+    if VERSION >= v"1.4" && isthreadsafe(outcols, incols)
+        basesize = max(1, cld(len - 1, Threads.nthreads()))
+        partitions = Iterators.partition(2:len, basesize)
+    else
+        partitions = (2:len,)
+    end
+    widen_type_lock = ReentrantLock()
+    outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols)
+    type_widened = fill(false, length(partitions))
+    tasks = Vector{Task}(undef, length(partitions))
+    for (tid, idx) in enumerate(partitions)
+        tasks[tid] =
+            @spawn _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
+                                                  outcols, outcolsref,
+                                                  type_widened, widen_type_lock,
+                                                  f, gd, starts, ends, incols, colnames,
+                                                  firstmulticol)
+    end
+
+    # Workaround JuliaLang/julia#38931:
+    # we want to preserve the exception type thrown in user code,
+    # and print the backtrace corresponding to it
+    for t in tasks
+        try
+            wait(t)
+        catch e
+            throw(t.exception)
         end
     end
+
+    # Copy data for any tasks that finished before others widened columns
+    oldoutcols = outcols
+    outcols = outcolsref[]
+    if outcols !== oldoutcols # first group
+        for k in 1:length(outcols)
+            outcols[k][1] = oldoutcols[k][1]
+        end
+    end
+    for (tid, idx) in enumerate(partitions)
+        if type_widened[tid]
+            oldoutcols = fetch(tasks[tid])
+            for k in 1:length(outcols)
+                # Check whether this particular column has been widened
+                if oldoutcols[k] !== outcols[k]
+                    copyto!(outcols[k], first(idx), oldoutcols[k], first(idx),
+                            last(idx) - first(idx) + 1)
+                end
+            end
+        end
+    end
+
     return outcols, colnames
 end
 

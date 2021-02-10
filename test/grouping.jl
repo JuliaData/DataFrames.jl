@@ -3761,4 +3761,74 @@ end
     end
 end
 
+@testset "result eltype widening from different tasks" begin
+    if VERSION < v"1.5"
+        Base.convert(::Type{Union{Missing, Nothing, Float64}}, x::Int) = float(x)
+    end
+    Random.seed!(1)
+    for y in (Any[1, missing, missing, 2, 4],
+              Any[1, missing, nothing, 2.1, 'a'],
+              Any[1, 1, missing, 1, nothing, 1, 2.1, 1, 'a'],
+              Any[1, 2, 3, 4, 5, 6, 2.1, missing, 'a'],
+              Any[1, 2, 3.1, 4, 5, 6, 2.1, missing, 'a']),
+        x in (1:length(y), rand(1:2, length(y)), rand(1:3, length(y)))
+        df = DataFrame(x=x, y1=y, y2=reverse(y))
+        gd = groupby(df, :x)
+        res = combine(gd, :y1 => (y -> y[1]) => :y1, :y2 => (y -> y[end]) => :y2)
+        # sleep ensures one task will widen the result after the other is done,
+        # so that data has to be copied at the end
+        @test res ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep((x == [5])/10); y[1])) => :y1,
+                          [:x, :y2] => ((x, y) -> (sleep((x == [5])/10); y[end])) => :y2) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(x[1]/100); y[1])) => :y1,
+                          [:x, :y2] => ((x, y) -> (sleep(x[1]/100); y[end])) => :y2) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(rand()/10); y[1])) => :y1,
+                          [:x, :y2] => ((x, y) -> (sleep(rand()/10); y[end])) => :y2)
+
+        if df.x == 1:nrow(df)
+            @test res ≅ df
+        end
+
+        res = combine(gd, :y1 => (y -> (y1=y[1], y2=y[end])) => AsTable,
+                          :y2 => (y -> (y3=y[1], y4=y[end])) => AsTable)
+        # sleep ensures one task will widen the result after the other is done,
+        # so that data has to be copied at the end
+        @test res ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep((x == [5])/10); (y1=y[1], y2=y[end]))) => AsTable,
+                          [:x, :y2] => ((x, y) -> (sleep((x == [5])/10); (y3=y[1], y4=y[end]))) => AsTable) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(x[1]/100); (y1=y[1], y2=y[end]))) => AsTable,
+                          [:x, :y2] => ((x, y) -> (sleep(x[1]/100); (y3=y[1], y4=y[end]))) => AsTable) ≅
+              combine(gd, [:x, :y1] => ((x, y) -> (sleep(rand()/10); (y1=y[1], y2=y[end]))) => AsTable,
+                          [:x, :y2] => ((x, y) -> (sleep(rand()/10); (y3=y[1], y4=y[end]))) => AsTable)
+    end
+end
+
+@testset "CategoricalArray thread safety" begin
+    # These tests do not actually trigger multithreading bugs,
+    # but at least they check that the code that disables multithreading
+    # with CategoricalArray when levels are different works
+    Random.seed!(35)
+    df = DataFrame(x=rand(1:10, 100),
+                   y=categorical(rand(10:15, 100)),
+                   z=categorical(rand(0:20, 100)))
+    df.y2 = reverse(df.y) # Same levels
+    gd = groupby(df, :x)
+
+    @test combine(gd, :y => (y -> y[1]) => :res) ==
+        combine(gd, [:y, :y2] => ((y, x) -> y[1]) => :res) ==
+        combine(gd, [:y, :x] => ((y, x) -> y[1]) => :res) ==
+        combine(gd, [:y, :z] => ((y, z) -> y[1]) => :res) ==
+        combine(gd, :y => (y -> get(y[1])) => :res)
+
+    @test combine(gd, [:x, :y, :y2] =>
+                          ((x, y, y2) -> x[1] <= 5 ? y[1] : y2[1]) => :res) ==
+        combine(gd, [:x, :y, :y2] =>
+                        ((x, y, y2) -> x[1] <= 5 ? get(y[1]) : get(y2[1])) => :res)
+
+    @test combine(gd, [:x, :y, :z] =>
+                          ((x, y, z) -> x[1] <= 5 ? y[1] : z[1]) => :res) ==
+        combine(gd, [:x, :y, :z] =>
+                        ((x, y, z) -> x[1] <= 5 ? get(y[1]) : get(z[1])) => :res)
+end
+
 end # module
