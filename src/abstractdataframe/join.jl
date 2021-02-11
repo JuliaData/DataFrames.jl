@@ -415,7 +415,7 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     dict = Dict{T, Int}()
 
     right_len = length(right)
-    sizehint!(dict, right_len)
+    sizehint!(dict, 2 * min(right_len, typemax(Int) >> 2))
 
     right isa OnCol && _prehash(right)
     left isa OnCol && _prehash(left)
