@@ -1119,6 +1119,8 @@ end
           DataFrame(id=[])
     @test innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
           DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
     @test innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
                     on=:id, matchmissing=:equal) == DataFrame(id=[])
     @test innerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
