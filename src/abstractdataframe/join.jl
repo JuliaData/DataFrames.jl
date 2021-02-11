@@ -421,12 +421,8 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     left isa OnCol && _prehash(left)
 
     for (idx_r, val_r) in enumerate(right)
-        # we use dict_index to make sure the following two operations are fast:
-        # - if index is found - fall back to algorithm allowing duplicates
-        # - if index is not found - add it
-        dict_index = Base.ht_keyindex2!(dict, val_r)
-        dict_index > 0 && return _innerjoin_dup(left, right, dict, idx_r)
-        Base._setindex!(dict, idx_r, val_r, -dict_index)
+        haskey(dict, val_r) && return _innerjoin_dup(left, right, dict, idx_r)
+        dict[val_r] = idx_r
     end
 
     left_ixs = Int[]
@@ -437,12 +433,9 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     sizehint!(right_ixs, right_len)
 
     for (idx_l, val_l) in enumerate(left)
-        # we use dict_index to make sure the following two operations are fast:
-        # - if index is found - get it and process it
-        # - if index is not found - do nothing
-        dict_index = Base.ht_keyindex(dict, val_l)
-        if dict_index > 0 # -1 if key not found
-            @inbounds idx_r = dict.vals[dict_index]
+        # we know that dict contains only positive values
+        idx_r = get(dict, val_l, -1)
+        if idx_r != -1
             push!(left_ixs, idx_l)
             push!(right_ixs, idx_r)
         end
@@ -520,18 +513,16 @@ function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T},
     groups = Vector{Int}(undef, right_len)
     groups[1:ngroups] = 1:ngroups
 
-    for idx_r in idx_r_start:right_len
-        @inbounds val_r = right[idx_r]
-        # we use dict_index to make sure the following two operations are fast:
-        # - if index is found - process the row with existing group number
-        # - if index is not found - add a new group
-        dict_index = Base.ht_keyindex2!(dict, val_r)
-        if dict_index > 0
-            @inbounds groups[idx_r] = dict.vals[dict_index]
-        else
+    @inbounds for idx_r in idx_r_start:right_len
+        val_r = right[idx_r]
+        # we know that group ids are positive
+        group_id = get(dict, val_r, -1)
+        if group_id == -1
             ngroups += 1
-            @inbounds groups[idx_r] = ngroups
-            Base._setindex!(dict, ngroups, val_r, -dict_index)
+            groups[idx_r] = ngroups
+            dict[val_r] = ngroups
+        else
+            groups[idx_r] = group_id
         end
     end
 
@@ -597,12 +588,8 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
 
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
-        # we use dict_index to make sure the following two operations are fast:
-        # - if index is found - get it and process it
-        # - if index is not found - do nothing
-        dict_index = Base.ht_keyindex(dict, val_l)
-        if dict_index > 0 # -1 if key not found
-            group_id = dict.vals[dict_index]
+        group_id = get(dict, val_l, -1)
+        if group_id != -1
             ref_stop = starts[group_id + 1]
             l = ref_stop - starts[group_id]
             newn = n + l
