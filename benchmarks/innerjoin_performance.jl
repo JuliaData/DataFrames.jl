@@ -3,7 +3,7 @@ using DataFrames
 using PooledArrays
 using Random
 
-fullgc() = (GC.gc(); GC.gc(); GC.gc(); GC.gc())
+fullgc() = (GC.gc(true); GC.gc(true); GC.gc(true); GC.gc(true))
 
 @assert length(ARGS) == 6
 @assert ARGS[3] in ["int", "pool", "cat", "str"]
@@ -75,23 +75,22 @@ else
 end
 
 if ARGS[6] == "1"
-    df1 = DataFrame(id1 = col1);
-    df2 = DataFrame(id1 = col2);
-    innerjoin(df1[1:1000, :], df2[1:2000, :], on=:id1);
-    innerjoin(df2[1:2000, :], df1[1:1000, :], on=:id1);
-    fullgc();
-    @time innerjoin(df1, df2, on=:id1);
-    fullgc();
-    @time innerjoin(df2, df1, on=:id1);
+    df1 = DataFrame(id1 = col1)
+    df2 = DataFrame(id1 = col2)
+    innerjoin(df1[1:1000, :], df2[1:2000, :], on=:id1)
+    innerjoin(df2[1:2000, :], df1[1:1000, :], on=:id1)
+    fullgc()
+    @time innerjoin(df1, df2, on=:id1)
+    fullgc()
+    @time innerjoin(df2, df1, on=:id1)
 else
     @assert ARGS[6] == "2"
-    df1 = DataFrame(id1 = col1, id2 = col1);
-    df2 = DataFrame(id1 = col1, id2 = col1);
-    innerjoin(df1[1:1000, :], df2[1:2000, :], on=[:id1, :id2]);
-    innerjoin(df2[1:2000, :], df1[1:1000, :], on=[:id1, :id2]);
-    fullgc();
-    @time innerjoin(df1, df2, on=[:id1, :id2]);
-    fullgc();
-    @time innerjoin(df2, df1, on=[:id1, :id2]);
-    df2 = DataFrame(id1 = col2, id2 = col2);
+    df1 = DataFrame(id1 = col1, id2 = col1)
+    df2 = DataFrame(id1 = col1, id2 = col1)
+    innerjoin(df1[1:1000, :], df2[1:2000, :], on=[:id1, :id2])
+    innerjoin(df2[1:2000, :], df1[1:1000, :], on=[:id1, :id2])
+    fullgc()
+    @time innerjoin(df1, df2, on=[:id1, :id2])
+    fullgc()
+    @time innerjoin(df2, df1, on=[:id1, :id2])
 end
