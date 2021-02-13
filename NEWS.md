@@ -35,7 +35,7 @@
 
 * `innerjoin` is now much faster and checks if passed data frames are sorted
   by the `on` columns and takes into account if shorter data frame that is joined
-  has unique values in `on` columns. These aspect of input data frames might affect
+  has unique values in `on` columns. These aspects of input data frames might affect
   the order of rows produced in the output
   ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612))
 
