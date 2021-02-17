@@ -22,7 +22,8 @@
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 * `names` now allows passing a predicate as a column selector
   ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
-
+* added support for casting `AbstractDataFrame` to `Dict` datatype
+  ([#2624](https://github.com/JuliaData/DataFrames.jl/pull/2624))
 ## Deprecated
 
 * all old deprecations now throw an error
@@ -132,7 +133,6 @@
   with `ByRow` is now accepted ([#2476](https://github.com/JuliaData/DataFrames.jl/pull/2476))
 * add `permutedims` method for `AbstractDataFrame` ([#2447](https://github.com/JuliaData/DataFrames.jl/pull/2447))
 * add support for `Cols` from DataAPI.jl ([#2495](https://github.com/JuliaData/DataFrames.jl/pull/2495))
-* added support for casting `AbstractDataFrame` to `Dict` datatype. [#2624](https://github.com/JuliaData/DataFrames.jl/pull/2624)
 
 ## Deprecated
 
