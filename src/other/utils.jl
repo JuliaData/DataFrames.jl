@@ -83,3 +83,19 @@ else
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
+
+"""
+## Dict(df::AbstractDataFrame)
+Converts an AbstractDataFrame into JSON-friendly 1-dimensional key data.
+
+"""
+function Base.Dict(df::DataFrame)
+    newdict = Dict()
+    name = names(df)
+    count = 1
+    for col in eachcol(df)
+        push!(newdict, name[count] => Array(col))
+        count += 1
+    end
+    return(newdict)
+end
