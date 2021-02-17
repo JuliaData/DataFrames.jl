@@ -24,6 +24,7 @@
   ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
 * added support for casting `AbstractDataFrame` to `Dict` datatype
   ([#2624](https://github.com/JuliaData/DataFrames.jl/pull/2624))
+  
 ## Deprecated
 
 * all old deprecations now throw an error
