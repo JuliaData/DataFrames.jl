@@ -1175,6 +1175,7 @@ Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where {T}  = Matrix{T}(df)
 Base.Array(df::AbstractDataFrame) = Matrix(df)
 Base.Array{T}(df::AbstractDataFrame) where {T} = Matrix{T}(df)
 
+Base.Dict(df::AbstractDataFrame) = Dict(pairs(eachcol(df)))
 """
     nonunique(df::AbstractDataFrame)
     nonunique(df::AbstractDataFrame, cols)
