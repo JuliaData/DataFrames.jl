@@ -113,7 +113,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    return res, nothing, nothing
+    return res
 end
 
 function find_missing_idxs(present::Vector{Int}, target_len::Int)
@@ -155,17 +155,16 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
 
     target_nrow = lil + loil + roil
 
-    _similar_left = roil == 0 ? similar : similar_missing
-    _similar_right = loil == 0 ? similar : similar_missing
+    _similar_left = kind == :left ? similar : similar_missing
+    _similar_right = kind == :right ? similar : similar_missing
 
     if isnothing(indicator)
-        left_indicator = nothing
-        right_indicator = nothing
+        src_indicator = nothing
     else
-        left_indicator = zeros(UInt32, target_nrow)
-        left_indicator[lil + 1:lil + loil] .= 1
-        right_indicator = zeros(UInt32, target_nrow)
-        right_indicator[lil + loil + 1:target_nrow] .= 2
+        src_indicator = Vector{UInt32}(undef, target_nrow)
+        src_indicator[1:lil] .= 3
+        src_indicator[lil + 1:lil + loil] .= 1
+        src_indicator[lil + loil + 1:target_nrow] .= 2
     end
 
     cols = Vector{AbstractVector}(undef, ncol(joiner.dfl) + ncol(dfr_noon))
@@ -231,7 +230,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    return res, left_indicator, right_indicator
+    return res, src_indicator
 end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -327,18 +326,17 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                             right_invalid_msg))
     end
 
-    left_indicator, right_indicator = nothing, nothing
+    src_indicator = nothing
     if kind == :inner
-        joined, left_indicator, right_indicator =
-            compose_inner_table(joiner, makeunique, left_rename, right_rename)
+        joined = compose_inner_table(joiner, makeunique, left_rename, right_rename)
     elseif kind == :left
-        joined, left_indicator, right_indicator =
+        joined, src_indicator =
             compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :right
-        joined, left_indicator, right_indicator =
+        joined, src_indicator =
             compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :outer
-        joined, left_indicator, right_indicator =
+        joined, src_indicator =
             compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
         # hash the right rows
@@ -373,12 +371,11 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        left_indicator .+= right_indicator
         pool = ["left_only", "right_only", "both"]
         invpool = Dict{String, UInt32}("left_only" => 1,
                                        "right_only" => 2,
                                        "both" => 3)
-        indicatorcol = PooledArray(PooledArrays.RefArray(left_indicator),
+        indicatorcol = PooledArray(PooledArrays.RefArray(src_indicator),
                                    invpool, pool)
 
         unique_indicator = indicator
@@ -397,8 +394,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
         joined[!, unique_indicator] = indicatorcol
     else
-        @assert isnothing(left_indicator)
-        @assert isnothing(right_indicator)
+        @assert isnothing(src_indicator)
     end
 
     return joined

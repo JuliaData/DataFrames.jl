@@ -435,13 +435,13 @@ end
     @test innerjoin(l, r, on=[:a, :b]) ≅ DataFrame(a=Any[3:7;], b=3:7)
     @test eltype.(eachcol(innerjoin(l, r, on=[:a, :b]))) == [Any, Int]
 
-    @test leftjoin(l, r, on=[:a, :b]) ≅ DataFrame(a=Any[1:7;], b=1:7)
+    @test leftjoin(l, r, on=[:a, :b]) ≅ DataFrame(a=Any[3:7;1:2], b=[3:7; 1:2])
     @test eltype.(eachcol(leftjoin(l, r, on=[:a, :b]))) == [Any, Int]
 
     @test rightjoin(l, r, on=[:a, :b]) ≅ DataFrame(a=Any[3:10;], b=3:10)
     @test eltype.(eachcol(rightjoin(l, r, on=[:a, :b]))) == [Any, Int]
 
-    @test outerjoin(l, r, on=[:a, :b]) ≅ DataFrame(a=Any[1:10;], b=1:10)
+    @test outerjoin(l, r, on=[:a, :b]) ≅ DataFrame(a=Any[3:7; 1:2; 8:10], b=[3:7; 1:2; 8:10])
     @test eltype.(eachcol(outerjoin(l, r, on=[:a, :b]))) == [Any, Int]
 
     # join by :b (Any is not on-column)
@@ -450,7 +450,7 @@ end
     @test eltype.(eachcol(innerjoin(l, r, on=:b, makeunique=true))) == [Any, Int, Any]
 
     @test leftjoin(l, r, on=:b, makeunique=true) ≅
-        DataFrame(a=Any[1:7;], b=1:7, a_1=[fill(missing, 2); 3:7;])
+        DataFrame(a=Any[3:7; 1:2], b=[3:7; 1:2], a_1=[3:7; missing; missing])
     @test eltype.(eachcol(leftjoin(l, r, on=:b, makeunique=true))) == [Any, Int, Any]
 
     @test rightjoin(l, r, on=:b, makeunique=true) ≅
@@ -458,7 +458,8 @@ end
     @test eltype.(eachcol(rightjoin(l, r, on=:b, makeunique=true))) == [Any, Int, Any]
 
     @test outerjoin(l, r, on=:b, makeunique=true) ≅
-        DataFrame(a=[1:7; fill(missing, 3)], b=1:10, a_1=[fill(missing, 2); 3:10;])
+        DataFrame(a=[3:7; 1:2; missing; missing; missing], b=[3:7; 1:2; 8:10],
+                  a_1=[3:7; missing; missing; 8:10])
     @test eltype.(eachcol(outerjoin(l, r, on=:b, makeunique=true))) == [Any, Int, Any]
 end
 
@@ -677,10 +678,10 @@ end
     df2 = DataFrame(id=[1, 2, 4], y=[1, 2, 4])
     df3 = DataFrame(id=[1, 3, 4], z=[1, 3, 4])
     @test innerjoin(df1, df2, df3, on=:id) == DataFrame(id=1, x=1, y=1, z=1)
-    @test outerjoin(df1, df2, df3, on=:id) ≅ DataFrame(id=[1, 2, 3, 4],
-                                                       x=[1, 2, 3, missing],
-                                                       y=[1, 2, missing, 4],
-                                                       z=[1, missing, 3, 4])
+    @test outerjoin(df1, df2, df3, on=:id) ≅ DataFrame(id=[1, 3, 4, 2],
+                                                       x=[1, 3, missing, 2],
+                                                       y=[1, missing, 4, 2],
+                                                       z=[1, 3, 4, missing])
     @test_throws MethodError leftjoin(df1, df2, df3, on=:id)
     @test_throws MethodError rightjoin(df1, df2, df3, on=:id)
     @test_throws MethodError semijoin(df1, df2, df3, on=:id)
@@ -904,15 +905,24 @@ end
     for i in 5:15, j in 5:15
         df1 = DataFrame(id=rand(1:10, i), x=1:i)
         df2 = DataFrame(id=rand(1:10, j), y=1:j)
+        dfi = innerjoin(df1, df2, on=:id)
         dfl = leftjoin(df1, df2, on=:id, indicator=:ind)
         dfr = rightjoin(df1, df2, on=:id, indicator=:ind)
         dfo = outerjoin(df1, df2, on=:id, indicator=:ind)
-        @test issorted(dfl.x)
-        @test issorted(string.(dfr.ind)) # use the fact that "both" < "right_only"
-        @test issorted(dfr.y[dfr.ind .== "both"])
-        @test issorted(dfr.y[dfr.ind .== "right_only"])
+        @test issorted(dfl, :ind)
+        @test issorted(dfr, :ind)
+        @test issorted(dfo, :ind)
+
+        @test all(==("both"), dfl[1:nrow(dfi), :ind])
+        @test dfl[1:nrow(dfi), 1:3] ≅ dfi
+        @test all(==("left_only"), dfl[nrow(dfi)+1:end, :ind])
+
+        @test all(==("both"), dfr[1:nrow(dfi), :ind])
+        @test dfr[1:nrow(dfi), 1:3] ≅ dfi
+        @test all(==("right_only"), dfr[nrow(dfi)+1:end, :ind])
+
+        @test all(==("both"), dfo[1:nrow(dfi), :ind])
         @test dfl ≅ dfo[1:nrow(dfl), :]
-        @test issorted(dfo[nrow(dfl)+1:end, :y])
         @test all(==("right_only"), dfo[nrow(dfl)+1:end, :ind])
     end
 end
