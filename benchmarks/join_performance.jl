@@ -90,7 +90,7 @@ if ARGS[6] == "1"
 else
     @assert ARGS[6] == "2"
     df1 = DataFrame(id1 = col1, id2 = col1)
-    df2 = DataFrame(id1 = col1, id2 = col1)
+    df2 = DataFrame(id1 = col2, id2 = col2)
     joinfun(df1[1:1000, :], df2[1:2000, :], on=[:id1, :id2])
     joinfun(df2[1:2000, :], df1[1:1000, :], on=[:id1, :id2])
     fullgc()
