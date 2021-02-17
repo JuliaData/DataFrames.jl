@@ -348,8 +348,8 @@ end
     @test levels(innerjoin(B, A, on=:b).b) == ["a", "b", "c"]
     @test levels(leftjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(leftjoin(B, A, on=:b).b) == ["a", "b", "c"]
-    @test levels(rightjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
-    @test levels(rightjoin(B, A, on=:b).b) == ["a", "b", "d", "c"]
+    @test levels(rightjoin(A, B, on=:b).b) == ["a", "b", "c"]
+    @test levels(rightjoin(B, A, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(outerjoin(B, A, on=:b).b) == ["a", "b", "d", "c"]
     @test levels(outerjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(semijoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
@@ -364,9 +364,9 @@ end
     @test levels(innerjoin(B, A, on=:b).b) == ["a", "b", "c"]
     @test levels(leftjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(leftjoin(B, A, on=:b).b) == ["a", "b", "c"]
-    @test levels(rightjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
-    @test levels(rightjoin(B, A, on=:b).b) == ["a", "b", "c", "d"]
-    @test levels(outerjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
+    @test levels(rightjoin(A, B, on=:b).b) == ["a", "b", "c"]
+    @test levels(rightjoin(B, A, on=:b).b) == ["d", "c", "b", "a"]
+    @test levels(outerjoin(A, B, on=:b).b) == ["a", "b", "c", "d"]
     @test levels(outerjoin(B, A, on=:b).b) == ["a", "b", "c", "d"]
     @test levels(semijoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(semijoin(B, A, on=:b).b) == ["a", "b", "c"]
@@ -384,13 +384,13 @@ end
         DataFrame(id = 3:7, sid = string.(3:7))
 
     @test leftjoin(left, right, on = :id => :ID) ≅
-        DataFrame(id = 1:7, sid = string.(1:7),
-                  SID = [missing, missing, string.(3:7)...])
+        DataFrame(id = [3:7; 1:2], sid = string.([3:7; 1:2]),
+                  SID = [string.(3:7)..., missing, missing])
     @test leftjoin(left, right, on = [:id => :ID]) ≅
-        DataFrame(id = 1:7, sid = string.(1:7),
-                  SID = [missing, missing, string.(3:7)...])
+        DataFrame(id = [3:7; 1:2], sid = string.([3:7; 1:2]),
+                  SID = [string.(3:7)..., missing, missing])
     @test leftjoin(left, right, on = [:id => :ID, :sid => :SID]) ==
-        DataFrame(id = 1:7, sid = string.(1:7))
+        DataFrame(id = [3:7; 1:2], sid = string.([3:7; 1:2]))
 
     @test rightjoin(left, right, on = :id => :ID) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
@@ -402,13 +402,13 @@ end
         DataFrame(id = 3:10, sid = string.(3:10))
 
     @test outerjoin(left, right, on = :id => :ID) ≅
-        DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
-                  SID = [missing, missing, string.(3:10)...])
+        DataFrame(id = [3:7; 1:2; 8:10], sid = [string.([3:7; 1:2])..., missing, missing, missing],
+                  SID = [string.(3:7)..., missing, missing, string.(8:10)...])
     @test outerjoin(left, right, on = [:id => :ID]) ≅
-        DataFrame(id = 1:10, sid = [string.(1:7)..., missing, missing, missing],
-                  SID = [missing, missing, string.(3:10)...])
+        DataFrame(id = [3:7; 1:2; 8:10], sid = [string.([3:7; 1:2])..., missing, missing, missing],
+                  SID = [string.(3:7)..., missing, missing, string.(8:10)...])
     @test outerjoin(left, right, on = [:id => :ID, :sid => :SID]) ≅
-        DataFrame(id = 1:10, sid = string.(1:10))
+        DataFrame(id = [3:7; 1:2; 8:10], sid = string.([3:7; 1:2; 8:10]))
 
     @test semijoin(left, right, on = :id => :ID) ==
         DataFrame(id = 3:7, sid = string.(3:7))
