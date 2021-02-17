@@ -6,6 +6,12 @@
 
 ## Bug fixes
 
+* DataFrames.jl now checks that passed columns are 1-based as this is a current
+  design assumption ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+* `mapcols!` makes sure not to create columns being `AbstractRange` consistently
+  with other methods that add columns to a `DataFrame`
+  ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+
 ## New functionalities
 
 * `firstindex`, `lastindex`, `size`, `ndims`, and `axes` are now consistently defined
@@ -14,6 +20,8 @@
   ([#2573](https://github.com/JuliaData/DataFrames.jl/pull/2573))
 * add `subset` and `subset!` functions that allow to subset rows
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
+* `names` now allows passing a predicate as a column selector
+  ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
 
 ## Deprecated
 
@@ -25,6 +33,11 @@
 
 ## Other relevant changes
 
+* `innerjoin` is now much faster and checks if passed data frames are sorted
+  by the `on` columns and takes into account if shorter data frame that is joined
+  has unique values in `on` columns. These aspects of input data frames might affect
+  the order of rows produced in the output
+  ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612))
 
 # DataFrames v0.22 Release Notes
 

@@ -2005,4 +2005,8 @@ end
     @test_throws BoundsError lastindex(gk, 0)
 end
 
+if VERSION >= v"1.5"
+    include("indexing_offset.jl")
+end
+
 end # module

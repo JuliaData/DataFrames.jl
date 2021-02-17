@@ -265,7 +265,7 @@ end
 end
 
 @testset "test constructor with vectors" begin
-    @test_throws ArgumentError DataFrame(Any[])
+    @test DataFrame(Any[]) == DataFrame()
     df = DataFrame(typeof((1, 1))[])
     @test names(df) == ["Column1", "Column2"]
     @test size(df) == (0, 2)

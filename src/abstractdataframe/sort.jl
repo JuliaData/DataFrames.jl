@@ -463,7 +463,7 @@ julia> sortperm(df, (:x, :y), rev=true)
  2
  4
 
- julia> sortperm(df, (:x, order(:y, rev=true)))
+ julia> sortperm(df, [:x, order(:y, rev=true)])
  4-element Array{Int64,1}:
   2
   4

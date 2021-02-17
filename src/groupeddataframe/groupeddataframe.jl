@@ -282,9 +282,9 @@ function Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
         all(x -> isequal(x...), zip(gd1, gd2))
 end
 
-Base.names(gd::GroupedDataFrame) = names(gd.parent)
-Base.names(gd::GroupedDataFrame, cols) = names(gd.parent, cols)
-_names(gd::GroupedDataFrame) = _names(gd.parent)
+Base.names(gd::GroupedDataFrame) = names(parent(gd))
+Base.names(gd::GroupedDataFrame, cols) = names(parent(gd), cols)
+_names(gd::GroupedDataFrame) = _names(parent(gd))
 
 function DataFrame(gd::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=true)
     if !copycols

@@ -1,7 +1,7 @@
 module TestJoin
 
-using Test, DataFrames, Random, CategoricalArrays
-using DataFrames: similar_missing
+using Test, DataFrames, Random, CategoricalArrays, PooledArrays
+using DataFrames: similar_missing, OnCol
 const ≅ = isequal
 
 name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
@@ -934,6 +934,206 @@ end
     @test innerjoin(df1_copy, df2, on=:a) ==
           innerjoin(df1_view1, df2, on=:a) ==
           innerjoin(df1_view2, df2, on=:a)
+end
+
+@testset "OnCol correctness tests" begin
+    Random.seed!(1234)
+    c1 = collect(1:10^2)
+    c2 = collect(Float64, 1:10^2)
+    c3 = collect(sort(string.(1:10^2)))
+    c4 = repeat(1:10, inner=10)
+    c5 = collect(Float64, repeat(1:50, inner=2))
+    c6 = sort(string.(repeat(1:25,inner=4)))
+    c7 = repeat(20:-1:1, inner=5)
+
+    @test_throws AssertionError OnCol()
+    @test_throws AssertionError OnCol(c1)
+    @test_throws AssertionError OnCol(c1, [1])
+    @test_throws MethodError OnCol(c1, 1)
+
+    oncols = [OnCol(c1, c2), OnCol(c3, c4), OnCol(c5, c6), OnCol(c1, c2, c3),
+              OnCol(c2, c3, c4), OnCol(c4, c5, c6), OnCol(c1, c2, c3, c4),
+              OnCol(c2, c3, c4, c5), OnCol(c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5),
+              OnCol(c2, c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5, c6),
+              OnCol(c4, c7), OnCol(c4, c5, c7), OnCol(c4, c5, c6, c7)]
+    tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
+               tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+               tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+               tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+               tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+
+    for (oncol, tupcol) in zip(oncols, tupcols)
+        @test issorted(oncol) == issorted(tupcol)
+        @test IndexStyle(oncol) === IndexLinear()
+        @test_throws MethodError oncol[1] == oncol[2]
+    end
+
+    for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        @test_throws MethodError hash(oncols[j][1], zero(UInt))
+        DataFrames._prehash(oncols[j])
+        @test hash(oncols[j][i]) == hash(tupcols[j][i])
+        for k in eachindex(c1)
+            @test isequal(oncols[j][i], oncols[j][k]) == isequal(tupcols[j][i], tupcols[j][k])
+            @test isequal(oncols[j][k], oncols[j][i]) == isequal(tupcols[j][k], tupcols[j][i])
+            @test isless(oncols[j][i], oncols[j][k]) == isless(tupcols[j][i], tupcols[j][k])
+            @test isless(oncols[j][k], oncols[j][i]) == isless(tupcols[j][k], tupcols[j][i])
+        end
+    end
+
+    foreach(shuffle!, [c1, c2, c3, c4, c5, c6])
+
+    tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
+               tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+               tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+               tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+               tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+
+    for i in eachindex(c1), j in eachindex(oncols, tupcols)
+        DataFrames._prehash(oncols[j])
+        @test hash(oncols[j][i]) == hash(tupcols[j][i])
+        for k in eachindex(c1)
+            @test isequal(oncols[j][i], oncols[j][k]) == isequal(tupcols[j][i], tupcols[j][k])
+            @test isequal(oncols[j][k], oncols[j][i]) == isequal(tupcols[j][k], tupcols[j][i])
+            @test isless(oncols[j][i], oncols[j][k]) == isless(tupcols[j][i], tupcols[j][k])
+            @test isless(oncols[j][k], oncols[j][i]) == isless(tupcols[j][k], tupcols[j][i])
+        end
+    end
+end
+
+@testset "innerjoin correctness tests" begin
+
+    @test_throws ArgumentError DataFrames.prepare_on_col()
+
+    function test_innerjoin(df1, df2)
+        @assert names(df1) == ["id", "x"]
+        @assert names(df2) == ["id", "y"]
+
+        dfres = DataFrame(id=[], x=[], y=[])
+        for i in axes(df1, 1), j in axes(df2, 1)
+            if isequal(df1.id[i], df2.id[j])
+                push!(dfres, (id=df1.id[i], x=df1.x[i], y=df2.y[j]))
+            end
+        end
+
+        df1x = copy(df1)
+        df1x.id2 = copy(df1x.id)
+        df2x = copy(df2)
+        df2x.id2 = copy(df2x.id)
+
+        df1x2 = copy(df1x)
+        df1x2.id3 = copy(df1x2.id)
+        df2x2 = copy(df2x)
+        df2x2.id3 = copy(df2x2.id)
+
+        sort!(dfres)
+        dfres2 = copy(dfres)
+        insertcols!(dfres2, 3, :id2 => dfres2.id)
+        dfres3 = copy(dfres2)
+        insertcols!(dfres3, 4, :id3 => dfres3.id)
+
+        return dfres ≅ sort(innerjoin(df1, df2, on=:id, matchmissing=:equal)) &&
+               dfres2 ≅ sort(innerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal)) &&
+               dfres3 ≅ sort(innerjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal))
+    end
+
+    Random.seed!(1234)
+    for i in 1:5, j in 0:2
+        for df1 in [DataFrame(id=rand(1:i+j, i+j), x=1:i+j), DataFrame(id=rand(1:i, i), x=1:i),
+                    DataFrame(id=[rand(1:i+j, i+j); missing], x=1:i+j+1),
+                    DataFrame(id=[rand(1:i, i); missing], x=1:i+1)],
+            df2 in [DataFrame(id=rand(1:i+j, i+j), y=1:i+j), DataFrame(id=rand(1:i, i), y=1:i),
+                    DataFrame(id=[rand(1:i+j, i+j); missing], y=1:i+j+1),
+                    DataFrame(id=[rand(1:i, i); missing], y=1:i+1)]
+            for opleft = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))],
+                opright = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))]
+
+                # integers
+                @test test_innerjoin(opleft(df1), opright(df2))
+                @test test_innerjoin(opleft(df1), opright(rename(df1, :x => :y)))
+
+                # strings
+                df1s = copy(df1)
+                df1s[!, 1] = passmissing(string).(df1s[!, 1])
+                df2s = copy(df2)
+                df2s[!, 1] = passmissing(string).(df2s[!, 1])
+                @test test_innerjoin(opleft(df1s), opright(df2s))
+                @test test_innerjoin(opleft(df1s), opright(rename(df1s, :x => :y)))
+
+                # PooledArrays
+                df1p = copy(df1)
+                df1p[!, 1] = PooledArray(df1p[!, 1])
+                df2p = copy(df2)
+                df2p[!, 1] = PooledArray(df2p[!, 1])
+                @test test_innerjoin(opleft(df1), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(df2))
+                @test test_innerjoin(opleft(df1p), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(rename(df1p, :x => :y)))
+
+                # add unused level
+                df1p[1, 1] = 0
+                df2p[1, 1] = 0
+                df1p[1, 1] = 1
+                df2p[1, 1] = 1
+                @test test_innerjoin(opleft(df1), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(df2))
+                @test test_innerjoin(opleft(df1p), opright(df2p))
+                @test test_innerjoin(opleft(df1p), opright(rename(df1p, :x => :y)))
+
+                # CategoricalArrays
+                df1c = copy(df1)
+                df1c[!, 1] = categorical(df1c[!, 1])
+                df2c = copy(df2)
+                df2c[!, 1] = categorical(df2c[!, 1])
+                @test test_innerjoin(opleft(df1), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2))
+                @test test_innerjoin(opleft(df1c), opright(rename(df1c, :x => :y)))
+                @test test_innerjoin(opleft(df1p), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2p))
+
+                # add unused level
+                df1c[1, 1] = 0
+                df2c[1, 1] = 0
+                df1c[1, 1] = 1
+                df2c[1, 1] = 1
+                @test test_innerjoin(opleft(df1), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2))
+                @test test_innerjoin(opleft(df1c), opright(rename(df1c, :x => :y)))
+                @test test_innerjoin(opleft(df1p), opright(df2c))
+                @test test_innerjoin(opleft(df1c), opright(df2p))
+            end
+        end
+    end
+
+    # some special cases
+    @test innerjoin(DataFrame(id=[]), DataFrame(id=[]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id) == DataFrame(id=[])
+
+    @test innerjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal) ==
+          DataFrame(id=[])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
+                    on=:id, matchmissing=:equal) == DataFrame(id=[])
+    @test innerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
+    @test innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
+                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
+
+    @test innerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
+          DataFrame(id=[typemin(Int)])
+    @test innerjoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id) ==
+          DataFrame(id=[typemax(Int)])
+    @test innerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
+          DataFrame(id=[2000, 100])
 end
 
 end # module

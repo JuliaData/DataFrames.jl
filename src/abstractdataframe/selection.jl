@@ -143,6 +143,17 @@ const TRANSFORMATION_COMMON_RULES =
     returned and the same copying rules apply as for a `DataFrame` input: this
     means in particular that selected columns will be copied. If
     `copycols=false`, a `SubDataFrame` is returned without copying columns.
+
+    If a `GroupedDataFrame` is passed, a separate task is spawned for each
+    specified transformation; each transformation then spawns as many tasks
+    as Julia threads, and splits processing of groups across them
+    (however, currently transformations with optimized implementations like `sum`
+    and transformations that return multiple rows use a single task for all groups).
+    This allows for parallel operation when Julia was started with more than one
+    thread. Passed transformation functions should therefore not modify global
+    variables (i.e. they should be pure), or use locks to control parallel accesses.
+    In the future, parallelism may be extended to other cases, so this requirement
+    also holds for `DataFrame` inputs.
     """
 
 """
@@ -406,7 +417,9 @@ function _fix_existing_columns_for_vector(newdf::DataFrame, df::AbstractDataFram
     if allow_resizing_newdf[] && nrow(newdf) == 1
         newdfcols = _columns(newdf)
         for (i, col) in enumerate(newdfcols)
-            newdfcols[i] = fill!(similar(col, lr), first(col))
+            newcol = fill!(similar(col, lr), first(col))
+            firstindex(newcol) != 1 && _onebased_check_error()
+            newdfcols[i] = newcol
         end
     end
     # !allow_resizing_newdf[] && ncol(newdf) == 0
@@ -1263,7 +1276,9 @@ function _manipulate(df::AbstractDataFrame, @nospecialize(normalized_cs), copyco
                     if allow_resizing_newdf[] && nrow(newdf) == 1
                         newdfcols = _columns(newdf)
                         for (i, col) in enumerate(newdfcols)
-                            newdfcols[i] = fill!(similar(col, nrow(df)), first(col))
+                            newcol = fill!(similar(col, nrow(df)), first(col))
+                            firstindex(newcol) != 1 && _onebased_check_error()
+                            newdfcols[i] = newcol
                         end
                     end
                     # here even if keeprows is true all is OK

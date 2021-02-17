@@ -440,7 +440,7 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
             end
             seenvector = true
-            push!(vs, fv)
+            push!(vs, fv isa AbstractRange ? collect(fv) : fv)
         else
             if seenvector
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
@@ -454,7 +454,16 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
     if len_min != len_max
         throw(DimensionMismatch("lengths of returned vectors must be identical"))
     end
-    _columns(df) .= vs
+
+    for (i, col) in enumerate(vs)
+        firstindex(col) != 1 && _onebased_check_error(i, col)
+    end
+
+    @assert length(vs) == ncol(df)
+    raw_columns = _columns(df)
+    for i in 1:ncol(df)
+        raw_columns[i] = vs[i]
+    end
 
     return df
 end

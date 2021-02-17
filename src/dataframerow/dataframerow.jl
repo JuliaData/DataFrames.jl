@@ -263,7 +263,7 @@ Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
-Base.names(r::DataFrameRow) = names(index(r))
+Base.names(r::DataFrameRow, cols::Colon=:) = names(index(r))
 
 function Base.names(r::DataFrameRow, cols)
     nms = _names(index(r))
@@ -271,6 +271,10 @@ function Base.names(r::DataFrameRow, cols)
     idxs = idx isa Int ? (idx:idx) : idx
     return [string(nms[i]) for i in idxs]
 end
+
+Base.names(r::DataFrameRow, T::Type) =
+    [String(n) for n in _names(r) if eltype(parent(r)[!, n]) <: T]
+Base.names(r::DataFrameRow, fun::Function) = filter!(fun, names(r))
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
@@ -571,6 +575,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                firstindex(newcol) != 1 && _onebased_check_error()
                 _columns(df)[i] = newcol
             end
         end
@@ -625,6 +630,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
                 newcol = similar(col, promote_type(S, T), targetrows)
                 copyto!(newcol, 1, col, 1, nrows)
                 newcol[end] = val
+                firstindex(newcol) != 1 && _onebased_check_error()
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end

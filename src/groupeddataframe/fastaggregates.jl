@@ -122,9 +122,8 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             # !ismissing check is purely an optimization to avoid a copy later
             outcol = similar(incol, condf === !ismissing ? S : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
-            outcolT = typeof(outcol).name
-            if outcolT.name === :CategoricalArray &&
-                nameof(outcolT.module) === :CategoricalArrays
+            resT = typeof(outcol)
+            if nameof(resT) === :CategoricalArray && nameof(parentmodule(resT)) === :CategoricalArrays
                 # we know that CategoricalArray has `pool` field
                 outcol.pool = incol.pool
             end
@@ -163,18 +162,31 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
         counts = zeros(Int, n)
     end
     groups = gd.groups
-    @inbounds for i in eachindex(incol, groups)
-        gix = groups[i]
-        x = incol[i]
-        if gix > 0 && (condf === nothing || condf(x))
-            # this check should be optimized out if U is not Any
-            if eltype(res) === Any && !isassigned(res, gix)
-                res[gix] = f(x, gix)
-            else
-                res[gix] = op(res[gix], f(x, gix))
-            end
-            if adjust !== nothing || checkempty
-                counts[gix] += 1
+    @static if VERSION >= v"1.4"
+        batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
+        batches = Iterators.partition(eachindex(incol, groups), batchsize)
+    else
+        batches = (eachindex(incol, groups),)
+    end
+    for batch in batches
+        # Allow other tasks to do garbage collection while this one runs
+        @static if VERSION >= v"1.4"
+            GC.safepoint()
+        end
+
+        @inbounds for i in batch
+            gix = groups[i]
+            x = incol[i]
+            if gix > 0 && (condf === nothing || condf(x))
+                # this check should be optimized out if U is not Any
+                if eltype(res) === Any && !isassigned(res, gix)
+                    res[gix] = f(x, gix)
+                else
+                    res[gix] = op(res[gix], f(x, gix))
+                end
+                if adjust !== nothing || checkempty
+                    counts[gix] += 1
+                end
             end
         end
     end
@@ -201,9 +213,8 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
     end
     # Reallocate Vector created in groupreduce_init with min or max
     # for CategoricalVector
-    resT = typeof(res).name
-    if resT.name === :CategoricalArray &&
-        nameof(resT.module) === :CategoricalArrays
+    resT = typeof(res)
+    if nameof(resT) === :CategoricalArray && nameof(parentmodule(resT)) === :CategoricalArrays
         @assert op === min || op === max
         # we know that CategoricalArray has `pool` field
         @assert res.pool === incol.pool
@@ -238,24 +249,23 @@ end
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)
+    z = zero(eltype(incol)) - zero(eltype(means))
+    S = typeof((abs2(z) + abs2(z))/2)
     # !ismissing check is purely an optimization to avoid a copy later
-    if eltype(means) >: Missing && agg.condf !== !ismissing
-        T = Union{Missing, real(eltype(means))}
-    else
-        T = real(eltype(means))
-    end
+    T = eltype(incol) >: Missing && agg.condf !== !ismissing ?
+        T = Union{Missing, S} : S
     res = zeros(T, length(gd))
     return groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +, agg.condf,
-                        (x, l) -> l <= 1 ? oftype(x / (l-1), NaN) : x / (l-1),
+                        (x, l) -> l <= 1 ? x/0 : x/(l-1),
                         false, incol, gd)
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
     outcol = Aggregate(var, agg.condf)(incol, gd)
-    if eltype(outcol) <: Union{Missing, Rational}
-        return sqrt.(outcol)
-    else
+    if typeof(sqrt(zero(eltype(outcol)))) === eltype(outcol)
         return map!(sqrt, outcol, outcol)
+    else
+        return map(sqrt, outcol)
     end
 end
 

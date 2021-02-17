@@ -8,6 +8,14 @@ anyerrors = false
 
 using DataFrames, Dates, Test, Random
 
+if VERSION > v"1.3"
+    if Threads.nthreads() < 2
+        @warn("Running with only one thread: correctness of parallel operations is not tested")
+    else
+        @show Threads.nthreads()
+    end
+end
+
 my_tests = ["utils.jl",
             "cat.jl",
             "data.jl",
