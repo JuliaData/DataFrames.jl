@@ -1103,10 +1103,6 @@ end
             for opleft = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))],
                 opright = [identity, sort, x -> unique(x, :id), x -> sort(unique(x, :id))]
 
-                # REMOVE ME: remove these two lines later, now they are needed as otherwise tests fail on 0.22.5
-                allowmissing!(df1)
-                allowmissing!(df2)
-
                 # integers
                 @test test_join(opleft(df1), opright(df2))
                 @test test_join(opleft(df1), opright(rename(df1, :x => :y)))
@@ -1213,22 +1209,20 @@ end
     @test leftjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
           DataFrame(id=[missing])
 
-    # REMOVE ME: these two tests fail on 0.22.5
-    # @test rightjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
-    #       DataFrame(id=[1])
-    # @test outerjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
-    #       DataFrame(id=[missing, 1])
+    @test rightjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
+          DataFrame(id=[1])
+    @test outerjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
+          DataFrame(id=[missing, 1])
 
     @test innerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
           DataFrame(id=[])
     @test leftjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
           DataFrame(id=[])
 
-    # REMOVE ME: these two tests fail on 0.22.5
-    # @test rightjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
-    #       DataFrame(id=[1])
-    # @test outerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
-    #       DataFrame(id=[1])
+    @test rightjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
+          DataFrame(id=[1])
+    @test outerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
+          DataFrame(id=[1])
 
     @test innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal) ≅
           DataFrame(id=[])
@@ -1261,11 +1255,10 @@ end
                     on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
     @test leftjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
-    # REMOVE ME: these two tests fail on 0.22.5
-    # @test rightjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
-    #                 on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing, 1])
-    # @test outerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
-    #                 on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing, 1])
+    @test rightjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing, 1])
+    @test outerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                    on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing, 1])
 
     @test innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
                     on=:id, matchmissing=:equal) ≅ DataFrame(id=[missing])
@@ -1278,14 +1271,12 @@ end
 
     @test innerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
           DataFrame(id=[typemin(Int)])
-    # REMOVE ME: this test fails on 0.22.5 as we will use different joining order in the future
-    # @test leftjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
-    #       DataFrame(id=[typemin(Int), typemin(Int) + 1])
+    @test leftjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
+          DataFrame(id=[typemin(Int), typemin(Int) + 1])
     @test rightjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
           DataFrame(id=[typemin(Int)])
-    # REMOVE ME: this test fails on 0.22.5 as we will use different joining order in the future
-    # @test outerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
-    #       DataFrame(id=[typemin(Int), typemin(Int) + 1])
+    @test outerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id) ==
+          DataFrame(id=[typemin(Int), typemin(Int) + 1])
 
     @test innerjoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id) ==
           DataFrame(id=[typemax(Int)])
@@ -1298,18 +1289,108 @@ end
 
     @test innerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
           DataFrame(id=[2000, 100])
-    # REMOVE ME: this test fails on 0.22.5 as we will use different joining order in the future
-    # @test leftjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
-    #       DataFrame(id=[2000, 100, 2])
-    # @test rightjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
-    #       DataFrame(id=[2000, 100, 1])
-    # REMOVE ME: this test fails on 0.22.5 as we will use different joining order in the future
-    # @test outerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
-    #       DataFrame(id=[2000, 100, 2, 1])
+    @test leftjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
+          DataFrame(id=[2000, 100, 2])
+    @test rightjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
+          DataFrame(id=[2000, 100, 1])
+    @test outerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id) ==
+          DataFrame(id=[2000, 100, 2, 1])
 
-    # REMOVE ME: these two tests fail on 0.22.5
-    # @test outerjoin(DataFrame(id=[1], DataFrame(id=[4.5])) == DataFrame(id=[1, 4.5])
-    # @test outerjoin(DataFrame(id=categorical([1]), DataFrame(id=[(1, 2)])) == DataFrame(id=[1, (1, 2)])
+    @test outerjoin(DataFrame(id=[1]), DataFrame(id=[4.5]), on=:id) == DataFrame(id=[1, 4.5])
+    @test outerjoin(DataFrame(id=categorical([1])), DataFrame(id=[(1, 2)]), on=:id) == DataFrame(id=[1, (1, 2)])
+end
+
+@testset "legacy merge tests" begin
+    Random.seed!(1)
+    df1 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:10)),
+                    b = rand(Union{Symbol, Missing}[:A, :B], 10),
+                    v1 = Vector{Union{Float64, Missing}}(randn(10)))
+
+    df2 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:5)),
+                    b2 = rand(Union{Symbol, Missing}[:A, :B, :C], 5),
+                    v2 = Vector{Union{Float64, Missing}}(randn(5)))
+
+    m1 = innerjoin(df1, df2, on = :a)
+    @test m1[!, :a] == df1[!, :a][df1[!, :a] .<= 5] # preserves df1 order
+    m2 = outerjoin(df1, df2, on = :a)
+    @test m2[!, :a] != df1[!, :a] # does not preserve df1 order
+    @test m2[!, :b] != df1[!, :b] # does not preserve df1 order
+    @test sort(m2[!, [:a, :b]]) == sort(df1[!, [:a, :b]]) # but keeps values
+    @test m1 == m2[1:nrow(m1), :] # and is consistent with innerjoin in the first rows
+    @test m2[indexin(df1[!, :a], m2[!, :a]), :b] == df1[!, :b]
+    @test m2[indexin(df2[!, :a], m2[!, :a]), :b2] == df2[!, :b2]
+    @test m2[indexin(df1[!, :a], m2[!, :a]), :v1] == df1[!, :v1]
+    @test m2[indexin(df2[!, :a], m2[!, :a]), :v2] == df2[!, :v2]
+    @test all(ismissing, m2[map(x -> !in(x, df2[!, :a]), m2[!, :a]), :b2])
+    @test all(ismissing, m2[map(x -> !in(x, df2[!, :a]), m2[!, :a]), :v2])
+
+    df1 = DataFrame(a = Union{Int, Missing}[1, 2, 3],
+                    b = Union{String, Missing}["America", "Europe", "Africa"])
+    df2 = DataFrame(a = Union{Int, Missing}[1, 2, 4],
+                    c = Union{String, Missing}["New World", "Old World", "New World"])
+
+    m1 = innerjoin(df1, df2, on = :a)
+    @test m1[!, :a] == [1, 2]
+
+    m2 = leftjoin(df1, df2, on = :a)
+    @test m2[!, :a] == [1, 2, 3]
+
+    m3 = rightjoin(df1, df2, on = :a)
+    @test m3[!, :a] == [1, 2, 4]
+
+    m4 = outerjoin(df1, df2, on = :a)
+    @test m4[!, :a] == [1, 2, 3, 4]
+
+    # test with missings (issue #185)
+    df1 = DataFrame()
+    df1[!, :A] = ["a", "b", "a", missing]
+    df1[!, :B] = Union{Int, Missing}[1, 2, 1, 3]
+
+    df2 = DataFrame()
+    df2[!, :A] = ["a", missing, "c"]
+    df2[!, :C] = Union{Int, Missing}[1, 2, 4]
+
+    @test_throws ArgumentError innerjoin(df1, df2, on = :A)
+    m1 = innerjoin(df1, df2, on = :A, matchmissing=:equal)
+    @test size(m1) == (3, 3)
+    @test m1[!, :A] ≅ ["a", "a", missing]
+
+    @test_throws ArgumentError outerjoin(df1, df2, on = :A)
+    m2 = outerjoin(df1, df2, on = :A, matchmissing=:equal)
+    @test size(m2) == (5, 3)
+    @test m2[!, :A] ≅ ["a", "a", missing, "b", "c"]
+end
+
+@testset "legacy join tests" begin
+    df1 = DataFrame(a = Union{Symbol, Missing}[:x, :y][[1, 1, 1, 2, 1, 1]],
+                    b = Union{Symbol, Missing}[:A, :B, :D][[1, 1, 2, 2, 1, 3]],
+                    v1 = 1:6)
+
+    df2 = DataFrame(a = Union{Symbol, Missing}[:x, :y][[2, 2, 1, 1, 1, 1]],
+                    b = Union{Symbol, Missing}[:A, :B, :C][[1, 2, 1, 2, 3, 1]],
+                    v2 = 1:6)
+    df2[1, :a] = missing
+
+    m1 = innerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
+    @test m1 == DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x],
+                          b=[:A, :A, :A, :A, :B, :B, :A, :A],
+                          v1=[1, 1, 2, 2, 3, 4, 5, 5],
+                          v2=[3, 6, 3, 6, 4, 2, 3, 6])
+    m2 = outerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
+    @test m2 ≅ DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x, :x, missing, :x],
+                         b=[:A, :A, :A, :A, :B, :B, :A, :A, :D, :A, :C],
+                         v1=[1, 1, 2, 2, 3, 4, 5, 5, 6, missing, missing],
+                         v2=[3, 6, 3, 6, 4, 2, 3, 6, missing, 1, 5])
+
+    Random.seed!(1)
+    df1 = DataFrame(a = ["abc", "abx", "axz", "def", "dfr"], v1 = randn(5))
+    df2 = DataFrame(a = ["def", "abc", "abx", "axz", "xyz"], v2 = randn(5))
+    transform!(df1, :a => ByRow(collect) => AsTable)
+    transform!(df2, :a => ByRow(collect) => AsTable)
+
+    m1 = innerjoin(df1, df2, on = :a, makeunique=true)
+    m2 = innerjoin(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
+    @test m1[!, :a] == m2[!, :a]
 end
 
 end # module
