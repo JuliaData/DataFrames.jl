@@ -4,7 +4,7 @@ llen = ARGS[1]
 rlen = ARGS[2]
 type = ARGS[3]
 
-for a3 in ["str", "int", "pool", "cat"],
+for a3 in ["str", "int", "pool"], # "cat"], # temporarily exclude cat from tests
     a4 in ["uniq", "dup", "manydup"],
     a5 in ["sort", "rand"],
     a6 in ["1", "2"]
