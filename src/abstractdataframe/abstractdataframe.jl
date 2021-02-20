@@ -335,6 +335,9 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
+# obtain the total size of `df`.
+Base.sizeof(df::AbstractDataFrame) = sum(sizeof.(eachcol(df)))
+
 Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
 if VERSION < v"1.6"
