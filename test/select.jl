@@ -1189,6 +1189,8 @@ end
 @testset "combine AbstractDataFrame" begin
     df = DataFrame(x=1:3, y=4:6)
 
+    @test_throws ArgumentError combine(df)
+
     @test combine(x -> Matrix(x), df) == rename(df, [:x1, :x2])
     @test combine(x -> Ref(1:3), df) == DataFrame(x1=[1:3])
     @test combine(df, x -> Ref(1:3)) == DataFrame(x1=[1:3])
@@ -1214,6 +1216,8 @@ end
           DataFrame(y_function = [], x_sum=[])
 
     dfv = view(df, [2, 1], [2, 1])
+
+    @test_throws ArgumentError combine(dfv)
 
     @test combine(x -> Matrix(x), dfv) == rename(dfv, [:x1, :x2])
 

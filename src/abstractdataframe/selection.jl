@@ -1175,6 +1175,9 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 combine(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
     manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
+combine(df::AbstractDataFrame; renamecols::Bool=true) =
+    throw(ArgumentError("At least one transformation must be specified"))
+
 function combine(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument to select! must be a transformation if the second argument is a data frame"))

@@ -918,6 +918,7 @@ end
         combine(gd, :c => (x -> [Dict(:c_sum => sum(x))]) => AsTable)
     @test_throws ArgumentError combine(:c => sum, gd)
     @test_throws ArgumentError combine(:, gd)
+    @test_throws ArgumentError combine(gd)
 
     @test combine(gd, :c => vexp) ==
         combine(gd, :c => vexp => :c_function) ==
@@ -1658,11 +1659,6 @@ end
            1 │     1      1      1
            2 │     2      1      2
            3 │     2      2      3"""
-
-    df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
-    gd = groupby_checked(df, :a)
-    @test size(combine(gd)) == (0, 1)
-    @test names(combine(gd)) == ["a"]
 end
 
 @testset "GroupedDataFrame dictionary interface" begin
@@ -2635,10 +2631,7 @@ end
     df = DataFrame(x=[], g=[])
     gdf = groupby_checked(df, :g)
 
-    @test size(combine(gdf)) == (0, 1)
-    @test names(combine(gdf)) == ["g"]
-    @test combine(gdf, keepkeys=false) == DataFrame()
-    @test combine(gdf, ungroup=false) == groupby(DataFrame(g=[]), :g)
+    @test_throws ArgumentError combine(gdf)
     @test size(select(gdf)) == (0, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
@@ -2680,12 +2673,7 @@ end
     df = DataFrame(x=[1], g=[1])
     gdf = groupby_checked(df, :g)
 
-    @test size(combine(gdf)) == (0, 1)
-    @test names(combine(gdf)) == ["g"]
-    @test combine(gdf, ungroup=false) isa GroupedDataFrame
-    @test length(combine(gdf, ungroup=false)) == 0
-    @test parent(combine(gdf, ungroup=false)) == DataFrame(g=[])
-    @test combine(gdf, keepkeys=false) == DataFrame()
+    @test_throws ArgumentError combine(gdf)
     @test size(select(gdf)) == (1, 1)
     @test names(select(gdf)) == ["g"]
     @test groupcols(validate_gdf(select(gdf, ungroup=false))) == [:g]
@@ -2714,8 +2702,7 @@ end
     @test select(gdf, :x => (x -> 10x) => :g, keepkeys=false) == DataFrame(g=10)
 
     gdf = gdf[1:0]
-    @test size(combine(gdf)) == (0, 1)
-    @test names(combine(gdf)) == ["g"]
+    @test_throws ArgumentError combine(gdf)
     @test size(combine(x -> DataFrame(z=1), gdf)) == (0, 2)
     @test names(combine(x -> DataFrame(z=1), gdf)) == ["g", "z"]
     @test combine(x -> DataFrame(z=1), gdf, keepkeys=false) == DataFrame(z=[])

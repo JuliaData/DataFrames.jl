@@ -675,6 +675,9 @@ combine(gd::GroupedDataFrame,
     _combine_prepare(gd, cs..., keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
+combine(df::GroupedDataFrame; renamecols::Bool=true) =
+    throw(ArgumentError("At least one transformation must be specified"))
+
 function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
