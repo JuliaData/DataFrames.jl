@@ -2,7 +2,7 @@
 
 ## Breaking changes
 
-* No breaking changes are planned for v1.0 release
+* A few breaking changes are planned for v1.0 release
 
 ## Bug fixes
 
