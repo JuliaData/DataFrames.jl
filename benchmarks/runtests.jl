@@ -4,7 +4,12 @@ llen = ARGS[1]
 rlen = ARGS[2]
 type = ARGS[3]
 
-for a3 in ["str", "int", "pool"], # "cat"], # temporarily exclude cat from tests
+# re-enable "cat" when
+# https://github.com/JuliaData/CategoricalArrays.jl/pull/327
+# and
+# https://github.com/JuliaData/CategoricalArrays.jl/pull/331
+# are merged and tagged
+for a3 in ["str", "int", "pool"], # "cat"],
     a4 in ["uniq", "dup", "manydup"],
     a5 in ["sort", "rand"],
     a6 in ["1", "2"]
