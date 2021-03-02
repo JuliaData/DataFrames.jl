@@ -465,7 +465,6 @@ function find_inner_rows(joiner::DataFrameJoiner)
         end
     end
 
-    # although isless should be transitive it is safer not to rely on it if we do not have to
     disallow_sorted = false
 
     for (lc, rc) in zip(left_cols, right_cols)
