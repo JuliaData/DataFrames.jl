@@ -465,19 +465,27 @@ function find_inner_rows(joiner::DataFrameJoiner)
         end
     end
 
-    # this is a workaround for https://github.com/JuliaData/CategoricalArrays.jl/issues/319
-    # this path will be triggered only in rare cases when the refpool code above
-    # fails to convert CategoricalArray into refpool
+    # although isless should be transitive it is safer not to rely on it if we do not have to
     disallow_sorted = false
 
     for (lc, rc) in zip(left_cols, right_cols)
         @assert length(lc) == left_len
         @assert length(rc) == right_len
-        lct = typeof(lc)
-        lcat = nameof(lct) === :CategoricalArray && nameof(parentmodule(lct)) === :CategoricalArrays
-        rct = typeof(rc)
-        rcat = nameof(rct) === :CategoricalArray && nameof(parentmodule(rct)) === :CategoricalArrays
-        disallow_sorted |= rcat ⊻ lcat
+        lc_et = nonmissingtype(eltype(lc))
+        rc_et = nonmissingtype(eltype(rc))
+
+        # special case common safe scenarios when eltype between left and right column
+        # can be different or non-concrete
+        lc_et <: Real && rc_et <: Real && continue
+        lc_et <: AbstractString && rc_et <: AbstractString && continue
+
+        # otherwise we require non-missing eltype of both sides to be the same and concrete
+        lc_et === rc_et && isconcretetype(lc_et) && continue
+
+        # we disallow using sorted branch for some columns that theoretically
+        # could be safely sorted (e.g. having Any eltype but holding strings)
+        # for safety reasons assuming that such cases will be rare in practice
+        disallow_sorted = true
     end
 
     # TODO:
