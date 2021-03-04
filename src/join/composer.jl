@@ -339,33 +339,9 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         joined, src_indicator =
             compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
-        # hash the right rows
-        dfr_on_grp = group_rows(joiner.dfr_on)
-        # iterate over left rows and leave those found in right
-        left_ixs = Vector{Int}()
-        sizehint!(left_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
-        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
-            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
-                push!(left_ixs, l_ix)
-            end
-        end
-        joined = joiner.dfl[left_ixs, :]
+        joined = joiner.dfl[find_semi_rows(joiner), :]
     elseif kind == :anti
-        # hash the right rows
-        dfr_on_grp = group_rows(joiner.dfr_on)
-        # iterate over left rows and leave those not found in right
-        leftonly_ixs = Vector{Int}()
-        sizehint!(leftonly_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
-        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
-            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
-                push!(leftonly_ixs, l_ix)
-            end
-        end
-        joined = joiner.dfl[leftonly_ixs, :]
+        joined = joiner.dfl[.!find_semi_rows(joiner), :]
     else
         throw(ArgumentError("Unknown kind of join requested: $kind"))
     end
