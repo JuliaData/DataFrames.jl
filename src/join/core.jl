@@ -610,13 +610,15 @@ function _semijoin_unsorted(left::AbstractArray, right::AbstractArray{T},
         dict[val_r] = idx_r
     end
 
-    for (idx_l, val_l) in enumerate(left)
+    @inbounds for (idx_l, val_l) in enumerate(left)
         # we know that dict contains only positive values
         idx_r = get(dict, val_l, -1)
-        if right_shorter
-            seen_rows[idx_l] = true
-        else
-            seen_rows[idx_r] = true
+        if idx_r != -1
+            if right_shorter
+                seen_rows[idx_l] = true
+            else
+                seen_rows[idx_r] = true
+            end
         end
     end
     return seen_rows
@@ -760,7 +762,7 @@ function _semijoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
     return seen_rows
 end
 
-function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
+function _semijoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
                                     dict::Vector{Int},
                                     groups::Vector{Int}, ngroups::Int, right_len::Int,
                                     offset::Int, minv::Int, maxv::Int,

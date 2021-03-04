@@ -10,7 +10,7 @@ fullgc() = (GC.gc(true); GC.gc(true); GC.gc(true); GC.gc(true))
 @assert ARGS[4] in ["uniq", "dup", "manydup"]
 @assert ARGS[5] in ["sort", "rand"]
 @assert ARGS[6] in ["1", "2"]
-@assert ARGS[7] in ["inner", "left", "right", "outer"]
+@assert ARGS[7] in ["inner", "left", "right", "outer", "semi", "anti"]
 
 @info ARGS
 
@@ -76,7 +76,8 @@ else
 end
 
 const joinfun = Dict("inner" => innerjoin, "left" => leftjoin,
-                     "right" => rightjoin, "outer" => outerjoin)[ARGS[7]]
+                     "right" => rightjoin, "outer" => outerjoin,
+                     "semi" => semijoin, "anti" => antijoin)[ARGS[7]]
 
 if ARGS[6] == "1"
     df1 = DataFrame(id1 = col1)

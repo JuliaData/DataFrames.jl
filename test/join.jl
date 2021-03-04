@@ -1014,7 +1014,7 @@ end
     end
 end
 
-@testset "innerjoin correctness tests" begin
+@testset "join correctness tests" begin
 
     @test_throws ArgumentError DataFrames.prepare_on_col()
 
@@ -1050,6 +1050,9 @@ end
         df_right = vcat(df_inner, df_right_part)
         df_outer = vcat(df_inner, df_left_part, df_right_part)
 
+        df_semi = df1[[x in Set(df2.id) for x in df1.id], :]
+        df_anti = df1[[!(x in Set(df2.id)) for x in df1.id], :]
+
         df1x = copy(df1)
         df1x.id2 = copy(df1x.id)
         df2x = copy(df2)
@@ -1069,18 +1072,26 @@ end
         df_left2 = copy(df_left)
         df_right2 = copy(df_right)
         df_outer2 = copy(df_outer)
+        df_semi2 = copy(df_semi)
+        df_anti2 = copy(df_anti)
         insertcols!(df_inner2, 3, :id2 => df_inner2.id)
         insertcols!(df_left2, 3, :id2 => df_left2.id)
         insertcols!(df_right2, 3, :id2 => df_right2.id)
         insertcols!(df_outer2, 3, :id2 => df_outer2.id)
+        insertcols!(df_semi2, 3, :id2 => df_semi2.id)
+        insertcols!(df_anti2, 3, :id2 => df_anti2.id)
         df_inner3 = copy(df_inner2)
         df_left3 = copy(df_left2)
         df_right3 = copy(df_right2)
         df_outer3 = copy(df_outer2)
+        df_semi3 = copy(df_semi2)
+        df_anti3 = copy(df_anti2)
         insertcols!(df_inner3, 4, :id3 => df_inner3.id)
         insertcols!(df_left3, 4, :id3 => df_left3.id)
         insertcols!(df_right3, 4, :id3 => df_right3.id)
         insertcols!(df_outer3, 4, :id3 => df_outer3.id)
+        insertcols!(df_semi3, 4, :id3 => df_semi3.id)
+        insertcols!(df_anti3, 4, :id3 => df_anti3.id)
 
         return df_inner ≅ sort(innerjoin(df1, df2, on=:id, matchmissing=:equal), [:x, :y]) &&
                df_inner2 ≅ sort(innerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y]) &&
@@ -1093,7 +1104,13 @@ end
                df_right3 ≅ sort(rightjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y]) &&
                df_outer ≅ sort(outerjoin(df1, df2, on=:id, matchmissing=:equal), [:x, :y]) &&
                df_outer2 ≅ sort(outerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y]) &&
-               df_outer3 ≅ sort(outerjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y])
+               df_outer3 ≅ sort(outerjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y]) &&
+               df_semi ≅ semijoin(df1, df2, on=:id, matchmissing=:equal) &&
+               df_semi2 ≅ semijoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal) &&
+               df_semi3 ≅ semijoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal) &&
+               df_anti ≅ antijoin(df1, df2, on=:id, matchmissing=:equal) &&
+               df_anti2 ≅ antijoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal) &&
+               df_anti3 ≅ antijoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal)
     end
 
     Random.seed!(1234)
