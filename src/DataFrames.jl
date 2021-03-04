@@ -125,8 +125,10 @@ include("other/broadcasting.jl")
 include("abstractdataframe/selection.jl")
 include("abstractdataframe/subset.jl")
 include("abstractdataframe/iteration.jl")
-include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
+
+include("join/composer.jl")
+include("join/core.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
 include("groupeddataframe/callprocessing.jl")

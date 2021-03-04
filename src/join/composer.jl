@@ -6,6 +6,9 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
+similar_outer(leftcol::AbstractVector, rightcol::AbstractVector, n::Int) =
+    Tables.allocatecolumn(promote_type(eltype(leftcol), eltype(rightcol)), n)
+
 const OnType = Union{SymbolOrString, NTuple{2, Symbol}, Pair{Symbol, Symbol},
                      Pair{<:AbstractString, <:AbstractString}}
 
@@ -88,238 +91,11 @@ _rename_cols(old_names::AbstractVector{Symbol},
            (renamecols isa Function ? Symbol(renamecols(string(n))) : Symbol(n, renamecols))
            for n in old_names]
 
-struct OnColRow{T}
-    row::Int
-    cols::T
-    h::Vector{UInt}
-
-    OnColRow(row::Union{Signed,Unsigned},
-             cols::NTuple{<:Any, AbstractVector}, h::Vector{UInt}) =
-        new{typeof(cols)}(Int(row), cols, h)
-end
-
-struct OnCol{T,N} <: AbstractVector{OnColRow{T}}
-    len::Int
-    cols::T
-    h::Vector{UInt}
-
-    function OnCol(cs::AbstractVector...)
-        @assert length(cs) > 1
-        len = length(cs[1])
-        @assert all(x -> firstindex(x) == 1, cs)
-        @assert all(x -> lastindex(x) == len, cs)
-        new{typeof(cs), length(cs)}(len, cs, UInt[])
-    end
-end
-
-Base.IndexStyle(::Type{<:OnCol}) = Base.IndexLinear()
-
-@inline Base.size(oc::OnCol) = (oc.len,)
-
-@inline function Base.getindex(oc::OnCol, i::Int)
-    @boundscheck checkbounds(oc, i)
-    return OnColRow(i, oc.cols, oc.h)
-end
-
-Base.hash(ocr1::OnColRow, h::UInt) = throw(MethodError(hash, (ocr1, h)))
-@inline Base.hash(ocr1::OnColRow) = @inbounds ocr1.h[ocr1.row]
-
-# Hashing one column at a time is faster since it can use SIMD
-function _prehash(oc::OnCol)
-    h = oc.h
-    resize!(h, oc.len)
-    fill!(h, Base.tuplehash_seed)
-    for col in reverse(oc.cols)
-        h .= hash.(col, h)
-    end
-end
-
-# TODO: rewrite isequal and isless to use @generated
-# or some other approach that would keep them efficient and avoid code duplication
-
-Base.:(==)(x::OnColRow, y::OnColRow) = throw(MethodError(==, (x, y)))
-
-@inline function Base.isequal(ocr1::OnColRow{<:NTuple{2, AbstractVector}},
-                              ocr2::OnColRow{<:NTuple{2, AbstractVector}})
-    r1 = ocr1.row
-    c11, c12 = ocr1.cols
-    r2 = ocr2.row
-    c21, c22 = ocr2.cols
-
-    return @inbounds isequal(c11[r1], c21[r2]) && isequal(c12[r1], c22[r2])
-end
-
-Base.isequal(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
-             ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N} =
-    isequal(ntuple(i -> @inbounds(ocr1.cols[i][ocr1.row]), N),
-            ntuple(i -> @inbounds(ocr2.cols[i][ocr2.row]), N))
-
-@inline function Base.isless(ocr1::OnColRow{<:NTuple{2, AbstractVector}},
-                             ocr2::OnColRow{<:NTuple{2, AbstractVector}})
-    r1 = ocr1.row
-    c11, c12 = ocr1.cols
-    r2 = ocr2.row
-    c21, c22 = ocr2.cols
-
-    c11r = @inbounds c11[r1]
-    c12r = @inbounds c12[r1]
-    c21r = @inbounds c21[r2]
-    c22r = @inbounds c22[r2]
-
-    isless(c11r, c21r) || (isequal(c11r, c21r) && isless(c12r, c22r))
-end
-
-@inline Base.isless(ocr1::OnColRow{<:NTuple{N,AbstractVector}},
-                    ocr2::OnColRow{<:NTuple{N,AbstractVector}}) where {N} =
-    isless(ntuple(i -> @inbounds(ocr1.cols[i][ocr1.row]), N),
-           ntuple(i -> @inbounds(ocr2.cols[i][ocr2.row]), N))
-
-prepare_on_col() = throw(ArgumentError("at least one on column required when joining"))
-prepare_on_col(c::AbstractVector) = c
-prepare_on_col(cs::AbstractVector...) = OnCol(cs...)
-
-# Return if it is allowed to use refpool instead of the original array for joining.
-# There are multiple conditions that must be met to allow for this.
-# If it is allowed we are sure that missing can be used as a sentinel
-check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
-                      refpool_long, invrefpool_long) =
-    !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
-        eltype(refarray_long) <: Union{Signed, Unsigned}
-
-@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{fi})  where {fi} =
-    [@inbounds mapping[r - fi + 1] for r in refarray]
-
-function map2refs(x::AbstractVector, invrefpool)
-    x_refpool = DataAPI.refpool(x)
-    if x_refpool isa AbstractVector{<:Integer} && 0 <= firstindex(x_refpool) <= 1
-        # here we know that x_refpool is AbstractVector that allows integer indexing
-        # and its firstindex must be an integer
-        # if firstindex is not 0 or 1 then we fallback to slow path for safety reasons
-        # all refpool we currently know have firstindex 0 or 1
-        # if there is some very strange firstindex we might run into overflow issues
-        # below use function barrier as mapping is not type stable
-        mapping = [get(invrefpool, v, missing) for v in x_refpool]
-        return map_refarray(mapping, DataAPI.refarray(x), Val(Int(firstindex(x_refpool))))
-    else
-        return [get(invrefpool, v, missing) for v in x]
-    end
-end
-
 function compose_inner_table(joiner::DataFrameJoiner,
                              makeunique::Bool,
                              left_rename::Union{Function, AbstractString, Symbol},
                              right_rename::Union{Function, AbstractString, Symbol})
-
-    right_len = length(joiner.dfr_on[!, 1])
-    left_len = length(joiner.dfl_on[!, 1])
-    right_shorter = right_len <= left_len
-
-    left_cols = collect(eachcol(joiner.dfl_on))
-    right_cols = collect(eachcol(joiner.dfr_on))
-
-    # if column of a longer table supports DataAPI.refpool and DataAPI.invrefpool
-    # remap matching left and right columns to use refs
-    if right_shorter
-        for i in eachindex(left_cols, right_cols)
-            rc = right_cols[i]
-            lc = left_cols[i]
-
-            lc_refs = DataAPI.refarray(lc)
-            lc_refpool = DataAPI.refpool(lc)
-            lc_invrefpool = DataAPI.invrefpool(lc)
-            if check_mapping_allowed(rc, lc_refs, lc_refpool, lc_invrefpool)
-                right_cols[i] = map2refs(rc, lc_invrefpool)
-                left_cols[i] = lc_refs
-            end
-        end
-    else
-        for i in eachindex(left_cols, right_cols)
-            rc = right_cols[i]
-            lc = left_cols[i]
-
-            rc_refs = DataAPI.refarray(rc)
-            rc_refpool = DataAPI.refpool(rc)
-            rc_invrefpool = DataAPI.invrefpool(rc)
-            if check_mapping_allowed(lc, rc_refs, rc_refpool, rc_invrefpool)
-                right_cols[i] = rc_refs
-                left_cols[i] = map2refs(lc, rc_invrefpool)
-            end
-        end
-    end
-
-    # this is a workaround for https://github.com/JuliaData/CategoricalArrays.jl/issues/319
-    # this path will be triggered only in rare cases when the refpool code above
-    # fails to convert CategoricalArray into refpool
-    disallow_sorted = false
-
-    for (lc, rc) in zip(left_cols, right_cols)
-        @assert length(lc) == left_len
-        @assert length(rc) == right_len
-        lct = typeof(lc)
-        lcat = nameof(lct) === :CategoricalArray && nameof(parentmodule(lct)) === :CategoricalArrays
-        rct = typeof(rc)
-        rcat = nameof(rct) === :CategoricalArray && nameof(parentmodule(rct)) === :CategoricalArrays
-        disallow_sorted |= rcat ⊻ lcat
-    end
-
-    # TODO:
-    # If DataAPI.invrefpool vectors are found in the "on" columns
-    # then potentially the following optimizations can be done:
-    # 1. identify rows in shorter table that should be dropped
-    # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that
-    #    drop rows from shorter table that do not match rows from longer table based on
-    #    PooledArray refpool check
-    # This optimization significantly complicates the code (especially sorted path).
-    # It should be added if in practice we find that the use case is often enough
-    # and that the benefits are significant. The two cases when the benefits should
-    # be expected are:
-    # 1. Shorter table is sorted when we drop rows not matching longer table rows
-    # 2. Shorter table does not have duplicates when we drop rows not matching longer table rows
-
-    left_col = prepare_on_col(left_cols...)
-    right_col = prepare_on_col(right_cols...)
-
-    local left_ixs
-    local right_ixs
-
-    if isempty(left_col) || isempty(right_col)
-        # we treat this case separately so we know we have at least one element later
-        left_ixs, right_ixs = Int[], Int[]
-    else
-        # if sorting is not disallowed try using a fast algorithm that works
-        # on sorted columns; if it is not run or errors fall back to the unsorted case
-        # the try-catch is used to handle the case when columns on which we join
-        # contain values that are not comparable
-        already_joined = false
-        if !disallow_sorted
-            try
-                if issorted(left_col) && issorted(right_col)
-                    left_ixs, right_ixs = _innerjoin_sorted(left_col, right_col)
-                    already_joined = true
-                end
-            catch
-                # nothing to do - one of the columns is not sortable
-            end
-        end
-        if !already_joined
-            if right_shorter
-                if left_col isa AbstractVector{<:Union{Integer, Missing}} &&
-                   right_col isa AbstractVector{<:Union{Integer, Missing}}
-                    left_ixs, right_ixs = _innerjoin_unsorted_int(left_col, right_col)
-                else
-                    left_ixs, right_ixs = _innerjoin_unsorted(left_col, right_col)
-                end
-            else
-                if left_col isa AbstractVector{<:Union{Integer, Missing}} &&
-                   right_col isa AbstractVector{<:Union{Integer, Missing}}
-                    right_ixs, left_ixs = _innerjoin_unsorted_int(right_col, left_col)
-                else
-                    right_ixs, left_ixs = _innerjoin_unsorted(right_col, left_col)
-                end
-            end
-        end
-    end
-
+    left_ixs, right_ixs = find_inner_rows(joiner)
     dfl = joiner.dfl[left_ixs, :]
     dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
 
@@ -337,516 +113,124 @@ function compose_inner_table(joiner::DataFrameJoiner,
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    return res, nothing, nothing
+    return res
 end
 
-@inline function find_next_range(x::AbstractArray, start::Int, start_value)
-    stop_value = start_value
-    n = length(x)
-    stop = start + 1
-    while stop <= n
-        @inbounds stop_value = x[stop]
-        isequal(start_value, stop_value) || break
-        stop += 1
+function find_missing_idxs(present::Vector{Int}, target_len::Int)
+    not_seen = trues(target_len)
+    @inbounds for v in present
+        not_seen[v] = false
     end
-    return stop, stop_value
+    return findall(not_seen)
 end
 
-function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
-    left_n = length(left)
-    right_n = length(right)
-
-    left_ixs = Int[]
-    right_ixs = Int[]
-
-    (left_n == 0 || right_n == 0) && return left_ixs, right_ixs
-
-    # lower bound assuming we get matches
-    sizehint!(left_ixs, min(left_n, right_n))
-    sizehint!(right_ixs, min(left_n, right_n))
-
-    left_cur = 1
-    left_val = left[left_cur]
-    left_new, left_tmp = find_next_range(left, left_cur, left_val)
-
-    right_cur = 1
-    right_val = right[right_cur]
-    right_new, right_tmp = find_next_range(right, right_cur, right_val)
-
-    while left_cur <= left_n && right_cur <= right_n
-        if isequal(left_val, right_val)
-            if left_new - left_cur == right_new - right_cur == 1
-                push!(left_ixs, left_cur)
-                push!(right_ixs, right_cur)
-            else
-                idx = length(left_ixs)
-                left_range = left_cur:left_new - 1
-                right_range = right_cur:right_new - 1
-                to_grow = Base.checked_add(idx, Base.checked_mul(length(left_range), length(right_range)))
-                resize!(left_ixs, to_grow)
-                resize!(right_ixs, to_grow)
-                @inbounds for right_i in right_range, left_i in left_range
-                    idx += 1
-                    left_ixs[idx] = left_i
-                    right_ixs[idx] = right_i
-                end
-            end
-            left_cur, left_val = left_new, left_tmp
-            left_new, left_tmp = find_next_range(left, left_cur, left_val)
-            right_cur, right_val = right_new, right_tmp
-            right_new, right_tmp = find_next_range(right, right_cur, right_val)
-        elseif isless(left_val, right_val)
-            left_cur, left_val = left_new, left_tmp
-            left_new, left_tmp = find_next_range(left, left_cur, left_val)
-        else
-            right_cur, right_val = right_new, right_tmp
-            right_new, right_tmp = find_next_range(right, right_cur, right_val)
-        end
-    end
-
-    return left_ixs, right_ixs
-end
-
-# optimistically assume that shorter table does not have duplicates in on column
-# if this is not the case we call _innerjoin_dup
-# which efficiently uses the work already done and continues with the more
-# memory expensive algorithm that allows for duplicates
-function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
-    dict = Dict{T, Int}()
-
-    right_len = length(right)
-    sizehint!(dict, 2 * min(right_len, typemax(Int) >> 2))
-
-    right isa OnCol && _prehash(right)
-    left isa OnCol && _prehash(left)
-
-    for (idx_r, val_r) in enumerate(right)
-        haskey(dict, val_r) && return _innerjoin_dup(left, right, dict, idx_r)
-        dict[val_r] = idx_r
-    end
-
-    left_ixs = Int[]
-    right_ixs = Int[]
-
-    # lower bound assuming we get matches
-    sizehint!(left_ixs, right_len)
-    sizehint!(right_ixs, right_len)
-
-    for (idx_l, val_l) in enumerate(left)
-        # we know that dict contains only positive values
-        idx_r = get(dict, val_l, -1)
-        if idx_r != -1
-            push!(left_ixs, idx_l)
-            push!(right_ixs, idx_r)
-        end
-    end
-    return left_ixs, right_ixs
-end
-
-extrema_missing(x::AbstractVector{Missing}) = (1, 0)
-
-function extrema_missing(x::AbstractVector{T}) where {T<:Union{Integer, Missing}}
-    try
-        return extrema(skipmissing(x))
-    catch
-        S = nonmissingtype(T)
-        return S(1), S(0)
-    end
-end
-
-function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}},
-                                 right::AbstractVector{<:Union{Integer, Missing}})
-    minv, maxv = extrema_missing(right)
-
-    val_range = big(maxv) - big(minv)
-    if val_range > typemax(Int) - 3 || val_range ÷ 2 > max(64, length(right)) ||
-       minv < typemin(Int) + 2 || maxv > typemax(Int) - 3
-       return _innerjoin_unsorted(left, right)
-    end
-
-    offset = 1 - Int(minv) # we are now sure it does not overflow
-    len = Int(maxv) - Int(minv) + 2
-    dict = zeros(Int, len)
-
-    @inbounds for (idx_r, val_r) in enumerate(right)
-        i = ismissing(val_r) ? length(dict) : Int(val_r) + offset
-        if dict[i] > 0
-            return _innerjoin_dup_int(left, right, dict, idx_r, offset, Int(minv), Int(maxv))
-        end
-        dict[i] = idx_r
-    end
-
-    left_ixs = Int[]
-    right_ixs = Int[]
-
-    right_len = length(right)
-    sizehint!(left_ixs, right_len)
-    sizehint!(right_ixs, right_len)
-
-    @inbounds for (idx_l, val_l) in enumerate(left)
-        # we use dict_index to make sure the following two operations are fast:
-        # - if index is found - get it and process it
-        # - if index is not found - do nothing
-        if ismissing(val_l)
-            idx_r = dict[end]
-            if idx_r > 0
-                push!(left_ixs, idx_l)
-                push!(right_ixs, idx_r)
-            end
-        elseif minv <= val_l <= maxv
-            idx_r = dict[Int(val_l) + offset]
-            if idx_r > 0
-                push!(left_ixs, idx_l)
-                push!(right_ixs, idx_r)
-            end
-        end
-    end
-    return left_ixs, right_ixs
-end
-
-# we fall back to general case if we have duplicates
-# normally it should happen fast as we reuse work already done
-function _innerjoin_dup(left::AbstractArray, right::AbstractArray{T},
-                        dict::Dict{T, Int}, idx_r_start::Int) where {T}
-    ngroups = idx_r_start - 1
-    right_len = length(right)
-    groups = Vector{Int}(undef, right_len)
-    groups[1:ngroups] = 1:ngroups
-
-    @inbounds for idx_r in idx_r_start:right_len
-        val_r = right[idx_r]
-        # we know that group ids are positive
-        group_id = get(dict, val_r, -1)
-        if group_id == -1
-            ngroups += 1
-            groups[idx_r] = ngroups
-            dict[val_r] = ngroups
-        else
-            groups[idx_r] = group_id
-        end
-    end
-
-    @assert ngroups > 0 # we should not get here with 0-length right
-    return _innerjoin_postprocess(left, dict, groups, ngroups, right_len)
-end
-
-function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
-                            right::AbstractVector{<:Union{Integer, Missing}},
-                            dict::Vector{Int}, idx_r_start::Int, offset::Int,
-                            minv::Int, maxv::Int)
-    ngroups = idx_r_start - 1
-    right_len = length(right)
-    groups = Vector{Int}(undef, right_len)
-    groups[1:ngroups] = 1:ngroups
-
-    @inbounds for idx_r in idx_r_start:right_len
-        val_r = right[idx_r]
-        i = ismissing(val_r) ? length(dict) : Int(val_r) + offset
-        dict_val = dict[i]
-        if dict_val > 0
-            groups[idx_r] = dict_val
-        else
-            ngroups += 1
-            groups[idx_r] = ngroups
-            dict[i] = ngroups
-        end
-    end
-
-    @assert ngroups > 0 # we should not get here with 0-length right
-    return _innerjoin_postprocess_int(left, dict, groups, ngroups, right_len, offset, minv, maxv)
-end
-
-function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
-                               starts::Vector, rperm::Vector)
-    @inbounds for gix in groups
-        starts[gix] += 1
-    end
-
-    cumsum!(starts, starts)
-
-    @inbounds for (i, gix) in enumerate(groups)
-        rperm[starts[gix]] = i
-        starts[gix] -= 1
-    end
-    push!(starts, length(groups))
-    return nothing
-end
-
-function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
-                                groups::Vector{Int}, ngroups::Int, right_len::Int) where {T}
-    starts = zeros(Int, ngroups)
-    rperm = Vector{Int}(undef, right_len)
-
-    left_ixs = Int[]
-    right_ixs = Int[]
-
-    # lower bound assuming we get matches
-    sizehint!(left_ixs, right_len)
-    sizehint!(right_ixs, right_len)
-
-    compute_join_indices!(groups, ngroups, starts, rperm)
-
-    n = 0
-    @inbounds for (idx_l, val_l) in enumerate(left)
-        group_id = get(dict, val_l, -1)
-        if group_id != -1
-            ref_stop = starts[group_id + 1]
-            l = ref_stop - starts[group_id]
-            newn = n + l
-            resize!(left_ixs, newn)
-            for i in n+1:n+l
-                left_ixs[i] = idx_l
-            end
-            resize!(right_ixs, newn)
-            for i in 1:l
-                right_ixs[n + i] = rperm[ref_stop - i + 1]
-            end
-            n = newn
-        end
-    end
-
-    return left_ixs, right_ixs
-end
-
-function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
-                                    dict::Vector{Int},
-                                    groups::Vector{Int}, ngroups::Int, right_len::Int,
-                                    offset::Int, minv::Int, maxv::Int)
-    starts = zeros(Int, ngroups)
-    rperm = Vector{Int}(undef, right_len)
-
-    left_ixs = Int[]
-    right_ixs = Int[]
-
-    sizehint!(left_ixs, right_len)
-    sizehint!(right_ixs, right_len)
-
-    compute_join_indices!(groups, ngroups, starts, rperm)
-
-    n = 0
-    @inbounds for (idx_l, val_l) in enumerate(left)
-        if ismissing(val_l)
-            group_id = dict[end]
-        elseif minv <= val_l <= maxv
-            group_id = dict[Int(val_l) + offset]
-        else
-            group_id = 0
-        end
-
-        if group_id > 0
-            ref_stop = starts[group_id + 1]
-            l = ref_stop - starts[group_id]
-            newn = n + l
-            resize!(left_ixs, newn)
-            for i in n+1:n+l
-                left_ixs[i] = idx_l
-            end
-            resize!(right_ixs, newn)
-            for i in 1:l
-                right_ixs[n + i] = rperm[ref_stop - i + 1]
-            end
-            n = newn
-        end
-    end
-
-    return left_ixs, right_ixs
-end
-
-function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
-                              left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
-                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap,
-                              makeunique::Bool,
+function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique::Bool,
                               left_rename::Union{Function, AbstractString, Symbol},
                               right_rename::Union{Function, AbstractString, Symbol},
                               indicator::Union{Nothing, Symbol, AbstractString})
-    @assert length(left_ixs) == length(right_ixs)
-    # compose left half of the result taking all left columns
-    all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
+    @assert kind == :left || kind == :right || kind == :outer
+    left_ixs, right_ixs = find_inner_rows(joiner)
 
-    ril = length(right_ixs)
+    if kind == :left || kind == :outer
+        leftonly_ixs = find_missing_idxs(left_ixs, nrow(joiner.dfl))
+    else
+        leftonly_ixs = Int[]
+    end
+
+    if kind == :right || kind == :outer
+        rightonly_ixs = find_missing_idxs(right_ixs, nrow(joiner.dfr))
+    else
+        rightonly_ixs = Int[]
+    end
+
     lil = length(left_ixs)
+    ril = length(right_ixs)
     loil = length(leftonly_ixs)
     roil = length(rightonly_ixs)
 
-    if loil > 0
-        # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig)
-        # indices of the left table rows, preserving the original rows order
-        all_orig_left_ixs = similar(left_ixs.orig, lil + loil)
-        @inbounds all_orig_left_ixs[left_ixs.join] = left_ixs.orig
-        @inbounds all_orig_left_ixs[leftonly_ixs.join] = leftonly_ixs.orig
-    else
-        # the result contains only the left rows that are matched to right rows (left_ixs)
-        # no need to copy left_ixs.orig as it's not used elsewhere
-        all_orig_left_ixs = left_ixs.orig
-    end
-    # permutation to swap rightonly and leftonly rows
-    right_perm = vcat(1:ril, ril+roil+1:ril+roil+loil, ril+1:ril+roil)
-    if length(leftonly_ixs) > 0
-        # compose right_perm with the permutation that restores left rows order
-        right_perm[vcat(right_ixs.join, leftonly_ixs.join)] = right_perm[1:ril+loil]
-    end
-    all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
+    @assert lil == ril
 
-    # compose right half of the result taking all right columns excluding on
+    dfl_noon = select(joiner.dfl, Not(joiner.left_on), copycols=false)
     dfr_noon = select(joiner.dfr, Not(joiner.right_on), copycols=false)
 
-    nrow = length(all_orig_left_ixs) + roil
-    @assert nrow == length(all_orig_right_ixs) + loil
+    target_nrow = lil + loil + roil
 
-    # inner and left joins preserve non-missingness of the left frame
-    _similar_left = kind == :inner || kind == :left ? similar : similar_missing
-    # inner and right joins preserve non-missingness of the right frame
-    _similar_right = kind == :inner || kind == :right ? similar : similar_missing
+    _similar_left = kind == :left ? similar : similar_missing
+    _similar_right = kind == :right ? similar : similar_missing
 
     if isnothing(indicator)
-        left_indicator = nothing
-        right_indicator = nothing
+        src_indicator = nothing
     else
-        # this code heavily depends on how currently rows are ordered in
-        # leftjoin, rightjoin and outerjoin
-        # in particular it takes advantage of the fact that we do not care
-        # about the permutation of left data frame in rightjoin as we always
-        # assign 0x1 to it anyway and these rows are guaranteed to come first
-        # (even if they are permuted)
-        left_indicator = zeros(UInt32, nrow)
-        left_indicator[axes(all_orig_left_ixs, 1)] .= 1
-        right_indicator = zeros(UInt32, nrow)
-        right_indicator[axes(all_orig_right_ixs, 1)] .= 2
-        permute!(right_indicator, right_perm)
+        src_indicator = Vector{UInt32}(undef, target_nrow)
+        src_indicator[1:lil] .= 3
+        src_indicator[lil + 1:lil + loil] .= 1
+        src_indicator[lil + loil + 1:target_nrow] .= 2
     end
 
-    ncleft = ncol(joiner.dfl)
-    cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
+    cols = Vector{AbstractVector}(undef, ncol(joiner.dfl) + ncol(dfr_noon))
 
-    for (i, col) in enumerate(eachcol(joiner.dfl))
-        cols[i] = _similar_left(col, nrow)
-        copyto!(cols[i], view(col, all_orig_left_ixs))
+    col_idx = 1
+
+    left_idxs = [columnindex(joiner.dfl, n) for n in joiner.left_on]
+    append!(left_idxs, setdiff(1:ncol(joiner.dfl), left_idxs))
+
+    if kind == :left
+        @assert loil + lil == target_nrow
+        for col in eachcol(joiner.dfl_on)
+            cols_i = left_idxs[col_idx]
+            cols[cols_i] = similar(col, target_nrow)
+            copyto!(cols[cols_i], view(col, left_ixs))
+            copyto!(cols[cols_i], lil + 1, view(col, leftonly_ixs), 1, loil)
+            col_idx += 1
+        end
+    elseif kind == :right
+        @assert roil + ril == target_nrow
+        for col in eachcol(joiner.dfr_on)
+            cols_i = left_idxs[col_idx]
+            cols[cols_i] = similar(col, target_nrow)
+            copyto!(cols[cols_i], view(col, right_ixs))
+            copyto!(cols[cols_i], lil + 1, view(col, rightonly_ixs), 1, roil)
+            col_idx += 1
+        end
+    else
+        @assert kind == :outer
+        @assert loil + roil + ril == target_nrow
+        for (lcol, rcol) in zip(eachcol(joiner.dfl_on), eachcol(joiner.dfr_on))
+            cols_i = left_idxs[col_idx]
+            cols[cols_i] = similar_outer(lcol, rcol, target_nrow)
+            copyto!(cols[cols_i], view(lcol, left_ixs))
+            copyto!(cols[cols_i], lil + 1, view(lcol, leftonly_ixs), 1, loil)
+            copyto!(cols[cols_i], lil + loil + 1, view(rcol, rightonly_ixs), 1, roil)
+            col_idx += 1
+        end
     end
-    for (i, col) in enumerate(eachcol(dfr_noon))
-        cols[i+ncleft] = _similar_right(col, nrow)
-        copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
-        permute!(cols[i+ncleft], right_perm)
+
+    @assert col_idx == ncol(joiner.dfl_on) + 1
+
+    for col in eachcol(dfl_noon)
+        cols_i = left_idxs[col_idx]
+        cols[cols_i] = _similar_left(col, target_nrow)
+        copyto!(cols[cols_i], view(col, left_ixs))
+        copyto!(cols[cols_i], lil + 1, view(col, leftonly_ixs), 1, loil)
+        col_idx += 1
     end
+
+    @assert col_idx == ncol(joiner.dfl) + 1
+
+    for col in eachcol(dfr_noon)
+        cols[col_idx] = _similar_right(col, target_nrow)
+        copyto!(cols[col_idx], view(col, right_ixs))
+        copyto!(cols[col_idx], lil + loil + 1, view(col, rightonly_ixs), 1, roil)
+        col_idx += 1
+    end
+
+    @assert col_idx == length(cols) + 1
 
     new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    if length(rightonly_ixs.join) > 0
-        # some left rows are missing, so the values of the "on" columns
-        # need to be taken from the right
-        for (on_col_ix, on_col) in enumerate(joiner.left_on)
-            # fix the result of the rightjoin by taking the nonmissing values from the right table
-            offset = nrow - length(rightonly_ixs.orig) + 1
-            copyto!(res[!, on_col], offset,
-                    view(joiner.dfr_on[!, on_col_ix], rightonly_ixs.orig))
-        end
-    end
-    if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)
-        # At this point on-columns of the result allow missing values, because
-        # right-only rows were filled with missing values when processing joiner.dfl
-        # However, when the right on-column (plus the left one for the outer join)
-        # does not allow missing values, the result should also disallow them.
-        for (on_col_ix, on_col) in enumerate(joiner.left_on)
-            LT = eltype(joiner.dfl_on[!, on_col_ix])
-            RT = eltype(joiner.dfr_on[!, on_col_ix])
-            if !(RT >: Missing) && (kind == :right || !(LT >: Missing))
-                res[!, on_col] = disallowmissing(res[!, on_col])
-            end
-        end
-    end
-    return res, left_indicator, right_indicator
-end
-
-# map the indices of the left and right joined tables
-# to the indices of the rows in the resulting table
-# if `nothing` is given, the corresponding map is not built
-function update_row_maps!(left_table::AbstractDataFrame,
-                          right_table::AbstractDataFrame,
-                          right_dict::RowGroupDict,
-                          left_ixs::Union{Nothing, RowIndexMap},
-                          leftonly_ixs::Union{Nothing, RowIndexMap},
-                          right_ixs::Union{Nothing, RowIndexMap},
-                          rightonly_mask::Union{Nothing, Vector{Bool}},
-                          right_dict_cols::Tuple{Vararg{AbstractVector}},
-                          left_table_cols::Tuple{Vararg{AbstractVector}})
-    # helper functions
-    @inline update!(ixs::Nothing, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
-    @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
-        n = length(ixs.orig)
-        resize!(ixs.orig, n+count)
-        ixs.orig[n+1:end] .= orig_ix
-        append!(ixs.join, join_ix:(join_ix+count-1))
-        ixs
-    end
-    @inline update!(ixs::Nothing, orig_ixs::AbstractArray, join_ix::Int) = nothing
-    @inline function update!(ixs::RowIndexMap, orig_ixs::AbstractArray, join_ix::Int)
-        append!(ixs.orig, orig_ixs)
-        append!(ixs.join, join_ix:(join_ix+length(orig_ixs)-1))
-        ixs
-    end
-    @inline update!(ixs::Nothing, orig_ixs::AbstractArray) = nothing
-    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) =
-        (mask[orig_ixs] .= false)
-
-    # iterate over left rows and compose the left<->right index map
-    next_join_ix = 1
-    for l_ix in 1:nrow(left_table)
-        r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
-        if isempty(r_ixs)
-            update!(leftonly_ixs, l_ix, next_join_ix)
-            next_join_ix += 1
-        else
-            update!(left_ixs, l_ix, next_join_ix, length(r_ixs))
-            update!(right_ixs, r_ixs, next_join_ix)
-            update!(rightonly_mask, r_ixs)
-            next_join_ix += length(r_ixs)
-        end
-    end
-end
-
-# map the row indices of the left and right joined tables
-# to the indices of rows in the resulting table
-# returns the 4-tuple of row indices maps for
-# - matching left rows
-# - non-matching left rows
-# - matching right rows
-# - non-matching right rows
-# if false is provided, the corresponding map is not built and the
-# tuple element is empty RowIndexMap
-function update_row_maps!(left_table::AbstractDataFrame,
-                          right_table::AbstractDataFrame,
-                          right_dict::RowGroupDict,
-                          map_left::Bool, map_leftonly::Bool,
-                          map_right::Bool, map_rightonly::Bool)
-    init_map(df::AbstractDataFrame, init::Bool) = init ?
-        RowIndexMap(sizehint!(Vector{Int}(), nrow(df)),
-                    sizehint!(Vector{Int}(), nrow(df))) : nothing
-    to_bimap(x::RowIndexMap) = x
-    to_bimap(::Nothing) = RowIndexMap(Vector{Int}(), Vector{Int}())
-
-    # init maps as requested
-    left_ixs = init_map(left_table, map_left)
-    leftonly_ixs = init_map(left_table, map_leftonly)
-    right_ixs = init_map(right_table, map_right)
-    rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
-    update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs,
-                     right_ixs, rightonly_mask,
-                     ntuple(i -> right_dict.df[!, i], ncol(right_dict.df)),
-                     ntuple(i -> left_table[!, i], ncol(left_table)))
-    if map_rightonly
-        rightonly_orig_ixs = findall(rightonly_mask)
-        leftonly_ixs_len = leftonly_ixs === nothing ? 0 : length(leftonly_ixs)
-        rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
-                                    collect(length(right_ixs.orig) .+
-                                            leftonly_ixs_len .+
-                                            (1:length(rightonly_orig_ixs))))
-    else
-        rightonly_ixs = nothing
-    end
-
-    return to_bimap(left_ixs), to_bimap(leftonly_ixs),
-           to_bimap(right_ixs), to_bimap(rightonly_ixs)
+    return res, src_indicator
 end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -942,31 +326,18 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                             right_invalid_msg))
     end
 
-    left_indicator, right_indicator = nothing, nothing
+    src_indicator = nothing
     if kind == :inner
-        joined, left_indicator, right_indicator =
-            compose_inner_table(joiner, makeunique, left_rename, right_rename)
+        joined = compose_inner_table(joiner, makeunique, left_rename, right_rename)
     elseif kind == :left
-        left_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                         group_rows(joiner.dfr_on),
-                                         true, true, true, false)
-        joined, left_indicator, right_indicator =
-            compose_joined_table(joiner, kind, left_row_maps...,
-                                 makeunique, left_rename, right_rename, indicator)
+        joined, src_indicator =
+            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :right
-        right_row_maps = update_row_maps!(joiner.dfr_on, joiner.dfl_on,
-                                          group_rows(joiner.dfl_on),
-                                          true, true, true, false)[[3, 4, 1, 2]]
-        joined, left_indicator, right_indicator =
-            compose_joined_table(joiner, kind, right_row_maps...,
-                                 makeunique, left_rename, right_rename, indicator)
+        joined, src_indicator =
+            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :outer
-        outer_row_maps = update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                          group_rows(joiner.dfr_on),
-                                          true, true, true, true)
-        joined, left_indicator, right_indicator =
-            compose_joined_table(joiner, kind, outer_row_maps...,
-                                 makeunique, left_rename, right_rename, indicator)
+        joined, src_indicator =
+            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -1000,12 +371,11 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if indicator !== nothing
-        left_indicator .+= right_indicator
         pool = ["left_only", "right_only", "both"]
         invpool = Dict{String, UInt32}("left_only" => 1,
                                        "right_only" => 2,
                                        "both" => 3)
-        indicatorcol = PooledArray(PooledArrays.RefArray(left_indicator),
+        indicatorcol = PooledArray(PooledArrays.RefArray(src_indicator),
                                    invpool, pool)
 
         unique_indicator = indicator
@@ -1024,8 +394,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
         joined[!, unique_indicator] = indicatorcol
     else
-        @assert isnothing(left_indicator)
-        @assert isnothing(right_indicator)
+        @assert isnothing(src_indicator)
     end
 
     return joined
@@ -1042,6 +411,10 @@ containing the result. An inner join includes rows with keys that match in all
 passed data frames.
 
 The order of rows in the result is undefined and may change in the future releases.
+
+In the returned data frame the type of the columns on which the data frames are
+joined is determined by the type of these columns in `df1`. This behavior may
+change in future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
@@ -1178,6 +551,10 @@ the result. A left join includes all rows from `df1`.
 
 The order of rows in the result is undefined and may change in the future releases.
 
+In the returned data frame the type of the columns on which the data frames are
+joined is determined by the type of these columns in `df1`. This behavior may
+change in future releases.
+
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
@@ -1306,6 +683,10 @@ Perform a right join on two data frame objects and return a `DataFrame` containi
 the result. A right join includes all rows from `df2`.
 
 The order of rows in the result is undefined and may change in the future releases.
+
+In the returned data frame the type of the columns on which the data frames are
+joined is determined by the type of these columns in `df2`. This behavior may
+change in future releases.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1437,6 +818,10 @@ containing the result. An outer join includes rows with keys that appear in any
 of the passed data frames.
 
 The order of rows in the result is undefined and may change in the future releases.
+
+In the returned data frame the type of the columns on which the data frames are
+joined is determined by the element type of these columns both `df1` and `df2`.
+This behavior may change in future releases.
 
 # Arguments
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
