@@ -2184,12 +2184,12 @@ end
     f1b(i) = i[1] == 1 ? ["a"] : ["c"]
     f2b(i) = i[1] == 1 ? "d" : "e"
     @test combine(gdf, :g => f1b, :g => f2b) ==
-          DataFrame(g=[1, 2], g_f1=["a", "c"], g_f2 = ["d", "e"])
+          DataFrame(g=[1, 2], g_f1b=["a", "c"], g_f2b = ["d", "e"])
 
     f1c(i) = i[1] == 1 ? ["a", "c"] : []
     f2c(i) = i[1] == 1 ? "d" : "e"
     @test combine(gdf, :g => f1c, :g => f2c) ==
-          DataFrame(g = [1, 1], g_f1 = ["a", "c"], g_f2 = ["d", "d"])
+          DataFrame(g = [1, 1], g_f1c = ["a", "c"], g_f2c = ["d", "d"])
 
     @test combine(gdf, :g => Ref) == DataFrame(g=[1, 2], g_Ref=[[1, 1, 1], [2, 2]])
     @test combine(gdf, :g => x -> view([x], 1)) == DataFrame(g=[1, 2], g_function=[[1, 1, 1], [2, 2]])
