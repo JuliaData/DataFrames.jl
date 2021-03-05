@@ -125,7 +125,7 @@ function preprocess_columns(joiner::DataFrameJoiner)
     left_cols = collect(eachcol(joiner.dfl_on))
     right_cols = collect(eachcol(joiner.dfr_on))
 
-    # if column of a longer table supports DataAPI.refpool and DataAPI.invrefpool
+    # if column of the longer table supports DataAPI.refpool and DataAPI.invrefpool
     # remap matching left and right columns to use refs
     if right_shorter
         for i in eachindex(left_cols, right_cols)
@@ -184,7 +184,7 @@ function preprocess_columns(joiner::DataFrameJoiner)
     # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that
     #    drop rows from shorter table that do not match rows from longer table based on
     #    PooledArray refpool check
-    # This optimization significantly complicates the code (especially sorted path).
+    # This optimization would significantly complicate the code (especially sorted path).
     # It should be added if in practice we find that the use case is often enough
     # and that the benefits are significant. The two cases when the benefits should
     # be expected are:
@@ -802,7 +802,6 @@ function _semijoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing
 end
 
 function find_semi_rows(joiner::DataFrameJoiner)
-
     left_col, right_col, right_shorter, disallow_sorted = preprocess_columns(joiner)
 
     seen_rows = falses(length(left_col))
