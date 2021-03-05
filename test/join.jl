@@ -1025,7 +1025,7 @@ end
         df_inner = DataFrame(id=[], x=[], y=[])
         for i in axes(df1, 1), j in axes(df2, 1)
             if isequal(df1.id[i], df2.id[j])
-                v = df1.id[i] isa CategoricalValue ? get(df1.id[i]) : df1.id[i]
+                v = df1.id[i] isa CategoricalValue ? unwrap(df1.id[i]) : df1.id[i]
                 push!(df_inner, (id=v, x=df1.x[i], y=df2.y[j]))
             end
         end
@@ -1033,7 +1033,7 @@ end
         df_left_part = DataFrame(id=[], x=[], y=[])
         for i in axes(df1, 1)
             if !(df1.id[i] in Set(df2.id))
-                v = df1.id[i] isa CategoricalValue ? get(df1.id[i]) : df1.id[i]
+                v = df1.id[i] isa CategoricalValue ? unwrap(df1.id[i]) : df1.id[i]
                 push!(df_left_part, (id=v, x=df1.x[i], y=missing))
             end
         end
@@ -1041,7 +1041,7 @@ end
         df_right_part = DataFrame(id=[], x=[], y=[])
         for i in axes(df2, 1)
             if !(df2.id[i] in Set(df1.id))
-                v = df2.id[i] isa CategoricalValue ? get(df2.id[i]) : df2.id[i]
+                v = df2.id[i] isa CategoricalValue ? unwrap(df2.id[i]) : df2.id[i]
                 push!(df_right_part, (id=v, x=missing, y=df2.y[i]))
             end
         end
@@ -1192,6 +1192,10 @@ end
                            DataFrame(id=[]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[]), DataFrame(id=[]), on=:id),
                            DataFrame(id=[]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[]), DataFrame(id=[]), on=:id),
+                           DataFrame(id=[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[]), DataFrame(id=[]), on=:id),
+                           DataFrame(id=[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id),
                            DataFrame(id=[]))
@@ -1201,6 +1205,10 @@ end
                            DataFrame(id=[1, 2, 3]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id),
                            DataFrame(id=Any[1, 2, 3]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id),
+                           DataFrame(id=[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id),
+                           DataFrame(id=[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id),
                            DataFrame(id=Int[]))
@@ -1210,6 +1218,10 @@ end
                            DataFrame(id=Any[]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id),
                            DataFrame(id=Any[1, 2, 3]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id),
+                           DataFrame(id=Int[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id),
+                           DataFrame(id=[1, 2, 3]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id),
                            DataFrame(id=Int[]))
@@ -1219,6 +1231,10 @@ end
                            DataFrame(id=Int[1, 2, 3]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id),
                            DataFrame(id=Int[4, 5, 6, 1, 2, 3]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id),
+                           DataFrame(id=Int[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id),
+                           DataFrame(id=[4, 5, 6]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id),
                            DataFrame(id=Int[]))
@@ -1228,6 +1244,10 @@ end
                            DataFrame(id=Int[4, 5, 6]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id),
                            DataFrame(id=Int[1, 2, 3, 4, 5, 6]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id),
+                           DataFrame(id=Int[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id),
+                           DataFrame(id=[1, 2, 3]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=Missing[]))
@@ -1237,6 +1257,10 @@ end
                            DataFrame(id=[1]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=[missing, 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Missing[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=[missing]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=Missing[]))
@@ -1246,6 +1270,10 @@ end
                            DataFrame(id=[1]))
     @test isequal_coltyped(outerjoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=Union{Int, Missing}[1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Missing[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Missing[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=Union{Int, Missing}[]))
@@ -1255,6 +1283,10 @@ end
                            DataFrame(id=[1]))
     @test isequal_coltyped(outerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=Union{Int, Missing}[1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal),
                            DataFrame(id=Union{Int, Missing}[]))
@@ -1264,6 +1296,10 @@ end
                            DataFrame(id=[2, 1, 2]))
     @test isequal_coltyped(outerjoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal),
                            DataFrame(id=Union{Int, Missing}[2, 1, 2]))
+    @test isequal_coltyped(semijoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
                                      on=:id, matchmissing=:equal),
@@ -1277,6 +1313,12 @@ end
     @test isequal_coltyped(outerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
                                      on=:id, matchmissing=:equal),
                            DataFrame(id=[missing, 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
+                                     on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
+    @test isequal_coltyped(antijoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
+                                     on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[missing]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
                                      on=:id, matchmissing=:equal),
@@ -1290,6 +1332,12 @@ end
     @test isequal_coltyped(outerjoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
                                      on=:id, matchmissing=:equal),
                            DataFrame(id=[missing, 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                                     on=:id, matchmissing=:equal),
+                           DataFrame(id=[missing]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                                     on=:id, matchmissing=:equal),
+                           DataFrame(id=Missing[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
                                      on=:id, matchmissing=:equal),
@@ -1303,6 +1351,12 @@ end
     @test isequal_coltyped(outerjoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
                                      on=:id, matchmissing=:equal),
                            DataFrame(id=[missing, 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
+                                     on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[missing]))
+    @test isequal_coltyped(antijoin(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
+                                     on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id),
                            DataFrame(id=[typemin(Int)]))
@@ -1312,6 +1366,10 @@ end
                            DataFrame(id=[typemin(Int)]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id),
                            DataFrame(id=[typemin(Int), typemin(Int) + 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id),
+                           DataFrame(id=[typemin(Int)]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id),
+                           DataFrame(id=[typemin(Int) + 1]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id),
                            DataFrame(id=[typemax(Int)]))
@@ -1321,6 +1379,10 @@ end
                            DataFrame(id=[typemax(Int)]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id),
                            DataFrame(id=[typemax(Int), typemax(Int) - 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id),
+                           DataFrame(id=[typemax(Int)]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id),
+                           DataFrame(id=[typemax(Int) - 1]))
 
     @test isequal_coltyped(innerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id),
                            DataFrame(id=[2000, 100]))
@@ -1330,6 +1392,10 @@ end
                            DataFrame(id=[2000, 100, 1]))
     @test isequal_coltyped(outerjoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id),
                            DataFrame(id=[2000, 100, 2, 1]))
+    @test isequal_coltyped(semijoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id),
+                           DataFrame(id=[2000, 100]))
+    @test isequal_coltyped(antijoin(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id),
+                           DataFrame(id=[2]))
 
     @test isequal_coltyped(outerjoin(DataFrame(id=[1]), DataFrame(id=[4.5]), on=:id),
                            DataFrame(id=[1, 4.5]))
@@ -1409,15 +1475,15 @@ end
     df2[1, :a] = missing
 
     m1 = innerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
-    @test m1 == DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x],
-                          b=[:A, :A, :A, :A, :B, :B, :A, :A],
-                          v1=[1, 1, 2, 2, 3, 4, 5, 5],
-                          v2=[3, 6, 3, 6, 4, 2, 3, 6])
+    @test sort(m1) == sort(DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x],
+                                     b=[:A, :A, :A, :A, :B, :B, :A, :A],
+                                     v1=[1, 1, 2, 2, 3, 4, 5, 5],
+                                     v2=[3, 6, 3, 6, 4, 2, 3, 6]))
     m2 = outerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
-    @test m2 ≅ DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x, :x, missing, :x],
-                         b=[:A, :A, :A, :A, :B, :B, :A, :A, :D, :A, :C],
-                         v1=[1, 1, 2, 2, 3, 4, 5, 5, 6, missing, missing],
-                         v2=[3, 6, 3, 6, 4, 2, 3, 6, missing, 1, 5])
+    @test sort(m2) ≅ sort(DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x, :x, missing, :x],
+                                    b=[:A, :A, :A, :A, :B, :B, :A, :A, :D, :A, :C],
+                                    v1=[1, 1, 2, 2, 3, 4, 5, 5, 6, missing, missing],
+                                    v2=[3, 6, 3, 6, 4, 2, 3, 6, missing, 1, 5]))
 
     Random.seed!(1)
     df1 = DataFrame(a = ["abc", "abx", "axz", "def", "dfr"], v1 = randn(5))
