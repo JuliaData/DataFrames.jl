@@ -287,16 +287,16 @@ end
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
-    @test_throws DimensionMismatch df[!, 1] .= rand(3, 1)
+    @test_throws DimensionMismatch df[!, 1] .= rand(1, 2)
     @test_throws ArgumentError dfv[!, 1] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= rand(3, 1)
-    @test_throws DimensionMismatch df[:, 1] .= rand(3, 1)
-    @test_throws DimensionMismatch dfv[:, 1] .= rand(2, 1)
-    @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), :, 1)
+    @test_throws DimensionMismatch df[:, 1] .= rand(1, 3)
+    @test_throws DimensionMismatch dfv[:, 1] .= rand(1, 2)
+    @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), 1, :)
     @test_throws ArgumentError dfv[!, 1] .= reshape(rand(2), :, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
-    @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), :, 1)
-    @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), :, 1)
+    @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), 1, :, 1)
+    @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), 1, :, 1)
 
     df = copy(refdf)
     df[!, :x1] .+= 1
@@ -413,21 +413,21 @@ end
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
-    @test_throws DimensionMismatch df[!, :x1] .= rand(3, 1)
+    @test_throws DimensionMismatch df[!, :x1] .= rand(1, 3)
     @test_throws ArgumentError dfv[!, :x2] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[[:x4, :x5]] .= rand(3, 1)
-    @test_throws DimensionMismatch df[:, :x1] .= rand(3, 1)
-    @test_throws DimensionMismatch dfv[:, :x2] .= rand(2, 1)
-    @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), :, 1)
+    @test_throws DimensionMismatch df[:, :x1] .= rand(1, 3)
+    @test_throws DimensionMismatch dfv[:, :x2] .= rand(1, 2)
+    @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), 1, :)
     @test_throws ArgumentError dfv[!, 1] .= reshape(rand(2), :, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
-    @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), :, 1)
-    @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), :, 1)
-    @test_throws DimensionMismatch df[!, "x1"] .= rand(3, 1)
+    @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), 1, :)
+    @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), 1, :)
+    @test_throws DimensionMismatch df[!, "x1"] .= rand(1, 3)
     @test_throws ArgumentError dfv[!, "x2"] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[["x4", "x5"]] .= rand(3, 1)
-    @test_throws DimensionMismatch df[:, "x1"] .= rand(3, 1)
-    @test_throws DimensionMismatch dfv[:, "x2"] .= rand(2, 1)
+    @test_throws DimensionMismatch df[:, "x1"] .= rand(1, 3)
+    @test_throws DimensionMismatch dfv[:, "x2"] .= rand(1, 2)
 end
 
 @testset "normal data frame and data frame view in broadcasted assignment - two columns" begin
@@ -757,7 +757,7 @@ end
     @test names(df)[end] == "b"
     @test df[:, 1:end-2] == refdf
     cdf = copy(df)
-    @test_throws DimensionMismatch df[!, :c] .= ones(3, 1)
+    @test_throws DimensionMismatch df[!, :c] .= ones(1, 3)
     @test df == cdf
     @test_throws DimensionMismatch df[!, :x] .= ones(4)
     @test df == cdf
@@ -793,7 +793,7 @@ end
     @test names(df)[end] == "b"
     @test df[:, 1:end-2] == refdf
     cdf = copy(df)
-    @test_throws DimensionMismatch df[!, "c"] .= ones(3, 1)
+    @test_throws DimensionMismatch df[!, "c"] .= ones(1, 3)
     @test df == cdf
     @test_throws DimensionMismatch df[!, "x"] .= ones(4)
     @test df == cdf
@@ -921,7 +921,7 @@ end
     df .= ones(1, 1)
     @test df == DataFrame()
     @test_throws DimensionMismatch df .= ones(1, 2)
-    @test_throws DimensionMismatch df .= ones(1, 1, 1)
+    @test_throws DimensionMismatch df .= ones(1, 2, 1)
 
     df = DataFrame(a=[])
     df[!, :b] .= sin.(1)
@@ -1376,7 +1376,7 @@ end
     df[:, 1:2] .= reshape('d':'i', 3, :)
     @test v1 == [100.0, 101.0, 102.0]
     @test v2 == [103.0, 104.0, 105.0]
-    @test_throws DimensionMismatch df[:, 1:2] .= reshape('d':'i', 3, :, 1)
+    @test_throws DimensionMismatch df[:, 1:2] .= reshape('d':'i', 1, :, 3)
     @test v1 == [100.0, 101.0, 102.0]
     @test v2 == [103.0, 104.0, 105.0]
 
@@ -1556,7 +1556,7 @@ end
     df[:, 1:2] .= reshape('d':'i', 3, :)
     @test v1 == [100.0, 101.0, 102.0]
     @test v2 == [103.0, 104.0, 105.0]
-    @test_throws DimensionMismatch df[:, 1:2] .= reshape('d':'i', 3, :, 1)
+    @test_throws DimensionMismatch df[:, 1:2] .= reshape('d':'i', 1, :, 3)
     @test v1 == [100.0, 101.0, 102.0]
     @test v2 == [103.0, 104.0, 105.0]
 
@@ -1823,7 +1823,7 @@ end
     @test_throws MethodError df[:, 1] .= z
 
     df = DataFrame(ones(3, 4), :auto)
-    z = fill("abc", 1, 1, 1)
+    z = fill("abc", 1, 1, 2)
     @test_throws DimensionMismatch df[:, :z] .= z
 
     df = DataFrame(ones(3, 4), :auto)
@@ -1838,7 +1838,7 @@ end
     @test df.z == fill("abc", 3)
 
     df = DataFrame(ones(3, 4), :auto)
-    z = fill("abc", 1, 1, 1)
+    z = fill("abc", 1, 1, 2)
     @test_throws DimensionMismatch df[:, "z"] .= z
 end
 
