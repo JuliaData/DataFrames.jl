@@ -2177,18 +2177,18 @@ end
     df = DataFrame(g=[1, 1, 1, 2, 2])
     gdf = groupby_checked(df, :g)
 
-    f1(i) = i[1] == 1 ? ["a", "b"] : ["c"]
-    f2(i) = i[1] == 1 ? ["d"] : ["e", "f"]
-    @test_throws ArgumentError combine(gdf, :g => f1, :g => f2)
+    f1a(i) = i[1] == 1 ? ["a", "b"] : ["c"]
+    f2a(i) = i[1] == 1 ? ["d"] : ["e", "f"]
+    @test_throws ArgumentError combine(gdf, :g => f1a, :g => f2a)
 
-    f1(i) = i[1] == 1 ? ["a"] : ["c"]
-    f2(i) = i[1] == 1 ? "d" : "e"
-    @test combine(gdf, :g => f1, :g => f2) ==
+    f1b(i) = i[1] == 1 ? ["a"] : ["c"]
+    f2b(i) = i[1] == 1 ? "d" : "e"
+    @test combine(gdf, :g => f1b, :g => f2b) ==
           DataFrame(g=[1, 2], g_f1=["a", "c"], g_f2 = ["d", "e"])
 
-    f1(i) = i[1] == 1 ? ["a", "c"] : []
-    f2(i) = i[1] == 1 ? "d" : "e"
-    @test combine(gdf, :g => f1, :g => f2) ==
+    f1c(i) = i[1] == 1 ? ["a", "c"] : []
+    f2c(i) = i[1] == 1 ? "d" : "e"
+    @test combine(gdf, :g => f1c, :g => f2c) ==
           DataFrame(g = [1, 1], g_f1 = ["a", "c"], g_f2 = ["d", "d"])
 
     @test combine(gdf, :g => Ref) == DataFrame(g=[1, 2], g_Ref=[[1, 1, 1], [2, 2]])
@@ -3818,17 +3818,17 @@ end
         combine(gd, [:y, :y2] => ((y, x) -> y[1]) => :res) ==
         combine(gd, [:y, :x] => ((y, x) -> y[1]) => :res) ==
         combine(gd, [:y, :z] => ((y, z) -> y[1]) => :res) ==
-        combine(gd, :y => (y -> get(y[1])) => :res)
+        combine(gd, :y => (y -> unwrap(y[1])) => :res)
 
     @test combine(gd, [:x, :y, :y2] =>
                           ((x, y, y2) -> x[1] <= 5 ? y[1] : y2[1]) => :res) ==
         combine(gd, [:x, :y, :y2] =>
-                        ((x, y, y2) -> x[1] <= 5 ? get(y[1]) : get(y2[1])) => :res)
+                        ((x, y, y2) -> x[1] <= 5 ? unwrap(y[1]) : unwrap(y2[1])) => :res)
 
     @test combine(gd, [:x, :y, :z] =>
                           ((x, y, z) -> x[1] <= 5 ? y[1] : z[1]) => :res) ==
         combine(gd, [:x, :y, :z] =>
-                        ((x, y, z) -> x[1] <= 5 ? get(y[1]) : get(z[1])) => :res)
+                        ((x, y, z) -> x[1] <= 5 ? unwrap(y[1]) : unwrap(z[1])) => :res)
 end
 
 end # module
