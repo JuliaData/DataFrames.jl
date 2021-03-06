@@ -3,7 +3,6 @@ uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 version = "0.22.5"
 
 [deps]
-CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 Future = "9fa8497b-333b-5362-9e8d-4d0656e87820"
@@ -24,7 +23,7 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [compat]
-CategoricalArrays = "0.8.3, 0.9"
+CategoricalArrays = "0.9.3"
 Compat = "3.17"
 DataAPI = "1.4"
 InvertedIndices = "1"
@@ -40,6 +39,7 @@ Unitful = "1"
 julia = "1"
 
 [extras]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DataValues = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
@@ -51,5 +51,5 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Combinatorics", "DataStructures", "DataValues", "Dates", "Logging",
-        "OffsetArrays", "Random", "Test", "Unitful"]
+test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
+        "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful"]
