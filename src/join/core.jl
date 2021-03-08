@@ -98,7 +98,8 @@ check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
     !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
         eltype(refarray_long) <: Union{Signed, Unsigned}
 
-@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{fi})  where {fi} =
+@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector,
+                       ::Val{fi})  where {fi} =
     [@inbounds mapping[r - fi + 1] for r in refarray]
 
 function map2refs(x::AbstractVector, invrefpool)
@@ -163,8 +164,8 @@ function preprocess_columns(joiner::DataFrameJoiner)
         lc_et = nonmissingtype(eltype(lc))
         rc_et = nonmissingtype(eltype(rc))
 
-        # special case common safe scenarios when eltype between left and right column
-        # can be different or non-concrete
+        # special case common safe scenarios when eltype between left and right
+        # column can be different or non-concrete
         lc_et <: Real && rc_et <: Real && continue
         lc_et <: AbstractString && rc_et <: AbstractString && continue
 
@@ -181,15 +182,16 @@ function preprocess_columns(joiner::DataFrameJoiner)
     # If DataAPI.invrefpool vectors are found in the "on" columns
     # then potentially the following optimizations can be done:
     # 1. identify rows in shorter table that should be dropped
-    # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that
-    #    drop rows from shorter table that do not match rows from longer table based on
+    # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that drop rows
+    #    from shorter table that do not match rows from longer table based on
     #    PooledArray refpool check
-    # This optimization would significantly complicate the code (especially sorted path).
-    # It should be added if in practice we find that the use case is often enough
-    # and that the benefits are significant. The two cases when the benefits should
-    # be expected are:
+    # This optimization would significantly complicate the code (especially
+    # sorted path). It should be added if in practice we find that the use case
+    # is often enough and that the benefits are significant. The two cases when
+    # the benefits should be expected are:
     # 1. Shorter table is sorted when we drop rows not matching longer table rows
-    # 2. Shorter table does not have duplicates when we drop rows not matching longer table rows
+    # 2. Shorter table does not have duplicates when we drop rows not matching
+    #    longer table rows
 
     left_col = prepare_on_col(left_cols...)
     right_col = prepare_on_col(right_cols...)
@@ -241,7 +243,8 @@ function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
                 idx = length(left_ixs)
                 left_range = left_cur:left_new - 1
                 right_range = right_cur:right_new - 1
-                to_grow = Base.checked_add(idx, Base.checked_mul(length(left_range), length(right_range)))
+                to_grow = Base.checked_add(idx, Base.checked_mul(length(left_range),
+                                                                 length(right_range)))
                 resize!(left_ixs, to_grow)
                 resize!(right_ixs, to_grow)
                 @inbounds for right_i in right_range, left_i in left_range
@@ -338,7 +341,8 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
     @inbounds for (idx_r, val_r) in enumerate(right)
         i = val_r === missing ? length(group_map) : Int(val_r) + offset
         if group_map[i] > 0
-            return _innerjoin_dup_int(left, right, group_map, idx_r, offset, Int(minv), Int(maxv))
+            return _innerjoin_dup_int(left, right, group_map, idx_r, offset,
+                                      Int(minv), Int(maxv))
         end
         group_map[i] = idx_r
     end
@@ -417,7 +421,8 @@ function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
     end
 
     @assert ngroups > 0 # we should not get here with 0-length right
-    return _innerjoin_postprocess_int(left, group_map, groups, ngroups, right_len, offset, minv, maxv)
+    return _innerjoin_postprocess_int(left, group_map, groups, ngroups, right_len,
+                                      offset, minv, maxv)
 end
 
 function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
@@ -437,7 +442,8 @@ function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
 end
 
 function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
-                                groups::Vector{Int}, ngroups::Int, right_len::Int) where {T}
+                                groups::Vector{Int}, ngroups::Int,
+                                right_len::Int) where {T}
     starts = zeros(Int, ngroups)
     rperm = Vector{Int}(undef, right_len)
 
@@ -558,7 +564,8 @@ end
 
 ### semijoin logic
 
-function _semijoin_sorted(left::AbstractArray, right::AbstractArray, seen_rows::AbstractVector{Bool})
+function _semijoin_sorted(left::AbstractArray, right::AbstractArray,
+                          seen_rows::AbstractVector{Bool})
     left_n = length(left)
     right_n = length(right)
 
@@ -669,8 +676,8 @@ function _semijoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}},
         @inbounds for (idx_r, val_r) in enumerate(right)
             i = val_r === missing ? length(group_map) : Int(val_r) + offset
             if group_map[i] > 0
-                return _semijoin_dup_int(left, right, group_map, idx_r, offset, Int(minv), Int(maxv),
-                                         seen_rows)
+                return _semijoin_dup_int(left, right, group_map, idx_r, offset,
+                                         Int(minv), Int(maxv), seen_rows)
             end
             group_map[i] = idx_r
         end
@@ -745,8 +752,8 @@ function _semijoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
 
     @assert ngroups > 0 # we should not get here with 0-length right
     @assert length(right) == length(seen_rows)
-    return _semijoin_postprocess_int(left, group_map, groups, ngroups, right_len, offset,
-                                     minv, maxv, seen_rows)
+    return _semijoin_postprocess_int(left, group_map, groups, ngroups, right_len,
+                                     offset, minv, maxv, seen_rows)
 end
 
 function _semijoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
