@@ -293,8 +293,7 @@ end
     @test_throws ArgumentError SubDataFrame(sdf, true, :)
     @test_throws ArgumentError SubDataFrame(sdf, Integer[true], 1)
 
-    # this is an error in Julia Base
-    SubDataFrame(sdf, Integer[true, true, true], :) == SubDataFrame(sdf, [1, 1, 1], :)
+    @test_throws ArgumentError SubDataFrame(sdf, Integer[true, true, true], :)
 end
 
 end # module

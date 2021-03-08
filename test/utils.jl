@@ -16,7 +16,7 @@ end
     @test repeat(view(df, 1:2, :), 2) == ref
 
     @test size(repeat(df, 0)) == (0, 2)
-    @test size(repeat(df, false)) == (0, 2)
+    @test_throws MethodError repeat(df, false)
     @test_throws ArgumentError repeat(df, -1)
 end
 
@@ -29,9 +29,8 @@ end
 
     @test size(repeat(df, inner = 2, outer = 0)) == (0, 2)
     @test size(repeat(df, inner = 0, outer = 3)) == (0, 2)
-    @test size(repeat(df, inner = 2, outer = false)) == (0, 2)
-    @test size(repeat(df, inner = false, outer = 3)) == (0, 2)
-
+    @test_throws MethodError repeat(df, inner = 2, outer = false)
+    @test_throws MethodError repeat(df, inner = false, outer = 3)
     @test_throws ArgumentError repeat(df, inner = 2, outer = -1)
     @test_throws ArgumentError repeat(df, inner = -1, outer = 3)
 end
