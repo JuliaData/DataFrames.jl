@@ -190,22 +190,19 @@ struct DataFrame <: AbstractDataFrame
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        Threads.@threads for i in eachindex(columns)
-            col = columns[i]
-            # check for vectors first as they are most common
-            if col isa AbstractRange
-                columns[i] = collect(col)
-            elseif col isa AbstractVector
-                columns[i] = copycols ? copy(col) : col
-            elseif col isa Union{AbstractArray{<:Any, 0}, Ref}
-                x = col[]
-                columns[i] = fill!(Tables.allocatecolumn(typeof(x), len), x)
-            else
-                if col isa AbstractArray
-                    throw(ArgumentError("adding AbstractArray other than AbstractVector " *
-                                        "as a column of a data frame is not allowed"))
+        @static if VERSION >= 1.4
+            if Threads.nthreads() > 1 && len >= 1_000_000
+                @sync for i in eachindex(columns)
+                    Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
                 end
-                columns[i] = fill!(Tables.allocatecolumn(typeof(col), len), col)
+            else
+                for i in eachindex(columns)
+                    columns[i] = _preprocess_column(columns[i], len, copycols)
+                end
+            end
+        else
+            for i in eachindex(columns)
+                columns[i] = _preprocess_column(columns[i], len, copycols)
             end
         end
 
@@ -215,6 +212,21 @@ struct DataFrame <: AbstractDataFrame
 
         new(convert(Vector{AbstractVector}, columns), colindex)
     end
+end
+
+function _preprocess_column(col, len, copycols)
+    # check for vectors first as they are most common
+    col isa AbstractRange && return collect(col)
+    col isa AbstractVector && copycols ? copy(col) : col
+    if col isa Union{AbstractArray{<:Any, 0}, Ref}
+        x = col[]
+        return fill!(Tables.allocatecolumn(typeof(x), len), x)
+    end
+    if col isa AbstractArray
+        throw(ArgumentError("adding AbstractArray other than AbstractVector " *
+                            "as a column of a data frame is not allowed"))
+    end
+    return fill!(Tables.allocatecolumn(typeof(col), len), col)
 end
 
 DataFrame(df::DataFrame; copycols::Bool=true) = copy(df, copycols=copycols)
@@ -505,50 +517,44 @@ end
     selected_columns = index(df)[col_inds]
     old_columns = _columns(df)[selected_columns]
     new_columns = Vector{AbstractVector}(undef, length(old_columns))
+
     if length(new_columns) == 1
         new_columns[1] = only(old_columns)[row_inds]
     elseif length(new_columns) > 1
         # Computing integer indices once for all columns is faster
         selected_rows = T === Bool ? findall(row_inds) : row_inds
-        Threads.@threads for i in eachindex(new_columns)
-            new_columns[i] = old_columns[i][selected_rows]
+        @static if VERSION >= v"1.4"
+            if length(selected_rows) > 1_000_000 && Threads.nthreads() > 1
+                @sync for i in eachindex(new_columns)
+                    Threads.@spawn new_columns[i] = old_columns[i][selected_rows]
+                end
+            else
+                for i in eachindex(new_columns)
+                    new_columns[i] = old_columns[i][selected_rows]
+                end
+            end
+        else
+            for i in eachindex(new_columns)
+                new_columns[i] = old_columns[i][selected_rows]
+            end
         end
     end
 
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
-@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
-    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
-        throw(BoundsError(df, (row_inds, :)))
-    end
-    old_columns = _columns(df)
-    new_columns = Vector{AbstractVector}(undef, length(old_columns))
-    if length(new_columns) == 1
-        new_columns[1] = only(old_columns)[row_inds]
-    elseif length(new_columns) > 1
-        # Computing integer indices once for all columns is faster
-        selected_rows = T === Bool ? findall(row_inds) : row_inds
-        Threads.@threads for i in eachindex(new_columns)
-            new_columns[i] = old_columns[i][selected_rows]
-        end
-    end
+@inline Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T =
+    df[row_inds, index(df)[:]]
 
-    return DataFrame(new_columns, copy(index(df)), copycols=false)
-end
-
-@inline Base.getindex(df::DataFrame, row_inds::Not,
-                      col_inds::MultiColumnIndex) =
+@inline Base.getindex(df::DataFrame, row_inds::Not, col_inds::MultiColumnIndex) =
     df[axes(df, 1)[row_inds], col_inds]
 
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon,
-              col_inds::MultiColumnIndex) =
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::typeof(!),
-              col_inds::MultiColumnIndex) =
+Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=false)
 
 ##############################################################################
