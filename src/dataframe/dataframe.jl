@@ -190,7 +190,7 @@ struct DataFrame <: AbstractDataFrame
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        @static if VERSION >= 1.4
+        @static if VERSION >= v"1.4"
             if Threads.nthreads() > 1 && len >= 1_000_000
                 @sync for i in eachindex(columns)
                     Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
@@ -217,7 +217,7 @@ end
 function _preprocess_column(col, len, copycols)
     # check for vectors first as they are most common
     col isa AbstractRange && return collect(col)
-    col isa AbstractVector && copycols ? copy(col) : col
+    col isa AbstractVector && return copycols ? copy(col) : col
     if col isa Union{AbstractArray{<:Any, 0}, Ref}
         x = col[]
         return fill!(Tables.allocatecolumn(typeof(x), len), x)
