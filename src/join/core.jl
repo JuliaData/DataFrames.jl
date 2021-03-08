@@ -333,14 +333,14 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
 
     offset = 1 - Int(minv) # we are now sure it does not overflow
     len = Int(maxv) - Int(minv) + 2
-    dict = zeros(Int, len)
+    group_map = zeros(Int, len)
 
     @inbounds for (idx_r, val_r) in enumerate(right)
-        i = val_r === missing ? length(dict) : Int(val_r) + offset
-        if dict[i] > 0
-            return _innerjoin_dup_int(left, right, dict, idx_r, offset, Int(minv), Int(maxv))
+        i = val_r === missing ? length(group_map) : Int(val_r) + offset
+        if group_map[i] > 0
+            return _innerjoin_dup_int(left, right, group_map, idx_r, offset, Int(minv), Int(maxv))
         end
-        dict[i] = idx_r
+        group_map[i] = idx_r
     end
 
     left_ixs = Int[]
@@ -352,13 +352,13 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
 
     @inbounds for (idx_l, val_l) in enumerate(left)
         if val_l === missing
-            idx_r = dict[end]
+            idx_r = group_map[end]
             if idx_r > 0
                 push!(left_ixs, idx_l)
                 push!(right_ixs, idx_r)
             end
         elseif minv <= val_l <= maxv
-            idx_r = dict[Int(val_l) + offset]
+            idx_r = group_map[Int(val_l) + offset]
             if idx_r > 0
                 push!(left_ixs, idx_l)
                 push!(right_ixs, idx_r)
@@ -396,7 +396,7 @@ end
 
 function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
                             right::AbstractVector{<:Union{Integer, Missing}},
-                            dict::Vector{Int}, idx_r_start::Int, offset::Int,
+                            group_map::Vector{Int}, idx_r_start::Int, offset::Int,
                             minv::Int, maxv::Int)
     ngroups = idx_r_start - 1
     right_len = length(right)
@@ -405,19 +405,19 @@ function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
 
     @inbounds for idx_r in idx_r_start:right_len
         val_r = right[idx_r]
-        i = val_r === missing ? length(dict) : Int(val_r) + offset
-        dict_val = dict[i]
-        if dict_val > 0
-            groups[idx_r] = dict_val
+        i = val_r === missing ? length(group_map) : Int(val_r) + offset
+        group_map_val = group_map[i]
+        if group_map_val > 0
+            groups[idx_r] = group_map_val
         else
             ngroups += 1
             groups[idx_r] = ngroups
-            dict[i] = ngroups
+            group_map[i] = ngroups
         end
     end
 
     @assert ngroups > 0 # we should not get here with 0-length right
-    return _innerjoin_postprocess_int(left, dict, groups, ngroups, right_len, offset, minv, maxv)
+    return _innerjoin_postprocess_int(left, group_map, groups, ngroups, right_len, offset, minv, maxv)
 end
 
 function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
@@ -473,7 +473,7 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
 end
 
 function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
-                                    dict::Vector{Int},
+                                    group_map::Vector{Int},
                                     groups::Vector{Int}, ngroups::Int, right_len::Int,
                                     offset::Int, minv::Int, maxv::Int)
     starts = zeros(Int, ngroups)
@@ -490,9 +490,9 @@ function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missin
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
         if val_l === missing
-            group_id = dict[end]
+            group_id = group_map[end]
         elseif minv <= val_l <= maxv
-            group_id = dict[Int(val_l) + offset]
+            group_id = group_map[Int(val_l) + offset]
         else
             group_id = 0
         end
@@ -649,39 +649,39 @@ function _semijoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}},
 
     offset = 1 - Int(minv) # we are now sure it does not overflow
     len = Int(maxv) - Int(minv) + 2
-    dict = zeros(Int, len)
+    group_map = zeros(Int, len)
 
     if right_shorter
         @inbounds for (idx_r, val_r) in enumerate(right)
-            i = val_r === missing ? length(dict) : Int(val_r) + offset
-            dict[i] = idx_r
+            i = val_r === missing ? length(group_map) : Int(val_r) + offset
+            group_map[i] = idx_r
         end
         @inbounds for (idx_l, val_l) in enumerate(left)
             if val_l === missing
-                idx_r = dict[end]
+                idx_r = group_map[end]
                 seen_rows[idx_l] = idx_r > 0
             elseif minv <= val_l <= maxv
-                idx_r = dict[Int(val_l) + offset]
+                idx_r = group_map[Int(val_l) + offset]
                 seen_rows[idx_l] = idx_r > 0
             end
         end
     else
         @inbounds for (idx_r, val_r) in enumerate(right)
-            i = val_r === missing ? length(dict) : Int(val_r) + offset
-            if dict[i] > 0
-                return _semijoin_dup_int(left, right, dict, idx_r, offset, Int(minv), Int(maxv),
+            i = val_r === missing ? length(group_map) : Int(val_r) + offset
+            if group_map[i] > 0
+                return _semijoin_dup_int(left, right, group_map, idx_r, offset, Int(minv), Int(maxv),
                                          seen_rows)
             end
-            dict[i] = idx_r
+            group_map[i] = idx_r
         end
         @inbounds for (idx_l, val_l) in enumerate(left)
             if val_l === missing
-                idx_r = dict[end]
+                idx_r = group_map[end]
                 if idx_r > 0
                     seen_rows[idx_r] = true
                 end
             elseif minv <= val_l <= maxv
-                idx_r = dict[Int(val_l) + offset]
+                idx_r = group_map[Int(val_l) + offset]
                 if idx_r > 0
                     seen_rows[idx_r] = true
                 end
@@ -723,7 +723,7 @@ end
 
 function _semijoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
                            right::AbstractVector{<:Union{Integer, Missing}},
-                           dict::Vector{Int}, idx_r_start::Int, offset::Int,
+                           group_map::Vector{Int}, idx_r_start::Int, offset::Int,
                            minv::Int, maxv::Int, seen_rows::AbstractVector{Bool})
     ngroups = idx_r_start - 1
     right_len = length(right)
@@ -732,20 +732,20 @@ function _semijoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
 
     @inbounds for idx_r in idx_r_start:right_len
         val_r = right[idx_r]
-        i = val_r === missing ? length(dict) : Int(val_r) + offset
-        dict_val = dict[i]
-        if dict_val > 0
-            groups[idx_r] = dict_val
+        i = val_r === missing ? length(group_map) : Int(val_r) + offset
+        group_map_val = group_map[i]
+        if group_map_val > 0
+            groups[idx_r] = group_map_val
         else
             ngroups += 1
             groups[idx_r] = ngroups
-            dict[i] = ngroups
+            group_map[i] = ngroups
         end
     end
 
     @assert ngroups > 0 # we should not get here with 0-length right
     @assert length(right) == length(seen_rows)
-    return _semijoin_postprocess_int(left, dict, groups, ngroups, right_len, offset,
+    return _semijoin_postprocess_int(left, group_map, groups, ngroups, right_len, offset,
                                      minv, maxv, seen_rows)
 end
 
@@ -772,7 +772,7 @@ function _semijoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
 end
 
 function _semijoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
-                                   dict::Vector{Int},
+                                   group_map::Vector{Int},
                                    groups::Vector{Int}, ngroups::Int, right_len::Int,
                                    offset::Int, minv::Int, maxv::Int,
                                    seen_rows::AbstractVector{Bool})
@@ -783,9 +783,9 @@ function _semijoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing
 
     @inbounds for (idx_l, val_l) in enumerate(left)
         if val_l === missing
-            group_id = dict[end]
+            group_id = group_map[end]
         elseif minv <= val_l <= maxv
-            group_id = dict[Int(val_l) + offset]
+            group_id = group_map[Int(val_l) + offset]
         else
             group_id = 0
         end
