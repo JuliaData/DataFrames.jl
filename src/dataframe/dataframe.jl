@@ -190,7 +190,8 @@ struct DataFrame <: AbstractDataFrame
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        for (i, col) in enumerate(columns)
+        Threads.@threads for i in eachindex(columns)
+            col = columns[i]
             # check for vectors first as they are most common
             if col isa AbstractRange
                 columns[i] = collect(col)
@@ -502,9 +503,18 @@ end
         throw(BoundsError(df, (row_inds, col_inds)))
     end
     selected_columns = index(df)[col_inds]
-    # Computing integer indices once for all columns is faster
-    selected_rows = T === Bool ? findall(row_inds) : row_inds
-    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
+    old_columns = _columns(df)[selected_columns]
+    new_columns = Vector{AbstractVector}(undef, length(old_columns))
+    if length(new_columns) == 1
+        new_columns[1] = only(old_columns)[row_inds]
+    elseif length(new_columns) > 1
+        # Computing integer indices once for all columns is faster
+        selected_rows = T === Bool ? findall(row_inds) : row_inds
+        Threads.@threads for i in eachindex(new_columns)
+            new_columns[i] = old_columns[i][selected_rows]
+        end
+    end
+
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
@@ -512,9 +522,18 @@ end
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError(df, (row_inds, :)))
     end
-    # Computing integer indices once for all columns is faster
-    selected_rows = T === Bool ? findall(row_inds) : row_inds
-    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)]
+    old_columns = _columns(df)
+    new_columns = Vector{AbstractVector}(undef, length(old_columns))
+    if length(new_columns) == 1
+        new_columns[1] = only(old_columns)[row_inds]
+    elseif length(new_columns) > 1
+        # Computing integer indices once for all columns is faster
+        selected_rows = T === Bool ? findall(row_inds) : row_inds
+        Threads.@threads for i in eachindex(new_columns)
+            new_columns[i] = old_columns[i][selected_rows]
+        end
+    end
+
     return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
 

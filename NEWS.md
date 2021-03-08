@@ -39,6 +39,9 @@
   These aspects of input data frames might affect the order of rows produced in the output
   ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612),
    [#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
+* `DataFrame` constructor, `getindex`, `select`, `select!`, `transform`, `transform!`,
+  and `combine` functions now use multiple threads in selected operations
+  ([XXXX](XXXX))
 
 # DataFrames v0.22 Release Notes
 
