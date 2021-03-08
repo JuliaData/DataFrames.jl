@@ -214,7 +214,7 @@ struct DataFrame <: AbstractDataFrame
     end
 end
 
-function _preprocess_column(col::AbstractVector, len::Integer, copycols::Bool)
+function _preprocess_column(col::Any, len::Integer, copycols::Bool)
     # check for vectors first as they are most common
     if col isa AbstractRange
         return collect(col)
