@@ -33,12 +33,13 @@
 
 ## Other relevant changes
 
-* `innerjoin`, `leftjoin`, `rightjoin`, and `outerjoin` are now much faster and
-  check if passed data frames are sorted by the `on` columns and takes into account
-  if shorter data frame that is joined has unique values in `on` columns.
-  These aspects of input data frames might affect the order of rows produced in the output
+* `innerjoin`, `leftjoin`, `rightjoin`, `outerjoin`, `semijoin`, and `antijoin`
+  are now much faster and check if passed data frames are sorted by the `on`
+  columns and take into account if shorter data frame that is joined has unique
+  values in `on` columns. These aspects of input data frames might affect the
+  order of rows produced in the output
   ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612),
-   [#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
+  [#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
 
 # DataFrames v0.22 Release Notes
 
