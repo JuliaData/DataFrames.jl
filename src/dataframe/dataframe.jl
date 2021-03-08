@@ -191,10 +191,9 @@ struct DataFrame <: AbstractDataFrame
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
         @static if VERSION >= v"1.4"
-            if Threads.nthreads() > 1 && len >= 1_000_000
+            if copycols && len >= 1_000_000 && length(columns) > 1 && Threads.nthreads() > 1
                 @sync for i in eachindex(columns)
-                    @async Threads.@spawn columns[i] = _preprocess_column(columns[i],
-                                                                          len, copycols)
+                    Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
                 end
             else
                 for i in eachindex(columns)
@@ -217,17 +216,19 @@ end
 
 function _preprocess_column(col::AbstractVector, len::Integer, copycols::Bool)
     # check for vectors first as they are most common
-    col isa AbstractRange && return collect(col)
-    col isa AbstractVector && return copycols ? copy(col) : col
-    if col isa Union{AbstractArray{<:Any, 0}, Ref}
+    if col isa AbstractRange
+        return collect(col)
+    elseif col isa AbstractVector
+        return copycols ? copy(col) : col
+    elseif col isa Union{AbstractArray{<:Any, 0}, Ref}
         x = col[]
         return fill!(Tables.allocatecolumn(typeof(x), len), x)
-    end
-    if col isa AbstractArray
+    elseif col isa AbstractArray
         throw(ArgumentError("adding AbstractArray other than AbstractVector " *
                             "as a column of a data frame is not allowed"))
+    else
+        return fill!(Tables.allocatecolumn(typeof(col), len), col)
     end
-    return fill!(Tables.allocatecolumn(typeof(col), len), col)
 end
 
 DataFrame(df::DataFrame; copycols::Bool=true) = copy(df, copycols=copycols)
@@ -527,7 +528,7 @@ end
         @static if VERSION >= v"1.4"
             if length(selected_rows) > 1_000_000 && Threads.nthreads() > 1
                 @sync for i in eachindex(new_columns)
-                    @async Threads.@spawn new_columns[i] = old_columns[i][selected_rows]
+                    Threads.@spawn new_columns[i] = old_columns[i][selected_rows]
                 end
             else
                 for i in eachindex(new_columns)
