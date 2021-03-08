@@ -193,7 +193,8 @@ struct DataFrame <: AbstractDataFrame
         @static if VERSION >= v"1.4"
             if Threads.nthreads() > 1 && len >= 1_000_000
                 @sync for i in eachindex(columns)
-                    Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
+                    @async Threads.@spawn columns[i] = _preprocess_column(columns[i],
+                                                                          len, copycols)
                 end
             else
                 for i in eachindex(columns)
@@ -526,7 +527,7 @@ end
         @static if VERSION >= v"1.4"
             if length(selected_rows) > 1_000_000 && Threads.nthreads() > 1
                 @sync for i in eachindex(new_columns)
-                    Threads.@spawn new_columns[i] = old_columns[i][selected_rows]
+                    @async Threads.@spawn new_columns[i] = old_columns[i][selected_rows]
                 end
             else
                 for i in eachindex(new_columns)
