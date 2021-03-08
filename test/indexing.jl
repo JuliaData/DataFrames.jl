@@ -2009,7 +2009,7 @@ if VERSION >= v"1.5"
     include("indexing_offset.jl")
 end
 
-@testset "threading correcness tests" begin
+@testset "threading correctness tests" begin
     for x in (10, 2*10^6), y in 1:4
         mat = rand(x, y)
         df = DataFrame(mat, :auto)

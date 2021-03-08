@@ -365,7 +365,7 @@ end
     @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"], 2)
 end
 
-@testset "threading correcness tests" begin
+@testset "threading correctness tests" begin
     for x in (10, 2*10^6), y in 1:4
         df = DataFrame(rand(x, y), :auto)
         @test df == copy(df)
