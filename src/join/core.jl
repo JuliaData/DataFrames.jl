@@ -275,7 +275,7 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
 
     right_len = length(right)
     # we make sure that:
-    # * we do not preallocate dict to size larger than half of size of Int
+    # * we do not preallocate dict of size larger than half of size of Int
     #   (this is relevant in 32 bit architectures)
     # * dict has at least 2x more slots than the number of values we
     #   might store in it to avoid reallocations of internal structures when
