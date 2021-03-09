@@ -1554,6 +1554,38 @@ julia> vcat(df4, df1)
    1 │     1      1
    2 │     2      2
    3 │     3      3
+
+julia> vcat(df1, df2, df3, df4, cols=:union, source="source")
+10×4 DataFrame
+ Row │ source  A        B        C
+     │ Int64   Int64?   Int64?   Int64?
+─────┼───────────────────────────────────
+   1 │      1        1        1  missing
+   2 │      1        2        2  missing
+   3 │      1        3        3  missing
+   4 │      2        4        4  missing
+   5 │      2        5        5  missing
+   6 │      2        6        6  missing
+   7 │      3        7  missing        7
+   8 │      3        8  missing        8
+   9 │      3        9  missing        9
+  10 │      4  missing  missing  missing
+
+julia> vcat(df1, df2, df3, df4, cols=:union, source=:source => 'a':'d')
+10×4 DataFrame
+ Row │ source  A        B        C
+     │ Char    Int64?   Int64?   Int64?
+─────┼───────────────────────────────────
+   1 │ a             1        1  missing
+   2 │ a             2        2  missing
+   3 │ a             3        3  missing
+   4 │ b             4        4  missing
+   5 │ b             5        5  missing
+   6 │ b             6        6  missing
+   7 │ c             7  missing        7
+   8 │ c             8  missing        8
+   9 │ c             9  missing        9
+  10 │ d       missing  missing  missing
 ```
 """
 Base.vcat(dfs::AbstractDataFrame...;
