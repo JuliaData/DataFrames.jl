@@ -293,7 +293,9 @@ end
     @test_throws ArgumentError SubDataFrame(sdf, true, :)
     @test_throws ArgumentError SubDataFrame(sdf, Integer[true], 1)
 
-    @test_throws ArgumentError SubDataFrame(sdf, Integer[true, true, true], :)
+    if VERSION > v"1.6"
+        @test_throws ArgumentError SubDataFrame(sdf, Integer[true, true, true], :)
+    end
 end
 
 end # module
