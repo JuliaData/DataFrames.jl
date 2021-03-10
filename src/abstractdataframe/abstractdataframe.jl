@@ -1439,9 +1439,9 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
 """
     vcat(dfs::AbstractDataFrame...;
          cols::Union{Symbol, AbstractVector{Symbol},
-                     AbstractVector{<:AbstractString}}=:setequal),
+                     AbstractVector{<:AbstractString}}=:setequal,
          source::Union{Nothing, SymbolOrString,
-                       Pair{<:SymbolOrString, <:AbstractVector}}=nothing
+                       Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
 
 Vertically concatenate `AbstractDataFrame`s.
 
@@ -1459,13 +1459,13 @@ The `cols` keyword argument determines the columns of the returned data frame:
 * A vector of `Symbol`s or strings: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-The `source` keyword argument, if not `nothing` (the default) specifies the additional
-column to be added as a first column in the resulting data frame that will identify
-the source data frame. In this case `source` can be a `Symbol` or an `AbstractString`
-in which case the identifier will be the number of the passed source data frame.
-Alternatively `source` can be a `Pair` consisting of a `Symbol` or an `AbstractString`
-and a vector specifying the data frame identifiers (the identifiers do not have to be
-unique). The name of the source column name is not allowed to be present in any
+The `source` keyword argument, if not `nothing` (the default), specifies the additional
+column to be added in the first position in the resulting data frame that will identify
+the source data frame. It can be a `Symbol` or an `AbstractString`,
+in which case the identifier will be the number of the passed source data frame, or
+a `Pair` consisting of a `Symbol` or an `AbstractString`
+and of a vector specifying the data frame identifiers (which do not have to be unique).
+The name of the source column is not allowed to be present in any
 source data frame.
 
 The order of columns is determined by the order they appear in the included data
@@ -1615,13 +1615,13 @@ function Base.reduce(::typeof(vcat),
 
         idx = findfirst(df -> columnindex(df, col) > 0, dfs)
         if idx !== nothing
-            throw(ArgumentError("source column name exists in data frame " *
+            throw(ArgumentError("source column name :$source exists in data frame " *
                                 " passed in position $idx"))
         end
 
         if len != length(vals)
-            throw(ArgumentError("number of passed source column identifiers " *
-                                "does not match the number of passed columns"))
+            throw(ArgumentError("number of passed source identifiers ($(length(vals)))" *
+                                "does not match the number of data frames ($len)"))
         end
 
         dfs′ = Vector{AbstractDataFrame}(undef, len)

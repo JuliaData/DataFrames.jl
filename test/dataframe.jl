@@ -1731,6 +1731,7 @@ end
 
     for col in [:source, "source"]
         @test vcat(df1, df2, df3, df4, cols=:union, source=col) ≅
+              vcat(df1, df2, df3, df4, cols=:union, source=col => [1, 2, 3, 4]) ≅
               DataFrame(source=[1, 1, 1, 2, 2, 2, 3, 3, 3, 4],
                         A=[1:9; missing], B=[1:6; fill(missing, 4)],
                         C=[fill(missing, 6); 7:9; missing])
