@@ -1461,7 +1461,7 @@ The `cols` keyword argument determines the columns of the returned data frame:
 
 The `source` keyword argument, if not `nothing` (the default) specifies the additional
 column to be added as a first column in the resulting data frame that will identify
-the source data frame. In this case `source` can be a `Symbol` or an `AbstarctString`
+the source data frame. In this case `source` can be a `Symbol` or an `AbstractString`
 in which case the identifier will be the number of the passed source data frame.
 Alternatively `source` can be a `Pair` consisting of a `Symbol` or an `AbstractString`
 and a vector specifying the data frame identifiers (the identifiers do not have to be
