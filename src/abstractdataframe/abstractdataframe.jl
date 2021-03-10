@@ -1440,8 +1440,8 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     vcat(dfs::AbstractDataFrame...;
          cols::Union{Symbol, AbstractVector{Symbol},
                      AbstractVector{<:AbstractString}}=:setequal,
-         source::Union{Nothing, SymbolOrString,
-                       Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
+         indicator::Union{Nothing, SymbolOrString,
+                          Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
 
 Vertically concatenate `AbstractDataFrame`s.
 
@@ -1459,7 +1459,7 @@ The `cols` keyword argument determines the columns of the returned data frame:
 * A vector of `Symbol`s or strings: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-The `source` keyword argument, if not `nothing` (the default), specifies the additional
+The `indicator` keyword argument, if not `nothing` (the default), specifies the additional
 column to be added in the first position in the resulting data frame that will identify
 the source data frame. It can be a `Symbol` or an `AbstractString`,
 in which case the identifier will be the number of the passed source data frame, or
@@ -1555,82 +1555,88 @@ julia> vcat(df4, df1)
    2 │     2      2
    3 │     3      3
 
-julia> vcat(df1, df2, df3, df4, cols=:union, source="source")
-10×4 DataFrame
- Row │ source  A        B        C
-     │ Int64   Int64?   Int64?   Int64?
-─────┼───────────────────────────────────
-   1 │      1        1        1  missing
-   2 │      1        2        2  missing
-   3 │      1        3        3  missing
-   4 │      2        4        4  missing
-   5 │      2        5        5  missing
-   6 │      2        6        6  missing
-   7 │      3        7  missing        7
-   8 │      3        8  missing        8
-   9 │      3        9  missing        9
-  10 │      4  missing  missing  missing
+julia> vcat(df1, df2, df3, df4, cols=:union, indicator="source")
+9×4 DataFrame
+ Row │ source  A      B        C
+     │ Int64   Int64  Int64?   Int64?
+─────┼─────────────────────────────────
+   1 │      1      1        1  missing
+   2 │      1      2        2  missing
+   3 │      1      3        3  missing
+   4 │      2      4        4  missing
+   5 │      2      5        5  missing
+   6 │      2      6        6  missing
+   7 │      3      7  missing        7
+   8 │      3      8  missing        8
+   9 │      3      9  missing        9
 
-julia> vcat(df1, df2, df3, df4, cols=:union, source=:source => 'a':'d')
-10×4 DataFrame
- Row │ source  A        B        C
-     │ Char    Int64?   Int64?   Int64?
-─────┼───────────────────────────────────
-   1 │ a             1        1  missing
-   2 │ a             2        2  missing
-   3 │ a             3        3  missing
-   4 │ b             4        4  missing
-   5 │ b             5        5  missing
-   6 │ b             6        6  missing
-   7 │ c             7  missing        7
-   8 │ c             8  missing        8
-   9 │ c             9  missing        9
-  10 │ d       missing  missing  missing
+julia> vcat(df1, df2, df4, df3, cols=:union, indicator=:source => 'a':'d')
+9×4 DataFrame
+ Row │ source  A      B        C
+     │ Char    Int64  Int64?   Int64?
+─────┼─────────────────────────────────
+   1 │ a           1        1  missing
+   2 │ a           2        2  missing
+   3 │ a           3        3  missing
+   4 │ b           4        4  missing
+   5 │ b           5        5  missing
+   6 │ b           6        6  missing
+   7 │ d           7  missing        7
+   8 │ d           8  missing        8
+   9 │ d           9  missing        9
 ```
 """
 Base.vcat(dfs::AbstractDataFrame...;
           cols::Union{Symbol, AbstractVector{Symbol},
                       AbstractVector{<:AbstractString}}=:setequal,
-          source::Union{Nothing, SymbolOrString,
-                        Pair{<:SymbolOrString, <:AbstractVector}}=nothing) =
-    reduce(vcat, dfs; cols=cols, source=source)
+          indicator::Union{Nothing, SymbolOrString,
+                           Pair{<:SymbolOrString, <:AbstractVector}}=nothing) =
+    reduce(vcat, dfs; cols=cols, indicator=indicator)
 
 function Base.reduce(::typeof(vcat),
                      dfs::Union{AbstractVector{<:AbstractDataFrame},
                                 Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
                      cols::Union{Symbol, AbstractVector{Symbol},
                                  AbstractVector{<:AbstractString}}=:setequal,
-                     source::Union{Nothing, SymbolOrString,
+                     indicator::Union{Nothing, SymbolOrString,
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
-    if source === nothing
-        return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
-    else
+    res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+    if indicator !== nothing
         len = length(dfs)
-        if source isa SymbolOrString
-            col, vals = source, 1:len
+        if indicator isa SymbolOrString
+            col, vals = indicator, 1:len
         else
-            @assert source isa Pair{<:SymbolOrString, <:AbstractVector}
-            col, vals = source
+            @assert indicator isa Pair{<:SymbolOrString, <:AbstractVector}
+            col, vals = indicator
         end
 
-        idx = findfirst(df -> columnindex(df, col) > 0, dfs)
-        if idx !== nothing
-            throw(ArgumentError("source column name :$source exists in data frame " *
+        if columnindex(res, col) > 0
+            idx = findfirst(df -> columnindex(df, col) > 0, dfs)
+            @assert idx !== nothing
+            throw(ArgumentError("indicator column name :$col exists in data frame " *
                                 " passed in position $idx"))
         end
 
         if len != length(vals)
-            throw(ArgumentError("number of passed source identifiers ($(length(vals)))" *
+            throw(ArgumentError("number of passed indicator identifiers ($(length(vals)))" *
                                 "does not match the number of data frames ($len)"))
         end
 
-        dfs′ = Vector{AbstractDataFrame}(undef, len)
-        for (i, (v, df)) in enumerate(zip(vals, dfs))
-            dfs′[i] = insertcols!(copy(df, copycols=false), 1, col => Ref(v))
+        indicator_vec = Tables.allocatecolumn(eltype(vals), nrow(res))
+        @assert firstindex(indicator_vec) == 1 && lastindex(indicator_vec) == nrow(res)
+        start = 1
+        for (v, df) in zip(vals, dfs)
+            stop = start + nrow(df) - 1
+            indicator_vec[start:stop] .= Ref(v)
+            start = stop + 1
         end
 
-        return _vcat(dfs′; cols=cols)
+        @assert start == nrow(res) + 1
+
+        insertcols!(res, 1, col => indicator_vec)
     end
+
+    return res
 end
 
 
