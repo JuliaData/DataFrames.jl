@@ -1752,10 +1752,10 @@ julia> repeat(df, inner = 2, outer = 3)
   12 │     2      4
 ```
 """
-function Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)
+function Base.repeat(df::AbstractDataFrame; inner::Integer=1, outer::Integer=1)
     inner < 0 && throw(ArgumentError("inner keyword argument must be non-negative"))
     outer < 0 && throw(ArgumentError("outer keyword argument must be non-negative"))
-    return mapcols(x -> repeat(x, inner = inner, outer = outer), df)
+    return mapcols(x -> repeat(x, inner = Int(inner), outer = Int(outer)), df)
 end
 
 """
@@ -1787,7 +1787,7 @@ julia> repeat(df, 2)
 """
 function Base.repeat(df::AbstractDataFrame, count::Integer)
     count < 0 && throw(ArgumentError("count must be non-negative"))
-    return mapcols(x -> repeat(x, count), df)
+    return mapcols(x -> repeat(x, Int(count)), df)
 end
 
 ##############################################################################

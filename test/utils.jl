@@ -31,7 +31,6 @@ end
     @test size(repeat(df, inner = 0, outer = 3)) == (0, 2)
     @test size(repeat(df, inner = 2, outer = false)) == (0, 2)
     @test size(repeat(df, inner = false, outer = 3)) == (0, 2)
-
     @test_throws ArgumentError repeat(df, inner = 2, outer = -1)
     @test_throws ArgumentError repeat(df, inner = -1, outer = 3)
 end
