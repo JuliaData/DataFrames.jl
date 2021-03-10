@@ -295,6 +295,9 @@ end
 
     if VERSION > v"1.6"
         @test_throws ArgumentError SubDataFrame(sdf, Integer[true, true, true], :)
+    else
+        @test SubDataFrame(sdf, Integer[true, true, true], :) ==
+              SubDataFrame(sdf, [1, 1, 1], :)
     end
 end
 
