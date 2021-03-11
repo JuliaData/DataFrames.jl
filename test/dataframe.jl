@@ -672,6 +672,10 @@ end
     @test describe(DataFrame(a=[1, 2]), cols = :a, :min, minimum => :min2, maximum => "max2", :max) ==
           DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
+    @test describe(df, cols=[:number => identity => :number, :number => ByRow(string) => :string]) ==
+          DataFrame(variable=[:number, :string], mean=[2.5, nothing], min=[1, "1"],
+                    median=[2.5, nothing], max=[4, "4"], nmissing=[0, 0], eltype=[Int, String])
+
     @test_throws ArgumentError describe(df, :mean, :all)
     @test_throws MethodError describe(DataFrame(a=[1, 2]), cols = :a, "max2" => maximum)
     @test_throws ArgumentError describe(df, :min, :min)
