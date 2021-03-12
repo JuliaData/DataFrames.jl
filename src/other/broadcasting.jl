@@ -121,6 +121,14 @@ end
 Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =
     throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
+
+if isdefined(Base, :dotgetproperty)
+    Base.dotgetproperty(df::DataFrame, col::SymbolOrString) =
+        LazyNewColDataFrame(df, Symbol(col))
+    Base.dotgetproperty(df::SubDataFrame, ::SymbolOrString) =
+        throw(ArgumentError("broadcasting getproperty is not allowed for SubDataFrame"))
+end
+
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
         bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())
