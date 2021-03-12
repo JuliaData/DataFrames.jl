@@ -125,8 +125,9 @@ Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =
 if isdefined(Base, :dotgetproperty)
     Base.dotgetproperty(df::DataFrame, col::SymbolOrString) =
         LazyNewColDataFrame(df, Symbol(col))
-    Base.dotgetproperty(df::SubDataFrame, ::SymbolOrString) =
-        throw(ArgumentError("broadcasting getproperty is not allowed for SubDataFrame"))
+    Base.dotgetproperty(df::SubDataFrame, col::SymbolOrString) =
+        throw(ArgumentError("broadcasting getproperty is not allowed for SubDataFrame since " *
+                            "Julia 1.7. use `df[:, $col] .= ... instead"))
 end
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
