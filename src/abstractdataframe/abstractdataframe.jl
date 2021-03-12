@@ -504,8 +504,8 @@ where each row represents a variable and each column a summary statistic.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
 - `cols` : a keyword argument allowing to select only a subset or transformation
-  of columns from `df` to describe using `select(df, cols, copycols=false)`.
-  Can be any column selector accepted by `select`.
+  of columns from `df` to describe.
+  Can be any column selector or transformation accepted by [`select`](@ref).
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first
