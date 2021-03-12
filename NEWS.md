@@ -3,6 +3,9 @@
 ## Breaking changes
 
 * No breaking changes are planned for v1.0 release
+* Since Julia 1.7 broadcasting assignment to an existing column of a `DataFrame`
+  selected as a property replaces the column (on earlier Julia versions this is
+  an in-place operation)
 
 ## Bug fixes
 
@@ -22,9 +25,15 @@
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 * `names` now allows passing a predicate as a column selector
   ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
+* since Julia 1.7 using broadcasting assignment on a `DataFrames` column
+  selected as a property is allowed even when it does not exist in a data frame
+  ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 
 ## Deprecated
 
+* since Julia 1.7 using broadcasting assignment on a `SubDataFrames` column
+  selected as a property is deprecated
+  ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 * all old deprecations now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 

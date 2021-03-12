@@ -1842,4 +1842,22 @@ end
     @test_throws DimensionMismatch df[:, "z"] .= z
 end
 
+@testset "broadcasting of getproperty" begin
+    if isdefined(Base, :dotgetproperty)
+        df = DataFrame(a=1:4)
+        df.b .= 1
+        df.c .= 4:-1:1
+        # since Julia 1.7 this replaces column
+        # on previous Julia versions conversion of Char to Int is performed
+        df.a .= 'a':'d'
+        @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
+
+        # this behavior is deprecated; change this test to an error when
+        # fully switching to Julia 1.7 support
+        dfv = view(df, 2:3, 2:3)
+        dfv.b .= 0
+        @test df.b == [1, 0, 0, 1]
+    end
+end
+
 end # module

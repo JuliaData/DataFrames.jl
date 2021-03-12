@@ -192,10 +192,10 @@ Additional rules:
   if `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
-* `df.col .= v` syntax is allowed and performs in-place assignment to an existing vector `df.col`.
+* `df.col .= v` syntax is allowed up to Julia 1.6 and performs in-place assignment to an existing vector `df.col`. Since Julia 1.7 column gets replaced.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
-* `sdf.col .= v` syntax is allowed and performs in-place assignment to an existing vector `sdf.col`.
+* `sdf.col .= v` syntax is allowed and up to Julia 1.6 performs an in-place assignment to an existing vector `sdf.col`. Since Julia 1.7 this is deprecated.
 * `dfr.col .= v` syntax is allowed and performs in-place assignment to a value extracted by `dfr.col`.
 
 Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as `sdf` can be only modified in-place.
