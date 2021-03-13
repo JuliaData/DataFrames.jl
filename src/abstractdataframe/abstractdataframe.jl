@@ -1282,9 +1282,9 @@ end
 
 Return a data frame containing only the first occurrence of unique rows in `df`.
 When `cols` is specified, the returned `DataFrame` contains complete rows,
-retaining in each case the first instance of unique selected columns or their
-transformations. `cols` can be any column selector or transformation accepted by
-[`select`](@ref).
+retaining in each case the first occurrence of a given combination of values
+in selected columns or their transformations. `cols` can be any column
+selector or transformation accepted by [`select`](@ref).
 
 
 For `unique`, if `view=false` a freshly allocated `DataFrame` is returned,
