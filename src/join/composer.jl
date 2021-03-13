@@ -544,7 +544,7 @@ change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `soruce` : Default: `nothing`. If a `Symbol` or string, adds indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -654,8 +654,8 @@ function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
     elseif indicator !== nothing
         throw(ArgumentError("`indicator` keyword argument is deprecated. " *
-                            "it is not allow to pass while also passing `source` " *
-                            "keyword argument."))
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
     end
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
                  indicator=source, validate=validate,
@@ -690,7 +690,7 @@ change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `soruce` : Default: `nothing`. If a `Symbol` or string, adds indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -800,8 +800,8 @@ function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
     elseif indicator !== nothing
         throw(ArgumentError("`indicator` keyword argument is deprecated. " *
-                            "it is not allow to pass while also passing `source` " *
-                            "keyword argument."))
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
     end
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
                  indicator=source, validate=validate,
@@ -840,7 +840,7 @@ This behavior may change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `soruce` : Default: `nothing`. If a `Symbol` or string, adds indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -957,8 +957,8 @@ function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
     elseif indicator !== nothing
         throw(ArgumentError("`indicator` keyword argument is deprecated. " *
-                            "it is not allow to pass while also passing `source` " *
-                            "keyword argument."))
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
     end
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
                  indicator=source, validate=validate,
