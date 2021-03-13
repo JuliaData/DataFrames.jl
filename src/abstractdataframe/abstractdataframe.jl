@@ -1440,8 +1440,8 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     vcat(dfs::AbstractDataFrame...;
          cols::Union{Symbol, AbstractVector{Symbol},
                      AbstractVector{<:AbstractString}}=:setequal,
-         source::Union{Nothing, SymbolOrString,
-                       Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
+         source::Union{Nothing, Union{Symbol, AbstractString},
+                       Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
 Vertically concatenate `AbstractDataFrame`s.
 
@@ -1613,7 +1613,7 @@ function Base.reduce(::typeof(vcat),
         if columnindex(res, col) > 0
             idx = findfirst(df -> columnindex(df, col) > 0, dfs)
             @assert idx !== nothing
-            throw(ArgumentError("source column name :$col exists in data frame " *
+            throw(ArgumentError("source column name :$col already exists in data frame " *
                                 " passed in position $idx"))
         end
 
