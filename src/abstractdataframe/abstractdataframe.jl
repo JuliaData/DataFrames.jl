@@ -1593,6 +1593,79 @@ Base.vcat(dfs::AbstractDataFrame...;
                            Pair{<:SymbolOrString, <:AbstractVector}}=nothing) =
     reduce(vcat, dfs; cols=cols, source=source)
 
+"""
+    reduce(::typeof(vcat),
+           dfs::Union{AbstractVector{<:AbstractDataFrame},
+                      Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
+           cols::Union{Symbol, AbstractVector{Symbol},
+                       AbstractVector{<:AbstractString}}=:setequal,
+           source::Union{Nothing, SymbolOrString,
+                         Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
+
+
+Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with `vcat`.
+
+The column order, names, and types of the resulting `DataFrame`, and
+the behavior of `cols` and `source` keyword arguments follow the rules specified
+for [`vcat`](@ref) of `AbstractDataFrame`s.
+
+# Example
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+
+julia> df2 = DataFrame(A=4:6, B=4:6)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      4
+   2 │     5      5
+   3 │     6      6
+
+julia> df3 = DataFrame(A=7:9, C=7:9)
+3×2 DataFrame
+ Row │ A      C
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7      7
+   2 │     8      8
+   3 │     9      9
+
+julia> reduce(vcat, (df1, df2))
+6×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     4      4
+   5 │     5      5
+   6 │     6      6
+
+julia> reduce(vcat, [df1, df2, df3], cols=:union, source=:source)
+9×4 DataFrame
+ Row │ A      B        C        source
+     │ Int64  Int64?   Int64?   Int64
+─────┼─────────────────────────────────
+   1 │     1        1  missing       1
+   2 │     2        2  missing       1
+   3 │     3        3  missing       1
+   4 │     4        4  missing       2
+   5 │     5        5  missing       2
+   6 │     6        6  missing       2
+   7 │     7  missing        7       3
+   8 │     8  missing        8       3
+   9 │     9  missing        9       3
+```
+"""
 function Base.reduce(::typeof(vcat),
                      dfs::Union{AbstractVector{<:AbstractDataFrame},
                                 Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};

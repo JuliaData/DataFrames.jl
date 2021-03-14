@@ -44,6 +44,7 @@ insertcols!
 mapcols
 mapcols!
 push!
+reduce
 repeat
 repeat!
 select
