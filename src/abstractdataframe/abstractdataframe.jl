@@ -1602,7 +1602,6 @@ Base.vcat(dfs::AbstractDataFrame...;
            source::Union{Nothing, Symbol, AbstractString,
                          Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
-
 Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with `vcat`.
 
 The column order, names, and types of the resulting `DataFrame`, and
