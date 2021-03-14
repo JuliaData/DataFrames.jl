@@ -503,8 +503,9 @@ where each row represents a variable and each column a summary statistic.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
-- `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `cols` : a keyword argument allowing to select only a subset or transformation
+  of columns from `df` to describe. Can be any column selector or transformation
+  accepted by [`select`](@ref).
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first
@@ -1187,8 +1188,8 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Arguments
 - `df` : `AbstractDataFrame`
-- `cols` : a selector specifying the column(s) to compare. Can be any column
-  selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `cols` : a selector specifying the column(s) or their transformations to compare.
+  Can be any column selector or transformation accepted by [`select`](@ref).
 
 # Examples
 ```julia
@@ -1280,10 +1281,11 @@ end
     unique!(df::AbstractDataFrame, cols)
 
 Return a data frame containing only the first occurrence of unique rows in `df`.
-When `cols` is specified, the returned `DataFrame` contains
-complete rows, retaining in each case the first instance for which `df[cols]` is
-unique. `cols` can be any column selector ($COLUMNINDEX_STR;
-$MULTICOLUMNINDEX_STR).
+When `cols` is specified, the returned `DataFrame` contains complete rows,
+retaining in each case the first occurrence of a given combination of values
+in selected columns or their transformations. `cols` can be any column
+selector or transformation accepted by [`select`](@ref).
+
 
 For `unique`, if `view=false` a freshly allocated `DataFrame` is returned,
 and if `view=true` then a `SubDataFrame` view into `df` is returned.

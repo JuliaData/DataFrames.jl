@@ -660,6 +660,10 @@ end
     @test describe_output[:, [:variable, :mean, :test_std]] ≅
           describe(df, :mean, std => "test_std")
 
+    @test describe(df, cols=[:number => identity => :number, :number => ByRow(string) => :string]) ==
+          DataFrame(variable=[:number, :string], mean=[2.5, nothing], min=[1, "1"],
+                    median=[2.5, nothing], max=[4, "4"], nmissing=[0, 0], eltype=[Int, String])
+
     # Test that describe works with a dataframe with no observations
     df = DataFrame(a = Int[], b = String[], c = [])
     @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
