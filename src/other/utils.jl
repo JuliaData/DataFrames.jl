@@ -88,7 +88,7 @@ funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
     tforeach(f, x::AbstractArray; basesize::Integer)
 
 Apply function `f` to each entry in `x` in parallel, spawning
-one separate task for each block of `basesize` entries.
+one separate task for each block of at least `basesize` entries.
 
 A number of task higher than `Threads.nthreads()` may be spawned,
 since that can allow for a more efficient load balancing in case
@@ -97,8 +97,12 @@ some threads are busy (nested parallelism).
 function tforeach(f, x::AbstractArray; basesize::Integer)
     @static if VERSION >= v"1.4"
         nt = Threads.nthreads()
-        if nt > 1 && length(x) > basesize
-            @sync for p in partition(x, basesize)
+        len = length(x)
+        if nt > 1 && len > basesize
+            # Round size up to ensure all chunks have at least `basesize` entries
+            # This ensures balanced sizes by avoiding a small last chunk
+            basesize′ = cld(len, fld(len, basesize))
+            @sync for p in Iterators.partition(x, basesize′)
                 Threads.@spawn begin
                     for i in p
                         f(@inbounds x[i])
