@@ -1440,7 +1440,7 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     vcat(dfs::AbstractDataFrame...;
          cols::Union{Symbol, AbstractVector{Symbol},
                      AbstractVector{<:AbstractString}}=:setequal,
-         source::Union{Nothing, Union{Symbol, AbstractString},
+         source::Union{Nothing, Symbol, AbstractString,
                        Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
 Vertically concatenate `AbstractDataFrame`s.
@@ -1599,8 +1599,8 @@ Base.vcat(dfs::AbstractDataFrame...;
                       Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
            cols::Union{Symbol, AbstractVector{Symbol},
                        AbstractVector{<:AbstractString}}=:setequal,
-           source::Union{Nothing, SymbolOrString,
-                         Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
+           source::Union{Nothing, Symbol, AbstractString,
+                         Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
 
 Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with `vcat`.
