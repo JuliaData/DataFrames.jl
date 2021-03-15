@@ -215,7 +215,7 @@ julia> innerjoin(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true,
 ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3
 ```
 
-Finally, using the `indicator` keyword argument you can add a column to the
+Finally, using the `source` keyword argument you can add a column to the
 resulting data frame indicating whether the given row appeared only in the left,
 the right or both data frames. Here is an example:
 
@@ -236,7 +236,7 @@ julia> b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Doctor"])
    1 │    20  Lawyer
    2 │    60  Doctor
 
-julia> outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
+julia> outerjoin(a, b, on=:ID, validate=(true, true), source=:source)
 3×4 DataFrame
  Row │ ID     Name     Job      source
      │ Int64  String?  String?  String
@@ -246,4 +246,5 @@ julia> outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
    3 │    60  missing  Doctor   right_only
 ```
 
-Note that this time we also used the `validate` keyword argument and it did not produce errors as the keys defined in both source data frames were unique.
+Note that this time we also used the `validate` keyword argument and it did not
+produce errors as the keys defined in both source data frames were unique.
