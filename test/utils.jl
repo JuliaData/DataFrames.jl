@@ -101,4 +101,17 @@ end
     @test fetch(t) === true
 end
 
+@testset "split_indices" begin
+    for len in 0:12
+        basesize = 10
+        x = DataFrames.split_indices(len, basesize)
+
+        @test length(x) == max(1, div(len, basesize))
+        @test reduce(vcat, x) == 1:len
+        vmin, vmax = extrema(length, x)
+        @test vmin + 1 == vmax || vmin == vmax
+        @test len < basesize || vmin >= basesize
+    end
+end
+
 end # module
