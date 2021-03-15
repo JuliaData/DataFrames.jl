@@ -22,10 +22,17 @@
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 * `names` now allows passing a predicate as a column selector
   ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
+* `vcat` now allows a `source` keyword argument that specifies the
+  additional column to be added in the last position in the resulting data frame
+  that will identify the source data frame.
+  ([#2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
 
 ## Deprecated
 
-* all old deprecations now throw an error
+* in `leftjoin`, `rightjoin`, and `outerjoin` the `indicator` keyword argument
+  is deprecated in favor of `source` keyword argument; `indicator` will be removed
+  in 2.0 release ([2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
+* all deprecations present in 0.22 release now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 
 ## Dependency changes

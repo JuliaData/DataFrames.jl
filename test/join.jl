@@ -534,7 +534,7 @@ end
         [Union{Int, Missing}, CS, Union{Int, Missing}]
 end
 
-@testset "indicator columns" begin
+@testset "source columns" begin
     outer_indicator = DataFrame(ID = [1, 2, 2, 3, 4],
                                 Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
                                 Job = ["Lawyer", "Doctor", "Florist", missing, "Farmer"],
@@ -543,9 +543,9 @@ end
     # Check that input data frame isn't modified (#1434)
     pre_join_name = copy(name)
     pre_join_job = copy(job)
-    @test outerjoin(name, job, on = :ID, indicator=:_merge,
+    @test outerjoin(name, job, on = :ID, source=:_merge,
                makeunique=true) ≅
-          outerjoin(name, job, on = :ID, indicator="_merge",
+          outerjoin(name, job, on = :ID, source="_merge",
                makeunique=true) ≅ outer_indicator
 
     @test name ≅ pre_join_name
@@ -564,7 +564,7 @@ end
                                 _left_1 = [1, 1, 1, missing, 1],
                                 _left_2 = ["both", "both", "both", "left_only", "right_only"])
 
-    @test outerjoin(name2, job2, on = :ID, indicator=:_left,
+    @test outerjoin(name2, job2, on = :ID, source=:_left,
                makeunique=true) ≅ outer_indicator
 end
 
@@ -713,17 +713,17 @@ end
                                                                       x=[1, 2], y=[1, 2])
 end
 
-@testset "check naming of indicator" begin
+@testset "check naming of source" begin
     df = DataFrame(a=1)
-    @test_throws ArgumentError outerjoin(df, df, on=:a, indicator=:a)
-    @test outerjoin(df, df, on=:a, indicator=:a, makeunique=true) == DataFrame(a=1, a_1="both")
-    @test outerjoin(df, df, on=:a, indicator="_left") == DataFrame(a=1, _left="both")
-    @test outerjoin(df, df, on=:a, indicator="_right") == DataFrame(a=1, _right="both")
+    @test_throws ArgumentError outerjoin(df, df, on=:a, source=:a)
+    @test outerjoin(df, df, on=:a, source=:a, makeunique=true) == DataFrame(a=1, a_1="both")
+    @test outerjoin(df, df, on=:a, source="_left") == DataFrame(a=1, _left="both")
+    @test outerjoin(df, df, on=:a, source="_right") == DataFrame(a=1, _right="both")
 
     df = DataFrame(_left=1)
-    @test outerjoin(df, df, on=:_left, indicator="_leftX") == DataFrame(_left=1, _leftX="both")
+    @test outerjoin(df, df, on=:_left, source="_leftX") == DataFrame(_left=1, _leftX="both")
     df = DataFrame(_right=1)
-    @test outerjoin(df, df, on=:_right, indicator="_rightX") == DataFrame(_right=1, _rightX="both")
+    @test outerjoin(df, df, on=:_right, source="_rightX") == DataFrame(_right=1, _rightX="both")
 end
 
 @testset "validate error message composition" begin
@@ -814,11 +814,11 @@ end
     end
 
     @test_throws ArgumentError leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                        renamecols = "_left" => "_right", indicator=:id1)
+                                        renamecols = "_left" => "_right", source=:id1)
     @test_throws ArgumentError leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                        renamecols = "_left" => "_right", indicator=:x_left)
+                                        renamecols = "_left" => "_right", source=:x_left)
     @test leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                   renamecols = "_left" => "_right", indicator=:ind) ≅
+                   renamecols = "_left" => "_right", source=:ind) ≅
           DataFrame(id1=[1, 2, 3], id2=[1, 2, 3], x_left=[1, 2, 3],
                     x_right=[1, 2, missing], ind=["both", "both", "left_only"])
 
@@ -846,11 +846,11 @@ end
     end
 
     @test_throws ArgumentError rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:id1)
+                                         renamecols = "_left" => "_right", source=:id1)
     @test_throws ArgumentError rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:x_left)
+                                         renamecols = "_left" => "_right", source=:x_left)
     @test rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                    renamecols = "_left" => "_right", indicator=:ind) ≅
+                    renamecols = "_left" => "_right", source=:ind) ≅
           DataFrame(id1=[1, 2, 4], id2=[1, 2, 4], x_left=[1, 2, missing],
                     x_right=[1, 2, 3], ind=["both", "both", "right_only"])
 
@@ -879,11 +879,11 @@ end
     end
 
     @test_throws ArgumentError outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:id1)
+                                         renamecols = "_left" => "_right", source=:id1)
     @test_throws ArgumentError outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:x_left)
+                                         renamecols = "_left" => "_right", source=:x_left)
     @test outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                    renamecols = "_left" => "_right", indicator=:ind) ≅
+                    renamecols = "_left" => "_right", source=:ind) ≅
           DataFrame(id1=[1, 2, 3, 4], id2=[1, 2, 3, 4], x_left=[1, 2, 3, missing],
                     x_right=[1, 2, missing, 3], ind=["both", "both", "left_only", "right_only"])
 
@@ -904,15 +904,15 @@ end
           DataFrame(id1=1:2, id2=1:2, x_left=11:12, newcol=101:102, newcol_1=102:103)
 end
 
-@testset "careful indicator test" begin
+@testset "careful source test" begin
     Random.seed!(1234)
     for i in 5:15, j in 5:15
         df1 = DataFrame(id=rand(1:10, i), x=1:i)
         df2 = DataFrame(id=rand(1:10, j), y=1:j)
         dfi = innerjoin(df1, df2, on=:id)
-        dfl = leftjoin(df1, df2, on=:id, indicator=:ind)
-        dfr = rightjoin(df1, df2, on=:id, indicator=:ind)
-        dfo = outerjoin(df1, df2, on=:id, indicator=:ind)
+        dfl = leftjoin(df1, df2, on=:id, source=:ind)
+        dfr = rightjoin(df1, df2, on=:id, source=:ind)
+        dfo = outerjoin(df1, df2, on=:id, source=:ind)
         @test issorted(dfl, :ind)
         @test issorted(dfr, :ind)
         @test issorted(dfo, :ind)

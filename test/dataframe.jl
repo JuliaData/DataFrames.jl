@@ -1727,6 +1727,31 @@ end
                                     cols=:orderequal)
 end
 
+@testset "vcat with source" begin
+    df1 = DataFrame(A=1:3, B=1:3)
+    df2 = DataFrame(A=4:6, B=4:6)
+    df3 = DataFrame(A=7:9, C=7:9)
+    df4 = DataFrame()
+
+    for col in [:source, "source"]
+        @test vcat(df1, df2, df3, df4, cols=:union, source=col) ≅
+              vcat(df1, df2, df3, df4, cols=:union, source=col => [1, 2, 3, 4]) ≅
+              DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
+                        C=[fill(missing, 6); 7:9],
+                        source=[1, 1, 1, 2, 2, 2, 3, 3, 3])
+        res = vcat(df1, df2, df3, df4, cols=:union, source=col => categorical(-4:-1))
+        @test res ≅ DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
+                              C=[fill(missing, 6); 7:9],
+                              source=[-4, -4, -4, -3, -3, -3, -2, -2, -2])
+        @test res.source isa CategoricalVector
+    end
+
+    @test_throws TypeError vcat(df1, df2, df3, df4, cols=:union, source=1)
+    @test_throws TypeError vcat(df1, df2, df3, df4, cols=:union, source=:a => 1)
+    @test_throws ArgumentError vcat(df1, df2, df3, df4, cols=:union, source=:C)
+    @test_throws ArgumentError vcat(df1, df2, df3, df4, cols=:union, source=:a => [1])
+end
+
 @testset "push! with :subset" begin
     for v in (Dict(:a=>10, :b=>20, :d=>30), (a=10, b=20, d=30),
               DataFrame(a=10, b=20, d=30)[1, :])
