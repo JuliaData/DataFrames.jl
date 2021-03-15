@@ -1710,7 +1710,6 @@ function Base.reduce(::typeof(vcat),
     return res
 end
 
-
 function _vcat(dfs::AbstractVector{AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
                            AbstractVector{<:AbstractString}}=:setequal)
