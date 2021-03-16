@@ -1,3 +1,5 @@
+### Common preprocessing
+
 struct OnColRow{T}
     row::Int
     cols::T
@@ -96,7 +98,8 @@ check_mapping_allowed(short::AbstractVector, refarray_long::AbstractVector,
     !isempty(short) && !isnothing(refpool_long) && !isnothing(invrefpool_long) &&
         eltype(refarray_long) <: Union{Signed, Unsigned}
 
-@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector, ::Val{fi})  where {fi} =
+@noinline map_refarray(mapping::AbstractVector, refarray::AbstractVector,
+                       ::Val{fi})  where {fi} =
     [@inbounds mapping[r - fi + 1] for r in refarray]
 
 function map2refs(x::AbstractVector, invrefpool)
@@ -114,6 +117,89 @@ function map2refs(x::AbstractVector, invrefpool)
         return [get(invrefpool, v, missing) for v in x]
     end
 end
+
+function preprocess_columns(joiner::DataFrameJoiner)
+    right_len = length(joiner.dfr_on[!, 1])
+    left_len = length(joiner.dfl_on[!, 1])
+    right_shorter = right_len < left_len
+
+    left_cols = collect(eachcol(joiner.dfl_on))
+    right_cols = collect(eachcol(joiner.dfr_on))
+
+    # if column of the longer table supports DataAPI.refpool and DataAPI.invrefpool
+    # remap matching left and right columns to use refs
+    if right_shorter
+        for i in eachindex(left_cols, right_cols)
+            rc = right_cols[i]
+            lc = left_cols[i]
+
+            lc_refs = DataAPI.refarray(lc)
+            lc_refpool = DataAPI.refpool(lc)
+            lc_invrefpool = DataAPI.invrefpool(lc)
+            if check_mapping_allowed(rc, lc_refs, lc_refpool, lc_invrefpool)
+                right_cols[i] = map2refs(rc, lc_invrefpool)
+                left_cols[i] = lc_refs
+            end
+        end
+    else
+        for i in eachindex(left_cols, right_cols)
+            rc = right_cols[i]
+            lc = left_cols[i]
+
+            rc_refs = DataAPI.refarray(rc)
+            rc_refpool = DataAPI.refpool(rc)
+            rc_invrefpool = DataAPI.invrefpool(rc)
+            if check_mapping_allowed(lc, rc_refs, rc_refpool, rc_invrefpool)
+                right_cols[i] = rc_refs
+                left_cols[i] = map2refs(lc, rc_invrefpool)
+            end
+        end
+    end
+
+    disallow_sorted = false
+
+    for (lc, rc) in zip(left_cols, right_cols)
+        @assert length(lc) == left_len
+        @assert length(rc) == right_len
+        lc_et = nonmissingtype(eltype(lc))
+        rc_et = nonmissingtype(eltype(rc))
+
+        # special case common safe scenarios when eltype between left and right
+        # column can be different or non-concrete
+        lc_et <: Real && rc_et <: Real && continue
+        lc_et <: AbstractString && rc_et <: AbstractString && continue
+
+        # otherwise we require non-missing eltype of both sides to be the same and concrete
+        lc_et === rc_et && isconcretetype(lc_et) && continue
+
+        # we disallow using sorted branch for some columns that theoretically
+        # could be safely sorted (e.g. having Any eltype but holding strings)
+        # for safety reasons assuming that such cases will be rare in practice
+        disallow_sorted = true
+    end
+
+    # TODO:
+    # If DataAPI.invrefpool vectors are found in the "on" columns
+    # then potentially the following optimizations can be done:
+    # 1. identify rows in shorter table that should be dropped
+    # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that drop rows
+    #    from shorter table that do not match rows from longer table based on
+    #    PooledArray refpool check
+    # This optimization would significantly complicate the code (especially
+    # sorted path). It should be added if in practice we find that the use case
+    # is often enough and that the benefits are significant. The two cases when
+    # the benefits should be expected are:
+    # 1. Shorter table is sorted when we drop rows not matching longer table rows
+    # 2. Shorter table does not have duplicates when we drop rows not matching
+    #    longer table rows
+
+    left_col = prepare_on_col(left_cols...)
+    right_col = prepare_on_col(right_cols...)
+
+    return left_col, right_col, right_shorter, disallow_sorted
+end
+
+### innerjoin logic
 
 @inline function find_next_range(x::AbstractArray, start::Int, start_value)
     stop_value = start_value
@@ -157,7 +243,8 @@ function _innerjoin_sorted(left::AbstractArray, right::AbstractArray)
                 idx = length(left_ixs)
                 left_range = left_cur:left_new - 1
                 right_range = right_cur:right_new - 1
-                to_grow = Base.checked_add(idx, Base.checked_mul(length(left_range), length(right_range)))
+                to_grow = Base.checked_add(idx, Base.checked_mul(length(left_range),
+                                                                 length(right_range)))
                 resize!(left_ixs, to_grow)
                 resize!(right_ixs, to_grow)
                 @inbounds for right_i in right_range, left_i in left_range
@@ -190,6 +277,14 @@ function _innerjoin_unsorted(left::AbstractArray, right::AbstractArray{T}) where
     dict = Dict{T, Int}()
 
     right_len = length(right)
+    # we make sure that:
+    # * we do not preallocate dict of size larger than half of size of Int
+    #   (this is relevant in 32 bit architectures)
+    # * dict has at least 2x more slots than the number of values we
+    #   might store in it to avoid reallocations of internal structures when
+    #   we populate it later and to minimize the number of hash collisions;
+    #   typically Dict allows for 16 probes;
+    #   the value of multiplier is heuristic was determined by empirical tests
     sizehint!(dict, 2 * min(right_len, typemax(Int) >> 2))
 
     right isa OnCol && _prehash(right)
@@ -241,14 +336,15 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
 
     offset = 1 - Int(minv) # we are now sure it does not overflow
     len = Int(maxv) - Int(minv) + 2
-    dict = zeros(Int, len)
+    group_map = zeros(Int, len)
 
     @inbounds for (idx_r, val_r) in enumerate(right)
-        i = ismissing(val_r) ? length(dict) : Int(val_r) + offset
-        if dict[i] > 0
-            return _innerjoin_dup_int(left, right, dict, idx_r, offset, Int(minv), Int(maxv))
+        i = val_r === missing ? length(group_map) : Int(val_r) + offset
+        if group_map[i] > 0
+            return _innerjoin_dup_int(left, right, group_map, idx_r, offset,
+                                      Int(minv), Int(maxv))
         end
-        dict[i] = idx_r
+        group_map[i] = idx_r
     end
 
     left_ixs = Int[]
@@ -259,17 +355,14 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
     sizehint!(right_ixs, right_len)
 
     @inbounds for (idx_l, val_l) in enumerate(left)
-        # we use dict_index to make sure the following two operations are fast:
-        # - if index is found - get it and process it
-        # - if index is not found - do nothing
-        if ismissing(val_l)
-            idx_r = dict[end]
+        if val_l === missing
+            idx_r = group_map[end]
             if idx_r > 0
                 push!(left_ixs, idx_l)
                 push!(right_ixs, idx_r)
             end
         elseif minv <= val_l <= maxv
-            idx_r = dict[Int(val_l) + offset]
+            idx_r = group_map[Int(val_l) + offset]
             if idx_r > 0
                 push!(left_ixs, idx_l)
                 push!(right_ixs, idx_r)
@@ -307,7 +400,7 @@ end
 
 function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
                             right::AbstractVector{<:Union{Integer, Missing}},
-                            dict::Vector{Int}, idx_r_start::Int, offset::Int,
+                            group_map::Vector{Int}, idx_r_start::Int, offset::Int,
                             minv::Int, maxv::Int)
     ngroups = idx_r_start - 1
     right_len = length(right)
@@ -316,19 +409,20 @@ function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
 
     @inbounds for idx_r in idx_r_start:right_len
         val_r = right[idx_r]
-        i = ismissing(val_r) ? length(dict) : Int(val_r) + offset
-        dict_val = dict[i]
-        if dict_val > 0
-            groups[idx_r] = dict_val
+        i = val_r === missing ? length(group_map) : Int(val_r) + offset
+        group_map_val = group_map[i]
+        if group_map_val > 0
+            groups[idx_r] = group_map_val
         else
             ngroups += 1
             groups[idx_r] = ngroups
-            dict[i] = ngroups
+            group_map[i] = ngroups
         end
     end
 
     @assert ngroups > 0 # we should not get here with 0-length right
-    return _innerjoin_postprocess_int(left, dict, groups, ngroups, right_len, offset, minv, maxv)
+    return _innerjoin_postprocess_int(left, group_map, groups, ngroups, right_len,
+                                      offset, minv, maxv)
 end
 
 function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
@@ -348,7 +442,8 @@ function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
 end
 
 function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
-                                groups::Vector{Int}, ngroups::Int, right_len::Int) where {T}
+                                groups::Vector{Int}, ngroups::Int,
+                                right_len::Int) where {T}
     starts = zeros(Int, ngroups)
     rperm = Vector{Int}(undef, right_len)
 
@@ -384,7 +479,7 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
 end
 
 function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
-                                    dict::Vector{Int},
+                                    group_map::Vector{Int},
                                     groups::Vector{Int}, ngroups::Int, right_len::Int,
                                     offset::Int, minv::Int, maxv::Int)
     starts = zeros(Int, ngroups)
@@ -400,10 +495,10 @@ function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missin
 
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
-        if ismissing(val_l)
-            group_id = dict[end]
+        if val_l === missing
+            group_id = group_map[end]
         elseif minv <= val_l <= maxv
-            group_id = dict[Int(val_l) + offset]
+            group_id = group_map[Int(val_l) + offset]
         else
             group_id = 0
         end
@@ -428,81 +523,8 @@ function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missin
 end
 
 function find_inner_rows(joiner::DataFrameJoiner)
-    right_len = length(joiner.dfr_on[!, 1])
-    left_len = length(joiner.dfl_on[!, 1])
-    right_shorter = right_len <= left_len
 
-    left_cols = collect(eachcol(joiner.dfl_on))
-    right_cols = collect(eachcol(joiner.dfr_on))
-
-    # if column of a longer table supports DataAPI.refpool and DataAPI.invrefpool
-    # remap matching left and right columns to use refs
-    if right_shorter
-        for i in eachindex(left_cols, right_cols)
-            rc = right_cols[i]
-            lc = left_cols[i]
-
-            lc_refs = DataAPI.refarray(lc)
-            lc_refpool = DataAPI.refpool(lc)
-            lc_invrefpool = DataAPI.invrefpool(lc)
-            if check_mapping_allowed(rc, lc_refs, lc_refpool, lc_invrefpool)
-                right_cols[i] = map2refs(rc, lc_invrefpool)
-                left_cols[i] = lc_refs
-            end
-        end
-    else
-        for i in eachindex(left_cols, right_cols)
-            rc = right_cols[i]
-            lc = left_cols[i]
-
-            rc_refs = DataAPI.refarray(rc)
-            rc_refpool = DataAPI.refpool(rc)
-            rc_invrefpool = DataAPI.invrefpool(rc)
-            if check_mapping_allowed(lc, rc_refs, rc_refpool, rc_invrefpool)
-                right_cols[i] = rc_refs
-                left_cols[i] = map2refs(lc, rc_invrefpool)
-            end
-        end
-    end
-
-    disallow_sorted = false
-
-    for (lc, rc) in zip(left_cols, right_cols)
-        @assert length(lc) == left_len
-        @assert length(rc) == right_len
-        lc_et = nonmissingtype(eltype(lc))
-        rc_et = nonmissingtype(eltype(rc))
-
-        # special case common safe scenarios when eltype between left and right column
-        # can be different or non-concrete
-        lc_et <: Real && rc_et <: Real && continue
-        lc_et <: AbstractString && rc_et <: AbstractString && continue
-
-        # otherwise we require non-missing eltype of both sides to be the same and concrete
-        lc_et === rc_et && isconcretetype(lc_et) && continue
-
-        # we disallow using sorted branch for some columns that theoretically
-        # could be safely sorted (e.g. having Any eltype but holding strings)
-        # for safety reasons assuming that such cases will be rare in practice
-        disallow_sorted = true
-    end
-
-    # TODO:
-    # If DataAPI.invrefpool vectors are found in the "on" columns
-    # then potentially the following optimizations can be done:
-    # 1. identify rows in shorter table that should be dropped
-    # 2. develop custom _innerjoin_sorted and _innerjoin_unsorted that
-    #    drop rows from shorter table that do not match rows from longer table based on
-    #    PooledArray refpool check
-    # This optimization significantly complicates the code (especially sorted path).
-    # It should be added if in practice we find that the use case is often enough
-    # and that the benefits are significant. The two cases when the benefits should
-    # be expected are:
-    # 1. Shorter table is sorted when we drop rows not matching longer table rows
-    # 2. Shorter table does not have duplicates when we drop rows not matching longer table rows
-
-    left_col = prepare_on_col(left_cols...)
-    right_col = prepare_on_col(right_cols...)
+    left_col, right_col, right_shorter, disallow_sorted = preprocess_columns(joiner)
 
     # we treat this case separately so we know we have at least one element later
     (isempty(left_col) || isempty(right_col)) && return Int[], Int[]
@@ -537,5 +559,292 @@ function find_inner_rows(joiner::DataFrameJoiner)
         end
     end
 
+    error("unreachable reached")
+end
+
+### semijoin logic
+
+function _semijoin_sorted(left::AbstractArray, right::AbstractArray,
+                          seen_rows::AbstractVector{Bool})
+    left_n = length(left)
+    right_n = length(right)
+
+    @assert left_n > 0 && right_n > 0
+
+    left_cur = 1
+    left_val = left[left_cur]
+    left_new, left_tmp = find_next_range(left, left_cur, left_val)
+
+    right_cur = 1
+    right_val = right[right_cur]
+    right_new, right_tmp = find_next_range(right, right_cur, right_val)
+
+    while left_cur <= left_n && right_cur <= right_n
+        if isequal(left_val, right_val)
+            seen_rows[left_cur:left_new - 1] .= true
+            left_cur, left_val = left_new, left_tmp
+            left_new, left_tmp = find_next_range(left, left_cur, left_val)
+            right_cur, right_val = right_new, right_tmp
+            right_new, right_tmp = find_next_range(right, right_cur, right_val)
+        elseif isless(left_val, right_val)
+            left_cur, left_val = left_new, left_tmp
+            left_new, left_tmp = find_next_range(left, left_cur, left_val)
+        else
+            right_cur, right_val = right_new, right_tmp
+            right_new, right_tmp = find_next_range(right, right_cur, right_val)
+        end
+    end
+
+    return seen_rows
+end
+
+# optimistically assume that shorter table does not have duplicates in on column
+# if this is not the case we call _semijoin_dup
+# which efficiently uses the work already done and continues with the more
+# memory expensive algorithm that allows for duplicates
+# note that in semijoin and antijoin we do not have to do it if right table is
+# shorter as then we process left table row by row anyway
+function _semijoin_unsorted(left::AbstractArray, right::AbstractArray{T},
+                            seen_rows::AbstractVector{Bool},
+                            right_shorter::Bool) where {T}
+    right_len = length(right)
+    right isa OnCol && _prehash(right)
+    left isa OnCol && _prehash(left)
+
+    if right_shorter
+        @assert length(left) == length(seen_rows)
+        set = Set{T}()
+        sizehint!(set, 2 * min(right_len, typemax(Int) >> 2))
+        for val_r in right
+            push!(set, val_r)
+        end
+        @inbounds for (idx_l, val_l) in enumerate(left)
+            seen_rows[idx_l] = val_l in set
+        end
+    else
+        @assert length(right) == length(seen_rows)
+        dict = Dict{T, Int}()
+        sizehint!(dict, 2 * min(right_len, typemax(Int) >> 2))
+        for (idx_r, val_r) in enumerate(right)
+            haskey(dict, val_r) && return _semijoin_dup(left, right, dict, idx_r,
+                                                        seen_rows)
+            dict[val_r] = idx_r
+        end
+        @inbounds for (idx_l, val_l) in enumerate(left)
+            # we know that dict contains only positive values
+            idx_r = get(dict, val_l, -1)
+            if idx_r != -1
+                seen_rows[idx_r] = true
+            end
+        end
+    end
+
+    return seen_rows
+end
+
+function _semijoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}},
+                                right::AbstractVector{<:Union{Integer, Missing}},
+                                seen_rows::AbstractVector{Bool},
+                                right_shorter::Bool)
+    minv, maxv = extrema_missing(right)
+
+    val_range = big(maxv) - big(minv)
+    if val_range > typemax(Int) - 3 || val_range ÷ 2 > max(64, length(right)) ||
+       minv < typemin(Int) + 2 || maxv > typemax(Int) - 3
+       return _semijoin_unsorted(left, right, seen_rows, right_shorter)
+    end
+
+    offset = 1 - Int(minv) # we are now sure it does not overflow
+    len = Int(maxv) - Int(minv) + 2
+    group_map = zeros(Int, len)
+
+    if right_shorter
+        @inbounds for (idx_r, val_r) in enumerate(right)
+            i = val_r === missing ? length(group_map) : Int(val_r) + offset
+            group_map[i] = idx_r
+        end
+        @inbounds for (idx_l, val_l) in enumerate(left)
+            if val_l === missing
+                idx_r = group_map[end]
+                seen_rows[idx_l] = idx_r > 0
+            elseif minv <= val_l <= maxv
+                idx_r = group_map[Int(val_l) + offset]
+                seen_rows[idx_l] = idx_r > 0
+            end
+        end
+    else
+        @inbounds for (idx_r, val_r) in enumerate(right)
+            i = val_r === missing ? length(group_map) : Int(val_r) + offset
+            if group_map[i] > 0
+                return _semijoin_dup_int(left, right, group_map, idx_r, offset,
+                                         Int(minv), Int(maxv), seen_rows)
+            end
+            group_map[i] = idx_r
+        end
+        @inbounds for (idx_l, val_l) in enumerate(left)
+            if val_l === missing
+                idx_r = group_map[end]
+                if idx_r > 0
+                    seen_rows[idx_r] = true
+                end
+            elseif minv <= val_l <= maxv
+                idx_r = group_map[Int(val_l) + offset]
+                if idx_r > 0
+                    seen_rows[idx_r] = true
+                end
+            end
+        end
+    end
+
+    return seen_rows
+end
+
+# we fall back to general case if we have duplicates
+# normally it should happen fast as we reuse work already done
+function _semijoin_dup(left::AbstractArray, right::AbstractArray{T},
+                       dict::Dict{T, Int}, idx_r_start::Int,
+                       seen_rows::AbstractVector{Bool}) where {T}
+    ngroups = idx_r_start - 1
+    right_len = length(right)
+    groups = Vector{Int}(undef, right_len)
+    groups[1:ngroups] = 1:ngroups
+
+    @inbounds for idx_r in idx_r_start:right_len
+        val_r = right[idx_r]
+        # we know that group ids are positive
+        group_id = get(dict, val_r, -1)
+        if group_id == -1
+            ngroups += 1
+            groups[idx_r] = ngroups
+            dict[val_r] = ngroups
+        else
+            groups[idx_r] = group_id
+        end
+    end
+
+    @assert ngroups > 0 # we should not get here with 0-length right
+    @assert length(right) == length(seen_rows)
+    return _semijoin_postprocess(left, dict, groups, ngroups, right_len,
+                                 seen_rows)
+end
+
+function _semijoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
+                           right::AbstractVector{<:Union{Integer, Missing}},
+                           group_map::Vector{Int}, idx_r_start::Int, offset::Int,
+                           minv::Int, maxv::Int, seen_rows::AbstractVector{Bool})
+    ngroups = idx_r_start - 1
+    right_len = length(right)
+    groups = Vector{Int}(undef, right_len)
+    groups[1:ngroups] = 1:ngroups
+
+    @inbounds for idx_r in idx_r_start:right_len
+        val_r = right[idx_r]
+        i = val_r === missing ? length(group_map) : Int(val_r) + offset
+        group_map_val = group_map[i]
+        if group_map_val > 0
+            groups[idx_r] = group_map_val
+        else
+            ngroups += 1
+            groups[idx_r] = ngroups
+            group_map[i] = ngroups
+        end
+    end
+
+    @assert ngroups > 0 # we should not get here with 0-length right
+    @assert length(right) == length(seen_rows)
+    return _semijoin_postprocess_int(left, group_map, groups, ngroups, right_len,
+                                     offset, minv, maxv, seen_rows)
+end
+
+function _semijoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
+                               groups::Vector{Int}, ngroups::Int, right_len::Int,
+                               seen_rows::AbstractVector{Bool}) where {T}
+    starts = zeros(Int, ngroups)
+    rperm = Vector{Int}(undef, right_len)
+
+    compute_join_indices!(groups, ngroups, starts, rperm)
+
+    @inbounds for (idx_l, val_l) in enumerate(left)
+        group_id = get(dict, val_l, -1)
+        if group_id != -1
+            ref_stop = starts[group_id + 1]
+            l = ref_stop - starts[group_id]
+            for i in 1:l
+                seen_rows[rperm[ref_stop - i + 1]] = true
+            end
+        end
+    end
+
+    return seen_rows
+end
+
+function _semijoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing}},
+                                   group_map::Vector{Int},
+                                   groups::Vector{Int}, ngroups::Int, right_len::Int,
+                                   offset::Int, minv::Int, maxv::Int,
+                                   seen_rows::AbstractVector{Bool})
+    starts = zeros(Int, ngroups)
+    rperm = Vector{Int}(undef, right_len)
+
+    compute_join_indices!(groups, ngroups, starts, rperm)
+
+    @inbounds for (idx_l, val_l) in enumerate(left)
+        if val_l === missing
+            group_id = group_map[end]
+        elseif minv <= val_l <= maxv
+            group_id = group_map[Int(val_l) + offset]
+        else
+            group_id = 0
+        end
+
+        if group_id > 0
+            ref_stop = starts[group_id + 1]
+            l = ref_stop - starts[group_id]
+            for i in 1:l
+                seen_rows[rperm[ref_stop - i + 1]] = true
+            end
+        end
+    end
+
+    return seen_rows
+end
+
+function find_semi_rows(joiner::DataFrameJoiner)
+    left_col, right_col, right_shorter, disallow_sorted = preprocess_columns(joiner)
+
+    seen_rows = falses(length(left_col))
+
+    # we treat this case separately so we know we have at least one element later
+    (isempty(left_col) || isempty(right_col)) && return falses(length(left_col))
+
+    # if sorting is not disallowed try using a fast algorithm that works
+    # on sorted columns; if it is not run or errors fall back to the unsorted case
+    # the try-catch is used to handle the case when columns on which we join
+    # contain values that are not comparable
+    if !disallow_sorted
+        try
+            if issorted(left_col) && issorted(right_col)
+                return _semijoin_sorted(left_col, right_col, seen_rows)
+            end
+        catch
+            # nothing to do - one of the columns is not sortable
+        end
+    end
+
+    if right_shorter
+        if left_col isa AbstractVector{<:Union{Integer, Missing}} &&
+           right_col isa AbstractVector{<:Union{Integer, Missing}}
+            return _semijoin_unsorted_int(left_col, right_col, seen_rows, right_shorter)
+        else
+            return _semijoin_unsorted(left_col, right_col, seen_rows, right_shorter)
+        end
+    else
+        if left_col isa AbstractVector{<:Union{Integer, Missing}} &&
+           right_col isa AbstractVector{<:Union{Integer, Missing}}
+            return _semijoin_unsorted_int(right_col, left_col, seen_rows, right_shorter)
+        else
+            return _semijoin_unsorted(right_col, left_col, seen_rows, right_shorter)
+        end
+    end
     error("unreachable reached")
 end

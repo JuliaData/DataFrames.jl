@@ -22,10 +22,17 @@
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 * `names` now allows passing a predicate as a column selector
   ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
+* `vcat` now allows a `source` keyword argument that specifies the
+  additional column to be added in the last position in the resulting data frame
+  that will identify the source data frame.
+  ([#2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
 
 ## Deprecated
 
-* all old deprecations now throw an error
+* in `leftjoin`, `rightjoin`, and `outerjoin` the `indicator` keyword argument
+  is deprecated in favor of `source` keyword argument; `indicator` will be removed
+  in 2.0 release ([2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
+* all deprecations present in 0.22 release now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 
 ## Dependency changes
@@ -33,12 +40,13 @@
 
 ## Other relevant changes
 
-* `innerjoin`, `leftjoin`, `rightjoin`, and `outerjoin` are now much faster and
-  check if passed data frames are sorted by the `on` columns and takes into account
-  if shorter data frame that is joined has unique values in `on` columns.
-  These aspects of input data frames might affect the order of rows produced in the output
+* `innerjoin`, `leftjoin`, `rightjoin`, `outerjoin`, `semijoin`, and `antijoin`
+  are now much faster and check if passed data frames are sorted by the `on`
+  columns and take into account if shorter data frame that is joined has unique
+  values in `on` columns. These aspects of input data frames might affect the
+  order of rows produced in the output
   ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612),
-   [#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
+  ([#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
 * `DataFrame` constructor, `copy`, `getindex`, `select`, `select!`, `transform`,
   `transform!`, and `combine` functions now use multiple threads in selected operations
   ([#2647](https://github.com/JuliaData/DataFrames.jl/pull/2647))

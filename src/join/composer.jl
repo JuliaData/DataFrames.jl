@@ -339,33 +339,9 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         joined, src_indicator =
             compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
     elseif kind == :semi
-        # hash the right rows
-        dfr_on_grp = group_rows(joiner.dfr_on)
-        # iterate over left rows and leave those found in right
-        left_ixs = Vector{Int}()
-        sizehint!(left_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
-        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
-            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
-                push!(left_ixs, l_ix)
-            end
-        end
-        joined = joiner.dfl[left_ixs, :]
+        joined = joiner.dfl[find_semi_rows(joiner), :]
     elseif kind == :anti
-        # hash the right rows
-        dfr_on_grp = group_rows(joiner.dfr_on)
-        # iterate over left rows and leave those not found in right
-        leftonly_ixs = Vector{Int}()
-        sizehint!(leftonly_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[!, i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[!, i], ncol(joiner.dfl_on))
-        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
-            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
-                push!(leftonly_ixs, l_ix)
-            end
-        end
-        joined = joiner.dfl[leftonly_ixs, :]
+        joined = joiner.dfl[.!find_semi_rows(joiner), :]
     else
         throw(ArgumentError("Unknown kind of join requested: $kind"))
     end
@@ -543,7 +519,7 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
               matchmissing=matchmissing)
 
 """
-    leftjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+    leftjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
              renamecols=(identity => identity), matchmissing=:error)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
@@ -568,7 +544,7 @@ change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -660,22 +636,35 @@ julia> leftjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =>
 ```
 """
 function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
+         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+         source::Union{Nothing, Symbol, AbstractString}=nothing,
+         indicator::Union{Nothing, Symbol, AbstractString}=nothing,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
     end
+    if source === nothing
+        if indicator !== nothing
+            source = indicator
+            Base.depwarn("`indicator` keyword argument is deprecated and " *
+                         "will be removed in 2.0 release of DataFrames.jl. " *
+                         "Use `source` keyword argument instead.", :leftjoin)
+        end
+    elseif indicator !== nothing
+        throw(ArgumentError("`indicator` keyword argument is deprecated. " *
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
+    end
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
-                 indicator=indicator, validate=validate,
+                 indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
                  matchmissing=matchmissing)
 end
 
 """
-    rightjoin(df1, df2; on, makeunique=false, indicator = nothing,
+    rightjoin(df1, df2; on, makeunique=false, source=nothing,
               validate=(false, false), renamecols=(identity => identity),
               matchmissing=:error)
 
@@ -701,7 +690,7 @@ change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -794,21 +783,34 @@ julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =
 """
 function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          indicator::Union{Nothing, Symbol, AbstractString} = nothing,
+          source::Union{Nothing, Symbol, AbstractString}=nothing,
+          indicator::Union{Nothing, Symbol, AbstractString}=nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
     end
+    if source === nothing
+        if indicator !== nothing
+            source = indicator
+            Base.depwarn("`indicator` keyword argument is deprecated and " *
+                         "will be removed in 2.0 release of DataFrames.jl. " *
+                         "Use `source` keyword argument instead.", :rightjoin)
+        end
+    elseif indicator !== nothing
+        throw(ArgumentError("`indicator` keyword argument is deprecated. " *
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
+    end
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
-                 indicator=indicator, validate=validate,
+                 indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
                  matchmissing=matchmissing)
 end
 
 """
-    outerjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+    outerjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
               renamecols=(identity => identity), matchmissing=:error)
     outerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false), matchmissing=:error)
@@ -838,7 +840,7 @@ This behavior may change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -937,16 +939,29 @@ julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =
 ```
 """
 function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          source::Union{Nothing, Symbol, AbstractString}=nothing,
+          indicator::Union{Nothing, Symbol, AbstractString}=nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
     end
+    if source === nothing
+        if indicator !== nothing
+            source = indicator
+            Base.depwarn("`indicator` keyword argument is deprecated and " *
+                         "will be removed in 2.0 release of DataFrames.jl. " *
+                         "Use `source` keyword argument instead.", :outerjoin)
+        end
+    elseif indicator !== nothing
+        throw(ArgumentError("`indicator` keyword argument is deprecated. " *
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
+    end
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
-                 indicator=indicator, validate=validate,
+                 indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
                  matchmissing=matchmissing)
 end
