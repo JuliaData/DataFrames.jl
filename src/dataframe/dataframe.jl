@@ -525,7 +525,7 @@ end
         # Computing integer indices once for all columns is faster
         selected_rows = T === Bool ? findall(row_inds) : row_inds
         @static if VERSION >= v"1.4"
-            if length(selected_rows) > 1_000_000 && Threads.nthreads() > 1
+            if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
                 @sync for i in eachindex(new_columns)
                     Threads.@spawn new_columns[i] = old_columns[i][selected_rows]
                 end
