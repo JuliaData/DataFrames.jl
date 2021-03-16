@@ -107,11 +107,22 @@ end
         x = DataFrames.split_indices(len, basesize)
 
         @test length(x) == max(1, div(len, basesize))
-        @test reduce(vcat, x) == 1:len
+        @test reduce(vcat, x) === 1:len
         vmin, vmax = extrema(length, x)
         @test vmin + 1 == vmax || vmin == vmax
         @test len < basesize || vmin >= basesize
     end
+
+    # Check overflow on 32-bit
+    len = typemax(Int32)
+    basesize = 100_000_000
+    x = collect(DataFrames.split_indices(len, basesize))
+    @test length(x) == div(len, basesize)
+    @test x[1][1] === 1
+    @test x[end][end] === Int(len)
+    vmin, vmax = extrema(length, x)
+    @test vmin + 1 == vmax || vmin == vmax
+    @test len < basesize || vmin >= basesize
 end
 
 end # module

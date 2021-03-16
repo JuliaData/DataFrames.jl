@@ -88,8 +88,8 @@ funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
 # This method ensures balanced sizes by avoiding a small last chunk
 function split_indices(len::Integer, basesize::Integer)
     len′ = Int64(len) # Avoid overflow on 32-bit machines
-    np = max(1, div(len′, basesize))
-    return ((1 + ((i - 1) * len′) ÷ np):((i * len′) ÷ np) for i in 1:np)
+    np = max(1, div(len, basesize))
+    return (Int(1 + ((i - 1) * len′) ÷ np):Int((i * len′) ÷ np) for i in 1:np)
 end
 
 """
@@ -103,7 +103,7 @@ since that can allow for a more efficient load balancing in case
 some threads are busy (nested parallelism).
 """
 function tforeach(f, x::AbstractArray; basesize::Integer)
-    Base.require_one_based_indexing(x)
+    @assert firstindex(x) == 1
 
     @static if VERSION >= v"1.4"
         nt = Threads.nthreads()
