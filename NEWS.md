@@ -49,8 +49,8 @@
   ([#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
 * `DataFrame` constructor, `copy`, `getindex`, `select`, `select!`, `transform`,
   `transform!`, and `combine` functions now use multiple threads in selected operations
-  ([#2647](https://github.com/JuliaData/DataFrames.jl/pull/2647))
-  ([#2588](https://github.com/JuliaData/DataFrames.jl/pull/2588))
+  ([#2647](https://github.com/JuliaData/DataFrames.jl/pull/2647)),
+  ([#2588](https://github.com/JuliaData/DataFrames.jl/pull/2588)),
   ([#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574))
 
 # DataFrames v0.22 Release Notes
