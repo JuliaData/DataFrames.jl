@@ -522,7 +522,8 @@ end
     idx = Index(lookup, u)
 
     if length(selected_columns) == 1
-        return DataFrame(AbstractVector[_columns(df)[selected_columns[1]][row_inds]], idx, copycols=false)
+        return DataFrame(AbstractVector[_columns(df)[selected_columns[1]][row_inds]],
+                         idx, copycols=false)
     else
         # Computing integer indices once for all columns is faster
         selected_rows = T === Bool ? findall(row_inds) : row_inds
@@ -534,10 +535,12 @@ end
                 end
                 return DataFrame(new_columns, idx, copycols=false)
             else
-                return DataFrame(AbstractVector[dv[selected_rows] for dv in view(_columns(df), selected_columns)], idx, copycols=false)
+                return DataFrame(AbstractVector[dv[selected_rows] for dv in view(_columns(df), selected_columns)],
+                                 idx, copycols=false)
             end
         else
-            return DataFrame(AbstractVector[dv[selected_rows] for dv in view(_columns(df), selected_columns)], idx, copycols=false)
+            return DataFrame(AbstractVector[dv[selected_rows] for dv in view(_columns(df), selected_columns)],
+                             idx, copycols=false)
         end
     end
 end
@@ -547,8 +550,10 @@ end
         throw(BoundsError(df, (row_inds, :)))
     end
 
+    idx = copy(index(df))
+
     if ncol(df) == 1
-        return DataFrame(AbstractVector[_columns(df)[1][row_inds]], copy(index(df)), copycols=false)
+        return DataFrame(AbstractVector[_columns(df)[1][row_inds]], idx, copycols=false)
     else
         # Computing integer indices once for all columns is faster
         selected_rows = T === Bool ? findall(row_inds) : row_inds
@@ -558,12 +563,14 @@ end
                 @sync for i in eachindex(new_columns)
                     Threads.@spawn new_columns[i] = _columns(df)[i][selected_rows]
                 end
-                return DataFrame(new_columns, copy(index(df)), copycols=false)
+                return DataFrame(new_columns, idx, copycols=false)
             else
-                return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)], copy(index(df)), copycols=false)
+                return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)],
+                                 idx, copycols=false)
             end
         else
-            return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)], copy(index(df)), copycols=false)
+            return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)],
+                             idx, copycols=false)
         end
     end
 end
