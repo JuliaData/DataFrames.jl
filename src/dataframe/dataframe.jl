@@ -519,6 +519,8 @@ end
 
     u = _names(df)[selected_columns]
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
+    # use this constructor to avoid checking twice if column names are not
+    # duplicate as index(df)[col_inds] already checks this
     idx = Index(lookup, u)
 
     if length(selected_columns) == 1
@@ -535,11 +537,11 @@ end
                 end
                 return DataFrame(new_columns, idx, copycols=false)
             else
-                return DataFrame(AbstractVector[dv[selected_rows] for dv in view(_columns(df), selected_columns)],
+                return DataFrame(AbstractVector[_columns(df)[i][selected_rows] for i in selected_columns],
                                  idx, copycols=false)
             end
         else
-            return DataFrame(AbstractVector[dv[selected_rows] for dv in view(_columns(df), selected_columns)],
+            return DataFrame(AbstractVector[_columns(df)[i][selected_rows] for i in selected_columns],
                              idx, copycols=false)
         end
     end
@@ -549,7 +551,6 @@ end
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError(df, (row_inds, :)))
     end
-
     idx = copy(index(df))
 
     if ncol(df) == 1
