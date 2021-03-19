@@ -2009,4 +2009,15 @@ if VERSION >= v"1.5"
     include("indexing_offset.jl")
 end
 
+@testset "threading correctness tests" begin
+    for x in (10, 2*10^6), y in 1:4
+        mat = rand(x, y)
+        df = DataFrame(mat, :auto)
+        for rowrange in [:, 1:nrow(df)-5, collect(1:nrow(df)-5), axes(df, 1) .< nrow(df)-5],
+            colrange in [:, axes(df, 2), collect(axes(df, 2)), 1:ncol(df) - 1]
+            @test DataFrame(mat[rowrange, colrange], :auto) == df[rowrange, colrange]
+        end
+    end
+end
+
 end # module
