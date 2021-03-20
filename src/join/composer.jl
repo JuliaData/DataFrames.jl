@@ -225,41 +225,41 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
             @sync begin
                 for col in eachcol(dfl_noon)
                     cols_i = left_idxs[col_idx]
-                    Threads.@spawn _noon_compose_helper(cols, _similar_left, cols_i,
-                                                        col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                    Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
+                                                         col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
                     col_idx += 1
                 end
                 @assert col_idx == ncol(joiner.dfl) + 1
                 for col in eachcol(dfr_noon)
                     cols_i = col_idx
-                    Threads.@spawn _noon_compose_helper(cols, _similar_right, cols_i, col, target_nrow,
-                                                        right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                    Threads.@spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
+                                                         right_ixs, lil + loil + 1, rightonly_ixs, roil)
                     col_idx += 1
                 end
             end
         else
             for col in eachcol(dfl_noon)
-                _noon_compose_helper(cols, _similar_left, left_idxs[col_idx],
-                                     col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
+                                      col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
                 col_idx += 1
             end
             @assert col_idx == ncol(joiner.dfl) + 1
             for col in eachcol(dfr_noon)
-                _noon_compose_helper(cols, _similar_right, col_idx, col, target_nrow,
-                                     right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
+                                      right_ixs, lil + loil + 1, rightonly_ixs, roil)
                 col_idx += 1
             end
         end
     else
         for col in eachcol(dfl_noon)
-            _noon_compose_helper(cols, _similar_left, left_idxs[col_idx],
-                                 col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+            _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
+                                  col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
             col_idx += 1
         end
         @assert col_idx == ncol(joiner.dfl) + 1
         for col in eachcol(dfr_noon)
-            _noon_compose_helper(cols, _similar_right, col_idx, col, target_nrow,
-                                 right_ixs, lil + loil + 1, rightonly_ixs, roil)
+            _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
+                                  right_ixs, lil + loil + 1, rightonly_ixs, roil)
             col_idx += 1
         end
     end
@@ -273,8 +273,16 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
     return res, src_indicator
 end
 
-function _noon_compose_helper(cols, similar_col, cols_i, col, target_nrow,
-                              side_ixs, offset, sideonly_ixs, tocopy)
+function _noon_compose_helper!(cols::Vector{AbstractVector}, # target container to populate
+                               similar_col::Function, # function to use to materialize new column
+                               cols_i::Integer, # index in cols to populate
+                               col::AbstractVector, # source column
+                               target_nrow::Integer, # target number of rows in new column
+                               side_ixs::AbstractVector, # indices in col that were matched
+                               offset::Integer, # offset to put non matched indices
+                               sideonly_ixs::AbstractVector, # indices in col that were not
+                               tocopy::Integer) # number on non-matched rows to copy
+    @assert tocopy == length(sideonly_ixs)
     cols[cols_i] = similar_col(col, target_nrow)
     copyto!(cols[cols_i], view(col, side_ixs))
     copyto!(cols[cols_i], offset, view(col, sideonly_ixs), 1, tocopy)
