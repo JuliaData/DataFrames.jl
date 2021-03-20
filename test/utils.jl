@@ -108,7 +108,7 @@ end
 
         @test length(x) == max(1, div(len, basesize))
         @test reduce(vcat, x) === 1:len
-        vmin, vmax = extrema(length, x)
+        vmin, vmax = extrema(length(v) for v in x)
         @test vmin + 1 == vmax || vmin == vmax
         @test len < basesize || vmin >= basesize
     end
@@ -120,7 +120,7 @@ end
     @test length(x) == div(len, basesize)
     @test x[1][1] === 1
     @test x[end][end] === Int(len)
-    vmin, vmax = extrema(length, x)
+    vmin, vmax = extrema(length(v) for v in x)
     @test vmin + 1 == vmax || vmin == vmax
     @test len < basesize || vmin >= basesize
 end
