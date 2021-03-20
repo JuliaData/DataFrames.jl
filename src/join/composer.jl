@@ -231,10 +231,9 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
                 end
                 @assert col_idx == ncol(joiner.dfl) + 1
                 for col in eachcol(dfr_noon)
-                    let cols_i = col_idx
-                        Threads.@spawn _noon_compose_helper(cols, _similar_right, cols_i, col, target_nrow,
-                                                            right_ixs, lil + loil + 1, rightonly_ixs, roil)
-                    end
+                    cols_i = col_idx
+                    Threads.@spawn _noon_compose_helper(cols, _similar_right, cols_i, col, target_nrow,
+                                                        right_ixs, lil + loil + 1, rightonly_ixs, roil)
                     col_idx += 1
                 end
             end
