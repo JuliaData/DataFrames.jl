@@ -374,9 +374,9 @@ Base.length(gd::GroupedDataFrame) = gd.ngroups
 
 function Base.iterate(gd::GroupedDataFrame, i=1)
     if i > length(gd)
-        nothing
+        return nothing
     else
-        (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]], :), i+1)
+        return (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]], :), i+1)
     end
 end
 
@@ -977,4 +977,11 @@ function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
     end
 
     return gdf[[f(mapper(i))::Bool for i in 1:length(gdf)]]
+end
+
+function Base.map(f, gdf::GroupedDataFrame)
+    Base.depwarn("Use of the map function on GroupedDataFrame is deprecated. " *
+                 "The return value of this function might change in the future " *
+                 "in a breaking way.", :map)
+    return collect(Base.Generator(f, gdf))
 end
