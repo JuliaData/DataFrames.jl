@@ -11,6 +11,8 @@
 * `mapcols!` makes sure not to create columns being `AbstractRange` consistently
   with other methods that add columns to a `DataFrame`
   ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+* `eltype` of vector returned by `eachrow` is now `DataFrameRow`
+  ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
 
 ## New functionalities
 
@@ -32,6 +34,9 @@
 * in `leftjoin`, `rightjoin`, and `outerjoin` the `indicator` keyword argument
   is deprecated in favor of `source` keyword argument; `indicator` will be removed
   in 2.0 release ([2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
+* applying `map` to `GroupedDataFrame` is now deprecated. The return value
+  of this function might change in 2.0 release
+  ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
 * all deprecations present in 0.22 release now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 

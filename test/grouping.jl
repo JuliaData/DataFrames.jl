@@ -3024,12 +3024,6 @@ end
     @test_throws ArgumentError combine(gdf, (:g, :g) => identity)
 end
 
-@testset "new map behavior" begin
-    df = DataFrame(g=[1, 2, 3])
-    gdf = groupby(df, :g)
-    @test map(nrow, gdf) == [1, 1, 1]
-end
-
 @testset "check isagg correctly uses fast path only when it should" begin
     for fun in (sum, prod, mean, var, std, sum∘skipmissing, prod∘skipmissing,
                 mean∘skipmissing, var∘skipmissing, std∘skipmissing),
