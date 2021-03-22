@@ -503,8 +503,9 @@ where each row represents a variable and each column a summary statistic.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
-- `cols` : a keyword argument allowing to select only a subset of columns from `df`
-  to describe. Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `cols` : a keyword argument allowing to select only a subset or transformation
+  of columns from `df` to describe. Can be any column selector or transformation
+  accepted by [`select`](@ref).
 
 # Details
 For `Real` columns, compute the mean, standard deviation, minimum, first
@@ -1187,8 +1188,8 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Arguments
 - `df` : `AbstractDataFrame`
-- `cols` : a selector specifying the column(s) to compare. Can be any column
-  selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+- `cols` : a selector specifying the column(s) or their transformations to compare.
+  Can be any column selector or transformation accepted by [`select`](@ref).
 
 # Examples
 ```julia
@@ -1280,10 +1281,11 @@ end
     unique!(df::AbstractDataFrame, cols)
 
 Return a data frame containing only the first occurrence of unique rows in `df`.
-When `cols` is specified, the returned `DataFrame` contains
-complete rows, retaining in each case the first instance for which `df[cols]` is
-unique. `cols` can be any column selector ($COLUMNINDEX_STR;
-$MULTICOLUMNINDEX_STR).
+When `cols` is specified, the returned `DataFrame` contains complete rows,
+retaining in each case the first occurrence of a given combination of values
+in selected columns or their transformations. `cols` can be any column
+selector or transformation accepted by [`select`](@ref).
+
 
 For `unique`, if `view=false` a freshly allocated `DataFrame` is returned,
 and if `view=true` then a `SubDataFrame` view into `df` is returned.
@@ -1439,7 +1441,9 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
 """
     vcat(dfs::AbstractDataFrame...;
          cols::Union{Symbol, AbstractVector{Symbol},
-                     AbstractVector{<:AbstractString}}=:setequal)
+                     AbstractVector{<:AbstractString}}=:setequal,
+         source::Union{Nothing, Symbol, AbstractString,
+                       Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
 Vertically concatenate `AbstractDataFrame`s.
 
@@ -1456,6 +1460,15 @@ The `cols` keyword argument determines the columns of the returned data frame:
   Columns not present in some data frames are filled with `missing` where necessary.
 * A vector of `Symbol`s or strings: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
+
+The `source` keyword argument, if not `nothing` (the default), specifies the
+additional column to be added in the last position in the resulting data frame
+that will identify the source data frame. It can be a `Symbol` or an
+`AbstractString`, in which case the identifier will be the number of the passed
+source data frame, or a `Pair` consisting of a `Symbol` or an `AbstractString`
+and of a vector specifying the data frame identifiers (which do not have to be
+unique). The name of the source column is not allowed to be present in any
+source data frame.
 
 The order of columns is determined by the order they appear in the included data
 frames, searching through the header of the first data frame, then the second,
@@ -1496,7 +1509,7 @@ julia> df3 = DataFrame(A=7:9, C=7:9)
    2 │     8      8
    3 │     9      9
 
-julia> d4 = DataFrame()
+julia> df4 = DataFrame()
 0×0 DataFrame
 
 julia> vcat(df1, df2)
@@ -1535,7 +1548,7 @@ julia> vcat(df1, df3, cols=:intersect)
    5 │     8
    6 │     9
 
-julia> vcat(d4, df1)
+julia> vcat(df4, df1)
 3×2 DataFrame
  Row │ A      B
      │ Int64  Int64
@@ -1543,19 +1556,160 @@ julia> vcat(d4, df1)
    1 │     1      1
    2 │     2      2
    3 │     3      3
+
+julia> vcat(df1, df2, df3, df4, cols=:union, source="source")
+9×4 DataFrame
+ Row │ A      B        C        source
+     │ Int64  Int64?   Int64?   Int64
+─────┼─────────────────────────────────
+   1 │     1        1  missing       1
+   2 │     2        2  missing       1
+   3 │     3        3  missing       1
+   4 │     4        4  missing       2
+   5 │     5        5  missing       2
+   6 │     6        6  missing       2
+   7 │     7  missing        7       3
+   8 │     8  missing        8       3
+   9 │     9  missing        9       3
+
+julia> vcat(df1, df2, df4, df3, cols=:union, source=:source => 'a':'d')
+9×4 DataFrame
+ Row │ A      B        C        source
+     │ Int64  Int64?   Int64?   Char
+─────┼─────────────────────────────────
+   1 │     1        1  missing  a
+   2 │     2        2  missing  a
+   3 │     3        3  missing  a
+   4 │     4        4  missing  b
+   5 │     5        5  missing  b
+   6 │     6        6  missing  b
+   7 │     7  missing        7  d
+   8 │     8  missing        8  d
+   9 │     9  missing        9  d
 ```
 """
 Base.vcat(dfs::AbstractDataFrame...;
           cols::Union{Symbol, AbstractVector{Symbol},
-                      AbstractVector{<:AbstractString}}=:setequal) =
-    reduce(vcat, dfs; cols=cols)
+                      AbstractVector{<:AbstractString}}=:setequal,
+          source::Union{Nothing, SymbolOrString,
+                           Pair{<:SymbolOrString, <:AbstractVector}}=nothing) =
+    reduce(vcat, dfs; cols=cols, source=source)
 
+"""
+    reduce(::typeof(vcat),
+           dfs::Union{AbstractVector{<:AbstractDataFrame},
+                      Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
+           cols::Union{Symbol, AbstractVector{Symbol},
+                       AbstractVector{<:AbstractString}}=:setequal,
+           source::Union{Nothing, Symbol, AbstractString,
+                         Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
+
+Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with `vcat`.
+
+The column order, names, and types of the resulting `DataFrame`, and
+the behavior of `cols` and `source` keyword arguments follow the rules specified
+for [`vcat`](@ref) of `AbstractDataFrame`s.
+
+# Example
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+
+julia> df2 = DataFrame(A=4:6, B=4:6)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      4
+   2 │     5      5
+   3 │     6      6
+
+julia> df3 = DataFrame(A=7:9, C=7:9)
+3×2 DataFrame
+ Row │ A      C
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7      7
+   2 │     8      8
+   3 │     9      9
+
+julia> reduce(vcat, (df1, df2))
+6×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     4      4
+   5 │     5      5
+   6 │     6      6
+
+julia> reduce(vcat, [df1, df2, df3], cols=:union, source=:source)
+9×4 DataFrame
+ Row │ A      B        C        source
+     │ Int64  Int64?   Int64?   Int64
+─────┼─────────────────────────────────
+   1 │     1        1  missing       1
+   2 │     2        2  missing       1
+   3 │     3        3  missing       1
+   4 │     4        4  missing       2
+   5 │     5        5  missing       2
+   6 │     6        6  missing       2
+   7 │     7  missing        7       3
+   8 │     8  missing        8       3
+   9 │     9  missing        9       3
+```
+"""
 function Base.reduce(::typeof(vcat),
                      dfs::Union{AbstractVector{<:AbstractDataFrame},
                                 Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
                      cols::Union{Symbol, AbstractVector{Symbol},
-                     AbstractVector{<:AbstractString}}=:setequal)
-    return _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+                                 AbstractVector{<:AbstractString}}=:setequal,
+                     source::Union{Nothing, SymbolOrString,
+                                   Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
+    res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+    if source !== nothing
+        len = length(dfs)
+        if source isa SymbolOrString
+            col, vals = source, 1:len
+        else
+            @assert source isa Pair{<:SymbolOrString, <:AbstractVector}
+            col, vals = source
+        end
+
+        if columnindex(res, col) > 0
+            idx = findfirst(df -> columnindex(df, col) > 0, dfs)
+            @assert idx !== nothing
+            throw(ArgumentError("source column name :$col already exists in data frame " *
+                                " passed in position $idx"))
+        end
+
+        if len != length(vals)
+            throw(ArgumentError("number of passed source identifiers ($(length(vals)))" *
+                                "does not match the number of data frames ($len)"))
+        end
+
+        source_vec = Tables.allocatecolumn(eltype(vals), nrow(res))
+        @assert firstindex(source_vec) == 1 && lastindex(source_vec) == nrow(res)
+        start = 1
+        for (v, df) in zip(vals, dfs)
+            stop = start + nrow(df) - 1
+            source_vec[start:stop] .= Ref(v)
+            start = stop + 1
+        end
+
+        @assert start == nrow(res) + 1
+        insertcols!(res, col => source_vec)
+    end
+
+    return res
 end
 
 function _vcat(dfs::AbstractVector{AbstractDataFrame};

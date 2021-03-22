@@ -534,7 +534,7 @@ end
         [Union{Int, Missing}, CS, Union{Int, Missing}]
 end
 
-@testset "indicator columns" begin
+@testset "source columns" begin
     outer_indicator = DataFrame(ID = [1, 2, 2, 3, 4],
                                 Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
                                 Job = ["Lawyer", "Doctor", "Florist", missing, "Farmer"],
@@ -543,9 +543,9 @@ end
     # Check that input data frame isn't modified (#1434)
     pre_join_name = copy(name)
     pre_join_job = copy(job)
-    @test outerjoin(name, job, on = :ID, indicator=:_merge,
+    @test outerjoin(name, job, on = :ID, source=:_merge,
                makeunique=true) ≅
-          outerjoin(name, job, on = :ID, indicator="_merge",
+          outerjoin(name, job, on = :ID, source="_merge",
                makeunique=true) ≅ outer_indicator
 
     @test name ≅ pre_join_name
@@ -564,7 +564,7 @@ end
                                 _left_1 = [1, 1, 1, missing, 1],
                                 _left_2 = ["both", "both", "both", "left_only", "right_only"])
 
-    @test outerjoin(name2, job2, on = :ID, indicator=:_left,
+    @test outerjoin(name2, job2, on = :ID, source=:_left,
                makeunique=true) ≅ outer_indicator
 end
 
@@ -713,17 +713,17 @@ end
                                                                       x=[1, 2], y=[1, 2])
 end
 
-@testset "check naming of indicator" begin
+@testset "check naming of source" begin
     df = DataFrame(a=1)
-    @test_throws ArgumentError outerjoin(df, df, on=:a, indicator=:a)
-    @test outerjoin(df, df, on=:a, indicator=:a, makeunique=true) == DataFrame(a=1, a_1="both")
-    @test outerjoin(df, df, on=:a, indicator="_left") == DataFrame(a=1, _left="both")
-    @test outerjoin(df, df, on=:a, indicator="_right") == DataFrame(a=1, _right="both")
+    @test_throws ArgumentError outerjoin(df, df, on=:a, source=:a)
+    @test outerjoin(df, df, on=:a, source=:a, makeunique=true) == DataFrame(a=1, a_1="both")
+    @test outerjoin(df, df, on=:a, source="_left") == DataFrame(a=1, _left="both")
+    @test outerjoin(df, df, on=:a, source="_right") == DataFrame(a=1, _right="both")
 
     df = DataFrame(_left=1)
-    @test outerjoin(df, df, on=:_left, indicator="_leftX") == DataFrame(_left=1, _leftX="both")
+    @test outerjoin(df, df, on=:_left, source="_leftX") == DataFrame(_left=1, _leftX="both")
     df = DataFrame(_right=1)
-    @test outerjoin(df, df, on=:_right, indicator="_rightX") == DataFrame(_right=1, _rightX="both")
+    @test outerjoin(df, df, on=:_right, source="_rightX") == DataFrame(_right=1, _rightX="both")
 end
 
 @testset "validate error message composition" begin
@@ -814,11 +814,11 @@ end
     end
 
     @test_throws ArgumentError leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                        renamecols = "_left" => "_right", indicator=:id1)
+                                        renamecols = "_left" => "_right", source=:id1)
     @test_throws ArgumentError leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                        renamecols = "_left" => "_right", indicator=:x_left)
+                                        renamecols = "_left" => "_right", source=:x_left)
     @test leftjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                   renamecols = "_left" => "_right", indicator=:ind) ≅
+                   renamecols = "_left" => "_right", source=:ind) ≅
           DataFrame(id1=[1, 2, 3], id2=[1, 2, 3], x_left=[1, 2, 3],
                     x_right=[1, 2, missing], ind=["both", "both", "left_only"])
 
@@ -846,11 +846,11 @@ end
     end
 
     @test_throws ArgumentError rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:id1)
+                                         renamecols = "_left" => "_right", source=:id1)
     @test_throws ArgumentError rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:x_left)
+                                         renamecols = "_left" => "_right", source=:x_left)
     @test rightjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                    renamecols = "_left" => "_right", indicator=:ind) ≅
+                    renamecols = "_left" => "_right", source=:ind) ≅
           DataFrame(id1=[1, 2, 4], id2=[1, 2, 4], x_left=[1, 2, missing],
                     x_right=[1, 2, 3], ind=["both", "both", "right_only"])
 
@@ -879,11 +879,11 @@ end
     end
 
     @test_throws ArgumentError outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:id1)
+                                         renamecols = "_left" => "_right", source=:id1)
     @test_throws ArgumentError outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                                         renamecols = "_left" => "_right", indicator=:x_left)
+                                         renamecols = "_left" => "_right", source=:x_left)
     @test outerjoin(df1, df2, on=[:id1, :id2 => :ID2],
-                    renamecols = "_left" => "_right", indicator=:ind) ≅
+                    renamecols = "_left" => "_right", source=:ind) ≅
           DataFrame(id1=[1, 2, 3, 4], id2=[1, 2, 3, 4], x_left=[1, 2, 3, missing],
                     x_right=[1, 2, missing, 3], ind=["both", "both", "left_only", "right_only"])
 
@@ -904,15 +904,15 @@ end
           DataFrame(id1=1:2, id2=1:2, x_left=11:12, newcol=101:102, newcol_1=102:103)
 end
 
-@testset "careful indicator test" begin
+@testset "careful source test" begin
     Random.seed!(1234)
     for i in 5:15, j in 5:15
         df1 = DataFrame(id=rand(1:10, i), x=1:i)
         df2 = DataFrame(id=rand(1:10, j), y=1:j)
         dfi = innerjoin(df1, df2, on=:id)
-        dfl = leftjoin(df1, df2, on=:id, indicator=:ind)
-        dfr = rightjoin(df1, df2, on=:id, indicator=:ind)
-        dfo = outerjoin(df1, df2, on=:id, indicator=:ind)
+        dfl = leftjoin(df1, df2, on=:id, source=:ind)
+        dfr = rightjoin(df1, df2, on=:id, source=:ind)
+        dfo = outerjoin(df1, df2, on=:id, source=:ind)
         @test issorted(dfl, :ind)
         @test issorted(dfr, :ind)
         @test issorted(dfo, :ind)
@@ -1494,6 +1494,67 @@ end
     m1 = innerjoin(df1, df2, on = :a, makeunique=true)
     m2 = innerjoin(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
     @test m1[!, :a] == m2[!, :a]
+end
+
+@testset "threaded correctness" begin
+    df1 = DataFrame(id=[1:10^6; 10^7+1:10^7+2])
+    df1.left_row = axes(df1, 1)
+    df2 = DataFrame(id=[1:10^6; 10^8+1:10^8+4])
+    df2.right_row = axes(df2, 1)
+
+    df_inner = DataFrame(id=1:10^6, left_row=1:10^6, right_row=1:10^6)
+    df_left = DataFrame(id=[1:10^6; 10^7+1:10^7+2], left_row=1:10^6+2,
+                        right_row=[1:10^6; missing; missing])
+    df_right = DataFrame(id=[1:10^6; 10^8+1:10^8+4],
+                         left_row=[1:10^6; fill(missing, 4)],
+                         right_row=1:10^6+4)
+    df_outer = DataFrame(id=[1:10^6; 10^7+1:10^7+2; 10^8+1:10^8+4],
+                         left_row=[1:10^6+2; fill(missing, 4)],
+                         right_row=[1:10^6; missing; missing; 10^6+1:10^6+4])
+    df_semi = DataFrame(id=1:10^6, left_row=1:10^6)
+    df_anti = DataFrame(id=10^7+1:10^7+2, left_row=10^6+1:10^6+2)
+
+    @test innerjoin(df1, df2, on=:id) ≅ df_inner
+    @test leftjoin(df1, df2, on=:id) ≅ df_left
+    @test rightjoin(df1, df2, on=:id) ≅ df_right
+    @test outerjoin(df1, df2, on=:id) ≅ df_outer
+    @test semijoin(df1, df2, on=:id) ≅ df_semi
+    @test antijoin(df1, df2, on=:id) ≅ df_anti
+
+    Random.seed!(1234)
+    for i in 1:4
+        df1 = df1[shuffle(axes(df1, 1)), :]
+        df2 = df2[shuffle(axes(df2, 1)), :]
+        @test sort!(innerjoin(df1, df2, on=:id)) ≅ df_inner
+        @test sort!(leftjoin(df1, df2, on=:id)) ≅ df_left
+        @test sort!(rightjoin(df1, df2, on=:id)) ≅ df_right
+        @test sort!(outerjoin(df1, df2, on=:id)) ≅ df_outer
+        @test sort!(semijoin(df1, df2, on=:id)) ≅ df_semi
+        @test sort!(antijoin(df1, df2, on=:id)) ≅ df_anti
+    end
+
+    # test correctness of column order
+    df1 = DataFrame(a="a", id2=-[1:10^6; 10^7+1:10^7+2], b="b",
+                    id1=[1:10^6; 10^7+1:10^7+2], c="c", d="d")
+    df2 = DataFrame(e="e", id1=[1:10^6; 10^8+1:10^8+4], f="f", g="g",
+                    id2=-[1:10^6; 10^8+1:10^8+4], h="h")
+    @test innerjoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test leftjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test rightjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test outerjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test semijoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6, c="c", d="d")
+    @test antijoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a="a", id2=-(10^7+1:10^7+2), b="b", id1=(10^7+1:10^7+2),
+                    c="c", d="d")
 end
 
 end # module

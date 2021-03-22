@@ -83,3 +83,48 @@ else
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
+
+# Compute chunks of indices, each with at least `basesize` entries
+# This method ensures balanced sizes by avoiding a small last chunk
+function split_indices(len::Integer, basesize::Integer)
+    len′ = Int64(len) # Avoid overflow on 32-bit machines
+    np = max(1, div(len, basesize))
+    return (Int(1 + ((i - 1) * len′) ÷ np):Int((i * len′) ÷ np) for i in 1:np)
+end
+
+"""
+    tforeach(f, x::AbstractArray; basesize::Integer)
+
+Apply function `f` to each entry in `x` in parallel, spawning
+one separate task for each block of at least `basesize` entries.
+
+A number of task higher than `Threads.nthreads()` may be spawned,
+since that can allow for a more efficient load balancing in case
+some threads are busy (nested parallelism).
+"""
+function tforeach(f, x::AbstractArray; basesize::Integer)
+    @assert firstindex(x) == 1
+
+    @static if VERSION >= v"1.4"
+        nt = Threads.nthreads()
+        len = length(x)
+        if nt > 1 && len > basesize
+            @sync for p in split_indices(len, basesize)
+                Threads.@spawn begin
+                    for i in p
+                        f(@inbounds x[i])
+                    end
+                end
+            end
+        else
+            for i in eachindex(x)
+                f(@inbounds x[i])
+            end
+        end
+    else
+        for i in eachindex(x)
+            f(@inbounds x[i])
+        end
+    end
+    return
+end

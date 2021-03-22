@@ -190,21 +190,19 @@ struct DataFrame <: AbstractDataFrame
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        for (i, col) in enumerate(columns)
-            # check for vectors first as they are most common
-            if col isa AbstractRange
-                columns[i] = collect(col)
-            elseif col isa AbstractVector
-                columns[i] = copycols ? copy(col) : col
-            elseif col isa Union{AbstractArray{<:Any, 0}, Ref}
-                x = col[]
-                columns[i] = fill!(Tables.allocatecolumn(typeof(x), len), x)
-            else
-                if col isa AbstractArray
-                    throw(ArgumentError("adding AbstractArray other than AbstractVector " *
-                                        "as a column of a data frame is not allowed"))
+        @static if VERSION >= v"1.4"
+            if copycols && len >= 1_000_000 && length(columns) > 1 && Threads.nthreads() > 1
+                @sync for i in eachindex(columns)
+                    Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
                 end
-                columns[i] = fill!(Tables.allocatecolumn(typeof(col), len), col)
+            else
+                for i in eachindex(columns)
+                    columns[i] = _preprocess_column(columns[i], len, copycols)
+                end
+            end
+        else
+            for i in eachindex(columns)
+                columns[i] = _preprocess_column(columns[i], len, copycols)
             end
         end
 
@@ -213,6 +211,22 @@ struct DataFrame <: AbstractDataFrame
         end
 
         new(convert(Vector{AbstractVector}, columns), colindex)
+    end
+end
+
+function _preprocess_column(col::Any, len::Integer, copycols::Bool)
+    if col isa AbstractRange
+        return collect(col)
+    elseif col isa AbstractVector
+        return copycols ? copy(col) : col
+    elseif col isa Union{AbstractArray{<:Any, 0}, Ref}
+        x = col[]
+        return fill!(Tables.allocatecolumn(typeof(x), len), x)
+    elseif col isa AbstractArray
+        throw(ArgumentError("adding AbstractArray other than AbstractVector " *
+                            "as a column of a data frame is not allowed"))
+    else
+        return fill!(Tables.allocatecolumn(typeof(col), len), col)
     end
 end
 
@@ -502,34 +516,75 @@ end
         throw(BoundsError(df, (row_inds, col_inds)))
     end
     selected_columns = index(df)[col_inds]
-    # Computing integer indices once for all columns is faster
-    selected_rows = T === Bool ? findall(row_inds) : row_inds
-    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
+
+    u = _names(df)[selected_columns]
+    lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
+    # use this constructor to avoid checking twice if column names are not
+    # duplicate as index(df)[col_inds] already checks this
+    idx = Index(lookup, u)
+
+    if length(selected_columns) == 1
+        return DataFrame(AbstractVector[_columns(df)[selected_columns[1]][row_inds]],
+                         idx, copycols=false)
+    else
+        # Computing integer indices once for all columns is faster
+        selected_rows = T === Bool ? findall(row_inds) : row_inds
+        @static if VERSION >= v"1.4"
+            if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
+                new_columns = Vector{AbstractVector}(undef, length(selected_columns))
+                @sync for i in eachindex(new_columns)
+                    Threads.@spawn new_columns[i] = _columns(df)[selected_columns[i]][selected_rows]
+                end
+                return DataFrame(new_columns, idx, copycols=false)
+            else
+                return DataFrame(AbstractVector[_columns(df)[i][selected_rows] for i in selected_columns],
+                                 idx, copycols=false)
+            end
+        else
+            return DataFrame(AbstractVector[_columns(df)[i][selected_rows] for i in selected_columns],
+                             idx, copycols=false)
+        end
+    end
 end
 
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError(df, (row_inds, :)))
     end
-    # Computing integer indices once for all columns is faster
-    selected_rows = T === Bool ? findall(row_inds) : row_inds
-    new_columns = AbstractVector[dv[selected_rows] for dv in _columns(df)]
-    return DataFrame(new_columns, copy(index(df)), copycols=false)
+    idx = copy(index(df))
+
+    if ncol(df) == 1
+        return DataFrame(AbstractVector[_columns(df)[1][row_inds]], idx, copycols=false)
+    else
+        # Computing integer indices once for all columns is faster
+        selected_rows = T === Bool ? findall(row_inds) : row_inds
+        @static if VERSION >= v"1.4"
+            if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
+                new_columns = Vector{AbstractVector}(undef, ncol(df))
+                @sync for i in eachindex(new_columns)
+                    Threads.@spawn new_columns[i] = _columns(df)[i][selected_rows]
+                end
+                return DataFrame(new_columns, idx, copycols=false)
+            else
+                return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)],
+                                 idx, copycols=false)
+            end
+        else
+            return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)],
+                             idx, copycols=false)
+        end
+    end
 end
 
-@inline Base.getindex(df::DataFrame, row_inds::Not,
-                      col_inds::MultiColumnIndex) =
+@inline Base.getindex(df::DataFrame, row_inds::Not, col_inds::MultiColumnIndex) =
     df[axes(df, 1)[row_inds], col_inds]
 
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon,
-              col_inds::MultiColumnIndex) =
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::typeof(!),
-              col_inds::MultiColumnIndex) =
+Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=false)
 
 ##############################################################################
@@ -875,11 +930,7 @@ copies of column vectors in `df`.
 If `copycols=false`, return a new `DataFrame` sharing column vectors with `df`.
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
-    if copycols
-        df[:, :]
-    else
-        DataFrame(_columns(df), _names(df), copycols=false)
-    end
+    return DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
 end
 
 """
