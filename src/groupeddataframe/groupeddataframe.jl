@@ -533,16 +533,9 @@ Construct a `NamedTuple` with the same contents as the [`GroupKey`](@ref).
 """
 Base.copy(key::GroupKey) = NamedTuple(key)
 
-Base.convert(::Type{NamedTuple}, key::GroupKey) = NamedTuple(key)
-Base.convert(::Type{Tuple}, key::GroupKey) = Tuple(key)
+Base.Vector(key::GroupKey) = [v for v in key]
+Base.Vector{T}(key::GroupKey) where T = T[v for v in key]
 
-Base.convert(::Type{Vector}, key::GroupKey) = [v for v in key]
-Base.convert(::Type{Vector{T}}, key::GroupKey) where T = T[v for v in key]
-Base.Vector(key::GroupKey) = convert(Vector, key)
-Base.Vector{T}(key::GroupKey) where T = convert(Vector{T}, key)
-
-Base.convert(::Type{Array}, key::GroupKey) = Vector(key)
-Base.convert(::Type{Array{T}}, key::GroupKey) where {T} = Vector{T}(key)
 Base.Array(key::GroupKey) = Vector(key)
 Base.Array{T}(key::GroupKey) where {T} = Vector{T}(key)
 
