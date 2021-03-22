@@ -51,12 +51,14 @@
   values in `on` columns. These aspects of input data frames might affect the
   order of rows produced in the output
   ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612),
-  ([#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
+   [#2622](https://github.com/JuliaData/DataFrames.jl/pull/2622))
 * `DataFrame` constructor, `copy`, `getindex`, `select`, `select!`, `transform`,
-  `transform!`, and `combine` functions now use multiple threads in selected operations
-  ([#2647](https://github.com/JuliaData/DataFrames.jl/pull/2647)),
-  ([#2588](https://github.com/JuliaData/DataFrames.jl/pull/2588)),
-  ([#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574))
+  `transform!`, `combine`, `sort`, and join functions now use multiple threads
+  in selected operations
+  ([#2647](https://github.com/JuliaData/DataFrames.jl/pull/2647),
+   [#2588](https://github.com/JuliaData/DataFrames.jl/pull/2588),
+   [#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574),
+   [#2664](https://github.com/JuliaData/DataFrames.jl/pull/2664))
 
 # DataFrames v0.22 Release Notes
 
