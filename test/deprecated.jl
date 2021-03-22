@@ -7,6 +7,15 @@ using Test, DataFrames
     @test_throws ArgumentError aggregate()
 end
 
+@testset "deprecated broadcasting assignment" begin
+    df = DataFrame(a=1:4, b=1, c=2)
+    df.a .= 'a':'d'
+    @test df == DataFrame(a=97:100, b=1, c=2)
+    dfv = view(df, 2:3, 2:3)
+    dfv.b .= 0
+    @test df.b == [1, 0, 0, 1]
+end
+
 @testset "All indexing" begin
     df = DataFrame(a=1, b=2, c=3)
 
