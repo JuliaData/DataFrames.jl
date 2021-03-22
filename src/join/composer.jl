@@ -96,8 +96,21 @@ function compose_inner_table(joiner::DataFrameJoiner,
                              left_rename::Union{Function, AbstractString, Symbol},
                              right_rename::Union{Function, AbstractString, Symbol})
     left_ixs, right_ixs = find_inner_rows(joiner)
-    dfl = joiner.dfl[left_ixs, :]
-    dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+
+    @static if VERSION >= v"1.4"
+        if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
+            dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
+            dfr_noon_task = Threads.@spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
+            dfl = fetch(dfl_task)
+            dfr_noon = fetch(dfr_noon_task)
+        else
+            dfl = joiner.dfl[left_ixs, :]
+            dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+        end
+    else
+        dfl = joiner.dfl[left_ixs, :]
+        dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+    end
 
     ncleft = ncol(dfl)
     cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
@@ -207,21 +220,48 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
 
     @assert col_idx == ncol(joiner.dfl_on) + 1
 
-    for col in eachcol(dfl_noon)
-        cols_i = left_idxs[col_idx]
-        cols[cols_i] = _similar_left(col, target_nrow)
-        copyto!(cols[cols_i], view(col, left_ixs))
-        copyto!(cols[cols_i], lil + 1, view(col, leftonly_ixs), 1, loil)
-        col_idx += 1
-    end
-
-    @assert col_idx == ncol(joiner.dfl) + 1
-
-    for col in eachcol(dfr_noon)
-        cols[col_idx] = _similar_right(col, target_nrow)
-        copyto!(cols[col_idx], view(col, right_ixs))
-        copyto!(cols[col_idx], lil + loil + 1, view(col, rightonly_ixs), 1, roil)
-        col_idx += 1
+    @static if VERSION >= v"1.4"
+        if Threads.nthreads() > 1 && target_nrow >= 1_000_000 && length(cols) > col_idx
+            @sync begin
+                for col in eachcol(dfl_noon)
+                    cols_i = left_idxs[col_idx]
+                    Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
+                                                         col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                    col_idx += 1
+                end
+                @assert col_idx == ncol(joiner.dfl) + 1
+                for col in eachcol(dfr_noon)
+                    cols_i = col_idx
+                    Threads.@spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
+                                                         right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                    col_idx += 1
+                end
+            end
+        else
+            for col in eachcol(dfl_noon)
+                _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
+                                      col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                col_idx += 1
+            end
+            @assert col_idx == ncol(joiner.dfl) + 1
+            for col in eachcol(dfr_noon)
+                _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
+                                      right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                col_idx += 1
+            end
+        end
+    else
+        for col in eachcol(dfl_noon)
+            _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
+                                  col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+            col_idx += 1
+        end
+        @assert col_idx == ncol(joiner.dfl) + 1
+        for col in eachcol(dfr_noon)
+            _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
+                                  right_ixs, lil + loil + 1, rightonly_ixs, roil)
+            col_idx += 1
+        end
     end
 
     @assert col_idx == length(cols) + 1
@@ -231,6 +271,21 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
     return res, src_indicator
+end
+
+function _noon_compose_helper!(cols::Vector{AbstractVector}, # target container to populate
+                               similar_col::Function, # function to use to materialize new column
+                               cols_i::Integer, # index in cols to populate
+                               col::AbstractVector, # source column
+                               target_nrow::Integer, # target number of rows in new column
+                               side_ixs::AbstractVector, # indices in col that were matched
+                               offset::Integer, # offset to put non matched indices
+                               sideonly_ixs::AbstractVector, # indices in col that were not
+                               tocopy::Integer) # number on non-matched rows to copy
+    @assert tocopy == length(sideonly_ixs)
+    cols[cols_i] = similar_col(col, target_nrow)
+    copyto!(cols[cols_i], view(col, side_ixs))
+    copyto!(cols[cols_i], offset, view(col, sideonly_ixs), 1, tocopy)
 end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;

@@ -1496,4 +1496,65 @@ end
     @test m1[!, :a] == m2[!, :a]
 end
 
+@testset "threaded correctness" begin
+    df1 = DataFrame(id=[1:10^6; 10^7+1:10^7+2])
+    df1.left_row = axes(df1, 1)
+    df2 = DataFrame(id=[1:10^6; 10^8+1:10^8+4])
+    df2.right_row = axes(df2, 1)
+
+    df_inner = DataFrame(id=1:10^6, left_row=1:10^6, right_row=1:10^6)
+    df_left = DataFrame(id=[1:10^6; 10^7+1:10^7+2], left_row=1:10^6+2,
+                        right_row=[1:10^6; missing; missing])
+    df_right = DataFrame(id=[1:10^6; 10^8+1:10^8+4],
+                         left_row=[1:10^6; fill(missing, 4)],
+                         right_row=1:10^6+4)
+    df_outer = DataFrame(id=[1:10^6; 10^7+1:10^7+2; 10^8+1:10^8+4],
+                         left_row=[1:10^6+2; fill(missing, 4)],
+                         right_row=[1:10^6; missing; missing; 10^6+1:10^6+4])
+    df_semi = DataFrame(id=1:10^6, left_row=1:10^6)
+    df_anti = DataFrame(id=10^7+1:10^7+2, left_row=10^6+1:10^6+2)
+
+    @test innerjoin(df1, df2, on=:id) ≅ df_inner
+    @test leftjoin(df1, df2, on=:id) ≅ df_left
+    @test rightjoin(df1, df2, on=:id) ≅ df_right
+    @test outerjoin(df1, df2, on=:id) ≅ df_outer
+    @test semijoin(df1, df2, on=:id) ≅ df_semi
+    @test antijoin(df1, df2, on=:id) ≅ df_anti
+
+    Random.seed!(1234)
+    for i in 1:4
+        df1 = df1[shuffle(axes(df1, 1)), :]
+        df2 = df2[shuffle(axes(df2, 1)), :]
+        @test sort!(innerjoin(df1, df2, on=:id)) ≅ df_inner
+        @test sort!(leftjoin(df1, df2, on=:id)) ≅ df_left
+        @test sort!(rightjoin(df1, df2, on=:id)) ≅ df_right
+        @test sort!(outerjoin(df1, df2, on=:id)) ≅ df_outer
+        @test sort!(semijoin(df1, df2, on=:id)) ≅ df_semi
+        @test sort!(antijoin(df1, df2, on=:id)) ≅ df_anti
+    end
+
+    # test correctness of column order
+    df1 = DataFrame(a="a", id2=-[1:10^6; 10^7+1:10^7+2], b="b",
+                    id1=[1:10^6; 10^7+1:10^7+2], c="c", d="d")
+    df2 = DataFrame(e="e", id1=[1:10^6; 10^8+1:10^8+4], f="f", g="g",
+                    id2=-[1:10^6; 10^8+1:10^8+4], h="h")
+    @test innerjoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test leftjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test rightjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test outerjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6,
+                    c="c", d="d", e="e", f="f", g="g", h="h")
+    @test semijoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a="a", id2=-(1:10^6), b="b", id1=1:10^6, c="c", d="d")
+    @test antijoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a="a", id2=-(10^7+1:10^7+2), b="b", id1=(10^7+1:10^7+2),
+                    c="c", d="d")
+end
+
 end # module
