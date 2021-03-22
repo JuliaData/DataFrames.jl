@@ -187,6 +187,11 @@ end
     @test Tables.columntable(df3) == nt
     @test Tables.columntable(df3) !== nt
 
+    df4 = DataFrame(Tables.CopiedColumns(nt))
+    @test df4.a === nt.a
+    df4 = DataFrame(Tables.CopiedColumns(nt), copycols=true)
+    @test df4.a !== nt.a
+
     v = [(a=1, b=2), (a=3, b=4)]
     df = DataFrame(v)
     @test size(df) == (2, 2)

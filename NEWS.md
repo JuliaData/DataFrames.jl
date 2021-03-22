@@ -22,6 +22,10 @@
   ([#2496](https://github.com/JuliaData/DataFrames.jl/pull/2496))
 * `names` now allows passing a predicate as a column selector
   ([#2417](https://github.com/JuliaData/DataFrames.jl/pull/2417))
+* `vcat` now allows a `source` keyword argument that specifies the
+  additional column to be added in the last position in the resulting data frame
+  that will identify the source data frame.
+  ([#2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
 * since Julia 1.7 using broadcasting assignment on a `DataFrames` column
   selected as a property is allowed when it does not exist in a data frame
   and it allocates a fresh column
@@ -29,6 +33,9 @@
 
 ## Deprecated
 
+* in `leftjoin`, `rightjoin`, and `outerjoin` the `indicator` keyword argument
+  is deprecated in favor of `source` keyword argument; `indicator` will be removed
+  in 2.0 release ([2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
 * Using broadcasting assignment on a `SubDataFrames` column selected as a property
   is deprecated; it will be disallowed in the future.
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
@@ -36,8 +43,7 @@
   selected as a property being an in-place operation is deprecated. It will
   allocate a fresh column in the future
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
-
-* all old deprecations now throw an error
+* all deprecations present in 0.22 release now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 
 ## Dependency changes
@@ -51,7 +57,14 @@
   values in `on` columns. These aspects of input data frames might affect the
   order of rows produced in the output
   ([#2612](https://github.com/JuliaData/DataFrames.jl/pull/2612),
-  [#2622][https://github.com/JuliaData/DataFrames.jl/pull/2622])
+   [#2622](https://github.com/JuliaData/DataFrames.jl/pull/2622))
+* `DataFrame` constructor, `copy`, `getindex`, `select`, `select!`, `transform`,
+  `transform!`, `combine`, `sort`, and join functions now use multiple threads
+  in selected operations
+  ([#2647](https://github.com/JuliaData/DataFrames.jl/pull/2647),
+   [#2588](https://github.com/JuliaData/DataFrames.jl/pull/2588),
+   [#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574),
+   [#2664](https://github.com/JuliaData/DataFrames.jl/pull/2664))
 
 # DataFrames v0.22 Release Notes
 

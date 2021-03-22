@@ -217,6 +217,7 @@ end
     @test findall(nonunique(df, Not([false, true, false]))) == collect(7:12)
     @test findall(nonunique(df, [1, 3])) == collect(7:12)
     @test findall(nonunique(df, 1)) == collect(3:12)
+    @test findall(nonunique(df, :a => x -> 1)) == 2:12
 
     @test unique(df) == df1
     @test unique(df, :) == df1
@@ -234,6 +235,7 @@ end
     @test unique(df, Not([false, true, false])) == df1
     @test unique(df, :a) == df1[1:2, :]
     @test unique(df, "a") == df1[1:2, :]
+    @test unique(df, :a => x -> 1) == df[1:1, :]
     @test_throws ArgumentError unique(DataFrame())
     @test_throws ArgumentError nonunique(DataFrame())
 

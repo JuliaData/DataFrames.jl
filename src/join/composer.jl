@@ -96,8 +96,21 @@ function compose_inner_table(joiner::DataFrameJoiner,
                              left_rename::Union{Function, AbstractString, Symbol},
                              right_rename::Union{Function, AbstractString, Symbol})
     left_ixs, right_ixs = find_inner_rows(joiner)
-    dfl = joiner.dfl[left_ixs, :]
-    dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+
+    @static if VERSION >= v"1.4"
+        if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
+            dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
+            dfr_noon_task = Threads.@spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
+            dfl = fetch(dfl_task)
+            dfr_noon = fetch(dfr_noon_task)
+        else
+            dfl = joiner.dfl[left_ixs, :]
+            dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+        end
+    else
+        dfl = joiner.dfl[left_ixs, :]
+        dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+    end
 
     ncleft = ncol(dfl)
     cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
@@ -207,21 +220,48 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
 
     @assert col_idx == ncol(joiner.dfl_on) + 1
 
-    for col in eachcol(dfl_noon)
-        cols_i = left_idxs[col_idx]
-        cols[cols_i] = _similar_left(col, target_nrow)
-        copyto!(cols[cols_i], view(col, left_ixs))
-        copyto!(cols[cols_i], lil + 1, view(col, leftonly_ixs), 1, loil)
-        col_idx += 1
-    end
-
-    @assert col_idx == ncol(joiner.dfl) + 1
-
-    for col in eachcol(dfr_noon)
-        cols[col_idx] = _similar_right(col, target_nrow)
-        copyto!(cols[col_idx], view(col, right_ixs))
-        copyto!(cols[col_idx], lil + loil + 1, view(col, rightonly_ixs), 1, roil)
-        col_idx += 1
+    @static if VERSION >= v"1.4"
+        if Threads.nthreads() > 1 && target_nrow >= 1_000_000 && length(cols) > col_idx
+            @sync begin
+                for col in eachcol(dfl_noon)
+                    cols_i = left_idxs[col_idx]
+                    Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
+                                                         col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                    col_idx += 1
+                end
+                @assert col_idx == ncol(joiner.dfl) + 1
+                for col in eachcol(dfr_noon)
+                    cols_i = col_idx
+                    Threads.@spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
+                                                         right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                    col_idx += 1
+                end
+            end
+        else
+            for col in eachcol(dfl_noon)
+                _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
+                                      col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                col_idx += 1
+            end
+            @assert col_idx == ncol(joiner.dfl) + 1
+            for col in eachcol(dfr_noon)
+                _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
+                                      right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                col_idx += 1
+            end
+        end
+    else
+        for col in eachcol(dfl_noon)
+            _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
+                                  col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+            col_idx += 1
+        end
+        @assert col_idx == ncol(joiner.dfl) + 1
+        for col in eachcol(dfr_noon)
+            _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
+                                  right_ixs, lil + loil + 1, rightonly_ixs, roil)
+            col_idx += 1
+        end
     end
 
     @assert col_idx == length(cols) + 1
@@ -231,6 +271,21 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
     return res, src_indicator
+end
+
+function _noon_compose_helper!(cols::Vector{AbstractVector}, # target container to populate
+                               similar_col::Function, # function to use to materialize new column
+                               cols_i::Integer, # index in cols to populate
+                               col::AbstractVector, # source column
+                               target_nrow::Integer, # target number of rows in new column
+                               side_ixs::AbstractVector, # indices in col that were matched
+                               offset::Integer, # offset to put non matched indices
+                               sideonly_ixs::AbstractVector, # indices in col that were not
+                               tocopy::Integer) # number on non-matched rows to copy
+    @assert tocopy == length(sideonly_ixs)
+    cols[cols_i] = similar_col(col, target_nrow)
+    copyto!(cols[cols_i], view(col, side_ixs))
+    copyto!(cols[cols_i], offset, view(col, sideonly_ixs), 1, tocopy)
 end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
@@ -519,7 +574,7 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
               matchmissing=matchmissing)
 
 """
-    leftjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+    leftjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
              renamecols=(identity => identity), matchmissing=:error)
 
 Perform a left join of twodata frame objects and return a `DataFrame` containing
@@ -544,7 +599,7 @@ change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -636,22 +691,35 @@ julia> leftjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =>
 ```
 """
 function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[],
-         makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
+         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+         source::Union{Nothing, Symbol, AbstractString}=nothing,
+         indicator::Union{Nothing, Symbol, AbstractString}=nothing,
          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
     end
+    if source === nothing
+        if indicator !== nothing
+            source = indicator
+            Base.depwarn("`indicator` keyword argument is deprecated and " *
+                         "will be removed in 2.0 release of DataFrames.jl. " *
+                         "Use `source` keyword argument instead.", :leftjoin)
+        end
+    elseif indicator !== nothing
+        throw(ArgumentError("`indicator` keyword argument is deprecated. " *
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
+    end
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
-                 indicator=indicator, validate=validate,
+                 indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
                  matchmissing=matchmissing)
 end
 
 """
-    rightjoin(df1, df2; on, makeunique=false, indicator = nothing,
+    rightjoin(df1, df2; on, makeunique=false, source=nothing,
               validate=(false, false), renamecols=(identity => identity),
               matchmissing=:error)
 
@@ -677,7 +745,7 @@ change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -770,21 +838,34 @@ julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =
 """
 function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          indicator::Union{Nothing, Symbol, AbstractString} = nothing,
+          source::Union{Nothing, Symbol, AbstractString}=nothing,
+          indicator::Union{Nothing, Symbol, AbstractString}=nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
     end
+    if source === nothing
+        if indicator !== nothing
+            source = indicator
+            Base.depwarn("`indicator` keyword argument is deprecated and " *
+                         "will be removed in 2.0 release of DataFrames.jl. " *
+                         "Use `source` keyword argument instead.", :rightjoin)
+        end
+    elseif indicator !== nothing
+        throw(ArgumentError("`indicator` keyword argument is deprecated. " *
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
+    end
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
-                 indicator=indicator, validate=validate,
+                 indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
                  matchmissing=matchmissing)
 end
 
 """
-    outerjoin(df1, df2; on, makeunique=false, indicator=nothing, validate=(false, false),
+    outerjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
               renamecols=(identity => identity), matchmissing=:error)
     outerjoin(df1, df2, dfs...; on, makeunique = false,
               validate = (false, false), matchmissing=:error)
@@ -814,7 +895,7 @@ This behavior may change in future releases.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
-- `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
+- `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
@@ -913,16 +994,29 @@ julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =
 ```
 """
 function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false, indicator::Union{Nothing, Symbol, AbstractString} = nothing,
+          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+          source::Union{Nothing, Symbol, AbstractString}=nothing,
+          indicator::Union{Nothing, Symbol, AbstractString}=nothing,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
     end
+    if source === nothing
+        if indicator !== nothing
+            source = indicator
+            Base.depwarn("`indicator` keyword argument is deprecated and " *
+                         "will be removed in 2.0 release of DataFrames.jl. " *
+                         "Use `source` keyword argument instead.", :outerjoin)
+        end
+    elseif indicator !== nothing
+        throw(ArgumentError("`indicator` keyword argument is deprecated. " *
+                            "It is not allowed to pass both `indicator` and `source` " *
+                            "keyword arguments at the same time."))
+    end
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
-                 indicator=indicator, validate=validate,
+                 indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
                  matchmissing=matchmissing)
 end
