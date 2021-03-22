@@ -1458,8 +1458,13 @@ end
     @test v1 == [100.0, 100.0, 100.0]
 
     df = copy(refdf)
-    @test_throws ArgumentError df.newcol .= 'd'
-    @test df == refdf
+    if isdefined(Base, :dotgetproperty)
+        df.newcol .= 'd'
+        @test df == [refdf DataFrame(newcol=fill('d', 3))]
+    else
+        @test_throws ArgumentError df.newcol .= 'd'
+        @test df == refdf
+    end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
