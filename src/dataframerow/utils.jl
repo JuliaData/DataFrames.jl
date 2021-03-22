@@ -450,6 +450,16 @@ function group_rows(df::AbstractDataFrame)
     return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
 end
 
+# hash of DataFrame rows based on its values
+# so that duplicate rows would have the same hash
+# table columns are passed as a tuple of vectors to ensure type specialization
+rowhash(cols::Tuple{AbstractVector}, r::Int, h::UInt = zero(UInt))::UInt =
+    hash(cols[1][r], h)
+function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UInt))::UInt
+    h = hash(cols[1][r], h)
+    rowhash(Base.tail(cols), r, h)
+end
+
 # Find index of a row in gd that matches given row by content, 0 if not found
 function findrow(gd::RowGroupDict,
                  df::AbstractDataFrame,

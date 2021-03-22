@@ -455,28 +455,23 @@ Base.merge(a::DataFrameRow, b::DataFrameRow) = merge(NamedTuple(a), NamedTuple(b
 Base.merge(a::DataFrameRow, b::Base.Iterators.Pairs) = merge(NamedTuple(a), b)
 Base.merge(a::DataFrameRow, itr) = merge(NamedTuple(a), itr)
 
-# hash of DataFrame rows based on its values
-# so that duplicate rows would have the same hash
-# table columns are passed as a tuple of vectors to ensure type specialization
-rowhash(cols::Tuple{AbstractVector}, r::Int, h::UInt = zero(UInt))::UInt =
-    hash(cols[1][r], h)
-function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UInt))::UInt
-    h = hash(cols[1][r], h)
-    rowhash(Base.tail(cols), r, h)
-end
-
-Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(col -> parent(r)[!, parentcols(index(r), col)], length(r)), row(r), h)
+Base.hash(r::DataFrameRow, h::UInt) = _nt_like_hash(r, h)
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
         parentcols(index(r1)) == parentcols(index(r2)) || return false
-        row(r1) == row(r2) && return true
     else
         _names(r1) == _names(r2) || return false
     end
-    all(((a, b),) -> a == b, zip(r1, r2))
+    return all(((a, b),) -> a == b, zip(r1, r2))
 end
+
+function Base.:(==)(r1::NamedTuple, r2::DataFrameRow)
+    propertynames(r1) == _names(r2) || return false
+    return all(((a, b),) -> a == b, zip(r1, r2))
+end
+
+Base.:(==)(r1::DataFrameRow, r2::NamedTuple) = r2 == r1
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
@@ -488,6 +483,13 @@ function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
     all(((a, b),) -> isequal(a, b), zip(r1, r2))
 end
 
+function Base.isequal(r1::NamedTuple, r2::DataFrameRow)
+    propertynames(r1) == _names(r2) || return false
+    return all(((a, b),) -> isequal(a, b), zip(r1, r2))
+end
+
+Base.isequal(r1::DataFrameRow, r2::NamedTuple) = isequal(r2, r1)
+
 # lexicographic ordering on DataFrame rows, missing > !missing
 function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     length(r1) == length(r2) ||
@@ -495,10 +497,44 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
                             "of columns (got $(length(r1)) and $(length(r2)))"))
     if _names(r1) != _names(r2)
         mismatch = findfirst(i -> _names(r1)[i] != _names(r2)[i], 1:length(r1))
-        throw(ArgumentError("compared DataFrameRows must have the same colum " *
+        throw(ArgumentError("compared DataFrameRows must have the same column " *
                             "names but they differ in column number $mismatch " *
-                            "where the names are :$(names(r1)[mismatch]) and " *
+                            "where the names are :$(_names(r1)[mismatch]) and " *
                             ":$(_names(r2)[mismatch]) respectively"))
+    end
+    for (a, b) in zip(r1, r2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
+function Base.isless(r1::NamedTuple, r2::DataFrameRow)
+    length(r1) == length(r2) ||
+        throw(ArgumentError("compared objects must have the same number " *
+                            "of columns (got $(length(r1)) and $(length(r2)))"))
+    if propertynames(r1) != _names(r2)
+        mismatch = findfirst(i -> propertynames(r1)[i] != _names(r2)[i], 1:length(r1))
+        throw(ArgumentError("compared objects must have the same property names " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(propertynames(r1)[mismatch]) and " *
+                            ":$(_names(r2)[mismatch]) respectively"))
+    end
+    for (a, b) in zip(r1, r2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
+function Base.isless(r1::DataFrameRow, r2::NamedTuple)
+    length(r1) == length(r2) ||
+        throw(ArgumentError("compared objects must have the same number " *
+                            "of columns (got $(length(r1)) and $(length(r2)))"))
+    if propertynames(r1) != _names(r2)
+        mismatch = findfirst(i -> names(r1)[i] != propertynames(r2)[i], 1:length(r1))
+        throw(ArgumentError("compared objects must have the same property names " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(_names(r1)[mismatch]) and " *
+                            ":$(propertynames(r2)[mismatch]) respectively"))
     end
     for (a, b) in zip(r1, r2)
         isequal(a, b) || return isless(a, b)

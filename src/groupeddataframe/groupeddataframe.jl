@@ -521,6 +521,131 @@ end
 
 Base.getproperty(key::GroupKey, p::AbstractString) = getproperty(key, Symbol(p))
 
+Base.hash(key::GroupKey, h::UInt) = _nt_like_hash(key, h)
+
+function Base.:(==)(k1::GroupKey, k2::GroupKey)
+    parent(k1).cols == parent(k2).cols || return false
+    return all(((a, b),) -> a == b, zip(k1, k2))
+end
+
+function Base.:(==)(k1::GroupKey, k2::DataFrameRow)
+    parent(k1).cols == _names(k2) || return false
+    return all(((a, b),) -> a == b, zip(k1, k2))
+end
+
+Base.:(==)(k1::DataFrameRow, k2::GroupKey) = ==(k2, k1)
+
+function Base.:(==)(k1::GroupKey, k2::NamedTuple)
+    parent(k1).cols == _propertynames(k2) || return false
+    return all(((a, b),) -> a == b, zip(k1, k2))
+end
+
+Base.:(==)(k1::NamedTuple, k2::GroupKey) = ==(k2, k1)
+
+function Base.isequal(k1::GroupKey, k2::GroupKey)
+    parent(k1).cols == parent(k2).cols || return false
+    return all(((a, b),) -> isequal(a, b), zip(k1, k2))
+end
+
+function Base.isequal(k1::GroupKey, k2::DataFrameRow)
+    parent(k1).cols == _names(k2) || return false
+    return all(((a, b),) -> isequal(a, b), zip(k1, k2))
+end
+
+Base.isequal(k1::DataFrameRow, k2::GroupKey) = ==(k2, k1)
+
+function Base.isequal(k1::GroupKey, k2::NamedTuple)
+    parent(k1).cols == _propertynames(k2) || return false
+    return all(((a, b),) -> isequal(a, b), zip(k1, k2))
+end
+
+Base.isequal(k1::NamedTuple, k2::GroupKey) = ==(k2, k1)
+
+function Base.isless(k1::GroupKey, k2::GroupKey)
+    length(k1) == length(k2) ||
+        throw(ArgumentError("compared GroupKeys must have the same number " *
+                            "of columns (got $(length(k1)) and $(length(k2)))"))
+    if parent(k1).cols != parent(k2).cols
+        mismatch = findfirst(i -> parent(k1).cols[i] != parent(k2).cols[i], 1:length(k1))
+        throw(ArgumentError("compared DataFrameRows must have the same column " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(parent(k1).cols[mismatch]) and " *
+                            ":$(parent(k2).cols[mismatch]) respectively"))
+    end
+    for (a, b) in zip(k1, k2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
+function Base.isless(k1::GroupKey, k2::DataFrameRow)
+    length(k1) == length(k2) ||
+        throw(ArgumentError("compared objects must have the same number " *
+                            "of columns (got $(length(k1)) and $(length(k2)))"))
+    if parent(k1).cols != _names(k2)
+        mismatch = findfirst(i -> parent(k1).cols[i] != _names(k2)[i], 1:length(k1))
+        throw(ArgumentError("compared objects must have the same column " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(parent(k1).cols[mismatch]) and " *
+                            ":$(_names(k2)[mismatch]) respectively"))
+    end
+    for (a, b) in zip(k1, k2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
+function Base.isless(k1::DataFrameRow, k2::GroupKey)
+    length(k1) == length(k2) ||
+        throw(ArgumentError("compared objects must have the same number " *
+                            "of columns (got $(length(k1)) and $(length(k2)))"))
+    if _names(k1) != parent(k2).cols
+        mismatch = findfirst(i -> _names(k1)[i] != parent(k2).cols[i], 1:length(k1))
+        throw(ArgumentError("compared objects must have the same column " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(_names(k1)[mismatch]) and " *
+                            ":$(parent(k2).cols[mismatch]) respectively"))
+    end
+    for (a, b) in zip(k1, k2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
+function Base.isless(k1::GroupKey, k2::NamedTuple)
+    length(k1) == length(k2) ||
+        throw(ArgumentError("compared objects must have the same number " *
+                            "of columns (got $(length(k1)) and $(length(k2)))"))
+    if parent(k1).cols != propertynames(k2)
+        mismatch = findfirst(i -> parent(k1).cols[i] != propertynames(k2)[i], 1:length(k1))
+        throw(ArgumentError("compared objects must have the same column " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(parent(k1).cols[mismatch]) and " *
+                            ":$(propertynames(k2)[mismatch]) respectively"))
+    end
+    for (a, b) in zip(k1, k2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
+function Base.isless(k1::NamedTuple, k2::GroupKey)
+    length(k1) == length(k2) ||
+        throw(ArgumentError("compared objects must have the same number " *
+                            "of columns (got $(length(k1)) and $(length(k2)))"))
+    if propertynames(k1) != parent(k2).cols
+        mismatch = findfirst(i -> propertynames(k1)[i] != parent(k2).cols[i], 1:length(k1))
+        throw(ArgumentError("compared objects must have the same column " *
+                            "names but they differ in column number $mismatch " *
+                            "where the names are :$(propertynames(k1)[mismatch]) and " *
+                            ":$(parent(k2).cols[mismatch]) respectively"))
+    end
+    for (a, b) in zip(k1, k2)
+        isequal(a, b) || return isless(a, b)
+    end
+    return false
+end
+
 function Base.NamedTuple(key::GroupKey)
     N = NamedTuple{Tuple(parent(key).cols)}
     N(_groupvalues(parent(key), getfield(key, :idx)))
