@@ -1847,16 +1847,11 @@ end
         df = DataFrame(a=1:4)
         df.b .= 1
         df.c .= 4:-1:1
-        # since Julia 1.7 this replaces column
-        # on previous Julia versions conversion of Char to Int is performed
-        df.a .= 'a':'d'
-        @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
-
-        # this behavior is deprecated; change this test to an error when
-        # fully switching to Julia 1.7 support
-        dfv = view(df, 2:3, 2:3)
-        dfv.b .= 0
-        @test df.b == [1, 0, 0, 1]
+        # TODO: enable this in the future when the deprecation period is finished
+        # df.a .= 'a':'d'
+        # @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
+        # dfv = view(df, 2:3, 2:3)
+        # @test_throws ArgumentError dfv.b .= 0
     end
 end
 

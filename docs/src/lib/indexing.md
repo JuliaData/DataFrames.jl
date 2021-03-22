@@ -183,19 +183,24 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
     `DataFrameRow` is considered to be column-oriented.
 
 Additional rules:
-* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
+* in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is
+  broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
 * in the `df[row, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-* in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to `df` is performed in-place;
-  if `rows` is `:` and `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated and added;
+* in the `df[rows, col] .= v` and `df[rows, cols] .= v` syntaxes the assignment to
+  `df` is performed in-place; if `rows` is `:` and `col` is `Symbol` or `AbstractString`
+  and it is missing from `df` then a new column is allocated and added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector;
   if `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
-* `df.col .= v` syntax is allowed up to Julia 1.6 and performs in-place assignment to an existing vector `df.col`. Since Julia 1.7 column gets replaced.
+* `df.col .= v` currently syntax performs in-place assignment to an existing vector `df.col`;
+  this behavior is deprecated and a freshcolumn will be allocated in the future.
+  Starting from Julia 1.7 if `:col` is not present in `df` then a new column will be created in `df`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
-* `sdf.col .= v` syntax is allowed and up to Julia 1.6 performs an in-place assignment to an existing vector `sdf.col`. Since Julia 1.7 this is deprecated.
+* `sdf.col .= v` syntax is performs an in-place assignment to an existing vector `sdf.col` and is deprecated;
+  in the future this operation will not be allowed.
 * `dfr.col .= v` syntax is allowed and performs in-place assignment to a value extracted by `dfr.col`.
 
 Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as `sdf` can be only modified in-place.
