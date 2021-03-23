@@ -32,6 +32,12 @@
 * in `leftjoin`, `rightjoin`, and `outerjoin` the `indicator` keyword argument
   is deprecated in favor of `source` keyword argument; `indicator` will be removed
   in 2.0 release ([2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
+* legacy `convert` methods for `AbstractDataFrame`, `DataFrameRow` and `GroupKey`
+  are now deprecated as they are not required now; the only conversions that are
+  retained are `convert(::Type{NamedTuple}, dfr::DataFrameRow)`,
+  `convert(::Type{NamedTuple}, key::GroupKey)`, and
+  `convert(::Type{DataFrame}, sdf::SubDataFrame)`; the deprecated methods will be
+  removed in 2.0 release
 * all deprecations present in 0.22 release now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
 
