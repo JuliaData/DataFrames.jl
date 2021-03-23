@@ -179,10 +179,9 @@ end
     @test hash(DataFrameRow(df, 1, :)) == hash(DataFrameRow(df, 4, :))
     @test hash(DataFrameRow(df, 2, :)) == hash(DataFrameRow(df, 5, :))
     @test hash(DataFrameRow(df, 2, :)) != hash(DataFrameRow(df, 6, :))
-
-    # check that hashrows() function generates the same hashes as DataFrameRow
-    df_rowhashes, _ = DataFrames.hashrows(Tuple(eachcol(df)), false)
-    @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
+    for i in 1:6, h in UInt(0):UInt(10)
+        @test hash(DataFrameRow(df, i, :), h) == hash(NamedTuple(DataFrameRow(df, i, :)), h)
+    end
 end
 
 @testset "grouping" begin
