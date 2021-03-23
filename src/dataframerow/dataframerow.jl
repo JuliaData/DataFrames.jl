@@ -500,7 +500,7 @@ for (fun1, fun2) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<)))
                                 "of columns (got $(length(r1)) and $(length(r2)))"))
         if propertynames(r1) != _names(r2)
             mismatch = findfirst(i -> propertynames(r1)[i] != _names(r2)[i], 1:length(r1))
-            throw(ArgumentError("compared objects must have the same property names " *
+            throw(ArgumentError("compared objects must have the same property " *
                                 "names but they differ in column number $mismatch " *
                                 "where the names are :$(propertynames(r1)[mismatch]) and " *
                                 ":$(_names(r2)[mismatch]) respectively"))
@@ -517,7 +517,7 @@ for (fun1, fun2) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<)))
                                 "of columns (got $(length(r1)) and $(length(r2)))"))
         if propertynames(r1) != _names(r2)
             mismatch = findfirst(i -> names(r1)[i] != propertynames(r2)[i], 1:length(r1))
-            throw(ArgumentError("compared objects must have the same property names " *
+            throw(ArgumentError("compared objects must have the same property " *
                                 "names but they differ in column number $mismatch " *
                                 "where the names are :$(_names(r1)[mismatch]) and " *
                                 ":$(propertynames(r2)[mismatch]) respectively"))
