@@ -1157,7 +1157,7 @@ The exact behavior of `append!` depends on the `cols` argument:
 * If `cols == :subset` then `append!` behaves like for `:intersect` but if some
   column is missing in `df2` then a `missing` value is pushed to `df`.
 * If `cols == :union` then `append!` adds columns missing in `df` that are present
-  in `row`, for columns present in `df` but missing in `row` a `missing` value
+  in `df2`, for columns present in `df` but missing in `df2` a `missing` value
   is pushed.
 
 If `promote=true` and element type of a column present in `df` does not allow
