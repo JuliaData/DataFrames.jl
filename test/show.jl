@@ -688,4 +688,52 @@ end
 
 end
 
+@testset "Issue #2673 - Vertical line when not showing row numbers" begin
+    df = DataFrame(a=[10,20], b=[30,40], c=[50,60])
+
+    io = IOContext(IOBuffer())
+    show(io, df)
+    str = String(take!(io.io))
+    @test str == """
+        2×3 DataFrame
+         Row │ a      b      c
+             │ Int64  Int64  Int64
+        ─────┼─────────────────────
+           1 │    10     30     50
+           2 │    20     40     60"""
+
+
+    io = IOContext(IOBuffer())
+    show(io, df, show_row_number = false)
+    str = String(take!(io.io))
+    @test str == """
+        2×3 DataFrame
+         a      b      c
+         Int64  Int64  Int64
+        ─────────────────────
+            10     30     50
+            20     40     60"""
+
+    io = IOContext(IOBuffer())
+    show(io, df[2,:])
+    str = String(take!(io.io))
+    @test str == """
+        DataFrameRow
+         Row │ a      b      c
+             │ Int64  Int64  Int64
+        ─────┼─────────────────────
+           2 │    20     40     60"""
+
+
+    io = IOContext(IOBuffer())
+    show(io, df[2,:], show_row_number = false)
+    str = String(take!(io.io))
+    @test str == """
+        DataFrameRow
+         a      b      c
+         Int64  Int64  Int64
+        ─────────────────────
+            20     40     60"""
+end
+
 end # module
