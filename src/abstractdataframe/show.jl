@@ -278,12 +278,12 @@ function _show(io::IO,
     # case, we will add this information using the row name column of
     # PrettyTables.jl. Otherwise, we can just use the row number column.
     if (rowid === nothing) || (ncol(df) == 0)
-        show_row_number::Bool = haskey(kwargs, :show_row_number) ? kwargs[:show_row_number] : true
+        show_row_number::Bool = get(kwargs, :show_row_number, true)
         row_names = nothing
 
         # If the columns with row numbers is not shown, then we should not
         # display a vertical line after the first column.
-        vlines = show_row_number ? [1] : Int[]
+        vlines = fill(1, show_row_number)
     else
         nrow(df) != 1 &&
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -291,7 +291,7 @@ function _show(io::IO,
         # In this case, if the user does not want to show the row number, then
         # we must hide the row name column, which is used to display the
         # `rowid`.
-        if haskey(kwargs, :show_row_number) && !kwargs[:show_row_number]
+        if !get(kwargs, :show_row_number, true)
             row_names = nothing
             vlines = Int[]
         else
