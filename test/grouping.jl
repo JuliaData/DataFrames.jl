@@ -1775,24 +1775,18 @@ end
 
         # (Named)Tuple conversion
         @test Tuple(key) ≅ values(nt)
-        @test convert(Tuple, key) ≅ values(nt)
         @test NamedTuple(key) ≅ nt
-        @test convert(NamedTuple, key) ≅ nt
         @test copy(key) ≅ nt
 
         # other conversions
         @test Vector(key) ≅ collect(nt)
         @test eltype(Vector(key)) === eltype([v for v in key])
-        @test convert(Vector, key) ≅ collect(nt)
         @test Array(key) ≅ collect(nt)
         @test eltype(Array(key)) === eltype([v for v in key])
-        @test convert(Array, key) ≅ collect(nt)
         @test Vector{Any}(key) ≅ collect(nt)
         @test eltype(Vector{Any}(key)) === Any
-        @test convert(Vector{Any}, key) ≅ collect(nt)
         @test Array{Any}(key) ≅ collect(nt)
         @test eltype(Array{Any}(key)) === Any
-        @test convert(Array{Any}, key) ≅ collect(nt)
 
         # Iteration
         @test collect(key) ≅ collect(nt)

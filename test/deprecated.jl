@@ -1,6 +1,7 @@
 module TestDeprecated
 
 using Test, DataFrames
+using DataStructures: OrderedDict, SortedDict
 
 const ≅ = isequal
 
@@ -193,6 +194,34 @@ end
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
     @test_throws DimensionMismatch convert(DataFrame, di)
+end
+
+@testset "deprecated conversion for DataFrameRow and GroupKey" begin
+    df = DataFrame(a=1)
+    dfr = df[1, :]
+    key = keys(groupby(df, :a))[1]
+
+    @test convert(Vector, dfr) == Vector(dfr) == [1]
+    @test convert(Vector{Any}, dfr) == Vector{Any}(dfr) == Any[1]
+    @test convert(Array, dfr) == Vector(dfr) == [1]
+    @test convert(Array{Any}, dfr) == Vector{Any}(dfr) == Any[1]
+    @test convert(Tuple, dfr) == Tuple(dfr) == (1,)
+    @test convert(Vector, key) == Vector(key) == [1]
+    @test convert(Vector{Any}, key) == Vector{Any}(key) == Any[1]
+    @test convert(Array, key) == Vector(key) == [1]
+    @test convert(Array{Any}, key) == Vector{Any}(key) == Any[1]
+    @test convert(Tuple, key) == Tuple(key) == (1,)
+
+    @test convert(Vector, dfr) isa Vector{Int}
+    @test convert(Vector{Any}, dfr) isa Vector{Any}
+    @test convert(Array, dfr) isa Vector{Int}
+    @test convert(Array{Any}, dfr) isa Vector{Any}
+    @test convert(Tuple, dfr) isa Tuple{Int}
+    @test convert(Vector, key) isa Vector{Int}
+    @test convert(Vector{Any}, key) isa Vector{Any}
+    @test convert(Array, key) isa Vector{Int}
+    @test convert(Array{Any}, key) isa Vector{Any}
+    @test convert(Tuple, key) isa Tuple{Int}
 end
 
 end # module
