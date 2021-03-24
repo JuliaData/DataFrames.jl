@@ -525,25 +525,25 @@ Base.hash(key::GroupKey, h::UInt) = _nt_like_hash(key, h)
 
 _getnames(x::GroupKey) = parent(x).cols
 
-for eqfun in (Base.isequal, Base.:(==)),
-    (leftarg, rightarg) in ((GroupKey, GroupKey),
-                            (DataFrameRow, GroupKey),
-                            (GroupKey, DataFrameRow),
-                            (NamedTuple, GroupKey),
-                            (GroupKey, NamedTuple))
-    @eval function $eqfun(k1::$leftarg, k2::$rightarg)
+for eqfun in (:isequal, :(==)),
+    (leftarg, rightarg) in ((:GroupKey, :GroupKey),
+                            (:DataFrameRow, :GroupKey),
+                            (:GroupKey, :DataFrameRow),
+                            (:NamedTuple, :GroupKey),
+                            (:GroupKey, :NamedTuple))
+    @eval function Base.$eqfun(k1::$leftarg, k2::$rightarg)
         _getnames(k1) == _getnames(k2) || return false
         return all(((a, b),) -> $eqfun(k1, k2), zip(k1, k2))
     end
 end
 
-for (eqfun, cmpfun) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<))),
-    (leftarg, rightarg) in ((GroupKey, GroupKey),
-                            (DataFrameRow, GroupKey),
-                            (GroupKey, DataFrameRow),
-                            (NamedTuple, GroupKey),
-                            (GroupKey, NamedTuple))
-    @eval function $cmpfun(k1::$leftarg, k2::$rightarg)
+for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
+    (leftarg, rightarg) in ((:GroupKey, :GroupKey),
+                            (:DataFrameRow, :GroupKey),
+                            (:GroupKey, :DataFrameRow),
+                            (:NamedTuple, :GroupKey),
+                            (:GroupKey, :NamedTuple))
+    @eval function Base.$cmpfun(k1::$leftarg, k2::$rightarg)
         length(k1) == length(k2) ||
             throw(ArgumentError("compared objects must have the same number " *
                                 "of columns (got $(length(k1)) and $(length(k2)))"))

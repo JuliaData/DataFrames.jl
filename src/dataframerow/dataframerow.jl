@@ -460,21 +460,21 @@ Base.hash(r::DataFrameRow, h::UInt) = _nt_like_hash(r, h)
 _getnames(x::DataFrameRow) = _names(x)
 _getnames(x::NamedTuple) = propertynames(x)
 
-for eqfun in (Base.isequal, Base.:(==)),
-    (leftarg, rightarg) in ((DataFrameRow, DataFrameRow),
-                            (DataFrameRow, NamedTuple),
-                            (NamedTuple, DataFrameRow))
-    @eval function $eqfun(r1::$leftarg, r2::$rightarg)
+for eqfun in (:isequal, :(==)),
+    (leftarg, rightarg) in ((:DataFrameRow, :DataFrameRow),
+                            (:DataFrameRow, :NamedTuple),
+                            (:NamedTuple, :DataFrameRow))
+    @eval function Base.$eqfun(r1::$leftarg, r2::$rightarg)
         _getnames(r1) == _getnames(r2) || return false
         return all(((a, b),) -> $eqfun(a, b), zip(r1, r2))
     end
 end
 
-for (eqfun, cmpfun) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<))),
-    (leftarg, rightarg) in ((DataFrameRow, DataFrameRow),
-                            (DataFrameRow, NamedTuple),
-                            (NamedTuple, DataFrameRow))
-    @eval function $cmpfun(r1::$leftarg, r2::$rightarg)
+for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
+    (leftarg, rightarg) in ((:DataFrameRow, :DataFrameRow),
+                            (:DataFrameRow, :NamedTuple),
+                            (:NamedTuple, :DataFrameRow))
+    @eval function Base.$cmpfun(r1::$leftarg, r2::$rightarg)
         length(r1) == length(r2) ||
             throw(ArgumentError("compared objects must have the same number " *
                                 "of columns (got $(length(r1)) and $(length(r2)))"))
