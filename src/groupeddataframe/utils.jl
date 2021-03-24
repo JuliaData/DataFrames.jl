@@ -5,11 +5,13 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector{T},
                        rp::Nothing,
                        firstcol::Bool) where T
-    @inbounds for i in eachindex(h)
-        el = v[i]
-        h[i] = hash(el, h[i])
-        if length(n) > 0
-            n[i] |= ismissing(el)
+    tforeach(eachindex(h), basesize=1_000_000) do i
+        @inbounds begin
+            el = v[i]
+            h[i] = hash(el, h[i])
+            if length(n) > 0
+                n[i] |= ismissing(el)
+            end
         end
     end
     h
@@ -26,20 +28,24 @@ function hashrows_col!(h::Vector{UInt},
     # also when the number of values in the pool is more than half the length
     # of the vector avoid using this path. 50% is roughly based on benchmarks
     if firstcol && Int64(2) * length(rp) < length(v)
+        ra = DataAPI.refarray(v)
+        firp = firstindex(rp)
+        fira = firstindex(ra)
+
         hashes = Vector{UInt}(undef, length(rp))
-        @inbounds for (i, v) in zip(eachindex(hashes), rp)
-            hashes[i] = hash(v)
+        tforeach(eachindex(hashes), basesize=1_000_000) do i
+            @inbounds hashes[i] = hash(rp[i+firp-1])
         end
 
-        fi = firstindex(rp)
         # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
-        @inbounds for (i, ref) in enumerate(DataAPI.refarray(v))
-            h[i] = hashes[ref+1-fi]
+        tforeach(eachindex(h), basesize=1_000_000) do i
+            @inbounds ref = ra[i+fira-1]
+            @inbounds h[i] = hashes[ref+1-firp]
         end
     else
-        @inbounds for (i, x) in enumerate(v)
-            h[i] = hash(x, h[i])
+        tforeach(eachindex(h, v), basesize=1_000_000) do i
+            @inbounds h[i] = hash(v[i], h[i])
         end
     end
     # Doing this step separately is faster, as it would disable SIMD above
