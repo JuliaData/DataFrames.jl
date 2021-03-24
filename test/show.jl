@@ -689,7 +689,7 @@ end
 end
 
 @testset "Issue #2673 - Vertical line when not showing row numbers" begin
-    df = DataFrame(a=[10,20], b=[30,40], c=[50,60])
+    df = DataFrame(a = Int64[10,20], b = Int64[30,40], c = Int64[50,60])
 
     io = IOContext(IOBuffer())
     show(io, df)
