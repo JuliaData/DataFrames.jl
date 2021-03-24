@@ -1854,6 +1854,7 @@ end
         df.c .= 4:-1:1
         # TODO: enable this in the future when the deprecation period is finished
         # df.a .= 'a':'d'
+        # @test df.a isa Vector{Char}
         # @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
         # dfv = view(df, 2:3, 2:3)
         # @test_throws ArgumentError dfv.b .= 0

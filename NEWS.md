@@ -26,9 +26,9 @@
   additional column to be added in the last position in the resulting data frame
   that will identify the source data frame.
   ([#2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
-* since Julia 1.7 using broadcasting assignment on a `DataFrames` column
-  selected as a property is allowed when it does not exist in a data frame
-  and it allocates a fresh column
+* since Julia 1.7 using broadcasting assignment on a `DataFrame` column
+  selected as a property (e.g. `df.col .= 1`) is allowed when column does not
+  exist and it allocates a fresh column
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 
 ## Deprecated
@@ -37,11 +37,11 @@
   is deprecated in favor of `source` keyword argument; `indicator` will be removed
   in 2.0 release ([2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
 * Using broadcasting assignment on a `SubDataFrames` column selected as a property
-  is deprecated; it will be disallowed in the future.
+  (e.g. `sdf.col .= 1`) is deprecated; it will be disallowed in the future.
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 * Broadcasting assignment to an existing column of a `DataFrame`
-  selected as a property being an in-place operation is deprecated. It will
-  allocate a fresh column in the future
+  selected as a property (e.g. `df.col .= 1`) being an in-place
+  operation is deprecated. It will allocate a fresh column in the future
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 * all deprecations present in 0.22 release now throw an error
   ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))

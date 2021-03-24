@@ -137,7 +137,7 @@ if isdefined(Base, :dotgetproperty)
 
     function Base.dotgetproperty(df::SubDataFrame, col::SymbolOrString)
         Base.depwarn("broadcasting getproperty is deprecated for SubDataFrame and " *
-                     "will be disallowed in  the future. Use `df[:, $col] .= ... instead",
+                     "will be disallowed in  the future. Use `df[:, $(repr(col))] .= ... instead",
                      :dotgetproperty)
         return getproperty(df, col)
     end

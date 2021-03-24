@@ -194,8 +194,8 @@ Additional rules:
   if `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
 * the `df[!, cols] .= v` syntax replaces existing columns `cols` in data frame `df` with freshly allocated vectors;
-* `df.col .= v` currently syntax performs in-place assignment to an existing vector `df.col`;
-  this behavior is deprecated and a freshcolumn will be allocated in the future.
+* `df.col .= v` syntax currently performs in-place assignment to an existing vector `df.col`;
+  this behavior is deprecated and a new column will be allocated in the future.
   Starting from Julia 1.7 if `:col` is not present in `df` then a new column will be created in `df`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
