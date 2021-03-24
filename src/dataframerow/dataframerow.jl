@@ -457,73 +457,36 @@ Base.merge(a::DataFrameRow, itr) = merge(NamedTuple(a), itr)
 
 Base.hash(r::DataFrameRow, h::UInt) = _nt_like_hash(r, h)
 
-for fun in (Base.isequal, Base.:(==))
-    function $fun(r1::DataFrameRow, r2::DataFrameRow)
-        if parent(r1) === parent(r2)
-            parentcols(index(r1)) == parentcols(index(r2)) || return false
-        else
-            _names(r1) == _names(r2) || return false
-        end
-        return all(((a, b),) -> $fun(a, b), zip(r1, r2))
-    end
+_getnames(x::DataFrameRow) = _names(x)
+_getnames(x::NamedTuple) = propertynames(x)
 
-    function $fun(r1::NamedTuple, r2::DataFrameRow)
-        propertynames(r1) == _names(r2) || return false
-        return all(((a, b),) -> $fun(a, b), zip(r1, r2))
+for eqfun in (Base.isequal, Base.:(==)),
+    (leftarg, rightarg) in ((DataFrameRow, DataFrameRow),
+                            (DataFrameRow, NamedTuple),
+                            (NamedTuple, DataFrameRow))
+    @eval function $eqfun(r1::$leftarg, r2::$rightarg)
+        _getnames(r1) == _getnames(r2) || return false
+        return all(((a, b),) -> $eqfun(a, b), zip(r1, r2))
     end
-
-    $fun(r1::DataFrameRow, r2::NamedTuple) = $fun(r2, r1)
 end
 
-
-for (fun1, fun2) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<)))
-    function $fun2(r1::DataFrameRow, r2::DataFrameRow)
-        length(r1) == length(r2) ||
-            throw(ArgumentError("compared DataFrameRows must have the same number " *
-                                "of columns (got $(length(r1)) and $(length(r2)))"))
-        if _names(r1) != _names(r2)
-            mismatch = findfirst(i -> _names(r1)[i] != _names(r2)[i], 1:length(r1))
-            throw(ArgumentError("compared DataFrameRows must have the same column " *
-                                "names but they differ in column number $mismatch " *
-                                "where the names are :$(_names(r1)[mismatch]) and " *
-                                ":$(_names(r2)[mismatch]) respectively"))
-        end
-        for (a, b) in zip(r1, r2)
-            $fun1(a, b) || return $fun2(a, b)
-        end
-        return false
-    end
-
-    function $fun2(r1::NamedTuple, r2::DataFrameRow)
+for (eqfun, cmpfun) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<))),
+    (leftarg, rightarg) in ((DataFrameRow, DataFrameRow),
+                            (DataFrameRow, NamedTuple),
+                            (NamedTuple, DataFrameRow))
+    @eval function $cmpfun(r1::$leftarg, r2::$rightarg)
         length(r1) == length(r2) ||
             throw(ArgumentError("compared objects must have the same number " *
                                 "of columns (got $(length(r1)) and $(length(r2)))"))
-        if propertynames(r1) != _names(r2)
-            mismatch = findfirst(i -> propertynames(r1)[i] != _names(r2)[i], 1:length(r1))
+        if _getnames(r1) != _getnames(r2)
+            mismatch = findfirst(i -> _getnames(r1)[i] != _getnames(r2)[i], 1:length(r1))
             throw(ArgumentError("compared objects must have the same property " *
                                 "names but they differ in column number $mismatch " *
-                                "where the names are :$(propertynames(r1)[mismatch]) and " *
-                                ":$(_names(r2)[mismatch]) respectively"))
+                                "where the names are :$(_getnames(r1)[mismatch]) and " *
+                                ":$(_getnames(r2)[mismatch]) respectively"))
         end
         for (a, b) in zip(r1, r2)
-            $fun1(a, b) || return $fun2(a, b)
-        end
-        return false
-    end
-
-    function $fun2(r1::DataFrameRow, r2::NamedTuple)
-        length(r1) == length(r2) ||
-            throw(ArgumentError("compared objects must have the same number " *
-                                "of columns (got $(length(r1)) and $(length(r2)))"))
-        if propertynames(r1) != _names(r2)
-            mismatch = findfirst(i -> names(r1)[i] != propertynames(r2)[i], 1:length(r1))
-            throw(ArgumentError("compared objects must have the same property " *
-                                "names but they differ in column number $mismatch " *
-                                "where the names are :$(_names(r1)[mismatch]) and " *
-                                ":$(propertynames(r2)[mismatch]) respectively"))
-        end
-        for (a, b) in zip(r1, r2)
-            $fun1(a, b) || return $fun2(a, b)
+            $eqfun(a, b) || return $cmpfun(a, b)
         end
         return false
     end

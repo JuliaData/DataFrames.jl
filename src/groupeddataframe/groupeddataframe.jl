@@ -523,110 +523,39 @@ Base.getproperty(key::GroupKey, p::AbstractString) = getproperty(key, Symbol(p))
 
 Base.hash(key::GroupKey, h::UInt) = _nt_like_hash(key, h)
 
-for fun in (Base.isequal, Base.:(==))
-    function $fun(k1::GroupKey, k2::GroupKey)
-        parent(k1).cols == parent(k2).cols || return false
-        return all(((a, b),) -> $fun(k1, k2), zip(k1, k2))
+_getnames(x::GroupKey) = parent(x).cols
+
+for eqfun in (Base.isequal, Base.:(==)),
+    (leftarg, rightarg) in ((GroupKey, GroupKey),
+                            (DataFrameRow, GroupKey),
+                            (GroupKey, DataFrameRow),
+                            (NamedTuple, GroupKey),
+                            (GroupKey, NamedTuple))
+    @eval function $eqfun(k1::$leftarg, k2::$rightarg)
+        _getnames(k1) == _getnames(k2) || return false
+        return all(((a, b),) -> $eqfun(k1, k2), zip(k1, k2))
     end
-
-    function $fun(k1::GroupKey, k2::DataFrameRow)
-        parent(k1).cols == _names(k2) || return false
-        return all(((a, b),) -> $fun(k1, k2), zip(k1, k2))
-    end
-
-    $fun(k1::DataFrameRow, k2::GroupKey) = $fun(k2, k1)
-
-    function $fun(k1::GroupKey, k2::NamedTuple)
-        parent(k1).cols == _propertynames(k2) || return false
-        return all(((a, b),) -> $fun(k1, k2), zip(k1, k2))
-    end
-
-    $fun(k1::NamedTuple, k2::GroupKey) = $fun(k2, k1)
 end
 
-for (fun1, fun2) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<)))
-
-    function $fun2(k1::GroupKey, k2::GroupKey)
-        length(k1) == length(k2) ||
-            throw(ArgumentError("compared GroupKeys must have the same number " *
-                                "of columns (got $(length(k1)) and $(length(k2)))"))
-        if parent(k1).cols != parent(k2).cols
-            mismatch = findfirst(i -> parent(k1).cols[i] != parent(k2).cols[i], 1:length(k1))
-            throw(ArgumentError("compared DataFrameRows must have the same column " *
-                                "names but they differ in column number $mismatch " *
-                                "where the names are :$(parent(k1).cols[mismatch]) and " *
-                                ":$(parent(k2).cols[mismatch]) respectively"))
-        end
-        for (a, b) in zip(k1, k2)
-            $fun1(a, b) || return $fun2(a, b)
-        end
-        return false
-    end
-
-    function $fun2(k1::GroupKey, k2::DataFrameRow)
+for (eqfun, cmpfun) in ((Base.isequal, Base.isless), (Base.:(==), Base.:(<))),
+    (leftarg, rightarg) in ((GroupKey, GroupKey),
+                            (DataFrameRow, GroupKey),
+                            (GroupKey, DataFrameRow),
+                            (NamedTuple, GroupKey),
+                            (GroupKey, NamedTuple))
+    @eval function $cmpfun(k1::$leftarg, k2::$rightarg)
         length(k1) == length(k2) ||
             throw(ArgumentError("compared objects must have the same number " *
                                 "of columns (got $(length(k1)) and $(length(k2)))"))
-        if parent(k1).cols != _names(k2)
+        if _getnames(k1) != _getnames(k2)
             mismatch = findfirst(i -> parent(k1).cols[i] != _names(k2)[i], 1:length(k1))
             throw(ArgumentError("compared objects must have the same column " *
                                 "names but they differ in column number $mismatch " *
-                                "where the names are :$(parent(k1).cols[mismatch]) and " *
-                                ":$(_names(k2)[mismatch]) respectively"))
+                                "where the names are :$(_getnames(k1)[mismatch]) and " *
+                                ":$(_getnames(k2)[mismatch]) respectively"))
         end
         for (a, b) in zip(k1, k2)
-            $fun1(a, b) || return $fun2(a, b)
-        end
-        return false
-    end
-
-    function $fun2(k1::DataFrameRow, k2::GroupKey)
-        length(k1) == length(k2) ||
-            throw(ArgumentError("compared objects must have the same number " *
-                                "of columns (got $(length(k1)) and $(length(k2)))"))
-        if _names(k1) != parent(k2).cols
-            mismatch = findfirst(i -> _names(k1)[i] != parent(k2).cols[i], 1:length(k1))
-            throw(ArgumentError("compared objects must have the same column " *
-                                "names but they differ in column number $mismatch " *
-                                "where the names are :$(_names(k1)[mismatch]) and " *
-                                ":$(parent(k2).cols[mismatch]) respectively"))
-        end
-        for (a, b) in zip(k1, k2)
-            $fun1(a, b) || return $fun2(a, b)
-        end
-        return false
-    end
-
-    function $fun2(k1::GroupKey, k2::NamedTuple)
-        length(k1) == length(k2) ||
-            throw(ArgumentError("compared objects must have the same number " *
-                                "of columns (got $(length(k1)) and $(length(k2)))"))
-        if parent(k1).cols != propertynames(k2)
-            mismatch = findfirst(i -> parent(k1).cols[i] != propertynames(k2)[i], 1:length(k1))
-            throw(ArgumentError("compared objects must have the same column " *
-                                "names but they differ in column number $mismatch " *
-                                "where the names are :$(parent(k1).cols[mismatch]) and " *
-                                ":$(propertynames(k2)[mismatch]) respectively"))
-        end
-        for (a, b) in zip(k1, k2)
-            $fun1(a, b) || return $fun2(a, b)
-        end
-        return false
-    end
-
-    function $fun2(k1::NamedTuple, k2::GroupKey)
-        length(k1) == length(k2) ||
-            throw(ArgumentError("compared objects must have the same number " *
-                                "of columns (got $(length(k1)) and $(length(k2)))"))
-        if propertynames(k1) != parent(k2).cols
-            mismatch = findfirst(i -> propertynames(k1)[i] != parent(k2).cols[i], 1:length(k1))
-            throw(ArgumentError("compared objects must have the same column " *
-                                "names but they differ in column number $mismatch " *
-                                "where the names are :$(propertynames(k1)[mismatch]) and " *
-                                ":$(parent(k2).cols[mismatch]) respectively"))
-        end
-        for (a, b) in zip(k1, k2)
-            $fun1(a, b) || return $fun2(a, b)
+            $eqfun(a, b) || return $cmpfun(a, b)
         end
         return false
     end
