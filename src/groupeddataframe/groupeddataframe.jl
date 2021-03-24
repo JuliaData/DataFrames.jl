@@ -982,6 +982,6 @@ end
 function Base.map(f, gdf::GroupedDataFrame)
     Base.depwarn("Use of the map function on GroupedDataFrame is deprecated. " *
                  "The return value of this function might change in the future " *
-                 "in a breaking way.", :map)
+                 "in a breaking way. Use `[f(sdf) for sdf in gdf]` instead.", :map)
     return collect(Base.Generator(f, gdf))
 end
