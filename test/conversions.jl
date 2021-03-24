@@ -4,7 +4,7 @@ using Test, DataFrames
 using DataStructures: OrderedDict, SortedDict
 const ≅ = isequal
 
-@testset "legacy related construction tests" begin
+@testset "Constructors to Base types" begin
     df = DataFrame()
     df[!, :A] = 1:5
     df[!, :B] = 1.0:5.0
