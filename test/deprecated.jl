@@ -241,4 +241,17 @@ end
     @test convert(Tuple, key) isa Tuple{Int}
 end
 
+@testset "DataFrameRow convert" begin
+    df = DataFrame(a=[1, missing, missing], b=[2.0, 3.0, 0.0])
+    dfr = DataFrameRow(df, 1, :)
+    @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
+    @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
+    @test convert(Array, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
+    @test convert(Array{Int}, dfr)::Vector{Int} == [1, 2]
+
+    dfr = DataFrame(a=1, b=2)[1, :]
+    dfr2 = DataFrame(c=3, d=4)[1, :]
+    @test convert(Tuple, dfr) == (1, 2)
+end
+
 end # module

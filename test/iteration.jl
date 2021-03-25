@@ -47,7 +47,7 @@ using Test, DataFrames
         @test isa(col, AbstractVector)
     end
 
-    @test map(x -> minimum(convert(Vector, x)), eachrow(df)) == [1, 2]
+    @test map(x -> minimum(Vector(x)), eachrow(df)) == [1, 2]
     @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
     @test mapcols(minimum, df) == DataFrame(A = [1], B = [2])
     @test map(minimum, eachcol(df)) == [1, 2]
