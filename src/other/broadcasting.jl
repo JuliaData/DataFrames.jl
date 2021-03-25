@@ -121,6 +121,28 @@ end
 Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =
     throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
 
+
+# TODO: remove the deprecations when Julia 1.7 functionality is commonly used
+#       by the community
+if isdefined(Base, :dotgetproperty)
+    function Base.dotgetproperty(df::DataFrame, col::SymbolOrString)
+        if columnindex(df, col) == 0
+            return LazyNewColDataFrame(df, Symbol(col))
+        else
+            Base.depwarn("In the future this operation will allocate a new column" *
+                    "instead of performing an in-place assignment.", :dotgetproperty)
+            return getproperty(df, col)
+        end
+    end
+
+    function Base.dotgetproperty(df::SubDataFrame, col::SymbolOrString)
+        Base.depwarn("broadcasting getproperty is deprecated for SubDataFrame and " *
+                     "will be disallowed in  the future. Use `df[:, $(repr(col))] .= ... instead",
+                     :dotgetproperty)
+        return getproperty(df, col)
+    end
+end
+
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
         bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())

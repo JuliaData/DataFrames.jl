@@ -1458,8 +1458,13 @@ end
     @test v1 == [100.0, 100.0, 100.0]
 
     df = copy(refdf)
-    @test_throws ArgumentError df.newcol .= 'd'
-    @test df == refdf
+    if isdefined(Base, :dotgetproperty)
+        df.newcol .= 'd'
+        @test df == [refdf DataFrame(newcol=fill('d', 3))]
+    else
+        @test_throws ArgumentError df.newcol .= 'd'
+        @test df == refdf
+    end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
@@ -1840,6 +1845,20 @@ end
     df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 2)
     @test_throws DimensionMismatch df[:, "z"] .= z
+end
+
+@testset "broadcasting of getproperty" begin
+    if isdefined(Base, :dotgetproperty)
+        df = DataFrame(a=1:4)
+        df.b .= 1
+        df.c .= 4:-1:1
+        # TODO: enable this in the future when the deprecation period is finished
+        # df.a .= 'a':'d'
+        # @test df.a isa Vector{Char}
+        # @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
+        # dfv = view(df, 2:3, 2:3)
+        # @test_throws ArgumentError dfv.b .= 0
+    end
 end
 
 end # module
