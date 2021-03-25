@@ -1544,7 +1544,7 @@ end
     @test df.a === df.b
 end
 
-@testset "And and Between tests" begin
+@testset "All and Between tests" begin
     # we check dispatch here only
     df = DataFrame(a=1, b=2, c=3)
     completecases(df, All())
@@ -1694,6 +1694,8 @@ end
     df2v[Not(1), All()] = Matrix(df)
     df2v[Not(1), Cols(:)] = Matrix(df)
     df2v[Not(1), Between(1, 2)] = Matrix(df[!, 1:2])
+
+    @test_throws ArgumentError df[1, All()]
 end
 
 @testset "vcat and push! with :orderequal" begin
