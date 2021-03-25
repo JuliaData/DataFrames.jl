@@ -3,6 +3,7 @@ module TestGrouping
 using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI,
     Combinatorics, Unitful
 const ≅ = isequal
+const ≇ = !isequal
 
 """Check if passed data frames are `isequal` and have the same element types of columns"""
 isequal_typed(df1::AbstractDataFrame, df2::AbstractDataFrame) =
@@ -1737,13 +1738,14 @@ end
 end
 
 @testset "GroupKey and GroupKeys" begin
-    df = DataFrame(a = repeat([:A, :B, missing], outer=4), b = repeat([:X, :Y], inner=6), c = 1:12)
+    df = DataFrame(a=repeat([:A, :B, missing], outer=4),
+                   b=repeat([:X, :Y], inner=6), c=1:12)
     cols = [:a, :b]
     gd = groupby_checked(df, cols)
     gdkeys = keys(gd)
 
-    expected =
-        [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X), (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
+    expected = [(a=:A, b=:X), (a=:B, b=:X), (a=missing, b=:X),
+                (a=:A, b=:Y), (a=:B, b=:Y), (a=missing, b=:Y)]
 
     # Check AbstractVector behavior
     @test IndexStyle(gdkeys) === IndexLinear()
@@ -1760,7 +1762,7 @@ end
         nt = expected[i]
 
         # Check iteration vs indexing of GroupKeys
-        @test key == gdkeys[i]
+        @test key ≅ gdkeys[i]
 
         @test Base.IteratorEltype(key) == Base.EltypeUnknown()
 
@@ -1829,9 +1831,9 @@ end
     @test_throws ErrorException gd3[first(keys(gd2))]
 
     # Key equality
-    @test collect(keys(gd)) == gdkeys  # These are new instances
-    @test all(Ref(gdkeys[1]) .!= gdkeys[2:end])  # Keys should not be equal to each other
-    @test !any(collect(keys(gd2)) .== keys(gd3))  # Same values but different (but equal) parent
+    @test collect(keys(gd)) ≅ gdkeys  # These are new instances
+    @test all(Ref(gdkeys[1]) .≇ gdkeys[2:end])  # Keys should not be equal to each other
+    @test all(collect(keys(gd2)) .≅ keys(gd3))  # Same values but different (but equal) parent
 
     # Printing of GroupKey
     df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),

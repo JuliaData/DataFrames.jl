@@ -643,11 +643,26 @@ end
     @test !(dfr[1] ≅ (x=1, b=missing))
     @test !(gk[1] ≅ (x=1, b=missing))
 
-
     @test_throws ArgumentError dfr[1] < (x=1, b=missing)
     @test_throws ArgumentError gk[1] < (x=1, b=missing)
     @test_throws ArgumentError isless(dfr[1], (x=1, b=missing))
     @test_throws ArgumentError isless(gk[1], (x=1, b=missing))
+
+    df2 = DataFrame(a=1, b=missing)
+    df3 = DataFrame(a=2, b=1)
+    dfr2 = df2[1, :]
+    dfr3 = df3[1, :]
+    nt2 = NamedTuple(dfr2)
+    nt3 = NamedTuple(dfr3)
+    gk2 = keys(groupby(df2, [:a, :b]))[1]
+    gk3 = keys(groupby(df3, [:a, :b]))[1]
+
+    for a in (dfr2, nt2, gk2), b in (dfr3, nt3, gk3)
+        @test !(a == b)
+        @test !(a ≅ b)
+        @test a < b
+        @test isless(a, b)
+    end
 end
 
 end # module
