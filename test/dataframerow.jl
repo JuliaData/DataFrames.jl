@@ -171,41 +171,26 @@ end
     @test_throws ArgumentError df[1, 1:2] < df[1, 2:3]
 end
 
-@testset "hashing" begin
+@testset "hashing of DataFrameRow and GroupKey" begin
     df = deepcopy(ref_df)
+    gks = keys(groupby(df, :))
 
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 2, :))
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 3, :))
     @test hash(DataFrameRow(df, 1, :)) == hash(DataFrameRow(df, 4, :))
     @test hash(DataFrameRow(df, 2, :)) == hash(DataFrameRow(df, 5, :))
     @test hash(DataFrameRow(df, 2, :)) != hash(DataFrameRow(df, 6, :))
-    for i in 1:6, h in UInt(0):UInt(10)
-        @test hash(DataFrameRow(df, i, :), h) == hash(NamedTuple(DataFrameRow(df, i, :)), h)
+
+    df = DataFrame(reshape(1:24, 6, 4), :auto)
+    df.x2 = string.(df.x2)
+    df.x3 = categorical(df.x3)
+    df.x4 = Float64.(df.x4)
+    gks = keys(groupby(df, :))
+
+    for i in axes(df, 1), h in UInt(0):UInt(10)
+        @test hash(DataFrameRow(df, i, :), h) ==
+              hash(NamedTuple(DataFrameRow(df, i, :)), h)
     end
-end
-
-@testset "grouping" begin
-    # test RowGroupDict
-    Random.seed!(1234)
-    df1 = DataFrame(d1=rand(1:2, 1000))
-    df2 = DataFrame(d1=[2, 3])
-
-    # test_group("group_rows")
-    gd = DataFrames.group_rows(df1)
-    @test length(unique(gd.groups)) == 2
-
-    # getting groups for the rows of the other frames
-    @test length(gd[DataFrameRow(df2, 1, :)]) > 0
-    @test_throws KeyError gd[DataFrameRow(df2, 2, :)]
-    @test isempty(DataFrames.findrows(gd, df2, (gd.df[!, 1],), (df2[!, 1],), 2))
-
-    # grouping empty frame
-    gd = DataFrames.group_rows(DataFrame(x=Int[]))
-    @test length(unique(gd.groups)) == 0
-
-    # grouping single row
-    gd = DataFrames.group_rows(df1[1:1, :])
-    @test length(unique(gd.groups)) == 1
 end
 
 @testset "getproperty, setproperty! and propertynames" begin
