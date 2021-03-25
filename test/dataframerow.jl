@@ -279,13 +279,9 @@ end
     nt = first(Tables.namedtupleiterator(df))
     @test copy(dfr) === nt === NamedTuple{(:a, :b), Tuple{Union{Missing, Int}, Float64}}((1, 2.0))
     @test sum(skipmissing(copy(df[3, :]))) == 0
-    @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
-    @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
     @test Vector(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test Vector{Int}(dfr)::Vector{Int} == [1, 2]
 
-    @test convert(Array, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
-    @test convert(Array{Int}, dfr)::Vector{Int} == [1, 2]
     @test Array(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test Array{Int}(dfr)::Vector{Int} == [1, 2]
 
@@ -297,7 +293,6 @@ end
     dfr2 = DataFrame(c=3, d=4)[1, :]
     @test NamedTuple(dfr) == (a=1, b=2)
     @test convert(NamedTuple, dfr) == (a=1, b=2)
-    @test convert(Tuple, dfr) == (1, 2)
     @test merge(dfr) == (a=1, b=2)
     @test merge(dfr, (c=3, d=4)) == (a=1, b=2, c=3, d=4)
     @test merge((c=3, d=4), dfr) == (c=3, d=4, a=1, b=2)
