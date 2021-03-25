@@ -47,7 +47,10 @@
   operation is deprecated. It will allocate a fresh column in the future
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 * all deprecations present in 0.22 release now throw an error
-  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
+  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554));
+  in particular `convert` methods, `map` on `GroupedDataFrame`
+  that were deprecated in 0.22.6 release now throw an error
+  ([#2679](https://github.com/JuliaData/DataFrames.jl/pull/2679))
 
 ## Dependency changes
 
