@@ -460,12 +460,23 @@ Base.hash(r::DataFrameRow, h::UInt) = _nt_like_hash(r, h)
 _getnames(x::DataFrameRow) = _names(x)
 _getnames(x::NamedTuple) = propertynames(x)
 
+# this is required as == does not allow for comparison of tuples and vectors
+function _equal_names(r1, r2)
+    n1 = _getnames(r1)
+    n2 = _getnames(r2)
+    length(n1) == length(n2) || return false
+    for (a, b) in zip(n1, n2)
+        a == b || return false
+    end
+    return true
+end
+
 for eqfun in (:isequal, :(==)),
     (leftarg, rightarg) in ((:DataFrameRow, :DataFrameRow),
                             (:DataFrameRow, :NamedTuple),
                             (:NamedTuple, :DataFrameRow))
     @eval function Base.$eqfun(r1::$leftarg, r2::$rightarg)
-        _getnames(r1) == _getnames(r2) || return false
+        _equal_names(r1, r2) || return false
         return all(((a, b),) -> $eqfun(a, b), zip(r1, r2))
     end
 end
@@ -475,10 +486,10 @@ for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
                             (:DataFrameRow, :NamedTuple),
                             (:NamedTuple, :DataFrameRow))
     @eval function Base.$cmpfun(r1::$leftarg, r2::$rightarg)
-        length(r1) == length(r2) ||
-            throw(ArgumentError("compared objects must have the same number " *
-                                "of columns (got $(length(r1)) and $(length(r2)))"))
-        if _getnames(r1) != _getnames(r2)
+        if !_equal_names(r1, r2)
+            length(r1) == length(r2) ||
+                throw(ArgumentError("compared objects must have the same number " *
+                                    "of columns (got $(length(r1)) and $(length(r2)))"))
             mismatch = findfirst(i -> _getnames(r1)[i] != _getnames(r2)[i], 1:length(r1))
             throw(ArgumentError("compared objects must have the same property " *
                                 "names but they differ in column number $mismatch " *
@@ -486,9 +497,14 @@ for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
                                 ":$(_getnames(r2)[mismatch]) respectively"))
         end
         for (a, b) in zip(r1, r2)
-            $eqfun(a, b) || return $cmpfun(a, b)
+            eq = $eqfun(a, b)
+            if ismissing(eq)
+                return missing
+            elseif !eq
+                return $cmpfun(a, b)
+            end
         end
-        return false
+        return false # here we know that r1 and r2 have equal lengths and all values were equal
     end
 end
 

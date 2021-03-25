@@ -586,4 +586,68 @@ end
     @test_throws ArgumentError r .+ 1
 end
 
+@testset "comparison tests: DataFrameRow, NamedTuple and GroupKey" begin
+    df = DataFrame(a=[1, 2], b=[missing, 3])
+    dfr = [df[1, :], df[2, :], df[1, 1:1], df[2, 1:1]]
+    nt = NamedTuple.(dfr)
+    gk = [keys(groupby(df, [:a, :b])); keys(groupby(df, :a))]
+
+    for l in (dfr[1], nt[1], gk[1]), r in (dfr[1], nt[1], gk[1])
+        @test ismissing(l == r)
+        @test ismissing(l == (a=1, b=2))
+        @test l ≅ r
+        @test l ≇ (a=1, b=2)
+        # work around https://github.com/JuliaLang/julia/pull/40147
+        if !(l isa NamedTuple && r isa NamedTuple)
+            @test ismissing(l < r)
+        end
+        @test !isless(l, r)
+    end
+
+    for i in 2:4, l in (dfr, nt, gk), r in (dfr, nt, gk)
+        @test l[i] == r[i]
+        @test l[1] != l[i]
+        @test l[1] != r[i]
+        @test l[i] ≅ r[i]
+        @test l[1] ≇ l[i]
+        @test l[1] ≇ r[i]
+
+        @test !(l[i] < r[i])
+        @test !isless(l[i], r[i])
+
+        if i > 2
+            if l[1] isa NamedTuple && r[i] isa NamedTuple
+                @test_throws MethodError l[1] < r[i]
+                @test_throws MethodError isless(l[1], r[i])
+            else
+                @test_throws ArgumentError l[1] < r[i]
+                @test_throws ArgumentError isless(l[1], r[i])
+            end
+        end
+    end
+
+    for l in (dfr, nt, gk), r in (dfr, nt, gk)
+        @test l[1] < r[2]
+        @test isless(l[1], r[2])
+        @test !(l[2] < r[1])
+        @test !isless(l[2], r[1])
+
+        @test l[3] < r[4]
+        @test isless(l[3], r[4])
+        @test !(l[4] < r[3])
+        @test !isless(l[4], r[3])
+    end
+
+    @test !(dfr[1] == (x=1, b=missing))
+    @test !(gk[1] == (x=1, b=missing))
+    @test !(dfr[1] ≅ (x=1, b=missing))
+    @test !(gk[1] ≅ (x=1, b=missing))
+
+
+    @test_throws ArgumentError dfr[1] < (x=1, b=missing)
+    @test_throws ArgumentError gk[1] < (x=1, b=missing)
+    @test_throws ArgumentError isless(dfr[1], (x=1, b=missing))
+    @test_throws ArgumentError isless(gk[1], (x=1, b=missing))
+end
+
 end # module

@@ -532,8 +532,8 @@ for eqfun in (:isequal, :(==)),
                             (:NamedTuple, :GroupKey),
                             (:GroupKey, :NamedTuple))
     @eval function Base.$eqfun(k1::$leftarg, k2::$rightarg)
-        _getnames(k1) == _getnames(k2) || return false
-        return all(((a, b),) -> $eqfun(k1, k2), zip(k1, k2))
+        _equal_names(k1, k2) || return false
+        return all(((a, b),) -> $eqfun(a, b), zip(k1, k2))
     end
 end
 
@@ -544,20 +544,25 @@ for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
                             (:NamedTuple, :GroupKey),
                             (:GroupKey, :NamedTuple))
     @eval function Base.$cmpfun(k1::$leftarg, k2::$rightarg)
-        length(k1) == length(k2) ||
-            throw(ArgumentError("compared objects must have the same number " *
-                                "of columns (got $(length(k1)) and $(length(k2)))"))
-        if _getnames(k1) != _getnames(k2)
-            mismatch = findfirst(i -> parent(k1).cols[i] != _names(k2)[i], 1:length(k1))
+        if !_equal_names(k1, k2)
+            length(k1) == length(k2) ||
+                throw(ArgumentError("compared objects must have the same number " *
+                                    "of columns (got $(length(k1)) and $(length(k2)))"))
+            mismatch = findfirst(i -> _getnames(k1)[i] != _getnames(k2)[i], 1:length(k1))
             throw(ArgumentError("compared objects must have the same column " *
                                 "names but they differ in column number $mismatch " *
                                 "where the names are :$(_getnames(k1)[mismatch]) and " *
                                 ":$(_getnames(k2)[mismatch]) respectively"))
         end
         for (a, b) in zip(k1, k2)
-            $eqfun(a, b) || return $cmpfun(a, b)
+            eq = $eqfun(a, b)
+            if ismissing(eq)
+                return missing
+            elseif !eq
+                return $cmpfun(a, b)
+            end
         end
-        return false
+        return false # here we know that r1 and r2 have equal lengths and all values were equal
     end
 end
 
