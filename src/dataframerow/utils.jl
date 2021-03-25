@@ -1,23 +1,3 @@
-# Rows grouping.
-# Maps row contents to the indices of all the equal rows.
-# Used by groupby(), join(), nonunique()
-struct RowGroupDict{T<:AbstractDataFrame}
-    "source data table"
-    df::T
-    "row hashes (optional, can be empty)"
-    rhashes::Vector{UInt}
-    "hashindex -> index of group-representative row (optional, can be empty)"
-    gslots::Vector{Int}
-    "group index for each row"
-    groups::Vector{Int}
-    "permutation of row indices that sorts them by groups"
-    rperm::Vector{Int}
-    "starts of ranges in rperm for each group"
-    starts::Vector{Int}
-    "stops of ranges in rperm for each group"
-    stops::Vector{Int}
-end
-
 # "kernel" functions for hashrows()
 # adjust row hashes by the hashes of column elements
 function hashrows_col!(h::Vector{UInt},
@@ -173,7 +153,6 @@ function refpool_and_array(x::AbstractArray)
     return nothing, nothing
 end
 
-# Helper function for RowGroupDict.
 # Returns a tuple:
 # 1) the highest group index in the `groups` vector
 # 2) vector of row hashes (may be empty if hash=Val(false))
