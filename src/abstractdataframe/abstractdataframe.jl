@@ -1142,12 +1142,12 @@ end
 _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
     delete!(df, findall((x -> !(f(x)::Bool)).(nti)))
 
-function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
+function Base.Matrix(df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
     return convert(Matrix{T}, df)
 end
 
-function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
+function Base.Matrix{T}(df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(undef, n, p)
     idx = 1
@@ -1168,11 +1168,6 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     return res
 end
 
-Base.Matrix(df::AbstractDataFrame) = Base.convert(Matrix, df)
-Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
-
-Base.convert(::Type{Array}, df::AbstractDataFrame) = convert(Matrix, df)
-Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where {T}  = Matrix{T}(df)
 Base.Array(df::AbstractDataFrame) = Matrix(df)
 Base.Array{T}(df::AbstractDataFrame) where {T} = Matrix{T}(df)
 

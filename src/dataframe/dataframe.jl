@@ -1328,8 +1328,6 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
     return df1
 end
 
-Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
-
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                     cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))

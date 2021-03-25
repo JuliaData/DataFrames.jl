@@ -1,6 +1,6 @@
 name = "DataFrames"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "0.22.5"
+version = "0.22.6"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
