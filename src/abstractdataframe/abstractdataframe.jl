@@ -1144,7 +1144,7 @@ _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f
 
 function Base.Matrix(df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
-    return convert(Matrix{T}, df)
+    return Matrix{T}(df)
 end
 
 function Base.Matrix{T}(df::AbstractDataFrame) where T
