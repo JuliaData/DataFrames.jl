@@ -26,6 +26,9 @@
   additional column to be added in the last position in the resulting data frame
   that will identify the source data frame.
   ([#2649](https://github.com/JuliaData/DataFrames.jl/pull/2649))
+* `GroupKey` and `DataFrameRow` are consistently behaving like `NamedTuple`
+  in comparisons and they now implement: `hash`, `==`, `isequal`, `<`, `isless`
+  ([#2669](https://github.com/JuliaData/DataFrames.jl/pull/2669)])
 
 ## Deprecated
 
