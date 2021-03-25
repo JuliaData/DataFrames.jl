@@ -374,9 +374,9 @@ Base.length(gd::GroupedDataFrame) = gd.ngroups
 
 function Base.iterate(gd::GroupedDataFrame, i=1)
     if i > length(gd)
-        nothing
+        return nothing
     else
-        (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]], :), i+1)
+        return (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]], :), i+1)
     end
 end
 
@@ -579,15 +579,10 @@ Construct a `NamedTuple` with the same contents as the [`GroupKey`](@ref).
 Base.copy(key::GroupKey) = NamedTuple(key)
 
 Base.convert(::Type{NamedTuple}, key::GroupKey) = NamedTuple(key)
-Base.convert(::Type{Tuple}, key::GroupKey) = Tuple(key)
 
-Base.convert(::Type{Vector}, key::GroupKey) = [v for v in key]
-Base.convert(::Type{Vector{T}}, key::GroupKey) where T = T[v for v in key]
-Base.Vector(key::GroupKey) = convert(Vector, key)
-Base.Vector{T}(key::GroupKey) where T = convert(Vector{T}, key)
+Base.Vector(key::GroupKey) = [v for v in key]
+Base.Vector{T}(key::GroupKey) where T = T[v for v in key]
 
-Base.convert(::Type{Array}, key::GroupKey) = Vector(key)
-Base.convert(::Type{Array{T}}, key::GroupKey) where {T} = Vector{T}(key)
 Base.Array(key::GroupKey) = Vector(key)
 Base.Array{T}(key::GroupKey) where {T} = Vector{T}(key)
 
@@ -1022,4 +1017,10 @@ function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
     end
 
     return gdf[[f(mapper(i))::Bool for i in 1:length(gdf)]]
+end
+
+function Base.map(f, gdf::GroupedDataFrame)
+    Base.depwarn("Use of the map function on GroupedDataFrame is deprecated. " *
+                 "Use `[f(sdf) for sdf in gdf]` instead.", :map)
+    return collect(Base.Generator(f, gdf))
 end

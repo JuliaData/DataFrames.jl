@@ -400,18 +400,14 @@ end
 # so better let collect() do it only if necessary (widening)
 Base.IteratorEltype(::Type{<:DataFrameRow}) = Base.EltypeUnknown()
 
-function Base.convert(::Type{Vector}, dfr::DataFrameRow)
+function Base.Vector(dfr::DataFrameRow)
     df = parent(dfr)
     T = reduce(promote_type, (eltype(df[!, i]) for i in parentcols(index(dfr))))
-    convert(Vector{T}, dfr)
+    return Vector{T}(dfr)
 end
-Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
+Base.Vector{T}(dfr::DataFrameRow) where T =
     T[dfr[i] for i in 1:length(dfr)]
-Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
-Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
-Base.convert(::Type{Array}, dfr::DataFrameRow) = Vector(dfr)
-Base.convert(::Type{Array{T}}, dfr::DataFrameRow) where {T} = Vector{T}(dfr)
 Base.Array(dfr::DataFrameRow) = Vector(dfr)
 Base.Array{T}(dfr::DataFrameRow) where {T} = Vector{T}(dfr)
 
@@ -446,7 +442,6 @@ is not affected by changes to the parent data frame of which `dfr` is a view.
 Base.copy(dfr::DataFrameRow) = NamedTuple(dfr)
 
 Base.convert(::Type{NamedTuple}, dfr::DataFrameRow) = NamedTuple(dfr)
-Base.convert(::Type{Tuple}, dfr::DataFrameRow) = Tuple(dfr)
 
 Base.merge(a::DataFrameRow) = NamedTuple(a)
 Base.merge(a::DataFrameRow, b::NamedTuple) = merge(NamedTuple(a), b)
