@@ -65,6 +65,11 @@
   `convert(::Type{NamedTuple}, key::GroupKey)`, and
   `convert(::Type{DataFrame}, sdf::SubDataFrame)`; the deprecated methods will be
   removed in 1.0 release
+* as a bug fix `eltype` of vector returned by `eachrow` is now `DataFrameRow`
+  ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
+* applying `map` to `GroupedDataFrame` is now deprecated. It will
+  be an error in 1.0 release.
+  ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
 
 # DataFrames v0.22 Release Notes
 

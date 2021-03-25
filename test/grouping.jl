@@ -3018,12 +3018,6 @@ end
     @test_throws ArgumentError combine(gdf, (:g, :g) => identity)
 end
 
-@testset "new map behavior" begin
-    df = DataFrame(g=[1, 2, 3])
-    gdf = groupby(df, :g)
-    @test map(nrow, gdf) == [1, 1, 1]
-end
-
 @testset "check isagg correctly uses fast path only when it should" begin
     for fun in (sum, prod, mean, var, std, sum∘skipmissing, prod∘skipmissing,
                 mean∘skipmissing, var∘skipmissing, std∘skipmissing),
@@ -3823,6 +3817,19 @@ end
                           ((x, y, z) -> x[1] <= 5 ? y[1] : z[1]) => :res) ==
         combine(gd, [:x, :y, :z] =>
                         ((x, y, z) -> x[1] <= 5 ? unwrap(y[1]) : unwrap(z[1])) => :res)
+end
+
+@testset "grouped data frame iteration" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    dfv = @view df[1:3, 1:3]
+    gdf = groupby(df, :a)
+    gdfv = groupby(dfv, :a)
+
+    for x in (gdf, gdfv)
+        @test collect(x)  == [v for v in x] == [x[i] for i in 1:3]
+        @test reduce(vcat, x) == parent(x)
+        @test mapreduce(v -> sum(Matrix(v)), +, x) == sum(Matrix(parent(x)))
+    end
 end
 
 @testset "groupby multithreading" begin

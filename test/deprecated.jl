@@ -80,6 +80,23 @@ end
                                          indicator=:source, source=:source)
 end
 
+@testset "map on GroupedDataFrame" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    dfv = @view df[1:3, 1:3]
+    gdf = groupby(df, :a)
+    gdfv = groupby(dfv, :a)
+
+    for x in (gdf, gdfv)
+        @test collect(x) == map(identity, x)
+    end
+end
+
+@testset "new map behavior" begin
+    df = DataFrame(g=[1, 2, 3])
+    gdf = groupby(df, :g)
+    @test map(nrow, gdf) == [1, 1, 1]
+end
+
 @testset "Conversion tests" begin
     df = DataFrame()
     df[!, :A] = 1:5
