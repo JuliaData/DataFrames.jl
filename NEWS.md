@@ -1,3 +1,14 @@
+# DataFrames v0.22.6 Release notes
+
+* `convert` methods from `AbstractDataFrame`, `DataFrameRow` and `GroupKey`
+  to `Array`, `Matrix`, `Vector` and `Tuple`, as well as from `AbstractDict` to
+  `DataFrame`, are now deprecated: use corresponding
+  constructors instead. The only conversions that are
+  retained are `convert(::Type{NamedTuple}, dfr::DataFrameRow)`,
+  `convert(::Type{NamedTuple}, key::GroupKey)`, and
+  `convert(::Type{DataFrame}, sdf::SubDataFrame)`; the deprecated methods will be
+  removed in 1.0 release
+
 # DataFrames v0.22 Release Notes
 
 ## Breaking changes
