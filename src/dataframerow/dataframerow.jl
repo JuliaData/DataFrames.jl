@@ -460,7 +460,7 @@ Base.hash(r::DataFrameRow, h::UInt) = _nt_like_hash(r, h)
 _getnames(x::DataFrameRow) = _names(x)
 _getnames(x::NamedTuple) = propertynames(x)
 
-# this is required as == does not allow for comparison of tuples and vectors
+# this is required as == does not allow for comparison between tuples and vectors
 function _equal_names(r1, r2)
     n1 = _getnames(r1)
     n2 = _getnames(r2)
