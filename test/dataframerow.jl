@@ -173,7 +173,6 @@ end
 
 @testset "hashing of DataFrameRow and GroupKey" begin
     df = deepcopy(ref_df)
-    gks = keys(groupby(df, :))
 
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 2, :))
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 3, :))
@@ -189,6 +188,7 @@ end
 
     for i in axes(df, 1), h in UInt(0):UInt(10)
         @test hash(DataFrameRow(df, i, :), h) ==
+              hash(gks[i], h) ==
               hash(NamedTuple(DataFrameRow(df, i, :)), h)
     end
 end
