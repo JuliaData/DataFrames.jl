@@ -171,7 +171,7 @@ end
     @test_throws ArgumentError df[1, 1:2] < df[1, 2:3]
 end
 
-@testset "hashing" begin
+@testset "hashing of DataFrameRow and GroupKey" begin
     df = deepcopy(ref_df)
 
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 2, :))
@@ -180,33 +180,17 @@ end
     @test hash(DataFrameRow(df, 2, :)) == hash(DataFrameRow(df, 5, :))
     @test hash(DataFrameRow(df, 2, :)) != hash(DataFrameRow(df, 6, :))
 
-    # check that hashrows() function generates the same hashes as DataFrameRow
-    df_rowhashes, _ = DataFrames.hashrows(Tuple(eachcol(df)), false)
-    @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
-end
+    df = DataFrame(reshape(1:24, 6, 4), :auto)
+    df.x2 = string.(df.x2)
+    df.x3 = categorical(df.x3)
+    df.x4 = Float64.(df.x4)
+    gks = keys(groupby(df, :))
 
-@testset "grouping" begin
-    # test RowGroupDict
-    Random.seed!(1234)
-    df1 = DataFrame(d1=rand(1:2, 1000))
-    df2 = DataFrame(d1=[2, 3])
-
-    # test_group("group_rows")
-    gd = DataFrames.group_rows(df1)
-    @test length(unique(gd.groups)) == 2
-
-    # getting groups for the rows of the other frames
-    @test length(gd[DataFrameRow(df2, 1, :)]) > 0
-    @test_throws KeyError gd[DataFrameRow(df2, 2, :)]
-    @test isempty(DataFrames.findrows(gd, df2, (gd.df[!, 1],), (df2[!, 1],), 2))
-
-    # grouping empty frame
-    gd = DataFrames.group_rows(DataFrame(x=Int[]))
-    @test length(unique(gd.groups)) == 0
-
-    # grouping single row
-    gd = DataFrames.group_rows(df1[1:1, :])
-    @test length(unique(gd.groups)) == 1
+    for i in axes(df, 1), h in UInt(0):UInt(10)
+        @test hash(DataFrameRow(df, i, :), h) ==
+              hash(gks[i], h) ==
+              hash(NamedTuple(DataFrameRow(df, i, :)), h)
+    end
 end
 
 @testset "getproperty, setproperty! and propertynames" begin
@@ -580,6 +564,85 @@ end
 @testset "broadcasting" begin
     r = DataFrame(a=1)[1, :]
     @test_throws ArgumentError r .+ 1
+end
+
+@testset "comparison tests: DataFrameRow, NamedTuple and GroupKey" begin
+    df = DataFrame(a=[1, 2], b=[missing, 3])
+    dfr = [df[1, :], df[2, :], df[1, 1:1], df[2, 1:1]]
+    nt = NamedTuple.(dfr)
+    gk = [keys(groupby(df, [:a, :b])); keys(groupby(df, :a))]
+
+    for l in (dfr[1], nt[1], gk[1]), r in (dfr[1], nt[1], gk[1])
+        @test ismissing(l == r)
+        @test ismissing(l == (a=1, b=2))
+        @test l ≅ r
+        @test l ≇ (a=1, b=2)
+        # work around https://github.com/JuliaLang/julia/pull/40147
+        if !(l isa NamedTuple && r isa NamedTuple)
+            @test ismissing(l < r)
+        end
+        @test !isless(l, r)
+    end
+
+    for i in 2:4, l in (dfr, nt, gk), r in (dfr, nt, gk)
+        @test l[i] == r[i]
+        @test l[1] != l[i]
+        @test l[1] != r[i]
+        @test l[i] ≅ r[i]
+        @test l[1] ≇ l[i]
+        @test l[1] ≇ r[i]
+
+        @test !(l[i] < r[i])
+        @test !isless(l[i], r[i])
+
+        if i > 2
+            if l[1] isa NamedTuple && r[i] isa NamedTuple
+                @test_throws MethodError l[1] < r[i]
+                @test_throws MethodError isless(l[1], r[i])
+            else
+                @test_throws ArgumentError l[1] < r[i]
+                @test_throws ArgumentError isless(l[1], r[i])
+            end
+        end
+    end
+
+    for l in (dfr, nt, gk), r in (dfr, nt, gk)
+        @test l[1] < r[2]
+        @test isless(l[1], r[2])
+        @test !(l[2] < r[1])
+        @test !isless(l[2], r[1])
+
+        @test l[3] < r[4]
+        @test isless(l[3], r[4])
+        @test !(l[4] < r[3])
+        @test !isless(l[4], r[3])
+    end
+
+    @test !(dfr[1] == (x=1, b=missing))
+    @test !(gk[1] == (x=1, b=missing))
+    @test !(dfr[1] ≅ (x=1, b=missing))
+    @test !(gk[1] ≅ (x=1, b=missing))
+
+    @test_throws ArgumentError dfr[1] < (x=1, b=missing)
+    @test_throws ArgumentError gk[1] < (x=1, b=missing)
+    @test_throws ArgumentError isless(dfr[1], (x=1, b=missing))
+    @test_throws ArgumentError isless(gk[1], (x=1, b=missing))
+
+    df2 = DataFrame(a=1, b=missing)
+    df3 = DataFrame(a=2, b=1)
+    dfr2 = df2[1, :]
+    dfr3 = df3[1, :]
+    nt2 = NamedTuple(dfr2)
+    nt3 = NamedTuple(dfr3)
+    gk2 = keys(groupby(df2, [:a, :b]))[1]
+    gk3 = keys(groupby(df3, [:a, :b]))[1]
+
+    for a in (dfr2, nt2, gk2), b in (dfr3, nt3, gk3)
+        @test !(a == b)
+        @test !(a ≅ b)
+        @test a < b
+        @test isless(a, b)
+    end
 end
 
 end # module

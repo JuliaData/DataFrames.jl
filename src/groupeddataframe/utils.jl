@@ -1,23 +1,3 @@
-# Rows grouping.
-# Maps row contents to the indices of all the equal rows.
-# Used by groupby(), join(), nonunique()
-struct RowGroupDict{T<:AbstractDataFrame}
-    "source data table"
-    df::T
-    "row hashes (optional, can be empty)"
-    rhashes::Vector{UInt}
-    "hashindex -> index of group-representative row (optional, can be empty)"
-    gslots::Vector{Int}
-    "group index for each row"
-    groups::Vector{Int}
-    "permutation of row indices that sorts them by groups"
-    rperm::Vector{Int}
-    "starts of ranges in rperm for each group"
-    starts::Vector{Int}
-    "stops of ranges in rperm for each group"
-    stops::Vector{Int}
-end
-
 # "kernel" functions for hashrows()
 # adjust row hashes by the hashes of column elements
 function hashrows_col!(h::Vector{UInt},
@@ -173,7 +153,6 @@ function refpool_and_array(x::AbstractArray)
     return nothing, nothing
 end
 
-# Helper function for RowGroupDict.
 # Returns a tuple:
 # 1) the highest group index in the `groups` vector
 # 2) vector of row hashes (may be empty if hash=Val(false))
@@ -439,58 +418,4 @@ function compute_indices(groups::AbstractVector{<:Integer}, ngroups::Integer)
     popfirst!(stops)
 
     return rperm, starts, stops
-end
-
-# Build RowGroupDict for a given DataFrame, using all of its columns as grouping keys
-function group_rows(df::AbstractDataFrame)
-    groups = Vector{Int}(undef, nrow(df))
-    ngroups, rhashes, gslots, sorted =
-        row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), groups, false, false)
-    rperm, starts, stops = compute_indices(groups, ngroups)
-    return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
-end
-
-# Find index of a row in gd that matches given row by content, 0 if not found
-function findrow(gd::RowGroupDict,
-                 df::AbstractDataFrame,
-                 gd_cols::Tuple{Vararg{AbstractVector}},
-                 df_cols::Tuple{Vararg{AbstractVector}},
-                 row::Int)
-    (gd.df === df) && return row # same table, return itself
-    # different tables, content matching required
-    rhash = rowhash(df_cols, row)
-    szm1 = length(gd.gslots)-1
-    slotix = ini_slotix = rhash & szm1 + 1
-    while true
-        g_row = gd.gslots[slotix]
-        if g_row == 0 || # not found
-            (rhash == gd.rhashes[g_row] &&
-            isequal_row(gd_cols, g_row, df_cols, row)) # found
-            return g_row
-        end
-        slotix = (slotix & szm1) + 1 # miss, try the next slot
-        (slotix == ini_slotix) && break
-    end
-    return 0 # not found
-end
-
-# Find indices of rows in 'gd' that match given row by content.
-# return empty set if no row matches
-function findrows(gd::RowGroupDict,
-                  df::AbstractDataFrame,
-                  gd_cols::Tuple{Vararg{AbstractVector}},
-                  df_cols::Tuple{Vararg{AbstractVector}},
-                  row::Int)
-    g_row = findrow(gd, df, gd_cols, df_cols, row)
-    (g_row == 0) && return view(gd.rperm, 0:-1)
-    gix = gd.groups[g_row]
-    return view(gd.rperm, gd.starts[gix]:gd.stops[gix])
-end
-
-function Base.getindex(gd::RowGroupDict, dfr::DataFrameRow)
-    g_row = findrow(gd, parent(dfr), ntuple(i -> gd.df[!, i], ncol(gd.df)),
-                    ntuple(i -> parent(dfr)[!, i], ncol(parent(dfr))), row(dfr))
-    (g_row == 0) && throw(KeyError(dfr))
-    gix = gd.groups[g_row]
-    return view(gd.rperm, gd.starts[gix]:gd.stops[gix])
 end

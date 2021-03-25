@@ -450,55 +450,57 @@ Base.merge(a::DataFrameRow, b::DataFrameRow) = merge(NamedTuple(a), NamedTuple(b
 Base.merge(a::DataFrameRow, b::Base.Iterators.Pairs) = merge(NamedTuple(a), b)
 Base.merge(a::DataFrameRow, itr) = merge(NamedTuple(a), itr)
 
-# hash of DataFrame rows based on its values
-# so that duplicate rows would have the same hash
-# table columns are passed as a tuple of vectors to ensure type specialization
-rowhash(cols::Tuple{AbstractVector}, r::Int, h::UInt = zero(UInt))::UInt =
-    hash(cols[1][r], h)
-function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UInt))::UInt
-    h = hash(cols[1][r], h)
-    rowhash(Base.tail(cols), r, h)
+Base.hash(r::DataFrameRow, h::UInt) = _nt_like_hash(r, h)
+
+_getnames(x::DataFrameRow) = _names(x)
+_getnames(x::NamedTuple) = propertynames(x)
+
+# this is required as == does not allow for comparison between tuples and vectors
+function _equal_names(r1, r2)
+    n1 = _getnames(r1)
+    n2 = _getnames(r2)
+    length(n1) == length(n2) || return false
+    for (a, b) in zip(n1, n2)
+        a == b || return false
+    end
+    return true
 end
 
-Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(col -> parent(r)[!, parentcols(index(r), col)], length(r)), row(r), h)
-
-function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
-    if parent(r1) === parent(r2)
-        parentcols(index(r1)) == parentcols(index(r2)) || return false
-        row(r1) == row(r2) && return true
-    else
-        _names(r1) == _names(r2) || return false
+for eqfun in (:isequal, :(==)),
+    (leftarg, rightarg) in ((:DataFrameRow, :DataFrameRow),
+                            (:DataFrameRow, :NamedTuple),
+                            (:NamedTuple, :DataFrameRow))
+    @eval function Base.$eqfun(r1::$leftarg, r2::$rightarg)
+        _equal_names(r1, r2) || return false
+        return all(((a, b),) -> $eqfun(a, b), zip(r1, r2))
     end
-    all(((a, b),) -> a == b, zip(r1, r2))
 end
 
-function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
-    if parent(r1) === parent(r2)
-        parentcols(index(r1)) == parentcols(index(r2)) || return false
-        row(r1) == row(r2) && return true
-    else
-        _names(r1) == _names(r2) || return false
+for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
+    (leftarg, rightarg) in ((:DataFrameRow, :DataFrameRow),
+                            (:DataFrameRow, :NamedTuple),
+                            (:NamedTuple, :DataFrameRow))
+    @eval function Base.$cmpfun(r1::$leftarg, r2::$rightarg)
+        if !_equal_names(r1, r2)
+            length(r1) == length(r2) ||
+                throw(ArgumentError("compared objects must have the same number " *
+                                    "of columns (got $(length(r1)) and $(length(r2)))"))
+            mismatch = findfirst(i -> _getnames(r1)[i] != _getnames(r2)[i], 1:length(r1))
+            throw(ArgumentError("compared objects must have the same property " *
+                                "names but they differ in column number $mismatch " *
+                                "where the names are :$(_getnames(r1)[mismatch]) and " *
+                                ":$(_getnames(r2)[mismatch]) respectively"))
+        end
+        for (a, b) in zip(r1, r2)
+            eq = $eqfun(a, b)
+            if ismissing(eq)
+                return missing
+            elseif !eq
+                return $cmpfun(a, b)
+            end
+        end
+        return false # here we know that r1 and r2 have equal lengths and all values were equal
     end
-    all(((a, b),) -> isequal(a, b), zip(r1, r2))
-end
-
-# lexicographic ordering on DataFrame rows, missing > !missing
-function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
-    length(r1) == length(r2) ||
-        throw(ArgumentError("compared DataFrameRows must have the same number " *
-                            "of columns (got $(length(r1)) and $(length(r2)))"))
-    if _names(r1) != _names(r2)
-        mismatch = findfirst(i -> _names(r1)[i] != _names(r2)[i], 1:length(r1))
-        throw(ArgumentError("compared DataFrameRows must have the same colum " *
-                            "names but they differ in column number $mismatch " *
-                            "where the names are :$(names(r1)[mismatch]) and " *
-                            ":$(_names(r2)[mismatch]) respectively"))
-    end
-    for (a, b) in zip(r1, r2)
-        isequal(a, b) || return isless(a, b)
-    end
-    return false
 end
 
 function DataFrame(dfr::DataFrameRow)

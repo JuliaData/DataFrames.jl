@@ -521,6 +521,51 @@ end
 
 Base.getproperty(key::GroupKey, p::AbstractString) = getproperty(key, Symbol(p))
 
+Base.hash(key::GroupKey, h::UInt) = _nt_like_hash(key, h)
+
+_getnames(x::GroupKey) = parent(x).cols
+
+for eqfun in (:isequal, :(==)),
+    (leftarg, rightarg) in ((:GroupKey, :GroupKey),
+                            (:DataFrameRow, :GroupKey),
+                            (:GroupKey, :DataFrameRow),
+                            (:NamedTuple, :GroupKey),
+                            (:GroupKey, :NamedTuple))
+    @eval function Base.$eqfun(k1::$leftarg, k2::$rightarg)
+        _equal_names(k1, k2) || return false
+        return all(((a, b),) -> $eqfun(a, b), zip(k1, k2))
+    end
+end
+
+for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
+    (leftarg, rightarg) in ((:GroupKey, :GroupKey),
+                            (:DataFrameRow, :GroupKey),
+                            (:GroupKey, :DataFrameRow),
+                            (:NamedTuple, :GroupKey),
+                            (:GroupKey, :NamedTuple))
+    @eval function Base.$cmpfun(k1::$leftarg, k2::$rightarg)
+        if !_equal_names(k1, k2)
+            length(k1) == length(k2) ||
+                throw(ArgumentError("compared objects must have the same number " *
+                                    "of columns (got $(length(k1)) and $(length(k2)))"))
+            mismatch = findfirst(i -> _getnames(k1)[i] != _getnames(k2)[i], 1:length(k1))
+            throw(ArgumentError("compared objects must have the same column " *
+                                "names but they differ in column number $mismatch " *
+                                "where the names are :$(_getnames(k1)[mismatch]) and " *
+                                ":$(_getnames(k2)[mismatch]) respectively"))
+        end
+        for (a, b) in zip(k1, k2)
+            eq = $eqfun(a, b)
+            if ismissing(eq)
+                return missing
+            elseif !eq
+                return $cmpfun(a, b)
+            end
+        end
+        return false # here we know that r1 and r2 have equal lengths and all values were equal
+    end
+end
+
 function Base.NamedTuple(key::GroupKey)
     N = NamedTuple{Tuple(parent(key).cols)}
     N(_groupvalues(parent(key), getfield(key, :idx)))

@@ -118,7 +118,7 @@ include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")
 include("groupeddataframe/groupeddataframe.jl")
-include("dataframerow/utils.jl")
+include("groupeddataframe/utils.jl")
 
 include("other/broadcasting.jl")
 
