@@ -40,6 +40,7 @@ julia = "1"
 
 [extras]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+Chain = "8be319e6-bccf-4806-a6f7-6fae938471bc"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DataValues = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
@@ -51,5 +52,16 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
-        "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful"]
+test = [
+  "CategoricalArrays", 
+  "Chain, 
+  "Combinatorics", 
+  "DataStructures", 
+  "DataValues", 
+  "Dates", 
+  "Logging", 
+  "OffsetArrays", 
+  "Random", 
+  "Test", 
+  "Unitful"
+]

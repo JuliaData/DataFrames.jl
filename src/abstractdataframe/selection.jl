@@ -229,16 +229,19 @@ function normalize_selection(idx::AbstractIndex,
                                                       AbstractVector{<:AbstractString}}}},
                              renamecols::Bool)
     lls = last(last(sel))
-    if lls isa DataType
-        lls === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
+
+    if lls isa DataType && lls !== AsTable
+        throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
+
     if first(sel) isa AsTable
         rawc = first(sel).cols
-        wanttable = true
+        want_table = true
     else
         rawc = first(sel)
-        wanttable = false
+        want_table = false
     end
+
     if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}}
@@ -254,17 +257,23 @@ function normalize_selection(idx::AbstractIndex,
                 end
             end
     end
+
     if lls isa AbstractString
-        r = Symbol(lls)
+        combine_target = Symbol(lls)
     elseif lls isa AbstractVector{<:AbstractString}
-        r = Symbol.(lls)
+        combine_target = Symbol.(lls)
     else
-        r = lls
+        combine_target = lls
     end
-    if r isa AbstractVector{Symbol}
-        allunique(r) || throw(ArgumentError("target column names must be unique"))
+
+    if combine_target isa AbstractVector{Symbol}
+        allunique(combine_target) || throw(ArgumentError("target column names must be unique"))
     end
-    return (wanttable ? AsTable(c) : c) => first(last(sel)) => r
+
+    combine_src = want_table ? AsTable(c) : c
+    combine_func = first(last(sel))
+
+    return combine_src => combine_func => combine_target
 end
 
 function normalize_selection(idx::AbstractIndex,

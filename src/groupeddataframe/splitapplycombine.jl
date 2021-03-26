@@ -19,7 +19,7 @@ function gen_groups(idx::Vector{Int})
 end
 
 function _combine_prepare(gd::GroupedDataFrame,
-                          @nospecialize(cs::Union{Pair, Base.Callable,
+                          @nospecialize(combine_operations::Union{Pair, Base.Callable,
                                         ColumnIndex, MultiColumnIndex}...);
                           keepkeys::Bool, ungroup::Bool, copycols::Bool,
                           keeprows::Bool, renamecols::Bool)
@@ -27,26 +27,23 @@ function _combine_prepare(gd::GroupedDataFrame,
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
 
-    cs_vec = []
-    for p in cs
-        if p === nrow
-            push!(cs_vec, nrow => :nrow)
-        elseif p isa AbstractVecOrMat{<:Pair}
-            append!(cs_vec, p)
-        else
-            push!(cs_vec, p)
+    processed_combine_ops = map(combine_operations) do p
+        if p isa Pair && first(x) isa Tuple
+            # an explicit error is thrown as this was allowed in the past
+            throw(ArgumentError("passing a Tuple $(first(p)) as column selector is not " *
+                                "supported, use a vector $(collect(first(p))) instead"))
         end
-    end
-    if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
-        x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
-        # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("passing a Tuple $(first(x)) as column selector is not " *
-                            "supported, use a vector $(collect(first(x))) instead"))
+
+        if p === nrow
+            nrow => :nrow
+        else
+            p
+        end
     end
 
     cs_norm = []
     optional_transform = Bool[]
-    for c in cs_vec
+    for c in processed_combine_ops
         arg = normalize_selection(index(parent(gd)), c, renamecols)
         if arg isa AbstractVector{Int}
             for col_idx in arg
@@ -65,7 +62,9 @@ function _combine_prepare(gd::GroupedDataFrame,
 
     idx, valscat = _combine(gd, cs_norm, optional_transform, copycols, keeprows, renamecols)
 
-    !keepkeys && ungroup && return valscat
+    if !keepkeys && ungroup
+        return valscat
+    end
 
     gd_keys = groupcols(gd)
     for key in gd_keys
@@ -77,11 +76,13 @@ function _combine_prepare(gd::GroupedDataFrame,
             end
         end
     end
+
     if keeprows
         newparent = select(parent(gd), gd.cols, copycols=copycols)
     else
         newparent = length(gd) > 0 ? parent(gd)[idx, gd.cols] : parent(gd)[1:0, gd.cols]
     end
+
     added_cols = select(valscat, Not(intersect(gd_keys, _names(valscat))), copycols=false)
     hcat!(newparent, length(gd) > 0 ? added_cols : similar(added_cols, 0), copycols=false)
     ungroup && return newparent
