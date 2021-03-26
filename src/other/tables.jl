@@ -1,6 +1,6 @@
 Tables.istable(::Type{<:AbstractDataFrame}) = true
 Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
-Tables.columns(df::AbstractDataFrame) = df
+Tables.columns(df::AbstractDataFrame) = eachcol(df)
 Tables.rowaccess(::Type{<:AbstractDataFrame}) = true
 Tables.rows(df::AbstractDataFrame) = eachrow(df)
 Tables.rowtable(df::AbstractDataFrame) = Tables.rowtable(Tables.columntable(df))
