@@ -1695,7 +1695,7 @@ end
     df2v[Not(1), Cols(:)] = Matrix(df)
     df2v[Not(1), Between(1, 2)] = Matrix(df[!, 1:2])
 
-    @test_throws ArgumentError df[1, All()]
+    @test_throws ArgumentError df[1, All(1)]
 end
 
 @testset "vcat and push! with :orderequal" begin
