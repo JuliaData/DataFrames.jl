@@ -28,7 +28,7 @@ function _combine_prepare(gd::GroupedDataFrame,
     end
 
     processed_combine_ops = map(combine_operations) do p
-        if p isa Pair && first(x) isa Tuple
+        if p isa Pair && first(p) isa Tuple
             # an explicit error is thrown as this was allowed in the past
             throw(ArgumentError("passing a Tuple $(first(p)) as column selector is not " *
                                 "supported, use a vector $(collect(first(p))) instead"))
