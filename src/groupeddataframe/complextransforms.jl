@@ -4,9 +4,6 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-_getnames(x::AbstractDataFrame) = _names(x)
-_getnames(x::Any) = throw(ArgumentError("names not defined for argument of type $(typeof(x))"))
-
 function _combine_multicol(firstres, fun::Base.Callable, gd::GroupedDataFrame,
                            incols::Union{Nothing, AbstractVector, Tuple, NamedTuple})
     firstmulticol = firstres isa MULTI_COLS_TYPE
