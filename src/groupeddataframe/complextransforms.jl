@@ -76,7 +76,6 @@ function _names_match(r1, t::NTuple{N, Symbol}) where N
     return true
 end
 
-
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
                    colnames::NTuple{N, Symbol}) where N
@@ -310,10 +309,9 @@ _get_col(rows::AbstractDataFrame, j::Int) = rows[!, j]
 _get_col(rows::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}, j::Int) = rows[j]
 _get_col(rows::Any, j::Int) = throw(ArgumentError(ERROR_ROW_COUNT))
 
-
 function append_rows!(rows, outcols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::NTuple{N, Symbol}) where N
-if !_names_match(rows, colnames)
+    if !_names_match(rows, colnames)
         throw(ArgumentError("return value must have the same column names " *
                             "for all groups (got $colnames and $(propertynames(rows)))"))
     end
