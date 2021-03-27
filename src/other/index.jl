@@ -218,7 +218,7 @@ end
     setdiff(1:length(x), getindex(x, notidx.skip))
 @inline Base.getindex(x::AbstractIndex, idx::Between) = x[idx.first]:x[idx.last]
 @inline Base.getindex(x::AbstractIndex, idx::All) =
-    isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported"))
+    isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported: use Cols(args...) instead"))
 @inline Base.getindex(x::AbstractIndex, idx::Cols) =
     isempty(idx.cols) ? Int[] : union(getindex.(Ref(x), idx.cols)...)
 
