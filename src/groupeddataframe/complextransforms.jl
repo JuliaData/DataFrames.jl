@@ -82,7 +82,7 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    colnames::NTuple{N, Symbol}) where N
     if !_names_match(row, colnames)
         throw(ArgumentError("return value must have the same column names " *
-                           "for all groups (got $colnames and $(propertynames(row)))"))
+                            "for all groups (got $colnames and $(propertynames(row)))"))
     end
     @inbounds for j in colstart:length(outcols)
         col = outcols[j]
@@ -315,7 +315,7 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::NTuple{N, Symbol}) where N
 if !_names_match(rows, colnames)
         throw(ArgumentError("return value must have the same column names " *
-                           "for all groups (got $colnames and $(propertynames(row)))"))
+                            "for all groups (got $colnames and $(propertynames(rows)))"))
     end
     @inbounds for j in colstart:length(outcols)
         col = outcols[j]
