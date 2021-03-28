@@ -373,13 +373,13 @@ DataFrame(vecs::Vector{<:AbstractVector}) =
 DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
           nrows::Integer=0; makeunique::Bool=false) where T<:Type =
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
-                        "deprecated. Pass explicitly created columns to a " *
+                        "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))
 
 DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:AbstractString},
           nrows::Integer=0; makeunique::Bool=false) where T<:Type =
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
-                        "deprecated. Pass explicitly created columns to a " *
+                        "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))
 
 

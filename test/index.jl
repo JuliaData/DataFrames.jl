@@ -413,6 +413,8 @@ end
     df = DataFrame(a=1, b=2, c=3)
     @test select(df, All()) == df[:, :]
     @test df[:, All()] == df[:, :]
+    @test_throws ArgumentError select(df, All(1))
+    @test_throws ArgumentError df[:, All(1)]
 end
 
 @testset "Cols indexing" begin

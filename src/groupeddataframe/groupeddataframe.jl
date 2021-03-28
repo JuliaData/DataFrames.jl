@@ -1019,8 +1019,5 @@ function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
     return gdf[[f(mapper(i))::Bool for i in 1:length(gdf)]]
 end
 
-function Base.map(f, gdf::GroupedDataFrame)
-    Base.depwarn("Use of the map function on GroupedDataFrame is deprecated. " *
-                 "Use `[f(sdf) for sdf in gdf]` instead.", :map)
-    return collect(Base.Generator(f, gdf))
-end
+Base.map(f, gdf::GroupedDataFrame) =
+    throw(ArgumentError("using map over `GroupedDataFrame`s is reserved"))

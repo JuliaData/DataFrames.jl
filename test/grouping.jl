@@ -3852,4 +3852,15 @@ end
     end
 end
 
+@testset "map on GroupedDataFrame" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    dfv = @view df[1:3, 1:3]
+    gdf = groupby(df, :a)
+    gdfv = groupby(dfv, :a)
+
+    for x in (gdf, gdfv)
+        @test_throws ArgumentError map(identity, x)
+    end
+end
+
 end # module
