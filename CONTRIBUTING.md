@@ -11,7 +11,7 @@ Thanks for taking the plunge!
   or related issues for context, before opening a new issue
 * Including minimal examples is greatly appreciated
 * If it's a bug, or unexpected behaviour, reproducing on the latest development version
-  (`Pkg.add(name="DataFrames", rev="master")`) is a good gut check and can streamline the process,
+  (`Pkg.add(name="DataFrames", rev="main")`) is a good gut check and can streamline the process,
   along with including the first two lines of output from `versioninfo()`
 
 ## Contributing
