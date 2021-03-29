@@ -2010,8 +2010,8 @@ if VERSION >= v"1.5"
 end
 
 @testset "threading correctness tests" begin
-    for x in (10, 2*10^6), y in 1:4
-        mat = rand(x, y)
+    for x in (10, 1_100_000), y in 1:4
+        mat = rand(Int8, x, y)
         df = DataFrame(mat, :auto)
         for rowrange in [:, 1:nrow(df)-5, collect(1:nrow(df)-5), axes(df, 1) .< nrow(df)-5],
             colrange in [:, axes(df, 2), collect(axes(df, 2)), 1:ncol(df) - 1]
