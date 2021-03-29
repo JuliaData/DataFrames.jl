@@ -229,9 +229,11 @@ function normalize_selection(idx::AbstractIndex,
                                                       AbstractVector{<:AbstractString}}}},
                              renamecols::Bool)
     lls = last(last(sel))
+
     if lls isa DataType
         lls === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
+
     if first(sel) isa AsTable
         rawc = first(sel).cols
         wanttable = true
@@ -239,6 +241,7 @@ function normalize_selection(idx::AbstractIndex,
         rawc = first(sel)
         wanttable = false
     end
+
     if rawc isa AbstractVector{Int}
         c = rawc
     elseif rawc isa Union{AbstractVector{Symbol}, AbstractVector{<:AbstractString}}
@@ -254,17 +257,28 @@ function normalize_selection(idx::AbstractIndex,
                 end
             end
     end
+
     if lls isa AbstractString
-        r = Symbol(lls)
+        combine_target_col = Symbol(lls)
     elseif lls isa AbstractVector{<:AbstractString}
-        r = Symbol.(lls)
+        combine_target_col = Symbol.(lls)
     else
-        r = lls
+        combine_target_col = lls
     end
-    if r isa AbstractVector{Symbol}
-        allunique(r) || throw(ArgumentError("target column names must be unique"))
+
+    if combine_target_col isa AbstractVector{Symbol}
+        allunique(combine_target_col) || throw(ArgumentError("target column names must be unique"))
     end
-    return (wanttable ? AsTable(c) : c) => first(last(sel)) => r
+
+    combine_src = if wanttable 
+        AsTable(c) 
+    else 
+        (length(c) == 1 ? only(c) : c)
+    end
+
+    combine_func = first(last(sel))
+    
+    return combine_src => combine_func => combine_target_col
 end
 
 function normalize_selection(idx::AbstractIndex,
@@ -323,7 +337,14 @@ function normalize_selection(idx::AbstractIndex,
             newcol = Symbol(prefix)
         end
     end
-    return (wanttable ? AsTable(c) : c) => fun => newcol
+
+    combine_src = if wanttable 
+        AsTable(c) 
+    else 
+        (length(c) == 1 ? only(c) : c)
+    end
+
+    return combine_src => fun => newcol
 end
 
 _transformation_helper(df::AbstractDataFrame, col_idx::Nothing, fun) = fun(df)
