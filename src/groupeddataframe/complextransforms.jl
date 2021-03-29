@@ -304,7 +304,6 @@ end
 
 _get_col(rows::AbstractDataFrame, j::Int) = rows[!, j]
 _get_col(rows::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}, j::Int) = rows[j]
-_get_col(rows::Any, j::Int) = throw(ArgumentError(ERROR_ROW_COUNT))
 
 function append_rows!(rows, outcols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::NTuple{N, Symbol}) where N
