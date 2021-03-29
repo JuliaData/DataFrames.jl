@@ -523,8 +523,6 @@ Base.getproperty(key::GroupKey, p::AbstractString) = getproperty(key, Symbol(p))
 
 Base.hash(key::GroupKey, h::UInt) = _nt_like_hash(key, h)
 
-_getnames(x::GroupKey) = parent(x).cols
-
 for eqfun in (:isequal, :(==)),
     (leftarg, rightarg) in ((:GroupKey, :GroupKey),
                             (:DataFrameRow, :GroupKey),
