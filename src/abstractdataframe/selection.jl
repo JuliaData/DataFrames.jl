@@ -174,6 +174,8 @@ end
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
 
+@nospecialize
+
 normalize_selection(idx::AbstractIndex, sel, renamecols::Bool) =
     try
         idx[sel]
@@ -326,12 +328,15 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-_transformation_helper(df::AbstractDataFrame, col_idx::Nothing, fun) = fun(df)
-_transformation_helper(df::AbstractDataFrame, col_idx::Int, fun) = fun(df[!, col_idx])
+_transformation_helper(df::AbstractDataFrame, col_idx::Nothing, wfun::Ref{Any}) =
+    only(wfun)(df)
+_transformation_helper(df::AbstractDataFrame, col_idx::Int, wfun::Ref{Any}) =
+    only(wfun)(df[!, col_idx])
 
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
-function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, fun)
+function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, wfun::Ref{Any})
+    fun = only(wfun)
     tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
     if isempty(tbl) && fun isa ByRow
         return _empty_astable_helper(fun.fun, nrow(df))
@@ -342,7 +347,8 @@ end
 
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
 
-function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, fun)
+function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, wfun::Ref{Any})
+    fun = only(wfun)
     if isempty(col_idx) && fun isa ByRow
         return _empty_selector_helper(fun.fun, nrow(df))
     else
@@ -351,8 +357,8 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
     end
 end
 
-function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol},
-                                                          Type{AsTable}, Nothing})
+function _gen_colnames(res, newname::Union{AbstractVector{Symbol},
+                                           Type{AsTable}, Nothing})
     if res isa AbstractMatrix
         colnames = gennames(size(res, 2))
     else
@@ -412,7 +418,8 @@ end
 
 function _fix_existing_columns_for_vector(newdf::DataFrame, df::AbstractDataFrame,
                                           allow_resizing_newdf::Ref{Bool}, lr::Int,
-                                          @nospecialize(fun))
+                                          wfun::Ref{Any})
+    fun = only(wfun)
     # allow shortening to 0 rows
     if allow_resizing_newdf[] && nrow(newdf) == 1
         newdfcols = _columns(newdf)
@@ -434,8 +441,9 @@ end
 
 function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                             copycols::Bool, @nospecialize(fun),
+                             copycols::Bool, wfun::Ref{Any},
                              newname::Symbol, v::AbstractVector)
+    fun = only(wfun)
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
@@ -448,24 +456,24 @@ end
 
 function _add_multicol_res(res::AbstractDataFrame, newdf::DataFrame, df::AbstractDataFrame,
                            colnames::AbstractVector{Symbol},
-                           allow_resizing_newdf::Ref{Bool}, @nospecialize(fun),
+                           allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                            copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
     lr = nrow(res)
-    _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
+    _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == ncol(res)
     for (newname, v) in zip(colnames, eachcol(res))
-        _add_col_check_copy(newdf, df, col_idx, copycols, fun, newname, v)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v)
     end
 end
 
 function _add_multicol_res(res::AbstractMatrix, newdf::DataFrame, df::AbstractDataFrame,
                            colnames::AbstractVector{Symbol},
-                           allow_resizing_newdf::Ref{Bool}, @nospecialize(fun),
+                           allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                            copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
     lr = size(res, 1)
-    _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
+    _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == size(res, 2)
     for (i, newname) in enumerate(colnames)
         newdf[!, newname] = res[:, i]
@@ -475,20 +483,20 @@ end
 function _add_multicol_res(res::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
                            newdf::DataFrame, df::AbstractDataFrame,
                            colnames::AbstractVector{Symbol},
-                           allow_resizing_newdf::Ref{Bool}, @nospecialize(fun),
+                           allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                            copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
     lr = length(res[1])
-    _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
+    _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == length(res)
     for (newname, v) in zip(colnames, res)
-        _add_col_check_copy(newdf, df, col_idx, copycols, fun, newname, v)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v)
     end
 end
 
 function _add_multicol_res(res::NamedTuple, newdf::DataFrame, df::AbstractDataFrame,
                            colnames::AbstractVector{Symbol},
-                           allow_resizing_newdf::Ref{Bool}, @nospecialize(fun),
+                           allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                            copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
     if any(v -> v isa AbstractVector, res)
@@ -500,32 +508,33 @@ end
 
 function _add_multicol_res(res::DataFrameRow, newdf::DataFrame, df::AbstractDataFrame,
                            colnames::AbstractVector{Symbol},
-                           allow_resizing_newdf::Ref{Bool}, @nospecialize(fun),
+                           allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                            copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
     _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
 end
 
-function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{Int, AbstractVector{Int}, AsTable},
-                                                                       <:Pair{<:Base.Callable,
-                                                                              <:Union{Symbol,
-                                                                                      AbstractVector{Symbol},
-                                                                                      DataType}}}}),
-                           df::AbstractDataFrame, newdf::DataFrame,
+function select_transform!(wnc::Ref{Any}, df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
                            allow_resizing_newdf::Ref{Bool})
+    nc = only(wnc)
+    @assert nc isa Union{Base.Callable,
+                         Pair{<:Union{Int, AbstractVector{Int}, AsTable},
+                              <:Pair{<:Base.Callable, <:Union{Symbol, AbstractVector{Symbol}, DataType}}}}
     if nc isa Base.Callable
         col_idx, fun, newname = nothing, nc, nothing
     else
         col_idx, (fun, newname) = nc
     end
+    wfun = Ref{Any}(fun)
+
     if newname isa DataType
         newname === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
     # It is allowed to request a tranformation operation into a newname column
     # only once. This is ensured by the logic related to transformed_cols dictionaly
     # in _manipulate, therefore in select_transform! such a duplicate should not happen
-    res = _transformation_helper(df, col_idx, fun)
+    res = _transformation_helper(df, col_idx, Ref{Any}(fun))
 
     if newname === AsTable || newname isa AbstractVector{Symbol}
         res = _expand_to_table(res)
@@ -546,7 +555,7 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
             union!(transformed_cols, colnames)
             @assert startlen + length(colnames) == length(transformed_cols)
         end
-        _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, fun,
+        _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
                           col_idx, copycols, newname)
     elseif res isa AbstractVector
         if newname === nothing
@@ -558,8 +567,8 @@ function select_transform!(@nospecialize(nc::Union{Base.Callable, Pair{<:Union{I
             push!(transformed_cols, newname)
         end
         lr = length(res)
-        _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, fun)
-        _add_col_check_copy(newdf, df, col_idx, copycols, fun, newname, res)
+        _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res)
     else
         if newname === nothing
             newname = :x1
@@ -609,7 +618,7 @@ See [`select`](@ref) for examples.
 ```
 
 """
-select!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
+select!(df::DataFrame, args...; renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
 function select!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -639,7 +648,7 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
+transform!(df::DataFrame, args...; renamecols::Bool=true) =
     select!(df, :, args..., renamecols=renamecols)
 
 function transform!(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -853,7 +862,7 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 ```
 
 """
-select(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
+select(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
     manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
 
 function select(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -919,7 +928,7 @@ ERROR: ArgumentError: column :x in returned data frame is not equal to grouping 
 
 See [`select`](@ref) for more examples.
 """
-transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
+transform(df::AbstractDataFrame, args...; copycols::Bool=true, renamecols::Bool=true) =
     select(df, :, args..., copycols=copycols, renamecols=renamecols)
 
 function transform(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -1172,7 +1181,7 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    8 │     4      1      8      9
 ```
 """
-combine(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
+combine(df::AbstractDataFrame, args...; renamecols::Bool=true) =
     manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
 
 function combine(arg::Base.Callable, df::AbstractDataFrame; renamecols::Bool=true)
@@ -1206,7 +1215,7 @@ manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
            renamecols::Bool) =
     manipulate(df, [c], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
 
-function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprows::Bool, renamecols::Bool)
+function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVecOrMat{<:Pair}
@@ -1215,11 +1224,11 @@ function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprow
             push!(cs_vec, v)
         end
     end
-    return _manipulate(df, [normalize_selection(index(df), c, renamecols) for c in cs_vec],
+    return _manipulate(df, Any[normalize_selection(index(df), c, renamecols) for c in cs_vec],
                     copycols, keeprows)
 end
 
-function _manipulate(df::AbstractDataFrame, @nospecialize(normalized_cs), copycols::Bool, keeprows::Bool)
+function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols::Bool, keeprows::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
     # the role of transformed_cols is the following
@@ -1287,7 +1296,7 @@ function _manipulate(df::AbstractDataFrame, @nospecialize(normalized_cs), copyco
                 end
             end
         else
-            select_transform!(nc, df, newdf, transformed_cols, copycols,
+            select_transform!(Ref{Any}(nc), df, newdf, transformed_cols, copycols,
                               allow_resizing_newdf)
         end
     end
@@ -1308,7 +1317,7 @@ function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
     end
 end
 
-function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, keeprows::Bool,
+function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
                     renamecols::Bool)
     if copycols
         cs_vec = []
@@ -1319,7 +1328,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                 push!(cs_vec, v)
             end
         end
-        return _manipulate(dfv, [normalize_selection(index(dfv), c, renamecols) for c in cs_vec],
+        return _manipulate(dfv, Any[normalize_selection(index(dfv), c, renamecols) for c in cs_vec],
                            true, keeprows)
     else
         # we do not support transformations here
@@ -1348,3 +1357,5 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
         return view(dfv, :, Cols(newinds...))
     end
 end
+
+@specialize
