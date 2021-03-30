@@ -382,7 +382,7 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        incols::Union{Tuple, NamedTuple})
     if firstres isa AbstractVector
         idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
-                                              Val(firstmulticol), nothing)
+                                              Val(firstmulticol), NOTHING_IDX_AGG)
         @assert length(outcol_vec) == 1
         res = outcol_vec[1]
         @assert length(res) > 0
