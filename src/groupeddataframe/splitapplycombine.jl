@@ -213,7 +213,7 @@ function _combine_process_agg(wcs_i::Ref{Any},
                               trans_res::Vector{TransformationResult},
                               idx_agg::Vector{Int})
     cs_i = only(wcs_i)
-    @assert csi isa Pair{Int, <:Pair{<:Function, Symbol}}
+    @assert cs_i isa Pair{Int, <:Pair{<:Function, Symbol}}
     @assert isagg(cs_i, gd)
     @assert !optional_i
     out_col_name = last(last(cs_i))
