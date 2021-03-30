@@ -610,7 +610,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     # An array of Dicts for summary statistics
     col_stats_dicts = map(eachcol(df)) do col
         if eltype(col) >: Missing
-            t = collect(skipmissing(col))
+            t = skipmissing(col)
             d = get_stats(t, predefined_funs)
             get_stats!(d, t, custom_funs)
         else
@@ -649,7 +649,7 @@ end
 # Compute summary statistics
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
-function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
+function get_stats(col::Union{AbstractVector,Base.SkipMissing}, stats::AbstractVector{Symbol})
     d = Dict{Symbol, Any}()
 
     if :q25 in stats || :median in stats || :q75 in stats
@@ -687,7 +687,8 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
     return d
 end
 
-function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
+function get_stats!(d::Dict, col::Union{AbstractVector,Base.SkipMissing},
+                    stats::AbstractVector{<:Pair})
     for stat in stats
         d[stat[2]] = try stat[1](col) catch end
     end
