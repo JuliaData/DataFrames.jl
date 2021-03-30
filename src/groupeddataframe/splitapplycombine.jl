@@ -23,10 +23,15 @@ function gen_groups(idx::Vector{Int})
 end
 
 function _combine_prepare(gd::GroupedDataFrame,
-                          @nospecialize(cs::Union{Pair, Base.Callable,
-                                        ColumnIndex, MultiColumnIndex}...);
+                          wcs::Ref{Any};
                           keepkeys::Bool, ungroup::Bool, copycols::Bool,
                           keeprows::Bool, renamecols::Bool)
+    cs = only(wcs)
+    for cei in cs
+        if !(cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex})
+            throw(ArgumentError("Unrecognized transformation specification $cei"))
+        end
+    end
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
     end
@@ -200,13 +205,15 @@ struct TransformationResult
 end
 
 # the transformation is an aggregation for which we have the fast path
-function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, Symbol}}),
+function _combine_process_agg(wcs_i::Ref{Any},
                               optional_i::Bool,
                               parentdf::AbstractDataFrame,
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
                               idx_agg::Vector{Int})
+    cs_i = only(wcs_i)
+    @assert csi isa Pair{Int, <:Pair{<:Function, Symbol}}
     @assert isagg(cs_i, gd)
     @assert !optional_i
     out_col_name = last(last(cs_i))
@@ -269,13 +276,15 @@ function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pai
 end
 
 # perform a transformation taking SubDataFrame as an input
-function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
+function _combine_process_callable(wcs_i::Ref{Any},
                                    optional_i::Bool,
                                    parentdf::AbstractDataFrame,
                                    gd::GroupedDataFrame,
                                    seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                    trans_res::Vector{TransformationResult},
                                    idx_agg::Ref{Vector{Int}})
+    cs_i = only(wcs_i)
+    @assert cs_i isa Base.Callable
     firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parentdf, 0))
     idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
 
@@ -325,8 +334,11 @@ function _combine_process_pair_symbol(optional_i::Bool,
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
                                       firstres::Any,
-                                      @nospecialize(fun::Base.Callable),
+                                      wfun::Ref{Any},
                                       incols::Union{Tuple, NamedTuple})
+    fun = only(wfun)
+    @assert fun isa Base.Callable
+
     if firstmulticol
         throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
     end
@@ -378,8 +390,10 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
                                        firstres::Any,
-                                       @nospecialize(fun::Base.Callable),
+                                       wfun::Ref{Any},
                                        incols::Union{Tuple, NamedTuple})
+    fun = only(wfun)
+    @assert fun isa Base.Callable
     if firstres isa AbstractVector
         idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
                                               Val(firstmulticol), NOTHING_IDX_AGG)
@@ -455,13 +469,16 @@ end
 # perform a transformation specified using the Pair notation
 # cs_i is a Pair that has many possible forms so this function is used to dispatch
 # to an appropriate more specialized function
-function _combine_process_pair(@nospecialize(cs_i::Pair),
+function _combine_process_pair(wcs_i::Ref{Any},
                                optional_i::Bool,
                                parentdf::AbstractDataFrame,
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                trans_res::Vector{TransformationResult},
                                idx_agg::Ref{Vector{Int}})
+    cs_i = only(wcs_i)
+    @assert cs_i isa Pair
+
     source_cols, (fun, out_col_name) = cs_i
 
     if source_cols isa Int
@@ -482,11 +499,13 @@ function _combine_process_pair(@nospecialize(cs_i::Pair),
 
     if out_col_name isa Symbol
         return _combine_process_pair_symbol(optional_i, gd, seen_cols, trans_res, idx_agg,
-                                            out_col_name, firstmulticol, firstres, fun, incols)
+                                            out_col_name, firstmulticol, firstres,
+                                            Ref{Any}(fun), incols)
     end
     if out_col_name == AsTable || out_col_name isa AbstractVector{Symbol}
         return _combine_process_pair_astable(optional_i, gd, seen_cols, trans_res, idx_agg,
-                                             out_col_name, firstmulticol, firstres, fun, incols)
+                                             out_col_name, firstmulticol, firstres,
+                                             Ref{Any}(fun), incols)
     end
     throw(ArgumentError("unsupported target column name specifier $out_col_name"))
 end
@@ -561,16 +580,16 @@ function _combine(gd::GroupedDataFrame,
         optional_i = optional_transform[i]
 
         tasks[i] = @spawn if length(gd) > 0 && isagg(cs_i, gd)
-            _combine_process_agg(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
+            _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
             # this is a fast path used when we pass a column or rename a column in select or transform
             _combine_process_noop(cs_i, optional_i, parentdf, seen_cols, trans_res, idx_keeprows, copycols)
         elseif cs_i isa Base.Callable
-            _combine_process_callable(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         else
             @assert cs_i isa Pair
-            _combine_process_pair(cs_i, optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         end
     end
     # Workaround JuliaLang/julia#38931:
@@ -684,7 +703,7 @@ combine(f::Pair, gd::GroupedDataFrame;
 combine(gd::GroupedDataFrame,
         cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, cs..., keepkeys=keepkeys, ungroup=ungroup,
+    _combine_prepare(gd, Ref{Any}(cs), keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
 function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
@@ -698,7 +717,7 @@ end
 
 select(gd::GroupedDataFrame, args...; copycols::Bool=true, keepkeys::Bool=true,
        ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, args..., copycols=copycols, keepkeys=keepkeys,
+    _combine_prepare(gd, Ref{Any}(args), copycols=copycols, keepkeys=keepkeys,
                      ungroup=ungroup, keeprows=true, renamecols=renamecols)
 
 function transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
