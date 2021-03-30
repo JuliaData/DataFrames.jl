@@ -4,6 +4,10 @@
 # in combine are considered to produce multiple columns in the resulting data frame
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
+# use a constant Vector{Int} as a sentinel to signal that idx_agg has not been computed yet
+# to avoid excessive specialization
+const NOTHING_IDX_AGG = Int[]
+
 function gen_groups(idx::Vector{Int})
     groups = zeros(Int, length(idx))
     groups[1] = 1
@@ -175,7 +179,7 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
     outcol
 end
 
-function _agg2idx_map_helper(idx::AbstractVector, idx_agg::AbstractVector)
+function _agg2idx_map_helper(idx::Vector{Int}, idx_agg::Vector{Int})
     agg2idx_map = fill(-1, length(idx))
     aggj = 1
     @inbounds for (j, idxj) in enumerate(idx)
@@ -202,7 +206,7 @@ function _combine_process_agg(@nospecialize(cs_i::Pair{Int, <:Pair{<:Function, S
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
-                              idx_agg::AbstractVector{Int})
+                              idx_agg::Vector{Int})
     @assert isagg(cs_i, gd)
     @assert !optional_i
     out_col_name = last(last(cs_i))
@@ -271,16 +275,16 @@ function _combine_process_callable(@nospecialize(cs_i::Base.Callable),
                                    gd::GroupedDataFrame,
                                    seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                    trans_res::Vector{TransformationResult},
-                                   idx_agg::Ref{Union{Nothing, Vector{Int}}})
+                                   idx_agg::Ref{Vector{Int}})
     firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parentdf, 0))
     idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
 
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
         lock(gd.lazy_lock) do
-            # if idx_agg was not computed yet it is nothing
+            # if idx_agg was not computed yet it is NOTHING_IDX_AGG
             # in this case if we are not passed a vector compute it.
-            if isnothing(idx_agg[])
+            if idx_agg[] === NOTHING_IDX_AGG
                 idx_agg[] = Vector{Int}(undef, length(gd))
                 fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
             end
@@ -317,7 +321,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
                                       gd::GroupedDataFrame,
                                       seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                       trans_res::Vector{TransformationResult},
-                                      idx_agg::Ref{Union{Nothing, Vector{Int}}},
+                                      idx_agg::Ref{Vector{Int}},
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
                                       firstres::Any,
@@ -329,7 +333,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
     # if idx_agg was not computed yet it is nothing
     # in this case if we are not passed a vector compute it.
     lock(gd.lazy_lock) do
-        if !(firstres isa AbstractVector) && isnothing(idx_agg[])
+        if !(firstres isa AbstractVector) && idx_agg[] === NOTHING_IDX_AGG
             idx_agg[] = Vector{Int}(undef, length(gd))
             fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
         end
@@ -340,10 +344,10 @@ function _combine_process_pair_symbol(optional_i::Bool,
 
     # the last argument passed to _combine_with_first informs it about precomputed
     # idx. Currently we do it only for single-row return values otherwise we pass
-    # nothing to signal that idx has to be computed in _combine_with_first
-    idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
+    # NOTHING_IDX_AGG to signal that idx has to be computed in _combine_with_first
+    idx, outcols, _ = _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
                                           Val(firstmulticol),
-                                          firstres isa AbstractVector ? nothing : idx_agg[])
+                                          firstres isa AbstractVector ? NOTHING_IDX_AGG : idx_agg[])
     @assert length(outcols) == 1
     outcol = outcols[1]
 
@@ -370,14 +374,14 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        gd::GroupedDataFrame,
                                        seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                        trans_res::Vector{TransformationResult},
-                                       idx_agg::Ref{Union{Nothing, Vector{Int}}},
+                                       idx_agg::Ref{Vector{Int}},
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
                                        firstres::Any,
                                        @nospecialize(fun::Base.Callable),
                                        incols::Union{Tuple, NamedTuple})
     if firstres isa AbstractVector
-        idx, outcol_vec, _ = _combine_with_first(wrap(firstres), fun, gd, incols,
+        idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
                                               Val(firstmulticol), nothing)
         @assert length(outcol_vec) == 1
         res = outcol_vec[1]
@@ -407,7 +411,7 @@ function _combine_process_pair_astable(optional_i::Bool,
             lock(gd.lazy_lock) do
                 # if idx_agg was not computed yet it is nothing
                 # in this case if we are not passed a vector compute it.
-                if isnothing(idx_agg[])
+                if idx_agg[] === NOTHING_IDX_AGG
                     idx_agg[] = Vector{Int}(undef, length(gd))
                     fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
                 end
@@ -457,7 +461,7 @@ function _combine_process_pair(@nospecialize(cs_i::Pair),
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                trans_res::Vector{TransformationResult},
-                               idx_agg::Ref{Union{Nothing, Vector{Int}}})
+                               idx_agg::Ref{Vector{Int}})
     source_cols, (fun, out_col_name) = cs_i
 
     if source_cols isa Int
@@ -527,7 +531,7 @@ function _combine(gd::GroupedDataFrame,
         idx_keeprows = nothing
     end
 
-    idx_agg = Ref{Union{Nothing, Vector{Int}}}(nothing)
+    idx_agg = Ref(NOTHING_IDX_AGG)
     if length(gd) > 0 && any(x -> isagg(x, gd), cs_norm)
         # Compute indices of representative rows only once for all AbstractAggregates
         idx_agg[] = Vector{Int}(undef, length(gd))
@@ -599,11 +603,11 @@ function _combine(gd::GroupedDataFrame,
     end
 
     isempty(trans_res) && return Int[], DataFrame()
-    # idx_agg === nothing then we have only functions that
+    # idx_agg[] === NOTHING_IDX_AGG then we have only functions that
     # returned multiple rows and idx_loc = 1
     idx_loc = findfirst(x -> x.col_idx !== idx_agg[], trans_res)
     if !keeprows && isnothing(idx_loc)
-        @assert !isnothing(idx_agg[])
+        @assert idx_agg[] !== NOTHING_IDX_AGG
         idx = idx_agg[]
     else
         idx = keeprows ? idx_keeprows : trans_res[idx_loc].col_idx

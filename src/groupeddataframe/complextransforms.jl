@@ -12,16 +12,19 @@ function _combine_multicol(firstres, fun::Base.Callable, gd::GroupedDataFrame,
         idx_agg = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
     else
-        idx_agg = nothing
+        idx_agg = NOTHING_IDX_AGG
     end
-    return _combine_with_first(wrap(firstres), fun, gd, incols,
+    return _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
                                Val(firstmulticol), idx_agg)
 end
 
-function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
-                             f::Base.Callable, gd::GroupedDataFrame,
+function _combine_with_first(first::Ref{Any},
+                             f::Ref{Any}, gd::GroupedDataFrame,
                              incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
-                             firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
+                             firstmulticol::Val, idx_agg::Vector{Int})
+    @assert only(first) isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
+    @assert only(f) isa Base.Callable
+    first = only(first)
     extrude = false
 
     if first isa AbstractDataFrame
@@ -45,7 +48,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
-    idx = isnothing(idx_agg) ? Vector{Int}(undef, n) : idx_agg
+    idx = idx_agg === NOTHING_IDX_AGG ? Vector{Int}(undef, n) : idx_agg
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
@@ -54,11 +57,11 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     if !extrude && first isa Union{AbstractDataFrame,
                                    NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
-                                                             f, gd, incols, targetcolnames,
+                                                             only(f), gd, incols, targetcolnames,
                                                              firstmulticol)
     else
         outcols, finalcolnames = _combine_rows_with_first!(first, initialcols,
-                                                           f, gd, incols, targetcolnames,
+                                                           only(f), gd, incols, targetcolnames,
                                                            firstmulticol)
     end
     return idx, outcols, collect(Symbol, finalcolnames)
