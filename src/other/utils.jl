@@ -129,6 +129,61 @@ function tforeach(f, x::AbstractArray; basesize::Integer)
     return
 end
 
+if VERSION >= v"1.4"
+    function _splittasksfor(iter, lbody, basesize)
+        lidx = iter.args[1]
+        range = iter.args[2]
+        quote
+            let x = $(esc(range)), basesize = $(esc(basesize))
+                @assert firstindex(x) == 1
+
+                nt = Threads.nthreads()
+                len = length(x)
+                if nt > 1 && len > basesize
+                    tasks = [Threads.@spawn begin
+                                 for i in p
+                                     local $(esc(lidx)) = @inbounds x[i]
+                                     $(esc(lbody))
+                                 end
+                             end
+                             for p in split_indices(len, basesize)]
+                    foreach(wait, tasks)
+                else
+                    for i in eachindex(x)
+                        local $(esc(lidx)) = @inbounds x[i]
+                        $(esc(lbody))
+                    end
+                end
+            end
+            return nothing
+        end
+    end
+else
+    function _splittasksfor(iter, lbody, basesize)
+        lidx = iter.args[1]
+        range = iter.args[2]
+        quote
+            let x = $(esc(range))
+                for i in eachindex(x)
+                    local $(esc(lidx)) = @inbounds x[i]
+                    $(esc(lbody))
+                end
+            end
+            return nothing
+        end
+    end
+end
+
+macro splittasks(basesize, ex)
+    if !(isa(ex, Expr) && ex.head === :for)
+        throw(ArgumentError("@splittasks requires a `for` loop expression"))
+    end
+    if !(ex.args[1] isa Expr && ex.args[1].head === :(=))
+        throw(ArgumentError("nested outer loops are not currently supported by @splittasks"))
+    end
+    return _splittasksfor(ex.args[1], ex.args[2], basesize)
+end
+
 function _nt_like_hash(v, h::UInt)
     length(v) == 0 && return hash(NamedTuple(), h)
 
