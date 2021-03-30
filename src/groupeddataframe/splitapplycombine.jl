@@ -28,7 +28,7 @@ function _combine_prepare(gd::GroupedDataFrame,
                           keeprows::Bool, renamecols::Bool)
     cs = only(wcs)
     for cei in cs
-        @assert cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex})
+        @assert cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}
     end
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
