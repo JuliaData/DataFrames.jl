@@ -28,9 +28,7 @@ function _combine_prepare(gd::GroupedDataFrame,
                           keeprows::Bool, renamecols::Bool)
     cs = only(wcs)
     for cei in cs
-        if !(cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex})
-            throw(ArgumentError("Unrecognized transformation specification $cei"))
-        end
+        @assert cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex})
     end
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
@@ -715,8 +713,8 @@ function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
 end
 
 
-select(gd::GroupedDataFrame, args...; copycols::Bool=true, keepkeys::Bool=true,
-       ungroup::Bool=true, renamecols::Bool=true) =
+select(gd::GroupedDataFrame, args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
     _combine_prepare(gd, Ref{Any}(args), copycols=copycols, keepkeys=keepkeys,
                      ungroup=ungroup, keeprows=true, renamecols=renamecols)
 
@@ -728,8 +726,8 @@ function transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
     return transform(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
 end
 
-function transform(gd::GroupedDataFrame, args...; copycols::Bool=true,
-                   keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+function transform(gd::GroupedDataFrame, args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+                   copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
                  ungroup=ungroup, renamecols=renamecols)
     # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
@@ -745,7 +743,8 @@ function select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, ren
     return select!(gd, f, ungroup=ungroup)
 end
 
-function select!(gd::GroupedDataFrame{DataFrame}, args...;
+function select!(gd::GroupedDataFrame{DataFrame},
+                 args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
                  ungroup::Bool=true, renamecols::Bool=true)
     newdf = select(gd, args..., copycols=false, renamecols=renamecols)
     df = parent(gd)
@@ -760,7 +759,8 @@ function transform!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, 
     return transform!(gd, f, ungroup=ungroup)
 end
 
-function transform!(gd::GroupedDataFrame{DataFrame}, args...;
+function transform!(gd::GroupedDataFrame{DataFrame},
+                    args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
                     ungroup::Bool=true, renamecols::Bool=true)
     newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
     df = parent(gd)
