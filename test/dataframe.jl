@@ -613,11 +613,12 @@ end
         @test delete!(df, v) == DataFrame(x=[2, 3])
         @test x == [2, 3]
     end
-    
+
     for inds in (1, [1], [true, false])
         df = DataFrame(x1=[1, 2])
         df.x2 = df.x1
-        @test_throws ArgumentError delete!(df, inds)
+        @test delete!(df, inds) === df
+        @test df == DataFrame(x1=[2], x2=[2])
     end
 end
 
