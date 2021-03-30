@@ -966,9 +966,18 @@ function Base.delete!(df::DataFrame, inds)
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
+    
     # we require ind to be stored and unique like in Base
     # otherwise an error will be thrown and the data frame will get corrupted
-    foreach(col -> deleteat!(col, inds), _columns(df))
+    n = nrow(df)
+    for col in _columns(df)
+        if length(col) != n
+            throw(ArgumentError("Unequal lengths of columns detected. Most likely the " *
+                                "same column was stored in the data frame several times. 
+                                 The source data frame is now corrupted."))
+        end
+        deleteat!(col, inds)
+    end
     return df
 end
 
@@ -977,7 +986,16 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
         throw(BoundsError(df, (inds, :)))
     end
     drop = findall(inds)
-    foreach(col -> deleteat!(col, drop), _columns(df))
+
+    n = nrow(df)
+    for col in _columns(df)
+        if length(col) != n
+            throw(ArgumentError("Unequal lengths of columns detected. Most likely the " *
+                                "same column was stored in the data frame several times. 
+                                 The source data frame is now corrupted."))
+        end
+        deleteat!(col, inds)
+    end
     return df
 end
 
