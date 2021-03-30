@@ -684,6 +684,8 @@ function _combine(gd::GroupedDataFrame,
     return idx, DataFrame(outcols, nms, copycols=false)
 end
 
+@nospecialize
+
 function combine(f::Base.Callable, gd::GroupedDataFrame;
                  keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
@@ -768,3 +770,5 @@ function transform!(gd::GroupedDataFrame{DataFrame},
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
+
+@specialize
