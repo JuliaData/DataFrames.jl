@@ -13,6 +13,9 @@
 * applying `map` to `GroupedDataFrame` is now deprecated. It will
   be an error in 1.0 release.
   ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
+* `copycols` keyword argument is now respected when building DataFrame from
+  `Tables.CopiedColumns`
+  ([#2656](https://github.com/JuliaData/DataFrames.jl/pull/2656))
 
 # DataFrames v0.22 Release Notes
 
