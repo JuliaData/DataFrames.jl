@@ -1358,4 +1358,4 @@ manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
 
 manipulate(dfv::SubDataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
            renamecols::Bool) =
-    manipulate(dfv, Int[index(df)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
+    manipulate(dfv, Int[index(dfv)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
