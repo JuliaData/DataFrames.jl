@@ -72,7 +72,7 @@
    [#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574),
    [#2664](https://github.com/JuliaData/DataFrames.jl/pull/2664))
 
-# DataFrames v0.22.x Release notes
+# DataFrames v0.22.7 Release notes
 
 * `convert` methods from `AbstractDataFrame`, `DataFrameRow` and `GroupKey`
   to `Array`, `Matrix`, `Vector` and `Tuple`, as well as from `AbstractDict` to
