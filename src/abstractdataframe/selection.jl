@@ -1196,25 +1196,6 @@ combine(f::Pair, gd::AbstractDataFrame; renamecols::Bool=true) =
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
-manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool,
-           renamecols::Bool) =
-    DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
-
-function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool,
-                    renamecols::Bool)
-    if c isa AbstractVector{<:Pair}
-        return manipulate(df, c..., copycols=copycols, keeprows=keeprows,
-                          renamecols=renamecols)
-    else
-        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows,
-                          renamecols=renamecols)
-    end
-end
-
-manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
-           renamecols::Bool) =
-    manipulate(df, [c], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
-
 function manipulate(df::DataFrame, cs...; copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
@@ -1303,20 +1284,6 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
     return newdf
 end
 
-manipulate(dfv::SubDataFrame, ind::ColumnIndex; copycols::Bool, keeprows::Bool,
-           renamecols::Bool) =
-    manipulate(dfv, [ind], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
-
-function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
-                 copycols::Bool, keeprows::Bool, renamecols::Bool)
-    if args isa AbstractVector{<:Pair}
-        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows,
-                          renamecols=renamecols)
-    else
-        return copycols ? dfv[:, args] : view(dfv, :, args)
-    end
-end
-
 function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
                     renamecols::Bool)
     if copycols
@@ -1359,3 +1326,36 @@ function manipulate(dfv::SubDataFrame, args...; copycols::Bool, keeprows::Bool,
 end
 
 @specialize
+
+manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
+
+function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool,
+                    renamecols::Bool)
+    if c isa AbstractVector{<:Pair}
+        return manipulate(df, c..., copycols=copycols, keeprows=keeprows,
+                          renamecols=renamecols)
+    else
+        return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows,
+                          renamecols=renamecols)
+    end
+end
+
+function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
+                 copycols::Bool, keeprows::Bool, renamecols::Bool)
+    if args isa AbstractVector{<:Pair}
+        return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows,
+                          renamecols=renamecols)
+    else
+        return copycols ? dfv[:, args] : view(dfv, :, args)
+    end
+end
+
+manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    manipulate(df, Int[index(df)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
+
+manipulate(dfv::SubDataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    manipulate(dfv, Int[index(df)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
