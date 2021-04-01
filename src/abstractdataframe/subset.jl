@@ -31,8 +31,6 @@ function _and_missing(x::Any...)
                         "but only true, false, or missing are allowed"))
 end
 
-@nospecialize
-
 # Note that _get_subset_conditions will have a large compilation time
 # if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
@@ -158,13 +156,13 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
    2 │     4  false  false  missing     12
 ```
 """
-function subset(df::AbstractDataFrame, args...;
+function subset(df::AbstractDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false)
     row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
     return view ? Base.view(df, row_selector, :) : df[row_selector, :]
 end
 
-function subset(gdf::GroupedDataFrame, args...;
+function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false,
                         ungroup::Bool=true)
     row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
@@ -273,12 +271,12 @@ julia> df
    2 │     4  false  false  missing     12
 ```
 """
-function subset!(df::AbstractDataFrame, args...; skipmissing::Bool=false)
+function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Bool=false)
     row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
     return delete!(df, findall(!, row_selector))
 end
 
-function subset!(gdf::GroupedDataFrame, args...; skipmissing::Bool=false,
+function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
                  ungroup::Bool=true)
     row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
     df = parent(gdf)
@@ -286,5 +284,3 @@ function subset!(gdf::GroupedDataFrame, args...; skipmissing::Bool=false,
     # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
     return ungroup ? res : groupby(res, groupcols(gdf))
 end
-
-@specialize

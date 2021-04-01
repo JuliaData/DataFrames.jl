@@ -284,7 +284,7 @@ function _combine_process_callable(wcs_i::Ref{Any},
     cs_i = only(wcs_i)
     @assert cs_i isa Base.Callable
     firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parentdf, 0))
-    idx, outcols, nms = _combine_multicol(firstres, cs_i, gd, nothing)
+    idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), wcs_i, gd, Ref{Any}(nothing))
 
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
@@ -331,11 +331,12 @@ function _combine_process_pair_symbol(optional_i::Bool,
                                       idx_agg::Ref{Vector{Int}},
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
-                                      firstres::Any,
+                                      wfirstres::Ref{Any},
                                       wfun::Ref{Any},
-                                      incols::Union{Tuple, NamedTuple})
-    fun = only(wfun)
-    @assert fun isa Base.Callable
+                                      wincols::Ref{Any})
+    firstres = only(wfirstres)
+    @assert only(wfun) isa Base.Callable
+    @assert only(wincols) isa Union{Tuple, NamedTuple}
 
     if firstmulticol
         throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
@@ -355,7 +356,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
     # the last argument passed to _combine_with_first informs it about precomputed
     # idx. Currently we do it only for single-row return values otherwise we pass
     # NOTHING_IDX_AGG to signal that idx has to be computed in _combine_with_first
-    idx, outcols, _ = _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
+    idx, outcols, _ = _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
                                           Val(firstmulticol),
                                           firstres isa AbstractVector ? NOTHING_IDX_AGG : idx_agg[])
     @assert length(outcols) == 1
@@ -387,13 +388,15 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        idx_agg::Ref{Vector{Int}},
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
-                                       firstres::Any,
+                                       wfirstres::Ref{Any},
                                        wfun::Ref{Any},
-                                       incols::Union{Tuple, NamedTuple})
+                                       wincols::Ref{Any})
+    firstres = only(wfirstres)
     fun = only(wfun)
     @assert fun isa Base.Callable
+    @assert only(wincols) isa Union{Tuple, NamedTuple}
     if firstres isa AbstractVector
-        idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), Ref{Any}(fun), gd, incols,
+        idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
                                               Val(firstmulticol), NOTHING_IDX_AGG)
         @assert length(outcol_vec) == 1
         res = outcol_vec[1]
@@ -416,7 +419,7 @@ function _combine_process_pair_astable(optional_i::Bool,
             oldfun = fun
             fun = (x...) -> Tables.columntable(oldfun(x...))
         end
-        idx, outcols, nms = _combine_multicol(firstres, fun, gd, incols)
+        idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), Ref{Any}(fun), gd, wincols)
 
         if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
@@ -497,13 +500,13 @@ function _combine_process_pair(wcs_i::Ref{Any},
 
     if out_col_name isa Symbol
         return _combine_process_pair_symbol(optional_i, gd, seen_cols, trans_res, idx_agg,
-                                            out_col_name, firstmulticol, firstres,
-                                            Ref{Any}(fun), incols)
+                                            out_col_name, firstmulticol, Ref{Any}(firstres),
+                                            Ref{Any}(fun), Ref{Any}(incols))
     end
     if out_col_name == AsTable || out_col_name isa AbstractVector{Symbol}
         return _combine_process_pair_astable(optional_i, gd, seen_cols, trans_res, idx_agg,
-                                             out_col_name, firstmulticol, firstres,
-                                             Ref{Any}(fun), incols)
+                                             out_col_name, firstmulticol, Ref{Any}(firstres),
+                                             Ref{Any}(fun), Ref{Any}(incols))
     end
     throw(ArgumentError("unsupported target column name specifier $out_col_name"))
 end
@@ -684,9 +687,7 @@ function _combine(gd::GroupedDataFrame,
     return idx, DataFrame(outcols, nms, copycols=false)
 end
 
-@nospecialize
-
-function combine(f::Base.Callable, gd::GroupedDataFrame;
+function combine(@nospecialize(f::Base.Callable), gd::GroupedDataFrame;
                  keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame"))
@@ -694,19 +695,19 @@ function combine(f::Base.Callable, gd::GroupedDataFrame;
     return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
 end
 
-combine(f::Pair, gd::GroupedDataFrame;
+combine(@nospecialize(f::Pair), gd::GroupedDataFrame;
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
     throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame. " *
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
 combine(gd::GroupedDataFrame,
-        cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+        @nospecialize(cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...);
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
     _combine_prepare(gd, Ref{Any}(cs), keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
-function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
+function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
@@ -715,12 +716,12 @@ function select(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
 end
 
 
-select(gd::GroupedDataFrame, args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...);
        copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
     _combine_prepare(gd, Ref{Any}(args), copycols=copycols, keepkeys=keepkeys,
                      ungroup=ungroup, keeprows=true, renamecols=renamecols)
 
-function transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
+function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
@@ -728,7 +729,7 @@ function transform(f::Base.Callable, gd::GroupedDataFrame; copycols::Bool=true,
     return transform(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
 end
 
-function transform(gd::GroupedDataFrame, args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+function transform(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...);
                    copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
                  ungroup=ungroup, renamecols=renamecols)
@@ -738,7 +739,7 @@ function transform(gd::GroupedDataFrame, args::Union{Pair, Base.Callable, Column
     return res
 end
 
-function select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
+function select!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -746,7 +747,7 @@ function select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, ren
 end
 
 function select!(gd::GroupedDataFrame{DataFrame},
-                 args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+                 @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...);
                  ungroup::Bool=true, renamecols::Bool=true)
     newdf = select(gd, args..., copycols=false, renamecols=renamecols)
     df = parent(gd)
@@ -754,7 +755,7 @@ function select!(gd::GroupedDataFrame{DataFrame},
     return ungroup ? df : gd
 end
 
-function transform!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
+function transform!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -762,7 +763,7 @@ function transform!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, 
 end
 
 function transform!(gd::GroupedDataFrame{DataFrame},
-                    args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...;
+                    @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}...);
                     ungroup::Bool=true, renamecols::Bool=true)
     newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
     df = parent(gd)
@@ -770,5 +771,3 @@ function transform!(gd::GroupedDataFrame{DataFrame},
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
-
-@specialize
