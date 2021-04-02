@@ -374,27 +374,6 @@ function _gen_colnames(res, newname::Union{AbstractVector{Symbol},
     return colnames isa Vector{Symbol} ? colnames : collect(Symbol, colnames)
 end
 
-_expand_to_table(res) = Tables.columntable(res)
-_expand_to_table(res::Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}) = res
-
-function _expand_to_table(res::AbstractVector)
-    isempty(res) && return Tables.columntable(res)
-    kp1 = keys(res[1])
-    prepend = all(x -> x isa Integer, kp1)
-    if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
-        throw(ArgumentError("keys of the returned elements must be " *
-                            "`Symbol`s, strings or integers"))
-    end
-    if any(x -> !isequal(keys(x), kp1), res)
-        throw(ArgumentError("keys of the returned elements must be identical"))
-    end
-    newres = DataFrame()
-    for n in kp1
-        newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
-    end
-    return newres
-end
-
 function _insert_row_multicolumn(newdf::DataFrame, df::AbstractDataFrame,
                                  allow_resizing_newdf::Ref{Bool}, colnames::AbstractVector{Symbol},
                                  @nospecialize(res::Union{NamedTuple, DataFrameRow}))
@@ -530,7 +509,24 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
     res = _transformation_helper(df, col_idx, Ref{Any}(fun))
 
     if newname === AsTable || newname isa AbstractVector{Symbol}
-        res = _expand_to_table(res)
+        if res isa AbstractVector && !isempty(res)
+            kp1 = keys(res[1])
+            prepend = all(x -> x isa Integer, kp1)
+            if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
+                throw(ArgumentError("keys of the returned elements must be " *
+                                    "`Symbol`s, strings or integers"))
+            end
+            if any(x -> !isequal(keys(x), kp1), res)
+                throw(ArgumentError("keys of the returned elements must be identical"))
+            end
+            newres = DataFrame()
+            for n in kp1
+                newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
+            end
+            res = newres
+        elseif !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
+            res = Tables.columntable(res)
+        end
     end
 
     if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
