@@ -1,3 +1,12 @@
+# Source
+https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)
+Professor Dr. Hans Hofmann
+Institut f"ur Statistik und "Okonometrie
+Universit"at Hamburg
+FB Wirtschaftswissenschaften
+Von-Melle-Park 5
+2000 Hamburg 13
+
 ## ODC Open Database License (ODbL)
 
 ### Preamble
