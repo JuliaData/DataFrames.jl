@@ -36,7 +36,7 @@ end
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 (args,)::Ref{Any}, skipmissing::Bool)
     conditions = Any[if a isa ColumnIndex
-                         a => Symbol(:x, i))
+                         a => Symbol(:x, i)
                      elseif a isa Pair{<:Any, <:Base.Callable}
                          first(a) => last(a) => Symbol(:x, i)
                      else
