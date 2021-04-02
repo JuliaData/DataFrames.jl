@@ -1334,7 +1334,7 @@ function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows
 end
 
 function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
-                 copycols::Bool, keeprows::Bool, renamecols::Bool)
+                    copycols::Bool, keeprows::Bool, renamecols::Bool)
     if args isa AbstractVector{<:Pair}
         return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows,
                           renamecols=renamecols)
