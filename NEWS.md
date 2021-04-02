@@ -72,7 +72,7 @@
    [#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574),
    [#2664](https://github.com/JuliaData/DataFrames.jl/pull/2664))
 
-# DataFrames v0.22.6 Release notes
+# DataFrames v0.22.7 Release notes
 
 * `convert` methods from `AbstractDataFrame`, `DataFrameRow` and `GroupKey`
   to `Array`, `Matrix`, `Vector` and `Tuple`, as well as from `AbstractDict` to
@@ -87,6 +87,9 @@
 * applying `map` to `GroupedDataFrame` is now deprecated. It will
   be an error in 1.0 release.
   ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
+* `copycols` keyword argument is now respected when building a `DataFrame` from
+  `Tables.CopiedColumns`
+  ([#2656](https://github.com/JuliaData/DataFrames.jl/pull/2656))
 
 # DataFrames v0.22 Release Notes
 
