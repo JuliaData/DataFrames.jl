@@ -23,10 +23,9 @@ function gen_groups(idx::Vector{Int})
 end
 
 function _combine_prepare(gd::GroupedDataFrame,
-                          wcs::Ref{Any};
+                          (cs,)::Ref{Any};
                           keepkeys::Bool, ungroup::Bool, copycols::Bool,
                           keeprows::Bool, renamecols::Bool)
-    cs = only(wcs)
     for cei in cs
         @assert cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex}
     end
@@ -203,14 +202,13 @@ struct TransformationResult
 end
 
 # the transformation is an aggregation for which we have the fast path
-function _combine_process_agg(wcs_i::Ref{Any},
+function _combine_process_agg((cs_i,)::Ref{Any},
                               optional_i::Bool,
                               parentdf::AbstractDataFrame,
                               gd::GroupedDataFrame,
                               seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                               trans_res::Vector{TransformationResult},
                               idx_agg::Vector{Int})
-    cs_i = only(wcs_i)
     @assert cs_i isa Pair{Int, <:Pair{<:Function, Symbol}}
     @assert isagg(cs_i, gd)
     @assert !optional_i
@@ -331,10 +329,9 @@ function _combine_process_pair_symbol(optional_i::Bool,
                                       idx_agg::Ref{Vector{Int}},
                                       out_col_name::Symbol,
                                       firstmulticol::Bool,
-                                      wfirstres::Ref{Any},
+                                      (firstres,)::Ref{Any},
                                       wfun::Ref{Any},
                                       wincols::Ref{Any})
-    firstres = only(wfirstres)
     @assert only(wfun) isa Base.Callable
     @assert only(wincols) isa Union{Tuple, NamedTuple}
 
@@ -388,10 +385,9 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        idx_agg::Ref{Vector{Int}},
                                        out_col_name::Union{Type{AsTable}, AbstractVector{Symbol}},
                                        firstmulticol::Bool,
-                                       wfirstres::Ref{Any},
+                                       (firstres,)::Ref{Any},
                                        wfun::Ref{Any},
                                        wincols::Ref{Any})
-    firstres = only(wfirstres)
     fun = only(wfun)
     @assert fun isa Base.Callable
     @assert only(wincols) isa Union{Tuple, NamedTuple}
@@ -470,14 +466,13 @@ end
 # perform a transformation specified using the Pair notation
 # cs_i is a Pair that has many possible forms so this function is used to dispatch
 # to an appropriate more specialized function
-function _combine_process_pair(wcs_i::Ref{Any},
+function _combine_process_pair((cs_i,)::Ref{Any},
                                optional_i::Bool,
                                parentdf::AbstractDataFrame,
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                trans_res::Vector{TransformationResult},
                                idx_agg::Ref{Vector{Int}})
-    cs_i = only(wcs_i)
     @assert cs_i isa Pair
 
     source_cols, (fun, out_col_name) = cs_i

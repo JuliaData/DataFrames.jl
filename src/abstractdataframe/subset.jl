@@ -34,9 +34,14 @@ end
 # Note that _get_subset_conditions will have a large compilation time
 # if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
-                                wargs::Ref{Any}, skipmissing::Bool)
-    args = only(wargs)
-    conditions = Any[]
+                                (args,)::Ref{Any}, skipmissing::Bool)
+    conditions = Any[if a isa ColumnIndex
+                         a => Symbol(:x, i))
+                     elseif a isa Pair{<:Any, <:Base.Callable}
+                         first(a) => last(a) => Symbol(:x, i)
+                     else
+                         throw(ArgumentError("condition specifier $a is not supported by `subset`"))
+                     end for (i, a) in enumerate(args)]
 
     # subset allows a transformation specification without a target column name or a column
     for (i, a) in enumerate(args)

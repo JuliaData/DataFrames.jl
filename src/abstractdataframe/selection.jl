@@ -326,15 +326,14 @@ function normalize_selection(idx::AbstractIndex,
     return (wanttable ? AsTable(c) : c) => fun => newcol
 end
 
-_transformation_helper(df::AbstractDataFrame, col_idx::Nothing, wfun::Ref{Any}) =
-    only(wfun)(df)
-_transformation_helper(df::AbstractDataFrame, col_idx::Int, wfun::Ref{Any}) =
-    only(wfun)(df[!, col_idx])
+_transformation_helper(df::AbstractDataFrame, col_idx::Nothing, (fun,)::Ref{Any}) =
+    fun(df)
+_transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
+    fun(df[!, col_idx])
 
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
-function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, wfun::Ref{Any})
-    fun = only(wfun)
+function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
     tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
     if isempty(tbl) && fun isa ByRow
         return _empty_astable_helper(fun.fun, nrow(df))
@@ -345,8 +344,7 @@ end
 
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
 
-function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, wfun::Ref{Any})
-    fun = only(wfun)
+function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, (fun,)::Ref{Any})
     if isempty(col_idx) && fun isa ByRow
         return _empty_selector_helper(fun.fun, nrow(df))
     else
@@ -416,8 +414,7 @@ end
 
 function _fix_existing_columns_for_vector(newdf::DataFrame, df::AbstractDataFrame,
                                           allow_resizing_newdf::Ref{Bool}, lr::Int,
-                                          wfun::Ref{Any})
-    fun = only(wfun)
+                                          (fun,)::Ref{Any})
     # allow shortening to 0 rows
     if allow_resizing_newdf[] && nrow(newdf) == 1
         newdfcols = _columns(newdf)
@@ -439,9 +436,8 @@ end
 
 function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                             copycols::Bool, wfun::Ref{Any},
+                             copycols::Bool, (fun,)::Ref{Any},
                              newname::Symbol, v::AbstractVector)
-    fun = only(wfun)
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
@@ -512,10 +508,9 @@ function _add_multicol_res(res::DataFrameRow, newdf::DataFrame, df::AbstractData
     _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
 end
 
-function select_transform!(wnc::Ref{Any}, df::AbstractDataFrame, newdf::DataFrame,
+function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
                            allow_resizing_newdf::Ref{Bool})
-    nc = only(wnc)
     @assert nc isa Union{Base.Callable,
                          Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                               <:Pair{<:Base.Callable, <:Union{Symbol, AbstractVector{Symbol}, DataType}}}}

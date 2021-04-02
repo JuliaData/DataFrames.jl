@@ -4,9 +4,8 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-function _combine_multicol(wfirstres::Ref{Any}, wfun::Ref{Any}, gd::GroupedDataFrame,
+function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDataFrame,
                            wincols::Ref{Any})
-    firstres = only(wfirstres)
     @assert only(wfun) isa Base.Callable
     @assert only(wincols) isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     firstmulticol = firstres isa MULTI_COLS_TYPE
@@ -21,14 +20,12 @@ function _combine_multicol(wfirstres::Ref{Any}, wfun::Ref{Any}, gd::GroupedDataF
                                Val(firstmulticol), idx_agg)
 end
 
-function _combine_with_first(wfirst::Ref{Any},
+function _combine_with_first((first,)::Ref{Any},
                              f::Ref{Any}, gd::GroupedDataFrame,
-                             wincols::Ref{Any},
+                             (incols,)::Ref{Any},
                              firstmulticol::Val, idx_agg::Vector{Int})
     @assert only(f) isa Base.Callable
-    incols = only(wincols)
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
-    first = only(wfirst)
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     extrude = false
 
