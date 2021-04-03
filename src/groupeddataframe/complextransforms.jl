@@ -21,10 +21,10 @@ function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDat
 end
 
 function _combine_with_first((first,)::Ref{Any},
-                             f::Ref{Any}, gd::GroupedDataFrame,
+                             (f,)::Ref{Any}, gd::GroupedDataFrame,
                              (incols,)::Ref{Any},
                              firstmulticol::Val, idx_agg::Vector{Int})
-    @assert only(f) isa Base.Callable
+    @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     extrude = false
@@ -59,11 +59,11 @@ function _combine_with_first((first,)::Ref{Any},
     if !extrude && first isa Union{AbstractDataFrame,
                                    NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
-                                                             only(f), gd, incols, targetcolnames,
+                                                             f, gd, incols, targetcolnames,
                                                              firstmulticol)
     else
         outcols, finalcolnames = _combine_rows_with_first!(first, initialcols,
-                                                           only(f), gd, incols, targetcolnames,
+                                                           f, gd, incols, targetcolnames,
                                                            firstmulticol)
     end
     return idx, outcols, collect(Symbol, finalcolnames)
