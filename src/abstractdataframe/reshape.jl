@@ -218,7 +218,7 @@ Row and column keys will be ordered in the order of their first appearance.
 - `allowmissing`: if `false` (the default) then an error will be thrown if `colkey`
   contains `missing` values; if `true` then a column referring to `missing` value
   will be created.
-- allowduplicates`: if `false` (the default) then an error an error will be thrown
+- `allowduplicates`: if `false` (the default) then an error an error will be thrown
   if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
   then  then the last encountered `value` will be retained.
 
