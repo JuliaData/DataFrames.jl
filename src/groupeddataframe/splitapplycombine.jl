@@ -5,7 +5,7 @@
 const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
 
 # use a constant Vector{Int} as a sentinel to signal that idx_agg has not been computed yet
-# to avoid excessive specialization
+# we do not use nothing to avoid excessive specialization
 const NOTHING_IDX_AGG = Int[]
 
 function gen_groups(idx::Vector{Int})
