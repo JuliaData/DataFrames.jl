@@ -23,6 +23,8 @@ makedocs(
         "User Guide" => Any[
             "Getting Started" => "man/getting_started.md",
             "Working with DataFrames" => "man/Working_with_DataFrames.md",
+            "Replacing Data" => "man/replacing_data.md",
+            "Importing and Exporting Data (I/O)" => "importing_and_exporting.md",
             "Joins" => "man/joins.md",
             "Split-apply-combine" => "man/split_apply_combine.md",
             "Reshaping" => "man/reshaping_and_pivoting.md",
