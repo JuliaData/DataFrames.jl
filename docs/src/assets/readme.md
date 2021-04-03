@@ -21,5 +21,12 @@ Von-Melle-Park 5
 
 The original data is from [UCI](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)), and that this data is from [Kaggle](https://www.kaggle.com/uciml/german-credit)
 
+# Iris data set
 
+## License:
+https://creativecommons.org/publicdomain/zero/1.0/
 
+## Source:
+https://archive.ics.uci.edu/ml/datasets/Iris
+Creator:
+R.A. Fisher
