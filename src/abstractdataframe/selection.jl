@@ -353,8 +353,8 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
     end
 end
 
-function _gen_colnames(res, newname::Union{AbstractVector{Symbol},
-                                           Type{AsTable}, Nothing})
+function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol},
+                                                          Type{AsTable}, Nothing})
     if res isa AbstractMatrix
         colnames = gennames(size(res, 2))
     else
