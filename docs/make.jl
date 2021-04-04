@@ -22,7 +22,7 @@ makedocs(
         "Introduction" => "index.md",
         "User Guide" => Any[
             "Getting Started" => "man/getting_started.md",
-            "Working with DataFrames" => "man/Working_with_DataFrames.md",
+            "Working with DataFrames" => "man/working_with_dataframes.md",
             "Importing and Exporting Data (I/O)" => "man/importing_and_exporting.md",
             "Joins" => "man/joins.md",
             "Split-apply-combine" => "man/split_apply_combine.md",
