@@ -11,7 +11,7 @@ end
 makedocs(
     # options
     modules = [DataFrames],
-    doctest = false,
+    doctest = true,
     clean = false,
     sitename = "DataFrames.jl",
     format = Documenter.HTML(
