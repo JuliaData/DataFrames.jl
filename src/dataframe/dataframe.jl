@@ -91,9 +91,7 @@ functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
 # Examples
-```jldoctest
-julia> using DataFrame
-
+```julia
 julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
 2×2 DataFrame
  Row │ a      b
@@ -776,8 +774,6 @@ If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(a=1:3)
 3×1 DataFrame
  Row │ a
@@ -947,8 +943,6 @@ a vector of sorted and unique integers, a boolean vector, an integer, or `Not`.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
  Row │ a      b
@@ -1185,8 +1179,6 @@ to vertically concatenate data frames.
 
 # Examples
 ```jldoctest
-julia> using DataFrame
-
 julia> df1 = DataFrame(A=1:3, B=1:3)
 3×2 DataFrame
  Row │ A      B
@@ -1207,14 +1199,17 @@ julia> df2 = DataFrame(A=4.0:6.0, B=4:6)
 
 julia> append!(df1, df2);
 
-julia> df2  # we won't get same result of df1 after appending because append! modifies it's arguments
-3×2 DataFrame
- Row │ A        B
-     │ Float64  Int64
-─────┼────────────────
-   1 │     4.0      4
-   2 │     5.0      5
-   3 │     6.0      6
+julia> df1
+6×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     4      4
+   5 │     5      5
+   6 │     6      6
 ```
 """
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
@@ -1520,8 +1515,6 @@ that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
-julia> using DataFrame
-
 julia> df = DataFrame(A=1:3, B=1:3);
 
 julia> push!(df, (true, false))
@@ -1640,8 +1633,6 @@ of rows is repeated. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
-julia> using DataFrame
-
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
  Row │ a      b
@@ -1685,8 +1676,6 @@ specified by `count`. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
-julia> using DataFrame
-
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
  Row │ a      b
