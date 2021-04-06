@@ -620,6 +620,10 @@ end
         @test delete!(df, inds) === df
         @test df == DataFrame(x1=[2], x2=[2])
     end
+
+    df = DataFrame(a=1, b=2)
+    push!(df.b, 3)
+    @test_throws AssertionError delete!(df, 1)
 end
 
 @testset "describe" begin
