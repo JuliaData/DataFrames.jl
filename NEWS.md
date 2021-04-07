@@ -33,6 +33,8 @@
   selected as a property (e.g. `df.col .= 1`) is allowed when column does not
   exist and it allocates a fresh column
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
+* `delete!` now correctly handles the case when columns of a data frame are aliased
+  ([#2690](https://github.com/JuliaData/DataFrames.jl/pull/2690))
 
 ## Deprecated
 
