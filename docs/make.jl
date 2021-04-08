@@ -1,4 +1,5 @@
 using Documenter, DataFrames
+DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames); recursive=true)
 
 # Workaround for JuliaLang/julia/pull/28625
 if Base.HOME_PROJECT[] !== nothing
