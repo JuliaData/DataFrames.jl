@@ -211,7 +211,7 @@ element indicating whether to run check for the corresponding data frame. Here
 is an example for the join operation described above:
 
 ```jldoctest joins
-julia> innerjoin(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
+julia> innerjoin(a, b, on = [(:City => :Location), (:Job => :Work)], validate=(true, true))
 ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3
 ```
 

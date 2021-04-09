@@ -776,7 +776,25 @@ julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
    7 │     1      2      7
    8 │     2      1      8
 
-julia> gd = groupby(df, :a);
+julia> gd = groupby(df, :a)
+GroupedDataFrame with 2 groups based on key: a
+First Group (5 rows): a = 1
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      1      2
+   3 │     1      2      3
+   4 │     1      1      6
+   5 │     1      2      7
+⋮
+Last Group (3 rows): a = 2
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      4
+   2 │     2      2      5
+   3 │     2      1      8
 
 # specifying a name for target column
 julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)

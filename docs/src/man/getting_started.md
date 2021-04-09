@@ -65,14 +65,14 @@ returned by this syntax does not change `df`.
 
 ```jldoctest dataframe
 julia> df.A
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  1
  2
  3
  4
 
 julia> df."A"
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  1
  2
  3
@@ -122,7 +122,7 @@ Column names can be obtained as strings using the `names` function:
 
 ```jldoctest dataframe
 julia> names(df)
-2-element Array{String,1}:
+2-element Vector{String}:
  "A"
  "B"
 ```
@@ -130,7 +130,7 @@ julia> names(df)
 To get column names as `Symbol`s use the `propertynames` function:
 ```
 julia> propertynames(df)
-2-element Array{Symbol,1}:
+2-element Vector{Symbol}:
  :A
  :B
 ```
@@ -155,7 +155,7 @@ julia> df.A = 1:8
 1:8
 
 julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
-8-element Array{String,1}:
+8-element Vector{String}:
  "M"
  "F"
  "F"

@@ -784,7 +784,7 @@ julia> k = keys(gd)[1]
 GroupKey: (a = :foo, b = 2)
 
 julia> keys(k)
-2-element Array{Symbol,1}:
+2-element Vector{Symbol}:
  :a
  :b
 
