@@ -155,19 +155,9 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
-                      incol::AbstractVector, gd::GroupedDataFrame)
-    n = length(gd)
-    if adjust !== nothing || checkempty
-        counts = zeros(Int, n)
-    end
-    groups = gd.groups
-    @static if VERSION >= v"1.4"
-        batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
-        batches = Iterators.partition(eachindex(incol, groups), batchsize)
-    else
-        batches = (eachindex(incol, groups),)
-    end
+function groupreduce!_helper(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
+                             incol::AbstractVector, groups::Vector{Int}, counts::Vector{Int},
+                             batches)
     for batch in batches
         # Allow other tasks to do garbage collection while this one runs
         @static if VERSION >= v"1.4"
@@ -184,12 +174,33 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
                 else
                     res[gix] = op(res[gix], f(x, gix))
                 end
+                # this check should be opitmized out by constant propagation
                 if adjust !== nothing || checkempty
                     counts[gix] += 1
                 end
             end
         end
     end
+end
+
+function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Bool,
+                      incol::AbstractVector, gd::GroupedDataFrame)
+    n = length(gd)
+    if adjust !== nothing || checkempty
+        counts = zeros(Int, n)
+    else
+        counts = Int[]
+    end
+    groups = gd.groups
+    @static if VERSION >= v"1.4"
+        batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
+        batches = Iterators.partition(eachindex(incol, groups), batchsize)
+    else
+        batches = (eachindex(incol, groups),)
+    end
+
+    groupreduce!_helper(res, f, op, condf, adjust, checkempty,
+                             incol, groups, counts, batches)
     # handle the case of an unitialized reduction
     if eltype(res) === Any
         if op === Base.add_sum
