@@ -33,6 +33,8 @@
   selected as a property (e.g. `df.col .= 1`) is allowed when column does not
   exist and it allocates a fresh column
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
+* `delete!` now correctly handles the case when columns of a data frame are aliased
+  ([#2690](https://github.com/JuliaData/DataFrames.jl/pull/2690))
 
 ## Deprecated
 
@@ -47,7 +49,10 @@
   operation is deprecated. It will allocate a fresh column in the future
   ([#2655](https://github.com/JuliaData/DataFrames.jl/pull/2655))
 * all deprecations present in 0.22 release now throw an error
-  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554))
+  ([#2554](https://github.com/JuliaData/DataFrames.jl/pull/2554));
+  in particular `convert` methods, `map` on `GroupedDataFrame`
+  that were deprecated in 0.22.6 release now throw an error
+  ([#2679](https://github.com/JuliaData/DataFrames.jl/pull/2679))
 
 ## Dependency changes
 
@@ -69,7 +74,7 @@
    [#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574),
    [#2664](https://github.com/JuliaData/DataFrames.jl/pull/2664))
 
-# DataFrames v0.22.6 Release notes
+# DataFrames v0.22.7 Release notes
 
 * `convert` methods from `AbstractDataFrame`, `DataFrameRow` and `GroupKey`
   to `Array`, `Matrix`, `Vector` and `Tuple`, as well as from `AbstractDict` to
@@ -84,6 +89,9 @@
 * applying `map` to `GroupedDataFrame` is now deprecated. It will
   be an error in 1.0 release.
   ([#2662](https://github.com/JuliaData/DataFrames.jl/pull/2662))
+* `copycols` keyword argument is now respected when building a `DataFrame` from
+  `Tables.CopiedColumns`
+  ([#2656](https://github.com/JuliaData/DataFrames.jl/pull/2656))
 
 # DataFrames v0.22 Release Notes
 

@@ -64,23 +64,25 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
     return idx, outcols, collect(Symbol, finalcolnames)
 end
 
+function _names_match(r1, t::NTuple{N, Symbol}) where N
+    n1 = _getnames(r1)
+    length(n1) == length(t) || return false
+    for (a, b) in zip(n1, t)
+        a == b || return false
+    end
+    return true
+end
+
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
                    colnames::NTuple{N, Symbol}) where N
-    if _ncol(row) != N
-        throw(ArgumentError("return value must have the same number of columns " *
-                            "for all groups (got $N and $(length(row)))"))
+    if !_names_match(row, colnames)
+        throw(ArgumentError("return value must have the same column names " *
+                            "for all groups (got $colnames and $(propertynames(row)))"))
     end
     @inbounds for j in colstart:length(outcols)
         col = outcols[j]
-        cn = colnames[j]
-        local val
-        try
-            val = row[cn]
-        catch
-            throw(ArgumentError("return value must have the same column names " *
-                                "for all groups (got $colnames and $(propertynames(row)))"))
-        end
+        val = row[j]
         S = typeof(val)
         T = eltype(col)
         if S <: T || promote_type(S, T) <: T
@@ -300,24 +302,19 @@ else
     end
 end
 
+_get_col(rows::AbstractDataFrame, j::Int) = rows[!, j]
+_get_col(rows::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}, j::Int) = rows[j]
+
 function append_rows!(rows, outcols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::NTuple{N, Symbol}) where N
-    if !isa(rows, Union{AbstractDataFrame, NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-        throw(ArgumentError(ERROR_ROW_COUNT))
-    elseif _ncol(rows) != N
-        throw(ArgumentError("return value must have the same number of columns " *
-                            "for all groups (got $N and $(_ncol(rows)))"))
+    if !_names_match(rows, colnames)
+        throw(ArgumentError("return value must have the same column names " *
+                            "for all groups (got $colnames and $(propertynames(rows)))"))
     end
     @inbounds for j in colstart:length(outcols)
         col = outcols[j]
         cn = colnames[j]
-        local vals
-        try
-            vals = getproperty(rows, cn)
-        catch
-            throw(ArgumentError("return value must have the same column names " *
-                                "for all groups (got $colnames and $(propertynames(rows)))"))
-        end
+        vals = _get_col(rows, j)
         S = eltype(vals)
         T = eltype(col)
         if !do_append!(S <: T || promote_type(S, T) <: T, col, vals)

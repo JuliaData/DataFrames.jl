@@ -613,6 +613,17 @@ end
         @test delete!(df, v) == DataFrame(x=[2, 3])
         @test x == [2, 3]
     end
+
+    for inds in (1, [1], [true, false])
+        df = DataFrame(x1=[1, 2])
+        df.x2 = df.x1
+        @test delete!(df, inds) === df
+        @test df == DataFrame(x1=[2], x2=[2])
+    end
+
+    df = DataFrame(a=1, b=2)
+    push!(df.b, 3)
+    @test_throws AssertionError delete!(df, 1)
 end
 
 @testset "describe" begin
@@ -1544,7 +1555,7 @@ end
     @test df.a === df.b
 end
 
-@testset "And and Between tests" begin
+@testset "All and Between tests" begin
     # we check dispatch here only
     df = DataFrame(a=1, b=2, c=3)
     completecases(df, All())
@@ -1694,6 +1705,8 @@ end
     df2v[Not(1), All()] = Matrix(df)
     df2v[Not(1), Cols(:)] = Matrix(df)
     df2v[Not(1), Between(1, 2)] = Matrix(df[!, 1:2])
+
+    @test_throws ArgumentError df[1, All(1)]
 end
 
 @testset "vcat and push! with :orderequal" begin

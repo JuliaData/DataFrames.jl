@@ -437,10 +437,23 @@ end
     @test res.b ≅ [missing, "a", "a"]
 
     # Test return values with columns in different orders
-    @test combine(d -> d.x == [1] ? (x1=1, x2=3) : (x2=2, x1=4), gdf) ==
-        DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
-    @test combine(d -> d.x == [1] ? DataFrame(x1=1, x2=3) : DataFrame(x2=2, x1=4), gdf) ==
-        DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=1, x2=3) : (x2=2, x1=4), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1, [1, 2]] : d[1, [2, 1]], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? (x1=[1], x2=[3]) : (x2=[2], x1=[4]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? [1 3] : (x2=[2], x1=[4]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1:1, [1, 2]] : d[1:1, [2, 1]], gdf)
+    # but this should work
+    @test combine(d -> d.x == [1] ? [1 3] : (x1=[2], x2=[4]), gdf) == DataFrame(x=1:3, x1=[1, 2, 2], x2=[3, 4, 4])
+
+    # wrong mixing tests
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1:1, :] : d[1, :], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1, :] : d[1:1, :], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? [1 2] : d[1, :], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1, :] : [1 2], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1:1, :] : NamedTuple(d[1, :]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? NamedTuple(d[1, :]) : d[1:1, :], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? Tables.columntable(d[1:1, :]) : NamedTuple(d[1, :]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? NamedTuple(d[1, :]) : Tables.columntable(d[1:1, :]), gdf)
 
     # Test with NamedTuple with columns of incompatible lengths
     @test_throws DimensionMismatch combine(d -> (x1=[1], x2=[3, 4]), gdf)
@@ -3849,6 +3862,17 @@ end
         @test length(groupby_checked(df, [:x, :y])) == 40
         @test length(groupby_checked(df, [:x, :y], skipmissing=true)) ==
             length(unique(skipmissing(x))) * length(unique(skipmissing(y)))
+    end
+end
+
+@testset "map on GroupedDataFrame" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    dfv = @view df[1:3, 1:3]
+    gdf = groupby(df, :a)
+    gdfv = groupby(dfv, :a)
+
+    for x in (gdf, gdfv)
+        @test_throws ArgumentError map(identity, x)
     end
 end
 

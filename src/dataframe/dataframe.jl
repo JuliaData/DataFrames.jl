@@ -373,13 +373,13 @@ DataFrame(vecs::Vector{<:AbstractVector}) =
 DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
           nrows::Integer=0; makeunique::Bool=false) where T<:Type =
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
-                        "deprecated. Pass explicitly created columns to a " *
+                        "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))
 
 DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:AbstractString},
           nrows::Integer=0; makeunique::Bool=false) where T<:Type =
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
-                        "deprecated. Pass explicitly created columns to a " *
+                        "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))
 
 
@@ -966,10 +966,10 @@ function Base.delete!(df::DataFrame, inds)
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
+
     # we require ind to be stored and unique like in Base
     # otherwise an error will be thrown and the data frame will get corrupted
-    foreach(col -> deleteat!(col, inds), _columns(df))
-    return df
+    return _delete!_helper(df, inds)
 end
 
 function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
@@ -977,11 +977,34 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
         throw(BoundsError(df, (inds, :)))
     end
     drop = findall(inds)
-    foreach(col -> deleteat!(col, drop), _columns(df))
-    return df
+    return _delete!_helper(df, drop)
 end
 
 Base.delete!(df::DataFrame, inds::Not) = delete!(df, axes(df, 1)[inds])
+
+function _delete!_helper(df::DataFrame, drop)
+    cols = _columns(df)
+    isempty(cols) && return df
+
+    n = nrow(df)
+    col1 = cols[1]
+    deleteat!(col1, drop)
+    newn = length(col1)
+
+    for i in 2:length(cols)
+        col = cols[i]
+        if length(col) == n
+            deleteat!(col, drop)
+        end
+    end
+
+    for i in 1:length(cols)
+        # this should never happen, but we add it for safety
+        @assert length(cols[i]) == newn corrupt_msg(df, i)
+    end
+
+    return df
+end
 
 """
     empty!(df::DataFrame)
