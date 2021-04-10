@@ -39,6 +39,7 @@ Unitful = "1"
 julia = "1"
 
 [extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -51,5 +52,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
-        "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful"]
+test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues", "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful", "BenchmarkTools"]
