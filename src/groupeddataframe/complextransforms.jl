@@ -4,24 +4,29 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-function _combine_multicol(firstres, fun::Base.Callable, gd::GroupedDataFrame,
-                           incols::Union{Nothing, AbstractVector, Tuple, NamedTuple})
+function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDataFrame,
+                           wincols::Ref{Any})
+    @assert only(wfun) isa Base.Callable
+    @assert only(wincols) isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     firstmulticol = firstres isa MULTI_COLS_TYPE
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
         idx_agg = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg, 1:length(gd.groups), gd)
     else
-        idx_agg = nothing
+        idx_agg = NOTHING_IDX_AGG
     end
-    return _combine_with_first(wrap(firstres), fun, gd, incols,
+    return _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
                                Val(firstmulticol), idx_agg)
 end
 
-function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
-                             f::Base.Callable, gd::GroupedDataFrame,
-                             incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
-                             firstmulticol::Val, idx_agg::Union{Nothing, AbstractVector{<:Integer}})
+function _combine_with_first((first,)::Ref{Any},
+                             (f,)::Ref{Any}, gd::GroupedDataFrame,
+                             (incols,)::Ref{Any},
+                             firstmulticol::Val, idx_agg::Vector{Int})
+    @assert f isa Base.Callable
+    @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
+    @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     extrude = false
 
     if first isa AbstractDataFrame
@@ -45,7 +50,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
-    idx = isnothing(idx_agg) ? Vector{Int}(undef, n) : idx_agg
+    idx = idx_agg === NOTHING_IDX_AGG ? Vector{Int}(undef, n) : idx_agg
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))

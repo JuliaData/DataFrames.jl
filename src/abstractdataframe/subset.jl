@@ -1,11 +1,3 @@
-# subset allows a transformation specification without a target column name or a column
-
-_process_subset_pair(i::Int, a::ColumnIndex) = a => Symbol(:x, i)
-_process_subset_pair(i::Int, @nospecialize(a::Pair{<:Any, <:Base.Callable})) =
-    first(a) => last(a) => Symbol(:x, i)
-_process_subset_pair(i::Int, a) =
-    throw(ArgumentError("condition specifier $a is not supported by `subset`"))
-
 _and() = throw(ArgumentError("at least one condition must be passed"))
 _and(x::Bool) = x
 _and(x::Bool, y::Bool...) = x && _and(y...)
@@ -39,13 +31,18 @@ function _and_missing(x::Any...)
                         "but only true, false, or missing are allowed"))
 end
 
-
 # Note that _get_subset_conditions will have a large compilation time
 # if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
-                                @nospecialize(args), skipmissing::Bool)
-    conditions = Any[_process_subset_pair(i, a) for (i, a) in enumerate(args)]
-
+                                (args,)::Ref{Any}, skipmissing::Bool)
+    # subset allows a transformation specification without a target column name or a column
+    conditions = Any[if a isa ColumnIndex
+                         a => Symbol(:x, i)
+                     elseif a isa Pair{<:Any, <:Base.Callable}
+                         first(a) => last(a) => Symbol(:x, i)
+                     else
+                         throw(ArgumentError("condition specifier $a is not supported by `subset`"))
+                     end for (i, a) in enumerate(args)]
     isempty(conditions) && throw(ArgumentError("at least one condition must be passed"))
 
     if df isa AbstractDataFrame
@@ -155,14 +152,14 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 """
 function subset(df::AbstractDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false)
-    row_selector = _get_subset_conditions(df, args, skipmissing)
+    row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
     return view ? Base.view(df, row_selector, :) : df[row_selector, :]
 end
 
 function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false,
                         ungroup::Bool=true)
-    row_selector = _get_subset_conditions(gdf, args, skipmissing)
+    row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
     df = parent(gdf)
     res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
     # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
@@ -269,13 +266,13 @@ julia> df
 ```
 """
 function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Bool=false)
-    row_selector = _get_subset_conditions(df, args, skipmissing)
+    row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
     return delete!(df, findall(!, row_selector))
 end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
                  ungroup::Bool=true)
-    row_selector = _get_subset_conditions(gdf, args, skipmissing)
+    row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
     df = parent(gdf)
     res = delete!(df, findall(!, row_selector))
     # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
