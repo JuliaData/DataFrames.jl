@@ -66,8 +66,6 @@ julia> coalesce.(x, 0)
 The functions `dropmissing` and `dropmissing!` can be used to remove the rows containing `missing` values from a `DataFrame` and either create a new `DataFrame` or mutate the original in-place respectively.
 
 ```jldoctest missings
-julia> using DataFrames
-
 julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
@@ -93,8 +91,6 @@ julia> dropmissing(df)
 One can specify the column(s) in which to search for rows containing `missing` values to be removed.
 
 ```jldoctest missings
-julia> using DataFrames
-
 julia> dropmissing(df, :x)
 3×3 DataFrame
  Row │ i      x      y
@@ -111,8 +107,6 @@ the `Missing` part, if present, set the `disallowmissing` option to `true` (it
 will become the default behavior in the future).
 
 ```jldoctest missings
-julia> using DataFrames
-
 julia> dropmissing(df, disallowmissing=true)
 2×3 DataFrame
  Row │ i      x      y

@@ -17,7 +17,7 @@ Additionally selected MIME types support passing the following keyword arguments
   allows to choose whether to print a brief string summary of the data frame.
 
 # Examples
-```
+```jldoctest
 julia> show(stdout, MIME("text/latex"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 \\begin{tabular}{r|cc}
         & A & B\\\\

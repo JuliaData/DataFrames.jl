@@ -18,8 +18,6 @@ See other methods for a description of other keyword arguments.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y

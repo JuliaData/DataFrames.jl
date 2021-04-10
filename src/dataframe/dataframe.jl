@@ -92,8 +92,6 @@ extracted from a `DataFrame`.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
 2×2 DataFrame
  Row │ a      b
@@ -776,8 +774,6 @@ If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(a=1:3)
 3×1 DataFrame
  Row │ a
@@ -947,8 +943,6 @@ a vector of sorted and unique integers, a boolean vector, an integer, or `Not`.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
  Row │ a      b
@@ -1185,8 +1179,6 @@ to vertically concatenate data frames.
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df1 = DataFrame(A=1:3, B=1:3)
 3×2 DataFrame
  Row │ A      B
@@ -1520,8 +1512,6 @@ that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(A=1:3, B=1:3);
 
 julia> push!(df, (true, false))
@@ -1640,8 +1630,6 @@ of rows is repeated. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
  Row │ a      b
@@ -1685,8 +1673,6 @@ specified by `count`. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
-julia> using DataFrames
-
 julia> df = DataFrame(a = 1:2, b = 3:4)
 2×2 DataFrame
  Row │ a      b

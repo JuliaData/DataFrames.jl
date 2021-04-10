@@ -675,7 +675,7 @@ $TRANSFORMATION_COMMON_RULES
   frame or a `GroupedDataFrame`.
 
 # Examples
-```
+```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
  Row │ a      b
@@ -970,7 +970,7 @@ $TRANSFORMATION_COMMON_RULES
   frame or a `GroupedDataFrame`.
 
 # Examples
-```
+```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
 3×2 DataFrame
  Row │ a      b
