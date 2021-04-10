@@ -266,9 +266,9 @@ df = df |> @map({a=_.a + 1, _.b}) |> DataFrame
 A particular common case of a collection that supports the
 [Tables.jl](https://github.com/JuliaData/Tables.jl) interface is
 a vector of `NamedTuple`s:
-```
+```jldoctest dataframe
 julia> v = [(a=1, b=2), (a=3, b=4)]
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+2-element Vector{NamedTuple{(:a, :b), Tuple{Int64, Int64}}}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 
@@ -281,11 +281,11 @@ julia> df = DataFrame(v)
    2 │     3      4
 ```
 You can also easily convert a data frame back to a vector of `NamedTuple`s:
-```
+```jldoctest dataframe
 julia> using Tables
 
 julia> Tables.rowtable(df)
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+2-element Vector{NamedTuple{(:a, :b), Tuple{Int64, Int64}}}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 ```

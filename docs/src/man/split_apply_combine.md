@@ -384,7 +384,7 @@ which can be used in a similar fashion to a `NamedTuple`.
 Grouping a data frame using the `groupby` function can be seen as adding a lookup key
 to it. Such lookups can be performed efficiently by indexing the resulting
 `GroupedDataFrame` with a `Tuple` or `NamedTuple`:
-```
+```jldoctest sac
 julia> df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000)
 5000×2 DataFrame
   Row │ g      x
@@ -397,6 +397,7 @@ julia> df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000)
     5 │     1      5
     6 │     2      6
     7 │     2      7
+    8 │     2      8
   ⋮   │   ⋮      ⋮
  4994 │   999   4994
  4995 │   999   4995
@@ -405,7 +406,7 @@ julia> df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000)
  4998 │  1000   4998
  4999 │  1000   4999
  5000 │  1000   5000
-    4986 rows omitted
+    4985 rows omitted
 
 julia> gdf = groupby(df, :g)
 GroupedDataFrame with 1000 groups based on key: g
@@ -464,7 +465,7 @@ Last Group (5 rows): g = 501
 ```
 
 In order to apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
-```
+```jldoctest sac
 julia> gd = groupby(iris, :Species)
 GroupedDataFrame with 3 groups based on key: Species
 First Group (50 rows): Species = "Iris-setosa"

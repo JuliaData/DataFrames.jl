@@ -69,6 +69,8 @@ Also notice that when `DataFrame` is printed to the console or rendered in HTML
 its columns. For example in this case:
 
 ```jldoctest dataframe
+julia> using CategoricalArrays
+
 julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
@@ -801,6 +803,8 @@ column did not allow for missing values.
 
 Replacement operations affecting a single column can be performed using `replace!`:
 ```jldoctest replace
+julia> using DataFrames
+
 julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
 4×4 DataFrame
  Row │ a       b      c       d

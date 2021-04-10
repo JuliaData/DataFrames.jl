@@ -83,7 +83,7 @@ not matter in this case.
 [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);

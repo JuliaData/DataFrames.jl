@@ -99,7 +99,7 @@ See also: [`subset!`](@ref), [`filter`](@ref), [`select`](@ref)
 
 # Examples
 
-```
+```jldoctest 
 julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false],
                       z=[true, true, missing, missing], v=[1, 2, 11, 12])
 4×5 DataFrame
@@ -199,7 +199,7 @@ See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 
 # Examples
 
-```
+```jldoctest
 julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false])
 4×3 DataFrame
  Row │ id     x      y

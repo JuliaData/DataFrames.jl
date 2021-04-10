@@ -795,8 +795,10 @@ Last Group (3 rows): a = 2
    1 │     2      1      4
    2 │     2      2      5
    3 │     2      1      8
+```
 
 # specifying a name for target column
+```jldoctest
 julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 8×2 DataFrame
  Row │ a      sum_log_c
@@ -824,8 +826,10 @@ julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
    6 │     1      8     19
    7 │     1      8     19
    8 │     2      4     17
+```
 
 # multiple arguments, renaming and keepkeys
+```jldoctest
 julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
  Row │ b1     c1     b_c_+
@@ -839,8 +843,10 @@ julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
    6 │     1      6      7
    7 │     2      7      9
    8 │     1      8      9
+```
 
 # broadcasting and column expansion
+```jldoctest
 julia> select(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
  Row │ a      b      min    max
