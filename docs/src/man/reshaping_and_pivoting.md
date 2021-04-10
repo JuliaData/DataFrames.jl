@@ -203,7 +203,7 @@ julia> unstack(longdf, :id, :variable, :value)
 
 If the remaining columns are unique, you can skip the id variable and use:
 
-```
+```jldoctest reshape
 julia> unstack(longdf, :variable, :value)
 150×6 DataFrame
  Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth ⋯
@@ -230,7 +230,7 @@ julia> unstack(longdf, :variable, :value)
 
 You can even skip passing the `:variable` and `:value` values as positional
 arguments, as they will be used by default, and write:
-```
+```jldoctest reshape
 julia> unstack(longdf)
 150×6 DataFrame
  Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth ⋯
