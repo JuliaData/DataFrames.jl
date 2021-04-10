@@ -799,6 +799,12 @@ Last Group (3 rows): a = 2
 
 # specifying a name for target column
 ```jldoctest
+julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 8×2 DataFrame
  Row │ a      sum_log_c
@@ -830,6 +836,12 @@ julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
 
 # multiple arguments, renaming and keepkeys
 ```jldoctest
+julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
  Row │ b1     c1     b_c_+
@@ -847,6 +859,12 @@ julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 
 # broadcasting and column expansion
 ```jldoctest
+julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> select(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
  Row │ a      b      min    max
@@ -1130,8 +1148,16 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
    4 │     3      2      7
    5 │     4      1      4
    6 │     4      1      8
+```
 
 # auto-splatting, renaming and keepkeys
+```
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
  Row │ b1     c1     b_c_+
@@ -1145,8 +1171,16 @@ julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
    6 │     2      7      9
    7 │     1      4      5
    8 │     1      8      9
+```
 
 # broadcasting and column expansion
+```
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
  Row │ a      b      min    max

@@ -4,23 +4,23 @@ For reading and writing tabular data from CSV and other delimited text files,
 use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 
 If you have not used the CSV.jl package before then you may need to install it first:
-```jldoctest
+```julia
 using Pkg
 Pkg.add("CSV")
 ```
 
 The CSV.jl functions are not loaded automatically and must be imported into the session.
-```jldoctest
+```julia
 using CSV
 ```
 
 A dataset can now be read from a CSV file at path `input` using
-```jldoctest
+```julia
 DataFrame(CSV.File(input))
 ```
 
 A `DataFrame` can be written to a CSV file at path `output` using
-```jldcotest
+```julia
 df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)
 ```

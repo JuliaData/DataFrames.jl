@@ -551,8 +551,8 @@ julia> describe(df, :min, :max)
 julia> describe(df, :min, sum => :sum)
 3×3 DataFrame
  Row │ variable  min  sum
-     │ Symbol    Any  Any
-─────┼────────────────────
+     │ Symbol    Any  Union…
+─────┼───────────────────────
    1 │ i         1    55
    2 │ x         0.1  5.5
    3 │ y         a
@@ -716,17 +716,17 @@ Use `findall(completecases(df))` to get the indices of the rows.
 
 ```jldoctest
 julia> df = DataFrame(i = 1:5,
-                             x = [missing, 4, missing, 2, 1],
-                             y = [missing, missing, "c", "d", "e"])
+                            x = [missing, 4, missing, 2, 1],
+                            y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
-Row │ i      x        y
-│ Int64  Int64?   String?
+ Row │ i      x        y
+     │ Int64  Int64?   String?
 ─────┼─────────────────────────
-1 │     1  missing  missing
-2 │     2        4  missing
-3 │     3  missing  c
-4 │     4        2  d
-5 │     5        1  e
+   1 │     1  missing  missing
+   2 │     2        4  missing
+   3 │     3  missing  c
+   4 │     4        2  d
+   5 │     5        1  e
 
 julia> completecases(df)
 5-element BitVector:
@@ -736,7 +736,8 @@ julia> completecases(df)
  1
  1
 
-julia> 5-element BitVector:
+julia> completecases(df, :x)
+5-element BitVector:
  0
  1
  0

@@ -1,6 +1,7 @@
 using Documenter
 using DataFrames
 using CategoricalArrays
+using Tables
 DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames, CategoricalArrays); recursive=true)
 
 # Workaround for JuliaLang/julia/pull/28625
