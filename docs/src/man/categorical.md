@@ -50,7 +50,7 @@ allows us to determine efficiently the allowed levels of the variable at any tim
 the `levels` function (note that levels may or may not be actually used in the data):
 
 ```jldoctest categorical
-julia> levels(cv) 
+julia> levels(cv)
 2-element Vector{String}:
  "Group A"
  "Group B"
