@@ -464,7 +464,7 @@ Last Group (5 rows): g = 501
 ```
 
 In order to apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
-```jldoctest sac
+```
 julia> gd = groupby(iris, :Species)
 GroupedDataFrame with 3 groups based on key: Species
 First Group (50 rows): Species = "Iris-setosa"

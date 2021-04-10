@@ -17,17 +17,17 @@ Additionally selected MIME types support passing the following keyword arguments
   allows to choose whether to print a brief string summary of the data frame.
 
 # Examples
-```jldoctest
+```
 julia> show(stdout, MIME("text/latex"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
-\begin{tabular}{r|cc}
-        & A & B\\
-        \hline
-        & Int64 & String\\
-        \hline
-        1 & 1 & x \\
-        2 & 2 & y \\
-        3 & 3 & z \\
-\end{tabular}
+\\begin{tabular}{r|cc}
+        & A & B\\\\
+        \\hline
+        & Int64 & String\\\\
+        \\hline
+        1 & 1 & x \\\\
+        2 & 2 & y \\\\
+        3 & 3 & z \\\\
+\\end{tabular}
 14
 
 julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))

@@ -189,12 +189,12 @@ julia> innerjoin(a, b, on = [:City => :Location, :Job => :Work])
 ─────┼─────────────────────────────────────
    1 │ Amsterdam  Lawyer         1  a
    2 │ London     Lawyer         2  b
-   3 │ London     Lawyer         2  c
-   4 │ London     Lawyer         3  b
+   3 │ London     Lawyer         3  b
+   4 │ London     Lawyer         2  c
    5 │ London     Lawyer         3  c
    6 │ New York   Doctor         4  d
-   7 │ New York   Doctor         4  e
-   8 │ New York   Doctor         5  d
+   7 │ New York   Doctor         5  d
+   8 │ New York   Doctor         4  e
    9 │ New York   Doctor         5  e
 ```
 
@@ -212,7 +212,7 @@ is an example for the join operation described above:
 
 ```jldoctest joins
 julia> innerjoin(a, b, on = [(:City => :Location), (:Job => :Work)], validate=(true, true))
-ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3
+ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. df1 contains 2 duplicate keys: (City = "London", Job = "Lawyer") and (City = "New York", Job = "Doctor"). df2 contains 2 duplicate keys: (Location = "London", Work = "Lawyer") and (Location = "New York", Work = "Doctor").
 ```
 
 Finally, using the `source` keyword argument you can add a column to the
