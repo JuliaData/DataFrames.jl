@@ -18,7 +18,7 @@ The naive encoding used in an `Array` represents every entry of this vector as a
 In contrast, we can represent the data more efficiently by replacing the strings with indices
 into a small pool of levels. This is what the `CategoricalArray` type does:
 
-```
+```jldoctest categorical
 julia> using CategoricalArrays
 
 julia> cv = CategoricalArray(v)
@@ -33,7 +33,7 @@ julia> cv = CategoricalArray(v)
 
 `CategoricalArray`s support missing values.
 
-```
+```jldoctest categorical
 julia> cv = CategoricalArray(["Group A", missing, "Group A",
                               "Group B", "Group B", missing])
 6-element CategoricalArray{Union{Missing, String},1,UInt32}:
@@ -49,7 +49,7 @@ In addition to representing repeated data efficiently, the `CategoricalArray` ty
 allows us to determine efficiently the allowed levels of the variable at any time using
 the `levels` function (note that levels may or may not be actually used in the data):
 
-```
+```jldoctest categorical
 julia> levels(cv) 
 2-element Vector{String}:
  "Group A"
@@ -59,7 +59,7 @@ julia> levels(cv)
 The `levels!` function also allows changing the order of appearance of the levels,
 which can be useful for display purposes or when working with ordered variables.
 
-```
+```jldoctest categorical
 julia> levels!(cv, ["Group B", "Group A"])
 6-element CategoricalArray{Union{Missing, String},1,UInt32}:
  "Group A"
@@ -87,7 +87,7 @@ julia> sort(cv)
 By default, a `CategoricalArray` is able to represent ``2^{32}`` different levels.
 You can use less memory by calling the `compress` function:
 
-```
+```jldoctest categorical
 julia> cv = compress(cv)
 6-element CategoricalArray{Union{Missing, String},1,UInt8}:
  "Group A"
@@ -102,7 +102,7 @@ julia> cv = compress(cv)
 Instead of using the `CategoricalArray` constructor directly you can use `categorical`
 function. It additionally accepts a keyword argument `compress` which when set to `true`
 is equivalent to calling `compress` on the new vector:
-```
+```jldoctest categorical
 julia> cv1 = categorical(["A", "B"], compress=true)
 2-element CategoricalArray{String,1,UInt8}:
  "A"
@@ -111,7 +111,7 @@ julia> cv1 = categorical(["A", "B"], compress=true)
 
 If the `ordered` keyword argument is set to `true`, the resulting `CategoricalArray` will be
 ordered, which means that its levels can be tested for order (rather than throwing an error):
-```
+```jldoctest categorical
 julia> cv2 = categorical(["A", "B"], ordered=true)
 2-element CategoricalArray{String,1,UInt32}:
  "A"
@@ -127,7 +127,7 @@ true
 You can check if a `CategoricalArray` is ordered using the `isordered` function
 and change between ordered and unordered using `ordered!` function.
 
-```
+```jldoctest categorical
 julia> isordered(cv1)
 false
 

@@ -1,4 +1,6 @@
-using Documenter, DataFrames
+using Documenter
+using DataFrames
+using CategoricalArrays
 DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames, CategoricalArrays); recursive=true)
 
 # Workaround for JuliaLang/julia/pull/28625
