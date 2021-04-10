@@ -522,8 +522,9 @@ column `:nmissing` will report the number of missing values of that variable.
 
 If custom functions are provided, they are called repeatedly with the vector
 corresponding to each column as the only argument. For columns allowing for
-missing values, the vector is wrapped in a call to `skipmissing` and then
-`collect`ed: therefore custom functions cannot access missing values.
+missing values, the vector is wrapped in a call to `skipmissing`: custom
+functions must therefore support such objects (and not only vectors), and cannot
+access missing values.
 
 # Examples
 ```julia
