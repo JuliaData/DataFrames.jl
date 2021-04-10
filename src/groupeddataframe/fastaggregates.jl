@@ -100,7 +100,9 @@ function groupreduce_init(op, condf, adjust,
         else
             V = U >: Missing ? Union{typeof(x), Missing} : typeof(x)
         end
-        v = similar(incol, V, length(gd))
+        # here we are sure that only Base.add_sum or Base.mul_prod are performed
+        # so we always fall back to Vector as output column type
+        v = Vector{V}(undef, length(gd))
         fill!(v, x)
         return v
     else
