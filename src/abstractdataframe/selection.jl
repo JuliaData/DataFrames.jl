@@ -270,10 +270,10 @@ function normalize_selection(idx::AbstractIndex,
         allunique(combine_target_col) || throw(ArgumentError("target column names must be unique"))
     end
 
-    combine_src = if wanttable 
-        AsTable(c) 
+    if wanttable 
+        combine_src = AsTable(c) 
     else 
-        (length(c) == 1 ? only(c) : c)
+        combine_src = (length(c) == 1 ? only(c) : c)
     end
 
     combine_func = first(last(sel))
@@ -338,10 +338,10 @@ function normalize_selection(idx::AbstractIndex,
         end
     end
 
-    combine_src = if wanttable 
-        AsTable(c) 
+    if wanttable 
+        combine_src = AsTable(c) 
     else 
-        (length(c) == 1 ? only(c) : c)
+        combine_src = (length(c) == 1 ? only(c) : c)
     end
 
     return combine_src => fun => newcol
