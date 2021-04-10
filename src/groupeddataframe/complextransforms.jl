@@ -217,6 +217,8 @@ isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::AbstractVector) =
     isthreadsafe(outcols, (incols,))
 isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::Nothing) = true
 
+@nospecialize
+
 function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
                                    outcols::NTuple{N, AbstractVector},
                                    f::Base.Callable, gd::GroupedDataFrame,
@@ -292,6 +294,8 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
 
     return outcols, colnames
 end
+
+@specialize
 
 # This needs to be in a separate function
 # to work around a crash due to JuliaLang/julia#29430
