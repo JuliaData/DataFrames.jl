@@ -102,7 +102,7 @@ function groupreduce_init(op, condf, adjust,
         end
         # here we are sure that only Base.add_sum or Base.mul_prod are performed
         # so we always fall back to Vector as output column type
-        v = Vector{V}(undef, length(gd))
+        v = Tables.allocatecolumn(V, length(gd))
         fill!(v, x)
         return v
     else
