@@ -8,8 +8,8 @@ const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, Abstr
 # we do not use nothing to avoid excessive specialization
 const NOTHING_IDX_AGG = Int[]
 
-function gen_groups(idx::Vector{Int})
-    groups = zeros(Int, length(idx))
+function gen_groups(::Type{T}, idx::Vector{Int}) where {T <: Integer}
+    groups = zeros(T, length(idx))
     groups[1] = 1
     j = 1
     last_idx = idx[1]
@@ -102,7 +102,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
 
     if length(idx) == 0 && !(keeprows && length(gd_keys) > 0)
         @assert nrow(newparent) == 0
-        return GroupedDataFrame(newparent, copy(gd.cols), Int[],
+        return GroupedDataFrame(newparent, copy(gd.cols), similar(gd.groups, 0),
                                 Int[], Int[], Int[], 0, Dict{Any, Int}(),
                                 Threads.ReentrantLock())
     elseif keeprows
@@ -116,10 +116,10 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
                                     getfield(gd, :keymap), Threads.ReentrantLock())
         end
     else
-        groups = gen_groups(idx)
+        groups = gen_groups(eltype(gd.groups), idx)
         @assert groups[end] <= length(gd)
         return GroupedDataFrame(newparent, copy(gd.cols), groups,
-                                nothing, nothing, nothing, groups[end], nothing,
+                                nothing, nothing, nothing, Int(groups[end]), nothing,
                                 Threads.ReentrantLock())
     end
 end

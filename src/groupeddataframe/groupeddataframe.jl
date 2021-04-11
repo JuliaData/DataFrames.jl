@@ -20,10 +20,10 @@ view into the `AbstractDataFrame` grouped by rows.
 
 Not meant to be constructed directly, see `groupby`.
 """
-mutable struct GroupedDataFrame{T<:AbstractDataFrame}
+mutable struct GroupedDataFrame{T<:AbstractDataFrame, U<:Union{UInt32, UInt}}
     parent::T
     cols::Vector{Symbol}                   # column names used for grouping
-    groups::Vector{Int}                    # group indices for each row in 0:ngroups, 0 skipped
+    groups::Vector{U}                      # group indices for each row in 0:ngroups, 0 skipped
     idx::Union{Vector{Int}, Nothing}       # indexing vector sorting rows into groups
     starts::Union{Vector{Int}, Nothing}    # starts of groups after permutation by idx
     ends::Union{Vector{Int}, Nothing}      # ends of groups after permutation by idx
@@ -189,13 +189,14 @@ function groupby(df::AbstractDataFrame, cols;
     _check_consistency(df)
     idxcols = index(df)[cols]
     if isempty(idxcols)
-        return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
+        return GroupedDataFrame(df, Symbol[], ones(UInt32, nrow(df)),
                                 nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
                                 nothing, Threads.ReentrantLock())
     end
     sdf = select(df, idxcols, copycols=false)
 
-    groups = Vector{Int}(undef, nrow(df))
+    T = nrow(df) >= typemax(UInt32) ? UInt : UInt32
+    groups = Vector{T}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
                         groups, skipmissing, sort)
@@ -205,18 +206,22 @@ function groupby(df::AbstractDataFrame, cols;
 
     # sort groups if row_group_slots hasn't already done that
     if sort && !sorted
-        # Find index of representative row for each group
-        idx = Vector{Int}(undef, length(gd))
-        fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
-        group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
-        groups = gd.groups
-        @inbounds for i in eachindex(groups)
-            gix = groups[i]
-            groups[i] = gix == 0 ? 0 : group_invperm[gix]
-        end
+        sort_groups!(gd)
     end
 
     return gd
+end
+
+function sort_groups!(gd::GroupedDataFrame)
+    # Find index of representative row for each group
+    idx = Vector{Int}(undef, length(gd))
+    fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
+    group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
+    groups = gd.groups
+    @inbounds for i in eachindex(groups)
+        gix = groups[i]
+        groups[i] = gix == 0 ? 0 : group_invperm[gix]
+    end
 end
 
 function genkeymap(gd, cols)
@@ -323,7 +328,8 @@ any group are attributed `missing` (this can happen if `skipmissing=true` was
 passed when creating `gd`, or if `gd` is a subset from
 a larger [`GroupedDataFrame`](@ref)).
 """
-groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
+groupindices(gd::GroupedDataFrame) =
+    Union{Int, Missing}[gix == 0 ? missing : Int(gix) for gix in gd.groups]
 
 """
     groupcols(gd::GroupedDataFrame)
@@ -415,7 +421,7 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractVector{<:Integer})
     if !allunique(new_starts)
         throw(ArgumentError("duplicates in idxs argument are not allowed"))
     end
-    new_groups = zeros(Int, length(gd.groups))
+    new_groups = zeros(eltype(gd.groups), length(gd.groups))
     idx = gd.idx
     for i in eachindex(new_starts)
         @inbounds for j in new_starts[i]:new_ends[i]
