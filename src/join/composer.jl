@@ -577,7 +577,7 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
     leftjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
              renamecols=(identity => identity), matchmissing=:error)
 
-Perform a left join of twodata frame objects and return a `DataFrame` containing
+Perform a left join of two data frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
 
 The order of rows in the result is undefined and may change in the future releases.
