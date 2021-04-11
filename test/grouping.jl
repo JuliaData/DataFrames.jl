@@ -3876,4 +3876,14 @@ end
     end
 end
 
+@testset "aggregation of PooledArray" begin
+    df = DataFrame(x=PooledArray(Int32(1):Int32(3)))
+    gdf = groupby_checked(df, :x)
+    df2 = combine(gdf, :x => sum, :x => prod)
+    @test df2 == DataFrame(x=1:3, x_sum=1:3, x_prod=1:3)
+    @test df2.x isa PooledVector{Int32}
+    @test df2.x_sum isa Vector{Int}
+    @test df2.x_prod isa Vector{Int}
+end
+
 end # module

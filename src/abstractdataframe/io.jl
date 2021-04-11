@@ -20,13 +20,13 @@ Additionally selected MIME types support passing the following keyword arguments
 ```jldoctest
 julia> show(stdout, MIME("text/latex"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 \\begin{tabular}{r|cc}
-        & A & B\\\\
-        \\hline
-        & Int64 & String\\\\
-        \\hline
-        1 & 1 & x \\\\
-        2 & 2 & y \\\\
-        3 & 3 & z \\\\
+\t& A & B\\\\
+\t\\hline
+\t& Int64 & String\\\\
+\t\\hline
+\t1 & 1 & x \\\\
+\t2 & 2 & y \\\\
+\t3 & 3 & z \\\\
 \\end{tabular}
 14
 

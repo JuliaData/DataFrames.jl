@@ -57,7 +57,7 @@ julia> eachrow(df)
    4 │     4     14
 
 julia> copy.(eachrow(df))
-4-element Array{NamedTuple{(:x, :y),Tuple{Int64,Int64}},1}:
+4-element Vector{NamedTuple{(:x, :y), Tuple{Int64, Int64}}}:
  (x = 1, y = 11)
  (x = 2, y = 12)
  (x = 3, y = 13)
@@ -153,19 +153,19 @@ julia> eachcol(df)
    4 │     4     14
 
 julia> collect(eachcol(df))
-2-element Array{AbstractArray{T,1} where T,1}:
+2-element Vector{AbstractVector{T} where T}:
  [1, 2, 3, 4]
  [11, 12, 13, 14]
 
 julia> map(eachcol(df)) do col
            maximum(col) - minimum(col)
        end
-2-element Array{Int64,1}:
+2-element Vector{Int64}:
  3
  3
 
 julia> sum.(eachcol(df))
-2-element Array{Int64,1}:
+2-element Vector{Int64}:
  10
  50
 ```

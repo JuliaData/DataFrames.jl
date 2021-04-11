@@ -495,7 +495,7 @@ See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
@@ -634,7 +634,7 @@ See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
@@ -780,7 +780,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
@@ -936,7 +936,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
@@ -1077,7 +1077,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
@@ -1182,7 +1182,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
@@ -1266,7 +1266,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> df1 = DataFrame(X=1:3)
 3×1 DataFrame
  Row │ X

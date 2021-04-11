@@ -5,6 +5,8 @@
 The default printing of `DataFrame` objects only includes a sample of rows and columns that fits on screen:
 
 ```jldoctest dataframe
+julia> using DataFrames
+
 julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
 500×3 DataFrame
  Row │ A      B      C
@@ -17,6 +19,7 @@ julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
    5 │     9      1      5
    6 │    11      1      6
    7 │    13      1      7
+   8 │    15      1      8
   ⋮  │   ⋮      ⋮      ⋮
  494 │   987     10    494
  495 │   989     10    495
@@ -25,7 +28,7 @@ julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
  498 │   995     10    498
  499 │   997     10    499
  500 │   999     10    500
-           486 rows omitted
+           485 rows omitted
 ```
 
 Printing options can be adjusted by calling the `show` function manually:
@@ -66,6 +69,8 @@ Also notice that when `DataFrame` is printed to the console or rendered in HTML
 its columns. For example in this case:
 
 ```jldoctest dataframe
+julia> using CategoricalArrays
+
 julia> DataFrame(a = 1:2, b = [1.0, missing],
                  c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
@@ -126,6 +131,7 @@ julia> df[:, [:A, :B]]
    5 │     9      1
    6 │    11      1
    7 │    13      1
+   8 │    15      1
   ⋮  │   ⋮      ⋮
  494 │   987     10
  495 │   989     10
@@ -134,7 +140,7 @@ julia> df[:, [:A, :B]]
  498 │   995     10
  499 │   997     10
  500 │   999     10
-    486 rows omitted
+    485 rows omitted
 
 julia> df[1:3, [:B, :A]]
 3×2 DataFrame
@@ -169,6 +175,7 @@ julia> df[!, [:A]]
    5 │     9
    6 │    11
    7 │    13
+   8 │    15
   ⋮  │   ⋮
  494 │   987
  495 │   989
@@ -177,20 +184,28 @@ julia> df[!, [:A]]
  498 │   995
  499 │   997
  500 │   999
-486 rows omitted
+485 rows omitted
 
 julia> df[!, [:A]] == df[:, [:A]]
 true
 
 julia> df[!, :A]
-500-element Array{Int64,1}:
+500-element Vector{Int64}:
    1
    3
    5
    7
    9
   11
+  13
+  15
+  17
+  19
    ⋮
+ 983
+ 985
+ 987
+ 989
  991
  993
  995
@@ -282,6 +297,7 @@ julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
    5 │     9      1      5
    6 │    11      1      6
    7 │    13      1      7
+   8 │    15      1      8
   ⋮  │   ⋮      ⋮      ⋮
  494 │   987     10    494
  495 │   989     10    495
@@ -290,7 +306,7 @@ julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
  498 │   995     10    498
  499 │   997     10    499
  500 │   999     10    500
-           486 rows omitted
+           485 rows omitted
 
 julia> df[df.A .> 500, :]
 250×3 DataFrame
@@ -304,6 +320,7 @@ julia> df[df.A .> 500, :]
    5 │   509      6    255
    6 │   511      6    256
    7 │   513      6    257
+   8 │   515      6    258
   ⋮  │   ⋮      ⋮      ⋮
  244 │   987     10    494
  245 │   989     10    495
@@ -312,7 +329,7 @@ julia> df[df.A .> 500, :]
  248 │   995     10    498
  249 │   997     10    499
  250 │   999     10    500
-           236 rows omitted
+           235 rows omitted
 
 julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
 99×3 DataFrame
@@ -326,6 +343,7 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
    5 │   609      7    305
    6 │   611      7    306
    7 │   613      7    307
+   8 │   615      7    308
   ⋮  │   ⋮      ⋮      ⋮
   93 │   785      8    393
   94 │   787      8    394
@@ -334,7 +352,7 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
   97 │   793      8    397
   98 │   795      8    398
   99 │   797      8    399
-            85 rows omitted
+            84 rows omitted
 ```
 Where a specific subset of values needs to be matched, the `in()` function can be applied:
 
@@ -445,8 +463,9 @@ julia> select(df, :x1)
    2 │     2
 
 julia> df[:, :x1]
-1-element Array{Int64,1}:
+2-element Vector{Int64}:
  1
+ 2
 ```
 
 By default `select` copies columns of a passed source data frame.
@@ -706,7 +725,7 @@ julia> sort!(df)
    3 │     3
 
 julia> x
-3-element Array{Int64,1}:
+3-element Vector{Int64}:
  3
  1
  2
@@ -724,7 +743,7 @@ julia> df
    3 │     3
 
 julia> x
-3-element Array{Int64,1}:
+3-element Vector{Int64}:
  3
  1
  2
@@ -757,7 +776,7 @@ julia> df = DataFrame(x=x)
 julia> df.x == x
 true
 
-julia> df[1] !== x
+julia> df[!, 1] !== x
 true
 
 julia> eachcol(df)[1] === df.x
@@ -784,6 +803,8 @@ column did not allow for missing values.
 
 Replacement operations affecting a single column can be performed using `replace!`:
 ```jldoctest replace
+julia> using DataFrames
+
 julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
 4×4 DataFrame
  Row │ a       b      c       d
@@ -793,12 +814,14 @@ julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j",
    2 │ None        2  j       y
    3 │ b           3  k       None
    4 │ None        4  h       z
+
 julia> replace!(df.a, "None" => "c")
-4-element Array{String,1}:
+4-element Vector{String}:
  "a"
  "c"
  "b"
  "c"
+
 julia> df
 4×4 DataFrame
  Row │ a       b      c       d
@@ -827,6 +850,7 @@ julia> df[:, [:c, :d]] .= ifelse.(df[!, [:c, :d]] .== "None", "c", df[!, [:c, :d
    2 │ j       y
    3 │ k       c
    4 │ h       z
+
 julia> df
 4×4 DataFrame
  Row │ a       b      c       d
@@ -836,6 +860,7 @@ julia> df
    2 │ c           2  j       y
    3 │ b           3  k       c
    4 │ c           4  h       z
+
 julia> df .= ifelse.(df .== "c", "None", df) # replacement on entire data frame
 4×4 DataFrame
  Row │ a       b      c       d
@@ -864,6 +889,7 @@ julia> df2 = ifelse.(df .== "None", missing, df) # do not operate in-place (`df 
    2 │ missing      2  j        y
    3 │ b            3  k        missing
    4 │ missing      4  h        z
+
 julia> allowmissing!(df) # operate in-place after allowing for missing
 4×4 DataFrame
  Row │ a        b       c        d
@@ -873,6 +899,7 @@ julia> allowmissing!(df) # operate in-place after allowing for missing
    2 │ None          2  j        y
    3 │ b             3  k        None
    4 │ None          4  h        z
+
 julia> df .= ifelse.(df .== "None", missing, df)
 4×4 DataFrame
  Row │ a        b       c        d

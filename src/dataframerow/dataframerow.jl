@@ -26,7 +26,7 @@ then `DataFrameRow` will always have all columns from the parent,
 even if they are added or removed after its creation.
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2], outer=[2]),
                       b = repeat(["a", "b"], inner=[2]),
                       c = 1:4)
@@ -67,7 +67,7 @@ julia> NamedTuple(df[1, :])
 (a = 1, b = "a", c = 1)
 
 julia> Vector(df[1, :])
-3-element Array{Any,1}:
+3-element Vector{Any}:
  1
   "a"
  1
@@ -128,8 +128,8 @@ Note that this differs from the first element in the tuple returned by
 the source `DataFrame` where data that `dfr` gives access to is stored.
 
 # Examples
-```julia
-julia> df = DataFrame(reshape(1:12, 3, 4))
+```jldoctest
+julia> df = DataFrame(reshape(1:12, 3, 4), :auto)
 3×4 DataFrame
  Row │ x1     x2     x3     x4
      │ Int64  Int64  Int64  Int64
@@ -331,7 +331,7 @@ elements is returned directly as a number.
 See also: [`length`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :]
 DataFrameRow
  Row │ a      b
@@ -357,7 +357,7 @@ Return the number of elements of `dfr`.
 See also: [`size`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> dfr = DataFrame(a=1:3, b='a':'c')[1, :]
 DataFrameRow
  Row │ a      b

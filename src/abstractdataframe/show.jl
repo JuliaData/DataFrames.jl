@@ -156,7 +156,6 @@ implicit row ID column contained in every `AbstractDataFrame`.
 - `show_eltype`: Whether to print the column type
    under the column name in the heading.
 - `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
-```
 """
 function getmaxwidths(df::AbstractDataFrame,
                       io::IO,
@@ -380,12 +379,12 @@ julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
 julia> show(df, show_row_number=false)
 3×2 DataFrame
- A     │ B
- Int64 │ String
-───────┼────────
-     1 │ x
-     2 │ y
-     3 │ z
+ A      B
+ Int64  String
+───────────────
+     1  x
+     2  y
+     3  z
 ```
 """
 Base.show(io::IO,

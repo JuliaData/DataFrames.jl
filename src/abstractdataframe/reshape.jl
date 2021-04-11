@@ -41,86 +41,94 @@ that return views into the original data frame.
 
 
 # Examples
-```julia
-julia> using Random
-
-julia> Random.seed!(1234);
-
-julia> df = DataFrame(a = repeat([1:3;], inner = [2]),
-                      b = repeat([1:2;], inner = [3]),
-                      c = randn(6),
-                      d = randn(),
-                      e = map(string, 'a':'f'))
+```jldoctest
+julia> df = DataFrame(a = repeat(1:3, inner = 2),
+                             b = repeat(1:2, inner = 3),
+                             c = repeat(1:1, inner = 6),
+                             d = repeat(1:6, inner = 1),
+                             e = string.('a':'f'))
 6×5 DataFrame
- Row │ a      b      c          d         e
-     │ Int64  Int64  Float64    Float64   String
-─────┼───────────────────────────────────────────
-   1 │     1      1   0.867347  0.532813  a
-   2 │     1      1  -0.901744  0.532813  b
-   3 │     2      1  -0.494479  0.532813  c
-   4 │     2      2  -0.902914  0.532813  d
-   5 │     3      2   0.864401  0.532813  e
-   6 │     3      2   2.21188   0.532813  f
+ Row │ a      b      c      d      e
+     │ Int64  Int64  Int64  Int64  String
+─────┼────────────────────────────────────
+   1 │     1      1      1      1  a
+   2 │     1      1      1      2  b
+   3 │     2      1      1      3  c
+   4 │     2      2      1      4  d
+   5 │     3      2      1      5  e
+   6 │     3      2      1      6  f
 
 julia> stack(df, [:c, :d])
 12×5 DataFrame
  Row │ a      b      e       variable  value
-     │ Int64  Int64  String  String    Float64
-─────┼───────────────────────────────────────────
-   1 │     1      1  a       c          0.867347
-   2 │     1      1  b       c         -0.901744
-   3 │     2      1  c       c         -0.494479
-   4 │     2      2  d       c         -0.902914
-  ⋮  │   ⋮      ⋮      ⋮        ⋮          ⋮
-  10 │     2      2  d       d          0.532813
-  11 │     3      2  e       d          0.532813
-  12 │     3      2  f       d          0.532813
-                                   5 rows omitted
+     │ Int64  Int64  String  String    Int64
+─────┼───────────────────────────────────────
+   1 │     1      1  a       c             1
+   2 │     1      1  b       c             1
+   3 │     2      1  c       c             1
+   4 │     2      2  d       c             1
+   5 │     3      2  e       c             1
+   6 │     3      2  f       c             1
+   7 │     1      1  a       d             1
+   8 │     1      1  b       d             2
+   9 │     2      1  c       d             3
+  10 │     2      2  d       d             4
+  11 │     3      2  e       d             5
+  12 │     3      2  f       d             6
 
 julia> stack(df, [:c, :d], [:a])
 12×3 DataFrame
  Row │ a      variable  value
-     │ Int64  String    Float64
-─────┼────────────────────────────
-   1 │     1  c          0.867347
-   2 │     1  c         -0.901744
-   3 │     2  c         -0.494479
-   4 │     2  c         -0.902914
-  ⋮  │   ⋮       ⋮          ⋮
-  10 │     2  d          0.532813
-  11 │     3  d          0.532813
-  12 │     3  d          0.532813
-                    5 rows omitted
+     │ Int64  String    Int64
+─────┼────────────────────────
+   1 │     1  c             1
+   2 │     1  c             1
+   3 │     2  c             1
+   4 │     2  c             1
+   5 │     3  c             1
+   6 │     3  c             1
+   7 │     1  d             1
+   8 │     1  d             2
+   9 │     2  d             3
+  10 │     2  d             4
+  11 │     3  d             5
+  12 │     3  d             6
 
 julia> stack(df, Not([:a, :b, :e]))
 12×5 DataFrame
  Row │ a      b      e       variable  value
-     │ Int64  Int64  String  String    Float64
-─────┼───────────────────────────────────────────
-   1 │     1      1  a       c          0.867347
-   2 │     1      1  b       c         -0.901744
-   3 │     2      1  c       c         -0.494479
-   4 │     2      2  d       c         -0.902914
-  ⋮  │   ⋮      ⋮      ⋮        ⋮          ⋮
-  10 │     2      2  d       d          0.532813
-  11 │     3      2  e       d          0.532813
-  12 │     3      2  f       d          0.532813
-                                   5 rows omitted
+     │ Int64  Int64  String  String    Int64
+─────┼───────────────────────────────────────
+   1 │     1      1  a       c             1
+   2 │     1      1  b       c             1
+   3 │     2      1  c       c             1
+   4 │     2      2  d       c             1
+   5 │     3      2  e       c             1
+   6 │     3      2  f       c             1
+   7 │     1      1  a       d             1
+   8 │     1      1  b       d             2
+   9 │     2      1  c       d             3
+  10 │     2      2  d       d             4
+  11 │     3      2  e       d             5
+  12 │     3      2  f       d             6
 
 julia> stack(df, Not([:a, :b, :e]), variable_name=:somemeasure)
 12×5 DataFrame
  Row │ a      b      e       somemeasure  value
-     │ Int64  Int64  String  String       Float64
-─────┼──────────────────────────────────────────────
-   1 │     1      1  a       c             0.867347
-   2 │     1      1  b       c            -0.901744
-   3 │     2      1  c       c            -0.494479
-   4 │     2      2  d       c            -0.902914
-  ⋮  │   ⋮      ⋮      ⋮          ⋮           ⋮
-  10 │     2      2  d       d             0.532813
-  11 │     3      2  e       d             0.532813
-  12 │     3      2  f       d             0.532813
-                                      5 rows omitted
+     │ Int64  Int64  String  String       Int64
+─────┼──────────────────────────────────────────
+   1 │     1      1  a       c                1
+   2 │     1      1  b       c                1
+   3 │     2      1  c       c                1
+   4 │     2      2  d       c                1
+   5 │     3      2  e       c                1
+   6 │     3      2  f       c                1
+   7 │     1      1  a       d                1
+   8 │     1      1  b       d                2
+   9 │     2      1  c       d                3
+  10 │     2      2  d       d                4
+  11 │     3      2  e       d                5
+  12 │     3      2  f       d                6
 ```
 """
 function stack(df::AbstractDataFrame,
@@ -224,101 +232,105 @@ Row and column keys will be ordered in the order of their first appearance.
 
 # Examples
 
-```julia
-julia> using Random
-
-julia> Random.seed!(1234);
-
+```jldoctest
 julia> wide = DataFrame(id = 1:6,
-                        a  = repeat([1:3;], inner = [2]),
-                        b  = repeat([1:2;], inner = [3]),
-                        c  = randn(6),
-                        d  = randn(6))
+                                a  = repeat(1:3, inner = 2),
+                                b  = repeat(1.0:2.0, inner = 3),
+                                c  = repeat(1.0:1.0, inner = 6),
+                                d  = repeat(1.0:3.0, inner = 2))
 6×5 DataFrame
- Row │ id     a      b      c          d
-     │ Int64  Int64  Int64  Float64    Float64
-─────┼────────────────────────────────────────────
-   1 │     1      1      1   0.867347   0.532813
-   2 │     2      1      1  -0.901744  -0.271735
-   3 │     3      2      1  -0.494479   0.502334
-   4 │     4      2      2  -0.902914  -0.516984
-   5 │     5      3      2   0.864401  -0.560501
-   6 │     6      3      2   2.21188   -0.0192918
+ Row │ id     a      b        c        d
+     │ Int64  Int64  Float64  Float64  Float64
+─────┼─────────────────────────────────────────
+   1 │     1      1      1.0      1.0      1.0
+   2 │     2      1      1.0      1.0      1.0
+   3 │     3      2      1.0      1.0      2.0
+   4 │     4      2      2.0      1.0      2.0
+   5 │     5      3      2.0      1.0      3.0
+   6 │     6      3      2.0      1.0      3.0
 
 julia> long = stack(wide)
-12×5 DataFrame
- Row │ id     a      b      variable  value
-     │ Int64  Int64  Int64  String    Float64
-─────┼───────────────────────────────────────────
-   1 │     1      1      1  c          0.867347
-   2 │     2      1      1  c         -0.901744
-   3 │     3      2      1  c         -0.494479
-   4 │     4      2      2  c         -0.902914
-  ⋮  │   ⋮      ⋮      ⋮       ⋮          ⋮
-  10 │     4      2      2  d         -0.516984
-  11 │     5      3      2  d         -0.560501
-  12 │     6      3      2  d         -0.0192918
-                                   5 rows omitted
+18×4 DataFrame
+ Row │ id     a      variable  value
+     │ Int64  Int64  String    Float64
+─────┼─────────────────────────────────
+   1 │     1      1  b             1.0
+   2 │     2      1  b             1.0
+   3 │     3      2  b             1.0
+   4 │     4      2  b             2.0
+   5 │     5      3  b             2.0
+   6 │     6      3  b             2.0
+   7 │     1      1  c             1.0
+   8 │     2      1  c             1.0
+  ⋮  │   ⋮      ⋮       ⋮         ⋮
+  12 │     6      3  c             1.0
+  13 │     1      1  d             1.0
+  14 │     2      1  d             1.0
+  15 │     3      2  d             2.0
+  16 │     4      2  d             2.0
+  17 │     5      3  d             3.0
+  18 │     6      3  d             3.0
+                         3 rows omitted
 
 julia> unstack(long)
 6×5 DataFrame
- Row │ id     a      b      c          d
-     │ Int64  Int64  Int64  Float64?   Float64?
+ Row │ id     a      b         c         d
+     │ Int64  Int64  Float64?  Float64?  Float64?
 ─────┼────────────────────────────────────────────
-   1 │     1      1      1   0.867347   0.532813
-   2 │     2      1      1  -0.901744  -0.271735
-   3 │     3      2      1  -0.494479   0.502334
-   4 │     4      2      2  -0.902914  -0.516984
-   5 │     5      3      2   0.864401  -0.560501
-   6 │     6      3      2   2.21188   -0.0192918
+   1 │     1      1       1.0       1.0       1.0
+   2 │     2      1       1.0       1.0       1.0
+   3 │     3      2       1.0       1.0       2.0
+   4 │     4      2       2.0       1.0       2.0
+   5 │     5      3       2.0       1.0       3.0
+   6 │     6      3       2.0       1.0       3.0
 
 julia> unstack(long, :variable, :value)
 6×5 DataFrame
- Row │ id     a      b      c          d
-     │ Int64  Int64  Int64  Float64?   Float64?
+ Row │ id     a      b         c         d
+     │ Int64  Int64  Float64?  Float64?  Float64?
 ─────┼────────────────────────────────────────────
-   1 │     1      1      1   0.867347   0.532813
-   2 │     2      1      1  -0.901744  -0.271735
-   3 │     3      2      1  -0.494479   0.502334
-   4 │     4      2      2  -0.902914  -0.516984
-   5 │     5      3      2   0.864401  -0.560501
-   6 │     6      3      2   2.21188   -0.0192918
+   1 │     1      1       1.0       1.0       1.0
+   2 │     2      1       1.0       1.0       1.0
+   3 │     3      2       1.0       1.0       2.0
+   4 │     4      2       2.0       1.0       2.0
+   5 │     5      3       2.0       1.0       3.0
+   6 │     6      3       2.0       1.0       3.0
 
 julia> unstack(long, :id, :variable, :value)
-6×3 DataFrame
- Row │ id     c          d
-     │ Int64  Float64?   Float64?
-─────┼──────────────────────────────
-   1 │     1   0.867347   0.532813
-   2 │     2  -0.901744  -0.271735
-   3 │     3  -0.494479   0.502334
-   4 │     4  -0.902914  -0.516984
-   5 │     5   0.864401  -0.560501
-   6 │     6   2.21188   -0.0192918
+6×4 DataFrame
+ Row │ id     b         c         d
+     │ Int64  Float64?  Float64?  Float64?
+─────┼─────────────────────────────────────
+   1 │     1       1.0       1.0       1.0
+   2 │     2       1.0       1.0       1.0
+   3 │     3       1.0       1.0       2.0
+   4 │     4       2.0       1.0       2.0
+   5 │     5       2.0       1.0       3.0
+   6 │     6       2.0       1.0       3.0
 
 julia> unstack(long, [:id, :a], :variable, :value)
-6×4 DataFrame
- Row │ id     a      c          d
-     │ Int64  Int64  Float64?   Float64?
-─────┼─────────────────────────────────────
-   1 │     1      1   0.867347   0.532813
-   2 │     2      1  -0.901744  -0.271735
-   3 │     3      2  -0.494479   0.502334
-   4 │     4      2  -0.902914  -0.516984
-   5 │     5      3   0.864401  -0.560501
-   6 │     6      3   2.21188   -0.0192918
+6×5 DataFrame
+ Row │ id     a      b         c         d
+     │ Int64  Int64  Float64?  Float64?  Float64?
+─────┼────────────────────────────────────────────
+   1 │     1      1       1.0       1.0       1.0
+   2 │     2      1       1.0       1.0       1.0
+   3 │     3      2       1.0       1.0       2.0
+   4 │     4      2       2.0       1.0       2.0
+   5 │     5      3       2.0       1.0       3.0
+   6 │     6      3       2.0       1.0       3.0
 
 julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
-6×3 DataFrame
- Row │ id     _c         _d
-     │ Int64  Float64?   Float64?
-─────┼──────────────────────────────
-   1 │     1   0.867347   0.532813
-   2 │     2  -0.901744  -0.271735
-   3 │     3  -0.494479   0.502334
-   4 │     4  -0.902914  -0.516984
-   5 │     5   0.864401  -0.560501
-   6 │     6   2.21188   -0.0192918
+6×4 DataFrame
+ Row │ id     _b        _c        _d
+     │ Int64  Float64?  Float64?  Float64?
+─────┼─────────────────────────────────────
+   1 │     1       1.0       1.0       1.0
+   2 │     2       1.0       1.0       1.0
+   3 │     3       1.0       1.0       2.0
+   4 │     4       2.0       1.0       2.0
+   5 │     5       2.0       1.0       3.0
+   6 │     6       2.0       1.0       3.0
 ```
 Note that there are some differences between the widened results above.
 """
