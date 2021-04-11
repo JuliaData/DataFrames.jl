@@ -174,7 +174,7 @@ function groupreduce!_helper(res::AbstractVector, f, op, condf, adjust, checkemp
                 else
                     res[gix] = op(res[gix], f(x, gix))
                 end
-                # this check should be opitmized out by constant propagation
+                # this check is optimized out by constant propagation
                 if adjust !== nothing || checkempty
                     counts[gix] += 1
                 end
