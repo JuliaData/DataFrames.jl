@@ -233,13 +233,12 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                                    Missings.EachReplaceMissing{
                                        <:AbstractVector{<:Union{Real, Missing}}}}},
                          hash::Val{false},
-                         groups::Union{Vector{<:Integer}, Nothing} = nothing,
+                         groups::Union{Vector{T}, Nothing} = nothing,
                          skipmissing::Bool = false,
-                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where {N}
+                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where {N, T<:Integer}
     # Computing neither hashes nor groups isn't very useful,
     # and this method needs to allocate a groups vector anyway
     @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
-    T = groups === nothing ? UInt : eltype(groups)
 
     missinginds = map(refpools) do refpool
         eltype(refpool) >: Missing ?
@@ -326,9 +325,9 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                     refs_i = map(c -> c[i], refarrays)
                 end
                 vals = map((m, r, fi) -> m[r-fi+1], refmaps, refs_i, firstinds)
-                j = sum(map((v, s) -> v * s, vals, strides)) + one(T)
+                j = reduce(+, map((v, s) -> v * s, vals, strides)) + one(T)
                 # typemax(T) corresponds to missing
-                if skipmissing && any(x -> x == typemax(T), vals)
+                if skipmissing && any(x -> x == typemax(typeof(x)), vals)
                     j = zero(T)
                 else
                     seen[j] = true
@@ -342,19 +341,19 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                 local refs_i
                 let i=i # Workaround for julia#15276
                     refs_i = map(refarrays, missinginds) do ref, missingind
-                        r = Int(ref[i])
+                        r = T(ref[i])
                         if skipmissing
-                            return r == missingind ? -1 : (r > missingind ? r-1 : r)
+                            return r == missingind ? typemax(T) : (r > missingind ? r-one(T) : r)
                         else
                             return r
                         end
                     end
                 end
                 vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
-                j = sum(vals) + 1
-                # x < 0 happens with -1, which corresponds to missing
-                if skipmissing && any(x -> x < 0, vals)
-                    j = 0
+                j = reduce(+, vals) + one(T)
+                # typemax(T) corresponds to missing
+                if skipmissing && any(x -> x == typemax(typeof(x)), refs_i)
+                    j = zero(T)
                 else
                     seen[j] = true
                 end
