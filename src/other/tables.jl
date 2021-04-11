@@ -33,26 +33,26 @@ Tables.getcolumn(dfr::DataFrameRow, nm::Symbol) = dfr[nm]
 getvector(x::AbstractVector) = x
 getvector(x) = [x[i] for i = 1:length(x)]
 
-fromcolumns(x, names; copycols::Bool=true) =
+fromcolumns(x, names; copycols::Union{Nothing, Bool}=nothing) =
     DataFrame(AbstractVector[getvector(Tables.getcolumn(x, nm)) for nm in names],
               Index(names),
-              copycols=copycols)
+              copycols=something(copycols, true))
 
 # note that copycols is false by default in this definition (Tables.CopiedColumns
 # implies copies have already been made) but if `copycols=true`, a copy will still be
 # made; this is useful for scenarios where the input is immutable so avoiding copies
 # is desirable, but you may still want a copy for mutation (Arrow.Table is like this)
-DataFrame(x::Tables.CopiedColumns; copycols::Bool=false) =
-    DataFrame(Tables.source(x); copycols=copycols)
+fromcolumns(x::Tables.CopiedColumns; copycols::Union{Nothing, Bool}=nothing) =
+    fromcolumns(Tables.source(x); copycols=something(copycols, false))
 
-function DataFrame(x::T; copycols::Bool=true) where {T}
+function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
     if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
         # here we handle eltypes not specific enough to be dispatched
         # to other DataFrames constructors taking vector of `Pair`s
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
             all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
-                             copycols=copycols)
+                             copycols=something(copycols, true))
         end
     end
     cols = Tables.columns(x)
