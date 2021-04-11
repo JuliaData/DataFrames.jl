@@ -354,7 +354,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
     # idx. Currently we do it only for single-row return values otherwise we pass
     # NOTHING_IDX_AGG to signal that idx has to be computed in _combine_with_first
     idx, outcols, _ = _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
-                                          Val(firstmulticol),
+                                          Ref{Any}(Val(firstmulticol)),
                                           firstres isa AbstractVector ? NOTHING_IDX_AGG : idx_agg[])
     @assert length(outcols) == 1
     outcol = outcols[1]
@@ -393,7 +393,7 @@ function _combine_process_pair_astable(optional_i::Bool,
     @assert only(wincols) isa Union{Tuple, NamedTuple}
     if firstres isa AbstractVector
         idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
-                                                 Val(firstmulticol), NOTHING_IDX_AGG)
+                                                 Ref{Any}(Val(firstmulticol)), NOTHING_IDX_AGG)
         @assert length(outcol_vec) == 1
         res = outcol_vec[1]
         @assert length(res) > 0

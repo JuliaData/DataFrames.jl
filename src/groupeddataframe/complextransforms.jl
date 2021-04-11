@@ -17,16 +17,18 @@ function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDat
         idx_agg = NOTHING_IDX_AGG
     end
     return _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
-                               Val(firstmulticol), idx_agg)
+                               Ref{Any}(Val(firstmulticol)), idx_agg)
 end
 
 function _combine_with_first((first,)::Ref{Any},
                              (f,)::Ref{Any}, gd::GroupedDataFrame,
                              (incols,)::Ref{Any},
-                             firstmulticol::Val, idx_agg::Vector{Int})
+                             (firstmulticol,)::Ref{Any}, idx_agg::Vector{Int})
+    @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
+    @assert firstmulticol isa Union{Val{true}, Val{false}}
     extrude = false
 
     if first isa AbstractDataFrame
@@ -62,9 +64,13 @@ function _combine_with_first((first,)::Ref{Any},
                                                              f, gd, incols, targetcolnames,
                                                              firstmulticol)
     else
-        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols,
-                                                           f, gd, incols, targetcolnames,
-                                                           firstmulticol)
+        outcols, finalcolnames = _combine_rows_with_first!(Ref{Any}(first),
+                                                           Ref{Any}(initialcols),
+                                                           Ref{Any}(f),
+                                                           gd,
+                                                           Ref{Any}(incols),
+                                                           Ref{Any}(targetcolnames),
+                                                           Ref{Any}(firstmulticol))
     end
     return idx, outcols, collect(Symbol, finalcolnames)
 end
@@ -217,14 +223,20 @@ isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::AbstractVector) =
     isthreadsafe(outcols, (incols,))
 isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::Nothing) = true
 
-@nospecialize
-
-function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
-                                   outcols::NTuple{N, AbstractVector},
-                                   f::Base.Callable, gd::GroupedDataFrame,
-                                   incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
-                                   colnames::NTuple{N, Symbol},
-                                   firstmulticol::Val) where N
+function _combine_rows_with_first!((firstrow,)::Ref{Any},
+                                   (outcols,)::Ref{Any},
+                                   (f,)::Ref{Any},
+                                   gd::GroupedDataFrame,
+                                   (incols,)::Ref{Any},
+                                   (colnames,)::Ref{Any},
+                                   (firstmulticol,)::Ref{Any})
+    @assert firstrow isa Union{NamedTuple, DataFrameRow}
+    @assert outcols isa NTuple{N, AbstractVector} where N
+    @assert f isa Base.Callable
+    @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
+    @assert colnames isa NTuple{N, Symbol} where N
+    @assert firstmulticol isa Union{Val{true}, Val{false}}
+    @assert length(colnames) == length(outcols)
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -294,8 +306,6 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
 
     return outcols, colnames
 end
-
-@specialize
 
 # This needs to be in a separate function
 # to work around a crash due to JuliaLang/julia#29430
