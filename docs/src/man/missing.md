@@ -15,7 +15,7 @@ The `Missing` type lets users create `Vector`s and `DataFrame` columns with miss
 
 ```jldoctest missings
 julia> x = [1, 2, missing]
-3-element Array{Union{Missing, Int64},1}:
+3-element Vector{Union{Missing, Int64}}:
  1
  2
   missing
@@ -35,7 +35,7 @@ true
 
 ```jldoctest missings
 julia> skipmissing(x)
-Base.SkipMissing{Array{Union{Missing, Int64},1}}(Union{Missing, Int64}[1, 2, missing])
+skipmissing(Union{Missing, Int64}[1, 2, missing])
 
 ```
 
@@ -46,7 +46,7 @@ julia> sum(skipmissing(x))
 3
 
 julia> collect(skipmissing(x))
-2-element Array{Int64,1}:
+2-element Vector{Int64}:
  1
  2
 
@@ -56,7 +56,7 @@ The function `coalesce` can be used to replace missing values with another value
 
 ```jldoctest missings
 julia> coalesce.(x, 0)
-3-element Array{Int64,1}:
+3-element Vector{Int64}:
  1
  2
  0
@@ -66,6 +66,8 @@ julia> coalesce.(x, 0)
 The functions `dropmissing` and `dropmissing!` can be used to remove the rows containing `missing` values from a `DataFrame` and either create a new `DataFrame` or mutate the original in-place respectively.
 
 ```jldoctest missings
+julia> using DataFrames
+
 julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
@@ -126,10 +128,10 @@ elements with another value:
 julia> using Missings
 
 julia> Missings.replace(x, 1)
-Missings.EachReplaceMissing{Array{Union{Missing, Int64},1},Int64}(Union{Missing, Int64}[1, 2, missing], 1)
+Missings.EachReplaceMissing{Vector{Union{Missing, Int64}}, Int64}(Union{Missing, Int64}[1, 2, missing], 1)
 
 julia> collect(Missings.replace(x, 1))
-3-element Array{Int64,1}:
+3-element Vector{Int64}:
  1
  2
  1
@@ -143,7 +145,7 @@ The function `nonmissingtype` returns the element-type `T` in `Union{T, Missing}
 
 ```jldoctest missings
 julia> eltype(x)
-Union{Int64, Missing}
+Union{Missing, Int64}
 
 julia> nonmissingtype(eltype(x))
 Int64
@@ -155,21 +157,21 @@ values, using the optional first argument to specify the element-type.
 
 ```jldoctest missings
 julia> missings(1)
-1-element Array{Missing,1}:
+1-element Vector{Missing}:
  missing
 
 julia> missings(3)
-3-element Array{Missing,1}:
+3-element Vector{Missing}:
  missing
  missing
  missing
 
 julia> missings(1, 3)
-1×3 Array{Missing,2}:
+1×3 Matrix{Missing}:
  missing  missing  missing
 
 julia> missings(Int, 1, 3)
-1×3 Array{Union{Missing, Int64},2}:
+1×3 Matrix{Union{Missing, Int64}}:
  missing  missing  missing
 
 ```

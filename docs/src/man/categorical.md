@@ -4,7 +4,7 @@ Often, we have to deal with factors that take on a small number of levels:
 
 ```jldoctest categorical
 julia> v = ["Group A", "Group A", "Group A", "Group B", "Group B", "Group B"]
-6-element Array{String,1}:
+6-element Vector{String}:
  "Group A"
  "Group A"
  "Group A"
@@ -29,7 +29,6 @@ julia> cv = CategoricalArray(v)
  "Group B"
  "Group B"
  "Group B"
-
 ```
 
 `CategoricalArray`s support missing values.
@@ -52,20 +51,26 @@ the `levels` function (note that levels may or may not be actually used in the d
 
 ```jldoctest categorical
 julia> levels(cv)
-2-element Array{String,1}:
+2-element Vector{String}:
  "Group A"
  "Group B"
-
 ```
 
 The `levels!` function also allows changing the order of appearance of the levels,
 which can be useful for display purposes or when working with ordered variables.
 
 ```jldoctest categorical
-julia> levels!(cv, ["Group B", "Group A"]);
+julia> levels!(cv, ["Group B", "Group A"])
+6-element CategoricalArray{Union{Missing, String},1,UInt32}:
+ "Group A"
+ missing
+ "Group A"
+ "Group B"
+ "Group B"
+ missing
 
 julia> levels(cv)
-2-element Array{String,1}:
+2-element Vector{String}:
  "Group B"
  "Group A"
 
@@ -77,7 +82,6 @@ julia> sort(cv)
  "Group A"
  missing
  missing
-
 ```
 
 By default, a `CategoricalArray` is able to represent ``2^{32}`` different levels.

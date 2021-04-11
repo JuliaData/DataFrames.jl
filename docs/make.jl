@@ -1,9 +1,8 @@
-using Documenter, DataFrames
+using Documenter
+using DataFrames
+using CategoricalArrays
 
-# Workaround for JuliaLang/julia/pull/28625
-if Base.HOME_PROJECT[] !== nothing
-    Base.HOME_PROJECT[] = abspath(Base.HOME_PROJECT[])
-end
+DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames); recursive=true)
 
 # Build documentation.
 # ====================
@@ -11,7 +10,7 @@ end
 makedocs(
     # options
     modules = [DataFrames],
-    doctest = false,
+    doctest = true,
     clean = false,
     sitename = "DataFrames.jl",
     format = Documenter.HTML(

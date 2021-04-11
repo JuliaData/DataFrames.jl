@@ -132,7 +132,7 @@ Mixing symbols and strings in `to` and `from` is not allowed.
 See also: [`rename`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(i = 1, x = 2, y = 3)
 1×3 DataFrame
  Row │ i      x      y
@@ -253,7 +253,7 @@ Mixing symbols and strings in `to` and `from` is not allowed.
 See also: [`rename!`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(i = 1, x = 2, y = 3)
 1×3 DataFrame
  Row │ i      x      y
@@ -314,7 +314,7 @@ and `2` corresponds to columns.
 See also: [`nrow`](@ref), [`ncol`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(a=1:3, b='a':'c');
 
 julia> size(df)
@@ -527,7 +527,7 @@ functions must therefore support such objects (and not only vectors), and cannot
 access missing values.
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 
 julia> describe(df)
@@ -551,8 +551,8 @@ julia> describe(df, :min, :max)
 julia> describe(df, :min, sum => :sum)
 3×3 DataFrame
  Row │ variable  min  sum
-     │ Symbol    Any  Any
-─────┼────────────────────
+     │ Symbol    Any  Union…
+─────┼───────────────────────
    1 │ i         1    55
    2 │ x         0.1  5.5
    3 │ y         a
@@ -714,11 +714,10 @@ Use `findall(completecases(df))` to get the indices of the rows.
 
 # Examples
 
-```julia
+```jldoctest
 julia> df = DataFrame(i = 1:5,
-                      x = [missing, 4, missing, 2, 1],
-                      y = [missing, missing, "c", "d", "e"])
-5×3 DataFrame
+                            x = [missing, 4, missing, 2, 1],
+                            y = [missing, missing, "c", "d", "e"])
 5×3 DataFrame
  Row │ i      x        y
      │ Int64  Int64?   String?
@@ -730,28 +729,28 @@ julia> df = DataFrame(i = 1:5,
    5 │     5        1  e
 
 julia> completecases(df)
-5-element BitArray{1}:
- false
- false
- false
-  true
-  true
+5-element BitVector:
+ 0
+ 0
+ 0
+ 1
+ 1
 
 julia> completecases(df, :x)
-5-element BitArray{1}:
- false
-  true
- false
-  true
-  true
+5-element BitVector:
+ 0
+ 1
+ 0
+ 1
+ 1
 
 julia> completecases(df, [:x, :y])
-5-element BitArray{1}:
- false
- false
- false
-  true
-  true
+5-element BitVector:
+ 0
+ 0
+ 0
+ 1
+ 1
 ```
 """
 function completecases(df::AbstractDataFrame, col::Colon=:)
@@ -792,7 +791,7 @@ See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
 # Examples
 
-```julia
+```jldoctest
 julia> df = DataFrame(i = 1:5,
                       x = [missing, 4, missing, 2, 1],
                       y = [missing, missing, "c", "d", "e"])
@@ -951,7 +950,7 @@ Passing `cols` leads to a more efficient execution of the operation for large da
 See also: [`filter!`](@ref)
 
 # Examples
-```
+```jldoctest
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
@@ -1060,7 +1059,7 @@ Passing `cols` leads to a more efficient execution of the operation for large da
 See also: [`filter`](@ref)
 
 # Examples
-```
+```jldoctest
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
@@ -1187,7 +1186,7 @@ See also [`unique`](@ref) and [`unique!`](@ref).
   Can be any column selector or transformation accepted by [`select`](@ref).
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(i = 1:4, x = [1, 2, 1, 2])
 4×2 DataFrame
  Row │ i      x
@@ -1213,7 +1212,7 @@ julia> df = vcat(df, df)
    8 │     4      2
 
 julia> nonunique(df)
-8-element Array{Bool,1}:
+8-element Vector{Bool}:
  0
  0
  0
@@ -1224,7 +1223,7 @@ julia> nonunique(df)
  1
 
 julia> nonunique(df, 2)
-8-element Array{Bool,1}:
+8-element Vector{Bool}:
  0
  0
  1
@@ -1295,7 +1294,7 @@ See also [`nonunique`](@ref).
 specifying the column(s) to compare.
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(i = 1:4, x = [1, 2, 1, 2])
 4×2 DataFrame
  Row │ i      x
@@ -2047,7 +2046,7 @@ returned `DataFrame` will affect `df`.
 
 # Examples
 
-```
+```jldoctest
 julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
 2×3 DataFrame
  Row │ a      b       c

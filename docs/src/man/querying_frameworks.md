@@ -215,7 +215,7 @@ Or one can use a comprehension to extract the name of a subset of rows:
 
 ```jldoctest query
 julia> y = [i.name for i in q2 if i.number_of_children > 0]
-1-element Array{String,1}:
+1-element Vector{String}:
  "Roger"
 
 ```
@@ -229,7 +229,7 @@ julia> q3 = @from i in df begin
             @select i.name
             @collect
        end
-1-element Array{String,1}:
+1-element Vector{String}:
  "Roger"
 
 ```

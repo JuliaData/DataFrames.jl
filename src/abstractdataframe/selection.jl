@@ -604,8 +604,6 @@ $TRANSFORMATION_COMMON_RULES
   frame or a `GroupedDataFrame`.
 
 See [`select`](@ref) for examples.
-```
-
 """
 select!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
@@ -774,9 +772,35 @@ julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
    7 │     1      2      7
    8 │     2      1      8
 
-julia> gd = groupby(df, :a);
+julia> gd = groupby(df, :a)
+GroupedDataFrame with 2 groups based on key: a
+First Group (5 rows): a = 1
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      1      2
+   3 │     1      2      3
+   4 │     1      1      6
+   5 │     1      2      7
+⋮
+Last Group (3 rows): a = 2
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      1      4
+   2 │     2      2      5
+   3 │     2      1      8
+```
 
 # specifying a name for target column
+```jldoctest
+julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> select(gd, :c => (x -> sum(log, x)) => :sum_log_c)
 8×2 DataFrame
  Row │ a      sum_log_c
@@ -804,8 +828,16 @@ julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
    6 │     1      8     19
    7 │     1      8     19
    8 │     2      4     17
+```
 
 # multiple arguments, renaming and keepkeys
+```jldoctest
+julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
  Row │ b1     c1     b_c_+
@@ -819,8 +851,16 @@ julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
    6 │     1      6      7
    7 │     2      7      9
    8 │     1      8      9
+```
 
 # broadcasting and column expansion
+```jldoctest
+julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> select(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
  Row │ a      b      min    max
@@ -888,7 +928,7 @@ $TRANSFORMATION_COMMON_RULES
 Note that when the first argument is a `GroupedDataFrame`, `keepkeys=false`
 is needed to be able to return a different value for the grouping column:
 
-```
+```jldoctest
 julia> gdf = groupby(DataFrame(x=1:2), :x)
 GroupedDataFrame with 2 groups based on key: x
 First Group (1 row): x = 1
@@ -1104,8 +1144,16 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
    4 │     3      2      7
    5 │     4      1      4
    6 │     4      1      8
+```
 
 # auto-splatting, renaming and keepkeys
+```jldoctest
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 8×3 DataFrame
  Row │ b1     c1     b_c_+
@@ -1119,8 +1167,16 @@ julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
    6 │     2      7      9
    7 │     1      4      5
    8 │     1      8      9
+```
 
 # broadcasting and column expansion
+```jldoctest
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a);
+
 julia> combine(gd, :b, AsTable([:b, :c]) => ByRow(extrema) => [:min, :max])
 8×4 DataFrame
  Row │ a      b      min    max

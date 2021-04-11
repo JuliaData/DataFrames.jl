@@ -5,6 +5,9 @@ Reshape data from wide to long format using the `stack` function:
 ```jldoctest reshape
 julia> using DataFrames, CSV
 
+julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "iris.csv")),
+                       DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String
@@ -13,11 +16,19 @@ julia> using DataFrames, CSV
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
    3 │         4.7         3.2          1.3         0.2  Iris-setosa
    4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa
   ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         6.8         3.2          5.9         2.3  Iris-virginica
+ 145 │         6.7         3.3          5.7         2.5  Iris-virginica
+ 146 │         6.7         3.0          5.2         2.3  Iris-virginica
+ 147 │         6.3         2.5          5.0         1.9  Iris-virginica
  148 │         6.5         3.0          5.2         2.0  Iris-virginica
  149 │         6.2         3.4          5.4         2.3  Iris-virginica
  150 │         5.9         3.0          5.1         1.8  Iris-virginica
-                                                        143 rows omitted
+                                                        135 rows omitted
 
 julia> stack(iris, 1:4)
 600×3 DataFrame
@@ -28,11 +39,19 @@ julia> stack(iris, 1:4)
    2 │ Iris-setosa     SepalLength      4.9
    3 │ Iris-setosa     SepalLength      4.7
    4 │ Iris-setosa     SepalLength      4.6
+   5 │ Iris-setosa     SepalLength      5.0
+   6 │ Iris-setosa     SepalLength      5.4
+   7 │ Iris-setosa     SepalLength      4.6
+   8 │ Iris-setosa     SepalLength      5.0
   ⋮  │       ⋮              ⋮          ⋮
+ 594 │ Iris-virginica  PetalWidth       2.3
+ 595 │ Iris-virginica  PetalWidth       2.5
+ 596 │ Iris-virginica  PetalWidth       2.3
+ 597 │ Iris-virginica  PetalWidth       1.9
  598 │ Iris-virginica  PetalWidth       2.0
  599 │ Iris-virginica  PetalWidth       2.3
  600 │ Iris-virginica  PetalWidth       1.8
-                            593 rows omitted
+                            585 rows omitted
 ```
 
 The second optional argument to `stack` indicates the columns to be stacked.
@@ -49,11 +68,19 @@ julia> stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth])
    2 │ Iris-setosa     SepalLength      4.9
    3 │ Iris-setosa     SepalLength      4.7
    4 │ Iris-setosa     SepalLength      4.6
+   5 │ Iris-setosa     SepalLength      5.0
+   6 │ Iris-setosa     SepalLength      5.4
+   7 │ Iris-setosa     SepalLength      4.6
+   8 │ Iris-setosa     SepalLength      5.0
   ⋮  │       ⋮              ⋮          ⋮
+ 594 │ Iris-virginica  PetalWidth       2.3
+ 595 │ Iris-virginica  PetalWidth       2.5
+ 596 │ Iris-virginica  PetalWidth       2.3
+ 597 │ Iris-virginica  PetalWidth       1.9
  598 │ Iris-virginica  PetalWidth       2.0
  599 │ Iris-virginica  PetalWidth       2.3
  600 │ Iris-virginica  PetalWidth       1.8
-                            593 rows omitted
+                            585 rows omitted
 ```
 
 Note that all columns can be of different types. Type promotion follows the
@@ -79,11 +106,19 @@ julia> stack(iris, [:SepalLength, :SepalWidth], :Species)
    2 │ Iris-setosa     SepalLength      4.9
    3 │ Iris-setosa     SepalLength      4.7
    4 │ Iris-setosa     SepalLength      4.6
+   5 │ Iris-setosa     SepalLength      5.0
+   6 │ Iris-setosa     SepalLength      5.4
+   7 │ Iris-setosa     SepalLength      4.6
+   8 │ Iris-setosa     SepalLength      5.0
   ⋮  │       ⋮              ⋮          ⋮
+ 294 │ Iris-virginica  SepalWidth       3.2
+ 295 │ Iris-virginica  SepalWidth       3.3
+ 296 │ Iris-virginica  SepalWidth       3.0
+ 297 │ Iris-virginica  SepalWidth       2.5
  298 │ Iris-virginica  SepalWidth       3.0
  299 │ Iris-virginica  SepalWidth       3.4
  300 │ Iris-virginica  SepalWidth       3.0
-                            293 rows omitted
+                            285 rows omitted
 ```
 
 If you prefer to specify the id columns then use `Not` with `stack` like this:
@@ -98,11 +133,19 @@ julia> stack(iris, Not(:Species))
    2 │ Iris-setosa     SepalLength      4.9
    3 │ Iris-setosa     SepalLength      4.7
    4 │ Iris-setosa     SepalLength      4.6
+   5 │ Iris-setosa     SepalLength      5.0
+   6 │ Iris-setosa     SepalLength      5.4
+   7 │ Iris-setosa     SepalLength      4.6
+   8 │ Iris-setosa     SepalLength      5.0
   ⋮  │       ⋮              ⋮          ⋮
+ 594 │ Iris-virginica  PetalWidth       2.3
+ 595 │ Iris-virginica  PetalWidth       2.5
+ 596 │ Iris-virginica  PetalWidth       2.3
+ 597 │ Iris-virginica  PetalWidth       1.9
  598 │ Iris-virginica  PetalWidth       2.0
  599 │ Iris-virginica  PetalWidth       2.3
  600 │ Iris-virginica  PetalWidth       1.8
-                            593 rows omitted
+                            585 rows omitted
 ```
 
 `unstack` converts from a long format to a wide format.
@@ -122,11 +165,19 @@ julia> longdf = stack(iris, Not([:Species, :id]))
    2 │ Iris-setosa         2  SepalLength      4.9
    3 │ Iris-setosa         3  SepalLength      4.7
    4 │ Iris-setosa         4  SepalLength      4.6
+   5 │ Iris-setosa         5  SepalLength      5.0
+   6 │ Iris-setosa         6  SepalLength      5.4
+   7 │ Iris-setosa         7  SepalLength      4.6
+   8 │ Iris-setosa         8  SepalLength      5.0
   ⋮  │       ⋮           ⋮         ⋮          ⋮
+ 594 │ Iris-virginica    144  PetalWidth       2.3
+ 595 │ Iris-virginica    145  PetalWidth       2.5
+ 596 │ Iris-virginica    146  PetalWidth       2.3
+ 597 │ Iris-virginica    147  PetalWidth       1.9
  598 │ Iris-virginica    148  PetalWidth       2.0
  599 │ Iris-virginica    149  PetalWidth       2.3
  600 │ Iris-virginica    150  PetalWidth       1.8
-                                   593 rows omitted
+                                   585 rows omitted
 
 julia> unstack(longdf, :id, :variable, :value)
 150×5 DataFrame
@@ -137,11 +188,19 @@ julia> unstack(longdf, :id, :variable, :value)
    2 │     2          4.9         3.0          1.4         0.2
    3 │     3          4.7         3.2          1.3         0.2
    4 │     4          4.6         3.1          1.5         0.2
+   5 │     5          5.0         3.6          1.4         0.2
+   6 │     6          5.4         3.9          1.7         0.4
+   7 │     7          4.6         3.4          1.4         0.3
+   8 │     8          5.0         3.4          1.5         0.2
   ⋮  │   ⋮         ⋮           ⋮            ⋮           ⋮
+ 144 │   144          6.8         3.2          5.9         2.3
+ 145 │   145          6.7         3.3          5.7         2.5
+ 146 │   146          6.7         3.0          5.2         2.3
+ 147 │   147          6.3         2.5          5.0         1.9
  148 │   148          6.5         3.0          5.2         2.0
  149 │   149          6.2         3.4          5.4         2.3
  150 │   150          5.9         3.0          5.1         1.8
-                                               143 rows omitted
+                                               135 rows omitted
 ```
 
 If the remaining columns are unique, you can skip the id variable and use:
@@ -149,18 +208,26 @@ If the remaining columns are unique, you can skip the id variable and use:
 ```jldoctest reshape
 julia> unstack(longdf, :variable, :value)
 150×6 DataFrame
- Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth
-     │ String          Int64  Float64?     Float64?    Float64?     Float64?
-─────┼─────────────────────────────────────────────────────────────────────────
-   1 │ Iris-setosa         1          5.1         3.5          1.4         0.2
+ Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth ⋯
+     │ String          Int64  Float64?     Float64?    Float64?     Float64?   ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ Iris-setosa         1          5.1         3.5          1.4         0.2 ⋯
    2 │ Iris-setosa         2          4.9         3.0          1.4         0.2
    3 │ Iris-setosa         3          4.7         3.2          1.3         0.2
    4 │ Iris-setosa         4          4.6         3.1          1.5         0.2
-  ⋮  │       ⋮           ⋮         ⋮           ⋮            ⋮           ⋮
- 148 │ Iris-virginica    148          6.5         3.0          5.2         2.0
+   5 │ Iris-setosa         5          5.0         3.6          1.4         0.2 ⋯
+   6 │ Iris-setosa         6          5.4         3.9          1.7         0.4
+   7 │ Iris-setosa         7          4.6         3.4          1.4         0.3
+   8 │ Iris-setosa         8          5.0         3.4          1.5         0.2
+  ⋮  │       ⋮           ⋮         ⋮           ⋮            ⋮           ⋮      ⋱
+ 144 │ Iris-virginica    144          6.8         3.2          5.9         2.3 ⋯
+ 145 │ Iris-virginica    145          6.7         3.3          5.7         2.5
+ 146 │ Iris-virginica    146          6.7         3.0          5.2         2.3
+ 147 │ Iris-virginica    147          6.3         2.5          5.0         1.9
+ 148 │ Iris-virginica    148          6.5         3.0          5.2         2.0 ⋯
  149 │ Iris-virginica    149          6.2         3.4          5.4         2.3
  150 │ Iris-virginica    150          5.9         3.0          5.1         1.8
-                                                               143 rows omitted
+                                                               135 rows omitted
 ```
 
 You can even skip passing the `:variable` and `:value` values as positional
@@ -168,18 +235,26 @@ arguments, as they will be used by default, and write:
 ```jldoctest reshape
 julia> unstack(longdf)
 150×6 DataFrame
- Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth
-     │ String          Int64  Float64?     Float64?    Float64?     Float64?
-─────┼─────────────────────────────────────────────────────────────────────────
-   1 │ Iris-setosa         1          5.1         3.5          1.4         0.2
+ Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth ⋯
+     │ String          Int64  Float64?     Float64?    Float64?     Float64?   ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ Iris-setosa         1          5.1         3.5          1.4         0.2 ⋯
    2 │ Iris-setosa         2          4.9         3.0          1.4         0.2
    3 │ Iris-setosa         3          4.7         3.2          1.3         0.2
    4 │ Iris-setosa         4          4.6         3.1          1.5         0.2
-  ⋮  │       ⋮           ⋮         ⋮           ⋮            ⋮           ⋮
- 148 │ Iris-virginica    148          6.5         3.0          5.2         2.0
+   5 │ Iris-setosa         5          5.0         3.6          1.4         0.2 ⋯
+   6 │ Iris-setosa         6          5.4         3.9          1.7         0.4
+   7 │ Iris-setosa         7          4.6         3.4          1.4         0.3
+   8 │ Iris-setosa         8          5.0         3.4          1.5         0.2
+  ⋮  │       ⋮           ⋮         ⋮           ⋮            ⋮           ⋮      ⋱
+ 144 │ Iris-virginica    144          6.8         3.2          5.9         2.3 ⋯
+ 145 │ Iris-virginica    145          6.7         3.3          5.7         2.5
+ 146 │ Iris-virginica    146          6.7         3.0          5.2         2.3
+ 147 │ Iris-virginica    147          6.3         2.5          5.0         1.9
+ 148 │ Iris-virginica    148          6.5         3.0          5.2         2.0 ⋯
  149 │ Iris-virginica    149          6.2         3.4          5.4         2.3
  150 │ Iris-virginica    150          5.9         3.0          5.1         1.8
-                                                               143 rows omitted
+                                                               135 rows omitted
 ```
 
 Passing `view=true` to `stack` returns a data frame whose columns are views into
@@ -195,11 +270,19 @@ julia> stack(iris, view=true)
    2 │ Iris-setosa         2  SepalLength      4.9
    3 │ Iris-setosa         3  SepalLength      4.7
    4 │ Iris-setosa         4  SepalLength      4.6
+   5 │ Iris-setosa         5  SepalLength      5.0
+   6 │ Iris-setosa         6  SepalLength      5.4
+   7 │ Iris-setosa         7  SepalLength      4.6
+   8 │ Iris-setosa         8  SepalLength      5.0
   ⋮  │       ⋮           ⋮         ⋮          ⋮
+ 594 │ Iris-virginica    144  PetalWidth       2.3
+ 595 │ Iris-virginica    145  PetalWidth       2.5
+ 596 │ Iris-virginica    146  PetalWidth       2.3
+ 597 │ Iris-virginica    147  PetalWidth       1.9
  598 │ Iris-virginica    148  PetalWidth       2.0
  599 │ Iris-virginica    149  PetalWidth       2.3
  600 │ Iris-virginica    150  PetalWidth       1.8
-                                   593 rows omitted
+                                   585 rows omitted
 ```
 
 This saves memory. To create the view, several `AbstractVector`s are defined:
@@ -229,11 +312,19 @@ julia> d = stack(iris, Not(:Species))
    2 │ Iris-setosa     SepalLength      4.9
    3 │ Iris-setosa     SepalLength      4.7
    4 │ Iris-setosa     SepalLength      4.6
+   5 │ Iris-setosa     SepalLength      5.0
+   6 │ Iris-setosa     SepalLength      5.4
+   7 │ Iris-setosa     SepalLength      4.6
+   8 │ Iris-setosa     SepalLength      5.0
   ⋮  │       ⋮              ⋮          ⋮
+ 744 │ Iris-virginica  id             144.0
+ 745 │ Iris-virginica  id             145.0
+ 746 │ Iris-virginica  id             146.0
+ 747 │ Iris-virginica  id             147.0
  748 │ Iris-virginica  id             148.0
  749 │ Iris-virginica  id             149.0
  750 │ Iris-virginica  id             150.0
-                            743 rows omitted
+                            735 rows omitted
 
 julia> x = combine(groupby(d, [:variable, :Species]), :value => mean => :vsum)
 15×3 DataFrame
@@ -244,11 +335,17 @@ julia> x = combine(groupby(d, [:variable, :Species]), :value => mean => :vsum)
    2 │ SepalLength  Iris-versicolor    5.936
    3 │ SepalLength  Iris-virginica     6.588
    4 │ SepalWidth   Iris-setosa        3.418
-  ⋮  │      ⋮              ⋮            ⋮
+   5 │ SepalWidth   Iris-versicolor    2.77
+   6 │ SepalWidth   Iris-virginica     2.974
+   7 │ PetalLength  Iris-setosa        1.464
+   8 │ PetalLength  Iris-versicolor    4.26
+   9 │ PetalLength  Iris-virginica     5.552
+  10 │ PetalWidth   Iris-setosa        0.244
+  11 │ PetalWidth   Iris-versicolor    1.326
+  12 │ PetalWidth   Iris-virginica     2.026
   13 │ id           Iris-setosa       25.5
   14 │ id           Iris-versicolor   75.5
   15 │ id           Iris-virginica   125.5
-                               8 rows omitted
 
 julia> first(unstack(x, :Species, :vsum), 6)
 5×4 DataFrame

@@ -91,7 +91,7 @@ functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
 # Examples
-```julia
+```jldoctest
 julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
 2×2 DataFrame
  Row │ a      b

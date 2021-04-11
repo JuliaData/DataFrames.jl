@@ -83,7 +83,7 @@ not matter in this case.
 [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
 
 # Examples
-```julia
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
@@ -784,7 +784,7 @@ julia> k = keys(gd)[1]
 GroupKey: (a = :foo, b = 2)
 
 julia> keys(k)
-2-element Array{Symbol,1}:
+2-element Vector{Symbol}:
  :a
  :b
 
@@ -937,7 +937,7 @@ $MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
 `Symbol`s, strings, or integers is passed.
 
 # Examples
-```
+```jldoctest
 julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
 
 julia> gd = groupby(df, :g)

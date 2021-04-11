@@ -443,32 +443,32 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
    4 │     1  b
 
 julia> sortperm(df, :x)
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  2
  4
  3
  1
 
-julia> sortperm(df, (:x, :y))
-4-element Array{Int64,1}:
+julia> sortperm(df, [:x, :y])
+4-element Vector{Int64}:
  4
  2
  3
  1
 
-julia> sortperm(df, (:x, :y), rev=true)
-4-element Array{Int64,1}:
+julia> sortperm(df, [:x, :y], rev=true)
+4-element Vector{Int64}:
  1
  3
  2
  4
 
- julia> sortperm(df, [:x, order(:y, rev=true)])
- 4-element Array{Int64,1}:
-  2
-  4
-  3
-  1
+julia> sortperm(df, [:x, order(:y, rev=true)])
+4-element Vector{Int64}:
+ 2
+ 4
+ 3
+ 1
 ```
 """
 function Base.sortperm(df::AbstractDataFrame, cols=[];
