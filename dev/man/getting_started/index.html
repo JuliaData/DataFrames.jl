@@ -11,14 +11,14 @@ julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quo
    2 │     2  F
    3 │     3  F
    4 │     4  M</code></pre><p>Columns can be directly (i.e. without copying) accessed via <code>df.col</code>, <code>df.&quot;col&quot;</code>, <code>df[!, :col]</code> or <code>df[!, &quot;col&quot;]</code>. The two latter syntaxes are more flexible as they allow passing a variable holding the name of the column, and not only a literal name. Note that column names can be either symbols (written as <code>:col</code>, <code>:var&quot;col&quot;</code> or <code>Symbol(&quot;col&quot;)</code>) or strings (written as <code>&quot;col&quot;</code>). Note that in the forms <code>df.&quot;col&quot;</code> and <code>:var&quot;col&quot;</code> variable interpolation into a string using <code>$</code> does not work. Columns can also be accessed using an integer index specifying their position.</p><p>Since <code>df[!, :col]</code> does not make a copy, changing the elements of the column vector returned by this syntax will affect the values stored in the original <code>df</code>. To get a copy of the column use <code>df[:, :col]</code>: changing the vector returned by this syntax does not change <code>df</code>.</p><pre><code class="language-julia-repl">julia&gt; df.A
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  1
  2
  3
  4
 
 julia&gt; df.&quot;A&quot;
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  1
  2
  3
@@ -62,10 +62,10 @@ false
 
 julia&gt; df[:, firstcolumn] == df.A
 true</code></pre><p>Column names can be obtained as strings using the <code>names</code> function:</p><pre><code class="language-julia-repl">julia&gt; names(df)
-2-element Array{String,1}:
+2-element Vector{String}:
  &quot;A&quot;
  &quot;B&quot;</code></pre><p>To get column names as <code>Symbol</code>s use the <code>propertynames</code> function:</p><pre><code class="language-none">julia&gt; propertynames(df)
-2-element Array{Symbol,1}:
+2-element Vector{Symbol}:
  :A
  :B</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>DataFrames.jl allows to use <code>Symbol</code>s (like <code>:A</code>) and strings (like <code>&quot;A&quot;</code>) for all column indexing operations for convenience. However, using <code>Symbol</code>s is slightly faster and should generally be preferred, if not generating them via string manipulation.</p></div></div><h3 id="Constructing-Column-by-Column"><a class="docs-heading-anchor" href="#Constructing-Column-by-Column">Constructing Column by Column</a><a id="Constructing-Column-by-Column-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-Column-by-Column" title="Permalink"></a></h3><p>It is also possible to start with an empty <code>DataFrame</code> and add columns to it one by one:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame()
 0×0 DataFrame
@@ -74,7 +74,7 @@ julia&gt; df.A = 1:8
 1:8
 
 julia&gt; df.B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;]
-8-element Array{String,1}:
+8-element Vector{String}:
  &quot;M&quot;
  &quot;F&quot;
  &quot;F&quot;
@@ -134,8 +134,8 @@ CSV.write(&quot;dataframe.csv&quot;, df)
 SQLite.load!(df, db, &quot;dataframe_table&quot;)
 
 # transform a DataFrame through Query.jl package
-df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><p>A particular common case of a collection that supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface is a vector of <code>NamedTuple</code>s:</p><pre><code class="language-none">julia&gt; v = [(a=1, b=2), (a=3, b=4)]
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><p>A particular common case of a collection that supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface is a vector of <code>NamedTuple</code>s:</p><pre><code class="language-julia-repl">julia&gt; v = [(a=1, b=2), (a=3, b=4)]
+2-element Vector{NamedTuple{(:a, :b), Tuple{Int64, Int64}}}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 
@@ -145,9 +145,9 @@ julia&gt; df = DataFrame(v)
      │ Int64  Int64
 ─────┼──────────────
    1 │     1      2
-   2 │     3      4</code></pre><p>You can also easily convert a data frame back to a vector of <code>NamedTuple</code>s:</p><pre><code class="language-none">julia&gt; using Tables
+   2 │     3      4</code></pre><p>You can also easily convert a data frame back to a vector of <code>NamedTuple</code>s:</p><pre><code class="language-julia-repl">julia&gt; using Tables
 
 julia&gt; Tables.rowtable(df)
-2-element Array{NamedTuple{(:a, :b),Tuple{Int64,Int64}},1}:
+2-element Vector{NamedTuple{(:a, :b), Tuple{Int64, Int64}}}:
  (a = 1, b = 2)
- (a = 3, b = 4)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../working_with_dataframes/">Working with DataFrames »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 10 April 2021 22:04">Saturday 10 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ (a = 3, b = 4)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../working_with_dataframes/">Working with DataFrames »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 11 April 2021 10:25">Sunday 11 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
