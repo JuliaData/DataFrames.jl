@@ -13,62 +13,58 @@ then `SubDataFrame` will always have all columns from the parent,
 even if they are added or removed after its creation.
 
 # Examples
-```julia
-julia> using Random
-
-julia> Random.seed!(1234);
-
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
-                      c = randn(8))
+                      c = 1:8)
 8×3 DataFrame
  Row │ a      b      c
-     │ Int64  Int64  Float64
-─────┼─────────────────────────
-   1 │     1      2   0.867347
-   2 │     2      1  -0.901744
-   3 │     3      2  -0.494479
-   4 │     4      1  -0.902914
-   5 │     1      2   0.864401
-   6 │     2      1   2.21188
-   7 │     3      2   0.532813
-   8 │     4      1  -0.271735
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     2      1      2
+   3 │     3      2      3
+   4 │     4      1      4
+   5 │     1      2      5
+   6 │     2      1      6
+   7 │     3      2      7
+   8 │     4      1      8
 
 julia> sdf1 = view(df, :, 2:3) # column subsetting
 8×2 SubDataFrame
  Row │ b      c
-     │ Int64  Float64
-─────┼──────────────────
-   1 │     2   0.867347
-   2 │     1  -0.901744
-   3 │     2  -0.494479
-   4 │     1  -0.902914
-   5 │     2   0.864401
-   6 │     1   2.21188
-   7 │     2   0.532813
-   8 │     1  -0.271735
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      1
+   2 │     1      2
+   3 │     2      3
+   4 │     1      4
+   5 │     2      5
+   6 │     1      6
+   7 │     2      7
+   8 │     1      8
 
 julia> sdf2 = @view df[end:-1:1, [1, 3]]  # row and column subsetting
 8×2 SubDataFrame
  Row │ a      c
-     │ Int64  Float64
-─────┼──────────────────
-   1 │     4  -0.271735
-   2 │     3   0.532813
-   3 │     2   2.21188
-   4 │     1   0.864401
-   5 │     4  -0.902914
-   6 │     3  -0.494479
-   7 │     2  -0.901744
-   8 │     1   0.867347
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      8
+   2 │     3      7
+   3 │     2      6
+   4 │     1      5
+   5 │     4      4
+   6 │     3      3
+   7 │     2      2
+   8 │     1      1
 
 julia> sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 2×3 SubDataFrame
  Row │ a      b      c
-     │ Int64  Int64  Float64
-─────┼────────────────────────
-   1 │     1      2  0.867347
-   2 │     1      2  0.864401
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      1
+   2 │     1      2      5
 ```
 """
 struct SubDataFrame{D<:AbstractDataFrame, S<:AbstractIndex, T<:AbstractVector{Int}} <: AbstractDataFrame

@@ -156,7 +156,6 @@ implicit row ID column contained in every `AbstractDataFrame`.
 - `show_eltype`: Whether to print the column type
    under the column name in the heading.
 - `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
-```
 """
 function getmaxwidths(df::AbstractDataFrame,
                       io::IO,

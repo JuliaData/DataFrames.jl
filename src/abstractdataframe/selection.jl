@@ -606,8 +606,6 @@ $TRANSFORMATION_COMMON_RULES
   frame or a `GroupedDataFrame`.
 
 See [`select`](@ref) for examples.
-```
-
 """
 select!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
@@ -932,7 +930,7 @@ $TRANSFORMATION_COMMON_RULES
 Note that when the first argument is a `GroupedDataFrame`, `keepkeys=false`
 is needed to be able to return a different value for the grouping column:
 
-```
+```jldoctest
 julia> gdf = groupby(DataFrame(x=1:2), :x)
 GroupedDataFrame with 2 groups based on key: x
 First Group (1 row): x = 1
@@ -1151,7 +1149,7 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 ```
 
 # auto-splatting, renaming and keepkeys
-```
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
@@ -1174,7 +1172,7 @@ julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 ```
 
 # broadcasting and column expansion
-```
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);

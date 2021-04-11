@@ -170,7 +170,7 @@ julia> missings(1, 3)
 1×3 Matrix{Missing}:
  missing  missing  missing
 
-julia>  missings(Int, 1, 3)
+julia> missings(Int, 1, 3)
 1×3 Matrix{Union{Missing, Int64}}:
  missing  missing  missing
 

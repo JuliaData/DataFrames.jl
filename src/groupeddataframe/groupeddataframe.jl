@@ -937,7 +937,7 @@ $MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
 `Symbol`s, strings, or integers is passed.
 
 # Examples
-```
+```jldoctest
 julia> df = DataFrame(g=[1, 2], x=['a', 'b']);
 
 julia> gd = groupby(df, :g)

@@ -899,7 +899,7 @@ julia> allowmissing!(df) # operate in-place after allowing for missing
    2 │ None          2  j        y
    3 │ b             3  k        None
    4 │ None          4  h        z
-   
+
 julia> df .= ifelse.(df .== "None", missing, df)
 4×4 DataFrame
  Row │ a        b       c        d
