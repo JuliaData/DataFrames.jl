@@ -262,9 +262,7 @@ julia> long = stack(wide)
    6 │     6      3  b             2.0
    7 │     1      1  c             1.0
    8 │     2      1  c             1.0
-   9 │     3      2  c             1.0
-  10 │     4      2  c             1.0
-  11 │     5      3  c             1.0
+  ⋮  │   ⋮      ⋮       ⋮         ⋮
   12 │     6      3  c             1.0
   13 │     1      1  d             1.0
   14 │     2      1  d             1.0
@@ -272,6 +270,7 @@ julia> long = stack(wide)
   16 │     4      2  d             2.0
   17 │     5      3  d             3.0
   18 │     6      3  d             3.0
+                         3 rows omitted
 
 julia> unstack(long)
 6×5 DataFrame

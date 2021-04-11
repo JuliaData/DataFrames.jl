@@ -5,7 +5,9 @@ Reshape data from wide to long format using the `stack` function:
 ```jldoctest reshape
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)), "..", "docs", "src", "assets", "iris.csv")), DataFrame)
+julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "iris.csv")),
+                       DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String
@@ -225,7 +227,7 @@ julia> unstack(longdf, :variable, :value)
  148 │ Iris-virginica    148          6.5         3.0          5.2         2.0 ⋯
  149 │ Iris-virginica    149          6.2         3.4          5.4         2.3
  150 │ Iris-virginica    150          5.9         3.0          5.1         1.8
-                                                                135 rows omitted
+                                                               135 rows omitted
 ```
 
 You can even skip passing the `:variable` and `:value` values as positional
@@ -252,7 +254,7 @@ julia> unstack(longdf)
  148 │ Iris-virginica    148          6.5         3.0          5.2         2.0 ⋯
  149 │ Iris-virginica    149          6.2         3.4          5.4         2.3
  150 │ Iris-virginica    150          5.9         3.0          5.1         1.8
-                                                                135 rows omitted
+                                                               135 rows omitted
 ```
 
 Passing `view=true` to `stack` returns a data frame whose columns are views into

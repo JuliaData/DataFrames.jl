@@ -155,7 +155,9 @@ We show several examples of these functions applied to the `iris` dataset below:
 ```jldoctest sac
 julia> using DataFrames, CSV, Statistics
 
-julia> iris = DataFrame(CSV.File(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv")))
+julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "iris.csv")),
+                       DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String
@@ -516,11 +518,11 @@ Last Group (50 rows): Species = "Iris-virginica"
 
 julia> combine(gd, valuecols(gd) .=> mean)
 3×5 DataFrame
-  Row │ Species          SepalLength_mean  SepalWidth_mean  PetalLength_mean  P ⋯
-      │ String           Float64           Float64          Float64           F ⋯
- ─────┼──────────────────────────────────────────────────────────────────────────
-    1 │ Iris-setosa                 5.006            3.418             1.464    ⋯
-    2 │ Iris-versicolor             5.936            2.77              4.26
-    3 │ Iris-virginica              6.588            2.974             5.552
-                                                                 1 column omitted
+ Row │ Species          SepalLength_mean  SepalWidth_mean  PetalLength_mean  P ⋯
+     │ String           Float64           Float64          Float64           F ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ Iris-setosa                 5.006            3.418             1.464    ⋯
+   2 │ Iris-versicolor             5.936            2.77              4.26
+   3 │ Iris-virginica              6.588            2.974             5.552
+                                                                1 column omitted
 ```
