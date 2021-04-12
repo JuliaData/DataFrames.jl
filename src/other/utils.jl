@@ -155,7 +155,7 @@ if VERSION >= v"1.4"
                     end
                 end
             end
-            return nothing
+            nothing
         end
     end
 else
@@ -169,7 +169,7 @@ else
                     $(esc(lbody))
                 end
             end
-            return nothing
+            nothing
         end
     end
 end
