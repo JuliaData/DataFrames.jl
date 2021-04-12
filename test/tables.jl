@@ -62,6 +62,13 @@ Base.size(x::EmptyTableWithNames) = (0,)
 Base.eltype(x::EmptyTableWithNames) = NamedTuple
 Base.iterate(x::EmptyTableWithNames, st=1) = nothing
 
+struct CopiedCols
+end
+Tables.istable(::Type{CopiedCols}) = true
+Tables.columnaccess(::Type{CopiedCols}) = true
+const COPIEDCOLS = (a=[1,2,3], b=[:a, :b, :c])
+Tables.columns(x::CopiedCols) = Tables.CopiedColumns(COPIEDCOLS)
+
 @testset "Tables" begin
     df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
@@ -198,6 +205,12 @@ end
     @test df.a == [1, 3]
     @test df.b == [2, 4]
     @test DataFrame(v, copycols=false) == DataFrame(v, copycols=true) == df
+
+    df = DataFrame(CopiedCols())
+    @test df.a === COPIEDCOLS.a
+    df = DataFrame(CopiedCols(); copycols=true)
+    @test df.a !== COPIEDCOLS.a
+    @test df.a == COPIEDCOLS.a
 end
 
 @testset "columnindex" begin
