@@ -130,7 +130,7 @@ function tforeach(f, x::AbstractArray; basesize::Integer)
 end
 
 if VERSION >= v"1.4"
-    function _splittasksfor(iter, lbody, basesize)
+    function _spawn_for_chunksfor(iter, lbody, basesize)
         lidx = iter.args[1]
         range = iter.args[2]
         quote
@@ -159,7 +159,7 @@ if VERSION >= v"1.4"
         end
     end
 else
-    function _splittasksfor(iter, lbody, basesize)
+    function _spawn_for_chunksfor(iter, lbody, basesize)
         lidx = iter.args[1]
         range = iter.args[2]
         quote
@@ -174,14 +174,14 @@ else
     end
 end
 
-macro splittasks(basesize, ex)
+macro spawn_for_chunks(basesize, ex)
     if !(isa(ex, Expr) && ex.head === :for)
-        throw(ArgumentError("@splittasks requires a `for` loop expression"))
+        throw(ArgumentError("@spawn_for_chunks requires a `for` loop expression"))
     end
     if !(ex.args[1] isa Expr && ex.args[1].head === :(=))
-        throw(ArgumentError("nested outer loops are not currently supported by @splittasks"))
+        throw(ArgumentError("nested outer loops are not currently supported by @spawn_for_chunks"))
     end
-    return _splittasksfor(ex.args[1], ex.args[2], basesize)
+    return _spawn_for_chunksfor(ex.args[1], ex.args[2], basesize)
 end
 
 function _nt_like_hash(v, h::UInt)

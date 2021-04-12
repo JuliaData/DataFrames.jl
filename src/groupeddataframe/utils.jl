@@ -5,7 +5,7 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector{T},
                        rp::Nothing,
                        firstcol::Bool) where T
-    @splittasks 1_000_000 for i in eachindex(h)
+    @spawn_for_chunks 1_000_000 for i in eachindex(h)
         @inbounds begin
             el = v[i]
             h[i] = hash(el, h[i])
@@ -33,18 +33,18 @@ function hashrows_col!(h::Vector{UInt},
         fira = firstindex(ra)
 
         hashes = Vector{UInt}(undef, length(rp))
-        @splittasks 1_000_000 for i in eachindex(hashes)
+        @spawn_for_chunks 1_000_000 for i in eachindex(hashes)
             @inbounds hashes[i] = hash(rp[i+firp-1])
         end
 
         # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
-        @splittasks 1_000_000  for i in eachindex(h)
+        @spawn_for_chunks 1_000_000  for i in eachindex(h)
             @inbounds ref = ra[i+fira-1]
             @inbounds h[i] = hashes[ref+1-firp]
         end
     else
-        @splittasks 1_000_000 for i in eachindex(h, v)
+        @spawn_for_chunks 1_000_000 for i in eachindex(h, v)
             @inbounds h[i] = hash(v[i], h[i])
         end
     end
