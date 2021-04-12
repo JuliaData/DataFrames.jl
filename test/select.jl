@@ -1615,7 +1615,7 @@ end
     @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
                                          [:a] => sum => [:new],  false) == (1 => (sum => [:new]))
 
-    # Test that target col Strings are converted to symbols
+    # Test that target col strings are converted to Symbols
     @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
                                          [:a] => sum => ["new"],  false) == (1 => (sum => [:new]))
 end
