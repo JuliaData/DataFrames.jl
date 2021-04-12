@@ -1609,22 +1609,15 @@ end
 end
 
 @testset "normalize_selection" begin
-    @test DataFrames.normalize_selection(
-            DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]),
-            [:a] => sum,
-            false) ==
-        (1 => (sum => :a))
+    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]),
+                                         [:a] => sum, false) == (1 => (sum => :a))
 
     @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
-                                         [:a] => sum => [:new], 
-                                         false) ==
-        (1 => (sum => [:new]))
+                                         [:a] => sum => [:new],  false) == (1 => (sum => [:new]))
 
     # Test that target col Strings are converted to symbols
     @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
-                                         [:a] => sum => ["new"], 
-                                         false) ==
-        (1 => (sum => [:new]))
+                                         [:a] => sum => ["new"],  false) == (1 => (sum => [:new]))
 end
 
 end # module
