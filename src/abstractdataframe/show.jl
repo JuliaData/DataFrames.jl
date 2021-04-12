@@ -219,15 +219,14 @@ function _show(io::IO,
 
     _check_consistency(df)
 
-    aux = names(df)
-    names_len = textwidth.(aux)
+    names_str = names(df)
+    names_len = textwidth.(names_str)
     maxwidth = max.(9, names_len)
-    names_mat = permutedims(aux)
     types = eltype.(eachcol(df))
 
-    # NOTE: If we reuse `types` here, the time to print the first table is 2x more.
-    # This should be something related to type inference.
-    types_str = permutedims(compacttype.(eltype.(eachcol(df)), maxwidth))
+    # NOTE: If we reuse `types` here, the time to print the first table is 2x
+    # more. This should be something related to type inference.
+    types_str = compacttype.(eltype.(eachcol(df)), maxwidth)
 
     if allcols && allrows
         crop = :none
@@ -302,7 +301,7 @@ function _show(io::IO,
     end
 
     # Print the table with the selected options.
-    pretty_table(io, df, vcat(names_mat, types_str);
+    pretty_table(io, df;
                  alignment                   = alignment,
                  alignment_anchor_fallback   = :r,
                  alignment_anchor_regex      = alignment_anchor_regex,
@@ -311,6 +310,7 @@ function _show(io::IO,
                  crop_num_lines_at_beginning = 2,
                  ellipsis_line_skip          = 3,
                  formatters                  = (_pretty_tables_general_formatter,),
+                 header                      = (names_str, types_str),
                  header_alignment            = :l,
                  hlines                      = [:header],
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),

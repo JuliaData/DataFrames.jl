@@ -90,10 +90,9 @@ end
              │ Int64     Int64     Int64     Int64     Int64
         ─────┼──────────────────────────────────────────────────
            1 │ 10000001  10000026  10000051  10000076  10000101
-           2 │ 10000002  10000027  10000052  10000077  10000102
           ⋮  │    ⋮         ⋮         ⋮         ⋮         ⋮
           25 │ 10000025  10000050  10000075  10000100  10000125
-                                                 22 rows omitted"""
+                                                 23 rows omitted"""
 
     io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
     show(io, df_big, allrows=true, allcols=true)
