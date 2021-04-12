@@ -174,6 +174,17 @@ else
     end
 end
 
+"""
+    @spawn_for_chunks basesize for i in range ... end
+
+Parallelize a `for` loop by spawning separate tasks
+iterating each over a chunk of at least `basesize` elements
+in `range`.
+
+A number of task higher than `Threads.nthreads()` may be spawned,
+since that can allow for a more efficient load balancing in case
+some threads are busy (nested parallelism).
+"""
 macro spawn_for_chunks(basesize, ex)
     if !(isa(ex, Expr) && ex.head === :for)
         throw(ArgumentError("@spawn_for_chunks requires a `for` loop expression"))
