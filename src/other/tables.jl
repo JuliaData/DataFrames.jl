@@ -42,8 +42,8 @@ fromcolumns(x, names; copycols::Union{Nothing, Bool}=nothing) =
 # implies copies have already been made) but if `copycols=true`, a copy will still be
 # made; this is useful for scenarios where the input is immutable so avoiding copies
 # is desirable, but you may still want a copy for mutation (Arrow.Table is like this)
-fromcolumns(x::Tables.CopiedColumns; copycols::Union{Nothing, Bool}=nothing) =
-    fromcolumns(Tables.source(x); copycols=something(copycols, false))
+fromcolumns(x::Tables.CopiedColumns, names; copycols::Union{Nothing, Bool}=nothing) =
+    fromcolumns(Tables.source(x), names; copycols=something(copycols, false))
 
 function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
     if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
