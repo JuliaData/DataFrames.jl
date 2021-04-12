@@ -1608,4 +1608,16 @@ end
     @test_throws ArgumentError select(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
 end
 
+@testset "normalize_selection" begin
+    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]),
+                                         [:a] => sum, false) == (1 => (sum => :a))
+
+    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
+                                         [:a] => sum => [:new],  false) == (1 => (sum => [:new]))
+
+    # Test that target col strings are converted to Symbols
+    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
+                                         [:a] => sum => ["new"],  false) == (1 => (sum => [:new]))
+end
+
 end # module
