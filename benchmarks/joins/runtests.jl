@@ -1,3 +1,18 @@
+#!/usr/bin/env julia
+#
+# Run _join_ benchmarks
+#
+# Usage: julia runtests.jl [--single-process] <llen> <rlen> <join_type>
+#     --single-process      Runs all tests in a single julia process instead of
+#                           spawning multiple julia subprocesses
+#     <llen>                The length of the left dataframe
+#     <rlen>                The length of the right dataframe
+#     <join_type>           One of 'inner', 'left', 'right', 'outer', 'semi', 'anti'
+#
+# Note: Either provide all of <llen>, <rlen>, <join_type> arguments or leave blank
+#       to run all test cases (see `run_all_tests` below)
+
+
 using DataFrames
 include("join_performance.jl")
 
