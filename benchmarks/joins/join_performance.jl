@@ -104,9 +104,6 @@ end
 
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    path = pathof(DataFrames)
-
-    @info "DataFrames.jl at $path"
     @info "$ARGS"
 
     llen = parse(Int, ARGS[1])

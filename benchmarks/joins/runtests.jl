@@ -7,7 +7,9 @@ include("join_performance.jl")
 # https://github.com/JuliaData/CategoricalArrays.jl/pull/331
 # are merged and tagged
 
-function run_all_tests()
+const file_loc = joinpath(dirname(@__FILE__), "join_performance.jl")
+
+function run_all_tests(single_process)
     cases = [
         (100000, 50000000, "inner"),
         (5000000, 10000000, "inner"),
@@ -23,27 +25,63 @@ function run_all_tests()
         (5000000, 10000000, "anti")
     ]
 
-    println("llen,rlen,arr_type,dup_mode,sort_mode,num_keys,join_type,run_time")
-    flush(stdout)
+    for (llen, rlen, join_type) in cases
+        run_test(single_process, llen, rlen, join_type)
+    end
+end
 
-    for (llen, rlen, join_type) in cases,
+function run_test(single_process, llen, rlen, join_type)
+    for
         arr_type in ["str", "int", "pool"], # "cat"],
         dup_mode in ["uniq", "dup", "manydup"],
         sort_mode in ["sort", "rand"],
         num_keys in ["1", "2"]
         dup_mode == "uniq" && arr_type in ["pool", "cat"] && continue
 
-        @info "running test:  $llen $rlen $arr_type $dup_mode $sort_mode $num_keys $join_type"
-        t = run_bench(llen, rlen, arr_type, dup_mode, sort_mode, num_keys, join_type)
-        @info "timing: $t seconds"
+        if single_process
+            @info "Running test: $llen $rlen $arr_type $dup_mode $sort_mode $num_keys $join_type"
+            flush(stdout)
 
-        println("$llen,$rlen,$arr_type,$dup_mode,$sort_mode,$num_keys,$join_type,$t")
-        flush(stdout)
+            t = run_bench(llen, rlen, arr_type, dup_mode, sort_mode, num_keys, join_type)
+
+            @info "Timing: $t seconds"
+            flush(stdout)
+        else
+            run(`julia $file_loc $llen $rlen $arr_type $dup_mode $sort_mode $num_keys $join_type`)
+        end
     end
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     path = pathof(DataFrames)
     @info "DataFrames.jl at $path"
-    run_all_tests()
+
+    # do some argument processing
+    args = copy(ARGS)
+    single_process = false
+    pos = []
+    while length(args) > 0
+        arg = popfirst!(args)
+        if arg == "--single-process"
+            @info "Using single Julia process"
+            global single_process = true
+        elseif startswith(arg, "--")
+            @error("Unknown option $arg")
+            exit(1)
+        else
+            push!(pos, arg)
+        end
+    end
+
+    @assert length(args) in [0, 3] "Wrong positional arguments. Expect [llen, rlen, join_type], got $args."
+
+    if length(pos) == 0
+        @info "Running all tests"
+        run_all_tests(single_process)
+    else
+        llen, rlen, join_type = pos
+        llen = parse(Int, llen)
+        rlen = parse(Int, rlen)
+        run_test(single_process, llen, rlen, join_type)
+    end
 end
