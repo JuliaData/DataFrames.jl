@@ -3886,4 +3886,11 @@ end
     @test df2.x_prod isa Vector{Int}
 end
 
+@testset "extra tests of wrapper corner cases" begin
+    df = DataFrame(a=1:2)
+    gdf = groupby(df, :a)
+    @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? 1 : x[1, :])
+    @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? (a=1, b=2) : Ref(1))
+end
+
 end # module

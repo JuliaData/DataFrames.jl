@@ -1,3 +1,11 @@
+abstract type FirstColCount end
+
+struct FirstMultiCol <: FirstColCount end
+struct FirstSingleCol <: FirstColCount end
+
+firstcoltype(firstmulticol::Bool) =
+    firstmulticol ? FirstMultiCol() : FirstSingleCol()
+
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
 wrap(x::Union{AbstractDataFrame, DataFrameRow}) = x
@@ -22,52 +30,43 @@ const ERROR_ROW_COUNT = "return value must not change its kind " *
 const ERROR_COL_COUNT = "function must return only single-column values, " *
                         "or only multiple-column values"
 
-wrap_table(x::Any, ::Val) =
+wrap_table(x::Any, ::FirstSingleCol) =
     throw(ArgumentError(ERROR_ROW_COUNT))
-function wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
-                             AbstractDataFrame, AbstractMatrix},
-                             ::Val{firstmulticol}) where firstmulticol
-    if !firstmulticol
+wrap_table(x::Any, ::FirstMultiCol) =
+    throw(ArgumentError(ERROR_ROW_COUNT))
+wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
+                    AbstractDataFrame, AbstractMatrix}, ::FirstSingleCol) =
         throw(ArgumentError(ERROR_COL_COUNT))
-    end
-    return wrap(x)
-end
+wrap_table(x::Union{NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}},
+                    AbstractDataFrame, AbstractMatrix}, ::FirstMultiCol) =
+    wrap(x)
+wrap_table(x::AbstractVector, ::FirstSingleCol) = wrap(x)
+wrap_table(x::AbstractVector, ::FirstMultiCol) = throw(ArgumentError(ERROR_COL_COUNT))
 
-function wrap_table(x::AbstractVector, ::Val{firstmulticol}) where firstmulticol
-    if firstmulticol
-        throw(ArgumentError(ERROR_COL_COUNT))
-    end
-    return wrap(x)
-end
+wrap_row(x::DataFrameRow, ::FirstSingleCol) = throw(ArgumentError(ERROR_COL_COUNT))
+wrap_row(x::DataFrameRow, ::FirstMultiCol) = wrap(x)
+wrap_row(x::Any, ::FirstSingleCol) = wrap(x)
+# NamedTuple is not possible in this branch
+wrap_row(x::Any, ::FirstMultiCol) = throw(ArgumentError(ERROR_COL_COUNT))
 
-function wrap_row(x::Any, ::Val{firstmulticol}) where firstmulticol
-    # NamedTuple is not possible in this branch
-    if (x isa DataFrameRow) ⊻ firstmulticol
-        throw(ArgumentError(ERROR_COL_COUNT))
-    end
-    return wrap(x)
-end
-
-function wrap_row(x::Union{AbstractArray{<:Any, 0}, Ref},
-                  ::Val{firstmulticol}) where firstmulticol
-    if firstmulticol
-        throw(ArgumentError(ERROR_COL_COUNT))
-    end
-    return (x1 = x[],)
-end
-
+wrap_row(x::Union{AbstractArray{<:Any, 0}, Ref}, ::FirstMultiCol) =
+    throw(ArgumentError(ERROR_COL_COUNT))
+wrap_row(x::Union{AbstractArray{<:Any, 0}, Ref}, ::FirstSingleCol) =
+    (x1 = x[],)
 # note that also NamedTuple() is correctly captured by this definition
 # as it is more specific than the one below
 wrap_row(::Union{AbstractVecOrMat, AbstractDataFrame,
-                 NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}, ::Val) =
+                 NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}, ::FirstSingleCol) =
+    throw(ArgumentError(ERROR_ROW_COUNT))
+wrap_row(::Union{AbstractVecOrMat, AbstractDataFrame,
+                 NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}, ::FirstMultiCol) =
     throw(ArgumentError(ERROR_ROW_COUNT))
 
-function wrap_row(x::NamedTuple, ::Val{firstmulticol}) where firstmulticol
+wrap_row(x::NamedTuple, ::FirstSingleCol) = throw(ArgumentError(ERROR_COL_COUNT))
+
+function wrap_row(x::NamedTuple, ::FirstMultiCol)
     if any(v -> v isa AbstractVector, x)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
-    end
-    if !firstmulticol
-        throw(ArgumentError(ERROR_COL_COUNT))
     end
     return x
 end

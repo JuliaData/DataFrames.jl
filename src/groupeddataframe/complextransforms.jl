@@ -17,13 +17,14 @@ function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDat
         idx_agg = NOTHING_IDX_AGG
     end
     return _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
-                               Val(firstmulticol), idx_agg)
+                               firstmulticol, idx_agg)
 end
 
 function _combine_with_first((first,)::Ref{Any},
                              (f,)::Ref{Any}, gd::GroupedDataFrame,
                              (incols,)::Ref{Any},
-                             firstmulticol::Val, idx_agg::Vector{Int})
+                             firstmulticol::Bool, idx_agg::Vector{Int})
+    @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
@@ -38,9 +39,9 @@ function _combine_with_first((first,)::Ref{Any},
     elseif first isa DataFrameRow
         n = length(gd)
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
-    elseif firstmulticol == Val(false) && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
+    elseif !firstmulticol && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude = true
-        first = wrap_row(first[1], firstmulticol)
+        first = wrap_row(first[1], firstcoltype(firstmulticol))
         n = length(gd)
         eltys = (typeof(first[1]),)
     else # other NamedTuple giving a single row
@@ -60,10 +61,14 @@ function _combine_with_first((first,)::Ref{Any},
                                    NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
                                                              f, gd, incols, targetcolnames,
-                                                             firstmulticol)
+                                                             firstcoltype(firstmulticol))
     else
-        outcols, finalcolnames = _combine_rows_with_first!(first, initialcols,
-                                                           f, gd, incols, targetcolnames,
+        outcols, finalcolnames = _combine_rows_with_first!(Ref{Any}(first),
+                                                           Ref{Any}(initialcols),
+                                                           Ref{Any}(f),
+                                                           gd,
+                                                           Ref{Any}(incols),
+                                                           Ref{Any}(targetcolnames),
                                                            firstmulticol)
     end
     return idx, outcols, collect(Symbol, finalcolnames)
@@ -114,12 +119,13 @@ function _combine_rows_with_first_task!(tid::Integer,
                                         incols::Union{Nothing, AbstractVector,
                                                       Tuple, NamedTuple},
                                         colnames::NTuple{<:Any, Symbol},
-                                        firstmulticol::Val)
+                                        firstmulticol::FirstColCount)
     j = nothing
     gdidx = gd.idx
     local newoutcols
     for i in rownext:rowend
-        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i), firstmulticol)
+        row = wrap_row(do_call(f, gdidx, starts, ends, gd, incols, i),
+                       firstmulticol)
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column
             # If another thread is already widening outcols, wait until it's done
@@ -157,7 +163,8 @@ function _combine_rows_with_first_task!(tid::Integer,
             return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
                                                   type_widened, widen_type_lock,
                                                   f, gd, starts, ends,
-                                                  incols, colnames, firstmulticol)
+                                                  incols, colnames,
+                                                  firstmulticol)
         end
         # If other thread widened columns, copy already processed data to new vectors
         # This doesn't have to happen immediately (hence type_widened isn't atomic),
@@ -177,7 +184,8 @@ function _combine_rows_with_first_task!(tid::Integer,
             return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
                                                   type_widened, widen_type_lock,
                                                   f, gd, starts, ends,
-                                                  incols, colnames, firstmulticol)
+                                                  incols, colnames,
+                                                  firstmulticol)
         end
     end
     return outcols
@@ -217,12 +225,19 @@ isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::AbstractVector) =
     isthreadsafe(outcols, (incols,))
 isthreadsafe(outcols::NTuple{<:Any, AbstractVector}, incols::Nothing) = true
 
-function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
-                                   outcols::NTuple{N, AbstractVector},
-                                   f::Base.Callable, gd::GroupedDataFrame,
-                                   incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
-                                   colnames::NTuple{N, Symbol},
-                                   firstmulticol::Val) where N
+function _combine_rows_with_first!((firstrow,)::Ref{Any},
+                                   (outcols,)::Ref{Any},
+                                   (f,)::Ref{Any},
+                                   gd::GroupedDataFrame,
+                                   (incols,)::Ref{Any},
+                                   (colnames,)::Ref{Any},
+                                   firstmulticol::Bool)
+    @assert firstrow isa Union{NamedTuple, DataFrameRow}
+    @assert outcols isa NTuple{N, AbstractVector} where N
+    @assert f isa Base.Callable
+    @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
+    @assert colnames isa NTuple{N, Symbol} where N
+    @assert length(colnames) == length(outcols)
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
@@ -255,7 +270,7 @@ function _combine_rows_with_first!(firstrow::Union{NamedTuple, DataFrameRow},
                                                   outcols, outcolsref,
                                                   type_widened, widen_type_lock,
                                                   f, gd, starts, ends, incols, colnames,
-                                                  firstmulticol)
+                                                  firstcoltype(firstmulticol))
     end
 
     # Workaround JuliaLang/julia#38931:
@@ -336,7 +351,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
                                      f::Base.Callable, gd::GroupedDataFrame,
                                      incols::Union{Nothing, AbstractVector, Tuple, NamedTuple},
                                      colnames::NTuple{N, Symbol},
-                                     firstmulticol::Val) where N
+                                     firstmulticol::FirstColCount) where N
     len = length(gd)
     gdidx = gd.idx
     starts = gd.starts
