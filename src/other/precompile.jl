@@ -1578,6 +1578,10 @@ function precompile(all=false)
         Base.precompile(Tuple{typeof(_innerjoin_sorted),OnCol{Tuple{Vector{Union{Missing, Int}}, Vector{Union{Missing, Int}}, Vector{Union{Missing, Int}}}, 3},OnCol{Tuple{PooledVector{Int, UInt32, Vector{UInt32}}, PooledVector{Int, UInt32, Vector{UInt32}}, PooledVector{Int, UInt32, Vector{UInt32}}}, 3}})
         Base.precompile(Tuple{Reduce{typeof(max), Nothing, Nothing},Vector{Int},GroupedDataFrame{DataFrame}})
         Base.precompile(Tuple{Type{OnCol},Vector{String},Vararg{AbstractVector{T} where T, N} where N})
+
+        combine(groupby(DataFrame(), []), identity)
+        innerjoin(DataFrame(v1=[]), DataFrame(v1=[]), on=:v1)
+        outerjoin(DataFrame(v1=[]), DataFrame(v1=[]), on=:v1)
     end
     return nothing
 end
