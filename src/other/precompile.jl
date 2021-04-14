@@ -12,9 +12,9 @@
 # * removing signatures with specific NamedTuples passed as arguments except `x1` as name
 #   (which is generated internally)
 # * changing Int64 to Int (to handle 32-bit architectures correctly)
-# * disabling precompilation on Julia older than 1.6
+# * disabling precompilation on Julia older than 1.5
 function precompile(all=false)
-    VERSION >= v"1.6" || return nothing
+    VERSION >= v"1.5" || return nothing
     if !all
         ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
 
