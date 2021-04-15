@@ -272,14 +272,14 @@ function normalize_selection(idx::AbstractIndex,
         allunique(combine_target_col) || throw(ArgumentError("target column names must be unique"))
     end
 
-    if wanttable 
-        combine_src = AsTable(c) 
-    else 
+    if wanttable
+        combine_src = AsTable(c)
+    else
         combine_src = (length(c) == 1 ? only(c) : c)
     end
 
     combine_func = first(last(sel))
-    
+
     return combine_src => combine_func => combine_target_col
 end
 
@@ -340,9 +340,9 @@ function normalize_selection(idx::AbstractIndex,
         end
     end
 
-    if wanttable 
-        combine_src = AsTable(c) 
-    else 
+    if wanttable
+        combine_src = AsTable(c)
+    else
         combine_src = (length(c) == 1 ? only(c) : c)
     end
 
@@ -661,12 +661,12 @@ See [`select`](@ref) for examples.
 function transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true)
     idx = index(df)
     newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
-            idx[first(sel)] => copy => last(sel)
-        elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
-            idx[first(sel)] => copy => Symbol(last(sel))
-        else
-            sel
-        end for sel in args]
+                      idx[first(sel)] => copy => last(sel)
+                  elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
+                      idx[first(sel)] => copy => Symbol(last(sel))
+                  else
+                      sel
+                  end for sel in args]
     return select!(df, :, newargs..., renamecols=renamecols)
 end
 
@@ -992,12 +992,12 @@ See [`select`](@ref) for more examples.
 function transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true)
     idx = index(df)
     newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
-            idx[first(sel)] => copy => last(sel)
-        elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
-            idx[first(sel)] => copy => Symbol(last(sel))
-        else
-            sel
-        end for sel in args]
+                      idx[first(sel)] => copy => last(sel)
+                  elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
+                      idx[first(sel)] => copy => Symbol(last(sel))
+                  else
+                      sel
+                  end for sel in args]
     return select(df, :, newargs..., copycols=copycols, renamecols=renamecols)
 end
 
