@@ -138,6 +138,8 @@ const TRANSFORMATION_COMMON_RULES =
     transformations that return the same object without copying may create
     column aliases even if `copycols=true`. An example of such a situation is
     `select!(df, :a, :a => :b, :a => identity => :c)`.
+    As a special case in `transform` and `transform!` column renaming always
+    copies columns to avoid storing aliased columns in the target data frame.
 
     If `df` is a `SubDataFrame` and `copycols=true` then a `DataFrame` is
     returned and the same copying rules apply as for a `DataFrame` input: this
@@ -656,8 +658,17 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
-    select!(df, :, args..., renamecols=renamecols)
+function transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true)
+    idx = index(df)
+    newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
+            idx[first(sel)] => copy => last(sel)
+        elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
+            idx[first(sel)] => copy => Symbol(last(sel))
+        else
+            sel
+        end for sel in args]
+    return select!(df, :, newargs..., renamecols=renamecols)
+end
 
 function transform!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -978,8 +989,17 @@ ERROR: ArgumentError: column :x in returned data frame is not equal to grouping 
 
 See [`select`](@ref) for more examples.
 """
-transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
-    select(df, :, args..., copycols=copycols, renamecols=renamecols)
+function transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true)
+    idx = index(df)
+    newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
+            idx[first(sel)] => copy => last(sel)
+        elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
+            idx[first(sel)] => copy => Symbol(last(sel))
+        else
+            sel
+        end for sel in args]
+    return select(df, :, newargs..., copycols=copycols, renamecols=renamecols)
+end
 
 function transform(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
