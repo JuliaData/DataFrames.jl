@@ -1579,9 +1579,9 @@ function precompile(all=false)
         Base.precompile(Tuple{Reduce{typeof(max), Nothing, Nothing},Vector{Int},GroupedDataFrame{DataFrame}})
         Base.precompile(Tuple{Type{OnCol},Vector{String},Vararg{AbstractVector{T} where T, N} where N})
 
-        combine(groupby(DataFrame(), []), identity)
-        innerjoin(DataFrame(v1=[]), DataFrame(v1=[]), on=:v1)
-        outerjoin(DataFrame(v1=[]), DataFrame(v1=[]), on=:v1)
+        combine(groupby(DataFrame(v1=Int[]), :v1), identity, :v1 => sum)
+        innerjoin(DataFrame(v1=Int[]), DataFrame(v1=Int[]), on=:v1)
+        outerjoin(DataFrame(v1=Int[]), DataFrame(v1=Int[]), on=:v1)
     end
     return nothing
 end
