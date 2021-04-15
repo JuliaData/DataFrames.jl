@@ -1620,4 +1620,26 @@ end
                                          [:a] => sum => ["new"],  false) == (1 => (sum => [:new]))
 end
 
+@testset "copying in transform when renaming" begin
+    df = DataFrame(a=1)
+    df2 = transform(df, :a => :b)
+    @test df2.b == df2.a == df.a
+    @test df2.b !== df2.a
+    @test df2.b !== df.a
+    @test df2.a !== df.a
+
+    df2 = transform(df, :a => :b, copycols=false)
+    @test df2.b == df2.a == df.a
+    @test df2.b !== df2.a
+    @test df2.b !== df.a
+    @test df2.a === df.a
+
+    a = df.a
+    transform!(df, :a => :b)
+    @test df.b == df.a == a
+    @test df.b !== df.a
+    @test df.b !== a
+    @test df.a === a
+end
+                                                
 end # module
