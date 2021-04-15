@@ -1086,7 +1086,9 @@ end
     x2 = df.x2
     transform!(df, [:x1, :x2] => +, :x2 => :x3)
     @test df == df2
-    @test x2 === df.x2 === df.x3
+    @test x2 == df.x2 == df.x3
+    @test x2 === df.x2
+    @test x2 !== df.x3
 
     @test transform(df) == df
     df2 = transform(df, copycols=false)
