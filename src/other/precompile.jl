@@ -1579,9 +1579,15 @@ function precompile(all=false)
         Base.precompile(Tuple{Reduce{typeof(max), Nothing, Nothing},Vector{Int},GroupedDataFrame{DataFrame}})
         Base.precompile(Tuple{Type{OnCol},Vector{String},Vararg{AbstractVector{T} where T, N} where N})
 
-        combine(groupby(DataFrame(), []), identity)
-        innerjoin(DataFrame(v1=[]), DataFrame(v1=[]), on=:v1)
-        outerjoin(DataFrame(v1=[]), DataFrame(v1=[]), on=:v1)
+        for v in ([1, 2], [2, 1], [2, 2, 1]),
+            op in (identity, x -> string.(x), x -> PooledArrays.PooledArray(string.(x))),
+            on in (:v1, [:v1, :v2])
+            df = DataFrame(v1=op(v), v2=v)
+            combine(groupby(df, on), identity, :v1 => identity,
+                    :v2 => ByRow(identity), :v2 => sum)
+            innerjoin(df, select(df, on), on=on)
+            outerjoin(df, select(df, on), on=on)
+        end
     end
     return nothing
 end
