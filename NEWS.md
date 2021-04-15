@@ -11,6 +11,9 @@
 * `mapcols!` makes sure not to create columns being `AbstractRange` consistently
   with other methods that add columns to a `DataFrame`
   ([#2594](https://github.com/JuliaData/DataFrames.jl/pull/2594))
+* `transform` and `transform!` always copy columns when column renaming transformation
+  is passed
+  ([#2721](https://github.com/JuliaData/DataFrames.jl/pull/2721))
 
 ## New functionalities
 
