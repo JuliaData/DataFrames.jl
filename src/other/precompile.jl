@@ -1584,7 +1584,7 @@ function precompile(all=false)
             on in (:v1, [:v1, :v2])
             df = DataFrame(v1=op(v), v2=v)
             combine(groupby(df, on), identity, :v1 => identity,
-                            :v2 => ByRow(identity), :v2 => sum)
+                    :v2 => ByRow(identity), :v2 => sum)
             innerjoin(df, select(df, on), on=on)
             outerjoin(df, select(df, on), on=on)
         end
