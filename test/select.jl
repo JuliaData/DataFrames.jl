@@ -1080,7 +1080,9 @@ end
 
     df2 = transform(df, [:x1, :x2] => +, :x2 => :x3, copycols=false)
     @test df2 == select(df, :, [:x1, :x2] => +, :x2 => :x3)
-    @test df.x2 === df2.x2 === df2.x3
+    @test df.x2 == df2.x2 == df2.x3
+    @test df.x2 === df2.x2
+    @test df.x2 !== df2.x3
     @test_throws ArgumentError transform(view(df, :, :), [:x1, :x2] => +, :x2 => :x3, copycols=false)
 
     x2 = df.x2
