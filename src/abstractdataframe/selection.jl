@@ -991,6 +991,9 @@ See [`select`](@ref) for more examples.
 """
 function transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true)
     idx = index(df)
+    # when using the copy function the copy of source data frame
+    # is made exactly once even if copycols=true
+    # (copycols=true makes a copy only if the column were not copied previously)
     newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
                       idx[first(sel)] => copy => last(sel)
                   elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
