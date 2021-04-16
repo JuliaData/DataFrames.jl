@@ -1080,13 +1080,17 @@ end
 
     df2 = transform(df, [:x1, :x2] => +, :x2 => :x3, copycols=false)
     @test df2 == select(df, :, [:x1, :x2] => +, :x2 => :x3)
-    @test df.x2 === df2.x2 === df2.x3
+    @test df.x2 == df2.x2 == df2.x3
+    @test df.x2 === df2.x2
+    @test df.x2 !== df2.x3
     @test_throws ArgumentError transform(view(df, :, :), [:x1, :x2] => +, :x2 => :x3, copycols=false)
 
     x2 = df.x2
     transform!(df, [:x1, :x2] => +, :x2 => :x3)
     @test df == df2
-    @test x2 === df.x2 === df.x3
+    @test x2 == df.x2 == df.x3
+    @test x2 === df.x2
+    @test x2 !== df.x3
 
     @test transform(df) == df
     df2 = transform(df, copycols=false)
@@ -1620,4 +1624,28 @@ end
                                          [:a] => sum => ["new"],  false) == (1 => (sum => [:new]))
 end
 
+@testset "copying in transform when renaming" begin
+    for oldcol in (:a, "a", 1), newcol in (:b, "b")
+        df = DataFrame(a=1)
+        df2 = transform(df, oldcol => newcol)
+        @test df2.b == df2.a == df.a
+        @test df2.b !== df2.a
+        @test df2.b !== df.a
+        @test df2.a !== df.a
+
+        df2 = transform(df, oldcol => newcol, copycols=false)
+        @test df2.b == df2.a == df.a
+        @test df2.b !== df2.a
+        @test df2.b !== df.a
+        @test df2.a === df.a
+
+        a = df.a
+        transform!(df, oldcol => newcol)
+        @test df.b == df.a == a
+        @test df.b !== df.a
+        @test df.b !== a
+        @test df.a === a
+    end
+end
+                                                
 end # module
