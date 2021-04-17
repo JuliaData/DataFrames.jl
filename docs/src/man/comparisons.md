@@ -244,11 +244,11 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Reduce multiple values  |`df[, list(mean(x))]`       |`combine(df, :x => mean)`|
 |Add new columns         |`df[, x_mean := mean(x) ]`  |`transform(df, :x => mean => :x_mean)`|
 |Rename column (in place) |`setnames(df, "x", "x_new")`|`rename!(df, :x => :x_new)`|
-|Rename multiple columns (in place) |`setnames(df, c("x", "y"), c("x_new", "y_new")`|`rename!(df, [:x, :y] => [:x_new, :y_new])`|
+|Rename multiple columns (in place) |`setnames(df, c("x", "y"), c("x_new", "y_new")`|`rename!(df, [:x, :y] .=> [:x_new, :y_new])`|
 |Pick columns            |`df[, list(x, y)]`          |`select(df, :x, :y)`|
 |Remove columns          |`df[, -"x" ]`               |`select(df, Not(:x))`|
 |Remove columns (in place) |`df[, c("x") := NULL ]`   |`select!(df, Not(:x))`|
-|Pick & transform columns|`df[, list(mean(x), y)]`    |`select(df, :x => mean, :y)`|
+|Pick & transform columns |`df[, list(mean(x), y)]`    |`select(df, :x => mean, :y)`|
 |Pick rows               |`df[ x >= 1 ]`              |`filter(:x => >=(1), df)`|
 |Sort rows (in place)    |`setorder(df, x)`           |`sort!(df, :x)`|
 |Sort rows               |`df[ order(x) ]`            |`sort(df, :x)`|
@@ -266,7 +266,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Operations              | data.table                                      | DataFrames.jl             |
 |:-----------------------|:------------------------------------------------|:--------------------------|
 |Complex Function          |`df[, list(mean(x, na.rm = T)) ]`              |`combine(df, :x => x -> mean(skipmissing(x)))`|
-|Transform certain rows (in place) |`df[x<=0, x:=0 ]`                      |`transform!(df, :x => (x -> ifelse.(x .<= 0, 0, x)) => :x)`|
+|Transform certain rows (in place) |`df[x<=0, x:=0 ]`                      |`df.x[df.x .<= 0] .= 0`|
 |Transform several columns |`df[, list(max(x), min(y)) ]`                  |`combine(df, :x => maximum,  :y => minimum)`|
 |                          |`df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`   |`combine(df, [:x, :y] .=> mean)`|
 |                          |`df[, lapply(.SD, mean), .SDcols = patterns("x*") ]`|`combine(df, names(df, r"^x") .=> mean)`|
@@ -274,8 +274,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Multivariate function     |`df[, list(cor(x,y)) ]`                        |`transform(df, [:x, :y] => cor)`|
 |Row-wise                  |`df[, min_xy := min(x, y), by = 1:nrow(df)]`   |`transform(df, [:x, :y] => ByRow(min))`|
 |                          |`df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`|`transform(df, AsTable(r"^x") => ByRow(argmax))`|
-|DataFrame as input        |`df[, head(.SD, 2) ]`                          |`combine(d -> first(d, 2), df)`|
-|DataFrame as output       |`df[, .SD[, .(value = min(x), max(x))] ]`      |`combine(:x => x -> (value = [minimum(x), maximum(x)]), df)`|
+
 
 ### Joining data frames
 
