@@ -23,7 +23,8 @@ struct DataFrameJoiner
 
     function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame,
                              on::Union{<:OnType, AbstractVector},
-                             matchmissing::Symbol)
+                             matchmissing::Symbol,
+                             kind::Symbol)
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
@@ -54,6 +55,42 @@ struct DataFrameJoiner
                     throw(ArgumentError("missing values in key columns are not allowed " *
                                         "when matchmissing == :error"))
                 end
+            end
+        elseif matchmissing === :notequal_copy
+            if kind in [:left, :semi, :anti]
+                dfr = dropmissing(dfr, right_on)
+                dfr_on = select(dfr, right_on, copycols = false)
+            elseif kind === :right
+                dfl = dropmissing(dfl, left_on)
+                dfl_on = select(dfl, left_on, copycols = false)
+            elseif kind === :inner
+                @show kind, matchmissing
+                dfl = dropmissing(dfl, left_on)
+                dfl_on = select(dfl, left_on, copycols = false)
+                dfr = dropmissing(dfr, right_on)
+                dfr_on = select(dfr, right_on, copycols = false)
+            elseif kind === :outer 
+                throw(ArgumentError("matchmissing == :notequal with kind == :outer not allowed"))
+            else
+                throw("matchmissing == :notequal not implemented for kind == $kind")
+            end
+        elseif matchmissing === :notequal_view
+            if kind in [:left, :semi, :anti]
+                dfr = dropmissing(dfr, right_on, view = true)
+                dfr_on = select(dfr, right_on)
+            elseif kind === :right
+                dfl = dropmissing(dfl, left_on, view = true)
+                dfl_on = select(dfl, left_on)
+            elseif kind === :inner
+                @show kind, matchmissing
+                dfl = dropmissing(dfl, left_on, view = true)
+                dfl_on = select(dfl, left_on)
+                dfr = dropmissing(dfr, right_on, view = true)
+                dfr_on = select(dfr, right_on)
+            elseif kind === :outer 
+                throw(ArgumentError("matchmissing == :notequal with kind == :outer not allowed"))
+            else
+                throw("matchmissing == :notequal not implemented for kind == $kind")
             end
         elseif matchmissing !== :equal
             throw(ArgumentError("matchmissing allows only :error or :equal"))
@@ -311,7 +348,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    joiner = DataFrameJoiner(df1, df2, on, matchmissing)
+    joiner = DataFrameJoiner(df1, df2, on, matchmissing, kind)
 
     # Check merge key validity
     left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
