@@ -31,8 +31,10 @@ The steps needed to make a change to an existing docstring are listed below:
 The steps required to add a new docstring are listed below:
 * find a suitable definition in `src/` that the docstring will be most applicable to;
 * add a doctring above the definition;
-* find a suitable `@docs` code block in the `docs/src/lib/functions.md` file where you would like the docstring to appear;
-* add the name of the definition to the `@docs` code block. For example, with a docstring added to a function `bar`.
+* find a suitable `@docs` code block in the `docs/src/lib/functions.md` file where you 
+  would like the docstring to appear;
+* add the name of the definition to the `@docs` code block. For example, with a docstring
+  added to a function `bar`.
 ```
 "..."
 function bar(args...)
@@ -120,31 +122,31 @@ It is recommended to add the header `# Examples` above the doctests.
 ## Git Recommendations For Pull Requests
 
 * Avoid working from the `main` branch of your fork, creating a new branch will make it
- easier if DataFrame.jl `main` branch changes and you need to update your pull request;
+  easier if DataFrame.jl `main` branch changes and you need to update your pull request;
 * All PRs and issues should be made against the main branch not against the current release;
 * You can avoid `squash` because we will squash the PR when merging it anyway. The request is
- rather: `run tests` of your code before sending any commit to GitHub. Only push changes when 
- the tests of the change are passing locally. The point is that if you send e.g. 10 commits to 
- GitHub in one push operation it is not a problem as CI will be run only once then;
+  rather: `run tests` of your code before sending any commit to GitHub. Only push changes when 
+  the tests of the change are passing locally. The point is that if you send e.g. 10 commits to 
+  GitHub in one push operation it is not a problem as CI will be run only once then;
 * If any conflicts arise due to changes in DataFrame.jl `main` branch, prefer updating your pull
- request branch with `git rebase` (rather than `git merge`), since the latter will introduce a merge 
- commit that might confuse GitHub when displaying the diff of your PR, which makes your changes more 
- difficult to review. Alternatively use conflict resolution tool available at GitHub;
+  request branch with `git rebase` (rather than `git merge`), since the latter will introduce a merge 
+  commit that might confuse GitHub when displaying the diff of your PR, which makes your changes more 
+  difficult to review. Alternatively use conflict resolution tool available at GitHub;
 * Please try to use descriptive commit messages to simplify the review process;
 * Using `git add -p` or `git add -i` can be useful to avoid accidently committing unrelated changes;
 * Maintainers get notified of all changes in the repository. However, what is useful is writing a short
- message after a sequence of changes is made summarizing what has changed and that the PR is ready
- for a review;
+  message after a sequence of changes is made summarizing what has changed and that the PR is ready
+  for a review;
 * When linking to specific lines of code in discussion of an issue or pull request, hit the `y` key
- while viewing code on GitHub to reload the page with a URL that includes the specific version that 
- you're viewing. That way any lines of code that you refer to wil still make sense in the future, even 
- if the content of the file changes;
+  while viewing code on GitHub to reload the page with a URL that includes the specific version that 
+  you're viewing. That way any lines of code that you refer to wil still make sense in the future, even 
+  if the content of the file changes;
 * Whitespace can be automatically removed from existing commits with `git rebase`;
    + please make sure you follow the code formatting guidelines when submitting a PR
    + in particular do not remove whitespace in parts of code that you are not editing as this makes reviewing 
-   the PR harder (I regularly do code cleanup anyway
+     the PR harder (I regularly do code cleanup anyway
    + (and note that in some doctests actually whitespace might be relevant and it should not be removed) - this
-    is the case in multiline (triple-quoted) strings. Therefore using single quoted strings with an explicit
+     is the case in multiline (triple-quoted) strings. Therefore using single quoted strings with an explicit
      `"\n"` and joined with `*` across multiple lines should be done in such cases
 * If a PR is not finished yet and SHOULD NOT be reviewed yet then it should be opened as DRAFT 
-(in this way reviewer will know that they can ignore such PR until it is made non-draft or the author asks for a review).
+  (in this way reviewer will know that they can ignore such PR until it is made non-draft or the author asks for a review).
