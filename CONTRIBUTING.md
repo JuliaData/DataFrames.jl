@@ -26,12 +26,12 @@ The steps needed to make a change to an existing docstring are listed below:
 * run `julia make.jl` from the `/docs` directory;
 * check the output in `doc/_build/html/` to make sure the changes are correct;
 * commit your changes and open a pull request.
-* preferred style of docstring, 
-  + signature
-  + what function does
-  + description of its arguments
-  + additional details if needed
-  + examples
+* a preferred structure of docstring for a function is:
+  + list of accepted signatures;
+  + a short information what function does;
+  + description of its arguments;
+  + additional details if needed;
+  + examples.
 
 ## Adding a new docstring to `src/`
 
@@ -67,7 +67,7 @@ baz
 ## Doctests
 
 Examples written within docstrings can be used as test cases known as *doctests* by annotating code 
-blocks with `jldoctest`.
+blocks with `jldoctest`:
 ````
 ```jldoctest
 julia> uppercase("Docstring test")
@@ -150,7 +150,7 @@ It is recommended to add the header `# Examples` above the doctests.
   you're viewing. That way any lines of code that you refer to will still be correct in the future, even 
   if additional commits are pushed to the branch you are reviewing;
 * Please make sure you follow the code formatting guidelines when submitting a PR;
-  However, preferably do not modify parts of code that you are not editing as this makes
+  Also preferably do not modify parts of code that you are not editing as this makes
   reviewing the PR harder (it is better to open a separate maintenance PR
   if e.g. code layout can be improved);
 * If a PR is not finished yet and should not be reviewed yet then it should be opened as DRAFT 
