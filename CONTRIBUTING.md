@@ -16,7 +16,9 @@ Thanks for taking the plunge!
 
 ## Modifying an existing docstring in `src/`
 
-All docstrings are written inline above the methods or types they are associated with and can be found by clicking on the `source` link that appears below each docstring in the HTML file. The steps needed to make a change to an existing docstring are listed below:
+All docstrings are written inline above the methods or types they are associated with and can
+be found by clicking on the `source` link that appears below each docstring in the HTML file.
+The steps needed to make a change to an existing docstring are listed below:
 
 * Find the docstring in `src/`;
 * Update the text in the docstring;
@@ -53,14 +55,16 @@ baz
 
 ## Doctests
 
-Examples written within docstrings can be used as test cases known as *doctests* by annotating code blocks with `jldoctest`.
+Examples written within docstrings can be used as test cases known as *doctests* by annotating code 
+blocks with `jldoctest`.
 ````
 ```jldoctest
 julia> uppercase("Docstring test")
 "DOCSTRING TEST"
 ```
 ````
-A doctest needs to match an interactive REPL including the `julia>` prompt. To run doctests you need to make `doctest=true` inside the `docs/make.jl` directory and run `julia make.jl` from the `/docs` directory.
+A doctest needs to match an interactive REPL including the `julia>` prompt. To run doctests you need
+to make `doctest=true` inside the `docs/make.jl` directory and run `julia make.jl` from the `/docs` directory.
 
 It is recommended to add the header `# Examples` above the doctests.
 
@@ -115,17 +119,32 @@ It is recommended to add the header `# Examples` above the doctests.
 
 ## Git Recommendations For Pull Requests
 
-* Avoid working from the `main` branch of your fork, creating a new branch will make it easier if DataFrame.jl `main` branch changes and you need to update your pull request.
-* All PRs and issues should be made against the main branch not against the current release.
-* You can avoid `squash` because we will squash the PR when merging it anyway. The request is rather: `run tests` of your code before sending any commit to GitHub. Only push changes when the tests of the change are passing locally.
-The point is that if you send e.g. 10 commits to GitHub in one push operation it is not a problem as CI will be run only once then.
-* If any conflicts arise due to changes in DataFrame.jl `main` branch, prefer updating your pull request branch with `git rebase` (rather than `git merge`), since the latter will introduce a merge commit that might confuse GitHub when displaying the diff of your PR, which makes your changes more difficult to review. Alternatively use conflict resolution tool available at GitHub.
-* Please try to use descriptive commit messages to simplify the review process.
-* Using `git add -p` or `git add -i` can be useful to avoid accidently committing unrelated changes.
-* Maintainers get notified of all changes in the repository. However, what is useful is writing a short message after a sequence of changes is made summarizing what has changed and that the PR is ready for a review.
-* When linking to specific lines of code in discussion of an issue or pull request, hit the `y` key while viewing code on GitHub to reload the page with a URL that includes the specific version that you're viewing. That way any lines of code that you refer to wil still make sense in the future, even if the content of the file changes.
-* Whitespace can be automatically removed from existing commits with `git rebase`.
+* Avoid working from the `main` branch of your fork, creating a new branch will make it
+ easier if DataFrame.jl `main` branch changes and you need to update your pull request;
+* All PRs and issues should be made against the main branch not against the current release;
+* You can avoid `squash` because we will squash the PR when merging it anyway. The request is
+ rather: `run tests` of your code before sending any commit to GitHub. Only push changes when 
+ the tests of the change are passing locally. The point is that if you send e.g. 10 commits to 
+ GitHub in one push operation it is not a problem as CI will be run only once then;
+* If any conflicts arise due to changes in DataFrame.jl `main` branch, prefer updating your pull
+ request branch with `git rebase` (rather than `git merge`), since the latter will introduce a merge 
+ commit that might confuse GitHub when displaying the diff of your PR, which makes your changes more 
+ difficult to review. Alternatively use conflict resolution tool available at GitHub;
+* Please try to use descriptive commit messages to simplify the review process;
+* Using `git add -p` or `git add -i` can be useful to avoid accidently committing unrelated changes;
+* Maintainers get notified of all changes in the repository. However, what is useful is writing a short
+ message after a sequence of changes is made summarizing what has changed and that the PR is ready
+ for a review;
+* When linking to specific lines of code in discussion of an issue or pull request, hit the `y` key
+ while viewing code on GitHub to reload the page with a URL that includes the specific version that 
+ you're viewing. That way any lines of code that you refer to wil still make sense in the future, even 
+ if the content of the file changes;
+* Whitespace can be automatically removed from existing commits with `git rebase`;
    + please make sure you follow the code formatting guidelines when submitting a PR
-   + in particular do not remove whitespace in parts of code that you are not editing as this makes reviewing the PR harder (I regularly do code cleanup anyway.
-   + (and note that in some doctests actually whitespace might be relevant and it should not be removed) - this is the case in multiline (triple-quoted) strings. Therefore using single quoted strings with an explicit `"\n"` and joined with `*` across multiple lines should be done in such cases.
-* If a PR is not finished yet and SHOULD NOT be reviewed yet then it should be opened as DRAFT (in this way reviewer will know that they can ignore such PR until it is made non-draft or the author asks for a review).
+   + in particular do not remove whitespace in parts of code that you are not editing as this makes reviewing 
+   the PR harder (I regularly do code cleanup anyway
+   + (and note that in some doctests actually whitespace might be relevant and it should not be removed) - this
+    is the case in multiline (triple-quoted) strings. Therefore using single quoted strings with an explicit
+     `"\n"` and joined with `*` across multiple lines should be done in such cases
+* If a PR is not finished yet and SHOULD NOT be reviewed yet then it should be opened as DRAFT 
+(in this way reviewer will know that they can ignore such PR until it is made non-draft or the author asks for a review).
