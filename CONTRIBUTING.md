@@ -14,6 +14,54 @@ Thanks for taking the plunge!
   (`Pkg.add(name="DataFrames", rev="main")`) is a good gut check and can streamline the process,
   along with including the first two lines of output from `versioninfo()`
 
+## Modifying an existing docstring in `src/`
+
+All docstrings are written inline above the methods or types they are associated with and can be found by clicking on the `source` link that appears below each docstring in the HTML file. The steps needed to make a change to an existing docstring are listed below:
+
+* Find the docstring in `src/`;
+* Update the text in the docstring;
+* run `make docs` from the root directory;
+* check the output in `doc/_build/html/` to make sure the changes are correct;
+* commit your changes and open a pull request.
+
+## Adding a new docstring to `src/`
+
+The steps required to add a new docstring are listed below:
+* find a suitable definition in `src/` that thedocstring will be most applicable to;
+* add a doctring above the definition;
+* find a suitable `@docs` code block in one of the `docs/src/` files where you would like the docstring to appear;
+* add the name of the definition to the `@docs` code block. For example, with a docstring added to a function `bar`
+```
+"..."
+function bar(args...)
+    # ...
+end
+```
+
+you would add the name `bar` to a `@docs` block in `docs/src/`
+````
+```@docs
+foo
+bar # <-- Added this one.
+baz
+```
+````
+
+* run `make docs` from the root directory;
+* check the output in `docs/_build/html` to make sure the changes are correct;
+* commit your changes and open a pull request.
+
+## Doctests
+
+Examples written within docstrings can be used as testcases known as `"doctests"` by annotating code blocks with jldoctest.
+````
+```jldoctest
+julia> uppercase("Docstring test")
+"DOCSTRING TEST"
+```
+````
+A doctest needs to match an interactive REPL including the julia> prompt. To run doctests you need to run make -C doc doctest=true from the root directory. It is recommended to add the header # Examples above the doctests.
+
 ## Contributing
 
 * DataFrames.jl is a relatively complex package that also has many external dependencies.
@@ -62,3 +110,23 @@ Thanks for taking the plunge!
   rather than `[1., 2.]`
 * In docstrings, optional arguments, including separators and spaces, are surrounded by brackets,
   e.g. `mymethod(required[, optional1[, optional2] ]; kwargs...)`
+
+## Git Recommendations For Pull Requests
+
+* Avoid working from the `main` branch of your fork, creating a new branch will make it easier if DataFrame's `main` branch changes and you need to update your pull request.
+
+* Try to [squash](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html) together small commits that make repeated changes to the same section of code so your pull request is easier to review, and DataFrame's won't have any broken intermediate commits. A reasonable number of separate well-factored commits is fine, especially for larger changes.
+
+* If any conflicts arise due to changes in DataFrame's `main` branch, prefer updating your pull request branch with `git rebase` versus `git merge` or `git pull`, since the latter will introduce merge commits that clutter the git history with noise that makes your changes more difficult to review.
+
+* Descriptive commit messages are good.
+
+* Using `git add -p` or `git add -i` can be useful to avoid accidently committing unrelated changes.
+
+* GitHub does not send notifications when you push a new commit to pull request, so please add a comment to the pull request thread to let reviewers know when you've made changes.
+
+* When linking to specific lines of code in discussion of an issue or pull request, hit the `y` key while viewing code on GitHub to reload the page with a URL that includes the specific version that you're viewing. That way any lines of code that you refer to wil still make sense in the future, even if the content of the file changes.
+
+* Whitespace can be automatically removed from existing commits with `git rebase`.
+   + To remove whitespace for the previous commit, run `git rebase --whitespace=fix HEAD~1`.
+   + To remove whtespace relative to the `main` branch, run `git rebase --whitespace=fix main`.
