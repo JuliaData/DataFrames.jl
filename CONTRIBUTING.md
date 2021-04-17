@@ -27,10 +27,10 @@ All docstrings are written inline above the methods or types they are associated
 ## Adding a new docstring to `src/`
 
 The steps required to add a new docstring are listed below:
-* find a suitable definition in `src/` that thedocstring will be most applicable to;
+* find a suitable definition in `src/` that the docstring will be most applicable to;
 * add a doctring above the definition;
-* find a suitable `@docs` code block in one of the `docs/src/` files where you would like the docstring to appear;
-* add the name of the definition to the `@docs` code block. For example, with a docstring added to a function `bar`
+* find a suitable `@docs` code block in the `docs/src/lib/functions.md` file where you would like the docstring to appear;
+* add the name of the definition to the `@docs` code block. For example, with a docstring added to a function `bar`.
 ```
 "..."
 function bar(args...)
@@ -38,7 +38,7 @@ function bar(args...)
 end
 ```
 
-you would add the name `bar` to a `@docs` block in `docs/src/`
+you would add the name `bar` to a `@docs` block in `docs/src/lib/functions.md`
 ````
 ```@docs
 foo
@@ -47,20 +47,22 @@ baz
 ```
 ````
 
-* run `make docs` from the root directory;
+* run `julia make.jl` from the `/docs` directory;
 * check the output in `docs/_build/html` to make sure the changes are correct;
 * commit your changes and open a pull request.
 
 ## Doctests
 
-Examples written within docstrings can be used as testcases known as `"doctests"` by annotating code blocks with jldoctest.
+Examples written within docstrings can be used as test cases known as *doctests* by annotating code blocks with `jldoctest`.
 ````
 ```jldoctest
 julia> uppercase("Docstring test")
 "DOCSTRING TEST"
 ```
 ````
-A doctest needs to match an interactive REPL including the julia> prompt. To run doctests you need to run make -C doc doctest=true from the root directory. It is recommended to add the header # Examples above the doctests.
+A doctest needs to match an interactive REPL including the `julia>` prompt. To run doctests you need to make `doctest=true` inside the `docs/make.jl` directory and run `julia make.jl` from the `/docs` directory.
+
+It is recommended to add the header `# Examples` above the doctests.
 
 ## Contributing
 
@@ -113,20 +115,17 @@ A doctest needs to match an interactive REPL including the julia> prompt. To run
 
 ## Git Recommendations For Pull Requests
 
-* Avoid working from the `main` branch of your fork, creating a new branch will make it easier if DataFrame's `main` branch changes and you need to update your pull request.
-
-* Try to [squash](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html) together small commits that make repeated changes to the same section of code so your pull request is easier to review, and DataFrame's won't have any broken intermediate commits. A reasonable number of separate well-factored commits is fine, especially for larger changes.
-
-* If any conflicts arise due to changes in DataFrame's `main` branch, prefer updating your pull request branch with `git rebase` versus `git merge` or `git pull`, since the latter will introduce merge commits that clutter the git history with noise that makes your changes more difficult to review.
-
-* Descriptive commit messages are good.
-
+* Avoid working from the `main` branch of your fork, creating a new branch will make it easier if DataFrame.jl `main` branch changes and you need to update your pull request.
+* All PRs and issues should be made against the main branch not against the current release.
+* You can avoid `squash` because we will squash the PR when merging it anyway. The request is rather: `run tests` of your code before sending any commit to GitHub. Only push changes when the tests of the change are passing locally.
+The point is that if you send e.g. 10 commits to GitHub in one push operation it is not a problem as CI will be run only once then.
+* If any conflicts arise due to changes in DataFrame.jl `main` branch, prefer updating your pull request branch with `git rebase` (rather than `git merge`), since the latter will introduce a merge commit that might confuse GitHub when displaying the diff of your PR, which makes your changes more difficult to review. Alternatively use conflict resolution tool available at GitHub.
+* Please try to use descriptive commit messages to simplify the review process.
 * Using `git add -p` or `git add -i` can be useful to avoid accidently committing unrelated changes.
-
-* GitHub does not send notifications when you push a new commit to pull request, so please add a comment to the pull request thread to let reviewers know when you've made changes.
-
+* Maintainers get notified of all changes in the repository. However, what is useful is writing a short message after a sequence of changes is made summarizing what has changed and that the PR is ready for a review.
 * When linking to specific lines of code in discussion of an issue or pull request, hit the `y` key while viewing code on GitHub to reload the page with a URL that includes the specific version that you're viewing. That way any lines of code that you refer to wil still make sense in the future, even if the content of the file changes.
-
 * Whitespace can be automatically removed from existing commits with `git rebase`.
-   + To remove whitespace for the previous commit, run `git rebase --whitespace=fix HEAD~1`.
-   + To remove whtespace relative to the `main` branch, run `git rebase --whitespace=fix main`.
+   + please make sure you follow the code formatting guidelines when submitting a PR
+   + in particular do not remove whitespace in parts of code that you are not editing as this makes reviewing the PR harder (I regularly do code cleanup anyway.
+   + (and note that in some doctests actually whitespace might be relevant and it should not be removed) - this is the case in multiline (triple-quoted) strings. Therefore using single quoted strings with an explicit `"\n"` and joined with `*` across multiple lines should be done in such cases.
+* If a PR is not finished yet and SHOULD NOT be reviewed yet then it should be opened as DRAFT (in this way reviewer will know that they can ignore such PR until it is made non-draft or the author asks for a review).
