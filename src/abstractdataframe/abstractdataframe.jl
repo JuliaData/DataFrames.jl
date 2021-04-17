@@ -762,13 +762,20 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
     end
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
-        res .&= .!ismissing.(df[!, i])
+        if Missing <: eltype(df[!, i])
+            res .&= .!ismissing.(df[!, i])
+        end
     end
     res
 end
 
-completecases(df::AbstractDataFrame, col::ColumnIndex) =
-    .!ismissing.(df[!, col])
+function completecases(df::AbstractDataFrame, col::ColumnIndex)
+    if Missing <: eltype(df[!, col])
+        .!ismissing.(df[!, col])
+    else
+        trues(size(df, 1))
+    end
+end
 
 completecases(df::AbstractDataFrame, cols::MultiColumnIndex) =
     completecases(df[!, cols])
