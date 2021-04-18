@@ -1,4 +1,4 @@
-# Comparisons
+# comparisons
 
 This section compares DataFrames.jl with other data manipulation frameworks in Python, R, and Stata.
 
@@ -246,7 +246,7 @@ df  <- data.table(grp = rep(1:2, 3), x = 6:1, y = 4:9,
 df2 <- data.table(grp=c(1,3), w = c(10,11))                 
 ```
 
-|Operations                         | data.table                                      | DataFrames.jl                                | 
+| Operation                         | data.table                                      | DataFrames.jl                                | 
 |:----------------------------------|:------------------------------------------------|:---------------------------------------------|
 |Reduce multiple values             | `df[, list(mean(x))]`                           | `combine(df, :x => mean)`                    |
 |Add new columns                    | `df[, x_mean := mean(x) ]`                      | `transform(df, :x => mean => :x_mean)`       |
@@ -262,7 +262,7 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 
 ### Grouping data and aggregation
 
-|Operations                 | data.table                                        | DataFrames.jl                             |
+| Operation                 | data.table                                        | DataFrames.jl                             |
 |:--------------------------|:--------------------------------------------------|:------------------------------------------|
 |Reduce multiple values     | `df[, list(mean(x)), by = list(id) ]`             | `combine(groupby(df, :id), :x => mean)`   |
 |Add new columns (in place) | `df[, x_mean := mean(x), by = list(id) ]`         | `transform!(groupby(df, :id), :x => mean)`|
@@ -270,7 +270,7 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 
 ### More advanced commands
 
-|Operations                        | data.table                                                                                 | DataFrames.jl                                                              |
+| Operation                        | data.table                                                                                 | DataFrames.jl                                                              |
 |:---------------------------------|:-------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|
 |Complex Function                  | `df[, list(mean(x, na.rm = T)) ]`                                                          | `combine(df, :x => x -> mean(skipmissing(x)))`                             |
 |Transform certain rows (in place) | `df[x<=0, x:=0 ]`                                                                          | `df.x[df.x .<= 0] .= 0`                                                    |
