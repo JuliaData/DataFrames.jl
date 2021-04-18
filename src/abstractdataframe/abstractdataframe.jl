@@ -761,19 +761,23 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
                             "data frame with no columns"))
     end
     res = trues(size(df, 1))
+    aux = BitVector(undef, size(df, 1))
     for i in 1:size(df, 2)
-        if Missing <: eltype(df[!, i])
-            res .&= .!ismissing.(df[!, i])
+        v = df[!, i]
+        if Missing <: eltype(v)
+            aux .= .!ismissing.(v)
+            res .&= aux
         end
     end
-    res
+    return res
 end
 
 function completecases(df::AbstractDataFrame, col::ColumnIndex)
-    if Missing <: eltype(df[!, col])
-        .!ismissing.(df[!, col])
+    v = df[!, col]
+    if Missing <: eltype(v)
+        return .!ismissing.(v)
     else
-        trues(size(df, 1))
+        return trues(size(df, 1))
     end
 end
 
