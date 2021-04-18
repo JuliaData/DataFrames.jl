@@ -239,6 +239,13 @@ The table below compares more advanced commands:
 
 The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.14.1). 
 
+```R
+library(data.table)
+df  <- data.table(grp = rep(1:2, 3), x = 6:1, y = 4:9,
+                  z = c(3:7, NA), id = letters[1:6])
+df2 <- data.table(grp=c(1,3), w = c(10,11))                 
+```
+
 |Operations                         | data.table                                      | DataFrames.jl                                | 
 |:----------------------------------|:------------------------------------------------|:---------------------------------------------|
 |Reduce multiple values             | `df[, list(mean(x))]`                           | `combine(df, :x => mean)`                    |
@@ -267,7 +274,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |:---------------------------------|:-------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|
 |Complex Function                  | `df[, list(mean(x, na.rm = T)) ]`                                                          | `combine(df, :x => x -> mean(skipmissing(x)))`                             |
 |Transform certain rows (in place) | `df[x<=0, x:=0 ]`                                                                          | `df.x[df.x .<= 0] .= 0`                                                    |
-|Transform several columns         | `df[, list(max(x), min(y)) ]`                                                              | `combine(df, :x => maximum, :y => minimum)`                               |
+|Transform several columns         | `df[, list(max(x), min(y)) ]`                                                              | `combine(df, :x => maximum, :y => minimum)`                                |
 |                                  | `df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`                                          | `combine(df, [:x, :y] .=> mean)`                                           |
 |                                  | `df[, lapply(.SD, mean), .SDcols = patterns("x*") ]`                                       | `combine(df, names(df, r"^x") .=> mean)`                                   |
 |                                  | `df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]` | `combine(df, ([:x, :y] .=> [maximum minimum])...)`                         |
@@ -275,7 +282,6 @@ The following table compares the main functions of DataFrames.jl with the R pack
 |Row-wise                          | `df[, min_xy := min(x, y), by = 1:nrow(df)]`                                               | `transform(df, [:x, :y] => ByRow(min))`                                    |
 |                                  | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`           | `transform(df, AsTable(r"^x") => ByRow(argmax))`                           |
 |DataFrame as output               | `df[, .SD[, .(value = min(x), max(x))] ]`                                                  | `combine(df, :x => (x -> (value = [minimum(x), maximum(x)],)) => AsTable)` |
-
 
 ### Joining data frames
 
@@ -286,6 +292,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 | Left join             | `merge(df, df2, all.x = TRUE, on = "grp")`      | `leftjoin(df, df2, on = :grp)`  |
 | Right join            | `merge(df, df2, all.y = TRUE, on = "grp")`      | `rightjoin(df, df2, on = :grp)` |
 | Anti join (filtering) | `df[!df2, on = "grp" ]`                         | `antijoin(df, df2, on = :grp)`  |
+| Semi join (filtering) | `merge(df1, df2[, list(grp)])`                  | `semijoin(df, df2, on = :grp)`  |
 
 
 ## Comparison with Stata (version 8 and above)
@@ -298,7 +305,7 @@ The following table compares the main functions of DataFrames.jl with Stata:
 | Add new columns        | `egen x_mean = mean(x)` | `transform!(df, :x => mean => :x_mean)` |
 | Rename columns         | `rename x x_new`        | `rename!(df, :x => :x_new)`             |
 | Pick columns           | `keep x y`              | `select!(df, :x, :y)`                   |
-| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1)`        |
+| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1)`  |
 | Sort rows              | `sort x`                | `sort!(df, :x)`                         |
 
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
