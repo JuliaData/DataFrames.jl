@@ -226,4 +226,8 @@ Pages = ["lib/types.md", "lib/functions.md"]
 
 ## Supporting and Citing
 
-Much of the frameworks and softwares in this ecosystem was developed as part of the of academic research. If you would like to help support it, please star the repository as such metrics may help us secure funding in the future. If you use our framework as part of your research, teaching, or other activities, we would be grateful if you would start and fork it.
+Much of the frameworks and softwares in this ecosystem was developed as part of the of 
+academic research. If you would like to help support it, please star the repository as 
+such metrics may help us secure funding in the future. If you use our framework as part
+of your research, teaching, or other activities, we would be grateful if you would start
+and fork it.
