@@ -237,43 +237,44 @@ The table below compares more advanced commands:
 
 ## Comparison with the R package data.table
 
-The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.14.1). To contrast data.table with dplyr, the focus has been put on transformations in place.
+The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.14.1). 
 
-|Operations              | data.table  | DataFrames.jl|  
-|:-----------------------|:------------|:-------------|
-|Reduce multiple values  |`df[, list(mean(x))]`       |`combine(df, :x => mean)`|
-|Add new columns         |`df[, x_mean := mean(x) ]`  |`transform(df, :x => mean => :x_mean)`|
-|Rename column (in place) |`setnames(df, "x", "x_new")`|`rename!(df, :x => :x_new)`|
-|Rename multiple columns (in place) |`setnames(df, c("x", "y"), c("x_new", "y_new")`|`rename!(df, [:x, :y] .=> [:x_new, :y_new])`|
-|Pick columns            |`df[, list(x, y)]`          |`select(df, :x, :y)`|
-|Remove columns          |`df[, -"x" ]`               |`select(df, Not(:x))`|
-|Remove columns (in place) |`df[, c("x") := NULL ]`   |`select!(df, Not(:x))`|
-|Pick & transform columns |`df[, list(mean(x), y)]`    |`select(df, :x => mean, :y)`|
-|Pick rows               |`df[ x >= 1 ]`              |`filter(:x => >=(1), df)`|
-|Sort rows (in place)    |`setorder(df, x)`           |`sort!(df, :x)`|
-|Sort rows               |`df[ order(x) ]`            |`sort(df, :x)`|
+|Operations                         | data.table                                      | DataFrames.jl                                | 
+|:----------------------------------|:------------------------------------------------|:---------------------------------------------|
+|Reduce multiple values             | `df[, list(mean(x))]`                           | `combine(df, :x => mean)`                    |
+|Add new columns                    | `df[, x_mean := mean(x) ]`                      | `transform(df, :x => mean => :x_mean)`       |
+|Rename column (in place)           | `setnames(df, "x", "x_new")`                    | `rename!(df, :x => :x_new)`                  |
+|Rename multiple columns (in place) | `setnames(df, c("x", "y"), c("x_new", "y_new")` | `rename!(df, [:x, :y] .=> [:x_new, :y_new])` |
+|Pick columns                       | `df[, list(x, y)]`                              | `select(df, :x, :y)`                         |
+|Remove columns                     | `df[, -"x" ]`                                   | `select(df, Not(:x))`                        |
+|Remove columns (in place)          | `df[, c("x") := NULL ]`                         | `select!(df, Not(:x))`                       |
+|Pick & transform columns           | `df[, list(mean(x), y)]`                        | `select(df, :x => mean, :y)`                 |
+|Pick rows                          | `df[ x >= 1 ]`                                  | `filter(:x => >=(1), df)`                    |
+|Sort rows (in place)               | `setorder(df, x)`                               | `sort!(df, :x)`                              |
+|Sort rows                          | `df[ order(x) ]`                                | `sort(df, :x)`                               |
 
 ### Grouping data and aggregation
 
-|Operations              | data.table                                      | DataFrames.jl     |
-|:-----------------------|:------------------------------------------------|:------------------|
-|Reduce multiple values  |`df[, list(mean(x)), by = list(id) ]`            |`combine(groupby(df, :id), :x => mean)`|
-|Add new columns (in place) |`df[, x_mean := mean(x), by = list(id) ]`        |`transform!(groupby(df, :id), :x => mean)`|
-|Pick & transform columns|`df[, list(x_mean = mean(x), y), by = list(id) ]`|`select(groupby(df, :id), :x => mean, :y)`|
+|Operations                 | data.table                                        | DataFrames.jl                             |
+|:--------------------------|:--------------------------------------------------|:------------------------------------------|
+|Reduce multiple values     | `df[, list(mean(x)), by = list(id) ]`             | `combine(groupby(df, :id), :x => mean)`   |
+|Add new columns (in place) | `df[, x_mean := mean(x), by = list(id) ]`         | `transform!(groupby(df, :id), :x => mean)`|
+|Pick & transform columns   | `df[, list(x_mean = mean(x), y), by = list(id) ]` | `select(groupby(df, :id), :x => mean, :y)`|
 
 ### More advanced commands
 
-|Operations              | data.table                                      | DataFrames.jl             |
-|:-----------------------|:------------------------------------------------|:--------------------------|
-|Complex Function          |`df[, list(mean(x, na.rm = T)) ]`              |`combine(df, :x => x -> mean(skipmissing(x)))`|
-|Transform certain rows (in place) |`df[x<=0, x:=0 ]`                      |`df.x[df.x .<= 0] .= 0`|
-|Transform several columns |`df[, list(max(x), min(y)) ]`                  |`combine(df, :x => maximum,  :y => minimum)`|
-|                          |`df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`   |`combine(df, [:x, :y] .=> mean)`|
-|                          |`df[, lapply(.SD, mean), .SDcols = patterns("x*") ]`|`combine(df, names(df, r"^x") .=> mean)`|
-|                          |`df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]`|`combine(df, ([:x, :y] .=> [maximum minimum])...)`|
-|Multivariate function     |`df[, list(cor(x,y)) ]`                        |`transform(df, [:x, :y] => cor)`|
-|Row-wise                  |`df[, min_xy := min(x, y), by = 1:nrow(df)]`   |`transform(df, [:x, :y] => ByRow(min))`|
-|                          |`df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`|`transform(df, AsTable(r"^x") => ByRow(argmax))`|
+|Operations                        | data.table                                                                                 | DataFrames.jl                                                              |
+|:---------------------------------|:-------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|
+|Complex Function                  | `df[, list(mean(x, na.rm = T)) ]`                                                          | `combine(df, :x => x -> mean(skipmissing(x)))`                             |
+|Transform certain rows (in place) | `df[x<=0, x:=0 ]`                                                                          | `df.x[df.x .<= 0] .= 0`                                                    |
+|Transform several columns         | `df[, list(max(x), min(y)) ]`                                                              | `combine(df, :x => maximum, :y => minimum)`                               |
+|                                  | `df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`                                          | `combine(df, [:x, :y] .=> mean)`                                           |
+|                                  | `df[, lapply(.SD, mean), .SDcols = patterns("x*") ]`                                       | `combine(df, names(df, r"^x") .=> mean)`                                   |
+|                                  | `df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]` | `combine(df, ([:x, :y] .=> [maximum minimum])...)`                         |
+|Multivariate function             | `df[, list(cor(x,y)) ]`                                                                    | `transform(df, [:x, :y] => cor)`                                           |
+|Row-wise                          | `df[, min_xy := min(x, y), by = 1:nrow(df)]`                                               | `transform(df, [:x, :y] => ByRow(min))`                                    |
+|                                  | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`           | `transform(df, AsTable(r"^x") => ByRow(argmax))`                           |
+|DataFrame as output               | `df[, .SD[, .(value = min(x), max(x))] ]`                                                  | `combine(df, :x => (x -> (value = [minimum(x), maximum(x)],)) => AsTable)` |
 
 
 ### Joining data frames
