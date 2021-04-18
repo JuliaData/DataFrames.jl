@@ -96,7 +96,7 @@ Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::Abstract
         throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index " *
                             "(got $(length(rows)), expected $(nrow(parent)))"))
     end
-    return SubDataFrame(parent, findall(rows), cols)
+    return SubDataFrame(parent, _findall(rows), cols)
 end
 
 Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::AbstractVector, cols)

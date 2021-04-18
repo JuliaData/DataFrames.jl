@@ -168,3 +168,11 @@ function _nt_like_hash(v, h::UInt)
 
     return xor(objectid(Tuple(propertynames(v))), h)
 end
+
+function _findall(v::AbstractVector{Bool})
+    if all(v)
+        return keys(v)
+    else
+        return findall(v)
+    end
+end
