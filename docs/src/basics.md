@@ -41,7 +41,7 @@ column or variable.
 
 In this section you will see many ways to create a DataFrame using `DataFrame()` constructor.
 First, we could create an empty DataFrame:
-```jldoctest dataframe
+```jldoctest
 julia> using DataFrames
 julia> df = DataFrame()
 0×0 DataFrame
@@ -156,22 +156,22 @@ julia> names(german)
  "Credit amount"
  "Duration"
  "Purpose"
- ```
+```
 
  you can also get column names with a given `eltype`:
- ```jldoctest dataframe
- julia> names(german, String)
- 5-element Vector{String}:
+```jldoctest dataframe
+julia> names(german, String)
+5-element Vector{String}:
  "Sex"
  "Housing"
  "Saving accounts"
  "Checking account"
  "Purpose"
- ```
+```
 
  To get column names as `Symbol`s use the `propertynames` function:
- ```jldoctest dataframe
- julia> propertynames(german)
+```jldoctest dataframe
+julia> propertynames(german)
  10-element Vector{Symbol}:
  :id
  :Age
@@ -183,11 +183,11 @@ julia> names(german)
  Symbol("Credit amount")
  :Duration
  :Purpose
- ```
+```
 
- To get the element types of columns use `elrype` on `eachcol(german)`
- ```jldoctest dataframe
- julia> eltype.(eachcol(german))
+To get the element types of columns use `eltype` on `eachcol(german)`
+```jldoctest dataframe
+julia> eltype.(eachcol(german))
  10-element Vector{DataType}:
  Int64
  Int64
@@ -199,7 +199,7 @@ julia> names(german)
  Int64
  Int64
  String
- ```
+```
 
  !!! note
 
