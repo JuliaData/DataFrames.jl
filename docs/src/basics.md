@@ -41,7 +41,7 @@ column or variable.
 
 In this section you will see many ways to create a DataFrame using `DataFrame()` constructor.
 First, we could create an empty DataFrame:
-```jldoctest
+```jldoctest dataframe
 julia> using DataFrames
 julia> df = DataFrame()
 0×0 DataFrame
@@ -158,6 +158,17 @@ julia> names(german)
  "Purpose"
  ```
 
+ you can also get column names with a given `eltype`:
+ ```jldoctest dataframe
+ julia> names(german, String)
+ 5-element Vector{String}:
+ "Sex"
+ "Housing"
+ "Saving accounts"
+ "Checking account"
+ "Purpose"
+ ```
+
  To get column names as `Symbol`s use the `propertynames` function:
  ```jldoctest dataframe
  julia> propertynames(german)
@@ -174,6 +185,22 @@ julia> names(german)
  :Purpose
  ```
 
+ To get the element types of columns use `elrype` on `eachcol(german)`
+ ```jldoctest dataframe
+ julia> eltype.(eachcol(german))
+ 10-element Vector{DataType}:
+ Int64
+ Int64
+ String
+ Int64
+ String
+ String
+ String
+ Int64
+ Int64
+ String
+ ```
+
  !!! note
 
     DataFrames.jl allows to use `Symbol`s (like `:id`) and strings (like `"id"`)
@@ -181,11 +208,107 @@ julia> names(german)
     is slightly faster and should generally be preferred, if not generating them
     via string manipulation.
 
-## Examining the Data
+To remove all rows and columns from a DataFrame you can use `empty` and `empty!` functions to remove all rows from a DataFrame:
+```jldoctest dataframe
+julia> empty(german)
+0×10 DataFrame
+
+julia> german
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     1      1  male        2  own      NA               little          ⋯
+    2 │     1      1  female      2  own      little           moderate
+    3 │     2      2  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
+
+julia> empty!(german)
+0×10 DataFrame
+
+julia> german
+0×10 DataFrame
+```
+
+## Getting basic information about a DataFrame
+
+In this section we will learn about how to get basic information on our `German` DataFrame:
+
+The standard `size` function works to get dimensions of the DataFrame,
+```jldoctest dataframe
+julia> julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "german.csv")),
+                       DataFrame) ;
+```
+
+```jldoctest dataframe
+julia> size(german), size(german, 1), size(german, 2)
+((1000, 10), 1000, 10)
+```
+
+To get the number of Rows or Columns in an AbstractDataFrame `german`, you can use `nrow()` and `ncol()`,
+```jldoctest dataframe
+julia> nrow(german), ncol(german)
+(1000, 10)
+```
+
+To get basic summaer statistics of data in your DataFrame use `describe` (check out the help of describe for information on how to customize shown statistics).
+```jldoctest dataframe
+julia> describe(german)
+10×7 DataFrame
+ Row │ variable          mean     min       median  max              nmissing  ⋯
+     │ Symbol            Union…   Any       Union…  Any              Int64     ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ id                499.5    0         499.5   999                     0  ⋯
+   2 │ Age               35.546   19        33.0    75                      0
+   3 │ Sex                        female            male                    0
+   4 │ Job               1.904    0         2.0     3                       0
+   5 │ Housing                    free              rent                    0  ⋯
+   6 │ Saving accounts            NA                rich                    0
+   7 │ Checking account           NA                rich                    0
+   8 │ Credit amount     3271.26  250       2319.5  18424                   0
+   9 │ Duration          20.903   4         18.0    72                      0  ⋯
+  10 │ Purpose                    business          vacation/others         0
+                                                                1 column omitted
+```
+
+To limit the columns shown by `desribe` use `cols` keyword argument:
+```jldoctest dataframe
+julia> describe(german, cols=1:3)
+3×7 DataFrame
+ Row │ variable  mean    min     median  max   nmissing  eltype
+     │ Symbol    Union…  Any     Union…  Any   Int64     DataType
+─────┼────────────────────────────────────────────────────────────
+   1 │ id        499.5   0       499.5   999          0  Int64
+   2 │ Age       35.546  19      33.0    75           0  Int64
+   3 │ Sex               female          male         0  String
+```
 
 You can adjust printing options by calling the `show` function manually: `show(german, allrows=true)`
 prints all rows even if they do not fit on screen and `show(german, allcols=true)` does the same for
 columns.
+
+You can also compute descriptive statistics directly on indovidual columns:
+
+```jldoctest dataframe
+julia> using Statistics
+
+julia>  mean(german.Age)
+35.546
+```
 
 If you want to look at `first` and `last` rows of a dataframe (respectively) then you can do this 
 using `first` and `last` functions:
@@ -216,6 +339,25 @@ last(german, 5)
    4 │   998     23  male        2  free     little           little
    5 │   999     27  male        2  own      moderate         moderate         ⋯
                                                                3 columns omitted
+```
+
+Using `first` and `last` without number of rows will return a first/last DataFrameRow in the DataFrame:
+```jldoctest dataframe
+julia> first(german)
+DataFrameRow
+ Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account ⋯
+     │ Int64  Int64  String  Int64  String   String           String           ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │     0     67  male        2  own      NA               little           ⋯
+                                                               3 columns omitted
+
+julia> last(german)
+DataFrameRow
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+ 1000 │   999     27  male        2  own      moderate         moderate        ⋯
+                                                               4 columns omitted
 ```
 
 ## Taking a Subset
@@ -349,6 +491,99 @@ On the other hand, `:Sex` is a single symbol, indicating that a single column ve
 Note that in the first case a vector is required to be passed (not just any iterable), 
 so e.g. `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid. 
 
+### Most elementary `get` and `set` operations
+
+Given the DataFrame `german` earlier we have created earlier, here are various ways to grab one of its columns as vector:
+```jldoctest dataframe
+julia> german
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  male        2  own      NA               little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
+
+julia> german.Age, german[!, 2], german[!, :Age] # all get the vector stored in out DataFrame without copying it
+([67, 22, 49, 45, 53, 35, 53, 35, 61, 28  …  37, 34, 23, 30, 50, 31, 40, 38, 23, 27], [67, 22, 49, 45, 53, 35, 53, 35, 61, 28  …  37, 34, 23, 30, 50, 31, 40, 38, 23, 27], [67, 22, 49, 45, 53, 35, 53, 35, 61, 28  …  37, 34, 23, 30, 50, 31, 40, 38, 23, 27])
+
+julia> german."Sex", german[!, "Sex"] # the same using string indexing
+(["male", "female", "male", "male", "male", "male", "male", "male", "male", "male"  …  "male", "male", "male", "male", "male", "female", "male", "male", "male", "male"], ["male", "female", "male", "male", "male", "male", "male", "male", "male", "male"  …  "male", "male", "male", "male", "male", "female", "male", "male", "male", "male"])
+
+julia> german[:, 3] # note that this creates a copy
+1000-element PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}:
+ "male"
+ "female"
+ "male"
+ "male"
+ "male"
+ "male"
+ "male"
+ "male"
+ "male"
+ "male"
+ ⋮
+ "male"
+ "male"
+ "male"
+ "male"
+ "female"
+ "male"
+ "male"
+ "male"
+ "male"
+```
+
+To grab one row as DataFrame, we can index as follows:
+```jldoctest dataframe
+julia> german[2:2, :]
+1×10 DataFrame
+ Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account ⋯
+     │ Int64  Int64  String  Int64  String   String           String           ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │     1     22  female      2  own      little           moderate         ⋯
+                                                               3 columns omitted
+
+julia> german[3, :] # this produces a DataFrameRow which is treated as 1-dimensional object similar to a NamedTuple
+DataFrameRow
+ Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account ⋯
+     │ Int64  Int64  String  Int64  String   String           String           ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   3 │     2     49  male        1  own      little           NA               ⋯
+                                                               3 columns omitted
+```
+
+we can grab a single cell or element with the same syntax to grab an element of an array:
+```jldoctest dataframe
+julia> german[4, 4]
+2
+```
+
+or to get a new DataFrame that is subset of rows and columns:
+```jldoctest dataframe
+julia> german[4:5, 4:5]
+2×2 DataFrame
+ Row │ Job    Housing
+     │ Int64  String
+─────┼────────────────
+   1 │     2  free
+   2 │     2  free
+```
+
 ## Not, Between, Cols, and All selectors
 
 Finally, you can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection 
@@ -456,6 +691,118 @@ julia> german[:, Cols("Age", Not("Sex"))]
                                                   3 columns and 985 rows omitted
 ```
 
+You can also use `Regex` to select columns and `Not` from `InvertedIndices.jl` both to select rows and columns:
+```jldoctest dataframe
+julia> german[Not(5), r"Sex"]
+999×1 DataFrame
+ Row │ Sex
+     │ String
+─────┼────────
+   1 │ male
+   2 │ female
+   3 │ male
+   4 │ male
+   5 │ male
+   6 │ male
+   7 │ male
+   8 │ male
+  ⋮  │   ⋮
+ 993 │ male
+ 994 │ male
+ 995 │ female
+ 996 │ male
+ 997 │ male
+ 998 │ male
+ 999 │ male
+984 rows omitted
+```
+
+`german[!, Not(Age)]` ! indicates that underlying columns are not copied:
+```jldoctest dataframe
+julia> german[!, Not(3)]
+1000×9 DataFrame
+  Row │ id     Age    Job    Housing  Saving accounts  Checking account  Credi ⋯
+      │ Int64  Int64  Int64  String   String           String            Int64 ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67      2  own      NA               little                  ⋯
+    2 │     1     22      2  own      little           moderate
+    3 │     2     49      1  own      little           NA
+    4 │     3     45      2  free     little           little
+    5 │     4     53      2  free     little           little                  ⋯
+    6 │     5     35      1  free     NA               NA
+    7 │     6     53      2  own      quite rich       NA
+    8 │     7     35      3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮            ⋮                ⋮                ⋱
+  994 │   993     30      3  own      little           little                  ⋯
+  995 │   994     50      2  own      NA               NA
+  996 │   995     31      1  own      little           NA
+  997 │   996     40      3  own      little           little
+  998 │   997     38      2  own      little           NA                      ⋯
+  999 │   998     23      2  free     little           little
+ 1000 │   999     27      2  own      moderate         moderate
+                                                  3 columns and 985 rows omitted
+```
+
+In the given code of block `:` means that the columns will get copied:
+```jldoctest dataframe
+julia> german[:, Not(2)]
+1000×9 DataFrame
+  Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
+      │ Int64  String  Int64  String   String           String            Int6 ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0  male        2  own      NA               little                 ⋯
+    2 │     1  female      2  own      little           moderate
+    3 │     2  male        1  own      little           NA
+    4 │     3  male        2  free     little           little
+    5 │     4  male        2  free     little           little                 ⋯
+    6 │     5  male        1  free     NA               NA
+    7 │     6  male        2  own      quite rich       NA
+    8 │     7  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮       ⋮       ⋮            ⋮                ⋮               ⋱
+  994 │   993  male        3  own      little           little                 ⋯
+  995 │   994  male        2  own      NA               NA
+  996 │   995  female      1  own      little           NA
+  997 │   996  male        3  own      little           little
+  998 │   997  male        2  own      little           NA                     ⋯
+  999 │   998  male        2  free     little           little
+ 1000 │   999  male        2  own      moderate         moderate
+                                                  3 columns and 985 rows omitted
+```
+
+Assignment of a scalar to a DataFrame can be done in ranges using broadcasting:
+```jldoctest dataframe
+julia> german[1:2, 1:2] .= 1
+2×2 SubDataFrame
+ Row │ id     Age
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     1      1
+
+julia> german
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     1      1  male        2  own      NA               little          ⋯
+    2 │     1      1  female      2  own      little           moderate
+    3 │     2      2  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
+```
+
 The indexing syntax can also be used to select rows based on conditions on variables:
 ```jldoctest dataframe
 julia> german[german.id .> 600, :]
@@ -479,7 +826,7 @@ julia> german[german.id .> 600, :]
  397 │   997     38  male        2  own      little           NA               ⋯
  398 │   998     23  male        2  free     little           little
  399 │   999     27  male        2  own      moderate         moderate
-                                                  3 columns and 384 rows omitted                                                                                                          
+                                                  3 columns and 384 rows omitted                                                                                           
 ``` 
 
 If you need to match a specific subset of values, then `in()` can be applied:
@@ -535,4 +882,354 @@ julia> @view german[2:5, 2:5] # a SubDataFrame
    3 │    45  male        2  free
    4 │    53  male        2  free
 ```
+
+## Using `select`, and `select!`, `transform`, and `transform!`, `sort!`
+
+You can also use the `select` and `select!` functions to select, rename, and transform columns in a DataFrame.
+
+The `select` function creates a new DataFrame:
+
+```jldoctest dataframe
+julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "german.csv")),
+                       DataFrame);
+
+julia> select(german, Not(:Age)) # drop column :x1 in a new data frame
+1000×9 DataFrame
+  Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
+      │ Int64  String  Int64  String   String           String            Int6 ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0  male        2  own      NA               little                 ⋯
+    2 │     1  female      2  own      little           moderate
+    3 │     2  male        1  own      little           NA
+    4 │     3  male        2  free     little           little
+    5 │     4  male        2  free     little           little                 ⋯
+    6 │     5  male        1  free     NA               NA
+    7 │     6  male        2  own      quite rich       NA
+    8 │     7  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮       ⋮       ⋮            ⋮                ⋮               ⋱
+  994 │   993  male        3  own      little           little                 ⋯
+  995 │   994  male        2  own      NA               NA
+  996 │   995  female      1  own      little           NA
+  997 │   996  male        3  own      little           little
+  998 │   997  male        2  own      little           NA                     ⋯
+  999 │   998  male        2  free     little           little
+ 1000 │   999  male        2  own      moderate         moderate
+                                                  3 columns and 985 rows omitted
+
+julia> select(german, r"Sex") # select columns containing 'x' character
+1000×1 DataFrame
+  Row │ Sex
+      │ String
+──────┼────────
+    1 │ male
+    2 │ female
+    3 │ male
+    4 │ male
+    5 │ male
+    6 │ male
+    7 │ male
+    8 │ male
+  ⋮   │   ⋮
+  994 │ male
+  995 │ male
+  996 │ female
+  997 │ male
+  998 │ male
+  999 │ male
+ 1000 │ male
+985 rows omitted
+
+julia> select(german, :Sex => :x1, :Age => :x2) # rename columns
+1000×2 DataFrame
+  Row │ x1      x2
+      │ String  Int64
+──────┼───────────────
+    1 │ male       67
+    2 │ female     22
+    3 │ male       49
+    4 │ male       45
+    5 │ male       53
+    6 │ male       35
+    7 │ male       53
+    8 │ male       35
+  ⋮   │   ⋮       ⋮
+  994 │ male       30
+  995 │ male       50
+  996 │ female     31
+  997 │ male       40
+  998 │ male       38
+  999 │ male       23
+ 1000 │ male       27
+      985 rows omitted
+
+julia> select(german, :Age, :Age => ByRow(sqrt)) # transform columns by row
+1000×2 DataFrame
+  Row │ Age    Age_sqrt
+      │ Int64  Float64
+──────┼─────────────────
+    1 │    67   8.18535
+    2 │    22   4.69042
+    3 │    49   7.0
+    4 │    45   6.7082
+    5 │    53   7.28011
+    6 │    35   5.91608
+    7 │    53   7.28011
+    8 │    35   5.91608
+  ⋮   │   ⋮       ⋮
+  994 │    30   5.47723
+  995 │    50   7.07107
+  996 │    31   5.56776
+  997 │    40   6.32456
+  998 │    38   6.16441
+  999 │    23   4.79583
+ 1000 │    27   5.19615
+        985 rows omitted
+```
+
+It is always important to note that `select` always returns a DataFrame, even if a single column selected (as opposed to indexing syntax).
+
+```jldoctest dataframe
+julia> select(german, :Age)
+1000×1 DataFrame
+  Row │ Age
+      │ Int64
+──────┼───────
+    1 │    67
+    2 │    22
+    3 │    49
+    4 │    45
+    5 │    53
+    6 │    35
+    7 │    53
+    8 │    35
+  ⋮   │   ⋮
+  994 │    30
+  995 │    50
+  996 │    31
+  997 │    40
+  998 │    38
+  999 │    23
+ 1000 │    27
+985 rows omitted
+
+julia> german[:, :Age]
+1000-element Vector{Int64}:
+ 67
+ 22
+ 49
+ 45
+ 53
+ 35
+ 53
+ 35
+ 61
+ 28
+  ⋮
+ 34
+ 23
+ 30
+ 50
+ 31
+ 40
+ 38
+ 23
+ 27
+```
+
+By default `select` copis columns of a passed source DataFrame. In order to avoid copying, pass `copycols=false`:
+
+```jldoctest dataframe
+julia> df = select(german, :Sex)
+1000×1 DataFrame
+  Row │ Sex
+      │ String
+──────┼────────
+    1 │ male
+    2 │ female
+    3 │ male
+    4 │ male
+    5 │ male
+    6 │ male
+    7 │ male
+    8 │ male
+  ⋮   │   ⋮
+  994 │ male
+  995 │ male
+  996 │ female
+  997 │ male
+  998 │ male
+  999 │ male
+ 1000 │ male
+985 rows omitted
+
+julia> df.Sex === german.Sex
+false
+
+julia> df = select(german, :Sex, copycols=false)
+1000×1 DataFrame
+  Row │ Sex
+      │ String
+──────┼────────
+    1 │ male
+    2 │ female
+    3 │ male
+    4 │ male
+    5 │ male
+    6 │ male
+    7 │ male
+    8 │ male
+  ⋮   │   ⋮
+  994 │ male
+  995 │ male
+  996 │ female
+  997 │ male
+  998 │ male
+  999 │ male
+ 1000 │ male
+985 rows omitted
+
+julia> df.Sex === german.Sex
+true
+```
+
+To perform the selection operation in-place use `select!`:
+
+```jldoctest dataframe
+julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "german.csv")),
+                       DataFrame);
+
+julia> select!(german, Not(:Age));
+
+julia> german
+1000×9 DataFrame
+  Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
+      │ Int64  String  Int64  String   String           String            Int6 ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0  male        2  own      NA               little                 ⋯
+    2 │     1  female      2  own      little           moderate
+    3 │     2  male        1  own      little           NA
+    4 │     3  male        2  free     little           little
+    5 │     4  male        2  free     little           little                 ⋯
+    6 │     5  male        1  free     NA               NA
+    7 │     6  male        2  own      quite rich       NA
+    8 │     7  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮       ⋮       ⋮            ⋮                ⋮               ⋱
+  994 │   993  male        3  own      little           little                 ⋯
+  995 │   994  male        2  own      NA               NA
+  996 │   995  female      1  own      little           NA
+  997 │   996  male        3  own      little           little
+  998 │   997  male        2  own      little           NA                     ⋯
+  999 │   998  male        2  free     little           little
+ 1000 │   999  male        2  own      moderate         moderate
+                                                  3 columns and 985 rows omitted
+```
+
+`transform` and `transform!` functions work identically to `select` and `select!` with the only difference that they retain all columns that are present in the source DataFrame.
+
+On the other hand, in-place functions, whose names end with `!`, may mutate the column vectors of the `DataFrame` they take as an argument, for example:
+
+```jldoctest dataframe
+julia> sort!(german, :Age)
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │   391     19  female      1  rent     rich             moderate        ⋯
+    2 │   633     19  female      2  rent     little           NA
+    3 │    93     20  male        2  rent     NA               rich
+    4 │   155     20  female      2  rent     little           little
+    5 │   167     20  female      2  own      rich             moderate        ⋯
+    6 │   188     20  male        2  own      moderate         little
+    7 │   296     20  female      2  rent     NA               NA
+    8 │   410     20  female      2  own      little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   163     70  male        3  free     little           moderate        ⋯
+  995 │   186     74  female      3  free     little           moderate
+  996 │   430     74  male        1  own      little           NA
+  997 │   606     74  male        3  own      little           NA
+  998 │   756     74  male        0  own      little           rich            ⋯
+  999 │   330     75  male        3  free     little           little
+ 1000 │   536     75  female      3  own      NA               little
+                                                  4 columns and 985 rows omitted
+
+julia> 1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │   391     19  female      1  rent     rich             moderate        ⋯
+    2 │   633     19  female      2  rent     little           NA
+    3 │    93     20  male        2  rent     NA               rich
+    4 │   155     20  female      2  rent     little           little
+    5 │   167     20  female      2  own      rich             moderate        ⋯
+    6 │   188     20  male        2  own      moderate         little
+    7 │   296     20  female      2  rent     NA               NA
+    8 │   410     20  female      2  own      little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   163     70  male        3  free     little           moderate        ⋯
+  995 │   186     74  female      3  free     little           moderate
+  996 │   430     74  male        1  own      little           NA
+  997 │   606     74  male        3  own      little           NA
+  998 │   756     74  male        0  own      little           rich            ⋯
+  999 │   330     75  male        3  free     little           little
+ 1000 │   536     75  female      3  own      NA               little
+                                                  4 columns and 985 rows omitted
+
+julia> german.Age[1] = 100
+100
+
+julia> german
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │   391    100  female      1  rent     rich             moderate        ⋯
+    2 │   633     19  female      2  rent     little           NA
+    3 │    93     20  male        2  rent     NA               rich
+    4 │   155     20  female      2  rent     little           little
+    5 │   167     20  female      2  own      rich             moderate        ⋯
+    6 │   188     20  male        2  own      moderate         little
+    7 │   296     20  female      2  rent     NA               NA
+    8 │   410     20  female      2  own      little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   163     70  male        3  free     little           moderate        ⋯
+  995 │   186     74  female      3  free     little           moderate
+  996 │   430     74  male        1  own      little           NA
+  997 │   606     74  male        3  own      little           NA
+  998 │   756     74  male        0  own      little           rich            ⋯
+  999 │   330     75  male        3  free     little           little
+ 1000 │   536     75  female      3  own      NA               little
+                                                  4 columns and 985 rows omitted
+
+julia> german.Age
+1000-element Vector{Int64}:
+ 100
+  19
+  20
+  20
+  20
+  20
+  20
+  20
+  20
+  20
+   ⋮
+  68
+  68
+  70
+  74
+  74
+  74
+  74
+  75
+  75
+```
+
+Note, that in the above example the original `Age` vector is not mutated in the process. 
+
+In-place functions are safe to call, except when a view of the `DataFrame` (created via a `view`, `@view` or `*groupby*`) or when a `DataFrame` created with `copycols=false` are in use.
+
+It is possible to have a direct access to a column `col` of a `DataFrame` `german` using the syntaxes `german.col`, `german[!, :col]`, via the `*eachcol*` function, by accessing a parent of a view of a column of a `DataFrame`, or simply by storing the reference to the column vector before the `DataFrame` was created with `copycols=false`.
+
 
