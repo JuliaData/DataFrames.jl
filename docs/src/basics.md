@@ -5,8 +5,8 @@ package which is available thorugh the Julia package system and can be installed
 following commands:
 
 ```julia
-using Pkg
-Pkg.add("DataFrames")
+julia> using Pkg
+julia> Pkg.add("DataFrames")
 ```
 
 Or,
@@ -20,16 +20,16 @@ julia> add DataFrames
 To make sure everything works as expected, try to load the package and if you have the time execute 
 its test suits:
 ```julia
-using DataFrames
-using Pkg
-Pkg.test("DataFrames")
+julia> using DataFrames
+julia> using Pkg
+julia> Pkg.test("DataFrames")
 ```
 
 Throughout the rest of the tutorial we will assume that you have installed the DataFrames package and 
 have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 Let's get started by loading the DataFrames package:
 ```julia
-using DataFrames
+julia> using DataFrames
 ```
 
 The object of the `DataFrame` type represent a data table as a series of vectors, each correspondng to a 
@@ -43,12 +43,15 @@ In this section you will see many ways to create a DataFrame using `DataFrame()`
 First, we could create an empty DataFrame:
 ```jldoctest
 julia> using DataFrames
+
 julia> df = DataFrame()
 0×0 DataFrame
 ```
 
 Or, we could call the constructor using keyword arguments to add columns to the DataFrame:
-```jldoctest dataframe
+```jldoctest
+julia> using DataFrames
+
 julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
 3×3 DataFrame
  Row │ A      B      fixed
@@ -169,10 +172,11 @@ julia> names(german, String)
  "Purpose"
 ```
 
- To get column names as `Symbol`s use the `propertynames` function:
+To get column names as `Symbol`s use the `propertynames` function:
+
 ```jldoctest dataframe
 julia> propertynames(german)
- 10-element Vector{Symbol}:
+10-element Vector{Symbol}:
  :id
  :Age
  :Sex
@@ -188,7 +192,7 @@ julia> propertynames(german)
 To get the element types of columns use `eltype` on `eachcol(german)`
 ```jldoctest dataframe
 julia> eltype.(eachcol(german))
- 10-element Vector{DataType}:
+10-element Vector{DataType}:
  Int64
  Int64
  String
@@ -201,12 +205,12 @@ julia> eltype.(eachcol(german))
  String
 ```
 
- !!! note
+!!! note
 
-    DataFrames.jl allows to use `Symbol`s (like `:id`) and strings (like `"id"`)
-    for all column indexing operations for convenience. However, using `Symbol`s
-    is slightly faster and should generally be preferred, if not generating them
-    via string manipulation.
+  DataFrames.jl allows to use `Symbol`s (like `:id`) and strings (like `"id"`)
+  for all column indexing operations for convenience. However, using `Symbol`s
+  is slightly faster and should generally be preferred, if not generating them
+  via string manipulation.
 
 To remove all rows and columns from a DataFrame you can use `empty` and `empty!` functions to remove all rows from a DataFrame:
 ```jldoctest dataframe
@@ -218,9 +222,9 @@ julia> german
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  Int64  String  Int64  String   String           String          ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     1      1  male        2  own      NA               little          ⋯
-    2 │     1      1  female      2  own      little           moderate
-    3 │     2      2  male        1  own      little           NA
+    1 │     0     67  male        2  own      NA               little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           NA
     4 │     3     45  male        2  free     little           little
     5 │     4     53  male        2  free     little           little          ⋯
     6 │     5     35  male        1  free     NA               NA
@@ -249,7 +253,7 @@ In this section we will learn about how to get basic information on our `German`
 
 The standard `size` function works to get dimensions of the DataFrame,
 ```jldoctest dataframe
-julia> julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
+julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
                                  "..", "docs", "src", "assets", "german.csv")),
                        DataFrame) ;
 ```
@@ -265,7 +269,7 @@ julia> nrow(german), ncol(german)
 (1000, 10)
 ```
 
-To get basic summaer statistics of data in your DataFrame use `describe` (check out the help of describe for information on how to customize shown statistics).
+To get basic statistics of data in your DataFrame use `describe` (check out the help of describe for information on how to customize shown statistics).
 ```jldoctest dataframe
 julia> describe(german)
 10×7 DataFrame
@@ -306,7 +310,7 @@ You can also compute descriptive statistics directly on indovidual columns:
 ```jldoctest dataframe
 julia> using Statistics
 
-julia>  mean(german.Age)
+julia> mean(german.Age)
 35.546
 ```
 
@@ -493,7 +497,7 @@ so e.g. `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` 
 
 ### Most elementary `get` and `set` operations
 
-Given the DataFrame `german` earlier we have created earlier, here are various ways to grab one of its columns as vector:
+Given the DataFrame `german` earlier we have created, here are various ways to grab one of its columns as vector:
 ```jldoctest dataframe
 julia> german
 1000×10 DataFrame
@@ -1037,7 +1041,7 @@ julia> german[:, :Age]
  27
 ```
 
-By default `select` copis columns of a passed source DataFrame. In order to avoid copying, pass `copycols=false`:
+By default `select` copies columns of a passed source DataFrame. In order to avoid copying, pass `copycols=false`:
 
 ```jldoctest dataframe
 julia> df = select(german, :Sex)
@@ -1131,30 +1135,12 @@ julia> german
 On the other hand, in-place functions, whose names end with `!`, may mutate the column vectors of the `DataFrame` they take as an argument, for example:
 
 ```jldoctest dataframe
+julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 "..", "docs", "src", "assets", "german.csv")),
+                       DataFrame);
+
 julia> sort!(german, :Age)
 1000×10 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
-      │ Int64  Int64  String  Int64  String   String           String          ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │   391     19  female      1  rent     rich             moderate        ⋯
-    2 │   633     19  female      2  rent     little           NA
-    3 │    93     20  male        2  rent     NA               rich
-    4 │   155     20  female      2  rent     little           little
-    5 │   167     20  female      2  own      rich             moderate        ⋯
-    6 │   188     20  male        2  own      moderate         little
-    7 │   296     20  female      2  rent     NA               NA
-    8 │   410     20  female      2  own      little           moderate
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
-  994 │   163     70  male        3  free     little           moderate        ⋯
-  995 │   186     74  female      3  free     little           moderate
-  996 │   430     74  male        1  own      little           NA
-  997 │   606     74  male        3  own      little           NA
-  998 │   756     74  male        0  own      little           rich            ⋯
-  999 │   330     75  male        3  free     little           little
- 1000 │   536     75  female      3  own      NA               little
-                                                  4 columns and 985 rows omitted
-
-julia> 1000×10 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  Int64  String  Int64  String   String           String          ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
