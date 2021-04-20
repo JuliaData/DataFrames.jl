@@ -332,7 +332,6 @@ julia> first(german, 6)
                                                                3 columns omitted
 
 julia> last(german, 5)
-last(german, 5)
 5×10 DataFrame
  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account ⋯
      │ Int64  Int64  String  Int64  String   String           String           ⋯
@@ -421,7 +420,6 @@ julia> german[:, [:Age, :Sex]]
       985 rows omitted
 
 julia> german[1:5, [:Sex, :Age]]
-german[1:5, [:Sex, :Age]]
 5×2 DataFrame
  Row │ Sex     Age
      │ String  Int64
@@ -790,7 +788,7 @@ julia> german
 ──────┼─────────────────────────────────────────────────────────────────────────
     1 │     1      1  male        2  own      NA               little          ⋯
     2 │     1      1  female      2  own      little           moderate
-    3 │     2      2  male        1  own      little           NA
+    3 │     2     49  male        1  own      little           NA
     4 │     3     45  male        2  free     little           little
     5 │     4     53  male        2  free     little           little          ⋯
     6 │     5     35  male        1  free     NA               NA
@@ -836,14 +834,15 @@ julia> german[german.id .> 600, :]
 If you need to match a specific subset of values, then `in()` can be applied:
 ```jldoctest dataframe
 julia> german[in.(german.id, Ref([1, 6, 908, 955])), :]
-4×10 DataFrame
+5×10 DataFrame
  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account ⋯
      │ Int64  Int64  String  Int64  String   String           String           ⋯
 ─────┼──────────────────────────────────────────────────────────────────────────
-   1 │     1     22  female      2  own      little           moderate         ⋯
-   2 │     6     53  male        2  own      quite rich       NA
-   3 │   908     46  female      1  own      little           NA
-   4 │   955     57  female      3  rent     rich             little
+   1 │     1      1  male        2  own      NA               little           ⋯
+   2 │     1      1  female      2  own      little           moderate
+   3 │     6     53  male        2  own      quite rich       NA
+   4 │   908     46  female      1  own      little           NA
+   5 │   955     57  female      3  rent     rich             little           ⋯
                                                                3 columns omitted
 ```
 
@@ -858,16 +857,16 @@ Here are the possible return value options.
 
 ```jldoctest dataframe
 julia> @view german[1:5, 1]
-5-element view(::PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}, 1:5) with eltype String:
- "male"
- "female"
- "male"
- "male"
- "male"
+5-element view(::Vector{Int64}, 1:5) with eltype Int64:
+ 1
+ 1
+ 2
+ 3
+ 4
 
 julia> @view german[2, 2]
 0-dimensional view(::Vector{Int64}, 2) with eltype Int64:
-22
+1
 
 julia> @view german[3, 2:5] # a DataFrameRow, the same as for german[3, 2:5] without a view
 DataFrameRow
@@ -881,7 +880,7 @@ julia> @view german[2:5, 2:5] # a SubDataFrame
  Row │ Age    Sex     Job    Housing
      │ Int64  String  Int64  String
 ─────┼───────────────────────────────
-   1 │    22  female      2  own
+   1 │     1  female      2  own
    2 │    49  male        1  own
    3 │    45  male        2  free
    4 │    53  male        2  free
