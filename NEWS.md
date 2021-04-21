@@ -59,9 +59,6 @@
   that were deprecated in 0.22.6 release now throw an error
   ([#2679](https://github.com/JuliaData/DataFrames.jl/pull/2679))
 
-## Dependency changes
-
-
 ## Other relevant changes
 
 * `innerjoin`, `leftjoin`, `rightjoin`, `outerjoin`, `semijoin`, and `antijoin`
