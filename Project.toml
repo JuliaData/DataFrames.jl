@@ -30,7 +30,7 @@ InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = "0.4.2"
 PooledArrays = "1.2.1"
-PrettyTables = "0.12"
+PrettyTables = "0.12, 1.0"
 Reexport = "0.1, 0.2, 1.0"
 SortingAlgorithms = "0.1, 0.2, 0.3"
 TableTraits = "0.4, 1"
@@ -51,5 +51,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
-        "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful"]
+test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues", "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful"]
