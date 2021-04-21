@@ -1,7 +1,7 @@
-# Starting with DataFrames
+# First Steps with DataFrames
 
 The first and imporatant part to work with DataFrames.jl, is to install the `DataFrames.jl`
-package which is available thorugh the Julia package system and can be installed using the 
+package which is available thorugh the Julia package system and can be installed using the
 following commands:
 
 ```julia
@@ -17,7 +17,7 @@ julia> ]
 julia> add DataFrames
 ```
 
-To make sure everything works as expected, try to load the package and if you have the time execute 
+To make sure everything works as expected, try to load the package and if you have the time execute
 its test suits:
 ```julia
 julia> using DataFrames
@@ -25,14 +25,14 @@ julia> using Pkg
 julia> Pkg.test("DataFrames")
 ```
 
-Throughout the rest of the tutorial we will assume that you have installed the DataFrames package and 
+Throughout the rest of the tutorial we will assume that you have installed the DataFrames package and
 have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 Let's get started by loading the DataFrames package:
 ```julia
 julia> using DataFrames
 ```
 
-The object of the `DataFrame` type represent a data table as a series of vectors, each correspondng to a 
+The object of the `DataFrame` type represent a data table as a series of vectors, each correspondng to a
 column or variable.
 
 # Constructors and basic utility functions
@@ -64,9 +64,9 @@ julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
 note in column `:fixed` that scalars get automatically broadcasted.
 
 Now, we will explore how to load a CSV file into into a DataFrame. Unlike Python's Pandas `read_csv`
-the functions in Julia are separated into two modules - `CSV.jl` and `DataFrames.jl`. As the first 
+the functions in Julia are separated into two modules - `CSV.jl` and `DataFrames.jl`. As the first
 step, you have to declare the libraries you will use. In our case `CSV` and `DataFrames`. In order to
-turn the `CSV.File` to a DataFrame you have to pass it to the `DataFrames.DataFrame` object. You can 
+turn the `CSV.File` to a DataFrame you have to pass it to the `DataFrames.DataFrame` object. You can
 wrap DataFrame around the `CSV.read(path; kwargs)`.
 
 ```jldoctest dataframe
@@ -76,7 +76,7 @@ julia> using CSV
 
 julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
                                  "..", "docs", "src", "assets", "german.csv")),
-                       DataFrame) 
+                       DataFrame)
 1000×10 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  Int64  String  Int64  String   String           String          ⋯
@@ -100,17 +100,17 @@ julia> german = CSV.read((joinpath(dirname(pathof(DataFrames)),
                                                   4 columns and 985 rows omitted
 ```
 
-You can see that Julia representation (unlike python pandas) displays the data type of the column, 
+You can see that Julia representation (unlike python pandas) displays the data type of the column,
 whether it is a `string`, `int` or `float`.
 
 To access the columns directly (i.e. without copying) you can use `german.col`, `german."col"`,
-`german[!, :col]` or `german[!, "col"]`. The two latter syntaxes are more flexible as they allow 
-us passing a variable holding the name of the column, and not only a literal name. Columns name 
-can be either symbols (written as `:col`, `:var"col"` or `Symbol("col")`) or strings (written as `"col"`). 
-Variable interpolation into the string using `$` does not work if you have forms like `german."col"` 
-and `:var"col"`. You can also access the column using an integer index specifying their position. 
+`german[!, :col]` or `german[!, "col"]`. The two latter syntaxes are more flexible as they allow
+us passing a variable holding the name of the column, and not only a literal name. Columns name
+can be either symbols (written as `:col`, `:var"col"` or `Symbol("col")`) or strings (written as `"col"`).
+Variable interpolation into the string using `$` does not work if you have forms like `german."col"`
+and `:var"col"`. You can also access the column using an integer index specifying their position.
 
-Since `german[!, :col]` does not make a copy, changing the elements of the column vector returned by this 
+Since `german[!, :col]` does not make a copy, changing the elements of the column vector returned by this
 sysntax will affect the values stored in the original `german`. To get a **copy** of the column you can use
 `german[:, :col]`: changing the vector returned by this syntax does not change `german`.
 
@@ -314,7 +314,7 @@ julia> mean(german.Age)
 35.546
 ```
 
-If you want to look at `first` and `last` rows of a dataframe (respectively) then you can do this 
+If you want to look at `first` and `last` rows of a dataframe (respectively) then you can do this
 using `first` and `last` functions:
 
 ```jldoctest dataframe
@@ -367,8 +367,8 @@ DataFrameRow
 
 ### Indexing Syntax
 
-Specific subsets of a dataframe can be extracted using the indexing syntax, similar to matrices. 
-In the [Indexing](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing) section of the 
+Specific subsets of a dataframe can be extracted using the indexing syntax, similar to matrices.
+In the [Indexing](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing) section of the
 manual you can find all details about the available options. Here we highlight the basic options.
 
 The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
@@ -431,7 +431,7 @@ julia> german[1:5, [:Sex, :Age]]
    5 │ male       53
 ```
 
-Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` return a `DataFrame` object, 
+Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` return a `DataFrame` object,
 while `german[!, :Sex]` and `german[:, :Sex]` return a vector:
 
 ```jldoctest dataframe
@@ -488,10 +488,10 @@ julia> german[!, :Sex] == german[:, :Sex]
 true
 ```
 
-In the first case, `[:Sex]` is a vector, indicating that the resulting object should be a `DataFrame`. 
-On the other hand, `:Sex` is a single symbol, indicating that a single column vector should be extracted. 
-Note that in the first case a vector is required to be passed (not just any iterable), 
-so e.g. `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid. 
+In the first case, `[:Sex]` is a vector, indicating that the resulting object should be a `DataFrame`.
+On the other hand, `:Sex` is a single symbol, indicating that a single column vector should be extracted.
+Note that in the first case a vector is required to be passed (not just any iterable),
+so e.g. `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid.
 
 ### Most elementary `get` and `set` operations
 
@@ -588,13 +588,13 @@ julia> german[4:5, 4:5]
 
 ## Not, Between, Cols, and All selectors
 
-Finally, you can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection 
-scenarioes (note that `Cols()` selects no columns while `All()` selects all columns therefore `Cols` 
-is a preferred selector if you write generic code). The following examples move all columns whose 
+Finally, you can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection
+scenarioes (note that `Cols()` selects no columns while `All()` selects all columns therefore `Cols`
+is a preferred selector if you write generic code). The following examples move all columns whose
 names match `r"x"` regular expression respectively to the front and the end of a dataframe. Now we will
 see how `cols` and `Between` can be used to select columns of a DataFrame.
 
-A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be 
+A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) can be
 used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
@@ -828,8 +828,8 @@ julia> german[german.id .> 600, :]
  397 │   997     38  male        2  own      little           NA               ⋯
  398 │   998     23  male        2  free     little           little
  399 │   999     27  male        2  own      moderate         moderate
-                                                  3 columns and 384 rows omitted                                                                                           
-``` 
+                                                  3 columns and 384 rows omitted
+```
 
 If you need to match a specific subset of values, then `in()` can be applied:
 ```jldoctest dataframe
@@ -846,13 +846,13 @@ julia> german[in.(german.id, Ref([1, 6, 908, 955])), :]
                                                                3 columns omitted
 ```
 
-Equivalently, the `in` function can be called with a single argument to create a function object that 
+Equivalently, the `in` function can be called with a single argument to create a function object that
 tests whether each value belongs to the subset (partial application of `in`):
 `german[in([1, 6, 908, 955]).(german.id), :]`
 
 ## Views
 
-You can simply create a `view` of a DataFrame (it is more efficient than creating a materialized selection). 
+You can simply create a `view` of a DataFrame (it is more efficient than creating a materialized selection).
 Here are the possible return value options.
 
 ```jldoctest dataframe
@@ -1211,7 +1211,7 @@ julia> german.Age
   75
 ```
 
-Note, that in the above example the original `Age` vector is not mutated in the process. 
+Note, that in the above example the original `Age` vector is not mutated in the process.
 
 In-place functions are safe to call, except when a view of the `DataFrame` (created via a `view`, `@view` or `*groupby*`) or when a `DataFrame` created with `copycols=false` are in use.
 

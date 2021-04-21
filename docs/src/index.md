@@ -28,7 +28,7 @@ tool for working with tabular data in Julia -- as noted below, there are some
 other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
-TO understand the toolchain in more details, have a look at the tutorials in this manual. **It is highly recommended that new users start with the [First Steps with DataFrames.jl](@ref) tutorial.** 
+TO understand the toolchain in more details, have a look at the tutorials in this manual. **It is highly recommended that new users start with the [First Steps with DataFrames](@ref) tutorial.**
 
 ## DataFrames.jl and the Julia Data Ecosystem
 
@@ -182,7 +182,8 @@ page](https://github.com/JuliaData/DataFrames.jl/releases).
 ## Package Manual
 
 ```@contents
-Pages = ["man/getting_started.md",
+Pages = ["man/basics.md",
+         "man/getting_started.md",
          "man/joins.md",
          "man/split_apply_combine.md",
          "man/reshaping_and_pivoting.md",
@@ -226,8 +227,8 @@ Pages = ["lib/types.md", "lib/functions.md"]
 
 ## Supporting and Citing
 
-Much of the frameworks and softwares in this ecosystem was developed as part of the of 
-academic research. If you would like to help support it, please star the repository as 
+Much of the frameworks and softwares in this ecosystem was developed as part of the of
+academic research. If you would like to help support it, please star the repository as
 such metrics may help us secure funding in the future. If you use our framework as part
 of your research, teaching, or other activities, we would be grateful if you would start
 and fork it.
