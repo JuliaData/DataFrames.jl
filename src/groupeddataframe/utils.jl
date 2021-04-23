@@ -135,7 +135,11 @@ function refpool_and_array(x::AbstractArray)
     refarray = DataAPI.refarray(x)
 
     if refpool !== nothing
-        return refpool, refarray
+        if x isa PooledVector || allunique(refpool)
+            return refpool, refarray
+        else
+            return nothing, nothing
+        end
     elseif x isa AbstractArray{<:Union{Real, Missing}} &&
         all(v -> ismissing(v) | isinteger(v), x) &&
         !isempty(skipmissing(x))
@@ -269,15 +273,12 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     # of size ngroups (i.e. the number of possible combinations) in this method:
     # so it makes sense to allocate more memory for better performance,
     # but it needs to remain reasonable compared with the size of the data frame.
-    anydups = !all(allunique, refpools)
     if prod(big.(ngroupstup)) > typemax(Int) ||
-       ngroups > Int64(2) * length(groups) ||
-       anydups
+       ngroups > Int64(2) * length(groups)
         # In the simplest case, we can work directly with the reference codes
         newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
                   !(refarrays isa NTuple{<:Any, AbstractVector}) ||
-                  sort ||
-                  anydups ? cols : refarrays
+                  sort ? cols : refarrays
         return invoke(row_group_slots,
                       Tuple{Tuple{Vararg{AbstractVector}}, Any, Any, Val,
                             Union{Vector{Int}, Nothing}, Bool, Bool},
