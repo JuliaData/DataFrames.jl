@@ -135,6 +135,7 @@ function refpool_and_array(x::AbstractArray)
     refarray = DataAPI.refarray(x)
 
     if refpool !== nothing
+        # When invrefpool is defined, values are necessarily unique
         if DataAPI.invrefpool(x) !== nothing || allunique(refpool)
             return refpool, refarray
         else
