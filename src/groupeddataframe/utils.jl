@@ -135,7 +135,7 @@ function refpool_and_array(x::AbstractArray)
     refarray = DataAPI.refarray(x)
 
     if refpool !== nothing
-        if x isa PooledVector || allunique(refpool)
+        if DataAPI.invrefpool(x) !== nothing || allunique(refpool)
             return refpool, refarray
         else
             return nothing, nothing
