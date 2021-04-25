@@ -130,7 +130,7 @@ if isdefined(Base, :dotgetproperty)
             return LazyNewColDataFrame(df, Symbol(col))
         else
             Base.depwarn("In the future this operation will allocate a new column " *
-                    "instead of performing an in-place assignment.", :dotgetproperty)
+                         "instead of performing an in-place assignment.", :dotgetproperty)
             return getproperty(df, col)
         end
     end
