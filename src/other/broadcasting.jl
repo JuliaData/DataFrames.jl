@@ -129,7 +129,7 @@ if isdefined(Base, :dotgetproperty)
         if columnindex(df, col) == 0
             return LazyNewColDataFrame(df, Symbol(col))
         else
-            Base.depwarn("In the future this operation will allocate a new column" *
+            Base.depwarn("In the future this operation will allocate a new column " *
                     "instead of performing an in-place assignment.", :dotgetproperty)
             return getproperty(df, col)
         end
