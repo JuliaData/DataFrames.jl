@@ -373,7 +373,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     # assuming less than linear scaling by a factor of 2
     lg = length(groups)
     nt = Threads.nthreads()
-    if nt == 1 || ngroups > lg * (1.0 - 2.0 / nt) / nt
+    if nt == 1 || lg <= 1_000_000 || ngroups > lg * (1.0 - 2.0 / nt) / nt
         if skipmissing
             for j in groups
                 if j > 0
