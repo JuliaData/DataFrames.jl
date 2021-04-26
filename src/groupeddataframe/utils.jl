@@ -5,11 +5,13 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector{T},
                        rp::Nothing,
                        firstcol::Bool) where T
-    @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(h)
-        el = v[i]
-        h[i] = hash(el, h[i])
-        if length(n) > 0
-            n[i] |= ismissing(el)
+    @spawn_for_chunks 1_000_000 for i in eachindex(h)
+        @inbounds begin
+            el = v[i]
+            h[i] = hash(el, h[i])
+            if length(n) > 0
+                n[i] |= ismissing(el)
+            end
         end
     end
     h
@@ -31,19 +33,21 @@ function hashrows_col!(h::Vector{UInt},
         fira = firstindex(ra)
 
         hashes = Vector{UInt}(undef, length(rp))
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(hashes)
-            hashes[i] = hash(rp[i+firp-1])
+        @spawn_for_chunks 1_000_000 for i in eachindex(hashes)
+            @inbounds hashes[i] = hash(rp[i+firp-1])
         end
 
         # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
-        @inbounds @spawn_for_chunks 1_000_000  for i in eachindex(h)
-            ref = ra[i+fira-1]
-            h[i] = hashes[ref+1-firp]
+        @spawn_for_chunks 1_000_000  for i in eachindex(h)
+            @inbounds begin
+                ref = ra[i+fira-1]
+                h[i] = hashes[ref+1-firp]
+            end
         end
     else
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(h, v)
-            h[i] = hash(v[i], h[i])
+        @spawn_for_chunks 1_000_000 for i in eachindex(h, v)
+            @inbounds h[i] = hash(v[i], h[i])
         end
     end
     # Doing this step separately is faster, as it would disable SIMD above
@@ -286,7 +290,6 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                       newcols, refpools, refarrays, hash, groups, skipmissing, sort)
     end
 
-    seen = fill(false, ngroups)
     strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N, Int}
     firstinds = map(firstindex, refpools)
     if sort
@@ -323,54 +326,103 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             end
             refmap
         end
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(groups)
-            local refs_i
-            let i=i # Workaround for julia#15276
-                refs_i = map(c -> c[i], refarrays)
+        @spawn_for_chunks 1_000_000 for i in eachindex(groups)
+            @inbounds begin
+                local refs_i
+                let i=i # Workaround for julia#15276
+                    refs_i = map(c -> c[i], refarrays)
+                end
+                vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
+                j = sum(vals) + 1
+                # x < 0 happens with -1 in refmap, which corresponds to missing
+                if skipmissing && any(x -> x < 0, vals)
+                    j = 0
+                end
+                groups[i] = j
             end
-            vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
-            j = sum(vals) + 1
-            # x < 0 happens with -1 in refmap, which corresponds to missing
-            if skipmissing && any(x -> x < 0, vals)
-                j = 0
-            else
-                seen[j] = true
-            end
-            groups[i] = j
         end
     else
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(groups)
-            local refs_i
-            let i=i # Workaround for julia#15276
-                refs_i = map(refarrays, missinginds) do ref, missingind
-                    r = Int(ref[i])
-                    if skipmissing
-                        return r == missingind ? -1 : (r > missingind ? r-1 : r)
-                    else
-                        return r
+        @spawn_for_chunks 1_000_000 for i in eachindex(groups)
+            @inbounds begin
+                local refs_i
+                let i=i # Workaround for julia#15276
+                    refs_i = map(refarrays, missinginds) do ref, missingind
+                        r = Int(ref[i])
+                        if skipmissing
+                            return r == missingind ? -1 : (r > missingind ? r-1 : r)
+                        else
+                            return r
+                        end
                     end
                 end
+                vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
+                j = sum(vals) + 1
+                # x < 0 happens with -1, which corresponds to missing
+                if skipmissing && any(x -> x < 0, vals)
+                    j = 0
+                end
+                groups[i] = j
             end
-            vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
-            j = sum(vals) + 1
-            # x < 0 happens with -1, which corresponds to missing
-            if skipmissing && any(x -> x < 0, vals)
-                j = 0
-            else
-                seen[j] = true
-            end
-            groups[i] = j
         end
     end
+
+    seen1 = fill(false, ngroups)
+
+    # do division to avoid overflow
+    # we compare the amount of work do be done by both algorithms
+    # assuming less than linear scaling by a factor of 2
+    lg = length(groups)
+    nt = Threads.nthreads()
+    if nt == 1 || ngroups > lg * (1.0 - 2.0 / nt) / nt
+        if skipmissing
+            for j in groups
+                if j > 0
+                    @inbounds seen1[j] = true
+                end
+            end
+        else
+            for j in groups
+                @inbounds seen1[j] = true
+            end
+        end
+    else
+        seen = Vector{Vector{Bool}}(undef, nt)
+        seen[1] = seen1
+        for i in 2:nt
+            seen[i] = fill(false, ngroups)
+        end
+
+        if skipmissing
+            @spawn_for_chunks 1_000_000 for i in eachindex(groups)
+                seeni = seen[Threads.threadid()]
+                @inbounds j = groups[i]
+                if j > 0
+                    @inbounds seeni[] = true
+                end
+            end
+
+        else
+            @spawn_for_chunks 1_000_000 for i in eachindex(groups)
+                seeni = seen[Threads.threadid()]
+                @inbounds seeni[groups[i]] = true
+            end
+        end
+
+
+        for i in 2:nt
+            seen1 .|= seen[i]
+        end
+    end
+
     # If some groups are unused, compress group indices to drop them
-    # sum(seen) is faster than all(seen) when not short-circuiting,
+    # sum(seen1) is faster than all(seen1) when not short-circuiting,
     # and short-circuit would only happen in the slower case anyway
-    if sum(seen) < length(seen)
+    if sum(seen1) < length(seen1)
         oldngroups = ngroups
         remap = zeros(Int, ngroups)
         ngroups = 0
-        @inbounds for i in eachindex(remap, seen)
-            ngroups += seen[i]
+        @inbounds for i in eachindex(remap, seen1)
+            ngroups += seen1[i]
             remap[i] = ngroups
         end
         @inbounds for i in eachindex(groups)

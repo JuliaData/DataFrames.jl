@@ -104,10 +104,12 @@ if VERSION >= v"1.4"
                 len = length(x)
                 if nt > 1 && len > basesize
                     tasks = [Threads.@spawn begin
-                                 for i in p
-                                     local $(esc(lidx)) = @inbounds x[i]
-                                     $(esc(lbody))
-                                 end
+                                 let p = p
+                                     for i in p
+                                         local $(esc(lidx)) = @inbounds x[i]
+                                         $(esc(lbody))
+                                     end
+                                end
                              end
                              for p in split_indices(len, basesize)]
                     foreach(wait, tasks)
