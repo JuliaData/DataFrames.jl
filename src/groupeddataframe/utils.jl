@@ -397,7 +397,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                 seeni = seen[Threads.threadid()]
                 @inbounds j = groups[i]
                 if j > 0
-                    @inbounds seeni[] = true
+                    @inbounds seeni[j] = true
                 end
             end
 
