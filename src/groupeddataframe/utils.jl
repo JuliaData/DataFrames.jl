@@ -306,6 +306,21 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     else
         sorted = false
     end
+
+    lg = length(groups)
+    nt = Threads.nthreads()
+    use_threading = nt > 1 && lg > 1_000_000 && ngroups < lg / 20
+    # if chunk_size is length(groups) we will not use threading
+    chunk_size = use_threading ? 1_000_000 : length(groups)
+    seen1 = fill(false, ngroups)
+    seen = Vector{Vector{Bool}}(undef, nt)
+    seen[1] = seen1
+    if use_threading
+        for i in 2:nt
+            seen[i] = fill(false, ngroups)
+        end
+    end
+
     if sort && !sorted
         # Compute vector mapping missing to -1 if skipmissing=true
         refmaps = map(cols, refpools, missinginds, nminds) do col, refpool, missingind, nmind
@@ -326,8 +341,9 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             end
             refmap
         end
-        @spawn_for_chunks 1_000_000 for i in eachindex(groups)
+        @spawn_for_chunks chunk_size for i in eachindex(groups)
             @inbounds begin
+                seeni = seen[Threads.threadid()]
                 local refs_i
                 let i=i # Workaround for julia#15276
                     refs_i = map(c -> c[i], refarrays)
@@ -337,13 +353,16 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                 # x < 0 happens with -1 in refmap, which corresponds to missing
                 if skipmissing && any(x -> x < 0, vals)
                     j = 0
+                else
+                    seeni[j] = true
                 end
                 groups[i] = j
             end
         end
     else
-        @spawn_for_chunks 1_000_000 for i in eachindex(groups)
+        @spawn_for_chunks chunk_size for i in eachindex(groups)
             @inbounds begin
+                seeni = seen[Threads.threadid()]
                 local refs_i
                 let i=i # Workaround for julia#15276
                     refs_i = map(refarrays, missinginds) do ref, missingind
@@ -360,55 +379,15 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                 # x < 0 happens with -1, which corresponds to missing
                 if skipmissing && any(x -> x < 0, vals)
                     j = 0
+                else
+                    seeni[j] = true
                 end
                 groups[i] = j
             end
         end
     end
 
-    seen1 = fill(false, ngroups)
-
-    # do division to avoid overflow
-    # we compare the amount of work do be done by both algorithms
-    # assuming less than linear scaling by a factor of 2
-    lg = length(groups)
-    nt = Threads.nthreads()
-    if nt == 1 || lg <= 1_000_000 || ngroups > lg * (1.0 - 2.0 / nt) / nt
-        if skipmissing
-            for j in groups
-                if j > 0
-                    @inbounds seen1[j] = true
-                end
-            end
-        else
-            for j in groups
-                @inbounds seen1[j] = true
-            end
-        end
-    else
-        seen = Vector{Vector{Bool}}(undef, nt)
-        seen[1] = seen1
-        for i in 2:nt
-            seen[i] = fill(false, ngroups)
-        end
-
-        if skipmissing
-            @spawn_for_chunks 1_000_000 for i in eachindex(groups)
-                seeni = seen[Threads.threadid()]
-                @inbounds j = groups[i]
-                if j > 0
-                    @inbounds seeni[j] = true
-                end
-            end
-
-        else
-            @spawn_for_chunks 1_000_000 for i in eachindex(groups)
-                seeni = seen[Threads.threadid()]
-                @inbounds seeni[groups[i]] = true
-            end
-        end
-
-
+    if use_threading
         for i in 2:nt
             seen1 .|= seen[i]
         end
