@@ -1,4 +1,4 @@
-# comparisons
+# Comparisons
 
 This section compares DataFrames.jl with other data manipulation frameworks in Python, R, and Stata.
 
