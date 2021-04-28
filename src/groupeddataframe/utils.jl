@@ -403,6 +403,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             xl[1] .|= xr[1]
         end
     end
+    return
 
     use_threading && reduce_or!(seen_vec)
 
