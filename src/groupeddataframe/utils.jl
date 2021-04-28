@@ -312,12 +312,12 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     use_threading = nt > 1 && lg > 1_000_000 && ngroups < lg / 20
     # if chunk_size is length(groups) we will not use threading
     chunk_size = use_threading ? 1_000_000 : length(groups)
-    seen1 = fill(false, ngroups)
-    seen = Vector{Vector{Bool}}(undef, nt)
-    seen[1] = seen1
+    seen = fill(false, ngroups)
+    seen_vec = Vector{Vector{Bool}}(undef, nt)
+    seen_vec[1] = seen
     if use_threading
         for i in 2:nt
-            seen[i] = fill(false, ngroups)
+            seen_vec[i] = fill(false, ngroups)
         end
     end
 
@@ -343,12 +343,12 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         end
         @spawn_for_chunks chunk_size for i in eachindex(groups)
             @inbounds begin
-                seeni = seen[Threads.threadid()]
+                seeni = seen_vec[Threads.threadid()]
                 local refs_i
                 let i=i # Workaround for julia#15276
-                    refs_i = map(c -> c[i], refarrays)
+                    refs_i = map(c -> @inbounds c[i], refarrays)
                 end
-                vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
+                vals = map((m, r, s, fi) -> @inbounds m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
                 j = sum(vals) + 1
                 # x < 0 happens with -1 in refmap, which corresponds to missing
                 if skipmissing && any(x -> x < 0, vals)
@@ -362,7 +362,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     else
         @spawn_for_chunks chunk_size for i in eachindex(groups)
             @inbounds begin
-                seeni = seen[Threads.threadid()]
+                seeni = seen_vec[Threads.threadid()]
                 local refs_i
                 let i=i # Workaround for julia#15276
                     refs_i = map(refarrays, missinginds) do ref, missingind
@@ -387,21 +387,34 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         end
     end
 
-    if use_threading
-        for i in 2:nt
-            seen1 .|= seen[i]
+    function reduce_or!(x::AbstractVector{Vector{Bool}})
+        len = length(x)
+        if len < 2
+            return
+        elseif len == 2
+            x[1] .|= x[2]
+        else
+            xl = view(x, 1:len ÷ 2)
+            xr = view(x, len ÷ 2 + 1:len)
+            t1 = Threads.@spawn reduce_or!(xl)
+            t2 = Threads.@spawn reduce_or!(xr)
+            fetch(t1)
+            fetch(t2)
+            xl[1] .|= xr[1]
         end
     end
 
+    use_threading && reduce_or!(seen_vec)
+
     # If some groups are unused, compress group indices to drop them
-    # sum(seen1) is faster than all(seen1) when not short-circuiting,
+    # sum(seen) is faster than all(seen) when not short-circuiting,
     # and short-circuit would only happen in the slower case anyway
-    if sum(seen1) < length(seen1)
+    if sum(seen) < length(seen)
         oldngroups = ngroups
         remap = zeros(Int, ngroups)
         ngroups = 0
-        @inbounds for i in eachindex(remap, seen1)
-            ngroups += seen1[i]
+        @inbounds for i in eachindex(remap, seen)
+            ngroups += seen[i]
             remap[i] = ngroups
         end
         @inbounds for i in eachindex(groups)
