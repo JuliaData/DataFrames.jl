@@ -350,7 +350,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                         return @inbounds c[i]
                     end
                 end
-                vals = map(refmaps, refs_i, strides, firstinds) do (m, r, s, fi)
+                vals = map(refmaps, refs_i, strides, firstinds) do m, r, s, fi
                     return @inbounds m[r-fi+1] * s
                 end
                 j = sum(vals) + 1

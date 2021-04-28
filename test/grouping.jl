@@ -3893,4 +3893,53 @@ end
     @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? (a=1, b=2) : Ref(1))
 end
 
+@testset "grouping correctness with threading" begin
+    function cmp_gdf(gdf1::GroupedDataFrame, gdf2::GroupedDataFrame)
+        @test gdf1.ngroups == gdf2.ngroups
+        @test gdf1.groups == gdf2.groups
+        @test gdf1.starts == gdf2.starts
+        @test gdf1.ends == gdf2.ends
+        @test gdf1.idx == gdf2.idx
+    end
+
+    Random.seed!(1234)
+    @time for levs in (100, 99_000), sz in (100_000, 1_100_000)
+        df = DataFrame(x_int=rand(1:levs, sz))
+        df.x_str = string.(df.x_int, pad=5)
+        df.x_pool = PooledArray(df.x_str)
+        g_str = groupby(df, :x_str)
+        g_pool = groupby(df, :x_pool)
+        cmp_gdf(g_str, g_pool)
+        g_int = groupby(df, :x_int, sort=true)
+        g_str = groupby(df, :x_str, sort=true)
+        g_pool = groupby(df, :x_pool, sort=true)
+        cmp_gdf(g_int, g_pool)
+        cmp_gdf(g_str, g_pool)
+
+        df = df[reverse(1:nrow(df)), :]
+        g_str = groupby(df, :x_str, sort=true)
+        g_pool = groupby(df, :x_pool, sort=true)
+        cmp_gdf(g_str, g_pool)
+
+        df = DataFrame(x_int=[1:levs; rand(1:levs, sz)])
+        df.x_str = string.(df.x_int, pad=5)
+        df.x_pool = PooledArray(df.x_str)
+        allowmissing!(df)
+        df[rand(levs+1:sz, 10_000), :] .= missing
+        g_str = groupby(df, :x_str)
+        g_pool = groupby(df, :x_pool)
+        cmp_gdf(g_str, g_pool)
+        for sm in (false, true)
+            g_str = groupby(df, :x_str, skipmissing=sm)
+            g_pool = groupby(df, :x_pool, skipmissing=sm)
+            cmp_gdf(g_str, g_pool)
+            g_int = groupby(df, :x_int, sort=true, skipmissing=sm)
+            g_str = groupby(df, :x_str, sort=true, skipmissing=sm)
+            g_pool = groupby(df, :x_pool, sort=true, skipmissing=sm)
+            cmp_gdf(g_int, g_pool)
+            cmp_gdf(g_str, g_pool)
+        end
+    end
+end
+
 end # module
