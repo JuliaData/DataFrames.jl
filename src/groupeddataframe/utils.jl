@@ -309,7 +309,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
 
     lg = length(groups)
     nt = Threads.nthreads()
-    use_threading = nt > 1 && lg > 1_000_000 && ngroups < lg / 20
+    use_threading = nt > 1 && lg > 1_000_000 && ngroups < lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
     # if chunk_size is length(groups) we will not use threading
     chunk_size = use_threading ? 1_000_000 : length(groups)
     seen = fill(false, ngroups)
@@ -400,8 +400,8 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         else
             xl = view(x, 1:len ÷ 2)
             xr = view(x, len ÷ 2 + 1:len)
-            t1 = Threads.@spawn reduce_or!(xl)
-            t2 = Threads.@spawn reduce_or!(xr)
+            t1 = @spawn reduce_or!(xl)
+            t2 = @spawn reduce_or!(xr)
             fetch(t1)
             fetch(t2)
             xl[1] .|= xr[1]
