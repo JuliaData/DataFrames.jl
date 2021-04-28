@@ -51,7 +51,8 @@ into row groups.
   `DataAPI.refpool` in which case the order of groups follows the order of
   values returned by `DataAPI.refpool`. As a particular application of this rule
   if all `cols` are `CategoricalVector`s then groups are always sorted
-  irrespective of the value of `sort`.
+  irrespective of the value of `sort`. Also due to this optimization the
+  order of groups when grouping on integer column is undefined.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
