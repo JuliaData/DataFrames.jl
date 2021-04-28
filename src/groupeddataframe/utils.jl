@@ -346,9 +346,13 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                 seeni = seen_vec[Threads.threadid()]
                 local refs_i
                 let i=i # Workaround for julia#15276
-                    refs_i = map(c -> @inbounds c[i], refarrays)
+                    refs_i = map(refarrays) do c
+                        return @inbounds c[i]
+                    end
                 end
-                vals = map((m, r, s, fi) -> @inbounds m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
+                vals = map(refmaps, refs_i, strides, firstinds) do (m, r, s, fi)
+                    return @inbounds m[r-fi+1] * s
+                end
                 j = sum(vals) + 1
                 # x < 0 happens with -1 in refmap, which corresponds to missing
                 if skipmissing && any(x -> x < 0, vals)
