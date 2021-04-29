@@ -253,7 +253,8 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 | Add new columns                    | `df[, x_mean:=mean(x) ]`                         | `transform(df, :x => mean => :x_mean)`       |
 | Rename column (in place)           | `setnames(df, "x", "x_new")`                     | `rename!(df, :x => :x_new)`                  |
 | Rename multiple columns (in place) | `setnames(df, c("x", "y"), c("x_new", "y_new"))` | `rename!(df, [:x, :y] .=> [:x_new, :y_new])` |
-| Pick columns                       | `df[, .(x, y)]`                                  | `select(df, :x, :y)`                         |
+| Pick columns as dataframe          | `df[, .(x, y)]`                                  | `select(df, :x, :y)`                         |
+| Pick column as a vector            | `df[, x]`                                        | `df[!, :x]`                                  |
 | Remove columns                     | `df[, -"x"]`                                     | `select(df, Not(:x))`                        |
 | Remove columns (in place)          | `df[, x:=NULL]`                                  | `select!(df, Not(:x))`                       |
 | Remove columns (in place)          | `df[, c("x", "y"):=NULL]`                        | `select!(df, Not([:x, :y]))`                 |
