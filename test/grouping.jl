@@ -3903,7 +3903,7 @@ end
     end
 
     Random.seed!(1234)
-    @time for levs in (100, 99_000), sz in (100_000, 1_100_000)
+    for levs in (100, 99_000), sz in (100_000, 1_100_000)
         df = DataFrame(x_int=rand(1:levs, sz))
         df.x_str = string.(df.x_int, pad=5)
         df.x_pool = PooledArray(df.x_str)
