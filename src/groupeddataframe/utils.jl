@@ -309,6 +309,11 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
 
     lg = length(groups)
     nt = Threads.nthreads()
+    # TODO: in the future when `ngroups` is large relative to `lg` improve the algorithm to
+    # 1. increase chunk size so that we do not use all threads
+    # 2. initialize `seen` elements lazily (only when actually the task on a particular thread is spawned)
+    # 3. in reduction process only these `seen` elements that were initialized
+    # (finding optimal rule for this is hard so it is left for later)
     use_threading = nt > 1 && lg > 1_000_000 && ngroups < lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
     # if chunk_size is length(groups) we will not use threading
     chunk_size = use_threading ? 1_000_000 : length(groups)
@@ -370,7 +375,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                 local refs_i
                 let i=i # Workaround for julia#15276
                     refs_i = map(refarrays, missinginds) do ref, missingind
-                        r = Int(ref[i])
+                        r = @inbounds Int(ref[i])
                         if skipmissing
                             return r == missingind ? -1 : (r > missingind ? r-1 : r)
                         else
