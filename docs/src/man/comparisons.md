@@ -283,8 +283,8 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 | Multivariate function             | `df[, .(cor(x,y)) ]`                                                                       | `transform(df, [:x, :y] => cor)`                                            |
 | Row-wise                          | `df[, min_xy := min(x, y), by = 1:nrow(df)]`                                               | `transform(df, [:x, :y] => ByRow(min))`                                     |
 |                                   | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`           | `transform(df, AsTable(r"^x") => ByRow(argmax))`                            |
-| DataFrame as output               | `df[, .SD[1], by=grp]`                                                                     | `combine(groupby(df, :grp), names(df) .=> (x->x[1]) .=> names(df)`          |
-| DataFrame as output               | `df[, .SD[which.max(x)], by=grp]`                                                          | `subset(groupby(df, :grp), :x => (x->(x.==maximum(x))) )`                   |
+| DataFrame as output               | `df[, .SD[1], by=grp]`                                                                     | `combine(groupby(df, :grp), first)`                                         |
+| DataFrame as output               | `df[, .SD[which.max(x)], by=grp]`                                                          | `combine(groupby(df, :grp), sdf -> sdf[argmax(sdf.x), :])`                  |
 
 ### Joining data frames
 
