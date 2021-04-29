@@ -1586,7 +1586,7 @@ function precompile(all=false)
         Base.precompile(Tuple{Reduce{typeof(max), Nothing, Nothing},Vector{Int},GroupedDataFrame{DataFrame}})
         Base.precompile(Tuple{Type{OnCol},Vector{String},Vararg{AbstractVector{T} where T, N} where N})
 
-        for v in ([1, 2], [2, 1], [2, 2, 1]),
+        for v in ([1, 2], [2, 1], [2, 2, 1], Int32[1, 2], Int32[2, 1], Int32[2, 2, 1]),
             op in (identity, x -> string.(x), x -> PooledArrays.PooledArray(string.(x))),
             on in (:v1, [:v1, :v2])
             df = DataFrame(v1=op(v), v2=v)
