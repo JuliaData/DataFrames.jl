@@ -3888,7 +3888,7 @@ end
 
 @testset "extra tests of wrapper corner cases" begin
     df = DataFrame(a=1:2)
-    gdf = groupby(df, :a)
+    gdf = groupby_checked(df, :a)
     @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? 1 : x[1, :])
     @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? (a=1, b=2) : Ref(1))
 end
@@ -3907,18 +3907,18 @@ end
         df = DataFrame(x_int=rand(1:levs, sz))
         df.x_str = string.(df.x_int, pad=5)
         df.x_pool = PooledArray(df.x_str)
-        g_str = groupby(df, :x_str)
-        g_pool = groupby(df, :x_pool)
+        g_str = groupby_checked(df, :x_str)
+        g_pool = groupby_checked(df, :x_pool)
         cmp_gdf(g_str, g_pool)
-        g_int = groupby(df, :x_int, sort=true)
-        g_str = groupby(df, :x_str, sort=true)
-        g_pool = groupby(df, :x_pool, sort=true)
+        g_int = groupby_checked(df, :x_int, sort=true)
+        g_str = groupby_checked(df, :x_str, sort=true)
+        g_pool = groupby_checked(df, :x_pool, sort=true)
         cmp_gdf(g_int, g_pool)
         cmp_gdf(g_str, g_pool)
 
         df = df[reverse(1:nrow(df)), :]
-        g_str = groupby(df, :x_str, sort=true)
-        g_pool = groupby(df, :x_pool, sort=true)
+        g_str = groupby_checked(df, :x_str, sort=true)
+        g_pool = groupby_checked(df, :x_pool, sort=true)
         cmp_gdf(g_str, g_pool)
 
         df = DataFrame(x_int=[1:levs; rand(1:levs, sz)])
@@ -3926,16 +3926,16 @@ end
         df.x_pool = PooledArray(df.x_str)
         allowmissing!(df)
         df[rand(levs+1:sz, 10_000), :] .= missing
-        g_str = groupby(df, :x_str)
-        g_pool = groupby(df, :x_pool)
+        g_str = groupby_checked(df, :x_str)
+        g_pool = groupby_checked(df, :x_pool)
         cmp_gdf(g_str, g_pool)
         for sm in (false, true)
-            g_str = groupby(df, :x_str, skipmissing=sm)
-            g_pool = groupby(df, :x_pool, skipmissing=sm)
+            g_str = groupby_checked(df, :x_str, skipmissing=sm)
+            g_pool = groupby_checked(df, :x_pool, skipmissing=sm)
             cmp_gdf(g_str, g_pool)
-            g_int = groupby(df, :x_int, sort=true, skipmissing=sm)
-            g_str = groupby(df, :x_str, sort=true, skipmissing=sm)
-            g_pool = groupby(df, :x_pool, sort=true, skipmissing=sm)
+            g_int = groupby_checked(df, :x_int, sort=true, skipmissing=sm)
+            g_str = groupby_checked(df, :x_str, sort=true, skipmissing=sm)
+            g_pool = groupby_checked(df, :x_pool, sort=true, skipmissing=sm)
             cmp_gdf(g_int, g_pool)
             cmp_gdf(g_str, g_pool)
         end
