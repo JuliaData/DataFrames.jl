@@ -310,7 +310,8 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     # TODO: in the future when `ngroups` is large relative to `lg` improve the algorithm to
     # spawn less threads than `nt`. Then `seen` should be populated lazily - only if needed.
     # The implementation and proper heuristics are hard so I leave it out for now.
-    use_threading = nt > 1 && lg > 1_000_000 && ngroups < lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
+    use_threading = Threads.threadid() == 1 && nt > 1 && lg > 1_000_000 &&
+                    ngroups < lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
     # if chunk_size is length(groups) we will not use threading
     chunk_size = use_threading ? 1_000_000 : length(groups)
     seen = fill(false, ngroups)
