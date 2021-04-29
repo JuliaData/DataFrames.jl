@@ -92,14 +92,6 @@ function split_indices(len::Integer, basesize::Integer)
     return (Int(1 + ((i - 1) * len′) ÷ np):Int((i * len′) ÷ np) for i in 1:np)
 end
 
-# Compute chunks of indices, each with at least `basesize` entries
-# This method ensures balanced sizes by avoiding a small last chunk
-function split_indices(len::Integer, basesize::Integer)
-    len′ = Int64(len) # Avoid overflow on 32-bit machines
-    np = max(1, div(len, basesize))
-    return (Int(1 + ((i - 1) * len′) ÷ np):Int((i * len′) ÷ np) for i in 1:np)
-end
-
 if VERSION >= v"1.4"
     function _spawn_for_chunks_helper(iter, lbody, basesize)
         lidx = iter.args[1]
