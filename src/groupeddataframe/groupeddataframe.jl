@@ -66,7 +66,7 @@ In particular if it is an empty vector then a single-group `GroupedDataFrame`
 is created.
 
 A `GroupedDataFrame` also supports
-indexing by groups, `map` (which applies a function to each group)
+indexing by groups, `select`, `transform`,
 and `combine` (which applies a function to each group
 and combines the result into a data frame).
 
