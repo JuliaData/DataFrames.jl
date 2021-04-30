@@ -102,16 +102,18 @@ end
 end
 
 @testset "split_indices" begin
-    for len in 0:12
-        basesize = 10
+    for len in 1:100, basesize in 1:10
         x = DataFrames.split_indices(len, basesize)
 
         @test length(x) == max(1, div(len, basesize))
-        @test reduce(vcat, x) === 1:len
+        @test reduce(vcat, x) == 1:len
         vmin, vmax = extrema(length(v) for v in x)
         @test vmin + 1 == vmax || vmin == vmax
         @test len < basesize || vmin >= basesize
     end
+
+    @test_throws AssertionError DataFrames.split_indices(0, 10)
+    @test_throws AssertionError DataFrames.split_indices(10, 0)
 
     # Check overflow on 32-bit
     len = typemax(Int32)
@@ -123,6 +125,28 @@ end
     vmin, vmax = extrema(length(v) for v in x)
     @test vmin + 1 == vmax || vmin == vmax
     @test len < basesize || vmin >= basesize
+end
+
+@testset "split_to_chunks" begin
+    for lg in 1:100, nt in 1:11
+        if lg < nt
+            @test_throws AssertionError DataFrames.split_to_chunks(lg, nt)
+            continue
+        end
+        x = collect(DataFrames.split_to_chunks(lg, nt))
+        @test reduce(vcat, x) == 1:lg
+        @test sum(length, x) == lg
+        @test first(x[1]) == 1
+        @test last(x[end]) == lg
+        @test length(x) == nt
+        for i in 1:nt-1
+            @test first(x[i+1])-last(x[i]) == 1
+        end
+    end
+
+    @test_throws AssertionError DataFrames.split_to_chunks(0, 10)
+    @test_throws AssertionError DataFrames.split_to_chunks(10, 0)
+    @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
 end
 
 end # module

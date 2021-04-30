@@ -317,17 +317,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     for i in 2:nt
         seen_vec[i] = fill(false, ngroups)
     end
-
-    # this should be very cheap to compute as nt is not large
-    border_chunks = [0; (lg .÷ nt) .* (1:nt-1) ; lg]
-    range_chunks = [border_chunks[i]+1:border_chunks[i+1] for i in 1:nt]
-    @assert sum(length, range_chunks) == lg
-    @assert first(range_chunks[1]) == 1
-    @assert last(range_chunks[end]) == lg
-    @assert length(range_chunks) == nt
-    for i in 1:nt-1
-        @assert first(range_chunks[i+1])-last(range_chunks[i]) == 1
-    end
+    range_chunks = split_to_chunks(lg, nt)
 
     if sort && !sorted
         # Compute vector mapping missing to -1 if skipmissing=true
