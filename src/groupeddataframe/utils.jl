@@ -352,7 +352,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             refmap
         end
         if use_threading
-            @sync for (seeni, range_chunk) in zip(seen, range_chunks)
+            @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
                 Threads.@spawn for i in range_chunk
                     @inbounds begin
                         local refs_i
