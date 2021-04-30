@@ -307,18 +307,15 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
 
     lg = length(groups)
     nt = Threads.nthreads()
-    # TODO: in the future when `ngroups` is large relative to `lg` improve the algorithm to
-    # spawn less threads than `nt`. Then `seen` should be populated lazily - only if needed.
-    # The implementation and proper heuristics are hard so I leave it out for now.
-    use_threading = Threads.threadid() == 1 && nt > 1 && lg > 1_000_000 &&
-                    ngroups < lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
+    # disable threading if we are processing a small data frame or number of groups is large
+    if lg < 1_000_000 || ngroups > lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
+       nt = 1
+    end
     seen = fill(false, ngroups)
     seen_vec = Vector{Vector{Bool}}(undef, nt)
     seen_vec[1] = seen
-    if use_threading
-        for i in 2:nt
-            seen_vec[i] = fill(false, ngroups)
-        end
+    for i in 2:nt
+        seen_vec[i] = fill(false, ngroups)
     end
 
     # this should be very cheap to compute as nt is not large
@@ -327,6 +324,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     @assert sum(length, range_chunks) == lg
     @assert first(range_chunks[1]) == 1
     @assert last(range_chunks[end]) == lg
+    @assert length(range_chunks) == nt
     for i in 1:nt-1
         @assert first(range_chunks[i+1])-last(range_chunks[i]) == 1
     end
@@ -351,32 +349,9 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             end
             refmap
         end
-        if use_threading
-            @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
-                Threads.@spawn for i in range_chunk
-                    @inbounds begin
-                        local refs_i
-                        let i=i # Workaround for julia#15276
-                            refs_i = map(refarrays) do c
-                                return @inbounds c[i]
-                            end
-                        end
-                        vals = map(refmaps, refs_i, strides, firstinds) do m, r, s, fi
-                            return @inbounds m[r-fi+1] * s
-                        end
-                        j = sum(vals) + 1
-                        # x < 0 happens with -1 in refmap, which corresponds to missing
-                        if skipmissing && any(x -> x < 0, vals)
-                            j = 0
-                        else
-                            seeni[j] = true
-                        end
-                        groups[i] = j
-                    end
-                end
-            end
-        else
-            @inbounds for i in eachindex(groups)
+        @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
+            @spawn for i in range_chunk
+                @inbounds begin
                     local refs_i
                     let i=i # Workaround for julia#15276
                         refs_i = map(refarrays) do c
@@ -391,61 +366,37 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                     if skipmissing && any(x -> x < 0, vals)
                         j = 0
                     else
-                        seen[j] = true
+                        seeni[j] = true
                     end
                     groups[i] = j
+                end
             end
         end
     else
-        if use_threading
-            @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
-                Threads.@spawn for i in range_chunk
-                    @inbounds begin
-                        local refs_i
-                        let i=i # Workaround for julia#15276
-                            refs_i = map(refarrays, missinginds) do ref, missingind
-                                r = @inbounds Int(ref[i])
-                                if skipmissing
-                                    return r == missingind ? -1 : (r > missingind ? r-1 : r)
-                                else
-                                    return r
-                                end
+        @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
+            @spawn for i in range_chunk
+                @inbounds begin
+                    local refs_i
+                    let i=i # Workaround for julia#15276
+                        refs_i = map(refarrays, missinginds) do ref, missingind
+                            r = @inbounds Int(ref[i])
+                            if skipmissing
+                                return r == missingind ? -1 : (r > missingind ? r-1 : r)
+                            else
+                                return r
                             end
                         end
-                        vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
-                        j = sum(vals) + 1
-                        # x < 0 happens with -1, which corresponds to missing
-                        if skipmissing && any(x -> x < 0, vals)
-                            j = 0
-                        else
-                            seeni[j] = true
-                        end
-                        groups[i] = j
                     end
-                end
-            end
-        else
-            for i in eachindex(groups)
-                local refs_i
-                let i=i # Workaround for julia#15276
-                    refs_i = map(refarrays, missinginds) do ref, missingind
-                        r = @inbounds Int(ref[i])
-                        if skipmissing
-                            return r == missingind ? -1 : (r > missingind ? r-1 : r)
-                        else
-                            return r
-                        end
+                    vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
+                    j = sum(vals) + 1
+                    # x < 0 happens with -1, which corresponds to missing
+                    if skipmissing && any(x -> x < 0, vals)
+                        j = 0
+                    else
+                        seeni[j] = true
                     end
+                    groups[i] = j
                 end
-                vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
-                j = sum(vals) + 1
-                # x < 0 happens with -1, which corresponds to missing
-                if skipmissing && any(x -> x < 0, vals)
-                    j = 0
-                else
-                    seen[j] = true
-                end
-                groups[i] = j
             end
         end
     end
@@ -468,7 +419,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         return
     end
 
-    use_threading && reduce_or!(seen_vec)
+    reduce_or!(seen_vec)
 
     # If some groups are unused, compress group indices to drop them
     # sum(seen) is faster than all(seen) when not short-circuiting,
