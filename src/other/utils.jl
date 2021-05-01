@@ -88,7 +88,17 @@ funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
 # This method ensures balanced sizes by avoiding a small last chunk
 function split_indices(len::Integer, basesize::Integer)
     len′ = Int64(len) # Avoid overflow on 32-bit machines
-    np = max(1, div(len, basesize))
+    @assert len′ > 0
+    @assert basesize > 0
+    np = Int64(max(1, len ÷ basesize))
+    return split_to_chunks(len′, np)
+end
+
+function split_to_chunks(len::Integer, np::Integer)
+    len′ = Int64(len) # Avoid overflow on 32-bit machines
+    np′ = Int64(np)
+    @assert len′ > 0
+    @assert 0 < np′ <= len′
     return (Int(1 + ((i - 1) * len′) ÷ np):Int((i * len′) ÷ np) for i in 1:np)
 end
 

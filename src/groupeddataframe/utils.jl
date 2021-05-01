@@ -5,11 +5,13 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector{T},
                        rp::Nothing,
                        firstcol::Bool) where T
-    @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(h)
-        el = v[i]
-        h[i] = hash(el, h[i])
-        if length(n) > 0
-            n[i] |= ismissing(el)
+    @spawn_for_chunks 1_000_000 for i in eachindex(h)
+        @inbounds begin
+            el = v[i]
+            h[i] = hash(el, h[i])
+            if length(n) > 0
+                n[i] |= ismissing(el)
+            end
         end
     end
     h
@@ -31,19 +33,19 @@ function hashrows_col!(h::Vector{UInt},
         fira = firstindex(ra)
 
         hashes = Vector{UInt}(undef, length(rp))
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(hashes)
-            hashes[i] = hash(rp[i+firp-1])
+        @spawn_for_chunks 1_000_000 for i in eachindex(hashes)
+            @inbounds hashes[i] = hash(rp[i+firp-1])
         end
 
         # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
-        @inbounds @spawn_for_chunks 1_000_000  for i in eachindex(h)
-            ref = ra[i+fira-1]
-            h[i] = hashes[ref+1-firp]
+        @spawn_for_chunks 1_000_000 for i in eachindex(h)
+            @inbounds ref = ra[i+fira-1]
+            @inbounds h[i] = hashes[ref+1-firp]
         end
     else
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(h, v)
-            h[i] = hash(v[i], h[i])
+        @spawn_for_chunks 1_000_000 for i in eachindex(h, v)
+            @inbounds h[i] = hash(v[i], h[i])
         end
     end
     # Doing this step separately is faster, as it would disable SIMD above
@@ -286,7 +288,6 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                       newcols, refpools, refarrays, hash, groups, skipmissing, sort)
     end
 
-    seen = fill(false, ngroups)
     strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N, Int}
     firstinds = map(firstindex, refpools)
     if sort
@@ -303,6 +304,21 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     else
         sorted = false
     end
+
+    lg = length(groups)
+    nt = Threads.nthreads()
+    # disable threading if we are processing a small data frame or number of groups is large
+    if lg < 1_000_000 || ngroups > lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
+       nt = 1
+    end
+    seen = fill(false, ngroups)
+    seen_vec = Vector{Vector{Bool}}(undef, nt)
+    seen_vec[1] = seen
+    for i in 2:nt
+        seen_vec[i] = fill(false, ngroups)
+    end
+    range_chunks = split_to_chunks(lg, nt)
+
     if sort && !sorted
         # Compute vector mapping missing to -1 if skipmissing=true
         refmaps = map(cols, refpools, missinginds, nminds) do col, refpool, missingind, nmind
@@ -323,45 +339,78 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             end
             refmap
         end
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(groups)
-            local refs_i
-            let i=i # Workaround for julia#15276
-                refs_i = map(c -> c[i], refarrays)
-            end
-            vals = map((m, r, s, fi) -> m[r-fi+1] * s, refmaps, refs_i, strides, firstinds)
-            j = sum(vals) + 1
-            # x < 0 happens with -1 in refmap, which corresponds to missing
-            if skipmissing && any(x -> x < 0, vals)
-                j = 0
-            else
-                seen[j] = true
-            end
-            groups[i] = j
-        end
-    else
-        @inbounds @spawn_for_chunks 1_000_000 for i in eachindex(groups)
-            local refs_i
-            let i=i # Workaround for julia#15276
-                refs_i = map(refarrays, missinginds) do ref, missingind
-                    r = Int(ref[i])
-                    if skipmissing
-                        return r == missingind ? -1 : (r > missingind ? r-1 : r)
-                    else
-                        return r
+        @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
+            @spawn for i in range_chunk
+                @inbounds begin
+                    local refs_i
+                    let i=i # Workaround for julia#15276
+                        refs_i = map(refarrays) do c
+                            return @inbounds c[i]
+                        end
                     end
+                    vals = map(refmaps, refs_i, strides, firstinds) do m, r, s, fi
+                        return @inbounds m[r-fi+1] * s
+                    end
+                    j = sum(vals) + 1
+                    # x < 0 happens with -1 in refmap, which corresponds to missing
+                    if skipmissing && any(x -> x < 0, vals)
+                        j = 0
+                    else
+                        seeni[j] = true
+                    end
+                    groups[i] = j
                 end
             end
-            vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
-            j = sum(vals) + 1
-            # x < 0 happens with -1, which corresponds to missing
-            if skipmissing && any(x -> x < 0, vals)
-                j = 0
-            else
-                seen[j] = true
+        end
+    else
+        @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
+            @spawn for i in range_chunk
+                @inbounds begin
+                    local refs_i
+                    let i=i # Workaround for julia#15276
+                        refs_i = map(refarrays, missinginds) do ref, missingind
+                            r = @inbounds Int(ref[i])
+                            if skipmissing
+                                return r == missingind ? -1 : (r > missingind ? r-1 : r)
+                            else
+                                return r
+                            end
+                        end
+                    end
+                    vals = map((r, s, fi) -> (r-fi) * s, refs_i, strides, firstinds)
+                    j = sum(vals) + 1
+                    # x < 0 happens with -1, which corresponds to missing
+                    if skipmissing && any(x -> x < 0, vals)
+                        j = 0
+                    else
+                        seeni[j] = true
+                    end
+                    groups[i] = j
+                end
             end
-            groups[i] = j
         end
     end
+
+    function reduce_or!(x::AbstractVector{Vector{Bool}})
+        len = length(x)
+        if len < 2
+            return
+        elseif len == 2
+            x[1] .|= x[2]
+        else
+            xl = view(x, 1:len ÷ 2)
+            xr = view(x, len ÷ 2 + 1:len)
+            t1 = @spawn reduce_or!(xl)
+            t2 = @spawn reduce_or!(xr)
+            fetch(t1)
+            fetch(t2)
+            xl[1] .|= xr[1]
+        end
+        return
+    end
+
+    reduce_or!(seen_vec)
+
     # If some groups are unused, compress group indices to drop them
     # sum(seen) is faster than all(seen) when not short-circuiting,
     # and short-circuit would only happen in the slower case anyway
