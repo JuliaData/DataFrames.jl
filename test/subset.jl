@@ -260,8 +260,21 @@ end
     @test_throws AssertionError subset(DataFrame(), [] => () -> Union{}[], skipmissing=true)
     @test subset(DataFrame(x=1:3:15, y=1:5), [:x, :y] => (x, y) -> iseven.(x) .& iseven.(y)) ==
           DataFrame(x=[4, 10], y=[2, 4])
-    @test subset(DataFrame(x=1:3:15, y=1:5), AsTable([:x, :y]) => v -> iseven.(v.x) .& iseven.(v.y)) ==
+    @test subset(DataFrame(x=1:3:15, y=1:5),
+                 AsTable([:x, :y]) => v -> iseven.(v.x) .& iseven.(v.y)) ==
           DataFrame(x=[4, 10], y=[2, 4])
+
+    @test subset(DataFrame(x=1:3), :x => x -> Any[true, false, true]) ==
+          DataFrame(x=[1, 3])
+    @test subset(DataFrame(x=1:3), :x => x -> view(Any[true, false, true], :)) ==
+          DataFrame(x=[1, 3])
+    @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> Any[true, false, missing])
+    @test subset(DataFrame(x=1:3), :x => x -> Any[true, false, missing], skipmissing=true) ==
+          DataFrame(x=[1])
+    @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> Any[true, false, 1])
+    @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> Any[true, false, 1],
+                                      skipmissing=true)
+    @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> (true for i in 1:3))
 end
 
 end

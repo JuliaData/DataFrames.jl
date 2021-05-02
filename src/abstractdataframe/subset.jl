@@ -31,18 +31,16 @@ function _and_missing(x::Any...)
                         "but only true, false, or missing are allowed"))
 end
 
-function assert_bool_vec(@nospecialize(fun), skipmissing::Bool)
-    # we are guaranteed that ByRow returns a vector
-    # this workaround is needed for 0-argument ByRow
-    fun isa ByRow && return fun
+# we are guaranteed that ByRow returns a vector
+# this workaround is needed for 0-argument ByRow
+assert_bool_vec(fun::ByRow) = fun
 
+function assert_bool_vec(@nospecialize(fun))
     return function(x...)
         val = fun(x...)
-        T = skipmissing ? Union{Missing, Bool} : Bool
-        # this technically allows T to be Union{} but it will be disallowed later
-        if !(val isa AbstractVector{<:T})
+        if !(val isa AbstractVector)
             throw(ArgumentError("functions passed to `subset` must return " *
-                                "AbstractVector{$T}."))
+                                "an AbstractVector."))
         end
         return val
     end
@@ -56,7 +54,7 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
     conditions = Any[if a isa ColumnIndex
                          a => Symbol(:x, i)
                      elseif a isa Pair{<:Any, <:Base.Callable}
-                         first(a) => assert_bool_vec(last(a), skipmissing) => Symbol(:x, i)
+                         first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
                      end for (i, a) in enumerate(args)]
@@ -95,9 +93,7 @@ described for [`select`](@ref).
 
 Note that as opposed to [`filter`](@ref) the `subset` function works on whole
 columns and always makes a subset of rows (or all rows in groups for
-`GroupedDataFrame`) and must return a vector. If you want to filter rows
-of an `AbstractDataFrame` or groups of `GroupedDataFrame` by a function that
-returns `Bool` value use [`filter`](@ref).
+`GroupedDataFrame`) and must return a vector.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
