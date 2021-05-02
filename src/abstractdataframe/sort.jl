@@ -93,14 +93,15 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 
 # DFPerm: defines a permutation on a particular DataFrame, using
 #         a single ordering (O<:Ordering) or a list of column orderings
-#         (O<:AbstractVector{Ordering}), one per DataFrame column
+#         (NTuple of Ordering), one per DataFrame column
 #
 #         If a user only specifies a few columns, the DataFrame
 #         contained in the DFPerm only contains those columns, and
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-struct DFPerm{O<:Union{Ordering, AbstractVector}, T<:Tuple} <: Ordering
+struct DFPerm{O<:Union{Ordering, Tuple{Vararg{Ordering}}},
+              T<:Tuple{Vararg{AbstractVector}}} <: Ordering
     ord::O
     cols::T
 end
@@ -109,55 +110,33 @@ function DFPerm(ords::AbstractVector{O}, cols::T) where {O<:Ordering, T<:Tuple}
     if length(ords) != length(cols)
         error("DFPerm: number of column orderings does not equal the number of columns")
     end
-    DFPerm{typeof(ords), T}(ords, cols)
+    DFPerm(Tuple(ords), cols)
 end
 
 DFPerm(o::Union{Ordering, AbstractVector}, df::AbstractDataFrame) =
     DFPerm(o, ntuple(i -> df[!, i], ncol(df)))
 
 # get ordering function for the i-th column used for ordering
-col_ordering(o::DFPerm{O}, i::Int) where {O<:Ordering} = o.ord
-col_ordering(o::DFPerm{V}, i::Int) where {V<:AbstractVector} = o.ord[i]
+col_ordering(o::DFPerm{O}) where {O<:Ordering} = o.ord
+col_ordering(o::DFPerm{T}) where {T<:Tuple{Vararg{Ordering}}} = @inbounds o.ord[1]
 
-function Sort.lt(o::DFPerm, a, b)
+Sort.lt(o::DFPerm{O, Tuple{}}, a, b) where O = false
+
+function Sort.lt(o::DFPerm{O, <:Tuple}, a, b) where O
+
+    ord = o.ord
+    cols = o.cols
+
     @inbounds begin
-        loc = length(o.cols)
-        loc < 1 && return false
-
-        ord = col_ordering(o, 1)
-        col = o.cols[1]
+        ord = col_ordering(o)
+        col = first(cols)
         va = col[a]
         vb = col[b]
         lt(ord, va, vb) && return true
         lt(ord, vb, va) && return false
-        loc == 1 && return false
-
-        ord = col_ordering(o, 2)
-        col = o.cols[2]
-        va = col[a]
-        vb = col[b]
-        lt(ord, va, vb) && return true
-        lt(ord, vb, va) && return false
-        loc == 2 && return false
-
-        ord = col_ordering(o, 3)
-        col = o.cols[3]
-        va = col[a]
-        vb = col[b]
-        lt(ord, va, vb) && return true
-        lt(ord, vb, va) && return false
-        loc == 3 && return false
-
-        for i in 4:length(o.cols)
-            ord = col_ordering(o, i)
-            col = o.cols[i]
-            va = col[a]
-            vb = col[b]
-            lt(ord, va, vb) && return true
-            lt(ord, vb, va) && return false
-        end
     end
-    return false # a and b are equal
+    neword = ord isa Ordering ? ord : Base.tail(ord)
+    return Sort.lt(DFPerm(neword, Base.tail(cols)), a, b)
 end
 
 ###
