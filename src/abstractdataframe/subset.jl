@@ -39,8 +39,7 @@ function assert_bool_vec(@nospecialize(fun))
     return function(x...)
         val = fun(x...)
         if !(val isa AbstractVector)
-            throw(ArgumentError("functions passed to `subset` must return " *
-                                "an AbstractVector."))
+            throw(ArgumentError("functions passed to `subset` must return an AbstractVector."))
         end
         return val
     end
