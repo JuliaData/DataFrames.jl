@@ -250,7 +250,7 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 | Operation                          | data.table                                       | DataFrames.jl                                | 
 |:-----------------------------------|:-------------------------------------------------|:---------------------------------------------|
 | Reduce multiple values             | `df[, .(mean(x))]`                               | `combine(df, :x => mean)`                    |
-| Add new columns                    | `df[, x_mean:=mean(x) ]`                         | `transform(df, :x => mean => :x_mean)`       |
+| Add new columns                    | `df[, x_mean:=mean(x) ]`                         | `transform!(df, :x => mean => :x_mean)`      |
 | Rename column (in place)           | `setnames(df, "x", "x_new")`                     | `rename!(df, :x => :x_new)`                  |
 | Rename multiple columns (in place) | `setnames(df, c("x", "y"), c("x_new", "y_new"))` | `rename!(df, [:x, :y] .=> [:x_new, :y_new])` |
 | Pick columns as dataframe          | `df[, .(x, y)]`                                  | `select(df, :x, :y)`                         |
@@ -279,11 +279,11 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 | Transform certain rows (in place) | `df[x<=0, x:=0 ]`                                                                          | `df.x[df.x .<= 0] .= 0`                                                     |
 | Transform several columns         | `df[, .(max(x), min(y)) ]`                                                                 | `combine(df, :x => maximum, :y => minimum)`                                 |
 |                                   | `df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`                                          | `combine(df, [:x, :y] .=> mean)`                                            |
-|                                   | `df[, lapply(.SD, mean), .SDcols = patterns("x*") ]`                                       | `combine(df, names(df, r"^x") .=> mean)`                                    |
+|                                   | `df[, lapply(.SD, mean), .SDcols = patterns("*x") ]`                                       | `combine(df, names(df, r"^x") .=> mean)`                                    |
 |                                   | `df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]` | `combine(df, ([:x, :y] .=> [maximum minimum])...)`                          |
 | Multivariate function             | `df[, .(cor(x,y)) ]`                                                                       | `transform(df, [:x, :y] => cor)`                                            |
 | Row-wise                          | `df[, min_xy := min(x, y), by = 1:nrow(df)]`                                               | `transform(df, [:x, :y] => ByRow(min))`                                     |
-|                                   | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("x*"), by = 1:nrow(df) ]`           | `transform(df, AsTable(r"^x") => ByRow(argmax))`                            |
+|                                   | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("*x"), by = 1:nrow(df) ]`           | `transform(df, AsTable(r"^x") => ByRow(argmax))`                            |
 | DataFrame as output               | `df[, .SD[1], by=grp]`                                                                     | `combine(groupby(df, :grp), first)`                                         |
 | DataFrame as output               | `df[, .SD[which.max(x)], by=grp]`                                                          | `combine(groupby(df, :grp), sdf -> sdf[argmax(sdf.x), :])`                  |
 
