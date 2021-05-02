@@ -765,6 +765,7 @@ function completecases(df::AbstractDataFrame, col::Colon=:)
     for i in 1:size(df, 2)
         v = df[!, i]
         if Missing <: eltype(v)
+            # Disable fused broadcasting as it happens to be much slower
             aux .= .!ismissing.(v)
             res .&= aux
         end
