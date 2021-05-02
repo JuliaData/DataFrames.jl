@@ -132,7 +132,7 @@ function Sort.lt(o::DFPerm, a, b)
         lt(ord, vb, va) && return false
         loc == 1 && return false
 
-        ord = col_ordering(o, 1)
+        ord = col_ordering(o, 2)
         col = o.cols[2]
         va = col[a]
         vb = col[b]
@@ -140,7 +140,7 @@ function Sort.lt(o::DFPerm, a, b)
         lt(ord, vb, va) && return false
         loc == 2 && return false
 
-        ord = col_ordering(o, 1)
+        ord = col_ordering(o, 3)
         col = o.cols[3]
         va = col[a]
         vb = col[b]
