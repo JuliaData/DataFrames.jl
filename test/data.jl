@@ -117,12 +117,14 @@ end
     df3 = DataFrame(x = Int[1, 2, 3, 4], y = Union{Int, Missing}[1, missing, 2, 3], 
                     z = Missing[missing, missing, missing, missing])
 
-    @test df3[completecases(df3, :x), :] ≅ df3
-    @test df3[completecases(df3, :y), :] ≅ df3[[1, 3, 4], :]
-    @test df3[completecases(df3, :z), :] ≅ df3[[], :]
-    @test df3[completecases(df3, [:y, :x]), :] ≅ df3[[1, 3, 4], :]
-    @test df3[completecases(df3, [:z, :x]), :] ≅ df3[[], :]
-    @test df2[completecases(df2), :] == df2[[1, 2, 4], :]
+    @test completecases(df2), :] == .!ismissing.(df2.x2)
+    @test @inferred(completecases(df3, :x)) == trues(nrow(df3))
+    @test completecases(df3, :y) == .!ismissing.(df3.y)
+    @test completecases(df3, :z) == completecases(df3, [:z, :x]) ==
+          completecases(df3, [:x, :z]) == completecases(df3, [:y, :x, :z]) ==
+          falses(nrow(df3))
+    @test @inferred(completecases(df3, [:y, :x])) ==
+          completecases(df3, [:x, :y]) == .!ismissing.(df3.y)
     @test dropmissing(df2) == df2[[1, 2, 4], :]
     returned = dropmissing(df1)
     @test df1 == returned && df1 !== returned
