@@ -2,10 +2,10 @@
 
 * patch v1.0.3: make sure `subset` checks if the passed condition function
   returns a vector of values
-  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
-* patch v1.0.2: fix of perfromance issue of `groupby` when using multi-threading
+  ([#2744](https://github.com/JuliaData/DataFrames.jl/pull/2744))
+* patch v1.0.2: fix of performance issue of `groupby` when using multi-threading
   ([#2736](https://github.com/JuliaData/DataFrames.jl/pull/2736))
-* patch v1.0.1: fix of perfromance issue of `groupby` when using `PooledVector`
+* patch v1.0.1: fix of performance issue of `groupby` when using `PooledVector`
   ([2733](https://github.com/JuliaData/DataFrames.jl/pull/2733))
 
 # DataFrames v1.0 Release Notes

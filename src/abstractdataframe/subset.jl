@@ -31,7 +31,7 @@ function _and_missing(x::Any...)
                         "but only true, false, or missing are allowed"))
 end
 
-function assert_bool_vec(@nospecialize(fun), skipmissing)
+function assert_bool_vec(@nospecialize(fun), skipmissing::Bool)
     # we are guaranteed that ByRow returns a vector
     # this workaround is needed for 0-argument ByRow
     fun isa ByRow && return fun
@@ -215,9 +215,9 @@ If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
-`parent` data frame, like in [`select!`](@ref). Also note that in general in this
-case the parent of the passed `GroupedDataFrame` is mutaded in place, which means
-that the source `GroupedDataFrame` is not safe to use as most likely it will
+`parent` data frame, like in [`select!`](@ref). Also note that in general
+the parent of the passed `GroupedDataFrame` is mutated in place, which means
+that the `GroupedDataFrame` is not safe to use as most likely it will
 get corrupted due to row removal in the parent.
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
