@@ -85,14 +85,16 @@ end
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are `true`.
+All transformations must produce vectors containing `true` or `false` (and
+optionally `missing` if `skipmissing=true`).
 
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
 described for [`select`](@ref).
 
 Note that as opposed to [`filter`](@ref) the `subset` function works on whole
-columns and always makes a subset of rows (or all rows in groups for
-`GroupedDataFrame`) and must return a vector.
+columns (and selects rows within groups for `GroupedDataFrame`
+rather than whole groups) and must return a vector.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -189,17 +191,16 @@ end
 
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
+All transformations must produce vectors containing `true` or `false` (and
+optionally `missing` if `skipmissing=true`).
 
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
 described for [`select`](@ref).
 
 Note that as opposed to [`filter!`](@ref) the `subset!` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`) and must return a vector.
-If you want to filter rows of an `AbstractDataFrame` or groups of
-`GroupedDataFrame` by a function that returns `Bool` value use [`filter!`](@ref)
-or [`filter`](@ref) (note that [`filter!`](@ref) is not supported for
-`GroupedDataFrame`).
+columns (and selects rows within groups for `GroupedDataFrame` rather than whole
+groups) and must return a vector.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
