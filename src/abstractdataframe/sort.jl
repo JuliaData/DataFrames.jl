@@ -120,9 +120,9 @@ DFPerm(o::Union{Ordering, AbstractVector}, df::AbstractDataFrame) =
 col_ordering(o::Ordering) = o
 col_ordering(o::Tuple{Vararg{Ordering}}) = @inbounds o[1]
 
-Sort.lt(o::DFPerm{O, Tuple{}}, a, b) where O = false
+Sort.lt(o::DFPerm{<:Any, Tuple{}}, a, b) where O = false
 
-function Sort.lt(o::DFPerm{O, <:Tuple}, a, b) where O
+function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b) where O
     ord = o.ord
     cols = o.cols
 
