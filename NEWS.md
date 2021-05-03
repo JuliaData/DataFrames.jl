@@ -1,14 +1,23 @@
-# DataFrames v1.0.x Patch Release Notes
+# DataFrames.jl v1.1 Release Notes
 
-* patch v1.0.3: make sure `subset` checks if the passed condition function
-  returns a vector of values
+## Functionality changes
+
+* make sure `subset` checks if the passed condition function
+  returns a vector of values (in the 1.0 release also returning scalar `true`,
+  `false`, or `missing` was allowed which was unintended and error prone)
   ([#2744](https://github.com/JuliaData/DataFrames.jl/pull/2744))
-* patch v1.0.2: fix of performance issue of `groupby` when using multi-threading
+
+
+# DataFrames.jl v1.0.2 Patch Release Notes
+
+## Performance improvements
+
+* fix of performance issue of `groupby` when using multi-threading
   ([#2736](https://github.com/JuliaData/DataFrames.jl/pull/2736))
-* patch v1.0.1: fix of performance issue of `groupby` when using `PooledVector`
+* fix of performance issue of `groupby` when using `PooledVector`
   ([2733](https://github.com/JuliaData/DataFrames.jl/pull/2733))
 
-# DataFrames v1.0 Release Notes
+# DataFrames.jl v1.0 Release Notes
 
 ## Breaking changes
 
@@ -86,7 +95,7 @@
    [#2574](https://github.com/JuliaData/DataFrames.jl/pull/2574),
    [#2664](https://github.com/JuliaData/DataFrames.jl/pull/2664))
 
-# DataFrames v0.22.7 Release notes
+# DataFrames.jl v0.22.7 Release notes
 
 * `convert` methods from `AbstractDataFrame`, `DataFrameRow` and `GroupKey`
   to `Array`, `Matrix`, `Vector` and `Tuple`, as well as from `AbstractDict` to
@@ -105,7 +114,7 @@
   `Tables.CopiedColumns`
   ([#2656](https://github.com/JuliaData/DataFrames.jl/pull/2656))
 
-# DataFrames v0.22 Release Notes
+# DataFrames.jl v0.22 Release Notes
 
 ## Breaking changes
 
