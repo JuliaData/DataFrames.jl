@@ -117,7 +117,7 @@ end
     df3 = DataFrame(x = Int[1, 2, 3, 4], y = Union{Int, Missing}[1, missing, 2, 3], 
                     z = Missing[missing, missing, missing, missing])
 
-    @test completecases(df2), :] == .!ismissing.(df2.x2)
+    @test completecases(df2) == .!ismissing.(df2.x2)
     @test @inferred(completecases(df3, :x)) == trues(nrow(df3))
     @test completecases(df3, :y) == .!ismissing.(df3.y)
     @test completecases(df3, :z) == completecases(df3, [:z, :x]) ==

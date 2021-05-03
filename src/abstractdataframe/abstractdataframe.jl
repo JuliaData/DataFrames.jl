@@ -776,7 +776,9 @@ end
 function completecases(df::AbstractDataFrame, col::ColumnIndex)
     v = df[!, col]
     if Missing <: eltype(v)
-        return .!ismissing.(v)
+        res = BitVector(undef, size(df, 1))
+        res .= .!ismissing.(v)
+        return res
     else
         return trues(size(df, 1))
     end
