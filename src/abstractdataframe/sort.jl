@@ -117,23 +117,22 @@ DFPerm(o::Union{Ordering, AbstractVector}, df::AbstractDataFrame) =
     DFPerm(o, ntuple(i -> df[!, i], ncol(df)))
 
 # get ordering function for the i-th column used for ordering
-col_ordering(o::DFPerm{O}) where {O<:Ordering} = o.ord
-col_ordering(o::DFPerm{T}) where {T<:Tuple{Vararg{Ordering}}} = @inbounds o.ord[1]
+col_ordering(o::Ordering) = o
+col_ordering(o::Tuple{Vararg{Ordering}}) = @inbounds o[1]
 
 Sort.lt(o::DFPerm{O, Tuple{}}, a, b) where O = false
 
 function Sort.lt(o::DFPerm{O, <:Tuple}, a, b) where O
-
     ord = o.ord
     cols = o.cols
 
     @inbounds begin
-        ord = col_ordering(o)
+        ord1 = col_ordering(ord)
         col = first(cols)
         va = col[a]
         vb = col[b]
-        lt(ord, va, vb) && return true
-        lt(ord, vb, va) && return false
+        lt(ord1, va, vb) && return true
+        lt(ord1, vb, va) && return false
     end
     neword = ord isa Ordering ? ord : Base.tail(ord)
     return Sort.lt(DFPerm(neword, Base.tail(cols)), a, b)
