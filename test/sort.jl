@@ -172,16 +172,39 @@ end
     @test sortperm(df, [:x1, :x2, :x3], rev=true) ==
           sortperm(tuple.(df.x1, df.x2, df.x3), rev=true)
 
+    @test issorted(sort(df, :x1), :x1)
+    @test issorted(sort(df, [:x1, :x2]), [:x1, :x2])
+    @test issorted(sort(df, [:x1, :x2, :x3]), [:x1, :x2, :x3])
+    @test issorted(sort(df, :x1, rev=true), :x1, rev=true)
+    @test issorted(sort(df, [:x1, :x2], rev=true), [:x1, :x2], rev=true)
+    @test issorted(sort(df, [:x1, :x2, :x3], rev=true), [:x1, :x2, :x3], rev=true)
+
     for r1 in (true, false)
         @test sortperm(df, order(:x1, rev=r1)) == sortperm((1 - 2*r1) * df.x1)
+        @test issorted(sort(df, order(:x1, rev=r1)), order(:x1, rev=r1))
         for r2 in (true, false)
             @test sortperm(df, [order(:x1, rev=r1), order(:x2, rev=r2)]) ==
                   sortperm(tuple.((1 - 2*r1) * df.x1, (1 - 2*r2) * df.x2))
+            @test issorted(sort(df, [order(:x1, rev=r1), order(:x2, rev=r2)]),
+                           [order(:x1, rev=r1), order(:x2, rev=r2)])
             for r3 in (true, false)
                 @test sortperm(df, [order(:x1, rev=r1), order(:x2, rev=r2), order(:x3, rev=r3)]) ==
                       sortperm(tuple.((1 - 2*r1) * df.x1, (1 - 2*r2) * df.x2, (1 - 2*r3) * df.x3))
+                @test issorted(sort(df, [order(:x1, rev=r1), order(:x2, rev=r2), order(:x3, rev=r3)]),
+                               [order(:x1, rev=r1), order(:x2, rev=r2), order(:x3, rev=r3)])
             end
         end
+    end
+
+    for i in 2:20
+        df = DataFrame(ones(10, i), :auto)
+        df[!, end] = randperm(10)
+        @test sortperm(df) == sortperm(df[!, end])
+        @test sortperm(df, [1:i-1; order(i, rev=true)]) == sortperm(df[!, end], rev=true)
+        df[!, 1] = randperm(10)
+        @test sortperm(df) == sortperm(df[!, 1])
+        @test sortperm(df, [order(1, rev=true); 2:i-1; order(i, rev=true)]) ==
+              sortperm(df[!, 1], rev=true)
     end
 end
 

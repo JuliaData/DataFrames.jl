@@ -116,15 +116,17 @@ end
 DFPerm(o::Union{Ordering, AbstractVector}, df::AbstractDataFrame) =
     DFPerm(o, ntuple(i -> df[!, i], ncol(df)))
 
-# get ordering function for the i-th column used for ordering
-col_ordering(o::Ordering) = o
-col_ordering(o::Tuple{Vararg{Ordering}}) = @inbounds o[1]
+@inline col_ordering(o::Ordering) = o
+@inline ord_tail(o::Ordering) = o
+@inline col_ordering(o::Tuple{Vararg{Ordering}}) = @inbounds o[1]
+@inline ord_tail(o::Tuple{Vararg{Ordering}}) = Base.tail(o)
 
-Sort.lt(o::DFPerm{<:Any, Tuple{}}, a, b) where O = false
+Sort.lt(o::DFPerm{<:Any, Tuple{}}, a, b) = false
 
-function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b) where O
+function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b)
     ord = o.ord
     cols = o.cols
+    length(cols) > 16 && return  unstable_lt(ord, cols, a, b)
 
     @inbounds begin
         ord1 = col_ordering(ord)
@@ -134,8 +136,24 @@ function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b) where O
         lt(ord1, va, vb) && return true
         lt(ord1, vb, va) && return false
     end
-    neword = ord isa Ordering ? ord : Base.tail(ord)
-    return Sort.lt(DFPerm(neword, Base.tail(cols)), a, b)
+    return Sort.lt(DFPerm(ord_tail(ord), Base.tail(cols)), a, b)
+end
+
+# get ordering function for the i-th column used for ordering
+col_ordering(o::Ordering, i::Int) where {O<:Ordering} = o
+col_ordering(o::Tuple{Vararg{Ordering}}, i::Int) = @inbounds o[i]
+
+function unstable_lt(ord::Union{Ordering, Tuple{Vararg{Ordering}}},
+                     cols::Tuple{Vararg{AbstractVector}}, a, b)
+    for i in 1:length(cols)
+        ordi = col_ordering(ord, i)
+        @inbounds coli = cols[i]
+        @inbounds va = coli[a]
+        @inbounds vb = coli[b]
+        lt(ordi, va, vb) && return true
+        lt(ordi, vb, va) && return false
+    end
+    false # a and b are equal
 end
 
 ###
@@ -332,7 +350,7 @@ function Base.issorted(df::AbstractDataFrame, cols=[];
     end
     if cols isa ColumnIndex
         return issorted(df[!, cols], lt=lt, by=by, rev=rev, order=order)
-    elseif length(cols) == 1
+    elseif cols isa AbstractVector{<:ColumnIndex} && length(cols) == 1
         return issorted(df[!, cols[1]], lt=lt, by=by, rev=rev, order=order)
     else
         return issorted(1:nrow(df), ordering(df, cols, lt, by, rev, order))
