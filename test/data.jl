@@ -136,6 +136,7 @@ end
     @test df1b == df1
 
     @test_throws ArgumentError completecases(DataFrame())
+    @test_throws ArgumentError completecases(DataFrame(x=1:3), Cols())
     @test_throws MethodError completecases(DataFrame(x=1), true)
     @test_throws ArgumentError completecases(df3, :a)
 
