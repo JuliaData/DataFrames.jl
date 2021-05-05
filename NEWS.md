@@ -4,7 +4,7 @@
 
 * fix performance issue when aggregation function produces multiple rows
   in split-apply-combine
-  ([XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
+  ([2749](https://github.com/JuliaData/DataFrames.jl/pull/2749))
 
 # DataFrames.jl v1.1 Release Notes
 
