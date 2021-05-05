@@ -543,7 +543,7 @@ function _combine(gd::GroupedDataFrame,
         end
         idx_keeprows = prepare_idx_keeprows(gd.idx, gd.starts, gd.ends, nrow(parent(gd)))
     else
-        idx_keeprows = nothing
+        idx_keeprows = Int[]
     end
 
     idx_agg = Ref(NOTHING_IDX_AGG)
