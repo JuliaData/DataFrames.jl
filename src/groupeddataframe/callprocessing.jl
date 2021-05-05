@@ -90,7 +90,7 @@ end
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple{AbstractVector}, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(view(incols[1], idx))
 end
 
