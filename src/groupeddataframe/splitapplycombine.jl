@@ -653,24 +653,9 @@ function _combine(gd::GroupedDataFrame,
     # a correct index is stored in idx variable
 
     @sync for i in eachindex(trans_res)
-        @spawn begin
-            col_idx = trans_res[i].col_idx
-            col = trans_res[i].col
-            if keeprows && col_idx !== idx_keeprows # we need to reorder the column
-                newcol = similar(col)
-                # we can probably make it more efficient, but I leave it as an optimization for the future
-                gd_idx = gd.idx
-                k = 0
-                # consider adding @inbounds later
-                for (s, e) in zip(gd.starts, gd.ends)
-                    for j in s:e
-                        k += 1
-                        newcol[gd_idx[j]] = col[k]
-                    end
-                end
-                @assert k == length(gd_idx)
-                trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
-            end
+        let i=i
+            @spawn reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
+                                 keeprows, idx_keeprows, gd)
         end
     end
 
@@ -680,6 +665,23 @@ function _combine(gd::GroupedDataFrame,
     # but it is safer to double check and it is cheap
     @assert all(x -> length(x) == length(outcols[1]), outcols)
     return idx, DataFrame(outcols, nms, copycols=false)
+end
+
+function reorder_cols!(trans_res, i, col, col_idx, keeprows, idx_keeprows, gd)
+    if keeprows && col_idx !== idx_keeprows # we need to reorder the column
+        newcol = similar(col)
+        # we can probably make it more efficient, but I leave it as an optimization for the future
+        gd_idx = gd.idx
+        k = 0
+        for (s, e) in zip(gd.starts, gd.ends)
+            for j in s:e
+                k += 1
+                @inbounds newcol[gd_idx[j]] = col[k]
+            end
+        end
+        @assert k == length(gd_idx)
+        trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
+    end
 end
 
 function combine(@nospecialize(f::Base.Callable), gd::GroupedDataFrame;

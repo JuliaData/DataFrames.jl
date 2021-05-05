@@ -397,7 +397,13 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
             return _combine_tables_with_first!(rows, newcols, idx, i, j,
                                                f, gd, incols, colnames, firstmulticol)
         end
-        append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
+        growsize = _nrow(rows)
+        if growsize > 0
+            oldsize = length(idx)
+            newsize = oldsize + growsize
+            resize!(idx, newsize)
+            idx[oldsize+1:newsize] .= gdidx[starts[i]]
+        end
     end
     return outcols, colnames
 end

@@ -1,3 +1,11 @@
+# DataFrames.jl v1.1.1 Patch Release Notes
+
+## Performance improvements
+
+* fix performance issue when aggregation function produces multiple rows
+  in split-apply-combine
+  ([XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
+
 # DataFrames.jl v1.1 Release Notes
 
 ## Functionality changes
