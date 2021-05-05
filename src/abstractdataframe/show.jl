@@ -68,15 +68,34 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
     end
 end
 
-"""Return compact string representation of type T"""
-function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
-    maxwidth = max(8, maxwidth)
+# memoize calls to compacttype
+const TYPE2STRING_DICT = Dict{Any, String}()
 
+# use this lock on compacttype caller side to ensure thread safety
+const TYPE2STRING_LOCK = Threads.ReentrantLock()
+
+"""
+    compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
+
+Return compact string representation of type T.
+This function is not thread safe. Use TYPE2STRING_LOCK to ensure thread safety.
+"""
+function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     T === Any && return "Any"
     T === Missing && return "Missing"
 
+    if haskey(TYPE2STRING_DICT, (T, maxwidth, initial))
+        return TYPE2STRING_DICT[(T, maxwidth, initial)]
+    end
+
+    refT = T
+    maxwidth = max(8, maxwidth)
+
     sT = string(T)
-    textwidth(sT) ≤ maxwidth && return sT
+    if textwidth(sT) ≤ maxwidth
+        TYPE2STRING_DICT[(refT, maxwidth, initial)] = sT
+        return sT
+    end
 
     if T >: Missing
         T = nonmissingtype(T)
@@ -84,7 +103,11 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
         suffix = "?"
         # ignore "?" for initial width counting but respect it for display
         initial || (maxwidth -= 1)
-        textwidth(sT) ≤ maxwidth && return sT * suffix
+        if textwidth(sT) ≤ maxwidth
+            strrepr = sT * suffix
+            TYPE2STRING_DICT[(refT, maxwidth, initial)] = strrepr
+            return strrepr
+        end
     else
         suffix = ""
     end
@@ -96,12 +119,18 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     if startswith(sT, "CategoricalValue") || startswith(sT, "CategoricalArrays.CategoricalValue")
         sT = string(nameof(T))
         if textwidth(sT) ≤ maxwidth
-            return sT * "…" * suffix
+            strrepr = sT * "…" * suffix
+            TYPE2STRING_DICT[(refT, maxwidth, initial)] = strrepr
+            return strrepr
         else
-            return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+            strrepr = (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+            TYPE2STRING_DICT[(refT, maxwidth, initial)] = strrepr
+            return strrepr
         end
     elseif T isa Union
-        return "Union…" * suffix
+        strrepr = "Union…" * suffix
+        TYPE2STRING_DICT[(refT, maxwidth, initial)] = strrepr
+        return strrepr
     else
         sT = string(nameof(T))
     end
@@ -116,7 +145,11 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
             break
         end
     end
-    return first(sT, stop) * "…" * suffix
+
+    strrepr = first(sT, stop) * "…" * suffix
+
+    TYPE2STRING_DICT[(refT, maxwidth, initial)] = strrepr
+    return strrepr
 end
 
 """
@@ -171,6 +204,7 @@ function getmaxwidths(df::AbstractDataFrame,
     undefstrwidth = ourstrwidth(io, "#undef", buffer, truncstring)
 
     j = 1
+    Threads.lock(TYPE2STRING_LOCK)
     for (name, col) in pairs(eachcol(df))
         # (1) Consider length of column name
         # do not truncate column name
@@ -186,12 +220,14 @@ function getmaxwidths(df::AbstractDataFrame,
         end
         if show_eltype
             # do not truncate eltype name
+
             maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col)), buffer, 0))
         else
             maxwidths[j] = maxwidth
         end
         j += 1
     end
+    Threads.unlock(TYPE2STRING_LOCK)
 
     # do not truncate rowlabel
     if rowid isa Nothing
@@ -226,7 +262,9 @@ function _show(io::IO,
 
     # NOTE: If we reuse `types` here, the time to print the first table is 2x
     # more. This should be something related to type inference.
+    Threads.lock(TYPE2STRING_LOCK)
     types_str = compacttype.(eltype.(eachcol(df)), maxwidth)
+    Threads.unlock(TYPE2STRING_LOCK)
 
     if allcols && allrows
         crop = :none

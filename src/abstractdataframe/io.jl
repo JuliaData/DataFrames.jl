@@ -107,10 +107,12 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if eltypes
         write(io, "<tr>")
         write(io, "<th></th>")
+        Threads.lock(TYPE2STRING_LOCK)
         for j in 1:mxcol
             s = html_escape(compacttype(eltype(df[!, j])))
             write(io, "<th>$s</th>")
         end
+        Threads.unlock(TYPE2STRING_LOCK)
         write(io, "</tr>")
     end
     write(io, "</thead>")
@@ -281,8 +283,10 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     write(io, "\t\\hline\n")
     if eltypes
         write(io, "\t& ")
+        Threads.lock(TYPE2STRING_LOCK)
         header = join(map(c -> latex_escape(string(compacttype(c))),
                           eltype.(eachcol(df)[1:mxcol])), " & ")
+        Threads.unlock(TYPE2STRING_LOCK)
         write(io, header)
         mxcol < size(df, 2) && write(io, " & ")
         write(io, "\\\\\n")
