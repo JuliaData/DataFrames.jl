@@ -338,7 +338,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
     if firstmulticol
         throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
     end
-    # if idx_agg was not computed yet it is nothing
+    # if idx_agg was not computed yet it is NOTHING_IDX_AGG
     # in this case if we are not passed a vector compute it.
     lock(gd.lazy_lock) do
         if !(firstres isa AbstractVector) && idx_agg[] === NOTHING_IDX_AGG
@@ -667,7 +667,9 @@ function _combine(gd::GroupedDataFrame,
     return idx, DataFrame(outcols, nms, copycols=false)
 end
 
-function reorder_cols!(trans_res, i, col, col_idx, keeprows, idx_keeprows, gd)
+function reorder_cols!(trans_res::Vector{TransformationResult}, i::Integer,
+                       col::AbstractVector, col_idx::Vector{Int}, keeprows::Bool,
+                       idx_keeprows::Vector{Int}, gd::GroupedDataFrame)
     if keeprows && col_idx !== idx_keeprows # we need to reorder the column
         newcol = similar(col)
         # we can probably make it more efficient, but I leave it as an optimization for the future
