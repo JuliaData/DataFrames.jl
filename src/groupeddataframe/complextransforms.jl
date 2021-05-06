@@ -58,7 +58,6 @@ function _combine_with_first((first,)::Ref{Any},
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(_ncol(first)) do i
             res = Tables.allocatecolumn(eltys[i], n)
-            sizehint!(res, lgd)
             return res
         end
     end
