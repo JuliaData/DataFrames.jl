@@ -79,7 +79,7 @@ function batch_compacttype(types::Vector{Any}, maxwidths::AbstractVector{Int},
     end
 end
 
-function batch_compacttype(types::AbstractVector{<:Type}, maxwidth::Int=8, initial::Bool=true)
+function batch_compacttype(types::Vector{Any}, maxwidth::Int=8, initial::Bool=true)
     cache = Dict{Type, String}()
     return map(types) do T
         get!(cache, T) do
