@@ -68,7 +68,27 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
     end
 end
 
-"""Return compact string representation of type T"""
+function batch_compacttype(types::Vector{Any}, maxwidths::AbstractVector{Int},
+                           initial::Bool=true)
+    @assert length(types) == length(maxwidths)
+    cache = Dict{Any, String}()
+    return map(types, maxwidths) do T, maxwidth
+        get!(cache, T) do
+            compacttype(T, maxwidth, initial)
+        end
+    end
+end
+
+function batch_compacttype(types::AbstractVector{<:Type}, maxwidth::Int=8, initial::Bool=true)
+    cache = Dict{Type, String}()
+    return map(types) do T
+        get!(cache, T) do
+            compacttype(T, maxwidth, initial)
+        end
+    end
+end
+
+"""Return compact string representation of type `T`"""
 function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     maxwidth = max(8, maxwidth)
 
@@ -170,8 +190,9 @@ function getmaxwidths(df::AbstractDataFrame,
 
     undefstrwidth = ourstrwidth(io, "#undef", buffer, truncstring)
 
+    ct = show_eltype ? String[] : batch_compacttype(Any[eltype(c) for c in eachcol(df)])
     j = 1
-    for (name, col) in pairs(eachcol(df))
+    for (col_idx, (name, col)) in enumerate(pairs(eachcol(df)))
         # (1) Consider length of column name
         # do not truncate column name
         maxwidth = ourstrwidth(io, name, buffer, 0)
@@ -186,7 +207,7 @@ function getmaxwidths(df::AbstractDataFrame,
         end
         if show_eltype
             # do not truncate eltype name
-            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col)), buffer, 0))
+            maxwidths[j] = max(maxwidth, ourstrwidth(io, ct[col_idx], buffer, 0))
         else
             maxwidths[j] = maxwidth
         end
@@ -220,13 +241,10 @@ function _show(io::IO,
     _check_consistency(df)
 
     names_str = names(df)
-    names_len = textwidth.(names_str)
-    maxwidth = max.(9, names_len)
-    types = eltype.(eachcol(df))
-
-    # NOTE: If we reuse `types` here, the time to print the first table is 2x
-    # more. This should be something related to type inference.
-    types_str = compacttype.(eltype.(eachcol(df)), maxwidth)
+    names_len = Int[textwidth(n) for n in names_str]
+    maxwidth = Int[max(9, nl) for nl in names_len]
+    types = Any[eltype(c) for c in eachcol(df)]
+    types_str = batch_compacttype(types, maxwidth)
 
     if allcols && allrows
         crop = :none

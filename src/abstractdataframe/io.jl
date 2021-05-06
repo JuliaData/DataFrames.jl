@@ -107,8 +107,9 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if eltypes
         write(io, "<tr>")
         write(io, "<th></th>")
+        ct = batch_compacttype(Any[eltype(df[!, idx]) for idx in 1:mxcol])
         for j in 1:mxcol
-            s = html_escape(compacttype(eltype(df[!, j])))
+            s = html_escape(ct[j])
             write(io, "<th>$s</th>")
         end
         write(io, "</tr>")
@@ -281,8 +282,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     write(io, "\t\\hline\n")
     if eltypes
         write(io, "\t& ")
-        header = join(map(c -> latex_escape(string(compacttype(c))),
-                          eltype.(eachcol(df)[1:mxcol])), " & ")
+        ct = batch_compacttype(Any[eltype(df[!, idx]) for idx in 1:mxcol])
+        header = join(latex_escape.(ct), " & ")
         write(io, header)
         mxcol < size(df, 2) && write(io, " & ")
         write(io, "\\\\\n")
