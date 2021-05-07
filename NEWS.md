@@ -5,6 +5,12 @@
 * fix performance issue when aggregation function produces multiple rows
   in split-apply-combine
   ([2749](https://github.com/JuliaData/DataFrames.jl/pull/2749))
+* `completecases` is now optimized and only processes columns that
+  can contain missing values; additionally it is now type stable and
+  always returns a `BitVector`
+  ([#2726](https://github.com/JuliaData/DataFrames.jl/pull/2726))
+* fix performance bottleneck when displaying wide tables
+  ([#2750](https://github.com/JuliaData/DataFrames.jl/pull/2750))
 
 # DataFrames.jl v1.1 Release Notes
 
