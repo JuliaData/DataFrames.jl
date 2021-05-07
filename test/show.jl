@@ -735,4 +735,14 @@ end
             20     40     60"""
 end
 
+@testset "cover all corner cases of compacttype" begin
+    df = DataFrame(x2345678901234567 = categorical(["1"]))
+    @test sprint(show, df) === """
+        1×1 DataFrame
+         Row │ x2345678901234567
+             │ CategoricalValue…
+        ─────┼───────────────────
+           1 │ 1"""
+end
+
 end # module
