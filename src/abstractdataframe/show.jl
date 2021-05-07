@@ -113,7 +113,6 @@ function compacttype(T::Type, maxwidth::Int=8)
         T = nonmissingtype(T)
         sT = string(T)
         suffix = "?"
-        maxwidth -= 1
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
         suffix = ""
