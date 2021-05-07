@@ -56,10 +56,7 @@ function _combine_with_first((first,)::Ref{Any},
     sizehint!(idx, lgd)
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
-        initialcols = ntuple(_ncol(first)) do i
-            res = Tables.allocatecolumn(eltys[i], n)
-            return res
-        end
+        initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
     targetcolnames = tuple(propertynames(first)...)
     if !extrude && first isa Union{AbstractDataFrame,
@@ -407,7 +404,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     return outcols, colnames
 end
 
-@inline function append_const!(idx::Vector{Int}, val, growsize::Int)
+function append_const!(idx::Vector{Int}, val::Int, growsize::Int)
     if growsize > 0
         oldsize = length(idx)
         newsize = oldsize + growsize
