@@ -68,6 +68,10 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
     end
 end
 
+# For most data frames, especially wide, columns having the same element type
+# occur multiple times. batch_compacttype ensures that we compute string
+# representation of a specific column element type only once and then reuse it.
+
 function batch_compacttype(types::Vector{Any}, maxwidths::Vector{Int})
     @assert length(types) == length(maxwidths)
     cache = Dict{Any, String}()
