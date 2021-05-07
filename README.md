@@ -25,7 +25,7 @@ You can also check out
 that is available on GitHub.
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: http://JuliaData.github.io/DataFrames.jl/latest/
+[docs-latest-url]: http://dataframes.juliadata.org/latest/
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: http://JuliaData.github.io/DataFrames.jl/stable/
+[docs-stable-url]: http://dataframes.juliadata.org/stable/
