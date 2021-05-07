@@ -52,8 +52,13 @@ function _combine_with_first((first,)::Ref{Any},
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
+
     idx = idx_agg === NOTHING_IDX_AGG ? Vector{Int}(undef, n) : idx_agg
+    # assume that we will have at least one row per group;
+    # if the user wants to drop some groups this will over-allocate idx
+    # but this use case is uncommon and sizehint! is cheap.
     sizehint!(idx, lgd)
+
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
