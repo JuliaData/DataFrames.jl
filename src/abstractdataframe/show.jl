@@ -68,28 +68,35 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
     end
 end
 
-function batch_compacttype(types::Vector{Any}, maxwidths::AbstractVector{Int},
-                           initial::Bool=true)
+function batch_compacttype(types::Vector{Any}, maxwidths::Vector{Int})
     @assert length(types) == length(maxwidths)
     cache = Dict{Any, String}()
     return map(types, maxwidths) do T, maxwidth
         get!(cache, T) do
-            compacttype(T, maxwidth, initial)
+            compacttype(T, maxwidth)
         end
     end
 end
 
-function batch_compacttype(types::Vector{Any}, maxwidth::Int=8, initial::Bool=true)
+function batch_compacttype(types::Vector{Any}, maxwidth::Int=8)
     cache = Dict{Type, String}()
     return map(types) do T
         get!(cache, T) do
-            compacttype(T, maxwidth, initial)
+            compacttype(T, maxwidth)
         end
     end
 end
 
-"""Return compact string representation of type `T`"""
-function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
+"""
+    compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
+
+Return compact string representation of type `T`.
+
+For displaying data frame we do not want string representation of type to be
+longer than `maxwidth`. This function implements rules how type names are
+cropped if they are longer than `maxwidth`.
+"""
+function compacttype(T::Type, maxwidth::Int=8)
     maxwidth = max(8, maxwidth)
 
     T === Any && return "Any"
@@ -102,8 +109,7 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
         T = nonmissingtype(T)
         sT = string(T)
         suffix = "?"
-        # ignore "?" for initial width counting but respect it for display
-        initial || (maxwidth -= 1)
+        maxwidth -= 1
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
         suffix = ""
