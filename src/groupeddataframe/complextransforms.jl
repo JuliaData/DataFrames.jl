@@ -30,6 +30,7 @@ function _combine_with_first((first,)::Ref{Any},
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     extrude = false
 
+    lgd = length(gd)
     if first isa AbstractDataFrame
         n = 0
         eltys = eltype.(eachcol(first))
@@ -37,21 +38,27 @@ function _combine_with_first((first,)::Ref{Any},
         n = 0
         eltys = map(eltype, first)
     elseif first isa DataFrameRow
-        n = length(gd)
+        n = lgd
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
     elseif !firstmulticol && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude = true
         first = wrap_row(first[1], firstcoltype(firstmulticol))
-        n = length(gd)
+        n = lgd
         eltys = (typeof(first[1]),)
     else # other NamedTuple giving a single row
-        n = length(gd)
+        n = lgd
         eltys = map(typeof, first)
         if any(x -> x <: AbstractVector, eltys)
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
+
     idx = idx_agg === NOTHING_IDX_AGG ? Vector{Int}(undef, n) : idx_agg
+    # assume that we will have at least one row per group;
+    # if the user wants to drop some groups this will over-allocate idx
+    # but this use case is uncommon and sizehint! is cheap.
+    sizehint!(idx, lgd)
+
     local initialcols
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
@@ -362,7 +369,7 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
     if !isempty(colnames) && length(gd) > 0
         j = append_rows!(first, outcols, colstart, colnames)
         @assert j === nothing # eltype is guaranteed to match
-        append!(idx, Iterators.repeated(gdidx[starts[rowstart]], _nrow(first)))
+        append_const!(idx, gdidx[starts[rowstart]], _nrow(first))
     end
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
@@ -397,7 +404,16 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
             return _combine_tables_with_first!(rows, newcols, idx, i, j,
                                                f, gd, incols, colnames, firstmulticol)
         end
-        append!(idx, Iterators.repeated(gdidx[starts[i]], _nrow(rows)))
+        append_const!(idx, gdidx[starts[i]], _nrow(rows))
     end
     return outcols, colnames
+end
+
+function append_const!(idx::Vector{Int}, val::Int, growsize::Int)
+    if growsize > 0
+        oldsize = length(idx)
+        newsize = oldsize + growsize
+        resize!(idx, newsize)
+        idx[oldsize+1:newsize] .= val
+    end
 end
