@@ -388,7 +388,7 @@ julia> show(german, allcols=true)
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account  Credit amount  Duration  Purpose
       │ Int64  Int64  String  Int64  String   String           String            Int64          Int64     String
 ──────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    1 │     0    100  male        2  own      NA               little                     1169         6  radio/TV
+    1 │     0     67  male        2  own      NA               little                     1169         6  radio/TV
     2 │     1     22  female      2  own      little           moderate                   5951        48  radio/TV
     3 │     2     49  male        1  own      little           NA                         2096        12  education
     4 │     3     45  male        2  free     little           little                     7882        42  furniture/equipment
@@ -396,27 +396,7 @@ julia> show(german, allcols=true)
     6 │     5     35  male        1  free     NA               NA                         9055        36  education
     7 │     6     53  male        2  own      quite rich       NA                         2835        24  furniture/equipment
     8 │     7     35  male        3  rent     little           moderate                   6948        36  car
-    9 │     8     61  male        1  own      rich             NA                         3059        12  radio/TV
-   10 │     9     28  male        3  own      little           moderate                   5234        30  car
-   11 │    10     25  female      2  rent     little           moderate                   1295        12  car
-   12 │    11     24  female      2  rent     little           little                     4308        48  business
-   13 │    12     22  female      2  own      little           moderate                   1567        12  radio/TV
-   14 │    13     60  male        1  own      little           little                     1199        24  car
-   15 │    14     28  female      2  rent     little           little                     1403        15  car
-   16 │    15     32  female      1  own      moderate         little                     1282        24  radio/TV
-   17 │    16     53  male        2  own      NA               NA                         2424        24  radio/TV
-   18 │    17     25  male        2  own      NA               little                     8072        30  business
   ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮                ⋮           ⋮               ⋮
-  984 │   983     26  male        2  own      little           little                     8229        36  car
-  985 │   984     30  male        1  own      little           NA                         2028        24  furniture/equipment
-  986 │   985     25  female      2  rent     little           little                     1433        15  furniture/equipment
-  987 │   986     33  male        2  own      little           rich                       6289        42  business
-  988 │   987     64  female      2  own      moderate         NA                         1409        13  radio/TV
-  989 │   988     29  male        3  free     little           little                     6579        24  car
-  990 │   989     48  male        1  own      little           moderate                   1743        24  radio/TV
-  991 │   990     37  male        1  own      NA               NA                         3565        12  education
-  992 │   991     34  male        1  own      moderate         NA                         1569        15  radio/TV
-  993 │   992     23  male        1  rent     NA               little                     1936        18  radio/TV
   994 │   993     30  male        3  own      little           little                     3959        36  furniture/equipment
   995 │   994     50  male        2  own      NA               NA                         2390        12  car
   996 │   995     31  female      1  own      little           NA                         1736        12  furniture/equipment
@@ -424,7 +404,7 @@ julia> show(german, allcols=true)
   998 │   997     38  male        2  own      little           NA                          804        12  radio/TV
   999 │   998     23  male        2  free     little           little                     1845        45  radio/TV
  1000 │   999     27  male        2  own      moderate         moderate                   4576        45  car
-                                                                                                              965 rows omitted
+                                                                                                              985 rows omitted
 ```
 
 You can also compute descriptive statistics directly on individual columns:
@@ -445,26 +425,26 @@ julia> german = copy(german_ref);
 
 julia> mapcols(id -> id.^2, german)
 1000×10 DataFrame
-  Row │ id      Age    Sex           Job    Housing   Saving ac ⋯
-      │ Int64   Int64  String        Int64  String    String    ⋯
-──────┼──────────────────────────────────────────────────────────
-    1 │      0   4489  malemale          4  ownown    NANA      ⋯
-    2 │      1    484  femalefemale      4  ownown    littlelit
-    3 │      4   2401  malemale          1  ownown    littlelit
-    4 │      9   2025  malemale          4  freefree  littlelit
-    5 │     16   2809  malemale          4  freefree  littlelit ⋯
-    6 │     25   1225  malemale          1  freefree  NANA
-    7 │     36   2809  malemale          4  ownown    quite ric
-    8 │     49   1225  malemale          9  rentrent  littlelit
-  ⋮   │   ⋮       ⋮         ⋮          ⋮       ⋮                ⋱
-  994 │ 986049    900  malemale          9  ownown    littlelit ⋯
-  995 │ 988036   2500  malemale          4  ownown    NANA
-  996 │ 990025    961  femalefemale      1  ownown    littlelit
-  997 │ 992016   1600  malemale          9  ownown    littlelit
-  998 │ 994009   1444  malemale          4  ownown    littlelit ⋯
-  999 │ 996004    529  malemale          4  freefree  littlelit
- 1000 │ 998001    729  malemale          4  ownown    moderatem
-                                   5 columns and 985 rows omitted
+  Row │ id      Age    Sex           Job    Housing   Saving accounts       Ch ⋯
+      │ Int64   Int64  String        Int64  String    String                St ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │      0   4489  malemale          4  ownown    NANA                  li ⋯
+    2 │      1    484  femalefemale      4  ownown    littlelittle          mo
+    3 │      4   2401  malemale          1  ownown    littlelittle          NA
+    4 │      9   2025  malemale          4  freefree  littlelittle          li
+    5 │     16   2809  malemale          4  freefree  littlelittle          li ⋯
+    6 │     25   1225  malemale          1  freefree  NANA                  NA
+    7 │     36   2809  malemale          4  ownown    quite richquite rich  NA
+    8 │     49   1225  malemale          9  rentrent  littlelittle          mo
+  ⋮   │   ⋮       ⋮         ⋮          ⋮       ⋮               ⋮               ⋱
+  994 │ 986049    900  malemale          9  ownown    littlelittle          li ⋯
+  995 │ 988036   2500  malemale          4  ownown    NANA                  NA
+  996 │ 990025    961  femalefemale      1  ownown    littlelittle          NA
+  997 │ 992016   1600  malemale          9  ownown    littlelittle          li
+  998 │ 994009   1444  malemale          4  ownown    littlelittle          NA ⋯
+  999 │ 996004    529  malemale          4  freefree  littlelittle          li
+ 1000 │ 998001    729  malemale          4  ownown    moderatemoderate      mo
+                                                  4 columns and 985 rows omitted
 ```
 
 If you want to look at first and last rows of a data frame (respectively) then you can do this
@@ -880,12 +860,12 @@ A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/Inverted
 can be used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
-julia> german[:, Not(:Age)] # `:Age` was after `:id`.
+julia> german[:, Not(:Age)] # `:Age` was after `:id`
 1000×9 DataFrame
   Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
       │ Int64  String  Int64  String   String           String            Int6 ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0  male        2  own      NA               little                 ⋯
+    1 │     1  male        2  own      NA               little                 ⋯
     2 │     1  female      2  own      little           moderate
     3 │     2  male        1  own      little           NA
     4 │     3  male        2  free     little           little
@@ -933,8 +913,8 @@ julia> german[:, Cols("Age", Between("Sex", "Job"))]
   Row │ Age    Sex     Job
       │ Int64  String  Int64
 ──────┼──────────────────────
-    1 │    67  male        2
-    2 │    22  female      2
+    1 │     1  male        2
+    2 │     1  female      2
     3 │    49  male        1
     4 │    45  male        2
     5 │    53  male        2
@@ -956,8 +936,8 @@ julia> german[:, Cols("Age", Not("Sex"))]
   Row │ Age    id     Job    Housing  Saving accounts  Checking account  Credi ⋯
       │ Int64  Int64  Int64  String   String           String            Int64 ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │    67      0      2  own      NA               little                  ⋯
-    2 │    22      1      2  own      little           moderate
+    1 │     1      1      2  own      NA               little                  ⋯
+    2 │     1      1      2  own      little           moderate
     3 │    49      2      1  own      little           NA
     4 │    45      3      2  free     little           little
     5 │    53      4      2  free     little           little                  ⋯
@@ -975,13 +955,14 @@ julia> german[:, Cols("Age", Not("Sex"))]
                                                   3 columns and 985 rows omitted
 
 julia> findall(==(67), german[!, :Age]) # It will find 67 in column `Age` of `german` data frame
-3-element Vector{Int64}:
-   1
+2-element Vector{Int64}:
  555
  780
 
+
 julia> findall(!=(67), german[:, :Age]) # It is showing where 67 is not occuring
-997-element Vector{Int64}:
+998-element Vector{Int64}:
+    1
     2
     3
     4
@@ -991,7 +972,6 @@ julia> findall(!=(67), german[:, :Age]) # It is showing where 67 is not occuring
     8
     9
    10
-   11
     ⋮
   992
   993
@@ -1042,8 +1022,8 @@ julia> german[!, Not(3)]
   Row │ id     Age    Job    Housing  Saving accounts  Checking account  Credi ⋯
       │ Int64  Int64  Int64  String   String           String            Int64 ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0     67      2  own      NA               little                  ⋯
-    2 │     1     22      2  own      little           moderate
+    1 │     1      1      2  own      NA               little                  ⋯
+    2 │     1      1      2  own      little           moderate
     3 │     2     49      1  own      little           NA
     4 │     3     45      2  free     little           little
     5 │     4     53      2  free     little           little                  ⋯
@@ -1068,7 +1048,7 @@ julia> german[:, Not(2)]
   Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
       │ Int64  String  Int64  String   String           String            Int6 ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0  male        2  own      NA               little                 ⋯
+    1 │     1  male        2  own      NA               little                 ⋯
     2 │     1  female      2  own      little           moderate
     3 │     2  male        1  own      little           NA
     4 │     3  male        2  free     little           little
@@ -1147,7 +1127,7 @@ So, from `2:5` it will access the column from `Age` to `Housing`.
 ```jldoctest dataframe
 julia> @view german[1:5, 1]
 5-element view(::Vector{Int64}, 1:5) with eltype Int64:
- 1
+ 0
  1
  2
  3
@@ -1155,7 +1135,7 @@ julia> @view german[1:5, 1]
 
 julia> @view german[2, 2]
 0-dimensional view(::Vector{Int64}, 2) with eltype Int64:
-1
+22
 
 julia> @view german[3, 2:5] # a DataFrameRow, the same as for german[3, 2:5] without a view
 DataFrameRow
@@ -1164,8 +1144,8 @@ DataFrameRow
 ─────┼───────────────────────────────
    3 │    49  male        1  own
 
-julia>@time @view german[2:5, 2:5] # here you can see creation of view is very fast
-  0.000036 seconds (2 allocations: 112 bytes)
+julia> @time @view german[2:5, 2:5] # here you can see creation of view is very fast
+  0.000081 seconds (2 allocations: 112 bytes)
 4×4 SubDataFrame
  Row │ Age    Sex     Job    Housing
      │ Int64  String  Int64  String
