@@ -49,6 +49,8 @@ The reason is that `DataFrame` is not a collection of its columns.
 In this section you will see many ways to create a `DataFrame` using the `DataFrame(...)` constructor.
 First, let's create an empty `DataFrame`:
 ```jldoctest dataframe
+julia> using DataFrames
+
 julia> df = DataFrame()
 0×0 DataFrame
 ```
@@ -1144,8 +1146,7 @@ DataFrameRow
 ─────┼───────────────────────────────
    3 │    49  male        1  own
 
-julia> @time @view german[2:5, 2:5] # here you can see creation of view is very fast
-  0.000081 seconds (2 allocations: 112 bytes)
+julia> @view german[2:5, 2:5] # here you can see creation of view is very fast
 4×4 SubDataFrame
  Row │ Age    Sex     Job    Housing
      │ Int64  String  Int64  String
