@@ -114,8 +114,17 @@ end
                     :auto)
     df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]],
                     :auto)
+    df3 = DataFrame(x = Int[1, 2, 3, 4], y = Union{Int, Missing}[1, missing, 2, 3], 
+                    z = Missing[missing, missing, missing, missing])
 
-    @test df2[completecases(df2), :] == df2[[1, 2, 4], :]
+    @test completecases(df2) == .!ismissing.(df2.x2)
+    @test @inferred(completecases(df3, :x)) == trues(nrow(df3))
+    @test completecases(df3, :y) == .!ismissing.(df3.y)
+    @test completecases(df3, :z) == completecases(df3, [:z, :x]) ==
+          completecases(df3, [:x, :z]) == completecases(df3, [:y, :x, :z]) ==
+          falses(nrow(df3))
+    @test @inferred(completecases(df3, [:y, :x])) ==
+          completecases(df3, [:x, :y]) == .!ismissing.(df3.y)
     @test dropmissing(df2) == df2[[1, 2, 4], :]
     returned = dropmissing(df1)
     @test df1 == returned && df1 !== returned
@@ -127,7 +136,9 @@ end
     @test df1b == df1
 
     @test_throws ArgumentError completecases(DataFrame())
+    @test_throws ArgumentError completecases(DataFrame(x=1:3), Cols())
     @test_throws MethodError completecases(DataFrame(x=1), true)
+    @test_throws ArgumentError completecases(df3, :a)
 
     for cols in (:x2, "x2", [:x2], ["x2"], [:x1, :x2], ["x1", "x2"], 2, [2], 1:2,
                  [true, true], [false, true], :,

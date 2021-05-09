@@ -51,7 +51,8 @@ into row groups.
   `DataAPI.refpool` in which case the order of groups follows the order of
   values returned by `DataAPI.refpool`. As a particular application of this rule
   if all `cols` are `CategoricalVector`s then groups are always sorted
-  irrespective of the value of `sort`.
+  Integer columns with a narrow range also use this this optimization, so
+  to the order of groups when grouping on integer columns is undefined.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
@@ -65,7 +66,7 @@ In particular if it is an empty vector then a single-group `GroupedDataFrame`
 is created.
 
 A `GroupedDataFrame` also supports
-indexing by groups, `map` (which applies a function to each group)
+indexing by groups, `select`, `transform`,
 and `combine` (which applies a function to each group
 and combines the result into a data frame).
 

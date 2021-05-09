@@ -90,28 +90,28 @@ end
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple{AbstractVector}, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(view(incols[1], idx))
 end
 
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NTuple{2, AbstractVector}, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(view(incols[1], idx), view(incols[2], idx))
 end
 
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NTuple{3, AbstractVector}, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx))
 end
 
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::NTuple{4, AbstractVector}, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(view(incols[1], idx), view(incols[2], idx), view(incols[3], idx),
              view(incols[4], idx))
 end
@@ -119,7 +119,7 @@ end
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Tuple, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(map(c -> view(c, idx), incols)...)
 end
 
@@ -129,7 +129,7 @@ function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
     if f isa ByRow && isempty(incols)
         return [f.fun(NamedTuple()) for _ in 1:(ends[i] - starts[i] + 1)]
     else
-        idx = idx[starts[i]:ends[i]]
+        idx = view(idx, starts[i]:ends[i])
         return f(map(c -> view(c, idx), incols))
     end
 end
@@ -137,6 +137,6 @@ end
 function do_call(f::Base.Callable, idx::AbstractVector{<:Integer},
                  starts::AbstractVector{<:Integer}, ends::AbstractVector{<:Integer},
                  gd::GroupedDataFrame, incols::Nothing, i::Integer)
-    idx = idx[starts[i]:ends[i]]
+    idx = view(idx, starts[i]:ends[i])
     return f(view(parent(gd), idx, :))
 end
