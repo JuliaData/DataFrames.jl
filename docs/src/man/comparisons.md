@@ -4,12 +4,29 @@ This section compares DataFrames.jl with other data manipulation frameworks in P
 
 A sample data set can be created using the following code:
 
-```julia
-using DataFrames
-using Statistics
+```jldoctest
+julia> using DataFrames
+julia> using Statistics
 
-df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id = 'a':'f')
-df2 = DataFrame(grp = [1, 3], w = [10, 11])
+julia> df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id = 'a':'f')
+6×5 DataFrame
+ Row │ grp    x      y      z        id
+     │ Int64  Int64  Int64  Int64?   Char
+─────┼────────────────────────────────────
+   1 │     1      6      4        3  a
+   2 │     2      5      5        4  b
+   3 │     1      4      6        5  c
+   4 │     2      3      7        6  d
+   5 │     1      2      8        7  e
+   6 │     2      1      9  missing  f
+
+julia> df2 = DataFrame(grp = [1, 3], w = [10, 11])
+2×2 DataFrame
+ Row │ grp    w
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     10
+   2 │     3     11
 ```
 
 Note that in the comparisons presented below predicates like `x -> x >= 1` can
@@ -57,9 +74,20 @@ In addition, when indexing a data frame with the `findfirst` function, a single
 or boolean indexing instead. It would then return a `DataFrame` object containing all matched rows. The following
 two lines of code are functionally equivalent:
 
-```julia
-df[findall(==('c'), df.id), :]
-df[df.id .== 'c', :]
+```jldoctest dataframe
+julia> df[findall(==('c'), df.id), :]
+1×5 DataFrame
+ Row │ grp    x      y      z       id
+     │ Int64  Int64  Int64  Int64?  Char
+─────┼───────────────────────────────────
+   1 │     1      4      6       5  c
+
+julia> df[df.id .== 'c', :]
+1×5 DataFrame
+ Row │ grp    x      y      z       id
+     │ Int64  Int64  Int64  Int64?  Char
+─────┼───────────────────────────────────
+   1 │     1      4      6       5  c
 ```
 
 DataFrames.jl's indexing always produces a consistent and predictable return type.
@@ -100,6 +128,10 @@ examples above do not synchronize the column names between pandas and DataFrames
 
 ### Mutating operations
 
+!!! note
+    
+    Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
+
 | Operation          | pandas                                                | DataFrames.jl                                |
 |:-------------------|:------------------------------------------------------|:---------------------------------------------|
 | Add new columns    | `df['z1'] = df['z'] + 1`                              | `df.z1 = df.z .+ 1`                          |
@@ -119,6 +151,10 @@ DataFrames.jl provides a `groupby` function to apply operations
 over each group independently. The result of `groupby` is a `GroupedDataFrame` object
 which may be processed using the `combine`, `transform`, or `select` functions.
 The following table illustrates some common grouping and aggregation usages.
+
+!!! note
+    
+    Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
 
 | Operation                       | pandas                                                                                 | DataFrames.jl                                        |
 |:--------------------------------|:---------------------------------------------------------------------------------------|:-----------------------------------------------------|
@@ -141,14 +177,14 @@ Name: x, dtype: int64
 
 For DataFrames.jl, it looks like this:
 
-```julia
+```jldoctest dataframe
 julia> combine(groupby(df, :grp), :x => mean)
 2×2 DataFrame
-│ Row │ grp   │ x_mean  │
-│     │ Int64 │ Float64 │
-├─────┼───────┼─────────┤
-│ 1   │ 1     │ 4.0     │
-│ 2   │ 2     │ 3.0     │
+ Row │ grp    x_mean
+     │ Int64  Float64
+─────┼────────────────
+   1 │     1      4.0
+   2 │     2      3.0
 ```
 
 In DataFrames.jl, the `GroupedDataFrame` object supports an efficient key lookup.
@@ -159,16 +195,16 @@ Hence, it performs well when you need to perform lookups repeatedly.
 This section includes more complex examples.
 
 | Operation                              | pandas                                                                       | DataFrames.jl                                             |
-|:---------------------------------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------|
-| Complex Function                       | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`       |
-| Aggregate multiple columns             | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`               |
-|                                        | `df[['x', 'y']].mean()`                                                      | `combine(df, [:x, :y] .=> mean)`                          |
-|                                        | `df.filter(regex=("^x")).mean()`                                             | `combine(df, names(df, r"^x") .=> mean)`                  |
-| Apply function over multiple variables | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0, 1])`                         | `transform(df, [:x, :y] => cor)`                          |
-| Row-wise operation                     | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                   |
-|                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x, :y]) => ByRow(argmax))`       |
-| DataFrame as input                     | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`            |
-| DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(:x => x -> (x = [minimum(x), maximum(x)],), df)` |
+|:---------------------------------------|:-----------------------------------------------------------------------------|:------------------------------------------------------------------------|
+| Complex Function                       | `df[['z']].agg(lambda v: np.mean(np.cos(v)))`                                | `combine(df, :z => v -> mean(cos, skipmissing(v)))`                     |
+| Aggregate multiple columns             | `df.agg({'x': max, 'y': min})`                                               | `combine(df, :x => maximum, :y => minimum)`                             |
+|                                        | `df[['x', 'y']].mean()`                                                      | `combine(df, [:x, :y] .=> mean)`                                        |
+|                                        | `df.filter(regex=("^x")).mean()`                                             | `combine(df, names(df, r"^x") .=> mean)`                                |
+| Apply function over multiple variables | `df.assign(x_y_cor = np.corrcoef(df.x, df.y)[0, 1])`                         | `transform(df, [:x, :y] => cor)`                                        |
+| Row-wise operation                     | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                                 |
+|                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x, :y]) => ByRow(argmax))`                     |
+| DataFrame as input                     | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`                          |
+| DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(df, :x => (x -> (x = [minimum(x), maximum(x)],)) => AsTable)`  |
 
 Note that pandas preserves the same row order after `groupby` whereas DataFrames.jl
 shows them grouped by the provided keys after the `combine` operation,
@@ -222,22 +258,26 @@ As in dplyr, some of these functions can be applied to grouped data frames, in w
 
 The table below compares more advanced commands:
 
-| Operation                 | dplyr                                                     | DataFrames.jl                                                 |
-|:--------------------------|:----------------------------------------------------------|:--------------------------------------------------------------|
-| Complex Function          | `summarize(df, mean(x, na.rm = T))`                       | `combine(df, :x => x -> mean(skipmissing(x)))`                |
-| Transform several columns | `summarize(df, max(x), min(y))`                           | `combine(df, :x => maximum,  :y => minimum)`                  |
-|                           | `summarize(df, across(c(x, y), mean))`                    | `combine(df, [:x, :y] .=> mean)`                              |
-|                           | `summarize(df, across(starts_with("x"), mean))`           | `combine(df, names(df, r"^x") .=> mean)`                      |
-|                           | `summarize(df, across(c(x, y), list(max, min)))`          | `combine(df, ([:x, :y] .=> [maximum minimum])...)`            |
-| Multivariate function     | `mutate(df, cor(x, y))`                                   | `transform(df, [:x, :y] => cor)`                              |
-| Row-wise                  | `mutate(rowwise(df), min(x, y))`                          | `transform(df, [:x, :y] => ByRow(min))`                       |
-|                           | `mutate(rowwise(df), which.max(c_across(matches("^x"))))` | `transform(df, AsTable(r"^x") => ByRow(argmax))`              |
-| DataFrame as input        | `summarize(df, head(across(), 2))`                        | `combine(d -> first(d, 2), df)`                               |
-| DataFrame as output       | `summarize(df, tibble(value = c(min(x), max(x))))`        | `combine(:x => x -> (value = [minimum(x), maximum(x)],), df)` |
+| Operation                 | dplyr                                                     | DataFrames.jl                                                  |
+|:--------------------------|:----------------------------------------------------------|:---------------------------------------------------------------|
+| Complex Function          | `summarize(df, mean(x, na.rm = T))`                       | `combine(df, :x => x -> mean(skipmissing(x)))`                 |
+| Transform several columns | `summarize(df, max(x), min(y))`                           | `combine(df, :x => maximum,  :y => minimum)`                   |
+|                           | `summarize(df, across(c(x, y), mean))`                    | `combine(df, [:x, :y] .=> mean)`                               |
+|                           | `summarize(df, across(starts_with("x"), mean))`           | `combine(df, names(df, r"^x") .=> mean)`                       |
+|                           | `summarize(df, across(c(x, y), list(max, min)))`          | `combine(df, ([:x, :y] .=> [maximum minimum])...)`             |
+| Multivariate function     | `mutate(df, cor(x, y))`                                   | `transform(df, [:x, :y] => cor)`                               |
+| Row-wise                  | `mutate(rowwise(df), min(x, y))`                          | `transform(df, [:x, :y] => ByRow(min))`                        |
+|                           | `mutate(rowwise(df), which.max(c_across(matches("^x"))))` | `transform(df, AsTable(r"^x") => ByRow(argmax))`               |
+| DataFrame as input        | `summarize(df, head(across(), 2))`                        | `combine(d -> first(d, 2), df)`                                |
+| DataFrame as output       | `summarize(df, tibble(value = c(min(x), max(x))))`        | `combine(df, :x => (x -> [minimum(x), maximum(x)]) => :value)` |
 
 ## Comparison with Stata (version 8 and above)
 
 The following table compares the main functions of DataFrames.jl with Stata:
+
+!!! note
+    
+    Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
 
 | Operation              | Stata                   | DataFrames.jl                           |
 |:-----------------------|:------------------------|:----------------------------------------|
@@ -245,12 +285,15 @@ The following table compares the main functions of DataFrames.jl with Stata:
 | Add new columns        | `egen x_mean = mean(x)` | `transform!(df, :x => mean => :x_mean)` |
 | Rename columns         | `rename x x_new`        | `rename!(df, :x => :x_new)`             |
 | Pick columns           | `keep x y`              | `select!(df, :x, :y)`                   |
-| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1)`        |
+| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1))` |
 | Sort rows              | `sort x`                | `sort!(df, :x)`                         |
 
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
 
 Some of these functions can be applied to grouped data frames, in which case they operate by group:
+!!! note
+    
+    Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
 
 | Operation              | Stata                            | DataFrames.jl                               |
 |:-----------------------|:---------------------------------|:--------------------------------------------|
