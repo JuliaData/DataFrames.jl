@@ -151,6 +151,7 @@ end
 
 @testset "_findall(B::BitVector)" begin
     BD = Dict(
+        "Empty" => (BitVector([]), Vector{Int}),
         "T Big" => (trues(100000), UnitRange{Int}),
         "F Big" => (falses(100000), Vector{Int}),
         "T64 F64" => ([trues(64); falses(64)], UnitRange{Int}),
@@ -171,7 +172,7 @@ end
         "TFT Big" => ([trues(8500); falses(100000); trues(65000)], Vector{Int}),
         "FTFTFTF Big" => ([falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)], Vector{Int}),
 
-        "FTFR small" => ([falses(85); trues(100); falses(65); rand([true, false], 40)], Vector{Int}),
+        "FTFR small" => ([falses(85); trues(100); falses(65); rand([true, false], 2000)], Vector{Int}),
         "R Big" => (BitVector(rand([true, false], 2000000)), Vector{Int}),
         "RF Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
         "RT Big" => ([BitVector(rand([true, false], 1000000));  trues(1000000)], Vector{Int}),
@@ -183,8 +184,8 @@ end
         "TRT Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int}),
         "RFR Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int}),
         "FTFR Big" => ([falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)], Vector{Int}),
-        "T256 R100" => ([trues(256);  rand([true, false], 100)], Vector{Int}),
-        "F256 R100" => ([falses(256); rand([true, false], 100)], Vector{Int}),
+        "T256 R100" => ([trues(256);  rand([true, false], 2000)], Vector{Int}),
+        "F256 R100" => ([falses(256); rand([true, false], 2000)], Vector{Int}),
     )
     for (_, (B, T)) in BD
         res = DataFrames._findall(B)
