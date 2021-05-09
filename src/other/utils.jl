@@ -169,10 +169,132 @@ function _nt_like_hash(v, h::UInt)
     return xor(objectid(Tuple(propertynames(v))), h)
 end
 
-function _findall(v::AbstractVector{Bool})
-    if all(v)
-        return keys(v)
-    else
-        return findall(v)
+_findall(B) = findall(B)
+
+@inline _blsr(x)= x & (x-1) 
+const _msk64 = ~UInt64(0)
+
+# findall optimized for B::BitVector
+# the main idea from Base.findall(B::BitArray)
+function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
+    nnzB = count(B)
+    nnzB == 0 && return Int[]
+    nnzB == length(B) && return 1:length(B)
+    I = Vector{Int}()
+    Bc = B.chunks
+    Bi = 1 # block index
+    i1 = 1 # index of current block beginng in B
+    i = 1  # index of the _next_ one in I
+    c = Bc[1] # current block
+
+    start = -1 # the begining of ones block
+    stop = -1  # the end of ones block
+    
+    @inbounds while true # I not materialized
+        i > nnzB && return start:start + i - 2 # all ones in B found
+
+        if c == 0
+            if start != -1 && stop == -1
+                stop = i1 - 1
+            end
+            while c == 0 # no need to return here as we returned above
+                i1 += 64
+                Bi += 1
+                c = Bc[Bi]
+            end
+        end
+        if c == _msk64
+            if stop != -1
+                resize!(I, nnzB)
+                I[1:i-1] .= start:stop
+                break
+            end
+            if start == -1
+                start = i1
+            end
+            while c == _msk64
+                Bi == length(Bc) && return start:length(B)
+                
+                i += 64
+                i1 += 64
+                Bi += 1
+                c = Bc[Bi]
+            end    
+        end   
+        if c != 0 # mixed ones and zeros in block
+            tz = trailing_zeros(c)
+            lz = leading_zeros(c)
+            co = c >> tz == (one(UInt) << (64 - lz - tz)) - 1 # block of countinous ones in c
+            if stop != -1  # already found block of ones and zeros, just not materialized
+                resize!(I, nnzB)
+                I[1:i-1] .= start:stop
+                break
+            elseif !co # not countinous ones
+                resize!(I, nnzB)
+                if start != -1
+                    I[1:i-1] .= start:start + i - 2
+                end
+                break
+            else # countinous block of ones
+                if start != -1
+                    if tz > 0 # like __1111__ or 111111__
+                        resize!(I, nnzB)
+                        I[1:i-1] .= start:start + i - 2
+                        break
+                    else # lz > 0, like __111111
+                        stop = i1 + (64 - lz) - 1
+                        i += 64 - lz
+
+                        # return if last block
+                        Bi == length(Bc) && return start:stop
+
+                        i1 += 64
+                        Bi += 1
+                        c = Bc[Bi]
+                    end
+                else # start == -1 
+                    start = i1 + tz
+                    
+                    if lz > 0 # like __111111 or like __1111__
+                        stop = i1 + (64 - lz) - 1
+                        i += stop - start + 1
+                    else # like 111111__
+                        i += 64 - tz
+                    end
+
+                    # return if last block
+                    Bi == length(Bc) && return start:start + i - 2
+
+                    i1 += 64
+                    Bi += 1
+                    c = Bc[Bi]
+                end
+            end
+        end
+    end
+    @inbounds while true # I materialized, process like in Base.findall
+        i > nnzB && return I # all ones in B found
+
+        while c == 0 # no need to return here as we returned above
+            i1 += 64
+            Bi += 1
+            c = Bc[Bi]
+        end
+
+        while c == _msk64
+            I[i:i+64-1] .= i1:(i1+64-1)
+            Bi == length(Bc) && return I
+            i += 64
+            i1 += 64
+            Bi += 1
+            c = Bc[Bi]
+        end
+
+        while c!= 0
+            tz = trailing_zeros(c)
+            c = _blsr(c) # zeros last nonzero bit
+            I[i] = i1 + tz
+            i += 1
+        end
     end
 end

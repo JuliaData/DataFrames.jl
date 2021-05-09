@@ -125,4 +125,39 @@ end
     @test len < basesize || vmin >= basesize
 end
 
+@testset "_findall(B::BitVector)" begin
+    BD = Dict(
+        "T Big" => trues(100000),
+        "F Big" => falses(100000),
+        "T64 F64" => [trues(64); falses(64)],
+        "F64 T64" => [falses(64); trues(64)],
+        "F80 T100" => [falses(85); trues(100)],
+        "F256 T32" => [falses(256); trues(32)],
+        "F260 T32" => [falses(260); trues(32)],
+        "TF Big" => [trues(100000); falses(100000)],
+        "FT Big" => [falses(100000);trues(100000)] ,
+
+        # some edge cases
+        "TFT small" => [trues(85); falses(100); trues(85)],
+        "FTFFT small" => [falses(64 + 32); trues(32); falses(128); trues(32)],
+        "TFTF small" => [falses(64); trues(64); falses(64); trues(64)],
+        "TFT small" => [trues(64); falses(10); trues(100)],
+
+        "FTF Big" => [falses(8500); trues(100000); falses(65000)],
+        "TFT Big" => [trues(8500); falses(100000); trues(65000)],
+        "FTFTFTF Big" => [falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)],
+
+        "FTFR small" => [falses(85); trues(100); falses(65); rand([true, false], 20)],
+        "R Big" => BitVector(rand([true, false], 200000)),
+        "RF Big" => [BitVector(rand([true, false], 100000)) ; falses(100000)],
+        "RT Big" => [BitVector(rand([true, false], 100000)) ; trues(100000)],
+        "FTFR Big" => [falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)],
+        "T256 R100" => [trues(256);  rand([true, false], 100)],
+        "F256 R100" => [falses(256); rand([true, false], 100)],
+    )
+    for (_, B) in BD
+        @test Base.findall(B) == DataFrames._findall(B)
+    end
+end
+
 end # module
