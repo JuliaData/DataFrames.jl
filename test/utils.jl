@@ -127,36 +127,38 @@ end
 
 @testset "_findall(B::BitVector)" begin
     BD = Dict(
-        "T Big" => trues(100000),
-        "F Big" => falses(100000),
-        "T64 F64" => [trues(64); falses(64)],
-        "F64 T64" => [falses(64); trues(64)],
-        "F80 T100" => [falses(85); trues(100)],
-        "F256 T32" => [falses(256); trues(32)],
-        "F260 T32" => [falses(260); trues(32)],
-        "TF Big" => [trues(100000); falses(100000)],
-        "FT Big" => [falses(100000);trues(100000)] ,
+        "T Big" => (trues(100000), UnitRange{Int}),
+        "F Big" => (falses(100000), Vector{Int}),
+        "T64 F64" => ([trues(64); falses(64)], UnitRange{Int}),
+        "F64 T64" => ([falses(64); trues(64)], UnitRange{Int}),
+        "F80 T100" => ([falses(85); trues(100)], UnitRange{Int}),
+        "F256 T32" => ([falses(256); trues(32)], UnitRange{Int}),
+        "F260 T32" => ([falses(260); trues(32)], UnitRange{Int}),
+        "TF Big" => ([trues(100000); falses(100000)], UnitRange{Int}),
+        "FT Big" => ([falses(100000); trues(100000)], UnitRange{Int}),
 
         # some edge cases
-        "TFT small" => [trues(85); falses(100); trues(85)],
-        "FTFFT small" => [falses(64 + 32); trues(32); falses(128); trues(32)],
-        "TFTF small" => [falses(64); trues(64); falses(64); trues(64)],
-        "TFT small" => [trues(64); falses(10); trues(100)],
+        "TFT small" => ([trues(85); falses(100); trues(85)], Vector{Int}),
+        "FTFFT small" => ([falses(64 + 32); trues(32); falses(128); trues(32)], Vector{Int}),
+        "TFTF small" => ([falses(64); trues(64); falses(64); trues(64)], Vector{Int}),
+        "TFT small" => ([trues(64); falses(10); trues(100)], Vector{Int}),
 
-        "FTF Big" => [falses(8500); trues(100000); falses(65000)],
-        "TFT Big" => [trues(8500); falses(100000); trues(65000)],
-        "FTFTFTF Big" => [falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)],
+        "FTF Big" => ([falses(8500); trues(100000); falses(65000)], UnitRange{Int}),
+        "TFT Big" => ([trues(8500); falses(100000); trues(65000)], Vector{Int}),
+        "FTFTFTF Big" => ([falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)], Vector{Int}),
 
-        "FTFR small" => [falses(85); trues(100); falses(65); rand([true, false], 20)],
-        "R Big" => BitVector(rand([true, false], 200000)),
-        "RF Big" => [BitVector(rand([true, false], 100000)) ; falses(100000)],
-        "RT Big" => [BitVector(rand([true, false], 100000)) ; trues(100000)],
-        "FTFR Big" => [falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)],
-        "T256 R100" => [trues(256);  rand([true, false], 100)],
-        "F256 R100" => [falses(256); rand([true, false], 100)],
+        "FTFR small" => ([falses(85); trues(100); falses(65); rand([true, false], 40)], Vector{Int}),
+        "R Big" => (BitVector(rand([true, false], 200000)), Vector{Int}),
+        "RF Big" => ([BitVector(rand([true, false], 100000)) ; falses(100000)], Vector{Int}),
+        "RT Big" => ([BitVector(rand([true, false], 100000)) ; trues(100000)], Vector{Int}),
+        "FTFR Big" => ([falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)], Vector{Int}),
+        "T256 R100" => ([trues(256);  rand([true, false], 100)], Vector{Int}),
+        "F256 R100" => ([falses(256); rand([true, false], 100)], Vector{Int}),
     )
-    for (_, B) in BD
-        @test Base.findall(B) == DataFrames._findall(B)
+    for (_, (B, T)) in BD
+        res = DataFrames._findall(B)
+        @test Base.findall(B) == res
+        @test typeof(res) == T
     end
 end
 
