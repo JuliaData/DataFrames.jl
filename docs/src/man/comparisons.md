@@ -76,6 +76,8 @@ or boolean indexing instead. It would then return a `DataFrame` object containin
 two lines of code are functionally equivalent:
 
 ```jldoctest dataframe
+julia> df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id = 'a':'f');
+
 julia> df[findall(==('c'), df.id), :]
 1×5 DataFrame
  Row │ grp    x      y      z       id
@@ -178,7 +180,11 @@ Name: x, dtype: int64
 
 For DataFrames.jl, it looks like this:
 
-```jldoctest dataframe
+```jldoctest 
+julia> using DataFrames
+
+julia> df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id = 'a':'f');
+
 julia> combine(groupby(df, :grp), :x => mean)
 2×2 DataFrame
  Row │ grp    x_mean
