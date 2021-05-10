@@ -190,8 +190,8 @@ function _show(io::IO,
     # floating points.
     alignment_anchor_regex = Dict{Int, Vector{Regex}}()
 
-    # Regex to align floating points.
-    alignment_regex_float = [r"\."]
+    # Regex to align real numbers.
+    alignment_regex_real = [r"\."]
 
     # Regex for columns with complex numbers.
     #
@@ -199,28 +199,16 @@ function _show(io::IO,
     # string or an `e` precedes it.
     alignment_regex_complex = [r"(?<!^)(?<!e)[+|-]"]
 
-    # Regex for columns that are numbers (generic).
-    #
-    # Here we check if the string has "im" at the end. If it does, then apply
-    # the regex for complex numbers. Otherwise, match a decimal point.
-    alignment_regex_number = [r"(?(?=(.*im$))(?<!^)(?<!e)[+|-]|\.)"]
-
     for i = 1:num_cols
         type_i = nonmissingtype(types[i])
 
         if type_i <: Complex
             alignment_anchor_regex[i] = alignment_regex_complex
             alignment[i] = :r
-
-        elseif type_i <: AbstractFloat
-            alignment_anchor_regex[i] = alignment_regex_float
+        elseif type_i <: Real
+            alignment_anchor_regex[i] = alignment_regex_real
             alignment[i] = :r
-
-        elseif type_i <: Integer
-            alignment[i] = :r
-
         elseif type_i <: Number
-            alignment_anchor_regex[i] = alignment_regex_number
             alignment[i] = :r
         end
     end
