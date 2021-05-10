@@ -721,7 +721,7 @@ end
     @test str == """
     12×4 DataFrame
      Row │ very_big_column_name_1  very_big_column_name_2  very_big_column_name_3  very_big_column_name_4
-         │ Union{Missing, Number}  Int64                   Float64?                ComplexF64
+         │ Union{Missing, Number}  Int64                   Float64?                $str_complex
     ─────┼────────────────────────────────────────────────────────────────────────────────────────────────
        1 │                     im                      -1                   0.001        1.0e-5-10000.0im
        2 │                  1+1im                     -10                   0.01         0.0001+1000.0im
