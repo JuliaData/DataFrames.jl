@@ -687,6 +687,54 @@ end
 
 end
 
+@testset "Complex number alignment" begin
+    a = Union{Missing, Number}[
+        im,
+        1 + im,
+        -1 - im,
+        1.123 + 123im,
+        -2.323 - 32im,
+        -1//3 - 4//5im,
+        1028.23123,
+        missing,
+        -0.304105,
+        2123123,
+        +0.304105,
+        1.3123e-10 + 1.123e-5im
+    ]
+    b = Int64[10^(i-1) for i = 1:12];
+    c = Union{Missing, Float64}[i == 5 ? missing : 10.0^(i-4) for i = 1:12];
+    d = ComplexF64[10.0^(i-6) + (-1)^i * (10.0)^(11-i-6) * im for i = 1:12]
+    df = DataFrame(
+        very_big_column_name_1 = a,
+        very_big_column_name_2 = b,
+        very_big_column_name_3 = c,
+        very_big_column_name_4 = d
+    )
+
+    io = IOContext(IOBuffer())
+    show(io, df)
+    str = String(take!(io.io))
+
+    @test str == """
+    12×4 DataFrame
+     Row │ very_big_column_name_1  very_big_column_name_2  very_big_column_name_3  very_big_column_name_4
+         │ Union{Missing, Number}  Int64                   Float64?                ComplexF64
+    ─────┼────────────────────────────────────────────────────────────────────────────────────────────────
+       1 │          im                                  1                   0.001        1.0e-5-10000.0im
+       2 │           1+1im                             10                   0.01         0.0001+1000.0im
+       3 │          -1-1im                            100                   0.1           0.001-100.0im
+       4 │       1.123+123.0im                       1000                   1.0            0.01+10.0im
+       5 │      -2.323-32.0im                       10000             missing               0.1-1.0im
+       6 │       -1//3+4//5*im                     100000                 100.0             1.0+0.1im
+       7 │        1028.23                         1000000                1000.0            10.0-0.01im
+       8 │     missing                           10000000               10000.0           100.0+0.001im
+       9 │          -0.304105                   100000000              100000.0          1000.0-0.0001im
+      10 │     2123123                         1000000000                   1.0e6       10000.0+1.0e-5im
+      11 │           0.304105                 10000000000                   1.0e7      100000.0-1.0e-6im
+      12 │  1.3123e-10+1.123e-5im            100000000000                   1.0e8         1.0e6+1.0e-7im"""
+end
+
 @testset "Issue #2673 - Vertical line when not showing row numbers" begin
     df = DataFrame(a = Int64[10, 20], b = Int64[30, 40], c = Int64[50, 60])
 
