@@ -181,7 +181,7 @@ end
 
 _findall(B) = findall(B)
 
-@inline _blsr(x)= x & (x-1) 
+@inline _blsr(x)= x & (x-1)
 const _msk64 = ~UInt64(0)
 
 # findall optimized for B::BitVector
@@ -190,7 +190,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     nnzB = count(B)
     nnzB == 0 && return Int[]
     nnzB == length(B) && return 1:length(B)
-    I = Vector{Int}()
+    local I
     Bc = B.chunks
     Bi = 1 # block index
     i1 = 1 # index of current block beginng in B
@@ -199,7 +199,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
 
     start = -1 # the begining of ones block
     stop = -1  # the end of ones block
-    
+
     @inbounds while true # I not materialized
         i > nnzB && return start:start + i - 2 # all ones in B found
 
@@ -215,7 +215,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         end
         if c == _msk64
             if stop != -1
-                resize!(I, nnzB)
+                I = Vector{Int}(undef,nnzB)
                 I[1:i-1] .= start:stop
                 break
             end
@@ -224,23 +224,23 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             end
             while c == _msk64
                 Bi == length(Bc) && return start:length(B)
-                
+
                 i += 64
                 i1 += 64
                 Bi += 1
                 c = Bc[Bi]
-            end    
-        end   
+            end
+        end
         if c != 0 # mixed ones and zeros in block
             tz = trailing_zeros(c)
             lz = leading_zeros(c)
-            co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of countinous ones in c
+            co = c >> tz == (one(UInt) << (64 - lz - tz)) - 1 # block of countinous ones in c
             if stop != -1  # already found block of ones and zeros, just not materialized
-                resize!(I, nnzB)
+                I = Vector{Int}(undef,nnzB)
                 I[1:i-1] .= start:stop
                 break
             elseif !co # not countinous ones
-                resize!(I, nnzB)
+                I = Vector{Int}(undef,nnzB)
                 if start != -1
                     I[1:i-1] .= start:start + i - 2
                 end
@@ -248,7 +248,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             else # countinous block of ones
                 if start != -1
                     if tz > 0 # like __1111__ or 111111__
-                        resize!(I, nnzB)
+                        I = Vector{Int}(undef,nnzB)
                         I[1:i-1] .= start:start + i - 2
                         break
                     else # lz > 0, like __111111
@@ -262,9 +262,9 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
                         Bi += 1
                         c = Bc[Bi]
                     end
-                else # start == -1 
+                else # start == -1
                     start = i1 + tz
-                    
+
                     if lz > 0 # like __111111 or like __1111__
                         stop = i1 + (64 - lz) - 1
                         i += stop - start + 1
