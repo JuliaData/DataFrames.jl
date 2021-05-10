@@ -151,9 +151,9 @@ end
 
 @testset "_findall(B::BitVector)" begin
     BD = Dict(
-        "Empty" => (BitVector([]), Vector{Int64}),
+        "Empty" => (BitVector([]), Vector{Int}),
         "T Big" => (trues(100000), UnitRange{Int}),
-        "F Big" => (falses(100000), Vector{Int64}),
+        "F Big" => (falses(100000), Vector{Int}),
         "T64 F64" => ([trues(64); falses(64)], UnitRange{Int}),
         "F64 T64" => ([falses(64); trues(64)], UnitRange{Int}),
         "F80 T100" => ([falses(85); trues(100)], UnitRange{Int}),
@@ -163,29 +163,29 @@ end
         "FT Big" => ([falses(100000); trues(100000)], UnitRange{Int}),
 
         # some edge cases
-        "TFT small" => ([trues(85); falses(100); trues(85)], Vector{Int64}),
-        "FTFFT small" => ([falses(64 + 32); trues(32); falses(128); trues(32)], Vector{Int64}),
-        "TFTF small" => ([falses(64); trues(64); falses(64); trues(64)], Vector{Int64}),
-        "TFT small" => ([trues(64); falses(10); trues(100)], Vector{Int64}),
+        "TFT small" => ([trues(85); falses(100); trues(85)], Vector{Int}),
+        "FTFFT small" => ([falses(64 + 32); trues(32); falses(128); trues(32)], Vector{Int}),
+        "TFTF small" => ([falses(64); trues(64); falses(64); trues(64)], Vector{Int}),
+        "TFT small" => ([trues(64); falses(10); trues(100)], Vector{Int}),
 
         "FTF Big" => ([falses(8500); trues(100000); falses(65000)], UnitRange{Int}),
-        "TFT Big" => ([trues(8500); falses(100000); trues(65000)], Vector{Int64}),
-        "FTFTFTF Big" => ([falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)], Vector{Int64}),
+        "TFT Big" => ([trues(8500); falses(100000); trues(65000)], Vector{Int}),
+        "FTFTFTF Big" => ([falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)], Vector{Int}),
 
-        "FTFR small" => ([falses(85); trues(100); falses(65); rand([true, false], 2000)], Vector{Int64}),
-        "R Big" => (BitVector(rand([true, false], 2000000)), Vector{Int64}),
-        "RF Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int64}),
-        "RT Big" => ([BitVector(rand([true, false], 1000000));  trues(1000000)], Vector{Int64}),
-        "FR Big" => ([falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int64}),
-        "TR Big" => ([trues(1000000);  BitVector(rand([true, false], 1000000))], Vector{Int64}),
-        "FRT Big" => ([falses(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int64}),
-        "TRF Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int64}),
-        "FRF Big" => ([falses(1000000); BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int64}),
-        "TRT Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int64}),
-        "RFR Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int64}),
-        "FTFR Big" => ([falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)], Vector{Int64}),
-        "T256 R100" => ([trues(256);  rand([true, false], 2000)], Vector{Int64}),
-        "F256 R100" => ([falses(256); rand([true, false], 2000)], Vector{Int64}),
+        "FTFR small" => ([falses(85); trues(100); falses(65); rand([true, false], 2000)], Vector{Int}),
+        "R Big" => (BitVector(rand([true, false], 2000000)), Vector{Int}),
+        "RF Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
+        "RT Big" => ([BitVector(rand([true, false], 1000000));  trues(1000000)], Vector{Int}),
+        "FR Big" => ([falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int}),
+        "TR Big" => ([trues(1000000);  BitVector(rand([true, false], 1000000))], Vector{Int}),
+        "FRT Big" => ([falses(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int}),
+        "TRF Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
+        "FRF Big" => ([falses(1000000); BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
+        "TRT Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int}),
+        "RFR Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int}),
+        "FTFR Big" => ([falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)], Vector{Int}),
+        "T256 R100" => ([trues(256);  rand([true, false], 2000)], Vector{Int}),
+        "F256 R100" => ([falses(256); rand([true, false], 2000)], Vector{Int}),
     )
     for (_, (B, T)) in BD
         res = DataFrames._findall(B)

@@ -186,11 +186,11 @@ const _msk64 = ~UInt64(0)
 
 # findall optimized for B::BitVector
 # the main idea from Base.findall(B::BitArray)
-function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int64}}
+function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     nnzB = count(B)
-    nnzB == 0 && return Int64[]
+    nnzB == 0 && return Int[]
     nnzB == length(B) && return 1:length(B)
-    I = Vector{Int64}()
+    I = Vector{Int}()
     Bc = B.chunks
     Bi = 1 # block index
     i1 = 1 # index of current block beginng in B
