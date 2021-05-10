@@ -186,11 +186,11 @@ const _msk64 = ~UInt64(0)
 
 # findall optimized for B::BitVector
 # the main idea from Base.findall(B::BitArray)
-function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
+function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int64}}
     nnzB = count(B)
-    nnzB == 0 && return Int[]
+    nnzB == 0 && return Int64[]
     nnzB == length(B) && return 1:length(B)
-    I = Vector{Int}()
+    I = Vector{Int64}()
     Bc = B.chunks
     Bi = 1 # block index
     i1 = 1 # index of current block beginng in B
@@ -234,7 +234,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         if c != 0 # mixed ones and zeros in block
             tz = trailing_zeros(c)
             lz = leading_zeros(c)
-            co = c >> tz == (one(UInt) << (64 - lz - tz)) - 1 # block of countinous ones in c
+            co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of countinous ones in c
             if stop != -1  # already found block of ones and zeros, just not materialized
                 resize!(I, nnzB)
                 I[1:i-1] .= start:stop
