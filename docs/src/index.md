@@ -29,7 +29,7 @@ other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
 To understand the toolchain in more details, have a look at the tutorials in this manual. New
-users can start with the [First Steps with DataFrames](@ref) tutorial in this manual.
+users can start with the [First Steps with DataFrames.jl](@ref) tutorial in this manual.
 
 ## DataFrames.jl and the Julia Data Ecosystem
 
