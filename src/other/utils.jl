@@ -300,7 +300,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             c = Bc[Bi]
         end
 
-        while c!= 0
+        while c != 0
             tz = trailing_zeros(c)
             c = _blsr(c) # zeros last nonzero bit
             I[i] = i1 + tz
