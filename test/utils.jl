@@ -150,6 +150,7 @@ end
 end
 
 @testset "_findall(B::BitVector)" begin
+    Random.seed!(1234)
     BD = Dict(
         "Empty" => (BitVector([]), Vector{Int}),
         "T Big" => (trues(100000), UnitRange{Int}),
@@ -191,6 +192,24 @@ end
         res = DataFrames._findall(B)
         @test Base.findall(B) == res
         @test typeof(res) == T
+    end
+    
+    # 1:200 is to test all small cases
+    # 1000 is to test skipping multiple 64-bit blocks of 0 and 1
+    for n in [1:200; 1000], i in 1:n, j in i:n
+        x = falses(n)
+        x[i:j] .= true
+        res = _findall(x)
+        @test res == i:j
+        @test res isa UnitRange{Int}
+        if j + 1 < n
+            x[j + 2] = true
+            # add one false and then true
+            @test _findall(x) == [i:j; j+2]
+            # sprinkle trues randomly after one false
+            rand!(view(x, j + 2:n), Bool)
+            @test _findall(x) == findall(x)
+        end
     end
 end
 
