@@ -193,7 +193,7 @@ end
         @test Base.findall(B) == res
         @test res isa T
     end
-    
+
     # 1:200 is to test all small cases
     # 1000 is to test skipping multiple 64-bit blocks of 0 and 1
     for n in [1:200; 1000], i in 1:n, j in i:n
