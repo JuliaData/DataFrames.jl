@@ -1,6 +1,6 @@
 module TestUtils
 
-using Test, DataFrames
+using Test, Random, DataFrames
 
 @testset "make_unique" begin
     @test DataFrames.make_unique([:x, :x, :x_1, :x2], makeunique=true) == [:x, :x_2, :x_1, :x2]
@@ -191,7 +191,7 @@ end
     for (_, (B, T)) in BD
         res = DataFrames._findall(B)
         @test Base.findall(B) == res
-        @test typeof(res) == T
+        @test res isa T
     end
     
     # 1:200 is to test all small cases
@@ -199,16 +199,16 @@ end
     for n in [1:200; 1000], i in 1:n, j in i:n
         x = falses(n)
         x[i:j] .= true
-        res = _findall(x)
+        res = DataFrames._findall(x)
         @test res == i:j
         @test res isa UnitRange{Int}
         if j + 1 < n
             x[j + 2] = true
             # add one false and then true
-            @test _findall(x) == [i:j; j+2]
+            @test  DataFrames._findall(x) == [i:j; j+2]
             # sprinkle trues randomly after one false
             rand!(view(x, j + 2:n), Bool)
-            @test _findall(x) == findall(x)
+            @test  DataFrames._findall(x) == findall(x)
         end
     end
 end
