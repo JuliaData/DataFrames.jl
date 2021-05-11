@@ -197,7 +197,7 @@ function _show(io::IO,
     #
     # Here we are matching `+` or `-` unless it is not at the beginning of the
     # string or an `e` precedes it.
-    alignment_regex_complex = [r"(?<!^)(?<!e)[+|-]"]
+    alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
 
     for i = 1:num_cols
         type_i = nonmissingtype(types[i])
