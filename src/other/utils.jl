@@ -201,7 +201,11 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     stop = -1  # the end of ones block
 
     @inbounds while true # I not materialized
-        i > nnzB && return start:start + i - 2 # all ones in B found
+        if i > nnzB # all ones in B found
+            Ir = start:start + i - 2
+            @assert length(Ir) == nnzB
+            return Ir
+        end
 
         if c == 0
             if start != -1 && stop == -1
@@ -223,7 +227,11 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
                 start = i1
             end
             while c == _msk64
-                Bi == length(Bc) && return start:length(B)
+                if Bi == length(Bc)
+                    Ir = start:length(B)
+                    @assert length(Ir) == nnzB
+                    return Ir
+                end
 
                 i += 64
                 i1 += 64
@@ -256,7 +264,11 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
                         i += 64 - lz
 
                         # return if last block
-                        Bi == length(Bc) && return start:stop
+                        if Bi == length(Bc)
+                            Ir = start:stop
+                            @assert length(Ir) == nnzB
+                            return Ir
+                        end
 
                         i1 += 64
                         Bi += 1
@@ -273,7 +285,11 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
                     end
 
                     # return if last block
-                    Bi == length(Bc) && return start:start + i - 2
+                    if Bi == length(Bc)
+                        Ir = start:start + i - 2
+                        @assert length(Ir) == nnzB
+                        return Ir
+                    end
 
                     i1 += 64
                     Bi += 1
@@ -283,7 +299,10 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         end
     end
     @inbounds while true # I materialized, process like in Base.findall
-        i > nnzB && return I # all ones in B found
+        if i > nnzB # all ones in B found
+            @assert nnzB == i - 1
+            return I
+        end
 
         while c == 0 # no need to return here as we returned above
             i1 += 64
@@ -293,8 +312,11 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
 
         while c == _msk64
             I[i:i+64-1] .= i1:(i1+64-1)
-            Bi == length(Bc) && return I
             i += 64
+            if Bi == length(Bc)
+                @assert nnzB == i - 1
+                return I
+            end
             i1 += 64
             Bi += 1
             c = Bc[Bi]
