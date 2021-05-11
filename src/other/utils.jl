@@ -242,7 +242,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         if c != 0 # mixed ones and zeros in block
             tz = trailing_zeros(c)
             lz = leading_zeros(c)
-            co = c >> tz == (one(UInt) << (64 - lz - tz)) - 1 # block of countinous ones in c
+            co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of countinous ones in c
             if stop != -1  # already found block of ones and zeros, just not materialized
                 I = Vector{Int}(undef,nnzB)
                 I[1:i-1] .= start:stop
