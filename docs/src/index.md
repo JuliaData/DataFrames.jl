@@ -171,7 +171,7 @@ to the source files on GitHub to make pull requests for improving the
 documentation and function capabilities.
 
 Please review [DataFrames contributing
-guidelines](https://github.com/JuliaData/DataFrames.jl/blob/master/CONTRIBUTING.md)
+guidelines](https://github.com/JuliaData/DataFrames.jl/blob/main/CONTRIBUTING.md)
 before submitting your first PR!
 
 Information on specific versions can be found on the [Release
