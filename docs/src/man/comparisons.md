@@ -240,6 +240,70 @@ The table below compares more advanced commands:
 | DataFrame as input        | `summarize(df, head(across(), 2))`                        | `combine(d -> first(d, 2), df)`                                            |
 | DataFrame as output       | `summarize(df, tibble(value = c(min(x), max(x))))`        | `combine(df, :x => (x -> (value = [minimum(x), maximum(x)],)) => AsTable)` |
 
+
+## Comparison with the R package data.table
+
+The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.14.1).
+
+```R
+library(data.table)
+df  <- data.table(grp = rep(1:2, 3), x = 6:1, y = 4:9,
+                  z = c(3:7, NA), id = letters[1:6])
+df2 <- data.table(grp=c(1,3), w = c(10,11))                 
+```
+
+| Operation                          | data.table                                       | DataFrames.jl                                |
+|:-----------------------------------|:-------------------------------------------------|:---------------------------------------------|
+| Reduce multiple values             | `df[, .(mean(x))]`                               | `combine(df, :x => mean)`                    |
+| Add new columns                    | `df[, x_mean:=mean(x) ]`                         | `transform!(df, :x => mean => :x_mean)`      |
+| Rename column (in place)           | `setnames(df, "x", "x_new")`                     | `rename!(df, :x => :x_new)`                  |
+| Rename multiple columns (in place) | `setnames(df, c("x", "y"), c("x_new", "y_new"))` | `rename!(df, [:x, :y] .=> [:x_new, :y_new])` |
+| Pick columns as dataframe          | `df[, .(x, y)]`                                  | `select(df, :x, :y)`                         |
+| Pick column as a vector            | `df[, x]`                                        | `df[!, :x]`                                  |
+| Remove columns                     | `df[, -"x"]`                                     | `select(df, Not(:x))`                        |
+| Remove columns (in place)          | `df[, x:=NULL]`                                  | `select!(df, Not(:x))`                       |
+| Remove columns (in place)          | `df[, c("x", "y"):=NULL]`                        | `select!(df, Not([:x, :y]))`                 |
+| Pick & transform columns           | `df[, .(mean(x), y)]`                            | `select(df, :x => mean, :y)`                 |
+| Pick rows                          | `df[ x >= 1 ]`                                   | `filter(:x => >=(1), df)`                    |
+| Sort rows (in place)               | `setorder(df, x)`                                | `sort!(df, :x)`                              |
+| Sort rows                          | `df[ order(x) ]`                                 | `sort(df, :x)`                               |
+
+### Grouping data and aggregation
+
+| Operation                   | data.table                                        | DataFrames.jl                             |
+|:----------------------------|:--------------------------------------------------|:------------------------------------------|
+| Reduce multiple values      | `df[, mean(x), by=id ]`                           | `combine(groupby(df, :id), :x => mean)`   |
+| Add new columns (in place)  | `df[, x_mean:=mean(x), by=id]`                    | `transform!(groupby(df, :id), :x => mean)`|
+| Pick & transform columns    | `df[, .(x_mean = mean(x), y), by=id]`             | `select(groupby(df, :id), :x => mean, :y)`|
+
+### More advanced commands
+
+| Operation                         | data.table                                                                                 | DataFrames.jl                                                               |
+|:----------------------------------|:-------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------|
+| Complex Function                  | `df[, .(mean(x, na.rm=TRUE)) ]`                                                            | `combine(df, :x => x -> mean(skipmissing(x)))`                              |
+| Transform certain rows (in place) | `df[x<=0, x:=0]`                                                                           | `df.x[df.x .<= 0] .= 0`                                                     |
+| Transform several columns         | `df[, .(max(x), min(y)) ]`                                                                 | `combine(df, :x => maximum, :y => minimum)`                                 |
+|                                   | `df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`                                          | `combine(df, [:x, :y] .=> mean)`                                            |
+|                                   | `df[, lapply(.SD, mean), .SDcols = patterns("*x") ]`                                       | `combine(df, names(df, r"^x") .=> mean)`                                    |
+|                                   | `df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]` | `combine(df, ([:x, :y] .=> [maximum minimum])...)`                          |
+| Multivariate function             | `df[, .(cor(x,y)) ]`                                                                       | `transform(df, [:x, :y] => cor)`                                            |
+| Row-wise                          | `df[, min_xy := min(x, y), by = 1:nrow(df)]`                                               | `transform!(df, [:x, :y] => ByRow(min))`                                    |
+|                                   | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("*x"), by = 1:nrow(df) ]`           | `transform!(df, AsTable(r"^x") => ByRow(argmax))`                           |
+| DataFrame as output               | `df[, .SD[1], by=grp]`                                                                     | `combine(groupby(df, :grp), first)`                                         |
+| DataFrame as output               | `df[, .SD[which.max(x)], by=grp]`                                                          | `combine(groupby(df, :grp), sdf -> sdf[argmax(sdf.x), :])`                  |
+
+### Joining data frames
+
+| Operation             | data.table                                      | DataFrames.jl                   |
+|:----------------------|:------------------------------------------------|:--------------------------------|
+| Inner join            | `merge(df, df2, on = "grp")`                    | `innerjoin(df, df2, on = :grp)` |
+| Outer join            | `merge(df, df2, all = TRUE, on = "grp")`        | `outerjoin(df, df2, on = :grp)` |
+| Left join             | `merge(df, df2, all.x = TRUE, on = "grp")`      | `leftjoin(df, df2, on = :grp)`  |
+| Right join            | `merge(df, df2, all.y = TRUE, on = "grp")`      | `rightjoin(df, df2, on = :grp)` |
+| Anti join (filtering) | `df[!df2, on = "grp" ]`                         | `antijoin(df, df2, on = :grp)`  |
+| Semi join (filtering) | `merge(df1, df2[, .(grp)])   `                  | `semijoin(df, df2, on = :grp)`  |
+
+
 ## Comparison with Stata (version 8 and above)
 
 The following table compares the main functions of DataFrames.jl with Stata:
