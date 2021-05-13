@@ -238,7 +238,7 @@ The table below compares more advanced commands:
 
 ## Comparison with the R package data.table
 
-The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.14.1). 
+The following table compares the main functions of DataFrames.jl with the R package data.table (version 1.14.1).
 
 ```R
 library(data.table)
@@ -247,7 +247,7 @@ df  <- data.table(grp = rep(1:2, 3), x = 6:1, y = 4:9,
 df2 <- data.table(grp=c(1,3), w = c(10,11))                 
 ```
 
-| Operation                          | data.table                                       | DataFrames.jl                                | 
+| Operation                          | data.table                                       | DataFrames.jl                                |
 |:-----------------------------------|:-------------------------------------------------|:---------------------------------------------|
 | Reduce multiple values             | `df[, .(mean(x))]`                               | `combine(df, :x => mean)`                    |
 | Add new columns                    | `df[, x_mean:=mean(x) ]`                         | `transform!(df, :x => mean => :x_mean)`      |
@@ -309,7 +309,7 @@ The following table compares the main functions of DataFrames.jl with Stata:
 | Add new columns        | `egen x_mean = mean(x)` | `transform!(df, :x => mean => :x_mean)` |
 | Rename columns         | `rename x x_new`        | `rename!(df, :x => :x_new)`             |
 | Pick columns           | `keep x y`              | `select!(df, :x, :y)`                   |
-| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1)`  |
+| Pick rows              | `keep if x >= 1`        | `subset!(df, :x => ByRow(x -> x >= 1))` |
 | Sort rows              | `sort x`                | `sort!(df, :x)`                         |
 
 Note that the suffix `!` (i.e. `transform!`, `select!`, etc) ensures that the operation transforms the dataframe in place, as in Stata
