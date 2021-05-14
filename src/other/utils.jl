@@ -181,14 +181,14 @@ end
 
 _findall(B) = findall(B)
 
-@inline _blsr(x)= x & (x-1)
+@inline _blsr(x) = x & (x-1)
 const _msk64 = ~UInt64(0)
 
-# findall optimized for B::BitVector
-# the main idea from Base.findall(B::BitArray)
+# findall returning a range when possible (all true indices are contiguous), and optimized for B::BitVector
+# the main idea is taken from Base.findall(B::BitArray)
 function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     nnzB = count(B)
-    nnzB == 0 && return Int[]
+    nnzB == 0 && return 1:0
     nnzB == length(B) && return 1:length(B)
     local I
     Bc = B.chunks
@@ -329,4 +329,5 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             i += 1
         end
     end
+    @assert false "should not be reached"
 end
