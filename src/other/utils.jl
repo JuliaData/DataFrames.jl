@@ -182,7 +182,6 @@ end
 _findall(B) = findall(B)
 
 @inline _blsr(x) = x & (x-1)
-const _msk64 = ~UInt64(0)
 
 # findall returning a range when possible (all true indices are contiguous), and optimized for B::BitVector
 # the main idea is taken from Base.findall(B::BitArray)
@@ -217,7 +216,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
                 c = Bc[Bi]
             end
         end
-        if c == _msk64
+        if c == ~UInt64(0)
             if stop != -1
                 I = Vector{Int}(undef,nnzB)
                 I[1:i-1] .= start:stop
@@ -226,7 +225,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             if start == -1
                 start = i1
             end
-            while c == _msk64
+            while c == ~UInt64(0)
                 if Bi == length(Bc)
                     Ir = start:length(B)
                     @assert length(Ir) == nnzB
@@ -310,7 +309,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             c = Bc[Bi]
         end
 
-        while c == _msk64
+        while c == ~UInt64(0)
             I[i:i+64-1] .= i1:(i1+64-1)
             i += 64
             if Bi == length(Bc)

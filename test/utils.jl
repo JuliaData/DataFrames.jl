@@ -152,9 +152,9 @@ end
 @testset "_findall(B::BitVector)" begin
     Random.seed!(1234)
     BD = Dict(
-        "Empty" => (BitVector([]), Vector{Int}),
+        "Empty" => (BitVector([]), UnitRange{Int}),
         "T Big" => (trues(100000), UnitRange{Int}),
-        "F Big" => (falses(100000), Vector{Int}),
+        "F Big" => (falses(100000), UnitRange{Int}),
         "T64 F64" => ([trues(64); falses(64)], UnitRange{Int}),
         "F64 T64" => ([falses(64); trues(64)], UnitRange{Int}),
         "F80 T100" => ([falses(85); trues(100)], UnitRange{Int}),
