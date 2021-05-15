@@ -950,7 +950,7 @@ julia> german[:, Cols("Age", Between("Sex", "Job"))] # presents `Age` column as 
              985 rows omitted
 
 julia> german[:, Cols("Age", Not("Sex"))] # Shows all column except `Sex` because of `Not` operation
-000×9 DataFrame
+1000×9 DataFrame
   Row │ Age    id     Job    Housing  Saving accounts  Checking account  Credi ⋯
       │ Int64  Int64  Int64  String   String           String            Int64 ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
