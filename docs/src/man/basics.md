@@ -11,7 +11,7 @@ julia> Pkg.add("DataFrames")
 or,
 
 ```julia
-julia> ] # `]` should be pressed 
+julia> ] # `]` should be pressed
 
 (@v1.6) pkg>  add DataFrames
 ```
@@ -30,7 +30,7 @@ julia> ]
 
 (@v1.6) pkg> st DataFrames
       Status `C:\Users\TeAmp0is0N\.julia\environments\v1.6\Project.toml`
-  [a93c6f00] DataFrames v1.1.1 
+  [a93c6f00] DataFrames v1.1.1
 ```
 
 Throughout the rest of the tutorial we will assume that you have installed the DataFrames.jl package and
@@ -39,7 +39,7 @@ have already typed `using DataFrames` which loads the package:
 julia> using DataFrames
 ```
 
-The most fundamental type provided by DataFrames.jl is `DataFrame`, where typically 
+The most fundamental type provided by DataFrames.jl is `DataFrame`, where typically
 that each row is interpreted as an observation and each column as a feature.
 
 # Constructors and Basic Utility Functions
@@ -66,7 +66,7 @@ julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
 ```
 note that in column `:fixed` scalars get automatically broadcasted.
 
-To move forward with the tutorial you need to install the CSV.jl package in your environment. 
+To move forward with the tutorial you need to install the CSV.jl package in your environment.
 In order to do so run the following commands:
 ```julia
 julia> using Pkg
@@ -115,16 +115,16 @@ german_ref = CSV.read((joinpath(dirname(pathof(DataFrames)),
                                       "..", "docs", "src", "assets", "german.csv")),
                                       DataFrame)
 ```
-- we are storing `german.csv` file in the DataFrames.jl repository to make user's life easier and 
+- we are storing `german.csv` file in the DataFrames.jl repository to make user's life easier and
   avoid having to download it each time;
 - `pathof(DataFrames)` gives us the full path of the file that was used to import the DataFrames.jl package;
 - first we split the directory part from it using `dirname`;
-- then from this directory we need to move to the directory where `german.csv` is stored; we use 
-  `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating 
-  system independent way  (remember that Widnows and Unix differ as they use either `/` or `\` as path 
+- then from this directory we need to move to the directory where `german.csv` is stored; we use
+  `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating
+  system independent way  (remember that Widnows and Unix differ as they use either `/` or `\` as path
   separator - `joinpath` is a function to make sure we are not running into issues with this);
-- then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to 
-  read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it 
+- then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to
+  read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it
   can read-into).
 
 You can see that Julia's representation (unlike Python's Pandas) displays the data type of the column,
@@ -132,7 +132,7 @@ In our case, it is an `Int64`, and a `String`.
 
 To access the columns directly (i.e. without copying) you can use `german.Sex`, `german."Sex"`,
 `german[!, :Sex]` or `german[!, "Sex"]`. The two latter syntaxes are more flexible as they allow
-us passing a variable holding the name of the column, and not only a literal name. 
+us passing a variable holding the name of the column, and not only a literal name.
 
 ```jldoctest dataframe
 julia> german[!, :Sex]
@@ -297,9 +297,9 @@ julia> german
 0×10 DataFrame
 ```
 
-In the above example `empty` function created a new `DataFrame` with the same column names 
-and column element types as `german` but with zero rows. On the other hand `empty!` function 
-removed all rows from `german` in-place and made each of its column empty. 
+In the above example `empty` function created a new `DataFrame` with the same column names
+and column element types as `german` but with zero rows. On the other hand `empty!` function
+removed all rows from `german` in-place and made each of its column empty.
 
 ## Getting Basic Information about a data frame
 
@@ -331,7 +331,7 @@ julia> ncol(german)
 10
 ```
 
-To get basic statistics of data in your data frame use the `describe` function (check out the help of `describe` 
+To get basic statistics of data in your data frame use the `describe` function (check out the help of `describe`
 for information on how to customize shown statistics).
 ```jldoctest dataframe
 julia> describe(german)
@@ -364,7 +364,7 @@ julia> describe(german, cols=1:3)
    3 │ Sex               female          male         0  String
 ```
 
-The default statistics reported are mean, min, median, max, number of missing values, and element type of 
+The default statistics reported are mean, min, median, max, number of missing values, and element type of
 the column. If columns contain `missing` values they are skipped when computing the summary statistics.
 
 You can adjust printing options by calling the `show` function manually: `show(german, allrows=true)`
@@ -406,8 +406,8 @@ julia> mean(german.Age)
 ```
 
 the `mapcols` function returns a `DataFrame` where each column of the source data frame is transformed using a passed function.
-Note that `mapcols` guarantees not to reuse the columns from `german` in the returned `DataFrame`. If the transformation returns 
-its argument then it gets copied before being stored. 
+Note that `mapcols` guarantees not to reuse the columns from `german` in the returned `DataFrame`. If the transformation returns
+its argument then it gets copied before being stored.
 
 ```jldoctest dataframe
 julia> mapcols(id -> id.^2, german) # `mapcols` will sequentially set columns from `id` to `Purpose` and will do square of each columns
@@ -467,8 +467,8 @@ julia> last(german, 5)
 ```
 
 Using `first` and `last` without number of rows will return a first/last `DataFrameRow` in the data frame.
-`DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference to a parent 
-`DataFrame` and information about which row and columns from the parent are selected.  
+`DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference to a parent
+`DataFrame` and information about which row and columns from the parent are selected.
 
 ```jldoctest dataframe
 julia> first(german)
@@ -794,6 +794,7 @@ julia> german[:, 3]
  "male"
  "male"
  "male"
+```
 
 We can get a single cell or element with the same syntax to get an element of an array:
 ```jldoctest dataframe
@@ -864,20 +865,20 @@ julia> german
 ## Not, Between, Cols, and All selectors
 
 Finally, you can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection
-scenarioes (note that `Cols()` selects no columns while `All()` selects all columns). `All()` allows 
-us to select all columns of `DataFrame` while `Between` selector allow us to specify a range of columns 
-(we can specify the start and stop column using any of the single column selector syntaxes). On the other 
-hand, `Not` selector allow us to specify the columns we want to exclude from the resulting data frames. We 
-can put any valid other column selector inside `Not`. Finally `Cols()` selector picks a union of other  
+scenarioes (note that `Cols()` selects no columns while `All()` selects all columns). `All()` allows
+us to select all columns of `DataFrame` while `Between` selector allow us to specify a range of columns
+(we can specify the start and stop column using any of the single column selector syntaxes). On the other
+hand, `Not` selector allow us to specify the columns we want to exclude from the resulting data frames. We
+can put any valid other column selector inside `Not`. Finally `Cols()` selector picks a union of other
 selectors passed as its arguments.
 
-A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package) 
+A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package)
 can be used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
-julia> german = copy(german_ref); # because in previous example we had done in-place replacement so our dataframe had changed 
+julia> german = copy(german_ref); # because in previous example we had done in-place replacement so our dataframe had changed
 
-julia> german[:, Not(:Age)] 
+julia> german[:, Not(:Age)]
 1000×9 DataFrame
   Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
       │ Int64  String  Int64  String   String           String            Int6 ⋯
@@ -1270,10 +1271,10 @@ julia> select(german, :Age, :Age => ByRow(sqrt)) # transform columns by row
         985 rows omitted
 ```
 
-In the above example `ByRow` type is a special type used for selection operations to signal that 
+In the above example `ByRow` type is a special type used for selection operations to signal that
 the wrapped function should be applied to each element (row) of the selection.
 
-It is important to note that `select` always returns a data frame, even if a single column selected 
+It is important to note that `select` always returns a data frame, even if a single column selected
 (as opposed to indexing syntax).
 
 ```jldoctest dataframe
@@ -1411,6 +1412,6 @@ julia> german
                                                   3 columns and 985 rows omitted
 ```
 
-`transform` and `transform!` functions work identically to `select` and `select!` with the only difference that 
-they retain all columns that are present in the source data frame and another difference is that `transform` and 
+`transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
+they retain all columns that are present in the source data frame and another difference is that `transform` and
 `transform!` always copy columns when column renaming transformation is passed.
