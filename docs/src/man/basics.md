@@ -745,7 +745,7 @@ julia> german[:, 1:2]
  1000 │   999     27
      985 rows omitted
 
-julia> german[:, [:3]] # here we have created a single column data frame
+julia> german[:, [3]] # here we have created a single column data frame
 1000×1 DataFrame
   Row │ Sex
       │ String
@@ -769,10 +769,10 @@ julia> german[:, [:3]] # here we have created a single column data frame
 985 rows omitted
 ```
 
-And we access the vector contained in column `:3` :
+Compare this with accessing the vector contained in column `3`:
 
 ```jldoctest dataframe
-julia> german[:, :3]
+julia> german[:, 3]
 1000-element PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}:
  "male"
  "female"
