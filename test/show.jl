@@ -702,15 +702,13 @@ end
         +0.304105,
         1.3123e-10 + 1.123e-5im
     ]
-    b = Int64[i ≤ 6 ? -1 * 10^(i - 1) : 10^(i - 7) for i = 1:12];
-    c = Union{Missing, Float64}[i == 5 ? missing : 10.0^(i-4) for i = 1:12];
+    b = Int64[i ≤ 6 ? -1 * 10^(i - 1) : 10^(i - 7) for i = 1:12]
+    c = Union{Missing, Float64}[i == 5 ? missing : 10.0^(i-4) for i = 1:12]
     d = ComplexF64[(-1)^(i % 3 == 0) * 10.0^(i-6) + (-1)^i * (10.0)^(11-i-6) * im for i = 1:12]
-    df = DataFrame(
-        very_big_column_name_1 = a,
-        very_big_column_name_2 = b,
-        very_big_column_name_3 = c,
-        very_big_column_name_4 = d
-    )
+    df = DataFrame(very_big_column_name_1 = a,
+                   very_big_column_name_2 = b,
+                   very_big_column_name_3 = c,
+                   very_big_column_name_4 = d)
 
     io = IOContext(IOBuffer())
     show(io, df)
@@ -721,7 +719,7 @@ end
     @test str == """
     12×4 DataFrame
      Row │ very_big_column_name_1  very_big_column_name_2  very_big_column_name_3  very_big_column_name_4
-         │ Union{Missing, Number}  Int64                   Float64?                $str_complex
+         │ Union{Missing, Number}  Int64                   Float64?                $(Complex{Float64})
     ─────┼────────────────────────────────────────────────────────────────────────────────────────────────
        1 │                     im                      -1                   0.001        1.0e-5-10000.0im
        2 │                  1+1im                     -10                   0.01         0.0001+1000.0im
