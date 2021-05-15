@@ -35,7 +35,7 @@ julia> ]
 
 Throughout the rest of the tutorial we will assume that you have installed the DataFrames.jl package and
 have already typed `using DataFrames` which loads the package:
-```jldoctest
+```jldoctest dataframe
 julia> using DataFrames
 ```
 
