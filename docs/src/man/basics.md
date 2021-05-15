@@ -1036,7 +1036,7 @@ julia> german[:, Not(2)]
   Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
       │ Int64  String  Int64  String   String           String            Int6 ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     1  male        2  own      NA               little                 ⋯
+    1 │     0  male        2  own      NA               little                 ⋯
     2 │     1  female      2  own      little           moderate
     3 │     2  male        1  own      little           NA
     4 │     3  male        2  free     little           little
