@@ -190,14 +190,25 @@ function _show(io::IO,
     # floating points.
     alignment_anchor_regex = Dict{Int, Vector{Regex}}()
 
-    # Columns composed of numbers are printed aligned to the right.
-    alignment_regex_vec = [r"\."]
+    # Regex to align real numbers.
+    alignment_regex_real = [r"\."]
+
+    # Regex for columns with complex numbers.
+    #
+    # Here we are matching `+` or `-` unless it is not at the beginning of the
+    # string or an `e` precedes it.
+    alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
 
     for i = 1:num_cols
         type_i = nonmissingtype(types[i])
 
-        if type_i <: Number
-            alignment_anchor_regex[i] = alignment_regex_vec
+        if type_i <: Complex
+            alignment_anchor_regex[i] = alignment_regex_complex
+            alignment[i] = :r
+        elseif type_i <: Real
+            alignment_anchor_regex[i] = alignment_regex_real
+            alignment[i] = :r
+        elseif type_i <: Number
             alignment[i] = :r
         end
     end
