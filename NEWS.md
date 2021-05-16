@@ -1,3 +1,11 @@
+# DataFrames.jl changes on main since last release notes
+
+## Performance improvements
+
+* `SubDataFrame` creation is now more efficient if row selector is
+  `AbstractVector{Bool}` and selected rows form a continuous block
+  ([#2727](https://github.com/JuliaData/DataFrames.jl/pull/2727))
+
 # DataFrames.jl v1.1.1 Patch Release Notes
 
 ## Performance improvements
