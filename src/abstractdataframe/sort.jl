@@ -126,7 +126,9 @@ Sort.lt(o::DFPerm{<:Any, Tuple{}}, a, b) = false
 function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b)
     ord = o.ord
     cols = o.cols
-    length(cols) > 16 && return  unstable_lt(ord, cols, a, b)
+    # if there are too many columns fall back to type unstable mode to avoid high compilation cost
+    # it is expected that in practice users sort data frames on only few columns
+    length(cols) > 16 && return unstable_lt(ord, cols, a, b)
 
     @inbounds begin
         ord1 = col_ordering(ord)
