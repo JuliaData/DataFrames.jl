@@ -10,6 +10,7 @@
 
 * `text/plain` rendering of columns containing complex numbers is now improved
   ([#2756](https://github.com/JuliaData/DataFrames.jl/pull/2756))
+
 # DataFrames.jl v1.1.1 Patch Release Notes
 
 ## Performance improvements
