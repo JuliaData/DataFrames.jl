@@ -3,7 +3,7 @@
 ## Performance improvements
 
 * `SubDataFrame` creation is now more efficient if row selector is
-  `AbstractVector{Bool}` and selected rows form a continuous block
+  `BitVector` and selected rows form a continuous block
   ([#2727](https://github.com/JuliaData/DataFrames.jl/pull/2727))
 
 ## Other changes
