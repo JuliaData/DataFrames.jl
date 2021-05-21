@@ -510,6 +510,28 @@ function Base.getindex(df::DataFrame, ::typeof(!), col_ind::SymbolOrString)
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
+
+function _threaded_getindex(selected_rows::AbstractVector,
+                            selected_columns::AbstractVector,
+                            df_columns::AbstractVector,
+                            idx::AbstractIndex)
+    @static if VERSION >= v"1.4"
+        if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
+            new_columns = Vector{AbstractVector}(undef, length(selected_columns))
+            @sync for i in eachindex(new_columns)
+                Threads.@spawn new_columns[i] = df_columns[selected_columns[i]][selected_rows]
+            end
+            return DataFrame(new_columns, idx, copycols=false)
+        else
+            return DataFrame(AbstractVector[df_columns[i][selected_rows] for i in selected_columns],
+                             idx, copycols=false)
+        end
+    else
+        return DataFrame(AbstractVector[df_columns[i][selected_rows] for i in selected_columns],
+                         idx, copycols=false)
+    end
+end
+
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T},
                                col_inds::MultiColumnIndex) where T
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
@@ -528,22 +550,8 @@ end
                          idx, copycols=false)
     else
         # Computing integer indices once for all columns is faster
-        selected_rows = T === Bool ? findall(row_inds) : row_inds
-        @static if VERSION >= v"1.4"
-            if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
-                new_columns = Vector{AbstractVector}(undef, length(selected_columns))
-                @sync for i in eachindex(new_columns)
-                    Threads.@spawn new_columns[i] = _columns(df)[selected_columns[i]][selected_rows]
-                end
-                return DataFrame(new_columns, idx, copycols=false)
-            else
-                return DataFrame(AbstractVector[_columns(df)[i][selected_rows] for i in selected_columns],
-                                 idx, copycols=false)
-            end
-        else
-            return DataFrame(AbstractVector[_columns(df)[i][selected_rows] for i in selected_columns],
-                             idx, copycols=false)
-        end
+        selected_rows = T === Bool ? _findall(row_inds) : row_inds
+        _threaded_getindex(selected_rows, selected_columns, _columns(df), idx)
     end
 end
 
@@ -557,22 +565,8 @@ end
         return DataFrame(AbstractVector[_columns(df)[1][row_inds]], idx, copycols=false)
     else
         # Computing integer indices once for all columns is faster
-        selected_rows = T === Bool ? findall(row_inds) : row_inds
-        @static if VERSION >= v"1.4"
-            if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
-                new_columns = Vector{AbstractVector}(undef, ncol(df))
-                @sync for i in eachindex(new_columns)
-                    Threads.@spawn new_columns[i] = _columns(df)[i][selected_rows]
-                end
-                return DataFrame(new_columns, idx, copycols=false)
-            else
-                return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)],
-                                 idx, copycols=false)
-            end
-        else
-            return DataFrame(AbstractVector[dv[selected_rows] for dv in _columns(df)],
-                             idx, copycols=false)
-        end
+        selected_rows = T === Bool ? _findall(row_inds) : row_inds
+        _threaded_getindex(selected_rows, 1:ncol(df), _columns(df), idx)
     end
 end
 
@@ -976,7 +970,7 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
         throw(BoundsError(df, (inds, :)))
     end
-    drop = findall(inds)
+    drop = _findall(inds)
     return _delete!_helper(df, drop)
 end
 

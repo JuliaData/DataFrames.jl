@@ -234,7 +234,7 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
-    return findall(idx)
+    return _findall(idx)
 end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
