@@ -192,6 +192,9 @@ end
         res = DataFrames._findall(B)
         @test Base.findall(B) == res
         @test res isa T
+        res = DataFrames._findall(Vector{Bool}(B))
+        @test Base.findall(B) == res
+        @test res isa T
     end
 
     # 1:200 is to test all small cases
@@ -202,13 +205,18 @@ end
         res = DataFrames._findall(x)
         @test res == i:j
         @test res isa UnitRange{Int}
+        res = DataFrames._findall(Vector{Bool}(x))
+        @test res == i:j
+        @test res isa UnitRange{Int}
         if j + 1 < n
             x[j + 2] = true
             # add one false and then true
             @test  DataFrames._findall(x) == [i:j; j+2]
+            @test  DataFrames._findall(Vector{Bool}(x)) == [i:j; j+2]
             # sprinkle trues randomly after one false
             rand!(view(x, j + 2:n), Bool)
             @test  DataFrames._findall(x) == findall(x)
+            @test  DataFrames._findall(Vector{Bool}(x)) == findall(x)
         end
     end
 end
