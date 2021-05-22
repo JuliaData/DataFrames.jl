@@ -160,11 +160,11 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
 end
 
 function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique::Bool,
-                              left_rename::Union{Function, AbstractString, Symbol},
-                              right_rename::Union{Function, AbstractString, Symbol},
-                              indicator::Union{Nothing, Symbol, AbstractString},
-                              left_ixs::AbstractVector, right_ixs::AbstractVector,
-                              leftonly_ixs::AbstractVector, rightonly_ixs::AbstractVector)
+                               left_rename::Union{Function, AbstractString, Symbol},
+                               right_rename::Union{Function, AbstractString, Symbol},
+                               indicator::Union{Nothing, Symbol, AbstractString},
+                               left_ixs::AbstractVector, right_ixs::AbstractVector,
+                               leftonly_ixs::AbstractVector, rightonly_ixs::AbstractVector)
     lil = length(left_ixs)
     ril = length(right_ixs)
     loil = length(leftonly_ixs)
