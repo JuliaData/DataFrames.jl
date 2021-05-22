@@ -244,19 +244,25 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of countinous ones in c
             if stop != -1  # already found block of ones and zeros, just not materialized
                 I = Vector{Int}(undef,nnzB)
-                I[1:i-1] .= start:stop
+                for j in 1:i-1
+                    I[j] = start + j - 1
+                end
                 break
             elseif !co # not countinous ones
                 I = Vector{Int}(undef,nnzB)
                 if start != -1
-                    I[1:i-1] .= start:start + i - 2
+                    for j in 1:i-1
+                        I[j] = start + j - 1
+                    end
                 end
                 break
             else # countinous block of ones
                 if start != -1
                     if tz > 0 # like __1111__ or 111111__
                         I = Vector{Int}(undef,nnzB)
-                        I[1:i-1] .= start:start + i - 2
+                        for j in 1:i-1
+                            I[j] = start + j - 1
+                        end
                         break
                     else # lz > 0, like __111111
                         stop = i1 + (64 - lz) - 1
@@ -310,7 +316,9 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         end
 
         while c == ~UInt64(0)
-            I[i:i+64-1] .= i1:(i1+64-1)
+            for j in 0:64-1
+                I[i + j] = i1 + j 
+            end
             i += 64
             if Bi == length(Bc)
                 @assert nnzB == i - 1
