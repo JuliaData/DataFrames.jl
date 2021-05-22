@@ -218,7 +218,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         end
         if c == ~UInt64(0)
             if stop != -1
-                I = Vector{Int}(undef,nnzB)
+                I = Vector{Int}(undef, nnzB)
                 I[1:i-1] .= start:stop
                 break
             end
@@ -243,13 +243,13 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             lz = leading_zeros(c)
             co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of countinous ones in c
             if stop != -1  # already found block of ones and zeros, just not materialized
-                I = Vector{Int}(undef,nnzB)
+                I = Vector{Int}(undef, nnzB)
                 for j in 1:i-1
                     I[j] = start + j - 1
                 end
                 break
             elseif !co # not countinous ones
-                I = Vector{Int}(undef,nnzB)
+                I = Vector{Int}(undef, nnzB)
                 if start != -1
                     for j in 1:i-1
                         I[j] = start + j - 1
@@ -259,7 +259,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
             else # countinous block of ones
                 if start != -1
                     if tz > 0 # like __1111__ or 111111__
-                        I = Vector{Int}(undef,nnzB)
+                        I = Vector{Int}(undef, nnzB)
                         for j in 1:i-1
                             I[j] = start + j - 1
                         end
@@ -317,7 +317,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
 
         while c == ~UInt64(0)
             for j in 0:64-1
-                I[i + j] = i1 + j 
+                I[i + j] = i1 + j
             end
             i += 64
             if Bi == length(Bc)
