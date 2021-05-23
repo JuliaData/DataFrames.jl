@@ -219,7 +219,9 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         if c == ~UInt64(0)
             if stop != -1
                 I = Vector{Int}(undef, nnzB)
-                I[1:i-1] .= start:stop
+                for j in 1:i-1
+                    I[j] = start + j - 1
+                end
                 break
             end
             if start == -1
