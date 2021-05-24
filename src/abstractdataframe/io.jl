@@ -157,6 +157,10 @@ function html_escape(cell::AbstractString)
     cell = replace(cell, "&"=>"&amp;")
     cell = replace(cell, "<"=>"&lt;")
     cell = replace(cell, ">"=>"&gt;")
+    # Replace quotes so that the resulting string could also be used in the attributes of
+    # HTML tags
+    cell = replace(cell, "\""=>"&quot;")
+    cell = replace(cell, "'"=>"&apos;")
     return cell
 end
 
