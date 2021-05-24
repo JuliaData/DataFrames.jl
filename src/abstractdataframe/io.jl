@@ -195,10 +195,15 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if eltypes
         write(io, "<tr>")
         write(io, "<th></th>")
-        ct = batch_compacttype(Any[eltype(df[!, idx]) for idx in 1:mxcol])
+        # We put a longer string for the type into the title argument of the <th> element,
+        # which the users can hover over. The limit of 256 characters is arbitrary, but
+        # we want some maximum limit, since the types can sometimes get really-really long.
+        types = Any[eltype(df[!, idx]) for idx in 1:mxcol]
+        ct, ct_title = batch_compacttype(types), batch_compacttype(types, 256)
         for j in 1:mxcol
             s = html_escape(ct[j])
-            write(io, "<th>$s</th>")
+            title = html_escape(ct_title[j])
+            write(io, "<th title=\"$title\">$s</th>")
         end
         write(io, "</tr>")
     end
