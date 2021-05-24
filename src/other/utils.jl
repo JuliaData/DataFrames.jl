@@ -187,12 +187,12 @@ function _findall(B::AbstractVector{Bool})
 
     # fast path returning range
     nnzB == 0 && return 1:0
-    nnzB == length(B) && return 1:length(B)
     len = length(B)
+    nnzB == len && return 1:len
     start::Int = findfirst(B)
     nnzB == 1 && return start:start
     start + nnzB - 1 == len && return start:len
-    stop::Int = findnext(!, B, start+1) - 1
+    stop::Int = findnext(!, B, start + 1) - 1
     start + nnzB == stop + 1 && return start:stop
 
     # slow path returning Vector{Int}
