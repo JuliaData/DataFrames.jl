@@ -30,26 +30,26 @@ julia> german_ref = CSV.read((joinpath(dirname(pathof(DataFrames)),
                                     "..", "docs", "src", "assets", "german.csv")),
                                     DataFrame)
 1000×10 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  C ⋯
-      │ Int64  Int64  String  Int64  String   String           S ⋯
-──────┼───────────────────────────────────────────────────────────
-    1 │     0     67  male        2  own      NA               l ⋯
-    2 │     1     22  female      2  own      little           m
-    3 │     2     49  male        1  own      little           N
-    4 │     3     45  male        2  free     little           l
-    5 │     4     53  male        2  free     little           l ⋯
-    6 │     5     35  male        1  free     NA               N
-    7 │     6     53  male        2  own      quite rich       N
-    8 │     7     35  male        3  rent     little           m
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮           ⋱
-  994 │   993     30  male        3  own      little           l ⋯
-  995 │   994     50  male        2  own      NA               N
-  996 │   995     31  female      1  own      little           N
-  997 │   996     40  male        3  own      little           l
-  998 │   997     38  male        2  own      little           N ⋯
-  999 │   998     23  male        2  free     little           l
- 1000 │   999     27  male        2  own      moderate         m
-                                    4 columns and 985 rows omitted
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  male        2  own      NA               little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
 ```
 
 This table has all the `ids` of all factors to make comparisions for risk factor. Let’s say we 
@@ -105,26 +105,26 @@ We can do this using the `innerjoin` function:
 ```jldoctest dataframe
 julia> innerjoin(german_ref, risk_ref, on = :id)
 1000×11 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  C ⋯
-      │ Int64  Int64  String  Int64  String   String           S ⋯
-──────┼───────────────────────────────────────────────────────────
-    1 │     0     67  male        2  own      NA               l ⋯
-    2 │     1     22  female      2  own      little           m
-    3 │     2     49  male        1  own      little           N
-    4 │     3     45  male        2  free     little           l
-    5 │     4     53  male        2  free     little           l ⋯
-    6 │     5     35  male        1  free     NA               N
-    7 │     6     53  male        2  own      quite rich       N
-    8 │     7     35  male        3  rent     little           m
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮           ⋱
-  994 │   993     30  male        3  own      little           l ⋯
-  995 │   994     50  male        2  own      NA               N
-  996 │   995     31  female      1  own      little           N
-  997 │   996     40  male        3  own      little           l
-  998 │   997     38  male        2  own      little           N ⋯
-  999 │   998     23  male        2  free     little           l
- 1000 │   999     27  male        2  own      moderate         m
-                                    5 columns and 985 rows omitted
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  male        2  own      NA               little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  5 columns and 985 rows omitted
 ```
 
 Let’s go through this in detail. Arguments 1 and 2 `german_ref` & `risk_ref` are the two tables we’re 
@@ -402,7 +402,7 @@ julia> C_names.city = ["Orai", "Gwalior"][mod1.(1:5, 2)]
  "Gwalior"
  "Orai"
 
-julia> D_earnings = deepcopy(earnings) # do the same for earnings
+julia> D_earnings = copy(earnings) # do the same for earnings
 6×2 DataFrame
  Row │ id     salary
      │ Int64  Int64
