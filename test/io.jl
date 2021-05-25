@@ -1,6 +1,12 @@
+# This type is for testing the escaping of quotes in HTML output. It needs to be
+# outside of the module so that Julia 1.0 would not complain about the type
+# being defined in local scope.
+struct QuoteTestType{T} end
+
 module TestIO
 
 using Test, DataFrames, CategoricalArrays, Dates, Markdown
+import Main: QuoteTestType
 
 # Test LaTeX export
 @testset "LaTeX export" begin
@@ -154,11 +160,10 @@ end
         "\n</div></td></tr></tbody></table>"
 
     # Test that single and double quotes get escaped properly
-    struct Foo{T} end
     df = DataFrame(
         xs = ["'", "\"", "<foo>'</bar>"],
-        ys = [Foo{'\''}(), Foo{'"'}, Foo{Symbol("\"'")}()],
-        zs = Foo{'"'}[Foo{'"'}(), Foo{'"'}(), Foo{'"'}()],
+        ys = [QuoteTestType{'\''}(), QuoteTestType{'"'}, QuoteTestType{Symbol("\"'")}()],
+        zs = QuoteTestType{'"'}[QuoteTestType{'"'}(), QuoteTestType{'"'}(), QuoteTestType{'"'}()],
     )
     io = IOBuffer()
     show(io, "text/html", df)
@@ -174,25 +179,25 @@ end
                 "<th></th>"*
                 "<th title=\"String\">String</th>"*
                 "<th title=\"Any\">Any</th>"*
-                "<th title=\"Main.TestIO.Foo{&apos;&quot;&apos;}\">Foo…</th>"*
+                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTe…</th>"*
             "</tr>"*
         "</thead><tbody>"*
             "<p>3 rows × 3 columns</p>"*
             "<tr>"*
                 "<th>1</th>"*
                 "<td>&apos;</td>"*
-                "<td>Foo{&apos;\\\\&apos;&apos;}()</td>"*
-                "<td>Foo{&apos;&quot;&apos;}()</td>"*
+                "<td>QuoteTestType{&apos;\\\\&apos;&apos;}()</td>"*
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>"*
             "</tr><tr>"*
                 "<th>2</th>"*
                 "<td>&quot;</td>"*
-                "<td>Foo{&apos;&quot;&apos;}</td>"*
-                "<td>Foo{&apos;&quot;&apos;}()</td>"*
+                "<td>QuoteTestType{&apos;&quot;&apos;}</td>"*
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>"*
             "</tr><tr>"*
                 "<th>3</th>"*
                 "<td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>"*
-                "<td>Foo{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>"*
-                "<td>Foo{&apos;&quot;&apos;}()</td>"*
+                "<td>QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>"*
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>"*
             "</tr>"*
         "</tbody></table>"
 end
