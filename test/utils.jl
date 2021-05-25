@@ -167,7 +167,7 @@ end
         "TFT small" => ([trues(85); falses(100); trues(85)], Vector{Int}),
         "FTFFT small" => ([falses(64 + 32); trues(32); falses(128); trues(32)], Vector{Int}),
         "TFTF small" => ([falses(64); trues(64); falses(64); trues(64)], Vector{Int}),
-        "TFT small" => ([trues(64); falses(10); trues(100)], Vector{Int}),
+        "TFT small2" => ([trues(64); falses(10); trues(100)], Vector{Int}),
 
         "FTF Big" => ([falses(8500); trues(100000); falses(65000)], UnitRange{Int}),
         "TFT Big" => ([trues(8500); falses(100000); trues(65000)], Vector{Int}),
