@@ -156,15 +156,15 @@ Now to explain further operations I will use random dataset. But fear not, we wi
 joins one-by-one! First, let’s do a `left` join and see what happens to `ids` that are only in the first dataset:
 
 ```jldoctest dataframe
-julia> A_names = DataFrame(id = 1:5, name = ["Rohit", "Mohit", "Claire", "Daniel", "Akshat"])
+julia> persons = DataFrame(id = 1:5, name = ["Rohit", "Mohit", "Rahul", "Vijay", "Akshat"])
 5×2 DataFrame
  Row │ id     name
      │ Int64  String
 ─────┼───────────────
    1 │     1  Rohit
    2 │     2  Mohit
-   3 │     3  Claire
-   4 │     4  Daniel
+   3 │     3  Rahul
+   4 │     4  Vijay
    5 │     5  Akshat
 ```
 
@@ -172,7 +172,7 @@ This table has all the ids of individuals and their names. Let’s say we have a
 which has the earnings of these individuals:
 
 ```jldoctest dataframe
-julia> B_earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 9000])
+julia> earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 9000])
 6×2 DataFrame
  Row │ id     salary
      │ Int64  Int64
@@ -185,50 +185,50 @@ julia> B_earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 
    6 │     8    9000
 ```
 
-Now, lets perform `left` join operation:
+Now, lets perform `leftjoin` operation:
 
 ```jldoctest dataframe
-julia> leftjoin(A_names, B_earnings, on = :id)
+julia> leftjoin(persons, earnings, on = :id)
 5×3 DataFrame
  Row │ id     name    salary
      │ Int64  String  Int64?
 ─────┼────────────────────────
-   1 │     3  Claire     5000
-   2 │     4  Daniel     1000
+   1 │     3  Rahul      5000
+   2 │     4  Vijay      1000
    3 │     5  Akshat     5000
    4 │     1  Rohit   missing
    5 │     2  Mohit   missing
 ```
 
-Here we kept all of the observations from table `A_names` no matter what is going on in table `B_earnings`. 
-For records without a match in table `A_names`, the earnings column has `missingas` value. This makes sense 
-as we never actually saw those earning figures. Of course, there is also a `right` join. This keeps all rows 
+Here we kept all of the observations from table `persons` no matter what is going on in table `earnings`. 
+For records without a match in table `persons`, the salary column has `missingas` value. This makes sense 
+as we never actually saw those earning figures. Of course, there is also a `rightjoin`. This keeps all rows 
 from the second table.
 
 ```jldoctest dataframe
-julia> rightjoin(A_names, B_earnings, on = :id)
+julia> rightjoin(persons, earnings, on = :id)
 6×3 DataFrame
  Row │ id     name     salary
      │ Int64  String?  Int64
 ─────┼────────────────────────
-   1 │     3  Claire     5000
-   2 │     4  Daniel     1000
+   1 │     3  Rahul      5000
+   2 │     4  Vijay      1000
    3 │     5  Akshat     5000
    4 │     6  missing    8000
    5 │     7  missing    3000
    6 │     8  missing    9000
 ```
 
-If we want to have all ids from both tables, we use an `outer` join:
+If we want to have all ids from both tables, we use an `outerjoin`:
 
 ```jldoctest dataframe
-julia> outerjoin(A_names, B_earnings, on = :id)
+julia> outerjoin(persons, earnings, on = :id)
 8×3 DataFrame
  Row │ id     name     salary
      │ Int64  String?  Int64?
 ─────┼─────────────────────────
-   1 │     3  Claire      5000
-   2 │     4  Daniel      1000
+   1 │     3  Rahul       5000
+   2 │     4  Vijay       1000
    3 │     5  Akshat      5000
    4 │     1  Rohit    missing
    5 │     2  Mohit    missing
@@ -236,7 +236,7 @@ julia> outerjoin(A_names, B_earnings, on = :id)
    7 │     7  missing     3000
    8 │     8  missing     9000
 
-julia> antijoin(A_names, B_earnings, on = :id)
+julia> antijoin(persons, earnings, on = :id)
 2×2 DataFrame
  Row │ id     name
      │ Int64  String
@@ -246,45 +246,45 @@ julia> antijoin(A_names, B_earnings, on = :id)
 ```
 
 It loads more `missing` values, but we can see all the `ids` now. It check out the new `missing` 
-names for `ids` 6–8. It is known as `outer` join.
+names for `ids` 6–8. It is known as `outerjoin`.
 
 The above four joins make up the basics of table merging. We can remember like this:
-- `inner`: The output contains rows for values of the key that exist in both the first (left) and 
+- `innerjoin`: The output contains rows for values of the key that exist in both the first (left) and 
   second (right) arguments to `join`.
-- `left`: The output contains rows for values of the key that exist in the first (left) argument to 
+- `leftjoin`: The output contains rows for values of the key that exist in the first (left) argument to 
   `join`, whether or not that value exists in the second (right) argument.
-- `right`: The output contains rows for values of the key that exist in the second (right) argument 
+- `rightjoin`: The output contains rows for values of the key that exist in the second (right) argument 
   to `join`, whether or not that value exists in the first (left) argument.
-- `outer`: The output contains rows for values of the key that exist in the first (left) or second 
+- `outerjoin`: The output contains rows for values of the key that exist in the first (left) or second 
   (right) argument to `join`.
 
 Now, let’s say we want to look at people’s names for whom we have earnings data, but we don’t actually 
 want to have all the columns from the second table. That’s what `semijoin` does. It gives us the same 
-rows as an `inner` join, but doesn’t add any columns from the 2nd table:
+rows as an `innerjoin`, but doesn’t add any columns from the 2nd table:
 
 ```jldoctest dataframe
-julia> semijoin(A_names, B_earnings, on = :id)
+julia> semijoin(persons, earnings, on = :id)
 3×2 DataFrame
  Row │ id     name
      │ Int64  String
 ─────┼───────────────
-   1 │     3  Claire
-   2 │     4  Daniel
+   1 │     3  Rahul
+   2 │     4  Vijay
    3 │     5  Akshat
 ```
 
-The below example will return true, demonstrating that a `semi-join` is the same as `inner` join with 
-only columns from table A.
+The below example will return true, demonstrating that a `semijoin` is the same as `innerjoin` with 
+only columns from persons table.
 
 ```jldoctest dataframe
-julia> semijoin(A_names, B_earnings, on = :id) == innerjoin(A_names, B_earnings, on = :id)[:, names(A_names)]
+julia> semijoin(persons, earnings, on = :id) == innerjoin(persons, earnings, on = :id)[:, names(persons)]
 true
 ```
 
 Now, let's have a look on `crossjoin`:
 
 ```jldoctest dataframe
-julia> data = crossjoin(A_names, B_earnings, makeunique = true)
+julia> data = crossjoin(persons, earnings, makeunique = true)
 30×4 DataFrame
  Row │ id     name    id_1   salary
      │ Int64  String  Int64  Int64
@@ -298,7 +298,7 @@ julia> data = crossjoin(A_names, B_earnings, makeunique = true)
    7 │     2  Mohit       3    5000
    8 │     2  Mohit       4    1000
   ⋮  │   ⋮      ⋮       ⋮      ⋮
-  24 │     4  Daniel      8    9000
+  24 │     4  Vijay       8    9000
   25 │     5  Akshat      3    5000
   26 │     5  Akshat      4    1000
   27 │     5  Akshat      5    5000
@@ -308,15 +308,15 @@ julia> data = crossjoin(A_names, B_earnings, makeunique = true)
                      15 rows omitted
 ```
 
-In the above example, A `crossjoin` took all the rows from `table A` and for each row, it matches it 
-to every single row of `table B`. At first impression, this might not make any sense, but it’s a great 
+In the above example, A `crossjoin` took all the rows from `persons` table and for each row, it matches it 
+to every single row of `earnings` table. At first impression, this might not make any sense, but it’s a great 
 method for finding all combinations of 2 tables. Our new table has 30 rows, which is 
-5 (rows of table A) x 6 (rows of table B).
+5 (rows of persons) x 6 (rows of earnings).
 
 !!! note
 
   Cross joins are the only kind of join that does not use a `on` key:
-  `crossjoin(A_names, B_earnings, makeunique = true)`
+  `crossjoin(persons, earnings, makeunique = true)`
 
 For more clarification, now let’s say we want to design a new Table by changing the ingredients. To 
 understand profitability, we also need to figure out the total costs of the chocolate:
@@ -343,16 +343,15 @@ julia> coating_layer = DataFrame(coating = ["caramel", "chocolate sauce"],
 
 julia> innovation_table = crossjoin(base_layer, coating_layer) # do the join
 6×4 DataFrame
- Row │ base               base_cost  coating          coating_co ⋯
-     │ String             Float64    String           Float64    ⋯
-─────┼────────────────────────────────────────────────────────────
-   1 │ biscuit                 0.05  caramel                  0. ⋯
-   2 │ biscuit                 0.05  chocolate sauce          0.
-   3 │ chocolate biscuit       0.08  caramel                  0.
-   4 │ chocolate biscuit       0.08  chocolate sauce          0.
-   5 │ marshmallow             0.03  caramel                  0. ⋯
-   6 │ marshmallow             0.03  chocolate sauce          0.
-                                                  1 column omitted
+ Row │ base               base_cost  coating          coating_cost
+     │ String             Float64    String           Float64
+─────┼─────────────────────────────────────────────────────────────
+   1 │ biscuit                 0.05  caramel                  0.01
+   2 │ biscuit                 0.05  chocolate sauce          0.05
+   3 │ chocolate biscuit       0.08  caramel                  0.01
+   4 │ chocolate biscuit       0.08  chocolate sauce          0.05
+   5 │ marshmallow             0.03  caramel                  0.01
+   6 │ marshmallow             0.03  chocolate sauce          0.05
 
 julia> innovation_table.total_cost = innovation_table.base_cost .+ innovation_table.coating_cost # add together the 2 cost columns to calculate total cost
 6-element Vector{Float64}:
@@ -365,16 +364,15 @@ julia> innovation_table.total_cost = innovation_table.base_cost .+ innovation_ta
 
 julia> innovation_table
 6×5 DataFrame
- Row │ base               base_cost  coating          coating_co ⋯
-     │ String             Float64    String           Float64    ⋯
-─────┼────────────────────────────────────────────────────────────
-   1 │ biscuit                 0.05  caramel                  0. ⋯
-   2 │ biscuit                 0.05  chocolate sauce          0.
-   3 │ chocolate biscuit       0.08  caramel                  0.
-   4 │ chocolate biscuit       0.08  chocolate sauce          0.
-   5 │ marshmallow             0.03  caramel                  0. ⋯
-   6 │ marshmallow             0.03  chocolate sauce          0.
-                                                 2 columns omitted
+ Row │ base               base_cost  coating          coating_cost  total_cost ⋯
+     │ String             Float64    String           Float64       Float64    ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ biscuit                 0.05  caramel                  0.01        0.06 ⋯
+   2 │ biscuit                 0.05  chocolate sauce          0.05        0.1
+   3 │ chocolate biscuit       0.08  caramel                  0.01        0.09
+   4 │ chocolate biscuit       0.08  chocolate sauce          0.05        0.13
+   5 │ marshmallow             0.03  caramel                  0.01        0.04 ⋯
+   6 │ marshmallow             0.03  chocolate sauce          0.05        0.08
 ```
 
 ## Multiple keys to join on
@@ -385,26 +383,26 @@ symbols or strings to the `on` argument of the `join` functions. To demonstrate 
 and add another column to both of our datasets. This will contain city names where the users live.
 
 ```jldoctest dataframe
-julia> C_names= copy(A_names) # It make sure we don't mess with the original table
+julia> C_names= copy(persons) # It make sure we don't mess with the original table
 5×2 DataFrame
  Row │ id     name
      │ Int64  String
 ─────┼───────────────
    1 │     1  Rohit
    2 │     2  Mohit
-   3 │     3  Claire
-   4 │     4  Daniel
+   3 │     3  Rahul
+   4 │     4  Vijay
    5 │     5  Akshat
 
-julia> C_names.city = rand(["New York", "London"], nrow(C_names))
+julia> C_names.city = ["Orai", "Gwalior"][mod1.(1:5, 2)]
 5-element Vector{String}:
- "London"
- "London"
- "London"
- "London"
- "New York"
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
+ "Orai"
 
-julia> D_earnings = deepcopy(B_earnings) # do the same for earnings
+julia> D_earnings = deepcopy(earnings) # do the same for earnings
 6×2 DataFrame
  Row │ id     salary
      │ Int64  Int64
@@ -416,36 +414,37 @@ julia> D_earnings = deepcopy(B_earnings) # do the same for earnings
    5 │     7    3000
    6 │     8    9000
 
-julia> 6-element Vector{String}:
- "New York"
- "New York"
- "New York"
- "New York"
- "London"
- "London"
+julia> D_earnings.city = ["Orai", "Gwalior"][mod1.(1:6, 2)]
+6-element Vector{String}:
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
 
 julia> display(C_names)
 5×3 DataFrame
  Row │ id     name    city
      │ Int64  String  String
-─────┼─────────────────────────
-   1 │     1  Rohit   London
-   2 │     2  Mohit   London
-   3 │     3  Claire  London
-   4 │     4  Daniel  London
-   5 │     5  Akshat  New York
+─────┼────────────────────────
+   1 │     1  Rohit   Orai
+   2 │     2  Mohit   Gwalior
+   3 │     3  Rahul   Orai
+   4 │     4  Vijay   Gwalior
+   5 │     5  Akshat  Orai
 
 julia> display(D_earnings)
 6×3 DataFrame
  Row │ id     salary  city
      │ Int64  Int64   String
-─────┼─────────────────────────
-   1 │     3    5000  New York
-   2 │     4    1000  New York
-   3 │     5    5000  New York
-   4 │     6    8000  New York
-   5 │     7    3000  London
-   6 │     8    9000  London
+─────┼────────────────────────
+   1 │     3    5000  Orai
+   2 │     4    1000  Gwalior
+   3 │     5    5000  Orai
+   4 │     6    8000  Gwalior
+   5 │     7    3000  Orai
+   6 │     8    9000  Gwalior
 ```
 
 One way we can think of this is that we have 2 separate databases. One in New York and one in London. 
@@ -456,11 +455,13 @@ user ids but also on the database name. Let’s do some joining on both columns 
 
 ```jldoctest dataframe
 julia> innerjoin(C_names, D_earnings, on = [:id, :city])
-1×4 DataFrame
- Row │ id     name    city      salary
-     │ Int64  String  String    Int64
-─────┼─────────────────────────────────
-   1 │     5  Akshat  New York    5000
+3×4 DataFrame
+ Row │ id     name    city     salary
+     │ Int64  String  String   Int64
+─────┼────────────────────────────────
+   1 │     3  Rahul   Orai       5000
+   2 │     4  Vijay   Gwalior    1000
+   3 │     5  Akshat  Orai       5000
 ```
 
 As we can see, only Daniel appears in both datasets and lives in the same place.
@@ -490,13 +491,13 @@ Now what we want to do is to join the new earnings table with the names but we w
 in the new table as our joining key.
 
 ```jldoctest dataframe
-julia> innerjoin(A_names, another_earnings, on = :id => :another_id)
+julia> innerjoin(persons, another_earnings, on = :id => :another_id)
 3×3 DataFrame
  Row │ id     name    salary
      │ Int64  String  Int64
 ─────┼───────────────────────
-   1 │     3  Claire    1500
-   2 │     4  Daniel    1600
+   1 │     3  Rahul     1500
+   2 │     4  Vijay     1600
    3 │     5  Akshat    1700
 ```
 
@@ -506,46 +507,45 @@ exact format is used when we need to rename columns.
 Here is another example with multiple columns:
 
 ```jldoctest dataframe
-julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
+julia> a = DataFrame(City = ["Gwalior", "Delhi", "Delhi", "Mumbai", "Mumbai"],
                      Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
                      Category = [1, 2, 3, 4, 5])
 5×3 DataFrame
- Row │ City       Job     Category
-     │ String     String  Int64
-─────┼─────────────────────────────
-   1 │ Amsterdam  Lawyer         1
-   2 │ London     Lawyer         2
-   3 │ London     Lawyer         3
-   4 │ New York   Doctor         4
-   5 │ New York   Doctor         5
+ Row │ City     Job     Category
+     │ String   String  Int64
+─────┼───────────────────────────
+   1 │ Gwalior  Lawyer         1
+   2 │ Delhi    Lawyer         2
+   3 │ Delhi    Lawyer         3
+   4 │ Mumbai   Doctor         4
+   5 │ Mumbai   Doctor         5
 
-julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
+julia> b = DataFrame(Location = ["Banglore", "Delhi", "Delhi", "Mumbai", "Mumbai"],
                      Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
                      Name = ["a", "b", "c", "d", "e"])
 5×3 DataFrame
- Row │ Location   Work    Name
-     │ String     String  String
-─────┼───────────────────────────
-   1 │ Amsterdam  Lawyer  a
-   2 │ London     Lawyer  b
-   3 │ London     Lawyer  c
-   4 │ New York   Doctor  d
-   5 │ New York   Doctor  e
+ Row │ Location  Work    Name
+     │ String    String  String
+─────┼──────────────────────────
+   1 │ Banglore  Lawyer  a
+   2 │ Delhi     Lawyer  b
+   3 │ Delhi     Lawyer  c
+   4 │ Mumbai    Doctor  d
+   5 │ Mumbai    Doctor  e
 
 julia> innerjoin(a, b, on = [:City => :Location, :Job => :Work])
-9×4 DataFrame
- Row │ City       Job     Category  Name
-     │ String     String  Int64     String
-─────┼─────────────────────────────────────
-   1 │ Amsterdam  Lawyer         1  a
-   2 │ London     Lawyer         2  b
-   3 │ London     Lawyer         3  b
-   4 │ London     Lawyer         2  c
-   5 │ London     Lawyer         3  c
-   6 │ New York   Doctor         4  d
-   7 │ New York   Doctor         5  d
-   8 │ New York   Doctor         4  e
-   9 │ New York   Doctor         5  e
+8×4 DataFrame
+ Row │ City    Job     Category  Name
+     │ String  String  Int64     String
+─────┼──────────────────────────────────
+   1 │ Delhi   Lawyer         2  b
+   2 │ Delhi   Lawyer         3  b
+   3 │ Delhi   Lawyer         2  c
+   4 │ Delhi   Lawyer         3  c
+   5 │ Mumbai  Doctor         4  d
+   6 │ Mumbai  Doctor         5  d
+   7 │ Mumbai  Doctor         4  e
+   8 │ Mumbai  Doctor         5  e
 ```
 
 Additionally, notice that in the last join rows 2 and 3 had the same values on `on` variables in both joined 
@@ -553,32 +553,32 @@ DataFrames. In such a situation `innerjoin`, `outerjoin`, `leftjoin` and `rightj
 of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed 
 for rows 4 and 5 in both joined DataFrames.
 
-In order to check that columns passed as the `on` argument define unique keys (according to `isequa`l) in each 
+In order to check that columns passed as the `on` argument define unique keys (according to `isequal`) in each 
 input data frame you can set the `validate` keyword argument to a two-element tuple or a pair of `Bool` values, 
 with each element indicating whether to run check for the corresponding data frame. Here is an example for the 
 join operation described above:
 
 ```jldoctest dataframe
 julia> innerjoin(a, b, on = [(:City => :Location), (:Job => :Work)], validate=(true, true))
-ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. df1 contains 2 duplicate keys: (City = "London", Job = "Lawyer") and (City = "New York", Job = "Doctor"). df2 contains 2 duplicate keys: (Location = "London", Work = "Lawyer") and (Location = "New York", Work = "Doctor").
+ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. df1 contains 2 duplicate keys: (City = "Delhi", Job = "Lawyer") and (City = "Mumbai", Job = "Doctor"). df2 contains 2 duplicate keys: (Location = "Delhi", Work = "Lawyer") and (Location = "Mumbai", Work = "Doctor").
 ```
 
 Finally, using the `source` keyword argument we can add a column to the resulting data frame indicating whether 
 the given row appeared only in the left, the right or both data frames. Here is an example:
 
 ```jldoctest dataframe
-julia> A_names = DataFrame(id = 1:5, name = ["Rohit", "Mohit", "Claire", "Daniel", "Akshat"])
+julia> persons = DataFrame(id = 1:5, name = ["Rohit", "Mohit", "Rahul", "Vijay", "Akshat"])
 5×2 DataFrame
  Row │ id     name
      │ Int64  String
 ─────┼───────────────
    1 │     1  Rohit
    2 │     2  Mohit
-   3 │     3  Claire
-   4 │     4  Daniel
+   3 │     3  Rahul
+   4 │     4  Vijay
    5 │     5  Akshat
 
-julia> B_earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 9000])
+julia> earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 9000])
 6×2 DataFrame
  Row │ id     salary
      │ Int64  Int64
@@ -590,13 +590,13 @@ julia> B_earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 
    5 │     7    3000
    6 │     8    9000
 
-julia> outerjoin(A_names, B_earnings, on=:id, validate=(true, true), source=:source)
+julia> outerjoin(persons, earnings, on=:id, validate=(true, true), source=:source)
 8×4 DataFrame
  Row │ id     name     salary   source
      │ Int64  String?  Int64?   String
 ─────┼─────────────────────────────────────
-   1 │     3  Claire      5000  both
-   2 │     4  Daniel      1000  both
+   1 │     3  Rahul       5000  both
+   2 │     4  Vijay       1000  both
    3 │     5  Akshat      5000  both
    4 │     1  Rohit    missing  left_only
    5 │     2  Mohit    missing  left_only
