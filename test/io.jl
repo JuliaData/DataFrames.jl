@@ -165,14 +165,35 @@ end
     str = String(take!(io))
     @test str ==
         "<table class=\"data-frame\"><thead>"*
-            "<tr><th></th><th>xs</th><th>ys</th><th>zs</th></tr>"*
-            "<tr><th></th><th title=\"String\">String</th><th title=\"Any\">Any</th><th title=\"Main.TestIO.Foo{&apos;&quot;&apos;}\">Foo…</th></tr>"*
+            "<tr>"*
+                "<th></th>"*
+                "<th>xs</th>"*
+                "<th>ys</th>"*
+                "<th>zs</th>"*
+            "</tr><tr>"*
+                "<th></th>"*
+                "<th title=\"String\">String</th>"*
+                "<th title=\"Any\">Any</th>"*
+                "<th title=\"Main.TestIO.Foo{&apos;&quot;&apos;}\">Foo…</th>"*
+            "</tr>"*
         "</thead><tbody>"*
             "<p>3 rows × 3 columns</p>"*
-            "<tr><th>1</th><td>&apos;</td><td>Foo{&apos;\\\\&apos;&apos;}()</td><td>Foo{&apos;&quot;&apos;}()</td></tr>"*
-            "<tr><th>2</th><td>&quot;</td><td>Foo{&apos;&quot;&apos;}</td><td>Foo{&apos;&quot;&apos;}()</td></tr>"*
-            "<tr><th>3</th><td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>"*
-            "<td>Foo{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td><td>Foo{&apos;&quot;&apos;}()</td></tr>"*
+            "<tr>"*
+                "<th>1</th>"*
+                "<td>&apos;</td>"*
+                "<td>Foo{&apos;\\\\&apos;&apos;}()</td>"*
+                "<td>Foo{&apos;&quot;&apos;}()</td>"*
+            "</tr><tr>"*
+                "<th>2</th>"*
+                "<td>&quot;</td>"*
+                "<td>Foo{&apos;&quot;&apos;}</td>"*
+                "<td>Foo{&apos;&quot;&apos;}()</td>"*
+            "</tr><tr>"*
+                "<th>3</th>"*
+                "<td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>"*
+                "<td>Foo{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>"*
+                "<td>Foo{&apos;&quot;&apos;}()</td>"*
+            "</tr>"*
         "</tbody></table>"
 end
 
