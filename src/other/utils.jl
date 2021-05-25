@@ -197,7 +197,9 @@ function _findall(B::AbstractVector{Bool})
 
     # slow path returning Vector{Int}
     I = Vector{Int}(undef, nnzB)
-    I[1:stop - start + 1] .= start:stop
+    @inbounds for i in 1:stop - start + 1
+        I[i] = start + i - 1
+    end
     cnt = stop - start + 2
     @inbounds for i in stop+1:len
         if B[i]
