@@ -423,7 +423,7 @@ julia> D_earnings.city = ["Orai", "Gwalior"][mod1.(1:6, 2)]
  "Orai"
  "Gwalior"
 
-julia> display(C_names)
+julia> C_names
 5×3 DataFrame
  Row │ id     name    city
      │ Int64  String  String
@@ -434,7 +434,7 @@ julia> display(C_names)
    4 │     4  Vijay   Gwalior
    5 │     5  Akshat  Orai
 
-julia> display(D_earnings)
+julia> D_earnings
 6×3 DataFrame
  Row │ id     salary  city
      │ Int64  Int64   String
