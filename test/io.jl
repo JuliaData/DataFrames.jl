@@ -169,36 +169,36 @@ end
     show(io, "text/html", df)
     str = String(take!(io))
     @test str ==
-        "<table class=\"data-frame\"><thead>"*
-            "<tr>"*
-                "<th></th>"*
-                "<th>xs</th>"*
-                "<th>ys</th>"*
-                "<th>zs</th>"*
-            "</tr><tr>"*
-                "<th></th>"*
-                "<th title=\"String\">String</th>"*
-                "<th title=\"Any\">Any</th>"*
-                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTe…</th>"*
-            "</tr>"*
-        "</thead><tbody>"*
-            "<p>3 rows × 3 columns</p>"*
-            "<tr>"*
-                "<th>1</th>"*
-                "<td>&apos;</td>"*
-                "<td>QuoteTestType{&apos;\\\\&apos;&apos;}()</td>"*
-                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>"*
-            "</tr><tr>"*
-                "<th>2</th>"*
-                "<td>&quot;</td>"*
-                "<td>QuoteTestType{&apos;&quot;&apos;}</td>"*
-                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>"*
-            "</tr><tr>"*
-                "<th>3</th>"*
-                "<td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>"*
-                "<td>QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>"*
-                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>"*
-            "</tr>"*
+        "<table class=\"data-frame\"><thead>" *
+            "<tr>" *
+                "<th></th>" *
+                "<th>xs</th>" *
+                "<th>ys</th>" *
+                "<th>zs</th>" *
+            "</tr><tr>" *
+                "<th></th>" *
+                "<th title=\"String\">String</th>" *
+                "<th title=\"Any\">Any</th>" *
+                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTe…</th>" *
+            "</tr>" *
+        "</thead><tbody>" *
+            "<p>3 rows × 3 columns</p>" *
+            "<tr>" *
+                "<th>1</th>" *
+                "<td>&apos;</td>" *
+                "<td>QuoteTestType{&apos;\\\\&apos;&apos;}()</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
+            "</tr><tr>" *
+                "<th>2</th>" *
+                "<td>&quot;</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
+            "</tr><tr>" *
+                "<th>3</th>" *
+                "<td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>" *
+                "<td>QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
+            "</tr>" *
         "</tbody></table>"
 end
 
