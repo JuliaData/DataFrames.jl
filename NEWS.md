@@ -2,9 +2,11 @@
 
 ## Performance improvements
 
-* `SubDataFrame` creation is now more efficient if row selector is
-  `BitVector` and selected rows form a continuous block
-  ([#2727](https://github.com/JuliaData/DataFrames.jl/pull/2727))
+* `SubDataFrame`, `filter!`, `unique!`, `getindex`, `delete!`, `leftjoin`,
+  `rightjoin`, and `outerjoin` are now more efficient if rows selected
+  in internal operations form a continuous block
+  ([#2727](https://github.com/JuliaData/DataFrames.jl/pull/2727),
+   [#2769](https://github.com/JuliaData/DataFrames.jl/pull/2769))
 
 ## Other changes
 
