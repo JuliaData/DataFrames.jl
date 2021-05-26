@@ -10,6 +10,9 @@
 
 * `text/plain` rendering of columns containing complex numbers is now improved
   ([#2756](https://github.com/JuliaData/DataFrames.jl/pull/2756))
+* in `text/html` display of a data frame show full type information when
+  hovering over the shortened type with a mouse
+  ([#2774](https://github.com/JuliaData/DataFrames.jl/pull/2774))
 
 # DataFrames.jl v1.1.1 Patch Release Notes
 
