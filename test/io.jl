@@ -1,6 +1,12 @@
+# This type is for testing the escaping of quotes in HTML output. It needs to be
+# outside of the module so that Julia 1.0 would not complain about the type
+# being defined in local scope.
+struct QuoteTestType{T} end
+
 module TestIO
 
 using Test, DataFrames, CategoricalArrays, Dates, Markdown
+import Main: QuoteTestType
 
 # Test LaTeX export
 @testset "LaTeX export" begin
@@ -52,7 +58,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<p>2 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>Amir</td><td><em>missing</em></td></tr></tbody></table>"
@@ -63,7 +69,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<p>2 rows × 2 columns</p>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
@@ -74,7 +80,7 @@ end
     @test str == "<p>2×2 DataFrameRows</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
@@ -84,7 +90,7 @@ end
     @test str == "<p>2×2 DataFrameColumns</p>" *
                  "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
@@ -93,7 +99,7 @@ end
     str = String(take!(io))
     @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
                  "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th></th>" *
-                 "<th>String</th><th>Float64?</th></tr></thead><tbody><tr><th>1</th>" *
+                 "<th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody><tr><th>1</th>" *
                  "<td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
 
     io = IOBuffer()
@@ -101,7 +107,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
@@ -110,7 +116,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
@@ -119,7 +125,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th>String</th><th>Float64?</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
 
@@ -127,7 +133,7 @@ end
     show(io, MIME"text/html"(), df[1, :], summary=false)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
-                 "<th>Mass</th></tr><tr><th></th><th>String</th><th>Float64?</th></tr></thead>" *
+                 "<th>Mass</th></tr><tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
                  "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
@@ -144,7 +150,7 @@ end
 
     @test repr(MIME("text/html"), df) ==
         "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
-        "<th>Int64</th><th>MD…</th></tr></thead><tbody><p>4 rows × 2 columns</p><tr><th>1</th>" *
+        "<th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr></thead><tbody><p>4 rows × 2 columns</p><tr><th>1</th>" *
         "<td>1</td><td><div class=\"markdown\">" *
         "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a>" *
         "</p>\n</div></td></tr><tr><th>2</th><td>4</td><td><div class=\"markdown\">" *
@@ -153,6 +159,47 @@ end
         "<td>16</td><td><div class=\"markdown\"><p><em>A</em>b<strong>A</strong></p>"*
         "\n</div></td></tr></tbody></table>"
 
+    # Test that single and double quotes get escaped properly
+    df = DataFrame(
+        xs = ["'", "\"", "<foo>'</bar>"],
+        ys = [QuoteTestType{'\''}(), QuoteTestType{'"'}, QuoteTestType{Symbol("\"'")}()],
+        zs = QuoteTestType{'"'}[QuoteTestType{'"'}(), QuoteTestType{'"'}(), QuoteTestType{'"'}()],
+    )
+    io = IOBuffer()
+    show(io, "text/html", df)
+    str = String(take!(io))
+    @test str ==
+        "<table class=\"data-frame\"><thead>" *
+            "<tr>" *
+                "<th></th>" *
+                "<th>xs</th>" *
+                "<th>ys</th>" *
+                "<th>zs</th>" *
+            "</tr><tr>" *
+                "<th></th>" *
+                "<th title=\"String\">String</th>" *
+                "<th title=\"Any\">Any</th>" *
+                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTe…</th>" *
+            "</tr>" *
+        "</thead><tbody>" *
+            "<p>3 rows × 3 columns</p>" *
+            "<tr>" *
+                "<th>1</th>" *
+                "<td>&apos;</td>" *
+                "<td>QuoteTestType{&apos;\\\\&apos;&apos;}()</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
+            "</tr><tr>" *
+                "<th>2</th>" *
+                "<td>&quot;</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
+            "</tr><tr>" *
+                "<th>3</th>" *
+                "<td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>" *
+                "<td>QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>" *
+                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
+            "</tr>" *
+        "</tbody></table>"
 end
 
 # test limit attribute of IOContext is used
@@ -291,7 +338,7 @@ end
     @test sprint(show,"text/html",df) ==
         "<table class=\"data-frame\"><thead>" *
             "<tr><th></th><th>A</th><th>B</th></tr>" *
-            "<tr><th></th><th>Int64</th><th>MD…</th></tr>" *
+            "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr>" *
         "</thead>" *
         "<tbody>" * "<p>8 rows × 2 columns</p>" *
         "<tr><th>1</th><td>1</td><td><div class=\"markdown\">" *
@@ -455,7 +502,7 @@ end
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th>Int32</th><th>String</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
                  "<p>3 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
                  "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
@@ -465,7 +512,7 @@ end
     str = String(take!(io))
     @test str == "<p>3×2 DataFrameColumns</p><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th>Int32</th><th>String</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
                  "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
 
@@ -474,7 +521,7 @@ end
     str = String(take!(io))
     @test str == "<p>3×2 DataFrameRows</p><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th>Int32</th><th>String</th></tr></thead><tbody>" *
+                 "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
                  "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
 
@@ -584,7 +631,7 @@ end
     show(io, MIME("text/html"), df)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th>Int64</th><th>Any</th></tr></thead>" *
+                 "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Any\">Any</th></tr></thead>" *
                  "<tbody><p>9 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>1</td><td><em>9×2 DataFrame</em></td></tr>" *
                  "<tr><th>2</th><td>2</td><td><em>2-element DataFrameRow</em></td></tr>" *
@@ -668,7 +715,7 @@ end
     show(io, MIME("text/html"), df)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
-                 "<tr><th></th><th>String</th></tr></thead>" *
+                 "<tr><th></th><th title=\"String\">String</th></tr></thead>" *
                  "<tbody><p>1 rows × 1 columns</p><tr><th>1</th>" *
                  "<td>01234567890123456789012345678901234567890123456789" *
                  "01234567890123456789012345678901234567890123456789</td>"*
