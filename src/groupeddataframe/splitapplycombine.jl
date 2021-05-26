@@ -338,7 +338,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
     if firstmulticol
         throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
     end
-    # if idx_agg was not computed yet it is nothing
+    # if idx_agg was not computed yet it is NOTHING_IDX_AGG
     # in this case if we are not passed a vector compute it.
     lock(gd.lazy_lock) do
         if !(firstres isa AbstractVector) && idx_agg[] === NOTHING_IDX_AGG
@@ -543,7 +543,7 @@ function _combine(gd::GroupedDataFrame,
         end
         idx_keeprows = prepare_idx_keeprows(gd.idx, gd.starts, gd.ends, nrow(parent(gd)))
     else
-        idx_keeprows = nothing
+        idx_keeprows = Int[]
     end
 
     idx_agg = Ref(NOTHING_IDX_AGG)
@@ -653,24 +653,9 @@ function _combine(gd::GroupedDataFrame,
     # a correct index is stored in idx variable
 
     @sync for i in eachindex(trans_res)
-        @spawn begin
-            col_idx = trans_res[i].col_idx
-            col = trans_res[i].col
-            if keeprows && col_idx !== idx_keeprows # we need to reorder the column
-                newcol = similar(col)
-                # we can probably make it more efficient, but I leave it as an optimization for the future
-                gd_idx = gd.idx
-                k = 0
-                # consider adding @inbounds later
-                for (s, e) in zip(gd.starts, gd.ends)
-                    for j in s:e
-                        k += 1
-                        newcol[gd_idx[j]] = col[k]
-                    end
-                end
-                @assert k == length(gd_idx)
-                trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
-            end
+        let i=i
+            @spawn reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
+                                 keeprows, idx_keeprows, gd)
         end
     end
 
@@ -680,6 +665,25 @@ function _combine(gd::GroupedDataFrame,
     # but it is safer to double check and it is cheap
     @assert all(x -> length(x) == length(outcols[1]), outcols)
     return idx, DataFrame(outcols, nms, copycols=false)
+end
+
+function reorder_cols!(trans_res::Vector{TransformationResult}, i::Integer,
+                       col::AbstractVector, col_idx::Vector{Int}, keeprows::Bool,
+                       idx_keeprows::Vector{Int}, gd::GroupedDataFrame)
+    if keeprows && col_idx !== idx_keeprows # we need to reorder the column
+        newcol = similar(col)
+        # we can probably make it more efficient, but I leave it as an optimization for the future
+        gd_idx = gd.idx
+        k = 0
+        for (s, e) in zip(gd.starts, gd.ends)
+            for j in s:e
+                k += 1
+                @inbounds newcol[gd_idx[j]] = col[k]
+            end
+        end
+        @assert k == length(gd_idx)
+        trans_res[i] = TransformationResult(col_idx, newcol, trans_res[i].name, trans_res[i].optional)
+    end
 end
 
 function combine(@nospecialize(f::Base.Callable), gd::GroupedDataFrame;

@@ -1,6 +1,6 @@
 module TestUtils
 
-using Test, DataFrames
+using Test, Random, DataFrames
 
 @testset "make_unique" begin
     @test DataFrames.make_unique([:x, :x, :x_1, :x2], makeunique=true) == [:x, :x_2, :x_1, :x2]
@@ -147,6 +147,70 @@ end
     @test_throws AssertionError DataFrames.split_to_chunks(0, 10)
     @test_throws AssertionError DataFrames.split_to_chunks(10, 0)
     @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
+end
+
+@testset "_findall(B::BitVector)" begin
+    Random.seed!(1234)
+    BD = Dict(
+        "Empty" => (BitVector([]), UnitRange{Int}),
+        "T Big" => (trues(100000), UnitRange{Int}),
+        "F Big" => (falses(100000), UnitRange{Int}),
+        "T64 F64" => ([trues(64); falses(64)], UnitRange{Int}),
+        "F64 T64" => ([falses(64); trues(64)], UnitRange{Int}),
+        "F80 T100" => ([falses(85); trues(100)], UnitRange{Int}),
+        "F256 T32" => ([falses(256); trues(32)], UnitRange{Int}),
+        "F260 T32" => ([falses(260); trues(32)], UnitRange{Int}),
+        "TF Big" => ([trues(100000); falses(100000)], UnitRange{Int}),
+        "FT Big" => ([falses(100000); trues(100000)], UnitRange{Int}),
+
+        # some edge cases
+        "TFT small" => ([trues(85); falses(100); trues(85)], Vector{Int}),
+        "FTFFT small" => ([falses(64 + 32); trues(32); falses(128); trues(32)], Vector{Int}),
+        "TFTF small" => ([falses(64); trues(64); falses(64); trues(64)], Vector{Int}),
+        "TFT small2" => ([trues(64); falses(10); trues(100)], Vector{Int}),
+
+        "FTF Big" => ([falses(8500); trues(100000); falses(65000)], UnitRange{Int}),
+        "TFT Big" => ([trues(8500); falses(100000); trues(65000)], Vector{Int}),
+        "FTFTFTF Big" => ([falses(65000); trues(65000); falses(65000); trues(65000); falses(65000); trues(65000); falses(65000)], Vector{Int}),
+
+        "FTFR small" => ([falses(85); trues(100); falses(65); rand([true, false], 2000)], Vector{Int}),
+        "R Big" => (BitVector(rand([true, false], 2000000)), Vector{Int}),
+        "RF Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
+        "RT Big" => ([BitVector(rand([true, false], 1000000));  trues(1000000)], Vector{Int}),
+        "FR Big" => ([falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int}),
+        "TR Big" => ([trues(1000000);  BitVector(rand([true, false], 1000000))], Vector{Int}),
+        "FRT Big" => ([falses(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int}),
+        "TRF Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
+        "FRF Big" => ([falses(1000000); BitVector(rand([true, false], 1000000)); falses(1000000)], Vector{Int}),
+        "TRT Big" => ([trues(1000000); BitVector(rand([true, false], 1000000)); trues(1000000)], Vector{Int}),
+        "RFR Big" => ([BitVector(rand([true, false], 1000000)); falses(1000000); BitVector(rand([true, false], 1000000))], Vector{Int}),
+        "FTFR Big" => ([falses(65000);  trues(65000);  falses(65000); rand([true, false], 20000)], Vector{Int}),
+        "T256 R100" => ([trues(256);  rand([true, false], 2000)], Vector{Int}),
+        "F256 R100" => ([falses(256); rand([true, false], 2000)], Vector{Int}),
+    )
+    for (_, (B, T)) in BD
+        res = DataFrames._findall(B)
+        @test Base.findall(B) == res
+        @test res isa T
+    end
+
+    # 1:200 is to test all small cases
+    # 1000 is to test skipping multiple 64-bit blocks of 0 and 1
+    for n in [1:200; 1000], i in 1:n, j in i:n
+        x = falses(n)
+        x[i:j] .= true
+        res = DataFrames._findall(x)
+        @test res == i:j
+        @test res isa UnitRange{Int}
+        if j + 1 < n
+            x[j + 2] = true
+            # add one false and then true
+            @test  DataFrames._findall(x) == [i:j; j+2]
+            # sprinkle trues randomly after one false
+            rand!(view(x, j + 2:n), Bool)
+            @test  DataFrames._findall(x) == findall(x)
+        end
+    end
 end
 
 end # module

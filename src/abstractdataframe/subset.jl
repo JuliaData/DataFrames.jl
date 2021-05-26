@@ -31,6 +31,20 @@ function _and_missing(x::Any...)
                         "but only true, false, or missing are allowed"))
 end
 
+# we are guaranteed that ByRow returns a vector
+# this workaround is needed for 0-argument ByRow
+assert_bool_vec(fun::ByRow) = fun
+
+function assert_bool_vec(@nospecialize(fun))
+    return function(x...)
+        val = fun(x...)
+        if !(val isa AbstractVector)
+            throw(ArgumentError("functions passed to `subset` must return an AbstractVector."))
+        end
+        return val
+    end
+end
+
 # Note that _get_subset_conditions will have a large compilation time
 # if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
@@ -39,7 +53,7 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
     conditions = Any[if a isa ColumnIndex
                          a => Symbol(:x, i)
                      elseif a isa Pair{<:Any, <:Base.Callable}
-                         first(a) => last(a) => Symbol(:x, i)
+                         first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
                      end for (i, a) in enumerate(args)]
@@ -71,13 +85,16 @@ end
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are `true`.
+All transformations must produce vectors containing `true` or `false` (and
+optionally `missing` if `skipmissing=true`).
 
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
 described for [`select`](@ref).
 
 Note that as opposed to [`filter`](@ref) the `subset` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`).
+columns (and selects rows within groups for `GroupedDataFrame`
+rather than whole groups) and must return a vector.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -174,13 +191,16 @@ end
 
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
+All transformations must produce vectors containing `true` or `false` (and
+optionally `missing` if `skipmissing=true`).
 
 Each argument passed in `args` can be either a single column selector or a
 `source_columns => function` transformation specifier following the rules
 described for [`select`](@ref).
 
 Note that as opposed to [`filter!`](@ref) the `subset!` function works on whole
-columns (or all rows in groups for `GroupedDataFrame`).
+columns (and selects rows within groups for `GroupedDataFrame` rather than whole
+groups) and must return a vector.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -191,7 +211,10 @@ If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
-`parent` data frame, like in [`select!`](@ref).
+`parent` data frame, like in [`select!`](@ref). Also note that in general
+the parent of the passed `GroupedDataFrame` is mutated in place, which means
+that the `GroupedDataFrame` is not safe to use as most likely it will
+get corrupted due to row removal in the parent.
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 

@@ -68,8 +68,39 @@ if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
     end
 end
 
-"""Return compact string representation of type T"""
-function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
+# For most data frames, especially wide, columns having the same element type
+# occur multiple times. batch_compacttype ensures that we compute string
+# representation of a specific column element type only once and then reuse it.
+
+function batch_compacttype(types::Vector{Any}, maxwidths::Vector{Int})
+    @assert length(types) == length(maxwidths)
+    cache = Dict{Any, String}()
+    return map(types, maxwidths) do T, maxwidth
+        get!(cache, T) do
+            compacttype(T, maxwidth)
+        end
+    end
+end
+
+function batch_compacttype(types::Vector{Any}, maxwidth::Int=8)
+    cache = Dict{Type, String}()
+    return map(types) do T
+        get!(cache, T) do
+            compacttype(T, maxwidth)
+        end
+    end
+end
+
+"""
+    compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
+
+Return compact string representation of type `T`.
+
+For displaying data frame we do not want string representation of type to be
+longer than `maxwidth`. This function implements rules how type names are
+cropped if they are longer than `maxwidth`.
+"""
+function compacttype(T::Type, maxwidth::Int=8)
     maxwidth = max(8, maxwidth)
 
     T === Any && return "Any"
@@ -82,8 +113,6 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
         T = nonmissingtype(T)
         sT = string(T)
         suffix = "?"
-        # ignore "?" for initial width counting but respect it for display
-        initial || (maxwidth -= 1)
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
         suffix = ""
@@ -119,93 +148,6 @@ function compacttype(T::Type, maxwidth::Int=8, initial::Bool=true)
     return first(sT, stop) * "…" * suffix
 end
 
-"""
-    DataFrames.getmaxwidths(df::AbstractDataFrame,
-                            io::IO,
-                            rowindices1::AbstractVector{Int},
-                            rowindices2::AbstractVector{Int},
-                            rowlabel::Symbol,
-                            rowid::Union{Integer, Nothing},
-                            show_eltype::Bool,
-                            buffer::IOBuffer)
-
-Calculate, for each column of an AbstractDataFrame, the maximum
-string width used to render the name of that column, its type, and the
-longest entry in that column -- among the rows of the data frame
-will be rendered to IO. The widths for all columns are returned as a
-vector.
-
-Return a `Vector{Int}` giving the maximum string widths required to render
-each column, including that column's name and type.
-
-NOTE: The last entry of the result vector is the string width of the
-implicit row ID column contained in every `AbstractDataFrame`.
-
-# Arguments
-- `df::AbstractDataFrame`: The data frame whose columns will be printed.
-- `io::IO`: The `IO` to which `df` is to be printed
-- `rowindices1::AbstractVector{Int}: A set of indices of the first
-  chunk of the AbstractDataFrame that would be rendered to IO.
-- `rowindices2::AbstractVector{Int}: A set of indices of the second
-  chunk of the AbstractDataFrame that would be rendered to IO. Can
-  be empty if the AbstractDataFrame would be printed without any
-  ellipses.
-- `rowlabel::AbstractString`: The label that will be used when rendered the
-  numeric ID's of each row. Typically, this will be set to "Row".
-- `rowid`: Used to handle showing `DataFrameRow`.
-- `show_eltype`: Whether to print the column type
-   under the column name in the heading.
-- `buffer`: buffer passed around to avoid reallocations in `ourstrwidth`
-"""
-function getmaxwidths(df::AbstractDataFrame,
-                      io::IO,
-                      rowindices1::AbstractVector{Int},
-                      rowindices2::AbstractVector{Int},
-                      rowlabel::Symbol,
-                      rowid::Union{Integer, Nothing},
-                      show_eltype::Bool,
-                      buffer::IOBuffer,
-                      truncstring::Int)
-    maxwidths = Vector{Int}(undef, size(df, 2) + 1)
-
-    undefstrwidth = ourstrwidth(io, "#undef", buffer, truncstring)
-
-    j = 1
-    for (name, col) in pairs(eachcol(df))
-        # (1) Consider length of column name
-        # do not truncate column name
-        maxwidth = ourstrwidth(io, name, buffer, 0)
-
-        # (2) Consider length of longest entry in that column
-        for indices in (rowindices1, rowindices2), i in indices
-            if isassigned(col, i)
-                maxwidth = max(maxwidth, ourstrwidth(io, col[i], buffer, truncstring))
-            else
-                maxwidth = max(maxwidth, undefstrwidth)
-            end
-        end
-        if show_eltype
-            # do not truncate eltype name
-            maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col)), buffer, 0))
-        else
-            maxwidths[j] = maxwidth
-        end
-        j += 1
-    end
-
-    # do not truncate rowlabel
-    if rowid isa Nothing
-        rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
-        rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
-        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2),
-                           ourstrwidth(io, rowlabel, buffer, 0))
-    else
-        maxwidths[j] = max(ndigits(rowid), ourstrwidth(io, rowlabel, buffer, 0))
-    end
-
-    return maxwidths
-end
-
 function _show(io::IO,
                df::AbstractDataFrame;
                allrows::Bool = !get(io, :limit, false),
@@ -220,13 +162,10 @@ function _show(io::IO,
     _check_consistency(df)
 
     names_str = names(df)
-    names_len = textwidth.(names_str)
-    maxwidth = max.(9, names_len)
-    types = eltype.(eachcol(df))
-
-    # NOTE: If we reuse `types` here, the time to print the first table is 2x
-    # more. This should be something related to type inference.
-    types_str = compacttype.(eltype.(eachcol(df)), maxwidth)
+    names_len = Int[textwidth(n) for n in names_str]
+    maxwidth = Int[max(9, nl) for nl in names_len]
+    types = Any[eltype(c) for c in eachcol(df)]
+    types_str = batch_compacttype(types, maxwidth)
 
     if allcols && allrows
         crop = :none
@@ -251,14 +190,25 @@ function _show(io::IO,
     # floating points.
     alignment_anchor_regex = Dict{Int, Vector{Regex}}()
 
-    # Columns composed of numbers are printed aligned to the right.
-    alignment_regex_vec = [r"\."]
+    # Regex to align real numbers.
+    alignment_regex_real = [r"\."]
+
+    # Regex for columns with complex numbers.
+    #
+    # Here we are matching `+` or `-` unless it is not at the beginning of the
+    # string or an `e` precedes it.
+    alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
 
     for i = 1:num_cols
         type_i = nonmissingtype(types[i])
 
-        if type_i <: Number
-            alignment_anchor_regex[i] = alignment_regex_vec
+        if type_i <: Complex
+            alignment_anchor_regex[i] = alignment_regex_complex
+            alignment[i] = :r
+        elseif type_i <: Real
+            alignment_anchor_regex[i] = alignment_regex_real
+            alignment[i] = :r
+        elseif type_i <: Number
             alignment[i] = :r
         end
     end

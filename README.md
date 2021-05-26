@@ -1,8 +1,8 @@
 DataFrames.jl
 =============
 
-[![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=master)
-[![CI Testing](https://github.com/JuliaData/DataFrames.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/DataFrames.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=main)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=main)
+[![CI Testing](https://github.com/JuliaData/DataFrames.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/DataFrames.jl/actions?query=workflow%3ACI+branch%3Amain)
 
 Tools for working with tabular data in Julia.
 
@@ -25,7 +25,7 @@ You can also check out
 that is available on GitHub.
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: http://JuliaData.github.io/DataFrames.jl/latest/
+[docs-latest-url]: http://dataframes.juliadata.org/latest/
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: http://JuliaData.github.io/DataFrames.jl/stable/
+[docs-stable-url]: http://dataframes.juliadata.org/stable/
