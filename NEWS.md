@@ -2,7 +2,7 @@
 
 ## Bug fixes
 
-* fix bug in how `issorted` handles custom orderings and improve performane
+* fix bug in how `issorted` handles custom orderings and improve performance
   of sorting when complex custom orderings are passed
   ([#2746](https://github.com/JuliaData/DataFrames.jl/pull/2746))
 
