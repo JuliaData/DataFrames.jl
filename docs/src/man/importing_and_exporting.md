@@ -1,5 +1,7 @@
 # Importing and Exporting Data (I/O)
 
+## CSV files
+
 For reading and writing tabular data from CSV and other delimited text files,
 use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 
@@ -29,13 +31,11 @@ The behavior of CSV functions can be adapted via keyword arguments. For more
 information, see `?CSV.File`, `?CSV.read` and `?CSV.write`, or checkout the
 online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
 
-For reading and writing tabular data in Apache Arrow format use
-[Arrow.jl](https://github.com/JuliaData/Arrow.jl)
-
 In simple cases, when compilation latency of CSV.jl might be an issue,
 using the `DelimitedFiles` module from the Julia standard library can be considered.
 Here is an example showing how to read in the data and perform its
 post-processing:
+
 ```jldoctest readdlm
 julia> using DelimitedFiles, DataFrames
 
@@ -112,3 +112,14 @@ As you can see the code required to transform `iris` into a proper input to the
 `writedlm` function so that you can create the CSV file having the expected
 format is not easy. Therefore CSV.jl is the preferred package to write CSV files
 for data stored in data frames.
+
+## Other formats
+
+Other, selected, data formats are supported for reading and writing in the
+following packages:
+* Apache Arrow: [Arrow.jl](https://github.com/JuliaData/Arrow.jl)
+* Apache Avro: [Avro.jl](https://github.com/JuliaData/Avro.jl)
+* JSON: [JSONTables.jl](https://github.com/JuliaData/JSONTables.jl)
+* Parquet: [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)
+* Stata, SPSS, and SAS: [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)
+* XLSX: [XLSX.jl](https://github.com/felipenoris/XLSX.jl)
