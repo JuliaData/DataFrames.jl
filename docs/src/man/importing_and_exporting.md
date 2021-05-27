@@ -33,7 +33,7 @@ For reading and writing tabular data in Apache Arrow format use
 [Arrow.jl](https://github.com/JuliaData/Arrow.jl)
 
 In simple cases, when compilation latency of CSV.jl might be an issue,
-using `DelimitedFiles` module from Julia standard library can be considered.
+using the `DelimitedFiles` module from the Julia standard library can be considered.
 Here is an example showing how to read in the data and perform its
 post-processing:
 ```jldoctest readdlm
@@ -91,17 +91,17 @@ julia> iris = identity.(iris_raw)
 ```
 
 Observe that in our example:
-* `header` is a `Matrix` therefore we had to pass `vec(header)` to `DataFrame`
+* `header` is a `Matrix` therefore we had to pass `vec(header)` to the `DataFrame`
   constructor;
-* we broadcasted `identity` function over the `iris_raw` data frame to perform
+* we broadcasted the `identity` function over the `iris_raw` data frame to perform
   narrowing of `eltype` of columns of `iris_raw`; the reason is that read in by
   the `readdlm` function is stored into a `data` `Matrix` so all columns in
   `iris_raw` initially have the same `eltype` -- in this case it had to be `Any`
-  as some of the folumns are numeric and some are string.
+  as some of the columns are numeric and some are string.
 
 All such operations (and many more) are automatically handled by CSV.jl.
 
-Similarly, you can use the `writedlm` file from the `DelimitedFiles` module to
+Similarly, you can use the `writedlm` function from the `DelimitedFiles` module to
 save a data frame like this:
 
 ```julia
@@ -110,5 +110,5 @@ writedlm("test.csv", Iterators.flatten(([names(iris)], eachrow(iris))), ',')
 
 As you can see the code required to transform `iris` into a proper input to the
 `writedlm` function so that you can create the CSV file having the expected
-format is not easy. Therefore CSV.jl is a preferred package to write CSV files
+format is not easy. Therefore CSV.jl is the preferred package to write CSV files
 for data stored in data frames.
