@@ -134,7 +134,7 @@ function find_missing_idxs(present::Vector{Int}, target_len::Int)
     @inbounds for v in present
         not_seen[v] = false
     end
-    return findall(not_seen)
+    return _findall(not_seen)
 end
 
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique::Bool,
@@ -147,15 +147,24 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
     if kind == :left || kind == :outer
         leftonly_ixs = find_missing_idxs(left_ixs, nrow(joiner.dfl))
     else
-        leftonly_ixs = Int[]
+        leftonly_ixs = 1:0
     end
 
     if kind == :right || kind == :outer
         rightonly_ixs = find_missing_idxs(right_ixs, nrow(joiner.dfr))
     else
-        rightonly_ixs = Int[]
+        rightonly_ixs = 1:0
     end
+    return _compose_joined_table(joiner, kind, makeunique, left_rename, right_rename,
+                                 indicator, left_ixs, right_ixs, leftonly_ixs, rightonly_ixs)
+end
 
+function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique::Bool,
+                               left_rename::Union{Function, AbstractString, Symbol},
+                               right_rename::Union{Function, AbstractString, Symbol},
+                               indicator::Union{Nothing, Symbol, AbstractString},
+                               left_ixs::AbstractVector, right_ixs::AbstractVector,
+                               leftonly_ixs::AbstractVector, rightonly_ixs::AbstractVector)
     lil = length(left_ixs)
     ril = length(right_ixs)
     loil = length(leftonly_ixs)

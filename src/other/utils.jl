@@ -181,6 +181,36 @@ end
 
 _findall(B) = findall(B)
 
+function _findall(B::AbstractVector{Bool})
+    @assert firstindex(B) == 1
+    nnzB = count(B)
+
+    # fast path returning range
+    nnzB == 0 && return 1:0
+    len = length(B)
+    nnzB == len && return 1:len
+    start::Int = findfirst(B)
+    nnzB == 1 && return start:start
+    start + nnzB - 1 == len && return start:len
+    stop::Int = findnext(!, B, start + 1) - 1
+    start + nnzB == stop + 1 && return start:stop
+
+    # slow path returning Vector{Int}
+    I = Vector{Int}(undef, nnzB)
+    @inbounds for i in 1:stop - start + 1
+        I[i] = start + i - 1
+    end
+    cnt = stop - start + 2
+    @inbounds for i in stop+1:len
+        if B[i]
+            I[cnt] = i
+            cnt += 1
+        end
+    end
+    @assert cnt == nnzB + 1
+    return I
+end
+
 @inline _blsr(x) = x & (x-1)
 
 # findall returning a range when possible (all true indices are contiguous), and optimized for B::BitVector

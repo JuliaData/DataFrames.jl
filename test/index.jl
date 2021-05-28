@@ -139,10 +139,12 @@ end
     @test !haskey(si3, "A")
     @test si3.remap == [0, 0, 1, 2, 3]
     @test si4.cols == 3:5
-    @test si4.remap == [0, 0, 1, 2, 3]
+    @test si4.remap == -1:3
     @test !haskey(si4, :A)
     @test !haskey(si4, "A")
-    @test si4.remap == [0, 0, 1, 2, 3]
+    @test si4.remap == -1:3
+    # === passes as both si2 and si4 use ranges for indicating indexes
+    @test si2 === si4
     @test si5.cols == 3:5
     @test si5.remap == [0, 0, 1, 2, 3]
     @test !haskey(si5, :A)

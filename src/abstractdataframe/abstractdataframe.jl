@@ -1155,7 +1155,7 @@ function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
 end
 
 _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
-    delete!(df, findall((x -> !(f(x)::Bool)).(nti)))
+    delete!(df, _findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.Matrix(df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
@@ -1267,11 +1267,11 @@ end
 
 nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
-Base.unique!(df::AbstractDataFrame) = delete!(df, findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame) = delete!(df, _findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
-    delete!(df, findall(nonunique(df, cols)))
+    delete!(df, _findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
-    delete!(df, findall(nonunique(df, cols)))
+    delete!(df, _findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 @inline function Base.unique(df::AbstractDataFrame; view::Bool=false)
