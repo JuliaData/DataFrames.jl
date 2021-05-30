@@ -9,6 +9,12 @@ but preserved in right df; in `innerjoin` `missing`s are dropped in both dfs;
 in `outerjoin` method errors
 ([#2724](https://github.com/JuliaData/DataFrames.jl/pull/2724))
 
+## Bug fixes
+
+* fix bug in how `issorted` handles custom orderings and improve performance
+  of sorting when complex custom orderings are passed
+  ([#2746](https://github.com/JuliaData/DataFrames.jl/pull/2746))
+
 ## Performance improvements
 
 * `SubDataFrame`, `filter!`, `unique!`, `getindex`, `delete!`, `leftjoin`,
