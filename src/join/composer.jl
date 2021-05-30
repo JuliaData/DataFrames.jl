@@ -56,44 +56,25 @@ struct DataFrameJoiner
                                         "when matchmissing == :error"))
                 end
             end
-        elseif matchmissing === :notequal_copy
-            if kind in [:left, :semi, :anti]
-                dfr = dropmissing(dfr, right_on)
-                dfr_on = select(dfr, right_on, copycols = false)
-            elseif kind === :right
-                dfl = dropmissing(dfl, left_on)
-                dfl_on = select(dfl, left_on, copycols = false)
-            elseif kind === :inner
-                @show kind, matchmissing
-                dfl = dropmissing(dfl, left_on)
-                dfl_on = select(dfl, left_on, copycols = false)
-                dfr = dropmissing(dfr, right_on)
-                dfr_on = select(dfr, right_on, copycols = false)
-            elseif kind === :outer 
-                throw(ArgumentError("matchmissing == :notequal with kind == :outer not allowed"))
-            else
-                throw("matchmissing == :notequal not implemented for kind == $kind")
-            end
-        elseif matchmissing === :notequal_view
-            if kind in [:left, :semi, :anti]
+        elseif matchmissing === :notequal
+            if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view = true)
                 dfr_on = select(dfr, right_on)
             elseif kind === :right
                 dfl = dropmissing(dfl, left_on, view = true)
                 dfl_on = select(dfl, left_on)
             elseif kind === :inner
-                @show kind, matchmissing
                 dfl = dropmissing(dfl, left_on, view = true)
                 dfl_on = select(dfl, left_on)
                 dfr = dropmissing(dfr, right_on, view = true)
                 dfr_on = select(dfr, right_on)
-            elseif kind === :outer 
-                throw(ArgumentError("matchmissing == :notequal with kind == :outer not allowed"))
+            elseif kind === :outer
+                throw(ArgumentError("matchmissing == :notequal for `outerjoin` is not allowed"))
             else
-                throw("matchmissing == :notequal not implemented for kind == $kind")
+                throw(ArgumentError("matchmissing == :notequal not implemented for kind == $kind"))
             end
         elseif matchmissing !== :equal
-            throw(ArgumentError("matchmissing allows only :error or :equal"))
+            throw(ArgumentError("matchmissing allows only :error, :notequal and :equal"))
         end
 
         for df in (dfl_on, dfr_on), col in eachcol(df)
@@ -522,7 +503,8 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df1` and `df2` 
+  `on` columns (`isequal` is used for comparisons of rows for equality)
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -663,7 +645,8 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns
+  (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
 
@@ -809,7 +792,8 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df1` `on` columns
+  (`isequal` is used for comparisons of rows for equality)
 
 All columns of the returned data table will support missing values.
 
@@ -1108,7 +1092,8 @@ The order of rows in the result is undefined and may change in the future releas
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns
+  (`isequal` is used for comparisons of rows for equality)
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -1213,7 +1198,8 @@ The order of rows in the result is undefined and may change in the future releas
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns
+  (`isequal` is used for comparisons of rows for equality)
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use

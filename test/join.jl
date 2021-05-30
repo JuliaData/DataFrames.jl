@@ -32,6 +32,8 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
 
     @test_throws ArgumentError innerjoin(name, job)
     @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:errors)
+    @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:weirdmatch)
+    @test_throws ArgumentError outerjoin(name, job, on = :ID, matchmissing=:notequal)
 
     @test innerjoin(name, job, on = :ID) == inner
     @test outerjoin(name, job, on = :ID) ≅ outer
@@ -1555,6 +1557,29 @@ end
     @test antijoin(df1, df2, on=[:id1, :id2]) ≅
           DataFrame(a="a", id2=-(10^7+1:10^7+2), b="b", id1=(10^7+1:10^7+2),
                     c="c", d="d")
+end
+
+@testset "matchmissing :notequal correctness" begin
+    name = DataFrame(ID = Union{Int, Missing}[1, 2, missing],
+                    Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"])
+    noid = DataFrame(ID = Union{Int, Missing}[], Name = String[])
+    missid = DataFrame(ID = Union{Int, Missing}[missing, missing, missing],
+                    Name = String["John Doe", "Jane Doe", "Joe Blogs"])
+    job = DataFrame(ID = Union{Int, Missing}[missing, 2, 2, 4],
+                    Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"]);
+
+    for df in [name, noid, missid]
+        @test leftjoin(df, dropmissing(job), on=:ID, matchmissing=:equal) ≅
+            leftjoin(df, job, on=:ID, matchmissing=:notequal)
+        @test semijoin(df, dropmissing(job), on=:ID, matchmissing=:equal) ≅
+            semijoin(df, job, on=:ID, matchmissing=:notequal)
+        @test antijoin(df, dropmissing(job), on=:ID, matchmissing=:equal) ≅
+            antijoin(df, job, on=:ID, matchmissing=:notequal)
+        @test rightjoin(dropmissing(df), job, on=:ID, matchmissing=:equal) ≅
+            rightjoin(df, job, on=:ID, matchmissing=:notequal)
+        @test innerjoin(dropmissing(df), dropmissing(job), on=:ID, matchmissing=:equal) ≅
+            innerjoin(df, job, on=:ID, matchmissing=:notequal)
+    end
 end
 
 end # module
