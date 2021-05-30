@@ -93,14 +93,15 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 
 # DFPerm: defines a permutation on a particular DataFrame, using
 #         a single ordering (O<:Ordering) or a list of column orderings
-#         (O<:AbstractVector{Ordering}), one per DataFrame column
+#         (NTuple of Ordering), one per DataFrame column
 #
 #         If a user only specifies a few columns, the DataFrame
 #         contained in the DFPerm only contains those columns, and
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-struct DFPerm{O<:Union{Ordering, AbstractVector}, T<:Tuple} <: Ordering
+struct DFPerm{O<:Union{Ordering, Tuple{Vararg{Ordering}}},
+              T<:Tuple{Vararg{AbstractVector}}} <: Ordering
     ord::O
     cols::T
 end
@@ -109,24 +110,50 @@ function DFPerm(ords::AbstractVector{O}, cols::T) where {O<:Ordering, T<:Tuple}
     if length(ords) != length(cols)
         error("DFPerm: number of column orderings does not equal the number of columns")
     end
-    DFPerm{typeof(ords), T}(ords, cols)
+    DFPerm(Tuple(ords), cols)
 end
 
 DFPerm(o::Union{Ordering, AbstractVector}, df::AbstractDataFrame) =
     DFPerm(o, ntuple(i -> df[!, i], ncol(df)))
 
-# get ordering function for the i-th column used for ordering
-col_ordering(o::DFPerm{O}, i::Int) where {O<:Ordering} = o.ord
-col_ordering(o::DFPerm{V}, i::Int) where {V<:AbstractVector} = o.ord[i]
+@inline col_ordering(o::Ordering) = o
+@inline ord_tail(o::Ordering) = o
+@inline col_ordering(o::Tuple{Vararg{Ordering}}) = @inbounds o[1]
+@inline ord_tail(o::Tuple{Vararg{Ordering}}) = Base.tail(o)
 
-function Sort.lt(o::DFPerm, a, b)
-    @inbounds for i in 1:length(o.cols)
-        ord = col_ordering(o, i)
-        col = o.cols[i]
+Sort.lt(o::DFPerm{<:Any, Tuple{}}, a, b) = false
+
+function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b)
+    ord = o.ord
+    cols = o.cols
+    # if there are too many columns fall back to type unstable mode to avoid high compilation cost
+    # it is expected that in practice users sort data frames on only few columns
+    length(cols) > 16 && return unstable_lt(ord, cols, a, b)
+
+    @inbounds begin
+        ord1 = col_ordering(ord)
+        col = first(cols)
         va = col[a]
         vb = col[b]
-        lt(ord, va, vb) && return true
-        lt(ord, vb, va) && return false
+        lt(ord1, va, vb) && return true
+        lt(ord1, vb, va) && return false
+    end
+    return Sort.lt(DFPerm(ord_tail(ord), Base.tail(cols)), a, b)
+end
+
+# get ordering function for the i-th column used for ordering
+col_ordering(o::Ordering, i::Int) where {O<:Ordering} = o
+col_ordering(o::Tuple{Vararg{Ordering}}, i::Int) = @inbounds o[i]
+
+function unstable_lt(ord::Union{Ordering, Tuple{Vararg{Ordering}}},
+                     cols::Tuple{Vararg{AbstractVector}}, a, b)
+    for i in 1:length(cols)
+        ordi = col_ordering(ord, i)
+        @inbounds coli = cols[i]
+        @inbounds va = coli[a]
+        @inbounds vb = coli[b]
+        lt(ordi, va, vb) && return true
+        lt(ordi, vb, va) && return false
     end
     false # a and b are equal
 end
@@ -325,7 +352,7 @@ function Base.issorted(df::AbstractDataFrame, cols=[];
     end
     if cols isa ColumnIndex
         return issorted(df[!, cols], lt=lt, by=by, rev=rev, order=order)
-    elseif length(cols) == 1
+    elseif cols isa AbstractVector{<:ColumnIndex} && length(cols) == 1
         return issorted(df[!, cols[1]], lt=lt, by=by, rev=rev, order=order)
     else
         return issorted(1:nrow(df), ordering(df, cols, lt, by, rev, order))

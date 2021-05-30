@@ -1,5 +1,11 @@
 # DataFrames.jl changes on main since last release notes
 
+## Bug fixes
+
+* fix bug in how `issorted` handles custom orderings and improve performance
+  of sorting when complex custom orderings are passed
+  ([#2746](https://github.com/JuliaData/DataFrames.jl/pull/2746))
+
 ## Performance improvements
 
 * `SubDataFrame`, `filter!`, `unique!`, `getindex`, `delete!`, `leftjoin`,
