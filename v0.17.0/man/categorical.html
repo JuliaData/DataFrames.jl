@@ -1,63 +1,104 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Categorical Data · DataFrames.jl</title><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/categorical/index.html"/><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="getting_started.html">Getting Started</a></li><li><a class="toctext" href="joins.html">Joins</a></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li class="current"><a class="toctext" href="categorical.html">Categorical Data</a><ul class="internal"></ul></li><li><a class="toctext" href="missing.html">Missing Data</a></li><li><a class="toctext" href="querying_frameworks.html">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/types.html">Types</a></li><li><a class="toctext" href="../lib/functions.html">Functions</a></li><li><a class="toctext" href="../lib/indexing.html">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="categorical.html">Categorical Data</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/categorical.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Categorical Data</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Categorical-Data-1" href="#Categorical-Data-1">Categorical Data</a></h1><p>Often, we have to deal with factors that take on a small number of levels:</p><pre><code class="language-julia-repl">julia&gt; v = [&quot;Group A&quot;, &quot;Group A&quot;, &quot;Group A&quot;, &quot;Group B&quot;, &quot;Group B&quot;, &quot;Group B&quot;]
+<!DOCTYPE html><HTML lang="en"><head><meta charset="UTF-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Categorical Data · DataFrames.jl</title><link href="https://juliadata.github.io/DataFrames.jl/stable/man/categorical/index.html" rel="canonical"/><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script data-main="../assets/documenter.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body><nav class="toc"><a href="../index.html"><img alt="DataFrames.jl logo" class="logo" src="../assets/logo.png"/></a><h1>DataFrames.jl</h1><select id="version-selector" onchange="window.location.href=this.value" style="visibility: hidden"></select><form action="../search.html" class="search" id="search-form"><input id="search-query" name="q" placeholder="Search docs" type="text"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="getting_started.html">Getting Started</a></li><li><a class="toctext" href="joins.html">Joins</a></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li class="current"><a class="toctext" href="categorical.html">Categorical Data</a><ul class="internal"></ul></li><li><a class="toctext" href="missing.html">Missing Data</a></li><li><a class="toctext" href="querying_frameworks.html">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/types.html">Types</a></li><li><a class="toctext" href="../lib/functions.html">Functions</a></li><li><a class="toctext" href="../lib/indexing.html">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="categorical.html">Categorical Data</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/categorical.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Categorical Data</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" href="#Categorical-Data-1" id="Categorical-Data-1">Categorical Data</a></h1><p>Often, we have to deal with factors that take on a small number of levels:</p><pre><code class="language-julia-repl">julia&gt; v = ["Group A", "Group A", "Group A", "Group B", "Group B", "Group B"]
 6-element Array{String,1}:
- &quot;Group A&quot;
- &quot;Group A&quot;
- &quot;Group A&quot;
- &quot;Group B&quot;
- &quot;Group B&quot;
- &quot;Group B&quot;
+ "Group A"
+ "Group A"
+ "Group A"
+ "Group B"
+ "Group B"
+ "Group B"
 </code></pre><p>The naive encoding used in an <code>Array</code> represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the <code>CategoricalArray</code> type does:</p><pre><code class="language-julia-repl">julia&gt; using CategoricalArrays
 
 julia&gt; cv = CategoricalArray(v)
 6-element CategoricalArrays.CategoricalArray{String,1,UInt32}:
- &quot;Group A&quot;
- &quot;Group A&quot;
- &quot;Group A&quot;
- &quot;Group B&quot;
- &quot;Group B&quot;
- &quot;Group B&quot;
+ "Group A"
+ "Group A"
+ "Group A"
+ "Group B"
+ "Group B"
+ "Group B"
 </code></pre><p><code>CategoricalArrays</code> support missing values via the <code>Missings</code> package.</p><pre><code class="language-julia-repl">julia&gt; using Missings
 
-julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
-                              &quot;Group B&quot;, &quot;Group B&quot;, missing])
+julia&gt; cv = CategoricalArray(["Group A", missing, "Group A",
+                              "Group B", "Group B", missing])
 6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
- &quot;Group A&quot;
+ "Group A"
  missing
- &quot;Group A&quot;
- &quot;Group B&quot;
- &quot;Group B&quot;
+ "Group A"
+ "Group B"
+ "Group B"
  missing</code></pre><p>In addition to representing repeated data efficiently, the <code>CategoricalArray</code> type allows us to determine efficiently the allowed levels of the variable at any time using the <code>levels</code> function (note that levels may or may not be actually used in the data):</p><pre><code class="language-julia-repl">julia&gt; levels(cv)
 2-element Array{String,1}:
- &quot;Group A&quot;
- &quot;Group B&quot;
-</code></pre><p>The <code>levels!</code> function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.</p><pre><code class="language-julia-repl">julia&gt; levels!(cv, [&quot;Group B&quot;, &quot;Group A&quot;]);
+ "Group A"
+ "Group B"
+</code></pre><p>The <code>levels!</code> function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.</p><pre><code class="language-julia-repl">julia&gt; levels!(cv, ["Group B", "Group A"]);
 
 julia&gt; levels(cv)
 2-element Array{String,1}:
- &quot;Group B&quot;
- &quot;Group A&quot;
+ "Group B"
+ "Group A"
 
 julia&gt; sort(cv)
 6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
- &quot;Group B&quot;
- &quot;Group B&quot;
- &quot;Group A&quot;
- &quot;Group A&quot;
+ "Group B"
+ "Group B"
+ "Group A"
+ "Group A"
  missing
  missing
 </code></pre><p>By default, a <code>CategoricalArray</code> is able to represent 2&lt;sup&gt;32&lt;/sup&gt;differents levels. You can use less memory by calling the <code>compress</code> function:</p><pre><code class="language-julia-repl">julia&gt; cv = compress(cv)
 6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt8}:
- &quot;Group A&quot;
+ "Group A"
  missing
- &quot;Group A&quot;
- &quot;Group B&quot;
- &quot;Group B&quot;
+ "Group A"
+ "Group B"
+ "Group B"
  missing
 </code></pre><p>Often, you will have factors encoded inside a DataFrame with <code>Array</code> columns instead of <code>CategoricalArray</code> columns. You can convert one or more columns of the DataFrame using the <code>categorical!</code> function, which modifies the input DataFrame in-place.</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
 
-julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;D&quot;, &quot;A&quot;],
-                      B = [&quot;X&quot;, &quot;X&quot;, &quot;X&quot;, &quot;Y&quot;, &quot;Y&quot;, &quot;Y&quot;])
+julia&gt; df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
+                      B = ["X", "X", "X", "Y", "Y", "Y"])
 6×2 DataFrame
 │ Row │ A      │ B      │
 │     │ String │ String │
@@ -107,4 +148,4 @@ julia&gt; eltypes(df)
 2-element Array{Type,1}:
  CategoricalArrays.CategoricalString{UInt32}
  CategoricalArrays.CategoricalString{UInt32}
-</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalArray</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalArray</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p><footer><hr/><a class="previous" href="sorting.html"><span class="direction">Previous</span><span class="title">Sorting</span></a><a class="next" href="missing.html"><span class="direction">Next</span><span class="title">Missing Data</span></a></footer></article></body></html>
+</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalArray</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalArray</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p><footer><hr/><a class="previous" href="sorting.html"><span class="direction">Previous</span><span class="title">Sorting</span></a><a class="next" href="missing.html"><span class="direction">Next</span><span class="title">Missing Data</span></a></footer></article></body></HTML>

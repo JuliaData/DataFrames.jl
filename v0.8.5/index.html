@@ -1,35 +1,4 @@
-<!DOCTYPE html>
-<!--[if lt IE 7 ]><html class="no-js ie6"><![endif]-->
-<!--[if IE 7 ]><html class="no-js ie7"><![endif]-->
-<!--[if IE 8 ]><html class="no-js ie8"><![endif]-->
-<!--[if IE 9 ]><html class="no-js ie9"><![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
-    
-      
-        <title>DataFrames.jl - package for working with tabular data in Julia</title>
-
-        <link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/index.html"/>
-      
-      
-        <meta name="description" content="package for working with tabular data in Julia">
-      
-      
-      
-    
-    <meta property="og:url" content="None">
-    <meta property="og:title" content="DataFrames.jl">
-    <meta property="og:image" content="None/./">
-    <meta name="apple-mobile-web-app-title" content="DataFrames.jl">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    
-    <link rel="shortcut icon" type="image/x-icon" href="./assets/images/favicon-e565ddfa3b.ico">
-    <link rel="icon" type="image/x-icon" href="./assets/images/favicon-e565ddfa3b.ico">
-    <style>
+<!DOCTYPE html><HTML class="no-js"><head><meta charset="utf-8"/><meta content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1" name="viewport"/><title>DataFrames.jl - package for working with tabular data in Julia</title><link href="https://juliadata.github.io/DataFrames.jl/stable/index.html" rel="canonical"/><meta content="package for working with tabular data in Julia" name="description"/><meta content="None" property="og:url"/><meta content="DataFrames.jl" property="og:title"/><meta content="None/./" property="og:image"/><meta content="DataFrames.jl" name="apple-mobile-web-app-title"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/><link href="./assets/images/favicon-e565ddfa3b.ico" rel="shortcut icon" type="image/x-icon"/><link href="./assets/images/favicon-e565ddfa3b.ico" rel="icon" type="image/x-icon"/><style>
       @font-face {
       	font-family: 'Icon';
       	src: url('./assets/fonts/icon.eot?52m981');
@@ -44,384 +13,100 @@
       	font-weight: normal;
       	font-style: normal;
       }
-    </style>
-    <link rel="stylesheet" href="./assets/stylesheets/application-a422ff04cc.css">
-    
-      <link rel="stylesheet" href="./assets/stylesheets/palettes-05ab2406df.css">
-    
-    
-      
-      
-      
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
-      <style>
+    </style><link href="./assets/stylesheets/application-a422ff04cc.css" rel="stylesheet"/><link href="./assets/stylesheets/palettes-05ab2406df.css" rel="stylesheet"/><link href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono" rel="stylesheet"/><style>
         body, input {
           font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
         }
         pre, code {
           font-family: 'Ubuntu Mono', 'Courier New', 'Courier', monospace;
         }
-      </style>
-    
-    
-      <link rel="stylesheet" href="./assets/Documenter.css">
-    
-    <script src="./assets/javascripts/modernizr-4ab42b99fd.js"></script>
-    
-  </head>
-  
-  
-  
-  <body class="palette-primary-indigo palette-accent-blue">
-    
-      
-      
-    
-    <div class="backdrop">
-      <div class="backdrop-paper"></div>
-    </div>
-    <input class="toggle" type="checkbox" id="toggle-drawer">
-    <input class="toggle" type="checkbox" id="toggle-search">
-    <label class="toggle-button overlay" for="toggle-drawer"></label>
-    <header class="header">
-      <nav aria-label="Header">
-  <div class="bar default">
-    <div class="button button-menu" role="button" aria-label="Menu">
-      <label class="toggle-button icon icon-menu" for="toggle-drawer">
-        <span></span>
-      </label>
-    </div>
-    <div class="stretch">
-      <div class="title">
-        
-          <span class="path">
-            
-          </span>
+      </style><link href="./assets/Documenter.css" rel="stylesheet"/><script src="./assets/javascripts/modernizr-4ab42b99fd.js"></script><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body class="palette-primary-indigo palette-accent-blue"><div class="backdrop"><div class="backdrop-paper"></div></div><input class="toggle" id="toggle-drawer" type="checkbox"/><input class="toggle" id="toggle-search" type="checkbox"/><label class="toggle-button overlay" for="toggle-drawer"></label><header class="header"><nav aria-label="Header"><div class="bar default"><div aria-label="Menu" class="button button-menu" role="button"><label class="toggle-button icon icon-menu" for="toggle-drawer"><span></span></label></div><div class="stretch"><div class="title"><span class="path"></span>
         
         DataFrames.jl
-      </div>
-    </div>
-    
-    
-    <div class="button button-search" role="button" aria-label="Search">
-      <label class="toggle-button icon icon-search" title="Search" for="toggle-search"></label>
-    </div>
-  </div>
-  <div class="bar search">
-    <div class="button button-close" role="button" aria-label="Close">
-      <label class="toggle-button icon icon-back" for="toggle-search"></label>
-    </div>
-    <div class="stretch">
-      <div class="field">
-        <input class="query" type="text" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck>
-      </div>
-    </div>
-    <div class="button button-reset" role="button" aria-label="Search">
-      <button class="toggle-button icon icon-close" id="reset-search"></button>
-    </div>
-  </div>
-</nav>
-    </header>
-    <main class="main">
-      
-      <div class="drawer">
-        <nav aria-label="Navigation">
-  
-  <a href="https://github.com/JuliaStats/DataFrames.jl" class="project">
-    <div class="banner">
-      
-      <div class="name">
-        <strong>
+      </div></div><div aria-label="Search" class="button button-search" role="button"><label class="toggle-button icon icon-search" for="toggle-search" title="Search"></label></div></div><div class="bar search"><div aria-label="Close" class="button button-close" role="button"><label class="toggle-button icon icon-back" for="toggle-search"></label></div><div class="stretch"><div class="field"><input autocapitalize="off" autocomplete="off" autocorrect="off" class="query" placeholder="Search" spellcheck="" type="text"/></div></div><div aria-label="Search" class="button button-reset" role="button"><button class="toggle-button icon icon-close" id="reset-search"></button></div></div></nav></header><main class="main"><div class="drawer"><nav aria-label="Navigation"><a class="project" href="https://github.com/JuliaStats/DataFrames.jl"><div class="banner"><div class="name"><strong>
           DataFrames.jl
-          <span class="version">
-            
-          </span>
-        </strong>
-        
-          <br>
+          <span class="version"></span></strong><br/>
           JuliaStats/DataFrames.jl
         
-      </div>
-    </div>
-  </a>
-  <div class="scrollable">
-    <div class="wrapper">
-      
-        <ul class="repo">
-          <li class="repo-download">
-            
-            <a href="https://github.com/JuliaStats/DataFrames.jl/archive/master.zip" target="_blank" title="Download" data-action="download">
-              <i class="icon icon-download"></i> Download
-            </a>
-          </li>
-          <li class="repo-stars">
-            <a href="https://github.com/JuliaStats/DataFrames.jl/stargazers" target="_blank" title="Stargazers" data-action="star">
-              <i class="icon icon-star"></i> Stars
-              <span class="count">&ndash;</span>
-            </a>
-          </li>
-        </ul>
-        <hr>
-      
-      <div class="toc">
-        <ul>
-          
-            
-  <li>
-    <a class="current" title="Introduction" href=".">
+      </div></div></a><div class="scrollable"><div class="wrapper"><ul class="repo"><li class="repo-download"><a data-action="download" href="https://github.com/JuliaStats/DataFrames.jl/archive/master.zip" target="_blank" title="Download"><i class="icon icon-download"></i> Download
+            </a></li><li class="repo-stars"><a data-action="star" href="https://github.com/JuliaStats/DataFrames.jl/stargazers" target="_blank" title="Stargazers"><i class="icon icon-star"></i> Stars
+              <span class="count">–</span></a></li></ul><hr/><div class="toc"><ul><li><a class="current" href="." title="Introduction">
       Introduction
-    </a>
-    
-      
-        
-      
-      
-        <ul>
-          
-            <li class="anchor">
-              <a title="Package Manual" href="#package-manual">
+    </a><ul><li class="anchor"><a href="#package-manual" title="Package Manual">
                 Package Manual
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="API" href="#api">
+              </a></li><li class="anchor"><a href="#api" title="API">
                 API
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Documentation Index" href="#documentation-index">
+              </a></li><li class="anchor"><a href="#documentation-index" title="Documentation Index">
                 Documentation Index
-              </a>
-            </li>
-          
-        </ul>
-      
-    
-  </li>
-
-          
-            
-  <li>
-    <span class="section">User guide</span>
-    <ul>
-      
-        
-  <li>
-    <a class="" title="Getting Started" href="man/getting_started/">
+              </a></li></ul></li><li><span class="section">User guide</span><ul><li><a class="" href="man/getting_started/" title="Getting Started">
       Getting Started
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="IO" href="man/io/">
+    </a></li><li><a class="" href="man/io/" title="IO">
       IO
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Joins" href="man/joins/">
+    </a></li><li><a class="" href="man/joins/" title="Joins">
       Joins
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Split-apply-combine" href="man/split_apply_combine/">
+    </a></li><li><a class="" href="man/split_apply_combine/" title="Split-apply-combine">
       Split-apply-combine
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Reshaping" href="man/reshaping_and_pivoting/">
+    </a></li><li><a class="" href="man/reshaping_and_pivoting/" title="Reshaping">
       Reshaping
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Sorting" href="man/sorting/">
+    </a></li><li><a class="" href="man/sorting/" title="Sorting">
       Sorting
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Formulas" href="man/formulas/">
+    </a></li><li><a class="" href="man/formulas/" title="Formulas">
       Formulas
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Pooling" href="man/pooling/">
+    </a></li><li><a class="" href="man/pooling/" title="Pooling">
       Pooling
-    </a>
-    
-  </li>
-
-      
-    </ul>
-  </li>
-
-          
-            
-  <li>
-    <span class="section">API</span>
-    <ul>
-      
-        
-  <li>
-    <a class="" title="Main types" href="lib/maintypes/">
+    </a></li></ul></li><li><span class="section">API</span><ul><li><a class="" href="lib/maintypes/" title="Main types">
       Main types
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Utilities" href="lib/utilities/">
+    </a></li><li><a class="" href="lib/utilities/" title="Utilities">
       Utilities
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Data manipulation" href="lib/manipulation/">
+    </a></li><li><a class="" href="lib/manipulation/" title="Data manipulation">
       Data manipulation
-    </a>
-    
-  </li>
-
-      
-    </ul>
-  </li>
-
-          
-            
-  <li>
-    <span class="section">About</span>
-    <ul>
-      
-        
-  <li>
-    <a class="" title="Release notes" href="NEWS/">
+    </a></li></ul></li><li><span class="section">About</span><ul><li><a class="" href="NEWS/" title="Release notes">
       Release notes
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="License" href="LICENSE/">
+    </a></li><li><a class="" href="LICENSE/" title="License">
       License
-    </a>
-    
-  </li>
-
-      
-    </ul>
-  </li>
-
-          
-        </ul>
-        
-      </div>
-    </div>
-  </div>
-</nav>
-      </div>
-      <article class="article">
-        <div class="wrapper">
-          
-          <p><a id='DataFrames-Documentation-Outline-1'></a></p>
-<h1 id="dataframes-documentation-outline">DataFrames Documentation Outline</h1>
-<p><a id='Package-Manual-1'></a></p>
-<h2 id="package-manual">Package Manual</h2>
-<ul>
-<li><a href="man/getting_started/#Getting-Started-1">Getting Started</a><ul>
-<li><a href="man/getting_started/#Installation-1">Installation</a></li>
-<li><a href="man/getting_started/#The-NA-Value-1">The <code>NA</code> Value</a></li>
-<li><a href="man/getting_started/#The-DataArray-Type-1">The <code>DataArray</code> Type</a></li>
-<li><a href="man/getting_started/#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></li>
-<li><a href="man/getting_started/#Accessing-Classic-Data-Sets-1">Accessing Classic Data Sets</a></li>
-</ul>
-</li>
-<li><a href="man/io/#Importing-and-Exporting-(I/O)-1">Importing and Exporting (I/O)</a><ul>
-<li><a href="man/io/#Importing-data-from-tabular-data-files-1">Importing data from tabular data files</a></li>
-<li><a href="man/io/#Exporting-data-to-a-tabular-data-file-1">Exporting data to a tabular data file</a></li>
-<li><a href="man/io/#Supplying-DataFrames-inline-with-non-standard-string-literals-1">Supplying <code>DataFrame</code>s inline with non-standard string literals</a></li>
-</ul>
-</li>
-<li><a href="man/joins/#Database-Style-Joins-1">Database-Style Joins</a></li>
-<li><a href="man/split_apply_combine/#The-Split-Apply-Combine-Strategy-1">The Split-Apply-Combine Strategy</a></li>
-<li><a href="man/reshaping_and_pivoting/#Reshaping-and-Pivoting-Data-1">Reshaping and Pivoting Data</a></li>
-<li><a href="man/sorting/#Sorting-1">Sorting</a></li>
-<li><a href="man/formulas/#The-Formula,-ModelFrame-and-ModelMatrix-Types-1">The Formula, ModelFrame and ModelMatrix Types</a></li>
-<li><a href="man/pooling/#Pooling-Data-(Representing-Factors)-1">Pooling Data (Representing Factors)</a></li>
-</ul>
-<p><a id='API-1'></a></p>
-<h2 id="api">API</h2>
-<ul>
-<li><a href="lib/maintypes/#Main-Types-1">Main Types</a></li>
-<li><a href="lib/manipulation/#Data-Manipulation-1">Data Manipulation</a><ul>
-<li><a href="lib/manipulation/#Joins-1">Joins</a></li>
-<li><a href="lib/manipulation/#Reshaping-1">Reshaping</a></li>
-</ul>
-</li>
-<li><a href="lib/utilities/#Utilities-1">Utilities</a></li>
-</ul>
-<p><a id='Documentation-Index-1'></a></p>
-<h2 id="documentation-index">Documentation Index</h2>
-<ul>
-<li><a href="lib/maintypes/#DataFrames.AbstractDataFrame"><code>DataFrames.AbstractDataFrame</code></a></li>
-<li><a href="lib/maintypes/#DataFrames.DataFrame"><code>DataFrames.DataFrame</code></a></li>
-<li><a href="lib/maintypes/#DataFrames.SubDataFrame"><code>DataFrames.SubDataFrame</code></a></li>
-<li><a href="lib/manipulation/#Base.join"><code>Base.join</code></a></li>
-<li><a href="lib/manipulation/#DataFrames.melt"><code>DataFrames.melt</code></a></li>
-<li><a href="lib/manipulation/#DataFrames.meltdf"><code>DataFrames.meltdf</code></a></li>
-<li><a href="lib/manipulation/#DataFrames.stack"><code>DataFrames.stack</code></a></li>
-<li><a href="lib/manipulation/#DataFrames.stackdf"><code>DataFrames.stackdf</code></a></li>
-<li><a href="lib/manipulation/#DataFrames.unstack"><code>DataFrames.unstack</code></a></li>
-<li><a href="lib/utilities/#Base.dump"><code>Base.dump</code></a></li>
-<li><a href="lib/utilities/#Base.unique"><code>Base.unique</code></a></li>
-<li><a href="lib/utilities/#DataArrays.head"><code>DataArrays.head</code></a></li>
-<li><a href="lib/utilities/#DataArrays.tail"><code>DataArrays.tail</code></a></li>
-<li><a href="lib/utilities/#DataFrames.complete_cases"><code>DataFrames.complete_cases</code></a></li>
-<li><a href="lib/utilities/#DataFrames.complete_cases!"><code>DataFrames.complete_cases!</code></a></li>
-<li><a href="lib/utilities/#DataFrames.eltypes"><code>DataFrames.eltypes</code></a></li>
-<li><a href="lib/utilities/#DataFrames.names!"><code>DataFrames.names!</code></a></li>
-<li><a href="lib/utilities/#DataFrames.nonunique"><code>DataFrames.nonunique</code></a></li>
-<li><a href="lib/utilities/#DataFrames.rename"><code>DataFrames.rename</code></a></li>
-<li><a href="lib/utilities/#DataFrames.rename!"><code>DataFrames.rename!</code></a></li>
-<li><a href="lib/utilities/#DataFrames.unique!"><code>DataFrames.unique!</code></a></li>
-<li><a href="lib/utilities/#StatsBase.describe"><code>StatsBase.describe</code></a></li>
-<li><a href="man/io/#DataFrames.readtable"><code>DataFrames.readtable</code></a></li>
-<li><a href="man/io/#DataFrames.writetable"><code>DataFrames.writetable</code></a></li>
-</ul>
-          <aside class="copyright" role="note">
+    </a></li></ul></li></ul></div></div></div></nav></div><article class="article"><div class="wrapper"><p><a id="DataFrames-Documentation-Outline-1"></a></p><h1 id="dataframes-documentation-outline">DataFrames Documentation Outline</h1><p><a id="Package-Manual-1"></a></p><h2 id="package-manual">Package Manual</h2><ul><li><a href="man/getting_started/#Getting-Started-1">Getting Started</a><ul><li><a href="man/getting_started/#Installation-1">Installation</a></li><li><a href="man/getting_started/#The-NA-Value-1">The <code>NA</code> Value</a></li><li><a href="man/getting_started/#The-DataArray-Type-1">The <code>DataArray</code> Type</a></li><li><a href="man/getting_started/#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></li><li><a href="man/getting_started/#Accessing-Classic-Data-Sets-1">Accessing Classic Data Sets</a></li></ul></li><li><a href="man/io/#Importing-and-Exporting-(I/O)-1">Importing and Exporting (I/O)</a><ul><li><a href="man/io/#Importing-data-from-tabular-data-files-1">Importing data from tabular data files</a></li><li><a href="man/io/#Exporting-data-to-a-tabular-data-file-1">Exporting data to a tabular data file</a></li><li><a href="man/io/#Supplying-DataFrames-inline-with-non-standard-string-literals-1">Supplying <code>DataFrame</code>s inline with non-standard string literals</a></li></ul></li><li><a href="man/joins/#Database-Style-Joins-1">Database-Style Joins</a></li><li><a href="man/split_apply_combine/#The-Split-Apply-Combine-Strategy-1">The Split-Apply-Combine Strategy</a></li><li><a href="man/reshaping_and_pivoting/#Reshaping-and-Pivoting-Data-1">Reshaping and Pivoting Data</a></li><li><a href="man/sorting/#Sorting-1">Sorting</a></li><li><a href="man/formulas/#The-Formula,-ModelFrame-and-ModelMatrix-Types-1">The Formula, ModelFrame and ModelMatrix Types</a></li><li><a href="man/pooling/#Pooling-Data-(Representing-Factors)-1">Pooling Data (Representing Factors)</a></li></ul><p><a id="API-1"></a></p><h2 id="api">API</h2><ul><li><a href="lib/maintypes/#Main-Types-1">Main Types</a></li><li><a href="lib/manipulation/#Data-Manipulation-1">Data Manipulation</a><ul><li><a href="lib/manipulation/#Joins-1">Joins</a></li><li><a href="lib/manipulation/#Reshaping-1">Reshaping</a></li></ul></li><li><a href="lib/utilities/#Utilities-1">Utilities</a></li></ul><p><a id="Documentation-Index-1"></a></p><h2 id="documentation-index">Documentation Index</h2><ul><li><a href="lib/maintypes/#DataFrames.AbstractDataFrame"><code>DataFrames.AbstractDataFrame</code></a></li><li><a href="lib/maintypes/#DataFrames.DataFrame"><code>DataFrames.DataFrame</code></a></li><li><a href="lib/maintypes/#DataFrames.SubDataFrame"><code>DataFrames.SubDataFrame</code></a></li><li><a href="lib/manipulation/#Base.join"><code>Base.join</code></a></li><li><a href="lib/manipulation/#DataFrames.melt"><code>DataFrames.melt</code></a></li><li><a href="lib/manipulation/#DataFrames.meltdf"><code>DataFrames.meltdf</code></a></li><li><a href="lib/manipulation/#DataFrames.stack"><code>DataFrames.stack</code></a></li><li><a href="lib/manipulation/#DataFrames.stackdf"><code>DataFrames.stackdf</code></a></li><li><a href="lib/manipulation/#DataFrames.unstack"><code>DataFrames.unstack</code></a></li><li><a href="lib/utilities/#Base.dump"><code>Base.dump</code></a></li><li><a href="lib/utilities/#Base.unique"><code>Base.unique</code></a></li><li><a href="lib/utilities/#DataArrays.head"><code>DataArrays.head</code></a></li><li><a href="lib/utilities/#DataArrays.tail"><code>DataArrays.tail</code></a></li><li><a href="lib/utilities/#DataFrames.complete_cases"><code>DataFrames.complete_cases</code></a></li><li><a href="lib/utilities/#DataFrames.complete_cases!"><code>DataFrames.complete_cases!</code></a></li><li><a href="lib/utilities/#DataFrames.eltypes"><code>DataFrames.eltypes</code></a></li><li><a href="lib/utilities/#DataFrames.names!"><code>DataFrames.names!</code></a></li><li><a href="lib/utilities/#DataFrames.nonunique"><code>DataFrames.nonunique</code></a></li><li><a href="lib/utilities/#DataFrames.rename"><code>DataFrames.rename</code></a></li><li><a href="lib/utilities/#DataFrames.rename!"><code>DataFrames.rename!</code></a></li><li><a href="lib/utilities/#DataFrames.unique!"><code>DataFrames.unique!</code></a></li><li><a href="lib/utilities/#StatsBase.describe"><code>StatsBase.describe</code></a></li><li><a href="man/io/#DataFrames.readtable"><code>DataFrames.readtable</code></a></li><li><a href="man/io/#DataFrames.writetable"><code>DataFrames.writetable</code></a></li></ul><aside class="copyright" role="note">
             
             Documentation built with
             <a href="http://www.mkdocs.org" target="_blank">MkDocs</a>
@@ -430,58 +115,11 @@
               Material
             </a>
             theme.
-          </aside>
-          
-            <footer class="footer">
-              
-  <nav class="pagination" aria-label="Footer">
-    <div class="previous">
-      
-    </div>
-    <div class="next">
-      
-        <a href="man/getting_started/" title="Getting Started">
-          <span class="direction">
+          </aside><footer class="footer"><nav aria-label="Footer" class="pagination"><div class="previous"></div><div class="next"><a href="man/getting_started/" title="Getting Started"><span class="direction">
             Next
-          </span>
-          <div class="page">
-            <div class="stretch">
-              <div class="title">
+          </span><div class="page"><div class="stretch"><div class="title">
                 Getting Started
-              </div>
-            </div>
-            <div class="button button-next" role="button" aria-label="Next">
-              <i class="icon icon-forward"></i>
-            </div>
-          </div>
-        </a>
-      
-    </div>
-  </nav>
-
-            </footer>
-          
-        </div>
-      </article>
-      <div class="results" role="status" aria-live="polite">
-        <div class="scrollable">
-          <div class="wrapper">
-            <div class="meta"></div>
-            <div class="list"></div>
-          </div>
-        </div>
-      </div>
-    </main>
-    <script>
+              </div></div><div aria-label="Next" class="button button-next" role="button"><i class="icon icon-forward"></i></div></div></a></div></nav></footer></div></article><div aria-live="polite" class="results" role="status"><div class="scrollable"><div class="wrapper"><div class="meta"></div><div class="list"></div></div></div></div></main><script>
       var base_url = '.';
       var repo_id  = 'JuliaStats/DataFrames.jl';
-    </script>
-    <script src="./assets/javascripts/application-997097ee0c.js"></script>
-    
-      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-    
-      <script src="./assets/mathjaxhelper.js"></script>
-    
-    
-  </body>
-</html>
+    </script><script src="./assets/javascripts/application-997097ee0c.js"></script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script><script src="./assets/mathjaxhelper.js"></script></body></HTML>
