@@ -58,15 +58,15 @@ struct DataFrameJoiner
             end
         elseif matchmissing === :notequal
             if kind in (:left, :semi, :anti)
-                dfr = dropmissing(dfr, right_on, view = true)
+                dfr = dropmissing(dfr, right_on, view=true)
                 dfr_on = select(dfr, right_on)
             elseif kind === :right
-                dfl = dropmissing(dfl, left_on, view = true)
+                dfl = dropmissing(dfl, left_on, view=true)
                 dfl_on = select(dfl, left_on)
             elseif kind === :inner
-                dfl = dropmissing(dfl, left_on, view = true)
+                dfl = dropmissing(dfl, left_on, view=true)
                 dfl_on = select(dfl, left_on)
-                dfr = dropmissing(dfr, right_on, view = true)
+                dfr = dropmissing(dfr, right_on, view=true)
                 dfr_on = select(dfr, right_on)
             elseif kind === :outer
                 throw(ArgumentError("matchmissing == :notequal for `outerjoin` is not allowed"))
@@ -74,7 +74,7 @@ struct DataFrameJoiner
                 throw(ArgumentError("matchmissing == :notequal not implemented for kind == $kind"))
             end
         elseif matchmissing !== :equal
-            throw(ArgumentError("matchmissing allows only :error, :notequal and :equal"))
+            throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
         end
 
         for df in (dfl_on, dfr_on), col in eachcol(df)

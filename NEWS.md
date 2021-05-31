@@ -3,11 +3,11 @@
 ## New functionalities
 
 * add option `matchmissing=:notequal` in joins;
-in `leftjoin`, `semijoin` and `antijoin` `missing`s are dropped in right df,
-but preserved in left; in `rightjoin` `missing`s are dropped in left df,
-but preserved in right df; in `innerjoin` `missing`s are dropped in both dfs;
-in `outerjoin` method errors
-([#2724](https://github.com/JuliaData/DataFrames.jl/pull/2724))
+  in `leftjoin`, `semijoin` and `antijoin` `missing`s are dropped in right data frame,
+  but preserved in left; in `rightjoin` `missing`s are dropped in left data frame,
+  but preserved in right df; in `innerjoin` `missing`s are dropped in both data frames;
+  in `outerjoin` this value of keyword argument is not supported
+  ([#2724](https://github.com/JuliaData/DataFrames.jl/pull/2724))
 
 ## Bug fixes
 
