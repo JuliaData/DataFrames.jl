@@ -1,801 +1,125 @@
+<!DOCTYPE html><HTML class="no-js" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta content="ie=edge" http-equiv="x-ua-compatible"/><meta content="package for working with tabular data in Julia" name="description"/><link href="../../assets/images/favicon.png" rel="shortcut icon"/><meta content="mkdocs-0.16.3, mkdocs-material-1.8.0" name="generator"/><title>Data manipulation - DataFrames.jl</title><script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script><link href="../../assets/stylesheets/application-bfecc7305d.css" rel="stylesheet"/><link href="../../assets/stylesheets/application-02c2a4388f.palette.css" rel="stylesheet"/><link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono" rel="stylesheet"/><style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/><link href="../../assets/Documenter.css" rel="stylesheet"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
 
-<!DOCTYPE html>
-<html lang="en" class="no-js">
-  <head>
-    
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta http-equiv="x-ua-compatible" content="ie=edge">
-      
-        <meta name="description" content="package for working with tabular data in Julia">
-      
-      
-      
-      
-        <link rel="shortcut icon" href="../../assets/images/favicon.png">
-      
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.8.0">
-    
-    
-      
-        <title>Data manipulation - DataFrames.jl</title>
-      
-    
-    
-      <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application-bfecc7305d.css">
-      
-        <link rel="stylesheet" href="../../assets/stylesheets/application-02c2a4388f.palette.css">
-      
-    
-    
-      
-        
-        
-        
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
-        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
-      
-      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    
-    
-      <link rel="stylesheet" href="../../assets/Documenter.css">
-    
-    
-  </head>
-  
-  
-  
-  
-    <body data-md-color-primary="indigo" data-md-color-accent="blue">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
-    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
-    
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <a href="../.." title="DataFrames.jl" class="md-icon md-icon--home md-header-nav__button">
-          </a>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <span class="md-flex__ellipsis md-header-nav__title">
-          
-            
-              
-                <span class="md-header-nav__parent">
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body data-md-color-accent="blue" data-md-color-primary="indigo"><svg class="md-svg"><defs><svg height="448" id="github" viewBox="0 0 416 448" width="416" xmlns="http://www.w3.org/2000/svg"><path d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z" fill="currentColor"></path></svg></defs></svg><input class="md-toggle" data-md-toggle="drawer" id="drawer" type="checkbox"/><input class="md-toggle" data-md-toggle="search" id="search" type="checkbox"/><label class="md-overlay" data-md-component="overlay" for="drawer"></label><header class="md-header" data-md-component="header"><nav class="md-header-nav md-grid"><div class="md-flex"><div class="md-flex__cell md-flex__cell--shrink"><a class="md-icon md-icon--home md-header-nav__button" href="../.." title="DataFrames.jl"></a></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label></div><div class="md-flex__cell md-flex__cell--stretch"><span class="md-flex__ellipsis md-header-nav__title"><span class="md-header-nav__parent">
                   API
                 </span>
               
             
             Data manipulation
           
-        </span>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
-          
-<div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="search"></label>
-  <div class="md-search__inner">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" required placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
-      <label class="md-icon md-search__icon" for="search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result" data-md-lang-search="" data-md-lang-tokenizer="[\s\-]+">
-          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+        </span></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--search md-header-nav__button" for="search"></label><div class="md-search" data-md-component="search" role="dialog"><label class="md-search__overlay" for="search"></label><div class="md-search__inner"><form class="md-search__form" name="search"><input autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/><label class="md-icon md-search__icon" for="search"></label><button class="md-icon md-search__icon" data-md-component="reset" type="reset">close</button></form><div class="md-search__output"><div class="md-search__scrollwrap" data-md-scrollfix=""><div class="md-search-result" data-md-component="result" data-md-lang-search="" data-md-lang-tokenizer="[\s\-]+"><div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
-          </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-        
-      </div>
-      
-        <div class="md-flex__cell md-flex__cell--shrink">
-          <div class="md-header-nav__source">
-            
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+          </div><ol class="md-search-result__list"></ol></div></div></div></div></div></div><div class="md-flex__cell md-flex__cell--shrink"><div class="md-header-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-          </div>
-        </div>
-      
-    </div>
-  </nav>
-</header>
-    
-    <div class="md-container">
-      
-      
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="drawer">
-    
-      <i class="md-icon md-icon--home md-nav__button"></i>
+    </div></a></div></div></div></nav></header><div class="md-container"><main class="md-main"><div class="md-main__inner md-grid" data-md-component="container"><div class="md-sidebar md-sidebar--primary" data-md-component="navigation"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--primary" data-md-level="0"><label class="md-nav__title md-nav__title--site" for="drawer"><i class="md-icon md-icon--home md-nav__button"></i>
     
     DataFrames.jl
-  </label>
-  
-    <div class="md-nav__source">
-      
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+  </label><div class="md-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-    </div>
-  
-  <ul class="md-nav__list" data-md-scrollfix>
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../.." title="Introduction" class="md-nav__link">
+    </div></a></div><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../.." title="Introduction">
       Introduction
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
-    
-    <label class="md-nav__link" for="nav-2">
+    </a></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/><label class="md-nav__link" for="nav-2">
       User guide
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-2">
         User guide
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/getting_started/" title="Getting Started" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../../man/getting_started/" title="Getting Started">
       Getting Started
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/io/" title="IO" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/io/" title="IO">
       IO
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/joins/" title="Joins" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/joins/" title="Joins">
       Joins
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/split_apply_combine/" title="Split-apply-combine" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/split_apply_combine/" title="Split-apply-combine">
       Split-apply-combine
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/reshaping_and_pivoting/" title="Reshaping" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/reshaping_and_pivoting/" title="Reshaping">
       Reshaping
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/sorting/" title="Sorting" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/sorting/" title="Sorting">
       Sorting
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/formulas/" title="Formulas" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/formulas/" title="Formulas">
       Formulas
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/pooling/" title="Pooling" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/pooling/" title="Pooling">
       Pooling
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../man/querying_frameworks/" title="Querying frameworks" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../man/querying_frameworks/" title="Querying frameworks">
       Querying frameworks
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
-    
-    <label class="md-nav__link" for="nav-3">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--active md-nav__item--nested"><input checked="" class="md-toggle md-nav__toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/><label class="md-nav__link" for="nav-3">
       API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-3">
         API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../maintypes/" title="Main types" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../maintypes/" title="Main types">
       Main types
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../utilities/" title="Utilities" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../utilities/" title="Utilities">
       Utilities
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
+    </a></li><li class="md-nav__item md-nav__item--active"><input class="md-toggle md-nav__toggle" data-md-toggle="toc" id="toc" type="checkbox"/><label class="md-nav__link md-nav__link--active" for="toc">
         Data manipulation
-      </label>
-    
-    <a href="./" title="Data manipulation" class="md-nav__link md-nav__link--active">
+      </label><a class="md-nav__link md-nav__link--active" href="./" title="Data manipulation">
       Data manipulation
-    </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#joins" title="Joins" class="md-nav__link">
+    </a><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#joins" title="Joins">
     Joins
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reshaping" title="Reshaping" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#reshaping" title="Reshaping">
     Reshaping
-  </a>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-    
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
+  </a></li></ul></nav></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/><label class="md-nav__link" for="nav-4">
       About
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-4">
         About
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../NEWS/" title="Release notes" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../../NEWS/" title="Release notes">
       Release notes
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../LICENSE/" title="License" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../LICENSE/" title="License">
       License
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-  </ul>
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-            
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#joins" title="Joins" class="md-nav__link">
+    </a></li></ul></nav></li></ul></nav></div></div></div><div class="md-sidebar md-sidebar--secondary" data-md-component="toc"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#joins" title="Joins">
     Joins
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reshaping" title="Reshaping" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#reshaping" title="Reshaping">
     Reshaping
-  </a>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-          
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/lib/manipulation.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
-                
-                
-                <p><a id='Data-Manipulation-1'></a></p>
-<h1 id="data-manipulation">Data Manipulation</h1>
-<ul>
-<li><a href="./#Base.join"><code>Base.join</code></a></li>
-<li><a href="./#DataFrames.melt"><code>DataFrames.melt</code></a></li>
-<li><a href="./#DataFrames.meltdf"><code>DataFrames.meltdf</code></a></li>
-<li><a href="./#DataFrames.stack"><code>DataFrames.stack</code></a></li>
-<li><a href="./#DataFrames.stackdf"><code>DataFrames.stackdf</code></a></li>
-<li><a href="./#DataFrames.unstack"><code>DataFrames.unstack</code></a></li>
-</ul>
-<p><a id='Joins-1'></a></p>
-<h2 id="joins">Joins</h2>
-<p><a id='Base.join' href='#Base.join'>#</a>
-<strong><code>Base.join</code></strong> &mdash; <em>Function</em>.</p>
-<p>Join two DataFrames</p>
-<div class="codehilite"><pre><span></span><span class="n">join</span><span class="p">(</span><span class="n">df1</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span>
-     <span class="n">df2</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">;</span>
-     <span class="n">on</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Symbol</span><span class="p">,</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Symbol</span><span class="p">}}</span> <span class="o">=</span> <span class="kt">Symbol</span><span class="p">[],</span>
-     <span class="n">kind</span><span class="o">::</span><span class="kt">Symbol</span> <span class="o">=</span> <span class="o">:</span><span class="n">inner</span><span class="p">)</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>df1</code>, <code>df2</code> : the two AbstractDataFrames to be joined</li>
-</ul>
-<p><strong>Keyword Arguments</strong></p>
-<ul>
-<li><code>on</code> : a Symbol or Vector{Symbol}, the column(s) used as keys when joining; required argument except for <code>kind = :cross</code></li>
-<li>
-<p><code>kind</code> : the type of join, options include:</p>
-<ul>
-<li><code>:inner</code> : only include rows with keys that match in both <code>df1</code> and <code>df2</code>, the default</li>
-<li><code>:outer</code> : include all rows from <code>df1</code> and <code>df2</code></li>
-<li><code>:left</code> : include all rows from <code>df1</code></li>
-<li><code>:right</code> : include all rows from <code>df2</code></li>
-<li><code>:semi</code> : return rows of <code>df1</code> that match with the keys in <code>df2</code></li>
-<li><code>:anti</code> : return rows of <code>df1</code> that do not match with the keys in <code>df2</code></li>
-<li><code>:cross</code> : a full Cartesian product of the key combinations; every row of <code>df1</code> is matched with every row of <code>df2</code></li>
-</ul>
-</li>
-</ul>
-<p><code>NA</code>s are filled in where needed to complete joins.</p>
-<p><strong>Result</strong></p>
-<ul>
-<li><code>::DataFrame</code> : the joined DataFrame</li>
-</ul>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">name</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">Name</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;John Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Jane Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Joe Blogs&quot;</span><span class="p">])</span>
-<span class="n">job</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">Job</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Lawyer&quot;</span><span class="p">,</span> <span class="s">&quot;Doctor&quot;</span><span class="p">,</span> <span class="s">&quot;Farmer&quot;</span><span class="p">])</span>
-
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="o">:</span><span class="n">ID</span><span class="p">)</span>
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="o">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="o">:</span><span class="n">outer</span><span class="p">)</span>
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="o">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="o">:</span><span class="n">left</span><span class="p">)</span>
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="o">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="o">:</span><span class="n">right</span><span class="p">)</span>
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="o">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="o">:</span><span class="n">semi</span><span class="p">)</span>
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="o">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="o">:</span><span class="n">anti</span><span class="p">)</span>
-<span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="o">:</span><span class="n">cross</span><span class="p">)</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/join.jl#L136-L188' class='documenter-source'>source</a><br></p>
-<p><a id='Reshaping-1'></a></p>
-<h2 id="reshaping">Reshaping</h2>
-<p><a id='DataFrames.melt' href='#DataFrames.melt'>#</a>
-<strong><code>DataFrames.melt</code></strong> &mdash; <em>Function</em>.</p>
-<p>Stacks a DataFrame; convert from a wide to long format; see <code>stack</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L101-L104' class='documenter-source'>source</a><br></p>
-<p><a id='DataFrames.stack' href='#DataFrames.stack'>#</a>
-<strong><code>DataFrames.stack</code></strong> &mdash; <em>Function</em>.</p>
-<p>Stacks a DataFrame; convert from a wide to long format</p>
-<div class="codehilite"><pre><span></span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
-<span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">)</span>
-<span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
-<span class="n">melt</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">)</span>
-<span class="n">melt</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>df</code> : the AbstractDataFrame to be stacked</li>
-<li><code>measure_vars</code> : the columns to be stacked (the measurement variables), a normal column indexing type, like a Symbol, Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all variables that are not <code>id_vars</code></li>
-<li><code>id_vars</code> : the identifier columns that are repeated during stacking, a normal column indexing type; for <code>stack</code> defaults to all variables that are not <code>measure_vars</code></li>
-</ul>
-<p>If neither <code>measure_vars</code> or <code>id_vars</code> are given, <code>measure_vars</code> defaults to all floating point columns.</p>
-<p><strong>Result</strong></p>
-<ul>
-<li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code> holding the values of the stacked columns (<code>measure_vars</code>), with column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name, and with columns for each of the <code>id_vars</code>.</li>
-</ul>
-<p>See also <code>stackdf</code> and <code>meltdf</code> for stacking methods that return a view into the original DataFrame. See <code>unstack</code> for converting from long to wide format.</p>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">d1</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
-               <span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
-               <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
-               <span class="n">d</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
-               <span class="nb">e</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="sc">&#39;a&#39;</span><span class="o">:</span><span class="sc">&#39;l&#39;</span><span class="p">))</span>
-
-<span class="n">d1s</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span> <span class="o">:</span><span class="n">d</span><span class="p">])</span>
-<span class="n">d1s2</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span> <span class="o">:</span><span class="n">d</span><span class="p">],</span> <span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">])</span>
-<span class="n">d1m</span> <span class="o">=</span> <span class="n">melt</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">,</span> <span class="o">:</span><span class="n">b</span><span class="p">,</span> <span class="o">:</span><span class="nb">e</span><span class="p">])</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L16-L70' class='documenter-source'>source</a><br></p>
-<p><a id='DataFrames.unstack' href='#DataFrames.unstack'>#</a>
-<strong><code>DataFrames.unstack</code></strong> &mdash; <em>Function</em>.</p>
-<p>Unstacks a DataFrame; convert from a long to wide format</p>
-<div class="codehilite"><pre><span></span><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">rowkey</span><span class="p">,</span> <span class="n">colkey</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-<span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">colkey</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-<span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>df</code> : the AbstractDataFrame to be unstacked</li>
-<li><code>rowkey</code> : the column with a unique key for each row, if not given, find a key by grouping on anything not a <code>colkey</code> or <code>value</code></li>
-<li><code>colkey</code> : the column holding the column names in wide format, defaults to <code>:variable</code></li>
-<li><code>value</code> : the value column, defaults to <code>:value</code></li>
-</ul>
-<p><strong>Result</strong></p>
-<ul>
-<li><code>::DataFrame</code> : the wide-format dataframe</li>
-</ul>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">wide</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">id</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="mi">12</span><span class="p">,</span>
-                 <span class="n">a</span>  <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
-                 <span class="n">b</span>  <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
-                 <span class="n">c</span>  <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
-                 <span class="n">d</span>  <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">))</span>
-
-<span class="n">long</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">wide</span><span class="p">)</span>
-<span class="n">wide0</span> <span class="o">=</span> <span class="n">unstack</span><span class="p">(</span><span class="n">long</span><span class="p">)</span>
-<span class="n">wide1</span> <span class="o">=</span> <span class="n">unstack</span><span class="p">(</span><span class="n">long</span><span class="p">,</span> <span class="o">:</span><span class="n">variable</span><span class="p">,</span> <span class="o">:</span><span class="n">value</span><span class="p">)</span>
-<span class="n">wide2</span> <span class="o">=</span> <span class="n">unstack</span><span class="p">(</span><span class="n">long</span><span class="p">,</span> <span class="o">:</span><span class="n">id</span><span class="p">,</span> <span class="o">:</span><span class="n">variable</span><span class="p">,</span> <span class="o">:</span><span class="n">value</span><span class="p">)</span>
-</pre></div>
-
-
-<p>Note that there are some differences between the widened results above.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L119-L161' class='documenter-source'>source</a><br></p>
-<p><a id='DataFrames.stackdf' href='#DataFrames.stackdf'>#</a>
-<strong><code>DataFrames.stackdf</code></strong> &mdash; <em>Function</em>.</p>
-<p>A stacked view of a DataFrame (long format)</p>
-<p>Like <code>stack</code> and <code>melt</code>, but a view is returned rather than data copies.</p>
-<div class="codehilite"><pre><span></span><span class="n">stackdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
-<span class="n">stackdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">)</span>
-<span class="n">meltdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">)</span>
-<span class="n">meltdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>df</code> : the wide AbstractDataFrame</li>
-<li><code>measure_vars</code> : the columns to be stacked (the measurement variables), a normal column indexing type, like a Symbol, Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all variables that are not <code>id_vars</code></li>
-<li><code>id_vars</code> : the identifier columns that are repeated during stacking, a normal column indexing type; for <code>stack</code> defaults to all variables that are not <code>measure_vars</code></li>
-</ul>
-<p><strong>Result</strong></p>
-<ul>
-<li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code> holding the values of the stacked columns (<code>measure_vars</code>), with column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name, and with columns for each of the <code>id_vars</code>.</li>
-</ul>
-<p>The result is a view because the columns are special AbstractVectors that return indexed views into the original DataFrame.</p>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">d1</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
-               <span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
-               <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
-               <span class="n">d</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
-               <span class="nb">e</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="sc">&#39;a&#39;</span><span class="o">:</span><span class="sc">&#39;l&#39;</span><span class="p">))</span>
-
-<span class="n">d1s</span> <span class="o">=</span> <span class="n">stackdf</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span> <span class="o">:</span><span class="n">d</span><span class="p">])</span>
-<span class="n">d1s2</span> <span class="o">=</span> <span class="n">stackdf</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span> <span class="o">:</span><span class="n">d</span><span class="p">],</span> <span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">])</span>
-<span class="n">d1m</span> <span class="o">=</span> <span class="n">meltdf</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">,</span> <span class="o">:</span><span class="n">b</span><span class="p">,</span> <span class="o">:</span><span class="nb">e</span><span class="p">])</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L366-L416' class='documenter-source'>source</a><br></p>
-<p><a id='DataFrames.meltdf' href='#DataFrames.meltdf'>#</a>
-<strong><code>DataFrames.meltdf</code></strong> &mdash; <em>Function</em>.</p>
-<p>A stacked view of a DataFrame (long format); see <code>stackdf</code></p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L448-L450' class='documenter-source'>source</a><br></p>
-                
-                  
-                
-              
-              
-                
-              
-            </article>
-          </div>
-        </div>
-      </main>
-      
-        
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../utilities/" title="Utilities" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+  </a></li></ul></nav></div></div></div><div class="md-content"><article class="md-content__inner md-typeset"><a class="md-icon md-content__icon" href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/lib/manipulation.md" title="Edit this page">edit</a><p><a id="Data-Manipulation-1"></a></p><h1 id="data-manipulation">Data Manipulation</h1><ul><li><a href="./#Base.join"><code>Base.join</code></a></li><li><a href="./#DataFrames.melt"><code>DataFrames.melt</code></a></li><li><a href="./#DataFrames.meltdf"><code>DataFrames.meltdf</code></a></li><li><a href="./#DataFrames.stack"><code>DataFrames.stack</code></a></li><li><a href="./#DataFrames.stackdf"><code>DataFrames.stackdf</code></a></li><li><a href="./#DataFrames.unstack"><code>DataFrames.unstack</code></a></li></ul><p><a id="Joins-1"></a></p><h2 id="joins">Joins</h2><p><a href="#Base.join" id="Base.join">#</a><strong><code>Base.join</code></strong> — <em>Function</em>.</p><p>Join two DataFrames</p><div class="codehilite"><pre><span></span><span class="n">join</span><span class="p">(</span><span class="n">df1</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">df2</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">;</span><span class="n">on</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Symbol</span><span class="p">,</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Symbol</span><span class="p">}}</span><span class="o">=</span><span class="kt">Symbol</span><span class="p">[],</span><span class="n">kind</span><span class="o">::</span><span class="kt">Symbol</span><span class="o">=</span><span class="o">:</span><span class="n">inner</span><span class="p">)</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>df1</code>, <code>df2</code> : the two AbstractDataFrames to be joined</li></ul><p><strong>Keyword Arguments</strong></p><ul><li><code>on</code> : a Symbol or Vector{Symbol}, the column(s) used as keys when joining; required argument except for <code>kind = :cross</code></li><li><p><code>kind</code> : the type of join, options include:</p><ul><li><code>:inner</code> : only include rows with keys that match in both <code>df1</code> and <code>df2</code>, the default</li><li><code>:outer</code> : include all rows from <code>df1</code> and <code>df2</code></li><li><code>:left</code> : include all rows from <code>df1</code></li><li><code>:right</code> : include all rows from <code>df2</code></li><li><code>:semi</code> : return rows of <code>df1</code> that match with the keys in <code>df2</code></li><li><code>:anti</code> : return rows of <code>df1</code> that do not match with the keys in <code>df2</code></li><li><code>:cross</code> : a full Cartesian product of the key combinations; every row of <code>df1</code> is matched with every row of <code>df2</code></li></ul></li></ul><p><code>NA</code>s are filled in where needed to complete joins.</p><p><strong>Result</strong></p><ul><li><code>::DataFrame</code> : the joined DataFrame</li></ul><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">name</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">Name</span><span class="o">=</span><span class="p">[</span><span class="s">"John Doe"</span><span class="p">,</span><span class="s">"Jane Doe"</span><span class="p">,</span><span class="s">"Joe Blogs"</span><span class="p">])</span><span class="n">job</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span><span class="n">Job</span><span class="o">=</span><span class="p">[</span><span class="s">"Lawyer"</span><span class="p">,</span><span class="s">"Doctor"</span><span class="p">,</span><span class="s">"Farmer"</span><span class="p">])</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="o">:</span><span class="n">ID</span><span class="p">)</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="o">:</span><span class="n">ID</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="o">:</span><span class="n">outer</span><span class="p">)</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="o">:</span><span class="n">ID</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="o">:</span><span class="n">left</span><span class="p">)</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="o">:</span><span class="n">ID</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="o">:</span><span class="n">right</span><span class="p">)</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="o">:</span><span class="n">ID</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="o">:</span><span class="n">semi</span><span class="p">)</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="o">:</span><span class="n">ID</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="o">:</span><span class="n">anti</span><span class="p">)</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="o">:</span><span class="n">cross</span><span class="p">)</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/join.jl#L136-L188" target="_blank">source</a><br/></p><p><a id="Reshaping-1"></a></p><h2 id="reshaping">Reshaping</h2><p><a href="#DataFrames.melt" id="DataFrames.melt">#</a><strong><code>DataFrames.melt</code></strong> — <em>Function</em>.</p><p>Stacks a DataFrame; convert from a wide to long format; see <code>stack</code>.</p><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L101-L104" target="_blank">source</a><br/></p><p><a href="#DataFrames.stack" id="DataFrames.stack">#</a><strong><code>DataFrames.stack</code></strong> — <em>Function</em>.</p><p>Stacks a DataFrame; convert from a wide to long format</p><div class="codehilite"><pre><span></span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">measure_vars</span><span class="p">,</span><span class="n">id_vars</span><span class="p">)</span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">measure_vars</span><span class="p">)</span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span><span class="n">melt</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">id_vars</span><span class="p">,</span><span class="n">measure_vars</span><span class="p">)</span><span class="n">melt</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">id_vars</span><span class="p">)</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>df</code> : the AbstractDataFrame to be stacked</li><li><code>measure_vars</code> : the columns to be stacked (the measurement variables), a normal column indexing type, like a Symbol, Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all variables that are not <code>id_vars</code></li><li><code>id_vars</code> : the identifier columns that are repeated during stacking, a normal column indexing type; for <code>stack</code> defaults to all variables that are not <code>measure_vars</code></li></ul><p>If neither <code>measure_vars</code> or <code>id_vars</code> are given, <code>measure_vars</code> defaults to all floating point columns.</p><p><strong>Result</strong></p><ul><li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code> holding the values of the stacked columns (<code>measure_vars</code>), with column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name, and with columns for each of the <code>id_vars</code>.</li></ul><p>See also <code>stackdf</code> and <code>meltdf</code> for stacking methods that return a view into the original DataFrame. See <code>unstack</code> for converting from long to wide format.</p><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">d1</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">;],</span><span class="n">inner</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span><span class="n">b</span><span class="o">=</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">;],</span><span class="n">inner</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span><span class="n">c</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span><span class="n">d</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span><span class="nb">e</span><span class="o">=</span><span class="n">map</span><span class="p">(</span><span class="n">string</span><span class="p">,</span><span class="sc">'a'</span><span class="o">:</span><span class="sc">'l'</span><span class="p">))</span><span class="n">d1s</span><span class="o">=</span><span class="n">stack</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span><span class="o">:</span><span class="n">d</span><span class="p">])</span><span class="n">d1s2</span><span class="o">=</span><span class="n">stack</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span><span class="o">:</span><span class="n">d</span><span class="p">],</span><span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">])</span><span class="n">d1m</span><span class="o">=</span><span class="n">melt</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">,</span><span class="o">:</span><span class="n">b</span><span class="p">,</span><span class="o">:</span><span class="nb">e</span><span class="p">])</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L16-L70" target="_blank">source</a><br/></p><p><a href="#DataFrames.unstack" id="DataFrames.unstack">#</a><strong><code>DataFrames.unstack</code></strong> — <em>Function</em>.</p><p>Unstacks a DataFrame; convert from a long to wide format</p><div class="codehilite"><pre><span></span><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">rowkey</span><span class="p">,</span><span class="n">colkey</span><span class="p">,</span><span class="n">value</span><span class="p">)</span><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">colkey</span><span class="p">,</span><span class="n">value</span><span class="p">)</span><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>df</code> : the AbstractDataFrame to be unstacked</li><li><code>rowkey</code> : the column with a unique key for each row, if not given, find a key by grouping on anything not a <code>colkey</code> or <code>value</code></li><li><code>colkey</code> : the column holding the column names in wide format, defaults to <code>:variable</code></li><li><code>value</code> : the value column, defaults to <code>:value</code></li></ul><p><strong>Result</strong></p><ul><li><code>::DataFrame</code> : the wide-format dataframe</li></ul><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">wide</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="o">:</span><span class="mi">12</span><span class="p">,</span><span class="n">a</span><span class="o">=</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">;],</span><span class="n">inner</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span><span class="n">b</span><span class="o">=</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">;],</span><span class="n">inner</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span><span class="n">c</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span><span class="n">d</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">))</span><span class="n">long</span><span class="o">=</span><span class="n">stack</span><span class="p">(</span><span class="n">wide</span><span class="p">)</span><span class="n">wide0</span><span class="o">=</span><span class="n">unstack</span><span class="p">(</span><span class="n">long</span><span class="p">)</span><span class="n">wide1</span><span class="o">=</span><span class="n">unstack</span><span class="p">(</span><span class="n">long</span><span class="p">,</span><span class="o">:</span><span class="n">variable</span><span class="p">,</span><span class="o">:</span><span class="n">value</span><span class="p">)</span><span class="n">wide2</span><span class="o">=</span><span class="n">unstack</span><span class="p">(</span><span class="n">long</span><span class="p">,</span><span class="o">:</span><span class="n">id</span><span class="p">,</span><span class="o">:</span><span class="n">variable</span><span class="p">,</span><span class="o">:</span><span class="n">value</span><span class="p">)</span></pre></div><p>Note that there are some differences between the widened results above.</p><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L119-L161" target="_blank">source</a><br/></p><p><a href="#DataFrames.stackdf" id="DataFrames.stackdf">#</a><strong><code>DataFrames.stackdf</code></strong> — <em>Function</em>.</p><p>A stacked view of a DataFrame (long format)</p><p>Like <code>stack</code> and <code>melt</code>, but a view is returned rather than data copies.</p><div class="codehilite"><pre><span></span><span class="n">stackdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">measure_vars</span><span class="p">,</span><span class="n">id_vars</span><span class="p">)</span><span class="n">stackdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">measure_vars</span><span class="p">)</span><span class="n">meltdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">id_vars</span><span class="p">,</span><span class="n">measure_vars</span><span class="p">)</span><span class="n">meltdf</span><span class="p">(</span><span class="n">df</span><span class="o">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">id_vars</span><span class="p">)</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>df</code> : the wide AbstractDataFrame</li><li><code>measure_vars</code> : the columns to be stacked (the measurement variables), a normal column indexing type, like a Symbol, Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all variables that are not <code>id_vars</code></li><li><code>id_vars</code> : the identifier columns that are repeated during stacking, a normal column indexing type; for <code>stack</code> defaults to all variables that are not <code>measure_vars</code></li></ul><p><strong>Result</strong></p><ul><li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code> holding the values of the stacked columns (<code>measure_vars</code>), with column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name, and with columns for each of the <code>id_vars</code>.</li></ul><p>The result is a view because the columns are special AbstractVectors that return indexed views into the original DataFrame.</p><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">d1</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">;],</span><span class="n">inner</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span><span class="n">b</span><span class="o">=</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">;],</span><span class="n">inner</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span><span class="n">c</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span><span class="n">d</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span><span class="nb">e</span><span class="o">=</span><span class="n">map</span><span class="p">(</span><span class="n">string</span><span class="p">,</span><span class="sc">'a'</span><span class="o">:</span><span class="sc">'l'</span><span class="p">))</span><span class="n">d1s</span><span class="o">=</span><span class="n">stackdf</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span><span class="o">:</span><span class="n">d</span><span class="p">])</span><span class="n">d1s2</span><span class="o">=</span><span class="n">stackdf</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="p">[</span><span class="o">:</span><span class="n">c</span><span class="p">,</span><span class="o">:</span><span class="n">d</span><span class="p">],</span><span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">])</span><span class="n">d1m</span><span class="o">=</span><span class="n">meltdf</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="p">[</span><span class="o">:</span><span class="n">a</span><span class="p">,</span><span class="o">:</span><span class="n">b</span><span class="p">,</span><span class="o">:</span><span class="nb">e</span><span class="p">])</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L366-L416" target="_blank">source</a><br/></p><p><a href="#DataFrames.meltdf" id="DataFrames.meltdf">#</a><strong><code>DataFrames.meltdf</code></strong> — <em>Function</em>.</p><p>A stacked view of a DataFrame (long format); see <code>stackdf</code></p><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L448-L450" target="_blank">source</a><br/></p></article></div></div></main><footer class="md-footer"><div class="md-footer-nav"><nav class="md-footer-nav__inner md-grid"><a class="md-flex md-footer-nav__link md-footer-nav__link--prev" href="../utilities/" rel="prev" title="Utilities"><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-back md-footer-nav__button"></i></div><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Utilities
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../../NEWS/" title="Release notes" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+              </span></div></a><a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="../../NEWS/" rel="next" title="Release notes"><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Next
                 </span>
                 Release notes
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
+              </span></div><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i></div></a></nav></div><div class="md-footer-meta md-typeset"><div class="md-footer-meta__inner md-grid"><div class="md-footer-copyright">
         
         powered by
         <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
         and
         <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
-          Material for MkDocs</a>
-      </div>
-      
-        
-      
-    </div>
-  </div>
-</footer>
-      
-    </div>
-    
-      <script src="../../assets/javascripts/application-1d6ee6ee6c.js"></script>
-      
-      
-      <script>app.initialize({url:{base:"../.."}})</script>
-      
-        <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-      
-        <script src="../../assets/mathjaxhelper.js"></script>
-      
-    
-    
-      
-    
-  </body>
-</html>
+          Material for MkDocs</a></div></div></div></footer></div><script src="../../assets/javascripts/application-1d6ee6ee6c.js"></script><script>app.initialize({url:{base:"../.."}})</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script><script src="../../assets/mathjaxhelper.js"></script></body></HTML>

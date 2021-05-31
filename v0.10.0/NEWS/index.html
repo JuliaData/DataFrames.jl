@@ -1,1617 +1,301 @@
+<!DOCTYPE html><HTML class="no-js" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta content="package for working with tabular data in Julia" name="description"/><link href="../assets/images/favicon.png" rel="shortcut icon"/><meta content="mkdocs-0.16.3, mkdocs-material-1.6.3" name="generator"/><title>Release notes - DataFrames.jl</title><script src="../assets/javascripts/modernizr-56ade86843.js"></script><link href="../assets/stylesheets/application-e2807e330f.css" rel="stylesheet"/><link href="../assets/stylesheets/application-f78e5cb881.palette.css" rel="stylesheet"/><link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono" rel="stylesheet"/><style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/><link href="../assets/Documenter.css" rel="stylesheet"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
 
-<!DOCTYPE html>
-<html lang="en" class="no-js">
-  <head>
-    
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="package for working with tabular data in Julia">
-      
-      
-      
-      
-        <link rel="shortcut icon" href="../assets/images/favicon.png">
-      
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.3">
-    
-    
-      
-        <title>Release notes - DataFrames.jl</title>
-      
-    
-    
-      <script src="../assets/javascripts/modernizr-56ade86843.js"></script>
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application-e2807e330f.css">
-      
-        <link rel="stylesheet" href="../assets/stylesheets/application-f78e5cb881.palette.css">
-      
-    
-    
-      
-        
-        
-        
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
-        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
-      
-      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    
-    
-      <link rel="stylesheet" href="../assets/Documenter.css">
-    
-    
-  </head>
-  
-  
-  
-  
-    <body data-md-color-primary="indigo" data-md-color-accent="blue">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
-    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
-    
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <a href=".." title="DataFrames.jl" class="md-icon md-icon--home md-header-nav__button">
-          </a>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <span class="md-flex__ellipsis md-header-nav__title">
-          
-            
-              
-                <span class="md-header-nav__parent">
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body data-md-color-accent="blue" data-md-color-primary="indigo"><svg class="md-svg"><defs><svg height="448" id="github" viewBox="0 0 416 448" width="416" xmlns="http://www.w3.org/2000/svg"><path d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z" fill="currentColor"></path></svg></defs></svg><input class="md-toggle" data-md-toggle="drawer" id="drawer" type="checkbox"/><input class="md-toggle" data-md-toggle="search" id="search" type="checkbox"/><label class="md-overlay" data-md-component="overlay" for="drawer"></label><header class="md-header" data-md-component="header"><nav class="md-header-nav md-grid"><div class="md-flex"><div class="md-flex__cell md-flex__cell--shrink"><a class="md-icon md-icon--home md-header-nav__button" href=".." title="DataFrames.jl"></a></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label></div><div class="md-flex__cell md-flex__cell--stretch"><span class="md-flex__ellipsis md-header-nav__title"><span class="md-header-nav__parent">
                   About
                 </span>
               
             
             Release notes
           
-        </span>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
-          
-<div class="md-search" data-md-component="search">
-  <label class="md-search__overlay" for="search"></label>
-  <div class="md-search__inner">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
-      <label class="md-icon md-search__icon" for="search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
-          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+        </span></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--search md-header-nav__button" for="search"></label><div class="md-search" data-md-component="search"><label class="md-search__overlay" for="search"></label><div class="md-search__inner"><form class="md-search__form" name="search"><input accesskey="s" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/><label class="md-icon md-search__icon" for="search"></label><button class="md-icon md-search__icon" data-md-component="reset" type="reset">close</button></form><div class="md-search__output"><div class="md-search__scrollwrap" data-md-scrollfix=""><div class="md-search-result" data-md-component="result"><div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
-          </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <div class="md-header-nav__source">
-          
-            
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+          </div><ol class="md-search-result__list"></ol></div></div></div></div></div></div><div class="md-flex__cell md-flex__cell--shrink"><div class="md-header-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-          
-        </div>
-      </div>
-    </div>
-  </nav>
-</header>
-    
-    <div class="md-container">
-      
-      
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="drawer">
-    
-      <i class="md-icon md-icon--home md-nav__button"></i>
+    </div></a></div></div></div></nav></header><div class="md-container"><main class="md-main"><div class="md-main__inner md-grid" data-md-component="container"><div class="md-sidebar md-sidebar--primary" data-md-component="navigation"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--primary" data-md-level="0"><label class="md-nav__title md-nav__title--site" for="drawer"><i class="md-icon md-icon--home md-nav__button"></i>
     
     DataFrames.jl
-  </label>
-  
-    <div class="md-nav__source">
-      
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+  </label><div class="md-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-    </div>
-  
-  <ul class="md-nav__list" data-md-scrollfix>
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href=".." title="Introduction" class="md-nav__link">
+    </div></a></div><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href=".." title="Introduction">
       Introduction
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
-    
-    <label class="md-nav__link" for="nav-2">
+    </a></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/><label class="md-nav__link" for="nav-2">
       User guide
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-2">
         User guide
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/getting_started/" title="Getting Started" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../man/getting_started/" title="Getting Started">
       Getting Started
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/io/" title="IO" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/io/" title="IO">
       IO
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/joins/" title="Joins" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/joins/" title="Joins">
       Joins
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/split_apply_combine/" title="Split-apply-combine" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/split_apply_combine/" title="Split-apply-combine">
       Split-apply-combine
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/reshaping_and_pivoting/" title="Reshaping" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/reshaping_and_pivoting/" title="Reshaping">
       Reshaping
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/sorting/" title="Sorting" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/sorting/" title="Sorting">
       Sorting
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/formulas/" title="Formulas" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/formulas/" title="Formulas">
       Formulas
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/pooling/" title="Pooling" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/pooling/" title="Pooling">
       Pooling
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../man/querying_frameworks/" title="Querying frameworks" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../man/querying_frameworks/" title="Querying frameworks">
       Querying frameworks
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
-    
-    <label class="md-nav__link" for="nav-3">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/><label class="md-nav__link" for="nav-3">
       API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-3">
         API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../lib/maintypes/" title="Main types" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../lib/maintypes/" title="Main types">
       Main types
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../lib/utilities/" title="Utilities" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../lib/utilities/" title="Utilities">
       Utilities
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../lib/manipulation/" title="Data manipulation" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../lib/manipulation/" title="Data manipulation">
       Data manipulation
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
-    
-    <label class="md-nav__link" for="nav-4">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--active md-nav__item--nested"><input checked="" class="md-toggle md-nav__toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/><label class="md-nav__link" for="nav-4">
       About
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-4">
         About
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item md-nav__item--active"><input class="md-toggle md-nav__toggle" data-md-toggle="toc" id="toc" type="checkbox"/><label class="md-nav__link md-nav__link--active" for="toc">
         Release notes
-      </label>
-    
-    <a href="./" title="Release notes" class="md-nav__link md-nav__link--active">
+      </label><a class="md-nav__link md-nav__link--active" href="./" title="Release notes">
       Release notes
-    </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0611-release-notes" title="DataFrames v0.6.11 Release Notes" class="md-nav__link">
+    </a><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0611-release-notes" title="DataFrames v0.6.11 Release Notes">
     DataFrames v0.6.11 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#changes" title="Changes" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#changes" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v066-release-notes" title="DataFrames v0.6.6 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v066-release-notes" title="DataFrames v0.6.6 Release Notes">
     DataFrames v0.6.6 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deprecations" title="Deprecations" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#deprecations" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v063-release-notes" title="DataFrames v0.6.3 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v063-release-notes" title="DataFrames v0.6.3 Release Notes">
     DataFrames v0.6.3 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_1" title="Deprecations" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_1" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v061-release-notes" title="DataFrames v0.6.1 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v061-release-notes" title="DataFrames v0.6.1 Release Notes">
     DataFrames v0.6.1 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_1" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_1" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v060-release-notes" title="DataFrames v0.6.0 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v060-release-notes" title="DataFrames v0.6.0 Release Notes">
     DataFrames v0.6.0 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_1" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_1" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_2" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_2" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_2" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_2" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0512-release-notes" title="DataFrames v0.5.12 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0512-release-notes" title="DataFrames v0.5.12 Release Notes">
     DataFrames v0.5.12 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0511-release-notes" title="DataFrames v0.5.11 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0511-release-notes" title="DataFrames v0.5.11 Release Notes">
     DataFrames v0.5.11 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0510-release-notes" title="DataFrames v0.5.10 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0510-release-notes" title="DataFrames v0.5.10 Release Notes">
     DataFrames v0.5.10 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_2" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_2" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_3" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_3" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v059-release-notes" title="DataFrames v0.5.9 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v059-release-notes" title="DataFrames v0.5.9 Release Notes">
     DataFrames v0.5.9 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v058-release-notes" title="DataFrames v0.5.8 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v058-release-notes" title="DataFrames v0.5.8 Release Notes">
     DataFrames v0.5.8 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_3" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_3" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_3" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_3" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v057-release-notes" title="DataFrames v0.5.7 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v057-release-notes" title="DataFrames v0.5.7 Release Notes">
     DataFrames v0.5.7 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_4" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_4" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_4" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_4" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v056-release-notes" title="DataFrames v0.5.6 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v056-release-notes" title="DataFrames v0.5.6 Release Notes">
     DataFrames v0.5.6 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v055-release-notes" title="DataFrames v0.5.5 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v055-release-notes" title="DataFrames v0.5.5 Release Notes">
     DataFrames v0.5.5 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_5" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_5" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_5" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_5" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_4" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_4" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v054-release-notes" title="DataFrames v0.5.4 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v054-release-notes" title="DataFrames v0.5.4 Release Notes">
     DataFrames v0.5.4 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_6" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_6" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_6" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_6" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_5" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_5" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v053-release-notes" title="DataFrames v0.5.3 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v053-release-notes" title="DataFrames v0.5.3 Release Notes">
     DataFrames v0.5.3 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v052-release-notes" title="DataFrames v0.5.2 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v052-release-notes" title="DataFrames v0.5.2 Release Notes">
     DataFrames v0.5.2 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_7" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_7" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_7" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_7" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_6" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_6" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v051-release-notes" title="DataFrames v0.5.1 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v051-release-notes" title="DataFrames v0.5.1 Release Notes">
     DataFrames v0.5.1 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#changes_8" title="Changes" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#changes_8" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_7" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_7" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v050-release-notes" title="DataFrames v0.5.0 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v050-release-notes" title="DataFrames v0.5.0 Release Notes">
     DataFrames v0.5.0 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_8" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_8" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_9" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_9" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_8" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_8" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-    
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../LICENSE/" title="License" class="md-nav__link">
+  </a></li></ul></nav></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="../LICENSE/" title="License">
       License
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-  </ul>
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-            
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0611-release-notes" title="DataFrames v0.6.11 Release Notes" class="md-nav__link">
+    </a></li></ul></nav></li></ul></nav></div></div></div><div class="md-sidebar md-sidebar--secondary" data-md-component="toc"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0611-release-notes" title="DataFrames v0.6.11 Release Notes">
     DataFrames v0.6.11 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#changes" title="Changes" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#changes" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v066-release-notes" title="DataFrames v0.6.6 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v066-release-notes" title="DataFrames v0.6.6 Release Notes">
     DataFrames v0.6.6 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deprecations" title="Deprecations" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#deprecations" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v063-release-notes" title="DataFrames v0.6.3 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v063-release-notes" title="DataFrames v0.6.3 Release Notes">
     DataFrames v0.6.3 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_1" title="Deprecations" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_1" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v061-release-notes" title="DataFrames v0.6.1 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v061-release-notes" title="DataFrames v0.6.1 Release Notes">
     DataFrames v0.6.1 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_1" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_1" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v060-release-notes" title="DataFrames v0.6.0 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v060-release-notes" title="DataFrames v0.6.0 Release Notes">
     DataFrames v0.6.0 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_1" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_1" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_2" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_2" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_2" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_2" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0512-release-notes" title="DataFrames v0.5.12 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0512-release-notes" title="DataFrames v0.5.12 Release Notes">
     DataFrames v0.5.12 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0511-release-notes" title="DataFrames v0.5.11 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0511-release-notes" title="DataFrames v0.5.11 Release Notes">
     DataFrames v0.5.11 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v0510-release-notes" title="DataFrames v0.5.10 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v0510-release-notes" title="DataFrames v0.5.10 Release Notes">
     DataFrames v0.5.10 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_2" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_2" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_3" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_3" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v059-release-notes" title="DataFrames v0.5.9 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v059-release-notes" title="DataFrames v0.5.9 Release Notes">
     DataFrames v0.5.9 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v058-release-notes" title="DataFrames v0.5.8 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v058-release-notes" title="DataFrames v0.5.8 Release Notes">
     DataFrames v0.5.8 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_3" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_3" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_3" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_3" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v057-release-notes" title="DataFrames v0.5.7 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v057-release-notes" title="DataFrames v0.5.7 Release Notes">
     DataFrames v0.5.7 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_4" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_4" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_4" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_4" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v056-release-notes" title="DataFrames v0.5.6 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v056-release-notes" title="DataFrames v0.5.6 Release Notes">
     DataFrames v0.5.6 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v055-release-notes" title="DataFrames v0.5.5 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v055-release-notes" title="DataFrames v0.5.5 Release Notes">
     DataFrames v0.5.5 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_5" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_5" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_5" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_5" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_4" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_4" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v054-release-notes" title="DataFrames v0.5.4 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v054-release-notes" title="DataFrames v0.5.4 Release Notes">
     DataFrames v0.5.4 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_6" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_6" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_6" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_6" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_5" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_5" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v053-release-notes" title="DataFrames v0.5.3 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v053-release-notes" title="DataFrames v0.5.3 Release Notes">
     DataFrames v0.5.3 Release Notes
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v052-release-notes" title="DataFrames v0.5.2 Release Notes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v052-release-notes" title="DataFrames v0.5.2 Release Notes">
     DataFrames v0.5.2 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_7" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_7" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_7" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_7" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_6" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_6" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v051-release-notes" title="DataFrames v0.5.1 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v051-release-notes" title="DataFrames v0.5.1 Release Notes">
     DataFrames v0.5.1 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#changes_8" title="Changes" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#changes_8" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_7" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_7" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframes-v050-release-notes" title="DataFrames v0.5.0 Release Notes" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="#dataframes-v050-release-notes" title="DataFrames v0.5.0 Release Notes">
     DataFrames v0.5.0 Release Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-features_8" title="New features" class="md-nav__link">
+  </a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a class="md-nav__link" href="#new-features_8" title="New features">
     New features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changes_9" title="Changes" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#changes_9" title="Changes">
     Changes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deprecations_8" title="Deprecations" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#deprecations_8" title="Deprecations">
     Deprecations
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-          
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/NEWS.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
-                
-                
-                  <h1>Release notes</h1>
-                
-                <p><a id='DataFrames-v0.6.11-Release-Notes-1'></a></p>
-<h2 id="dataframes-v0611-release-notes">DataFrames v0.6.11 Release Notes</h2>
-<p><a id='Changes-1'></a></p>
-<h5 id="changes">Changes</h5>
-<ul>
-<li>New documentation based on Documenter ([#929])</li>
-<li>Support new fit indicator functions for statistical models ([#921]).</li>
-<li>Add string literals csv, csv2, wsv, and tsv ([#918])</li>
-<li>Add a readtable argument for optional name normalization ([#896])</li>
-</ul>
-<p><a id='DataFrames-v0.6.6-Release-Notes-1'></a></p>
-<h2 id="dataframes-v066-release-notes">DataFrames v0.6.6 Release Notes</h2>
-<p><a id='Deprecations-1'></a></p>
-<h5 id="deprecations">Deprecations</h5>
-<ul>
-<li>Deprecates <code>array(df, ...)</code> in favor of <code>convert(Array, df, ...)</code> ([#806])</li>
-<li>Deprecates <code>DataArray(df, T)</code> in favor of <code>convert(DataArray{T}, df)</code> ([#806])</li>
-</ul>
-<p><a id='DataFrames-v0.6.3-Release-Notes-1'></a></p>
-<h2 id="dataframes-v063-release-notes">DataFrames v0.6.3 Release Notes</h2>
-<p><a id='Deprecations-2'></a></p>
-<h5 id="deprecations_1">Deprecations</h5>
-<ul>
-<li>Removes <code>save</code> and <code>loaddf</code>, since the format was not compatible across Julia and DataFrames versions ([#790]). Use <code>writetable</code> or <a href="https://github.com/timholy/HDF5.jl">JLD</a> to save DataFrames</li>
-</ul>
-<p><a id='DataFrames-v0.6.1-Release-Notes-1'></a></p>
-<h2 id="dataframes-v061-release-notes">DataFrames v0.6.1 Release Notes</h2>
-<p><a id='New-features-1'></a></p>
-<h5 id="new-features">New features</h5>
-<ul>
-<li><code>writetable</code> supports <code>append</code> option ([#755])</li>
-</ul>
-<p><a id='Changes-2'></a></p>
-<h5 id="changes_1">Changes</h5>
-<ul>
-<li>Faster <code>read_rda</code> ([#754], [#759])</li>
-</ul>
-<p><a id='DataFrames-v0.6.0-Release-Notes-1'></a></p>
-<h2 id="dataframes-v060-release-notes">DataFrames v0.6.0 Release Notes</h2>
-<p>Focus on performance improvements and rooting out bugs in corner cases.</p>
-<p><a id='New-features-2'></a></p>
-<h5 id="new-features_1">New features</h5>
-<ul>
-<li>Constructor for empty DataFrames allows specifying PDAs ([#725])</li>
-<li><code>stack(df)</code> and <code>melt(df)</code>, which take FloatingPoint vars as measure vars ([#734])</li>
-<li>New convenience methods for <code>unstack</code> ([#734])</li>
-<li><code>convertdataframes</code> option added to <code>read_rda</code> ([#751])</li>
-</ul>
-<p><a id='Changes-3'></a></p>
-<h5 id="changes_2">Changes</h5>
-<ul>
-<li><code>vcat(dfs)</code> handles container and eltype promotion ([#747])</li>
-<li><code>join</code> finally handles DataFrames with no non-key columns ([#749])</li>
-<li>sorting methods throw an error when args meant for <code>cols</code> are passed to <code>by</code> ([#749])</li>
-<li><code>rename!</code> and <code>rename</code> throw when column to be renamed does not exist ([#749])</li>
-<li><code>names!</code>, <code>rename!</code>, and <code>rename</code> for DataFrames now return DataFrames ([#749])</li>
-</ul>
-<p><a id='Deprecations-3'></a></p>
-<h5 id="deprecations_2">Deprecations</h5>
-<ul>
-<li>Deprecates <code>by(df, cols, [symbol(s)])</code> in favor of <code>aggregate(df, cols, [function(s)])</code> ([#726])</li>
-<li>Removes <code>pivottable</code> in favor of other reshaping methods ([#734])</li>
-<li>Deprecates <code>nullable!(..., ::AbstractDataFrame)</code> in favor of <code>nullable!(::DataFrame, ...)</code> ([#752])</li>
-<li>Deprecates <code>keys(df)</code>, <code>values(df)</code> ([#752])</li>
-<li>Renames <code>insert!(df, df)</code> to <code>merge!(df, dfs...)</code> ([#752])</li>
-</ul>
-<p><a id='DataFrames-v0.5.12-Release-Notes-1'></a></p>
-<h2 id="dataframes-v0512-release-notes">DataFrames v0.5.12 Release Notes</h2>
-<p>Track changes to JuliaLang/julia</p>
-<p><a id='DataFrames-v0.5.11-Release-Notes-1'></a></p>
-<h2 id="dataframes-v0511-release-notes">DataFrames v0.5.11 Release Notes</h2>
-<p>Track changes to JuliaLang/julia</p>
-<p><a id='DataFrames-v0.5.10-Release-Notes-1'></a></p>
-<h2 id="dataframes-v0510-release-notes">DataFrames v0.5.10 Release Notes</h2>
-<p><a id='New-features-3'></a></p>
-<h5 id="new-features_2">New features</h5>
-<ul>
-<li>Formulas handle three-way (and higher) interactions ([#700])</li>
-</ul>
-<p><a id='Changes-4'></a></p>
-<h5 id="changes_3">Changes</h5>
-<ul>
-<li>Now using ReadTheDocs for documentation</li>
-</ul>
-<p><a id='DataFrames-v0.5.9-Release-Notes-1'></a></p>
-<h2 id="dataframes-v059-release-notes">DataFrames v0.5.9 Release Notes</h2>
-<p>Track changes to JuliaLang/julia</p>
-<p><a id='DataFrames-v0.5.8-Release-Notes-1'></a></p>
-<h2 id="dataframes-v058-release-notes">DataFrames v0.5.8 Release Notes</h2>
-<p><a id='New-features-4'></a></p>
-<h5 id="new-features_3">New features</h5>
-<ul>
-<li>Extends <code>StatsBase.predict</code> to take a DataFrame as a predictor ([#679])</li>
-<li><code>coefnames</code> handles random-effect terms ([#662])</li>
-</ul>
-<p><a id='Deprecations-4'></a></p>
-<h5 id="deprecations_3">Deprecations</h5>
-<ul>
-<li>Deprecates <code>DataFrame(::Dict, ...)</code> in favor of <code>convert</code> ([#626])</li>
-</ul>
-<p><a id='DataFrames-v0.5.7-Release-Notes-1'></a></p>
-<h2 id="dataframes-v057-release-notes">DataFrames v0.5.7 Release Notes</h2>
-<p><a id='New-features-5'></a></p>
-<h5 id="new-features_4">New features</h5>
-<ul>
-<li><code>deleterows!(df::DataFrame, inds)</code> ([#635])</li>
-</ul>
-<p><a id='Changes-5'></a></p>
-<h5 id="changes_4">Changes</h5>
-<ul>
-<li><code>empty!(::DataFrame)</code> and <code>insert!(::DataFrame, ...)</code> now operate in place ([#634])</li>
-<li>All exported higher-order functions now handle do-block syntax ([#643])</li>
-</ul>
-<p><a id='DataFrames-v0.5.6-Release-Notes-1'></a></p>
-<h2 id="dataframes-v056-release-notes">DataFrames v0.5.6 Release Notes</h2>
-<p>Track changes to JuliaLang/julia</p>
-<p><a id='DataFrames-v0.5.5-Release-Notes-1'></a></p>
-<h2 id="dataframes-v055-release-notes">DataFrames v0.5.5 Release Notes</h2>
-<p><a id='New-features-6'></a></p>
-<h5 id="new-features_5">New features</h5>
-<ul>
-<li>Support fitting arbitrary StatisticalModels ([#571])</li>
-<li>Test coverage now tracked via Coveralls.io ([#597])</li>
-</ul>
-<p><a id='Changes-6'></a></p>
-<h5 id="changes_5">Changes</h5>
-<ul>
-<li><code>show(::AbstractDataFrame)</code> now shows all columns by default</li>
-</ul>
-<p><a id='Deprecations-5'></a></p>
-<h5 id="deprecations_4">Deprecations</h5>
-<ul>
-<li>Deprecates <code>DataFrame(::Any...)</code>, <code>DataFrame(::Associative)</code> ([#610])</li>
-</ul>
-<p><a id='DataFrames-v0.5.4-Release-Notes-1'></a></p>
-<h2 id="dataframes-v054-release-notes">DataFrames v0.5.4 Release Notes</h2>
-<p><a id='New-features-7'></a></p>
-<h5 id="new-features_6">New features</h5>
-<ul>
-<li><code>push!</code> methods add a row to a DataFrame ([#621])</li>
-<li>Test coverage now tracked via Coveralls.io ([#597])</li>
-</ul>
-<p><a id='Changes-7'></a></p>
-<h5 id="changes_6">Changes</h5>
-<ul>
-<li>IO functions ensure column names are valid symbols ([#563])</li>
-<li><code>setindex!</code> methods now return the updated DataFrame</li>
-</ul>
-<p><a id='Deprecations-6'></a></p>
-<h5 id="deprecations_5">Deprecations</h5>
-<ul>
-<li>Deprecates <code>DataFrame(::Int, ::Int)</code> ([#561])</li>
-</ul>
-<p><a id='DataFrames-v0.5.3-Release-Notes-1'></a></p>
-<h2 id="dataframes-v053-release-notes">DataFrames v0.5.3 Release Notes</h2>
-<p>Internal changes to adjust to [JuliaLang/julia#5897]</p>
-<p><a id='DataFrames-v0.5.2-Release-Notes-1'></a></p>
-<h2 id="dataframes-v052-release-notes">DataFrames v0.5.2 Release Notes</h2>
-<p>Continues trend of stripping down features and improving core functionality.</p>
-<p><a id='New-features-8'></a></p>
-<h5 id="new-features_7">New features</h5>
-<ul>
-<li><code>append!(::AbstractDataFrame, ::AbstractDataFrame)</code> ([#506])</li>
-<li><code>join</code> supports <code>:semi</code>-, <code>:anti</code>- and <code>:cross</code>-joins ([#524], [#536])</li>
-<li>Implement <code>eltypes</code> argument in <code>readtable</code> ([#497])</li>
-<li>Read from generic IO objects ([#499])</li>
-</ul>
-<p><a id='Changes-8'></a></p>
-<h5 id="changes_7">Changes</h5>
-<ul>
-<li>Convert to using only symbols (no more strings) for column names ([#509])</li>
-<li>Renames <code>stack_df</code>, <code>melt_df</code>, <code>pivot_table</code> to <code>stackdf</code>, <code>meltdf</code>, <code>pivottable</code> ([#538])</li>
-<li>Renames <code>duplicated</code>, <code>drop_duplicates!</code> to <code>nonunique</code>, <code>unique!</code> ([#538])</li>
-<li>Renames <code>load_df</code> to <code>loaddf</code> ([#538])</li>
-<li>Renames <code>types</code> to <code>eltypes</code> ([#539])</li>
-<li>Renames <code>readtable</code> argument <code>colnames</code> to <code>names</code> ([#497])</li>
-</ul>
-<p><a id='Deprecations-7'></a></p>
-<h5 id="deprecations_6">Deprecations</h5>
-<ul>
-<li>Removes expression-based indexing, including <code>with</code>, <code>within!</code>, <code>based_on</code>, etc. ([#492])</li>
-<li>Removes <code>DataStream</code> ([#492])</li>
-<li>Removes <code>NamedArray</code> ([#492])</li>
-<li>Removes column groupings (<code>set_groups</code>, <code>get_groups</code>, etc.)  ([#492])</li>
-<li>Removes specific colwise and rowwise functions (<code>rowsums</code>, <code>colnorms</code>, etc.) ([#492])</li>
-<li>Removes <code>@DataFrame</code> and <code>@transform</code> ([#492])</li>
-<li>Deprecates natural <code>join</code>s: the key must be specified now ([#536])</li>
-</ul>
-<p><a id='DataFrames-v0.5.1-Release-Notes-1'></a></p>
-<h2 id="dataframes-v051-release-notes">DataFrames v0.5.1 Release Notes</h2>
-<p>Removing prototype features until core functionality is farther along.</p>
-<p><a id='Changes-9'></a></p>
-<h5 id="changes_8">Changes</h5>
-<ul>
-<li>Write <code>Formula</code>s without quoting, thanks to the <code>@~</code> macro ([JuliaLang/julia#4882])</li>
-<li>Renames <code>EachCol</code>, <code>EachRow</code> to <code>eachcol</code>, <code>eachrow</code> ([#474])</li>
-<li><code>eachrow</code> returns a <code>DataFrameRow</code> ([#474])</li>
-<li><code>SubDataFrames</code> are now immutable ([#474])</li>
-</ul>
-<p><a id='Deprecations-8'></a></p>
-<h5 id="deprecations_7">Deprecations</h5>
-<ul>
-<li>Removes <code>IndexedVector</code> ([#483])</li>
-<li>Removes <code>Blocks.jl</code> functionality ([#483])</li>
-<li>Removes methods that treat DataFrame like a matrix, e.g <code>round</code>, <code>sin</code> ([#484])</li>
-<li>Deprecates <code>sub</code>'s alias <code>subset</code> ([#474])</li>
-</ul>
-<p><a id='DataFrames-v0.5.0-Release-Notes-1'></a></p>
-<h2 id="dataframes-v050-release-notes">DataFrames v0.5.0 Release Notes</h2>
-<p>Improved I/O and more-Julian idioms.</p>
-<p><a id='New-features-9'></a></p>
-<h5 id="new-features_8">New features</h5>
-<ul>
-<li>Write HTML tables via writemime ([#433])</li>
-<li>Read whitespace-delimited input ([#443])</li>
-<li>Read input with C-style escapes ([#454])</li>
-</ul>
-<p><a id='Changes-10'></a></p>
-<h5 id="changes_9">Changes</h5>
-<ul>
-<li><code>sort</code> interface updated to better match mainline Julia ([#389])</li>
-<li><code>names!</code>, <code>rename!</code>, and <code>delete!</code> now return the updated Index, rather than the names in the Index ([#445])</li>
-<li>Renames <code>coltypes</code>, <code>colnames</code>, <code>clean_colnames!</code> to <code>types</code>, <code>names</code>, <code>cleannames!</code> ([#469])</li>
-<li>Various improvements to <code>print</code>/<code>show</code> methods</li>
-</ul>
-<p><a id='Deprecations-9'></a></p>
-<h5 id="deprecations_8">Deprecations</h5>
-<ul>
-<li>Deprecates <code>rbind</code>, <code>cbind</code> and <code>vecbind</code> deprecated in favor of <code>hcat</code> and <code>vcat</code> ([#453])</li>
-</ul>
-<p>[#389]: https://github.com/JuliaStats/DataFrames.jl/issues/389 [#433]: https://github.com/JuliaStats/DataFrames.jl/issues/433 [#443]: https://github.com/JuliaStats/DataFrames.jl/issues/443 [#445]: https://github.com/JuliaStats/DataFrames.jl/issues/445 [#453]: https://github.com/JuliaStats/DataFrames.jl/issues/453 [#454]: https://github.com/JuliaStats/DataFrames.jl/issues/454 [#469]: https://github.com/JuliaStats/DataFrames.jl/issues/469 [#474]: https://github.com/JuliaStats/DataFrames.jl/issues/474 [#483]: https://github.com/JuliaStats/DataFrames.jl/issues/483 [#484]: https://github.com/JuliaStats/DataFrames.jl/issues/484 [#492]: https://github.com/JuliaStats/DataFrames.jl/issues/492 [#497]: https://github.com/JuliaStats/DataFrames.jl/issues/497 [#499]: https://github.com/JuliaStats/DataFrames.jl/issues/499 [#506]: https://github.com/JuliaStats/DataFrames.jl/issues/506 [#509]: https://github.com/JuliaStats/DataFrames.jl/issues/509 [#524]: https://github.com/JuliaStats/DataFrames.jl/issues/524 [#536]: https://github.com/JuliaStats/DataFrames.jl/issues/536 [#538]: https://github.com/JuliaStats/DataFrames.jl/issues/538 [#539]: https://github.com/JuliaStats/DataFrames.jl/issues/539 [#561]: https://github.com/JuliaStats/DataFrames.jl/issues/561 [#563]: https://github.com/JuliaStats/DataFrames.jl/issues/563 [#571]: https://github.com/JuliaStats/DataFrames.jl/issues/571 [#597]: https://github.com/JuliaStats/DataFrames.jl/issues/597 [#610]: https://github.com/JuliaStats/DataFrames.jl/issues/610 [#621]: https://github.com/JuliaStats/DataFrames.jl/issues/621 [#626]: https://github.com/JuliaStats/DataFrames.jl/issues/626 [#634]: https://github.com/JuliaStats/DataFrames.jl/issues/634 [#635]: https://github.com/JuliaStats/DataFrames.jl/issues/635 [#643]: https://github.com/JuliaStats/DataFrames.jl/issues/643 [#662]: https://github.com/JuliaStats/DataFrames.jl/issues/662 [#679]: https://github.com/JuliaStats/DataFrames.jl/issues/679 [#700]: https://github.com/JuliaStats/DataFrames.jl/issues/700 [#725]: https://github.com/JuliaStats/DataFrames.jl/issues/725 [#726]: https://github.com/JuliaStats/DataFrames.jl/issues/726 [#734]: https://github.com/JuliaStats/DataFrames.jl/issues/734 [#747]: https://github.com/JuliaStats/DataFrames.jl/issues/747 [#749]: https://github.com/JuliaStats/DataFrames.jl/issues/749 [#751]: https://github.com/JuliaStats/DataFrames.jl/issues/751 [#752]: https://github.com/JuliaStats/DataFrames.jl/issues/752 [#754]: https://github.com/JuliaStats/DataFrames.jl/issues/754 [#755]: https://github.com/JuliaStats/DataFrames.jl/issues/755 [#759]: https://github.com/JuliaStats/DataFrames.jl/issues/759 [#790]: https://github.com/JuliaStats/DataFrames.jl/issues/790 [#806]: https://github.com/JuliaStats/DataFrames.jl/issues/806</p>
-<p>[JuliaLang/julia#4882]: https://github.com/JuliaLang/julia/issues/4882 [JuliaLang/julia#5897]: https://github.com/JuliaLang/julia/issues/5897</p>
-                
-                  
-                
-              
-              
-                
-              
-            </article>
-          </div>
-        </div>
-      </main>
-      
-        
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../lib/manipulation/" title="Data manipulation" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+  </a></li></ul></nav></li></ul></nav></div></div></div><div class="md-content"><article class="md-content__inner md-typeset"><a class="md-icon md-content__icon" href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/NEWS.md" title="Edit this page">edit</a><h1>Release notes</h1><p><a id="DataFrames-v0.6.11-Release-Notes-1"></a></p><h2 id="dataframes-v0611-release-notes">DataFrames v0.6.11 Release Notes</h2><p><a id="Changes-1"></a></p><h5 id="changes">Changes</h5><ul><li>New documentation based on Documenter ([#929])</li><li>Support new fit indicator functions for statistical models ([#921]).</li><li>Add string literals csv, csv2, wsv, and tsv ([#918])</li><li>Add a readtable argument for optional name normalization ([#896])</li></ul><p><a id="DataFrames-v0.6.6-Release-Notes-1"></a></p><h2 id="dataframes-v066-release-notes">DataFrames v0.6.6 Release Notes</h2><p><a id="Deprecations-1"></a></p><h5 id="deprecations">Deprecations</h5><ul><li>Deprecates <code>array(df, ...)</code> in favor of <code>convert(Array, df, ...)</code> ([#806])</li><li>Deprecates <code>DataArray(df, T)</code> in favor of <code>convert(DataArray{T}, df)</code> ([#806])</li></ul><p><a id="DataFrames-v0.6.3-Release-Notes-1"></a></p><h2 id="dataframes-v063-release-notes">DataFrames v0.6.3 Release Notes</h2><p><a id="Deprecations-2"></a></p><h5 id="deprecations_1">Deprecations</h5><ul><li>Removes <code>save</code> and <code>loaddf</code>, since the format was not compatible across Julia and DataFrames versions ([#790]). Use <code>writetable</code> or <a href="https://github.com/timholy/HDF5.jl">JLD</a> to save DataFrames</li></ul><p><a id="DataFrames-v0.6.1-Release-Notes-1"></a></p><h2 id="dataframes-v061-release-notes">DataFrames v0.6.1 Release Notes</h2><p><a id="New-features-1"></a></p><h5 id="new-features">New features</h5><ul><li><code>writetable</code> supports <code>append</code> option ([#755])</li></ul><p><a id="Changes-2"></a></p><h5 id="changes_1">Changes</h5><ul><li>Faster <code>read_rda</code> ([#754], [#759])</li></ul><p><a id="DataFrames-v0.6.0-Release-Notes-1"></a></p><h2 id="dataframes-v060-release-notes">DataFrames v0.6.0 Release Notes</h2><p>Focus on performance improvements and rooting out bugs in corner cases.</p><p><a id="New-features-2"></a></p><h5 id="new-features_1">New features</h5><ul><li>Constructor for empty DataFrames allows specifying PDAs ([#725])</li><li><code>stack(df)</code> and <code>melt(df)</code>, which take FloatingPoint vars as measure vars ([#734])</li><li>New convenience methods for <code>unstack</code> ([#734])</li><li><code>convertdataframes</code> option added to <code>read_rda</code> ([#751])</li></ul><p><a id="Changes-3"></a></p><h5 id="changes_2">Changes</h5><ul><li><code>vcat(dfs)</code> handles container and eltype promotion ([#747])</li><li><code>join</code> finally handles DataFrames with no non-key columns ([#749])</li><li>sorting methods throw an error when args meant for <code>cols</code> are passed to <code>by</code> ([#749])</li><li><code>rename!</code> and <code>rename</code> throw when column to be renamed does not exist ([#749])</li><li><code>names!</code>, <code>rename!</code>, and <code>rename</code> for DataFrames now return DataFrames ([#749])</li></ul><p><a id="Deprecations-3"></a></p><h5 id="deprecations_2">Deprecations</h5><ul><li>Deprecates <code>by(df, cols, [symbol(s)])</code> in favor of <code>aggregate(df, cols, [function(s)])</code> ([#726])</li><li>Removes <code>pivottable</code> in favor of other reshaping methods ([#734])</li><li>Deprecates <code>nullable!(..., ::AbstractDataFrame)</code> in favor of <code>nullable!(::DataFrame, ...)</code> ([#752])</li><li>Deprecates <code>keys(df)</code>, <code>values(df)</code> ([#752])</li><li>Renames <code>insert!(df, df)</code> to <code>merge!(df, dfs...)</code> ([#752])</li></ul><p><a id="DataFrames-v0.5.12-Release-Notes-1"></a></p><h2 id="dataframes-v0512-release-notes">DataFrames v0.5.12 Release Notes</h2><p>Track changes to JuliaLang/julia</p><p><a id="DataFrames-v0.5.11-Release-Notes-1"></a></p><h2 id="dataframes-v0511-release-notes">DataFrames v0.5.11 Release Notes</h2><p>Track changes to JuliaLang/julia</p><p><a id="DataFrames-v0.5.10-Release-Notes-1"></a></p><h2 id="dataframes-v0510-release-notes">DataFrames v0.5.10 Release Notes</h2><p><a id="New-features-3"></a></p><h5 id="new-features_2">New features</h5><ul><li>Formulas handle three-way (and higher) interactions ([#700])</li></ul><p><a id="Changes-4"></a></p><h5 id="changes_3">Changes</h5><ul><li>Now using ReadTheDocs for documentation</li></ul><p><a id="DataFrames-v0.5.9-Release-Notes-1"></a></p><h2 id="dataframes-v059-release-notes">DataFrames v0.5.9 Release Notes</h2><p>Track changes to JuliaLang/julia</p><p><a id="DataFrames-v0.5.8-Release-Notes-1"></a></p><h2 id="dataframes-v058-release-notes">DataFrames v0.5.8 Release Notes</h2><p><a id="New-features-4"></a></p><h5 id="new-features_3">New features</h5><ul><li>Extends <code>StatsBase.predict</code> to take a DataFrame as a predictor ([#679])</li><li><code>coefnames</code> handles random-effect terms ([#662])</li></ul><p><a id="Deprecations-4"></a></p><h5 id="deprecations_3">Deprecations</h5><ul><li>Deprecates <code>DataFrame(::Dict, ...)</code> in favor of <code>convert</code> ([#626])</li></ul><p><a id="DataFrames-v0.5.7-Release-Notes-1"></a></p><h2 id="dataframes-v057-release-notes">DataFrames v0.5.7 Release Notes</h2><p><a id="New-features-5"></a></p><h5 id="new-features_4">New features</h5><ul><li><code>deleterows!(df::DataFrame, inds)</code> ([#635])</li></ul><p><a id="Changes-5"></a></p><h5 id="changes_4">Changes</h5><ul><li><code>empty!(::DataFrame)</code> and <code>insert!(::DataFrame, ...)</code> now operate in place ([#634])</li><li>All exported higher-order functions now handle do-block syntax ([#643])</li></ul><p><a id="DataFrames-v0.5.6-Release-Notes-1"></a></p><h2 id="dataframes-v056-release-notes">DataFrames v0.5.6 Release Notes</h2><p>Track changes to JuliaLang/julia</p><p><a id="DataFrames-v0.5.5-Release-Notes-1"></a></p><h2 id="dataframes-v055-release-notes">DataFrames v0.5.5 Release Notes</h2><p><a id="New-features-6"></a></p><h5 id="new-features_5">New features</h5><ul><li>Support fitting arbitrary StatisticalModels ([#571])</li><li>Test coverage now tracked via Coveralls.io ([#597])</li></ul><p><a id="Changes-6"></a></p><h5 id="changes_5">Changes</h5><ul><li><code>show(::AbstractDataFrame)</code> now shows all columns by default</li></ul><p><a id="Deprecations-5"></a></p><h5 id="deprecations_4">Deprecations</h5><ul><li>Deprecates <code>DataFrame(::Any...)</code>, <code>DataFrame(::Associative)</code> ([#610])</li></ul><p><a id="DataFrames-v0.5.4-Release-Notes-1"></a></p><h2 id="dataframes-v054-release-notes">DataFrames v0.5.4 Release Notes</h2><p><a id="New-features-7"></a></p><h5 id="new-features_6">New features</h5><ul><li><code>push!</code> methods add a row to a DataFrame ([#621])</li><li>Test coverage now tracked via Coveralls.io ([#597])</li></ul><p><a id="Changes-7"></a></p><h5 id="changes_6">Changes</h5><ul><li>IO functions ensure column names are valid symbols ([#563])</li><li><code>setindex!</code> methods now return the updated DataFrame</li></ul><p><a id="Deprecations-6"></a></p><h5 id="deprecations_5">Deprecations</h5><ul><li>Deprecates <code>DataFrame(::Int, ::Int)</code> ([#561])</li></ul><p><a id="DataFrames-v0.5.3-Release-Notes-1"></a></p><h2 id="dataframes-v053-release-notes">DataFrames v0.5.3 Release Notes</h2><p>Internal changes to adjust to [JuliaLang/julia#5897]</p><p><a id="DataFrames-v0.5.2-Release-Notes-1"></a></p><h2 id="dataframes-v052-release-notes">DataFrames v0.5.2 Release Notes</h2><p>Continues trend of stripping down features and improving core functionality.</p><p><a id="New-features-8"></a></p><h5 id="new-features_7">New features</h5><ul><li><code>append!(::AbstractDataFrame, ::AbstractDataFrame)</code> ([#506])</li><li><code>join</code> supports <code>:semi</code>-, <code>:anti</code>- and <code>:cross</code>-joins ([#524], [#536])</li><li>Implement <code>eltypes</code> argument in <code>readtable</code> ([#497])</li><li>Read from generic IO objects ([#499])</li></ul><p><a id="Changes-8"></a></p><h5 id="changes_7">Changes</h5><ul><li>Convert to using only symbols (no more strings) for column names ([#509])</li><li>Renames <code>stack_df</code>, <code>melt_df</code>, <code>pivot_table</code> to <code>stackdf</code>, <code>meltdf</code>, <code>pivottable</code> ([#538])</li><li>Renames <code>duplicated</code>, <code>drop_duplicates!</code> to <code>nonunique</code>, <code>unique!</code> ([#538])</li><li>Renames <code>load_df</code> to <code>loaddf</code> ([#538])</li><li>Renames <code>types</code> to <code>eltypes</code> ([#539])</li><li>Renames <code>readtable</code> argument <code>colnames</code> to <code>names</code> ([#497])</li></ul><p><a id="Deprecations-7"></a></p><h5 id="deprecations_6">Deprecations</h5><ul><li>Removes expression-based indexing, including <code>with</code>, <code>within!</code>, <code>based_on</code>, etc. ([#492])</li><li>Removes <code>DataStream</code> ([#492])</li><li>Removes <code>NamedArray</code> ([#492])</li><li>Removes column groupings (<code>set_groups</code>, <code>get_groups</code>, etc.)  ([#492])</li><li>Removes specific colwise and rowwise functions (<code>rowsums</code>, <code>colnorms</code>, etc.) ([#492])</li><li>Removes <code>@DataFrame</code> and <code>@transform</code> ([#492])</li><li>Deprecates natural <code>join</code>s: the key must be specified now ([#536])</li></ul><p><a id="DataFrames-v0.5.1-Release-Notes-1"></a></p><h2 id="dataframes-v051-release-notes">DataFrames v0.5.1 Release Notes</h2><p>Removing prototype features until core functionality is farther along.</p><p><a id="Changes-9"></a></p><h5 id="changes_8">Changes</h5><ul><li>Write <code>Formula</code>s without quoting, thanks to the <code>@~</code> macro ([JuliaLang/julia#4882])</li><li>Renames <code>EachCol</code>, <code>EachRow</code> to <code>eachcol</code>, <code>eachrow</code> ([#474])</li><li><code>eachrow</code> returns a <code>DataFrameRow</code> ([#474])</li><li><code>SubDataFrames</code> are now immutable ([#474])</li></ul><p><a id="Deprecations-8"></a></p><h5 id="deprecations_7">Deprecations</h5><ul><li>Removes <code>IndexedVector</code> ([#483])</li><li>Removes <code>Blocks.jl</code> functionality ([#483])</li><li>Removes methods that treat DataFrame like a matrix, e.g <code>round</code>, <code>sin</code> ([#484])</li><li>Deprecates <code>sub</code>'s alias <code>subset</code> ([#474])</li></ul><p><a id="DataFrames-v0.5.0-Release-Notes-1"></a></p><h2 id="dataframes-v050-release-notes">DataFrames v0.5.0 Release Notes</h2><p>Improved I/O and more-Julian idioms.</p><p><a id="New-features-9"></a></p><h5 id="new-features_8">New features</h5><ul><li>Write HTML tables via writemime ([#433])</li><li>Read whitespace-delimited input ([#443])</li><li>Read input with C-style escapes ([#454])</li></ul><p><a id="Changes-10"></a></p><h5 id="changes_9">Changes</h5><ul><li><code>sort</code> interface updated to better match mainline Julia ([#389])</li><li><code>names!</code>, <code>rename!</code>, and <code>delete!</code> now return the updated Index, rather than the names in the Index ([#445])</li><li>Renames <code>coltypes</code>, <code>colnames</code>, <code>clean_colnames!</code> to <code>types</code>, <code>names</code>, <code>cleannames!</code> ([#469])</li><li>Various improvements to <code>print</code>/<code>show</code> methods</li></ul><p><a id="Deprecations-9"></a></p><h5 id="deprecations_8">Deprecations</h5><ul><li>Deprecates <code>rbind</code>, <code>cbind</code> and <code>vecbind</code> deprecated in favor of <code>hcat</code> and <code>vcat</code> ([#453])</li></ul><p>[#389]: https://github.com/JuliaStats/DataFrames.jl/issues/389 [#433]: https://github.com/JuliaStats/DataFrames.jl/issues/433 [#443]: https://github.com/JuliaStats/DataFrames.jl/issues/443 [#445]: https://github.com/JuliaStats/DataFrames.jl/issues/445 [#453]: https://github.com/JuliaStats/DataFrames.jl/issues/453 [#454]: https://github.com/JuliaStats/DataFrames.jl/issues/454 [#469]: https://github.com/JuliaStats/DataFrames.jl/issues/469 [#474]: https://github.com/JuliaStats/DataFrames.jl/issues/474 [#483]: https://github.com/JuliaStats/DataFrames.jl/issues/483 [#484]: https://github.com/JuliaStats/DataFrames.jl/issues/484 [#492]: https://github.com/JuliaStats/DataFrames.jl/issues/492 [#497]: https://github.com/JuliaStats/DataFrames.jl/issues/497 [#499]: https://github.com/JuliaStats/DataFrames.jl/issues/499 [#506]: https://github.com/JuliaStats/DataFrames.jl/issues/506 [#509]: https://github.com/JuliaStats/DataFrames.jl/issues/509 [#524]: https://github.com/JuliaStats/DataFrames.jl/issues/524 [#536]: https://github.com/JuliaStats/DataFrames.jl/issues/536 [#538]: https://github.com/JuliaStats/DataFrames.jl/issues/538 [#539]: https://github.com/JuliaStats/DataFrames.jl/issues/539 [#561]: https://github.com/JuliaStats/DataFrames.jl/issues/561 [#563]: https://github.com/JuliaStats/DataFrames.jl/issues/563 [#571]: https://github.com/JuliaStats/DataFrames.jl/issues/571 [#597]: https://github.com/JuliaStats/DataFrames.jl/issues/597 [#610]: https://github.com/JuliaStats/DataFrames.jl/issues/610 [#621]: https://github.com/JuliaStats/DataFrames.jl/issues/621 [#626]: https://github.com/JuliaStats/DataFrames.jl/issues/626 [#634]: https://github.com/JuliaStats/DataFrames.jl/issues/634 [#635]: https://github.com/JuliaStats/DataFrames.jl/issues/635 [#643]: https://github.com/JuliaStats/DataFrames.jl/issues/643 [#662]: https://github.com/JuliaStats/DataFrames.jl/issues/662 [#679]: https://github.com/JuliaStats/DataFrames.jl/issues/679 [#700]: https://github.com/JuliaStats/DataFrames.jl/issues/700 [#725]: https://github.com/JuliaStats/DataFrames.jl/issues/725 [#726]: https://github.com/JuliaStats/DataFrames.jl/issues/726 [#734]: https://github.com/JuliaStats/DataFrames.jl/issues/734 [#747]: https://github.com/JuliaStats/DataFrames.jl/issues/747 [#749]: https://github.com/JuliaStats/DataFrames.jl/issues/749 [#751]: https://github.com/JuliaStats/DataFrames.jl/issues/751 [#752]: https://github.com/JuliaStats/DataFrames.jl/issues/752 [#754]: https://github.com/JuliaStats/DataFrames.jl/issues/754 [#755]: https://github.com/JuliaStats/DataFrames.jl/issues/755 [#759]: https://github.com/JuliaStats/DataFrames.jl/issues/759 [#790]: https://github.com/JuliaStats/DataFrames.jl/issues/790 [#806]: https://github.com/JuliaStats/DataFrames.jl/issues/806</p><p>[JuliaLang/julia#4882]: https://github.com/JuliaLang/julia/issues/4882 [JuliaLang/julia#5897]: https://github.com/JuliaLang/julia/issues/5897</p></article></div></div></main><footer class="md-footer"><div class="md-footer-nav"><nav class="md-footer-nav__inner md-grid"><a class="md-flex md-footer-nav__link md-footer-nav__link--prev" href="../lib/manipulation/" rel="prev" title="Data manipulation"><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-back md-footer-nav__button"></i></div><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Data manipulation
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../LICENSE/" title="License" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+              </span></div></a><a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="../LICENSE/" rel="next" title="License"><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Next
                 </span>
                 License
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
+              </span></div><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i></div></a></nav></div><div class="md-footer-meta md-typeset"><div class="md-footer-meta__inner md-grid"><div class="md-footer-copyright">
         
         powered by
         <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
         and
         <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
-          Material for MkDocs</a>
-      </div>
-      
-        
-      
-    </div>
-  </div>
-</footer>
-      
-    </div>
-    
-      <script src="../assets/javascripts/application-6b4ff16fa7.js"></script>
-      <script>app.initialize({url:{base:".."}})</script>
-      
-        <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-      
-        <script src="../assets/mathjaxhelper.js"></script>
-      
-    
-    
-      
-    
-  </body>
-</html>
+          Material for MkDocs</a></div></div></div></footer></div><script src="../assets/javascripts/application-6b4ff16fa7.js"></script><script>app.initialize({url:{base:".."}})</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script><script src="../assets/mathjaxhelper.js"></script></body></HTML>

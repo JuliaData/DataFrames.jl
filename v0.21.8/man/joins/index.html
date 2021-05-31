@@ -1,7 +1,48 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Joins · DataFrames.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">DataFrames.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li class="is-active"><a class="tocitem" href>Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Joins</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Joins</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/joins.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Database-Style-Joins"><a class="docs-heading-anchor" href="#Database-Style-Joins">Database-Style Joins</a><a id="Database-Style-Joins-1"></a><a class="docs-heading-anchor-permalink" href="#Database-Style-Joins" title="Permalink"></a></h1><p>We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+<!DOCTYPE html><HTML lang="en"><head><meta charset="UTF-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Joins · DataFrames.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script data-main="../../assets/documenter.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" data-theme-name="documenter-dark" href="../../assets/themes/documenter-dark.css" rel="stylesheet" type="text/css"/><link class="docs-theme-link" data-theme-name="documenter-light" data-theme-primary="" href="../../assets/themes/documenter-light.css" rel="stylesheet" type="text/css"/><script src="../../assets/themeswap.js"></script><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
 
-julia&gt; people = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img alt="DataFrames.jl logo" src="../../assets/logo.png"/></a><div class="docs-package-name"><span class="docs-autofit">DataFrames.jl</span></div><form action="../../search/" class="docs-search"><input class="docs-search-query" id="documenter-search-query" name="q" placeholder="Search docs" type="text"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li class="is-active"><a class="tocitem" href="">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href="">Joins</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href="">Joins</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/joins.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" href="#" id="documenter-settings-button" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" href="#" id="documenter-sidebar-button"></a></div></header><article class="content" id="documenter-page"><h1 id="Database-Style-Joins"><a class="docs-heading-anchor" href="#Database-Style-Joins">Database-Style Joins</a><a id="Database-Style-Joins-1"></a><a class="docs-heading-anchor-permalink" href="#Database-Style-Joins" title="Permalink"></a></h1><p>We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+
+julia&gt; people = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 2×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
@@ -9,7 +50,7 @@ julia&gt; people = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;
 │ 1   │ 20    │ John Doe │
 │ 2   │ 40    │ Jane Doe │
 
-julia&gt; jobs = DataFrame(ID = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
+julia&gt; jobs = DataFrame(ID = [20, 40], Job = ["Lawyer", "Doctor"])
 2×2 DataFrame
 │ Row │ ID    │ Job    │
 │     │ Int64 │ String │
@@ -23,7 +64,7 @@ julia&gt; jobs = DataFrame(ID = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Docto
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 20    │ John Doe │ Lawyer │
 │ 2   │ 40    │ Jane Doe │ Doctor │
-</code></pre><p>In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.</p><p>The following functions are provided to perform seven kinds of joins:</p><ul><li><code>innerjoin</code>: the output contains rows for values of the key that exist in all passed data frames.</li><li><code>leftjoin</code>: the output contains rows for values of the key that exist in the first (left) argument,   whether or not that value exists in the second (right) argument.</li><li><code>rightjoin</code>: the output contains rows for values of the key that exist in the second (right) argument,   whether or not that value exists in the first (left) argument.</li><li><code>outerjoin</code>: the output contains rows for values of the key that exist in any of the passed data frames.</li><li><code>semijoin</code>: Like an inner join, but output is restricted to columns from the first (left) argument.</li><li><code>antijoin</code>: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument.   As with <code>semijoin</code>, output is restricted to columns from the first (left) argument.</li><li><code>crossjoin</code>: The output is the cartesian product of rows from all passed data frames.</li></ul><p>See <a href="https://en.wikipedia.org/wiki/Join_(SQL)">the Wikipedia page on SQL joins</a> for more information.</p><p>Here are examples of different kinds of join:</p><pre><code class="language-julia-repl">julia&gt; jobs = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Astronaut&quot;])
+</code></pre><p>In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.</p><p>The following functions are provided to perform seven kinds of joins:</p><ul><li><code>innerjoin</code>: the output contains rows for values of the key that exist in all passed data frames.</li><li><code>leftjoin</code>: the output contains rows for values of the key that exist in the first (left) argument,   whether or not that value exists in the second (right) argument.</li><li><code>rightjoin</code>: the output contains rows for values of the key that exist in the second (right) argument,   whether or not that value exists in the first (left) argument.</li><li><code>outerjoin</code>: the output contains rows for values of the key that exist in any of the passed data frames.</li><li><code>semijoin</code>: Like an inner join, but output is restricted to columns from the first (left) argument.</li><li><code>antijoin</code>: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument.   As with <code>semijoin</code>, output is restricted to columns from the first (left) argument.</li><li><code>crossjoin</code>: The output is the cartesian product of rows from all passed data frames.</li></ul><p>See <a href="https://en.wikipedia.org/wiki/Join_(SQL)">the Wikipedia page on SQL joins</a> for more information.</p><p>Here are examples of different kinds of join:</p><pre><code class="language-julia-repl">julia&gt; jobs = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
 2×2 DataFrame
 │ Row │ ID    │ Job       │
 │     │ Int64 │ String    │
@@ -85,7 +126,7 @@ julia&gt; antijoin(people, jobs, on = :ID)
 │ 2   │ 20    │ John Doe │ 60    │ Astronaut │
 │ 3   │ 40    │ Jane Doe │ 20    │ Lawyer    │
 │ 4   │ 40    │ Jane Doe │ 60    │ Astronaut │
-</code></pre><p>In order to join data frames on keys which have different names in the left and right tables, you may pass <code>(left, right)</code> tuples or <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
+</code></pre><p>In order to join data frames on keys which have different names in the left and right tables, you may pass <code>(left, right)</code> tuples or <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 2×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
@@ -93,7 +134,7 @@ julia&gt; antijoin(people, jobs, on = :ID)
 │ 1   │ 20    │ John Doe │
 │ 2   │ 40    │ Jane Doe │
 
-julia&gt; b = DataFrame(IDNew = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
+julia&gt; b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
 2×2 DataFrame
 │ Row │ IDNew │ Job    │
 │     │ Int64 │ String │
@@ -108,8 +149,8 @@ julia&gt; innerjoin(a, b, on = :ID =&gt; :IDNew)
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 20    │ John Doe │ Lawyer │
 │ 2   │ 40    │ Jane Doe │ Doctor │
-</code></pre><p>Here is another example with multiple columns:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(City = [&quot;Amsterdam&quot;, &quot;London&quot;, &quot;London&quot;, &quot;New York&quot;, &quot;New York&quot;],
-                     Job = [&quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Doctor&quot;, &quot;Doctor&quot;],
+</code></pre><p>Here is another example with multiple columns:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
+                     Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
                      Category = [1, 2, 3, 4, 5])
 5×3 DataFrame
 │ Row │ City      │ Job    │ Category │
@@ -121,9 +162,9 @@ julia&gt; innerjoin(a, b, on = :ID =&gt; :IDNew)
 │ 4   │ New York  │ Doctor │ 4        │
 │ 5   │ New York  │ Doctor │ 5        │
 
-julia&gt; b = DataFrame(Location = [&quot;Amsterdam&quot;, &quot;London&quot;, &quot;London&quot;, &quot;New York&quot;, &quot;New York&quot;],
-                     Work = [&quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Doctor&quot;, &quot;Doctor&quot;],
-                     Name = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;])
+julia&gt; b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
+                     Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
+                     Name = ["a", "b", "c", "d", "e"])
 5×3 DataFrame
 │ Row │ Location  │ Work   │ Name   │
 │     │ String    │ String │ String │
@@ -149,7 +190,7 @@ julia&gt; innerjoin(a, b, on = [:City =&gt; :Location, :Job =&gt; :Work])
 │ 8   │ New York  │ Doctor │ 5        │ d      │
 │ 9   │ New York  │ Doctor │ 5        │ e      │
 </code></pre><p>Additionally, notice that in the last join rows 2 and 3 had the same values on <code>on</code> variables in both joined <code>DataFrame</code>s. In such a situation <code>innerjoin</code>, <code>outerjoin</code>, <code>leftjoin</code> and <code>rightjoin</code> will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined <code>DataFrame</code>s.</p><p>In order to check that columns passed as the <code>on</code> argument define unique keys (according to <code>isequal</code>) in each input data frame you can set the <code>validate</code> keyword argument to a two-element tuple or a pair of <code>Bool</code> values, with each element indicating whether to run check for the corresponding data frame. Here is an example for the join operation described above:</p><pre><code class="language-julia-repl">julia&gt; innerjoin(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
-ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3</code></pre><p>Finally, using the <code>indicator</code> keyword argument you can add a column to the resulting data frame indicating whether the given row appeared only in the left, the right or both data frames. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John&quot;, &quot;Jane&quot;])
+ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3</code></pre><p>Finally, using the <code>indicator</code> keyword argument you can add a column to the resulting data frame indicating whether the given row appeared only in the left, the right or both data frames. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = ["John", "Jane"])
 2×2 DataFrame
 │ Row │ ID    │ Name   │
 │     │ Int64 │ String │
@@ -157,7 +198,7 @@ ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First dup
 │ 1   │ 20    │ John   │
 │ 2   │ 40    │ Jane   │
 
-julia&gt; b = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
+julia&gt; b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Doctor"])
 2×2 DataFrame
 │ Row │ ID    │ Job    │
 │     │ Int64 │ String │
@@ -172,4 +213,4 @@ julia&gt; outerjoin(a, b, on=:ID, validate=(true, true), indicator=:source)
 ├─────┼───────┼─────────┼─────────┼────────────┤
 │ 1   │ 20    │ John    │ Lawyer  │ both       │
 │ 2   │ 40    │ Jane    │ missing │ left_only  │
-│ 3   │ 60    │ missing │ Doctor  │ right_only │</code></pre><p>Note that this time we also used the <code>validate</code> keyword argument and it did not produce errors as the keys defined in both source data frames were unique.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../split_apply_combine/">Split-apply-combine »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 12 October 2020 18:09">Monday 12 October 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+│ 3   │ 60    │ missing │ Doctor  │ right_only │</code></pre><p>Note that this time we also used the <code>validate</code> keyword argument and it did not produce errors as the keys defined in both source data frames were unique.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../split_apply_combine/">Split-apply-combine »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label></p><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div><p></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 12 October 2020 18:09">Monday 12 October 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></HTML>

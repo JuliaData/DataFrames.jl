@@ -1,31 +1,4 @@
-<!DOCTYPE html>
-<!--[if lt IE 7 ]><html class="no-js ie6"><![endif]-->
-<!--[if IE 7 ]><html class="no-js ie7"><![endif]-->
-<!--[if IE 8 ]><html class="no-js ie8"><![endif]-->
-<!--[if IE 9 ]><html class="no-js ie9"><![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
-    
-      
-        <title>Main types - DataFrames.jl</title>
-      
-      
-      
-      
-    
-    <meta property="og:url" content="None">
-    <meta property="og:title" content="DataFrames.jl">
-    <meta property="og:image" content="None/../../">
-    <meta name="apple-mobile-web-app-title" content="DataFrames.jl">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    
-    <link rel="shortcut icon" type="image/x-icon" href="../../None">
-    <link rel="icon" type="image/x-icon" href="../../None">
-    <style>
+<!DOCTYPE html><HTML class="no-js"><head><meta charset="utf-8"/><meta content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1" name="viewport"/><title>Main types - DataFrames.jl</title><meta content="None" property="og:url"/><meta content="DataFrames.jl" property="og:title"/><meta content="None/../../" property="og:image"/><meta content="DataFrames.jl" name="apple-mobile-web-app-title"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/><link href="../../None" rel="shortcut icon" type="image/x-icon"/><link href="../../None" rel="icon" type="image/x-icon"/><style>
       @font-face {
       	font-family: 'Icon';
       	src: url('../../assets/fonts/icon.eot?52m981');
@@ -40,439 +13,97 @@
       	font-weight: normal;
       	font-style: normal;
       }
-    </style>
-    <link rel="stylesheet" href="../../assets/stylesheets/application-54f87043f3.css">
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
-    
-    
-      
-      
-      
-      <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
-      <style>
+    </style><link href="../../assets/stylesheets/application-54f87043f3.css" rel="stylesheet"/><link href="../../assets/stylesheets/palettes-05ab2406df.css" rel="stylesheet"/><link href="//fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono" rel="stylesheet"/><style>
         body, input {
           font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
         }
         pre, code {
           font-family: 'Ubuntu Mono', 'Courier New', 'Courier', monospace;
         }
-      </style>
-    
-    
-      <link rel="stylesheet" href="../../assets/Documenter.css">
-    
-    <script src="../../assets/javascripts/modernizr-4ab42b99fd.js"></script>
-    
-  </head>
-  
-  
-  
-  <body class="palette-primary-indigo palette-accent-blue">
-    
-      
-      
-    
-    <div class="backdrop">
-      <div class="backdrop-paper"></div>
-    </div>
-    <input class="toggle" type="checkbox" id="toggle-drawer">
-    <input class="toggle" type="checkbox" id="toggle-search">
-    <label class="toggle-button overlay" for="toggle-drawer"></label>
-    <header class="header">
-      <nav aria-label="Header">
-  <div class="bar default">
-    <div class="button button-menu" role="button" aria-label="Menu">
-      <label class="toggle-button icon icon-menu" for="toggle-drawer">
-        <span></span>
-      </label>
-    </div>
-    <div class="stretch">
-      <div class="title">
-        
-          <span class="path">
+      </style><link href="../../assets/Documenter.css" rel="stylesheet"/><script src="../../assets/javascripts/modernizr-4ab42b99fd.js"></script><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body class="palette-primary-indigo palette-accent-blue"><div class="backdrop"><div class="backdrop-paper"></div></div><input class="toggle" id="toggle-drawer" type="checkbox"/><input class="toggle" id="toggle-search" type="checkbox"/><label class="toggle-button overlay" for="toggle-drawer"></label><header class="header"><nav aria-label="Header"><div class="bar default"><div aria-label="Menu" class="button button-menu" role="button"><label class="toggle-button icon icon-menu" for="toggle-drawer"><span></span></label></div><div class="stretch"><div class="title"><span class="path">
             
               
-                API <i class="icon icon-link"></i>
-              
-            
-          </span>
+                API <i class="icon icon-link"></i></span>
         
         Main types
-      </div>
-    </div>
-    
-    
-    <div class="button button-search" role="button" aria-label="Search">
-      <label class="toggle-button icon icon-search" title="Search" for="toggle-search"></label>
-    </div>
-  </div>
-  <div class="bar search">
-    <div class="button button-close" role="button" aria-label="Close">
-      <label class="toggle-button icon icon-back" for="toggle-search"></label>
-    </div>
-    <div class="stretch">
-      <div class="field">
-        <input class="query" type="text" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck>
-      </div>
-    </div>
-    <div class="button button-reset" role="button" aria-label="Search">
-      <button class="toggle-button icon icon-close" id="reset-search"></button>
-    </div>
-  </div>
-</nav>
-    </header>
-    <main class="main">
-      
-      <div class="drawer">
-        <nav aria-label="Navigation">
-  
-  <a href="https://github.com/JuliaStats/DataFrames.jl" class="project">
-    <div class="banner">
-      
-      <div class="name">
-        <strong>
+      </div></div><div aria-label="Search" class="button button-search" role="button"><label class="toggle-button icon icon-search" for="toggle-search" title="Search"></label></div></div><div class="bar search"><div aria-label="Close" class="button button-close" role="button"><label class="toggle-button icon icon-back" for="toggle-search"></label></div><div class="stretch"><div class="field"><input autocapitalize="off" autocomplete="off" autocorrect="off" class="query" placeholder="Search" spellcheck="" type="text"/></div></div><div aria-label="Search" class="button button-reset" role="button"><button class="toggle-button icon icon-close" id="reset-search"></button></div></div></nav></header><main class="main"><div class="drawer"><nav aria-label="Navigation"><a class="project" href="https://github.com/JuliaStats/DataFrames.jl"><div class="banner"><div class="name"><strong>
           DataFrames.jl
-          <span class="version">
-            
-          </span>
-        </strong>
-        
-          <br>
+          <span class="version"></span></strong><br/>
           JuliaStats/DataFrames.jl
         
-      </div>
-    </div>
-  </a>
-  <div class="scrollable">
-    <div class="wrapper">
-      
-        <ul class="repo">
-          <li class="repo-download">
-            
-            <a href="https://github.com/JuliaStats/DataFrames.jl/archive/master.zip" target="_blank" title="Download" data-action="download">
-              <i class="icon icon-download"></i> Download
-            </a>
-          </li>
-          <li class="repo-stars">
-            <a href="https://github.com/JuliaStats/DataFrames.jl/stargazers" target="_blank" title="Stargazers" data-action="star">
-              <i class="icon icon-star"></i> Stars
-              <span class="count">&ndash;</span>
-            </a>
-          </li>
-        </ul>
-        <hr>
-      
-      <div class="toc">
-        <ul>
-          
-            
-  <li>
-    <a class="" title="Introduction" href="../..">
+      </div></div></a><div class="scrollable"><div class="wrapper"><ul class="repo"><li class="repo-download"><a data-action="download" href="https://github.com/JuliaStats/DataFrames.jl/archive/master.zip" target="_blank" title="Download"><i class="icon icon-download"></i> Download
+            </a></li><li class="repo-stars"><a data-action="star" href="https://github.com/JuliaStats/DataFrames.jl/stargazers" target="_blank" title="Stargazers"><i class="icon icon-star"></i> Stars
+              <span class="count">–</span></a></li></ul><hr/><div class="toc"><ul><li><a class="" href="../.." title="Introduction">
       Introduction
-    </a>
-    
-  </li>
-
-          
-            
-  <li>
-    <span class="section">User guide</span>
-    <ul>
-      
-        
-  <li>
-    <a class="" title="Getting Started" href="../../man/getting_started/">
+    </a></li><li><span class="section">User guide</span><ul><li><a class="" href="../../man/getting_started/" title="Getting Started">
       Getting Started
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="IO" href="../../man/io/">
+    </a></li><li><a class="" href="../../man/io/" title="IO">
       IO
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Joins" href="../../man/joins/">
+    </a></li><li><a class="" href="../../man/joins/" title="Joins">
       Joins
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Split-apply-combine" href="../../man/split_apply_combine/">
+    </a></li><li><a class="" href="../../man/split_apply_combine/" title="Split-apply-combine">
       Split-apply-combine
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Reshaping" href="../../man/reshaping_and_pivoting/">
+    </a></li><li><a class="" href="../../man/reshaping_and_pivoting/" title="Reshaping">
       Reshaping
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Sorting" href="../../man/sorting/">
+    </a></li><li><a class="" href="../../man/sorting/" title="Sorting">
       Sorting
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Formulas" href="../../man/formulas/">
+    </a></li><li><a class="" href="../../man/formulas/" title="Formulas">
       Formulas
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Pooling" href="../../man/pooling/">
+    </a></li><li><a class="" href="../../man/pooling/" title="Pooling">
       Pooling
-    </a>
-    
-  </li>
-
-      
-    </ul>
-  </li>
-
-          
-            
-  <li>
-    <span class="section">API</span>
-    <ul>
-      
-        
-  <li>
-    <a class="current" title="Main types" href="./">
+    </a></li></ul></li><li><span class="section">API</span><ul><li><a class="current" href="./" title="Main types">
       Main types
-    </a>
-    
-      
-        
-      
-      
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Utilities" href="../utilities/">
+    </a></li><li><a class="" href="../utilities/" title="Utilities">
       Utilities
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="Data manipulation" href="../manipulation/">
+    </a></li><li><a class="" href="../manipulation/" title="Data manipulation">
       Data manipulation
-    </a>
-    
-  </li>
-
-      
-    </ul>
-  </li>
-
-          
-            
-  <li>
-    <span class="section">About</span>
-    <ul>
-      
-        
-  <li>
-    <a class="" title="Release notes" href="../../NEWS/">
+    </a></li></ul></li><li><span class="section">About</span><ul><li><a class="" href="../../NEWS/" title="Release notes">
       Release notes
-    </a>
-    
-  </li>
-
-      
-        
-  <li>
-    <a class="" title="License" href="../../LICENSE/">
+    </a></li><li><a class="" href="../../LICENSE/" title="License">
       License
-    </a>
-    
-  </li>
-
-      
-    </ul>
-  </li>
-
-          
-        </ul>
-        
-      </div>
-    </div>
-  </div>
-</nav>
-      </div>
-      <article class="article">
-        <div class="wrapper">
-          
-          <p><a id='Main-Types-1'></a></p>
-<h1 id="main-types">Main Types</h1>
-<ul>
-<li><a href="./#DataFrames.AbstractDataFrame"><code>DataFrames.AbstractDataFrame</code></a></li>
-<li><a href="./#DataFrames.DataFrame"><code>DataFrames.DataFrame</code></a></li>
-<li><a href="./#DataFrames.SubDataFrame"><code>DataFrames.SubDataFrame</code></a></li>
-</ul>
-<p>...</p>
-<p><a id='DataFrames.AbstractDataFrame' href='#DataFrames.AbstractDataFrame'>#</a>
-<strong><code>DataFrames.AbstractDataFrame</code></strong> &mdash; <em>Type</em>.</p>
-<p>An abstract type for which all concrete types expose a database-like interface.</p>
-<p><strong>Common methods</strong></p>
-<p>An AbstractDataFrame is a two-dimensional table with Symbols for column names. An AbstractDataFrame is also similar to an Associative type in that it allows indexing by a key (the columns).</p>
-<p>The following are normally implemented for AbstractDataFrames:</p>
-<ul>
-<li><a href="../utilities/#StatsBase.describe"><code>describe</code></a> : summarize columns</li>
-<li><a href="../utilities/#Base.dump"><code>dump</code></a> : show structure</li>
-<li><code>hcat</code> : horizontal concatenation</li>
-<li><code>vcat</code> : vertical concatenation</li>
-<li><code>names</code> : columns names</li>
-<li><a href="../utilities/#DataFrames.names!"><code>names!</code></a> : set columns names</li>
-<li><a href="../utilities/#DataFrames.rename!"><code>rename!</code></a> : rename columns names based on keyword arguments</li>
-<li><a href="../utilities/#DataFrames.eltypes"><code>eltypes</code></a> : <code>eltype</code> of each column</li>
-<li><code>length</code> : number of columns</li>
-<li><code>size</code> : (nrows, ncols)</li>
-<li><a href="../utilities/#DataArrays.head"><code>head</code></a> : first <code>n</code> rows</li>
-<li><a href="../utilities/#DataArrays.tail"><code>tail</code></a> : last <code>n</code> rows</li>
-<li><code>convert</code> : convert to an array</li>
-<li><code>DataArray</code> : convert to a DataArray</li>
-<li><a href="../utilities/#DataFrames.complete_cases"><code>complete_cases</code></a> : indexes of complete cases (rows with no NA's)</li>
-<li><a href="../utilities/#DataFrames.complete_cases!"><code>complete_cases!</code></a> : remove rows with NA's</li>
-<li><a href="../utilities/#DataFrames.nonunique"><code>nonunique</code></a> : indexes of duplicate rows</li>
-<li><a href="../utilities/#DataFrames.unique!"><code>unique!</code></a> : remove duplicate rows</li>
-<li><code>similar</code> : a DataFrame with similar columns as <code>d</code></li>
-</ul>
-<p><strong>Indexing</strong></p>
-<p>Table columns are accessed (<code>getindex</code>) by a single index that can be a symbol identifier, an integer, or a vector of each. If a single column is selected, just the column object is returned. If multiple columns are selected, some AbstractDataFrame is returned.</p>
-<div class="codehilite"><pre><span></span><span class="n">d</span><span class="p">[:</span><span class="n">colA</span><span class="p">]</span>
-<span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-<span class="n">d</span><span class="p">[[:</span><span class="n">colA</span><span class="p">,</span> <span class="p">:</span><span class="n">colB</span><span class="p">]]</span>
-<span class="n">d</span><span class="p">[[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;</span> <span class="mi">5</span><span class="p">]]</span>
-</pre></div>
-
-
-<p>Rows and columns can be indexed like a <code>Matrix</code> with the added feature of indexing columns by name.</p>
-<div class="codehilite"><pre><span></span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="n">colA</span><span class="p">]</span>
-<span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
-<span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]</span>
-<span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">,[:</span><span class="n">colA</span><span class="p">,</span> <span class="p">:</span><span class="n">colB</span><span class="p">]]</span>
-<span class="n">d</span><span class="p">[:,</span> <span class="p">[:</span><span class="n">colA</span><span class="p">,</span> <span class="p">:</span><span class="n">colB</span><span class="p">]]</span>
-<span class="n">d</span><span class="p">[[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;</span> <span class="mi">5</span><span class="p">],</span> <span class="p">:]</span>
-</pre></div>
-
-
-<p><code>setindex</code> works similarly.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/abstractdataframe.jl#L6-66' class='documenter-source'>source</a><br>
-<a id='DataFrames.DataFrame' href='#DataFrames.DataFrame'>#</a>
-<strong><code>DataFrames.DataFrame</code></strong> &mdash; <em>Type</em>.</p>
-<p>An AbstractDataFrame that stores a set of named columns</p>
-<p>The columns are normally AbstractVectors stored in memory, particularly a Vector, DataVector, or PooledDataVector.</p>
-<p><strong>Constructors</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="p">::</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Any</span><span class="p">},</span> <span class="n">names</span><span class="p">::</span><span class="n">Vector</span><span class="p">{</span><span class="n">Symbol</span><span class="p">})</span>
-<span class="n">DataFrame</span><span class="p">(</span><span class="n">kwargs</span><span class="o">...</span><span class="p">)</span>
-<span class="n">DataFrame</span><span class="p">()</span> <span class="c"># an empty DataFrame</span>
-<span class="n">DataFrame</span><span class="p">(</span><span class="n">t</span><span class="p">::</span><span class="n">Type</span><span class="p">,</span> <span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ncols</span><span class="p">::</span><span class="n">Integer</span><span class="p">)</span> <span class="c"># an empty DataFrame of arbitrary size</span>
-<span class="n">DataFrame</span><span class="p">(</span><span class="n">column_eltypes</span><span class="p">::</span><span class="n">Vector</span><span class="p">,</span> <span class="n">names</span><span class="p">::</span><span class="n">Vector</span><span class="p">,</span> <span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span><span class="p">)</span>
-<span class="n">DataFrame</span><span class="p">(</span><span class="n">ds</span><span class="p">::</span><span class="n">Vector</span><span class="p">{</span><span class="n">Associative</span><span class="p">})</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>columns</code> : a Vector{Any} with each column as contents</li>
-<li><code>names</code> : the column names</li>
-<li><code>kwargs</code> : the key gives the column names, and the value is the   column contents</li>
-<li><code>t</code> : elemental type of all columns</li>
-<li><code>nrows</code>, <code>ncols</code> : number of rows and columns</li>
-<li><code>column_eltypes</code> : elemental type of each column</li>
-<li><code>ds</code> : a vector of Associatives</li>
-</ul>
-<p>Each column in <code>columns</code> should be the same length.</p>
-<p><strong>Notes</strong></p>
-<p>Most of the default constructors convert columns to <code>DataArrays</code>.  The base constructor, <code>DataFrame(columns::Vector{Any}, names::Vector{Symbol})</code> does not convert to <code>DataArrays</code>.</p>
-<p>A <code>DataFrame</code> is a lightweight object. As long as columns are not manipulated, creation of a DataFrame from existing AbstractVectors is inexpensive. For example, indexing on columns is inexpensive, but indexing by rows is expensive because copies are made of each column.</p>
-<p>Because column types can vary, a DataFrame is not type stable. For performance-critical code, do not index into a DataFrame inside of loops.</p>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">()</span>
-<span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">,</span><span class="s">&quot;y&quot;</span><span class="p">,</span><span class="s">&quot;z&quot;</span><span class="p">][</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
-<span class="n">df1</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="kt">Any</span><span class="p">[[</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">],</span> <span class="n">v</span><span class="p">,</span> <span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">)],</span> <span class="p">[:</span><span class="n">A</span><span class="p">,</span> <span class="p">:</span><span class="n">B</span><span class="p">,</span> <span class="p">:</span><span class="n">C</span><span class="p">])</span>  <span class="c"># columns are Arrays</span>
-<span class="n">df2</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="n">v</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>           <span class="c"># columns are DataArrays</span>
-<span class="n">dump</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span>
-<span class="n">dump</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span>
-<span class="n">describe</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span>
-<span class="n">head</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span>
-<span class="n">df1</span><span class="p">[:</span><span class="n">A</span><span class="p">]</span> <span class="o">+</span> <span class="n">df2</span><span class="p">[:</span><span class="n">C</span><span class="p">]</span>
-<span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
-<span class="n">df1</span><span class="p">[[:</span><span class="n">A</span><span class="p">,:</span><span class="n">C</span><span class="p">]]</span>
-<span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="p">[:</span><span class="n">A</span><span class="p">,:</span><span class="n">C</span><span class="p">]]</span>
-<span class="n">df1</span><span class="p">[:,</span> <span class="p">[:</span><span class="n">A</span><span class="p">,:</span><span class="n">C</span><span class="p">]]</span>
-<span class="n">df1</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]]</span>
-<span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="p">:</span><span class="n">C</span><span class="p">]</span>
-<span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="p">:</span><span class="n">C</span><span class="p">]</span> <span class="o">=</span> <span class="mf">40.</span> <span class="o">*</span> <span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="p">:</span><span class="n">C</span><span class="p">]</span>
-<span class="p">[</span><span class="n">df1</span><span class="p">;</span> <span class="n">df2</span><span class="p">]</span>  <span class="c"># vcat</span>
-<span class="p">[</span><span class="n">df1</span>  <span class="n">df2</span><span class="p">]</span>  <span class="c"># hcat</span>
-<span class="n">size</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/dataframe/dataframe.jl#L5-75' class='documenter-source'>source</a><br>
-<a id='DataFrames.SubDataFrame' href='#DataFrames.SubDataFrame'>#</a>
-<strong><code>DataFrames.SubDataFrame</code></strong> &mdash; <em>Type</em>.</p>
-<p>A view of row subsets of an AbstractDataFrame</p>
-<p>A <code>SubDataFrame</code> is meant to be constructed with <code>sub</code>.  A SubDataFrame is used frequently in split/apply sorts of operations.</p>
-<div class="codehilite"><pre><span></span><span class="n">sub</span><span class="p">(</span><span class="n">d</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>d</code> : an AbstractDataFrame</li>
-<li><code>rows</code> : any indexing type for rows, typically an Int,   AbstractVector{Int}, AbstractVector{Bool}, or a Range</li>
-</ul>
-<p><strong>Notes</strong></p>
-<p>A <code>SubDataFrame</code> is an AbstractDataFrame, so expect that most DataFrame functions should work. Such methods include <code>describe</code>, <code>dump</code>, <code>nrow</code>, <code>size</code>, <code>by</code>, <code>stack</code>, and <code>join</code>. Indexing is just like a DataFrame; copies are returned.</p>
-<p>To subset along columns, use standard column indexing as that creates a view to the columns by default. To subset along rows and columns, use column-based indexing with <code>sub</code>.</p>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">rep</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">b</span> <span class="o">=</span> <span class="n">rep</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
-<span class="n">sdf1</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span>
-<span class="n">sdf2</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span> <span class="o">.&gt;</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">sdf3</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]],</span> <span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span> <span class="o">.&gt;</span> <span class="mi">1</span><span class="p">)</span>  <span class="c"># row and column subsetting</span>
-<span class="n">sdf4</span> <span class="o">=</span> <span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">:</span><span class="n">a</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c"># indexing a GroupedDataFrame returns a SubDataFrame</span>
-<span class="n">sdf5</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">sdf1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">sdf1</span><span class="p">[:,[:</span><span class="n">a</span><span class="p">,:</span><span class="n">b</span><span class="p">]]</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/subdataframe/subdataframe.jl#L13-52' class='documenter-source'>source</a><br></p>
-          <aside class="copyright" role="note">
+    </a></li></ul></li></ul></div></div></div></nav></div><article class="article"><div class="wrapper"><p><a id="Main-Types-1"></a></p><h1 id="main-types">Main Types</h1><ul><li><a href="./#DataFrames.AbstractDataFrame"><code>DataFrames.AbstractDataFrame</code></a></li><li><a href="./#DataFrames.DataFrame"><code>DataFrames.DataFrame</code></a></li><li><a href="./#DataFrames.SubDataFrame"><code>DataFrames.SubDataFrame</code></a></li></ul><p>...</p><p><a href="#DataFrames.AbstractDataFrame" id="DataFrames.AbstractDataFrame">#</a><strong><code>DataFrames.AbstractDataFrame</code></strong> — <em>Type</em>.</p><p>An abstract type for which all concrete types expose a database-like interface.</p><p><strong>Common methods</strong></p><p>An AbstractDataFrame is a two-dimensional table with Symbols for column names. An AbstractDataFrame is also similar to an Associative type in that it allows indexing by a key (the columns).</p><p>The following are normally implemented for AbstractDataFrames:</p><ul><li><a href="../utilities/#StatsBase.describe"><code>describe</code></a> : summarize columns</li><li><a href="../utilities/#Base.dump"><code>dump</code></a> : show structure</li><li><code>hcat</code> : horizontal concatenation</li><li><code>vcat</code> : vertical concatenation</li><li><code>names</code> : columns names</li><li><a href="../utilities/#DataFrames.names!"><code>names!</code></a> : set columns names</li><li><a href="../utilities/#DataFrames.rename!"><code>rename!</code></a> : rename columns names based on keyword arguments</li><li><a href="../utilities/#DataFrames.eltypes"><code>eltypes</code></a> : <code>eltype</code> of each column</li><li><code>length</code> : number of columns</li><li><code>size</code> : (nrows, ncols)</li><li><a href="../utilities/#DataArrays.head"><code>head</code></a> : first <code>n</code> rows</li><li><a href="../utilities/#DataArrays.tail"><code>tail</code></a> : last <code>n</code> rows</li><li><code>convert</code> : convert to an array</li><li><code>DataArray</code> : convert to a DataArray</li><li><a href="../utilities/#DataFrames.complete_cases"><code>complete_cases</code></a> : indexes of complete cases (rows with no NA's)</li><li><a href="../utilities/#DataFrames.complete_cases!"><code>complete_cases!</code></a> : remove rows with NA's</li><li><a href="../utilities/#DataFrames.nonunique"><code>nonunique</code></a> : indexes of duplicate rows</li><li><a href="../utilities/#DataFrames.unique!"><code>unique!</code></a> : remove duplicate rows</li><li><code>similar</code> : a DataFrame with similar columns as <code>d</code></li></ul><p><strong>Indexing</strong></p><p>Table columns are accessed (<code>getindex</code>) by a single index that can be a symbol identifier, an integer, or a vector of each. If a single column is selected, just the column object is returned. If multiple columns are selected, some AbstractDataFrame is returned.</p><div class="codehilite"><pre><span></span><span class="n">d</span><span class="p">[:</span><span class="n">colA</span><span class="p">]</span><span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="n">d</span><span class="p">[[:</span><span class="n">colA</span><span class="p">,</span><span class="p">:</span><span class="n">colB</span><span class="p">]]</span><span class="n">d</span><span class="p">[[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;</span><span class="mi">5</span><span class="p">]]</span></pre></div><p>Rows and columns can be indexed like a <code>Matrix</code> with the added feature of indexing columns by name.</p><div class="codehilite"><pre><span></span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="p">:</span><span class="n">colA</span><span class="p">]</span><span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]</span><span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="p">,[:</span><span class="n">colA</span><span class="p">,</span><span class="p">:</span><span class="n">colB</span><span class="p">]]</span><span class="n">d</span><span class="p">[:,</span><span class="p">[:</span><span class="n">colA</span><span class="p">,</span><span class="p">:</span><span class="n">colB</span><span class="p">]]</span><span class="n">d</span><span class="p">[[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;</span><span class="mi">5</span><span class="p">],</span><span class="p">:]</span></pre></div><p><code>setindex</code> works similarly.</p><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/abstractdataframe.jl#L6-66" target="_blank">source</a><br/><a href="#DataFrames.DataFrame" id="DataFrames.DataFrame">#</a><strong><code>DataFrames.DataFrame</code></strong> — <em>Type</em>.</p><p>An AbstractDataFrame that stores a set of named columns</p><p>The columns are normally AbstractVectors stored in memory, particularly a Vector, DataVector, or PooledDataVector.</p><p><strong>Constructors</strong></p><div class="codehilite"><pre><span></span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="p">::</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Any</span><span class="p">},</span><span class="n">names</span><span class="p">::</span><span class="n">Vector</span><span class="p">{</span><span class="n">Symbol</span><span class="p">})</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">kwargs</span><span class="o">...</span><span class="p">)</span><span class="n">DataFrame</span><span class="p">()</span><span class="c"># an empty DataFrame</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">t</span><span class="p">::</span><span class="n">Type</span><span class="p">,</span><span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span><span class="p">,</span><span class="n">ncols</span><span class="p">::</span><span class="n">Integer</span><span class="p">)</span><span class="c"># an empty DataFrame of arbitrary size</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">column_eltypes</span><span class="p">::</span><span class="n">Vector</span><span class="p">,</span><span class="n">names</span><span class="p">::</span><span class="n">Vector</span><span class="p">,</span><span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span><span class="p">)</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">ds</span><span class="p">::</span><span class="n">Vector</span><span class="p">{</span><span class="n">Associative</span><span class="p">})</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>columns</code> : a Vector{Any} with each column as contents</li><li><code>names</code> : the column names</li><li><code>kwargs</code> : the key gives the column names, and the value is the   column contents</li><li><code>t</code> : elemental type of all columns</li><li><code>nrows</code>, <code>ncols</code> : number of rows and columns</li><li><code>column_eltypes</code> : elemental type of each column</li><li><code>ds</code> : a vector of Associatives</li></ul><p>Each column in <code>columns</code> should be the same length.</p><p><strong>Notes</strong></p><p>Most of the default constructors convert columns to <code>DataArrays</code>.  The base constructor, <code>DataFrame(columns::Vector{Any}, names::Vector{Symbol})</code> does not convert to <code>DataArrays</code>.</p><p>A <code>DataFrame</code> is a lightweight object. As long as columns are not manipulated, creation of a DataFrame from existing AbstractVectors is inexpensive. For example, indexing on columns is inexpensive, but indexing by rows is expensive because copies are made of each column.</p><p>Because column types can vary, a DataFrame is not type stable. For performance-critical code, do not index into a DataFrame inside of loops.</p><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">()</span><span class="n">v</span><span class="o">=</span><span class="p">[</span><span class="s">"x"</span><span class="p">,</span><span class="s">"y"</span><span class="p">,</span><span class="s">"z"</span><span class="p">][</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="mi">10</span><span class="p">)]</span><span class="n">df1</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="kt">Any</span><span class="p">[[</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">],</span><span class="n">v</span><span class="p">,</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">)],</span><span class="p">[:</span><span class="n">A</span><span class="p">,</span><span class="p">:</span><span class="n">B</span><span class="p">,</span><span class="p">:</span><span class="n">C</span><span class="p">])</span><span class="c"># columns are Arrays</span><span class="n">df2</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span><span class="o">=</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span><span class="n">B</span><span class="o">=</span><span class="n">v</span><span class="p">,</span><span class="n">C</span><span class="o">=</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="c"># columns are DataArrays</span><span class="n">dump</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span><span class="n">dump</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span><span class="n">describe</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span><span class="n">head</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span><span class="n">df1</span><span class="p">[:</span><span class="n">A</span><span class="p">]</span><span class="o">+</span><span class="n">df2</span><span class="p">[:</span><span class="n">C</span><span class="p">]</span><span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="n">df1</span><span class="p">[[:</span><span class="n">A</span><span class="p">,:</span><span class="n">C</span><span class="p">]]</span><span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="p">[:</span><span class="n">A</span><span class="p">,:</span><span class="n">C</span><span class="p">]]</span><span class="n">df1</span><span class="p">[:,</span><span class="p">[:</span><span class="n">A</span><span class="p">,:</span><span class="n">C</span><span class="p">]]</span><span class="n">df1</span><span class="p">[:,</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]]</span><span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="p">:]</span><span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="p">:</span><span class="n">C</span><span class="p">]</span><span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="p">:</span><span class="n">C</span><span class="p">]</span><span class="o">=</span><span class="mf">40.</span><span class="o">*</span><span class="n">df1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="p">:</span><span class="n">C</span><span class="p">]</span><span class="p">[</span><span class="n">df1</span><span class="p">;</span><span class="n">df2</span><span class="p">]</span><span class="c"># vcat</span><span class="p">[</span><span class="n">df1</span><span class="n">df2</span><span class="p">]</span><span class="c"># hcat</span><span class="n">size</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/dataframe/dataframe.jl#L5-75" target="_blank">source</a><br/><a href="#DataFrames.SubDataFrame" id="DataFrames.SubDataFrame">#</a><strong><code>DataFrames.SubDataFrame</code></strong> — <em>Type</em>.</p><p>A view of row subsets of an AbstractDataFrame</p><p>A <code>SubDataFrame</code> is meant to be constructed with <code>sub</code>.  A SubDataFrame is used frequently in split/apply sorts of operations.</p><div class="codehilite"><pre><span></span><span class="n">sub</span><span class="p">(</span><span class="n">d</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span><span class="n">rows</span><span class="p">)</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>d</code> : an AbstractDataFrame</li><li><code>rows</code> : any indexing type for rows, typically an Int,   AbstractVector{Int}, AbstractVector{Bool}, or a Range</li></ul><p><strong>Notes</strong></p><p>A <code>SubDataFrame</code> is an AbstractDataFrame, so expect that most DataFrame functions should work. Such methods include <code>describe</code>, <code>dump</code>, <code>nrow</code>, <code>size</code>, <code>by</code>, <code>stack</code>, and <code>join</code>. Indexing is just like a DataFrame; copies are returned.</p><p>To subset along columns, use standard column indexing as that creates a view to the columns by default. To subset along rows and columns, use column-based indexing with <code>sub</code>.</p><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">rep</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">b</span><span class="o">=</span><span class="n">rep</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span><span class="n">c</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span><span class="n">sdf1</span><span class="o">=</span><span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="mi">1</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span><span class="n">sdf2</span><span class="o">=</span><span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span><span class="o">.&gt;</span><span class="mi">1</span><span class="p">)</span><span class="n">sdf3</span><span class="o">=</span><span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]],</span><span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span><span class="o">.&gt;</span><span class="mi">1</span><span class="p">)</span><span class="c"># row and column subsetting</span><span class="n">sdf4</span><span class="o">=</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="p">:</span><span class="n">a</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="c"># indexing a GroupedDataFrame returns a SubDataFrame</span><span class="n">sdf5</span><span class="o">=</span><span class="n">sub</span><span class="p">(</span><span class="n">sdf1</span><span class="p">,</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">)</span><span class="n">sdf1</span><span class="p">[:,[:</span><span class="n">a</span><span class="p">,:</span><span class="n">b</span><span class="p">]]</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/subdataframe/subdataframe.jl#L13-52" target="_blank">source</a><br/></p><aside class="copyright" role="note">
             
             Documentation built with
             <a href="http://www.mkdocs.org" target="_blank">MkDocs</a>
@@ -481,74 +112,15 @@
               Material
             </a>
             theme.
-          </aside>
-          
-            <footer class="footer">
-              
-  <nav class="pagination" aria-label="Footer">
-    <div class="previous">
-      
-        <a href="../../man/pooling/" title="Pooling">
-          <span class="direction">
+          </aside><footer class="footer"><nav aria-label="Footer" class="pagination"><div class="previous"><a href="../../man/pooling/" title="Pooling"><span class="direction">
             Previous
-          </span>
-          <div class="page">
-            <div class="button button-previous" role="button" aria-label="Previous">
-              <i class="icon icon-back"></i>
-            </div>
-            <div class="stretch">
-              <div class="title">
+          </span><div class="page"><div aria-label="Previous" class="button button-previous" role="button"><i class="icon icon-back"></i></div><div class="stretch"><div class="title">
                 Pooling
-              </div>
-            </div>
-          </div>
-        </a>
-      
-    </div>
-    <div class="next">
-      
-        <a href="../utilities/" title="Utilities">
-          <span class="direction">
+              </div></div></div></a></div><div class="next"><a href="../utilities/" title="Utilities"><span class="direction">
             Next
-          </span>
-          <div class="page">
-            <div class="stretch">
-              <div class="title">
+          </span><div class="page"><div class="stretch"><div class="title">
                 Utilities
-              </div>
-            </div>
-            <div class="button button-next" role="button" aria-label="Next">
-              <i class="icon icon-forward"></i>
-            </div>
-          </div>
-        </a>
-      
-    </div>
-  </nav>
-
-            </footer>
-          
-        </div>
-      </article>
-      <div class="results" role="status" aria-live="polite">
-        <div class="scrollable">
-          <div class="wrapper">
-            <div class="meta"></div>
-            <div class="list"></div>
-          </div>
-        </div>
-      </div>
-    </main>
-    <script>
+              </div></div><div aria-label="Next" class="button button-next" role="button"><i class="icon icon-forward"></i></div></div></a></div></nav></footer></div></article><div aria-live="polite" class="results" role="status"><div class="scrollable"><div class="wrapper"><div class="meta"></div><div class="list"></div></div></div></div></main><script>
       var base_url = '../..';
       var repo_id  = 'JuliaStats/DataFrames.jl';
-    </script>
-    <script src="../../assets/javascripts/application-997097ee0c.js"></script>
-    
-      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-    
-      <script src="../../assets/mathjaxhelper.js"></script>
-    
-    
-  </body>
-</html>
+    </script><script src="../../assets/javascripts/application-997097ee0c.js"></script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script><script src="../../assets/mathjaxhelper.js"></script></body></HTML>

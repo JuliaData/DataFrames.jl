@@ -1,8 +1,49 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting Started · DataFrames.jl</title><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/getting_started/index.html"/><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li class="current"><a class="toctext" href="getting_started.html">Getting Started</a><ul class="internal"><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></li><li><a class="toctext" href="#Working-with-Data-Frames-1">Working with Data Frames</a></li><li><a class="toctext" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></li></ul></li><li><a class="toctext" href="joins.html">Joins</a></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li><a class="toctext" href="categorical.html">Categorical Data</a></li><li><a class="toctext" href="missing.html">Missing Data</a></li><li><a class="toctext" href="querying_frameworks.html">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/types.html">Types</a></li><li><a class="toctext" href="../lib/functions.html">Functions</a></li><li><a class="toctext" href="../lib/indexing.html">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="getting_started.html">Getting Started</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/getting_started.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Getting Started</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Getting-Started-1" href="#Getting-Started-1">Getting Started</a></h1><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p>The DataFrames package is available through the Julia package system and can be installed using the following commands:</p><pre><code class="language-julia">using Pkg
-Pkg.add(&quot;DataFrames&quot;)</code></pre><p>Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataFrames</code> to bring all of the relevant variables into your current namespace.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly fit the screen size (like in the REPL).</p><p>You can override this behavior by setting the <code>ENV[&quot;COLUMNS&quot;]</code> or <code>ENV[&quot;LINES&quot;]</code> variables to hold the maximum width and height of output in characters respectively before using the <code>notebook</code> function.</p><p>Alternatively, you may want to set the maximum number of data frame rows to print to <code>100</code> and the maximum output width in characters to <code>1000</code> for every Julia session using some Jupyter kernel file (numbers <code>100</code> and <code>1000</code> are only examples and can be adjusted). In such case add a <code>&quot;COLUMNS&quot;: &quot;1000&quot;, &quot;LINES&quot;: &quot;100&quot;</code> entry to the <code>&quot;env&quot;</code> variable in this Jupyter kernel file. See <a href="https://jupyter-client.readthedocs.io/en/stable/kernels.html">here</a> for information about location and specification of Jupyter kernels.</p></div></div><h2><a class="nav-anchor" id="The-DataFrame-Type-1" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></h2><p>Objects of the <code>DataFrame</code> type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a <code>DataFrame</code> is to pass column vectors using keyword arguments or pairs:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+<!DOCTYPE html><HTML lang="en"><head><meta charset="UTF-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Getting Started · DataFrames.jl</title><link href="https://juliadata.github.io/DataFrames.jl/stable/man/getting_started/index.html" rel="canonical"/><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script data-main="../assets/documenter.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
 
-julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body><nav class="toc"><a href="../index.html"><img alt="DataFrames.jl logo" class="logo" src="../assets/logo.png"/></a><h1>DataFrames.jl</h1><select id="version-selector" onchange="window.location.href=this.value" style="visibility: hidden"></select><form action="../search.html" class="search" id="search-form"><input id="search-query" name="q" placeholder="Search docs" type="text"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li class="current"><a class="toctext" href="getting_started.html">Getting Started</a><ul class="internal"><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></li><li><a class="toctext" href="#Working-with-Data-Frames-1">Working with Data Frames</a></li><li><a class="toctext" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></li></ul></li><li><a class="toctext" href="joins.html">Joins</a></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li><a class="toctext" href="categorical.html">Categorical Data</a></li><li><a class="toctext" href="missing.html">Missing Data</a></li><li><a class="toctext" href="querying_frameworks.html">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/types.html">Types</a></li><li><a class="toctext" href="../lib/functions.html">Functions</a></li><li><a class="toctext" href="../lib/indexing.html">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="getting_started.html">Getting Started</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/getting_started.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Getting Started</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" href="#Getting-Started-1" id="Getting-Started-1">Getting Started</a></h1><h2><a class="nav-anchor" href="#Installation-1" id="Installation-1">Installation</a></h2><p>The DataFrames package is available through the Julia package system and can be installed using the following commands:</p><pre><code class="language-julia">using Pkg
+Pkg.add("DataFrames")</code></pre><p>Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataFrames</code> to bring all of the relevant variables into your current namespace.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly fit the screen size (like in the REPL).</p><p>You can override this behavior by setting the <code>ENV["COLUMNS"]</code> or <code>ENV["LINES"]</code> variables to hold the maximum width and height of output in characters respectively before using the <code>notebook</code> function.</p><p>Alternatively, you may want to set the maximum number of data frame rows to print to <code>100</code> and the maximum output width in characters to <code>1000</code> for every Julia session using some Jupyter kernel file (numbers <code>100</code> and <code>1000</code> are only examples and can be adjusted). In such case add a <code>"COLUMNS": "1000", "LINES": "100"</code> entry to the <code>"env"</code> variable in this Jupyter kernel file. See <a href="https://jupyter-client.readthedocs.io/en/stable/kernels.html">here</a> for information about location and specification of Jupyter kernels.</p></div></div><h2><a class="nav-anchor" href="#The-DataFrame-Type-1" id="The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></h2><p>Objects of the <code>DataFrame</code> type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a <code>DataFrame</code> is to pass column vectors using keyword arguments or pairs:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+
+julia&gt; df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 4×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
@@ -11,7 +52,7 @@ julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quo
 │ 2   │ 2     │ F      │
 │ 3   │ 3     │ F      │
 │ 4   │ 4     │ M      │
-</code></pre><p>Columns can be accessed via <code>df.col</code> or <code>df[:col]</code>. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (<code>:col</code> or <code>Symbol(&quot;col&quot;)</code>) rather than strings (<code>&quot;col&quot;</code>). Columns can also be accessed using an integer index specifying their position.</p><pre><code class="language-julia-repl">julia&gt; df.A
+</code></pre><p>Columns can be accessed via <code>df.col</code> or <code>df[:col]</code>. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (<code>:col</code> or <code>Symbol("col")</code>) rather than strings (<code>"col"</code>). Columns can also be accessed using an integer index specifying their position.</p><pre><code class="language-julia-repl">julia&gt; df.A
 4-element Array{Int64,1}:
  1
  2
@@ -31,23 +72,23 @@ julia&gt; df[firstcolumn] === df.A
 true</code></pre><p>Column names can be obtained using the <code>names</code> function:</p><pre><code class="language-julia-repl">julia&gt; names(df)
 2-element Array{Symbol,1}:
  :A
- :B</code></pre><h3><a class="nav-anchor" id="Constructing-Column-by-Column-1" href="#Constructing-Column-by-Column-1">Constructing Column by Column</a></h3><p>It is also possible to start with an empty <code>DataFrame</code> and add columns to it one by one:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame()
+ :B</code></pre><h3><a class="nav-anchor" href="#Constructing-Column-by-Column-1" id="Constructing-Column-by-Column-1">Constructing Column by Column</a></h3><p>It is also possible to start with an empty <code>DataFrame</code> and add columns to it one by one:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame()
 0×0 DataFrame
 
 
 julia&gt; df.A = 1:8
 1:8
 
-julia&gt; df.B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;]
+julia&gt; df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
 8-element Array{String,1}:
- &quot;M&quot;
- &quot;F&quot;
- &quot;F&quot;
- &quot;M&quot;
- &quot;F&quot;
- &quot;M&quot;
- &quot;M&quot;
- &quot;F&quot;
+ "M"
+ "F"
+ "F"
+ "M"
+ "F"
+ "M"
+ "M"
+ "F"
 
 julia&gt; df
 8×2 DataFrame
@@ -70,37 +111,37 @@ julia&gt; size(df, 2)
 
 julia&gt; size(df)
 (8, 2)
-</code></pre><h3><a class="nav-anchor" id="Constructing-Row-by-Row-1" href="#Constructing-Row-by-Row-1">Constructing Row by Row</a></h3><p>It is also possible to fill a <code>DataFrame</code> row by row. Let us construct an empty data frame with two columns (note that the first column can only contain integers and the second one can only contain strings):</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = Int[], B = String[])
-0×2 DataFrame</code></pre><p>Rows can then be added as tuples or vectors, where the order of elements matches that of columns:</p><pre><code class="language-julia-repl">julia&gt; push!(df, (1, &quot;M&quot;))
+</code></pre><h3><a class="nav-anchor" href="#Constructing-Row-by-Row-1" id="Constructing-Row-by-Row-1">Constructing Row by Row</a></h3><p>It is also possible to fill a <code>DataFrame</code> row by row. Let us construct an empty data frame with two columns (note that the first column can only contain integers and the second one can only contain strings):</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = Int[], B = String[])
+0×2 DataFrame</code></pre><p>Rows can then be added as tuples or vectors, where the order of elements matches that of columns:</p><pre><code class="language-julia-repl">julia&gt; push!(df, (1, "M"))
 1×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 1     │ M      │
 
-julia&gt; push!(df, [2, &quot;N&quot;])
+julia&gt; push!(df, [2, "N"])
 2×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 1     │ M      │
-│ 2   │ 2     │ N      │</code></pre><p>Rows can also be added as <code>Dict</code>s, where the dictionary keys match the column names:</p><pre><code class="language-julia-repl">julia&gt; push!(df, Dict(:B =&gt; &quot;F&quot;, :A =&gt; 3))
+│ 2   │ 2     │ N      │</code></pre><p>Rows can also be added as <code>Dict</code>s, where the dictionary keys match the column names:</p><pre><code class="language-julia-repl">julia&gt; push!(df, Dict(:B =&gt; "F", :A =&gt; 3))
 3×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 1     │ M      │
 │ 2   │ 2     │ N      │
-│ 3   │ 3     │ F      │</code></pre><p>Note that constructing a <code>DataFrame</code> row by row is significantly less performant than constructing it all at once, or column by column. For many use-cases this will not matter, but for very large <code>DataFrame</code>s  this may be a consideration.</p><h3><a class="nav-anchor" id="Constructing-from-another-table-type-1" href="#Constructing-from-another-table-type-1">Constructing from another table type</a></h3><p>DataFrames supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface for interacting with tabular data. This means that a <code>DataFrame</code> can be used as a &quot;source&quot; to any package that expects a Tables.jl interface input, (file format packages, data manipulation packages, etc.). A <code>DataFrame</code> can also be a sink for any Tables.jl interface input. Some example uses are:</p><pre><code class="language-julia">df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
+│ 3   │ 3     │ F      │</code></pre><p>Note that constructing a <code>DataFrame</code> row by row is significantly less performant than constructing it all at once, or column by column. For many use-cases this will not matter, but for very large <code>DataFrame</code>s  this may be a consideration.</p><h3><a class="nav-anchor" href="#Constructing-from-another-table-type-1" id="Constructing-from-another-table-type-1">Constructing from another table type</a></h3><p>DataFrames supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface for interacting with tabular data. This means that a <code>DataFrame</code> can be used as a "source" to any package that expects a Tables.jl interface input, (file format packages, data manipulation packages, etc.). A <code>DataFrame</code> can also be a sink for any Tables.jl interface input. Some example uses are:</p><pre><code class="language-julia">df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
 
 # write DataFrame out to CSV file
-CSV.write(&quot;dataframe.csv&quot;, df)
+CSV.write("dataframe.csv", df)
 
 # store DataFrame in an SQLite database table
-SQLite.load!(df, db, &quot;dataframe_table&quot;)
+SQLite.load!(df, db, "dataframe_table")
 
 # transform a DataFrame through Query.jl package
-df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><h2><a class="nav-anchor" id="Working-with-Data-Frames-1" href="#Working-with-Data-Frames-1">Working with Data Frames</a></h2><h3><a class="nav-anchor" id="Examining-the-Data-1" href="#Examining-the-Data-1">Examining the Data</a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><h2><a class="nav-anchor" href="#Working-with-Data-Frames-1" id="Working-with-Data-Frames-1">Working with Data Frames</a></h2><h3><a class="nav-anchor" href="#Examining-the-Data-1" id="Examining-the-Data-1">Examining the Data</a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
 500×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -137,13 +178,13 @@ julia&gt; last(df, 6)
 │ 4   │ 995   │ 10    │ 498   │
 │ 5   │ 997   │ 10    │ 499   │
 │ 6   │ 999   │ 10    │ 500   │</code></pre><p>Also notice that when <code>DataFrame</code> is printed to the console or rendered in HTML (e.g. in Jupyter Notebook) you get an information about type of elements held in its columns. For example in this case:</p><pre><code class="language-julia-repl">julia&gt; DataFrame(a = 1:2, b = [1.0, missing],
-                 c = categorical(&#39;a&#39;:&#39;b&#39;), d = [1//2, missing])
+                 c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
 │ Row │ a     │ b        │ c            │ d         │
 │     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
 ├─────┼───────┼──────────┼──────────────┼───────────┤
-│ 1   │ 1     │ 1.0      │ &#39;a&#39;          │ 1//2      │
-│ 2   │ 2     │ missing  │ &#39;b&#39;          │ missing   │</code></pre><p>we can observe that:</p><ul><li>the first column <code>:a</code> can hold elements of type <code>Int64</code>;</li><li>the second column <code>:b</code> can hold <code>Float64</code> or <code>Missing</code>, which is indicated by <code>⍰</code> printed after the name of type;</li><li>the third column <code>:c</code> can hold categorical data; here we notice <code>…</code>, which indicates that the actual name of the type was long and got truncated;</li><li>the type information in fourth column <code>:d</code> presents a situation where the name is both truncated and the type allows <code>Missing</code>.</li></ul><h3><a class="nav-anchor" id="Taking-a-Subset-1" href="#Taking-a-Subset-1">Taking a Subset</a></h3><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
+│ 1   │ 1     │ 1.0      │ 'a'          │ 1//2      │
+│ 2   │ 2     │ missing  │ 'b'          │ missing   │</code></pre><p>we can observe that:</p><ul><li>the first column <code>:a</code> can hold elements of type <code>Int64</code>;</li><li>the second column <code>:b</code> can hold <code>Float64</code> or <code>Missing</code>, which is indicated by <code>⍰</code> printed after the name of type;</li><li>the third column <code>:c</code> can hold categorical data; here we notice <code>…</code>, which indicates that the actual name of the type was long and got truncated;</li><li>the type information in fourth column <code>:d</code> presents a situation where the name is both truncated and the type allows <code>Missing</code>.</li></ul><h3><a class="nav-anchor" href="#Taking-a-Subset-1" id="Taking-a-Subset-1">Taking a Subset</a></h3><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
 3×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -234,7 +275,7 @@ true</code></pre><p>In the first cases, <code>[:A]</code> is a vector, indicatin
 ├─────┼───────┼───────┼───────┤
 │ 1   │ 1     │ 2     │ 3     │
 
-julia&gt; df[r&quot;x&quot;]
+julia&gt; df[r"x"]
 1×2 DataFrame
 │ Row │ x1    │ x2    │
 │     │ Int64 │ Int64 │
@@ -269,7 +310,7 @@ julia&gt; df[(df.A .&gt; 500) .&amp; (300 .&lt; df.C .&lt; 400), :]
 │ 96  │ 791   │ 8     │ 396   │
 │ 97  │ 793   │ 8     │ 397   │
 │ 98  │ 795   │ 8     │ 398   │
-│ 99  │ 797   │ 8     │ 399   │</code></pre><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="querying_frameworks.html#Data-manipulation-frameworks-1">Data manipulation frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+│ 99  │ 797   │ 8     │ 399   │</code></pre><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="querying_frameworks.html#Data-manipulation-frameworks-1">Data manipulation frameworks</a> section for more information.</p><h3><a class="nav-anchor" href="#Summarizing-Data-1" id="Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 julia&gt; describe(df)
 2×8 DataFrame
@@ -281,7 +322,7 @@ julia&gt; describe(df)
 </code></pre><p>Of course, one can also compute descrptive statistics directly on individual columns:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
 
 julia&gt; mean(df.A)
-2.5</code></pre><h3><a class="nav-anchor" id="Column-Wise-Operations-1" href="#Column-Wise-Operations-1">Column-Wise Operations</a></h3><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>aggregate</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+2.5</code></pre><h3><a class="nav-anchor" href="#Column-Wise-Operations-1" id="Column-Wise-Operations-1">Column-Wise Operations</a></h3><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>aggregate</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
 │ Row │ A     │ B       │
 │     │ Int64 │ Float64 │
@@ -303,7 +344,7 @@ julia&gt; aggregate(df, [sum, prod])
 │ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
 │     │ Int64 │ Float64 │ Int64  │ Float64 │
 ├─────┼───────┼─────────┼────────┼─────────┤
-│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │</code></pre><h3><a class="nav-anchor" id="Handling-of-Columns-Stored-in-a-DataFrame-1" href="#Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │</code></pre><h3><a class="nav-anchor" href="#Handling-of-Columns-Stored-in-a-DataFrame-1" id="Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
 │ Row │ A     │ B       │
 │     │ Int64 │ Float64 │
@@ -358,7 +399,7 @@ julia&gt; x
 3-element Array{Int64,1}:
  100
    2
-   3</code></pre><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../lib/functions.html#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function) are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code> <code>df</code> using the syntaxes <code>df.col</code>, <code>df[:col]</code>, via the <a href="../lib/functions.html#DataFrames.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function).</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+   3</code></pre><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../lib/functions.html#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function) are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code><code>df</code> using the syntaxes <code>df.col</code>, <code>df[:col]</code>, via the <a href="../lib/functions.html#DataFrames.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code> (or with the <code>DataFrame!</code> function).</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
 
 julia&gt; df = DataFrame(x=x)
 3×1 DataFrame
@@ -376,6 +417,6 @@ julia&gt; df[1] !== x
 true
 
 julia&gt; eachcol(df, false)[1] === df.x
-true</code></pre><p>Note that a column obtained from a <code>DataFrame</code> using one of these methods should not be mutated without caution.</p><p>The exact rules of handling columns of a <code>DataFrame</code> are explained in <a href="../lib/types.html#man-columnhandling-1">The design of handling of columns of a <code>DataFrame</code></a> section of the manual.</p><h2><a class="nav-anchor" id="Importing-and-Exporting-Data-(I/O)-1" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
-Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">CSV.read(input)</code></pre><p>A <code>DataFrame</code> can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
-CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></html>
+true</code></pre><p>Note that a column obtained from a <code>DataFrame</code> using one of these methods should not be mutated without caution.</p><p>The exact rules of handling columns of a <code>DataFrame</code> are explained in <a href="../lib/types.html#man-columnhandling-1">The design of handling of columns of a <code>DataFrame</code></a> section of the manual.</p><h2><a class="nav-anchor" href="#Importing-and-Exporting-Data-(I/O)-1" id="Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
+Pkg.add("CSV")</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">CSV.read(input)</code></pre><p>A <code>DataFrame</code> can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
+CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></HTML>

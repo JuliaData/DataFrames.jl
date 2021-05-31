@@ -1,783 +1,137 @@
+<!DOCTYPE html><HTML class="no-js"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta content="package for working with tabular data in Julia" name="description"/><link href="../../assets/images/favicon.png" rel="shortcut icon"/><meta content="mkdocs-0.16.3, mkdocs-material-1.5.4" name="generator"/><title>Getting Started · DataFrames.jl</title><link href="https://juliadata.github.io/DataFrames.jl/stable/man/getting_started/index.html" rel="canonical"/><script src="../../assets/javascripts/modernizr-56ade86843.js"></script><link href="../../assets/stylesheets/application-b1a1975878.css" rel="stylesheet"/><link href="../../assets/stylesheets/application-f78e5cb881.palette.css" rel="stylesheet"/><link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono" rel="stylesheet"/><style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/><link href="../../assets/Documenter.css" rel="stylesheet"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
 
-<!DOCTYPE html>
-<html class="no-js">
-  <head>
-    
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="package for working with tabular data in Julia">
-      
-      
-      
-      
-        <link rel="shortcut icon" href="../../assets/images/favicon.png">
-      
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.4">
-    
-    
-      
-        <title>Getting Started · DataFrames.jl</title>
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
 
-     
-        <link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/getting_started/index.html"/>      
-    
-    
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
-      
-        <link rel="stylesheet" href="../../assets/stylesheets/application-f78e5cb881.palette.css">
-      
-    
-    
-      
-        
-        
-        
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
-        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
-      
-      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    
-    
-      <link rel="stylesheet" href="../../assets/Documenter.css">
-    
-    
-  </head>
-  
-  
-  
-  
-    <body data-md-color-primary="indigo" data-md-color-accent="blue">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
-    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
-    
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <a href="../.." title="DataFrames.jl" class="md-icon md-icon--home md-header-nav__button">
-          </a>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <span class="md-flex__ellipsis md-header-nav__title">
-          
-            
-              
-                <span class="md-header-nav__parent">
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body data-md-color-accent="blue" data-md-color-primary="indigo"><svg class="md-svg"><defs><svg height="448" id="github" viewBox="0 0 416 448" width="416" xmlns="http://www.w3.org/2000/svg"><path d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z" fill="currentColor"></path></svg></defs></svg><input class="md-toggle" data-md-toggle="drawer" id="drawer" type="checkbox"/><input class="md-toggle" data-md-toggle="search" id="search" type="checkbox"/><label class="md-overlay" data-md-component="overlay" for="drawer"></label><header class="md-header" data-md-component="header"><nav class="md-header-nav md-grid"><div class="md-flex"><div class="md-flex__cell md-flex__cell--shrink"><a class="md-icon md-icon--home md-header-nav__button" href="../.." title="DataFrames.jl"></a></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label></div><div class="md-flex__cell md-flex__cell--stretch"><span class="md-flex__ellipsis md-header-nav__title"><span class="md-header-nav__parent">
                   User guide
                 </span>
               
             
             Getting Started
           
-        </span>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
-          
-<div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
-  <div class="md-search__inner">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
-      <label class="md-icon md-search__icon" for="search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
-          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+        </span></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--search md-header-nav__button" for="search"></label><div class="md-search" data-md-component="search"><div class="md-search__overlay"></div><div class="md-search__inner"><form class="md-search__form" name="search"><input accesskey="s" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/><label class="md-icon md-search__icon" for="search"></label><button class="md-icon md-search__icon" data-md-component="reset" type="reset">close</button></form><div class="md-search__output"><div class="md-search__scrollwrap" data-md-scrollfix=""><div class="md-search-result" data-md-component="result"><div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
-          </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <div class="md-header-nav__source">
-          
-            
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+          </div><ol class="md-search-result__list"></ol></div></div></div></div></div></div><div class="md-flex__cell md-flex__cell--shrink"><div class="md-header-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-          
-        </div>
-      </div>
-    </div>
-  </nav>
-</header>
-    
-    <div class="md-container">
-      
-      
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="drawer">
-    
-      <i class="md-icon md-icon--home md-nav__button"></i>
+    </div></a></div></div></div></nav></header><div class="md-container"><main class="md-main"><div class="md-main__inner md-grid" data-md-component="container"><div class="md-sidebar md-sidebar--primary" data-md-component="navigation"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--primary" data-md-level="0"><label class="md-nav__title md-nav__title--site" for="drawer"><i class="md-icon md-icon--home md-nav__button"></i>
     
     DataFrames.jl
-  </label>
-  
-    <div class="md-nav__source">
-      
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+  </label><div class="md-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-    </div>
-  
-  <ul class="md-nav__list" data-md-scrollfix>
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../.." title="Introduction" class="md-nav__link">
+    </div></a></div><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../.." title="Introduction">
       Introduction
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
-    
-    <label class="md-nav__link" for="nav-2">
+    </a></li><li class="md-nav__item md-nav__item--active md-nav__item--nested"><input checked="" class="md-toggle md-nav__toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/><label class="md-nav__link" for="nav-2">
       User guide
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-2">
         User guide
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item md-nav__item--active"><input class="md-toggle md-nav__toggle" data-md-toggle="toc" id="toc" type="checkbox"/><label class="md-nav__link md-nav__link--active" for="toc">
         Getting Started
-      </label>
-    
-    <a href="./" title="Getting Started" class="md-nav__link md-nav__link--active">
+      </label><a class="md-nav__link md-nav__link--active" href="./" title="Getting Started">
       Getting Started
-    </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#installation" title="Installation" class="md-nav__link">
+    </a><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#installation" title="Installation">
     Installation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-na-value" title="The NA Value" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#the-na-value" title="The NA Value">
     The NA Value
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-dataarray-type" title="The DataArray Type" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#the-dataarray-type" title="The DataArray Type">
     The DataArray Type
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-dataframe-type" title="The DataFrame Type" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#the-dataframe-type" title="The DataFrame Type">
     The DataFrame Type
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-classic-data-sets" title="Accessing Classic Data Sets" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#accessing-classic-data-sets" title="Accessing Classic Data Sets">
     Accessing Classic Data Sets
-  </a>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-    
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../io/" title="IO" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="../io/" title="IO">
       IO
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../joins/" title="Joins" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../joins/" title="Joins">
       Joins
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../split_apply_combine/" title="Split-apply-combine" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../split_apply_combine/" title="Split-apply-combine">
       Split-apply-combine
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../reshaping_and_pivoting/" title="Reshaping" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../reshaping_and_pivoting/" title="Reshaping">
       Reshaping
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../sorting/" title="Sorting" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../sorting/" title="Sorting">
       Sorting
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../formulas/" title="Formulas" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../formulas/" title="Formulas">
       Formulas
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../pooling/" title="Pooling" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../pooling/" title="Pooling">
       Pooling
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../querying_frameworks/" title="Querying frameworks" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../querying_frameworks/" title="Querying frameworks">
       Querying frameworks
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
-    
-    <label class="md-nav__link" for="nav-3">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/><label class="md-nav__link" for="nav-3">
       API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-3">
         API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../lib/maintypes/" title="Main types" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../../lib/maintypes/" title="Main types">
       Main types
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../lib/utilities/" title="Utilities" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../lib/utilities/" title="Utilities">
       Utilities
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../lib/manipulation/" title="Data manipulation" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../lib/manipulation/" title="Data manipulation">
       Data manipulation
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/><label class="md-nav__link" for="nav-4">
       About
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-4">
         About
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../NEWS/" title="Release notes" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../../NEWS/" title="Release notes">
       Release notes
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../LICENSE/" title="License" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../LICENSE/" title="License">
       License
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-  </ul>
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-            
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#installation" title="Installation" class="md-nav__link">
+    </a></li></ul></nav></li></ul></nav></div></div></div><div class="md-sidebar md-sidebar--secondary" data-md-component="toc"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#installation" title="Installation">
     Installation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-na-value" title="The NA Value" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#the-na-value" title="The NA Value">
     The NA Value
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-dataarray-type" title="The DataArray Type" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#the-dataarray-type" title="The DataArray Type">
     The DataArray Type
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-dataframe-type" title="The DataFrame Type" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#the-dataframe-type" title="The DataFrame Type">
     The DataFrame Type
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-classic-data-sets" title="Accessing Classic Data Sets" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#accessing-classic-data-sets" title="Accessing Classic Data Sets">
     Accessing Classic Data Sets
-  </a>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-          
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/man/getting_started.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
-                
-                
-                <p><a id='Getting-Started-1'></a></p>
-<h1 id="getting-started">Getting Started</h1>
-<p><a id='Installation-1'></a></p>
-<h2 id="installation">Installation</h2>
-<p>The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataArrays, DataFrames</code> to bring all of the relevant variables into your current namespace. In addition, we will make use of the <code>RDatasets</code> package, which provides access to hundreds of classical data sets.</p>
-<p><a id='The-NA-Value-1'></a></p>
-<h2 id="the-na-value">The <code>NA</code> Value</h2>
-<p>To get started, let's examine the <code>NA</code> value. Type the following into the REPL:</p>
-<div class="codehilite"><pre><span></span><span class="n">NA</span>
-</pre></div>
-
-
-<p>One of the essential properties of <code>NA</code> is that it poisons other items. To see this, try to add something like <code>1</code> to <code>NA</code>:</p>
-<div class="codehilite"><pre><span></span><span class="mi">1</span> <span class="o">+</span> <span class="n">NA</span>
-</pre></div>
-
-
-<p><a id='The-DataArray-Type-1'></a></p>
-<h2 id="the-dataarray-type">The <code>DataArray</code> Type</h2>
-<p>Now that we see that <code>NA</code> is working, let's insert one into a <code>DataArray</code>. We'll create one now using the <code>@data</code> macro:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span> <span class="o">=</span> <span class="nd">@data</span><span class="p">([</span><span class="n">NA</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-</pre></div>
-
-
-<p>To see how <code>NA</code> poisons even complex calculations, let's try to take the mean of the five numbers stored in <code>dv</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
-</pre></div>
-
-
-<p>In many cases we're willing to just ignore <code>NA</code> values and remove them from our vector. We can do that using the <code>dropna</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="n">dropna</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
-<span class="n">mean</span><span class="p">(</span><span class="n">dropna</span><span class="p">(</span><span class="n">dv</span><span class="p">))</span>
-</pre></div>
-
-
-<p>Instead of removing <code>NA</code> values, you can try to conver the <code>DataArray</code> into a normal Julia <code>Array</code> using <code>convert</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">convert</span><span class="p">(</span><span class="kt">Array</span><span class="p">,</span> <span class="n">dv</span><span class="p">)</span>
-</pre></div>
-
-
-<p>This fails in the presence of <code>NA</code> values, but will succeed if there are no <code>NA</code> values:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="n">convert</span><span class="p">(</span><span class="kt">Array</span><span class="p">,</span> <span class="n">dv</span><span class="p">)</span>
-</pre></div>
-
-
-<p>In addition to removing <code>NA</code> values and hoping they won't occur, you can also replace any <code>NA</code> values using the <code>convert</code> function, which takes a replacement value as an argument:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span> <span class="o">=</span> <span class="nd">@data</span><span class="p">([</span><span class="n">NA</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-<span class="n">mean</span><span class="p">(</span><span class="n">convert</span><span class="p">(</span><span class="kt">Array</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
-</pre></div>
-
-
-<p>Which strategy for dealing with <code>NA</code> values is most appropriate will typically depend on the specific details of your data analysis pathway.</p>
-<p>Although the examples above employed only 1D <code>DataArray</code> objects, the <code>DataArray</code> type defines a completely generic N-dimensional array type. Operations on generic <code>DataArray</code> objects work in higher dimensions in the same way that they work on Julia's Base <code>Array</code> type:</p>
-<div class="codehilite"><pre><span></span><span class="n">dm</span> <span class="o">=</span> <span class="nd">@data</span><span class="p">([</span><span class="n">NA</span> <span class="mf">0.0</span><span class="p">;</span> <span class="mf">0.0</span> <span class="mf">1.0</span><span class="p">])</span>
-<span class="n">dm</span> <span class="o">*</span> <span class="n">dm</span>
-</pre></div>
-
-
-<p><a id='The-DataFrame-Type-1'></a></p>
-<h2 id="the-dataframe-type">The <code>DataFrame</code> Type</h2>
-<p>The <code>DataFrame</code> type can be used to represent data tables, each column of which is a <code>DataArray</code>. You can specify the columns using keyword arguments:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;M&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;M&quot;</span><span class="p">])</span>
-</pre></div>
-
-
-<p>It is also possible to construct a <code>DataFrame</code> in stages:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">()</span>
-<span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">A</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="mi">8</span>
-<span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">B</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;M&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;M&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;M&quot;</span><span class="p">,</span> <span class="s">&quot;M&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">]</span>
-<span class="n">df</span>
-</pre></div>
-
-
-<p>The <code>DataFrame</code> we build in this way has 8 rows and 2 columns. You can check this using <code>size</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="n">nrows</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">ncols</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-</pre></div>
-
-
-<p>We can also look at small subsets of the data in a couple of different ways:</p>
-<div class="codehilite"><pre><span></span><span class="n">head</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-<span class="n">tail</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-
-<span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">,</span> <span class="o">:</span><span class="p">]</span>
-</pre></div>
-
-
-<p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">describe</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</pre></div>
-
-
-<p>To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the <code>DataFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</pre></div>
-
-
-<p>We could also have used column names to access individual columns:</p>
-<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">A</span><span class="p">])</span>
-<span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">A</span><span class="p">])</span>
-</pre></div>
-
-
-<p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="n">colwise</span><span class="p">(</span><span class="n">cumsum</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-</pre></div>
-
-
-<p><a id='Accessing-Classic-Data-Sets-1'></a></p>
-<h2 id="accessing-classic-data-sets">Accessing Classic Data Sets</h2>
-<p>To see more of the functionality for working with <code>DataFrame</code> objects, we need a more complex data set to work with. We'll use the <code>RDatasets</code> package, which provides access to many of the classical data sets that are available in R.</p>
-<p>For example, we can access Fisher's iris data set using the following functions:</p>
-<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">RDatasets</span>
-<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
-<span class="n">head</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
-</pre></div>
-
-
-<p>In the next section, we'll discuss generic I/O strategy for reading and writing <code>DataFrame</code> objects that you can use to import and export your own data files.</p>
-                
-                  
-                
-              
-              
-                
-              
-            </article>
-          </div>
-        </div>
-      </main>
-      
-        
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../.." title="Introduction" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+  </a></li></ul></nav></div></div></div><div class="md-content"><article class="md-content__inner md-typeset"><a class="md-icon md-content__icon" href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/man/getting_started.md" title="Edit this page">edit</a><p><a id="Getting-Started-1"></a></p><h1 id="getting-started">Getting Started</h1><p><a id="Installation-1"></a></p><h2 id="installation">Installation</h2><p>The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataArrays, DataFrames</code> to bring all of the relevant variables into your current namespace. In addition, we will make use of the <code>RDatasets</code> package, which provides access to hundreds of classical data sets.</p><p><a id="The-NA-Value-1"></a></p><h2 id="the-na-value">The <code>NA</code> Value</h2><p>To get started, let's examine the <code>NA</code> value. Type the following into the REPL:</p><div class="codehilite"><pre><span></span><span class="n">NA</span></pre></div><p>One of the essential properties of <code>NA</code> is that it poisons other items. To see this, try to add something like <code>1</code> to <code>NA</code>:</p><div class="codehilite"><pre><span></span><span class="mi">1</span><span class="o">+</span><span class="n">NA</span></pre></div><p><a id="The-DataArray-Type-1"></a></p><h2 id="the-dataarray-type">The <code>DataArray</code> Type</h2><p>Now that we see that <code>NA</code> is working, let's insert one into a <code>DataArray</code>. We'll create one now using the <code>@data</code> macro:</p><div class="codehilite"><pre><span></span><span class="n">dv</span><span class="o">=</span><span class="nd">@data</span><span class="p">([</span><span class="n">NA</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span></pre></div><p>To see how <code>NA</code> poisons even complex calculations, let's try to take the mean of the five numbers stored in <code>dv</code>:</p><div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span></pre></div><p>In many cases we're willing to just ignore <code>NA</code> values and remove them from our vector. We can do that using the <code>dropna</code> function:</p><div class="codehilite"><pre><span></span><span class="n">dropna</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span><span class="n">mean</span><span class="p">(</span><span class="n">dropna</span><span class="p">(</span><span class="n">dv</span><span class="p">))</span></pre></div><p>Instead of removing <code>NA</code> values, you can try to conver the <code>DataArray</code> into a normal Julia <code>Array</code> using <code>convert</code>:</p><div class="codehilite"><pre><span></span><span class="n">convert</span><span class="p">(</span><span class="kt">Array</span><span class="p">,</span><span class="n">dv</span><span class="p">)</span></pre></div><p>This fails in the presence of <code>NA</code> values, but will succeed if there are no <code>NA</code> values:</p><div class="codehilite"><pre><span></span><span class="n">dv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="mi">3</span><span class="n">convert</span><span class="p">(</span><span class="kt">Array</span><span class="p">,</span><span class="n">dv</span><span class="p">)</span></pre></div><p>In addition to removing <code>NA</code> values and hoping they won't occur, you can also replace any <code>NA</code> values using the <code>convert</code> function, which takes a replacement value as an argument:</p><div class="codehilite"><pre><span></span><span class="n">dv</span><span class="o">=</span><span class="nd">@data</span><span class="p">([</span><span class="n">NA</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span><span class="n">mean</span><span class="p">(</span><span class="n">convert</span><span class="p">(</span><span class="kt">Array</span><span class="p">,</span><span class="n">dv</span><span class="p">,</span><span class="mi">11</span><span class="p">))</span></pre></div><p>Which strategy for dealing with <code>NA</code> values is most appropriate will typically depend on the specific details of your data analysis pathway.</p><p>Although the examples above employed only 1D <code>DataArray</code> objects, the <code>DataArray</code> type defines a completely generic N-dimensional array type. Operations on generic <code>DataArray</code> objects work in higher dimensions in the same way that they work on Julia's Base <code>Array</code> type:</p><div class="codehilite"><pre><span></span><span class="n">dm</span><span class="o">=</span><span class="nd">@data</span><span class="p">([</span><span class="n">NA</span><span class="mf">0.0</span><span class="p">;</span><span class="mf">0.0</span><span class="mf">1.0</span><span class="p">])</span><span class="n">dm</span><span class="o">*</span><span class="n">dm</span></pre></div><p><a id="The-DataFrame-Type-1"></a></p><h2 id="the-dataframe-type">The <code>DataFrame</code> Type</h2><p>The <code>DataFrame</code> type can be used to represent data tables, each column of which is a <code>DataArray</code>. You can specify the columns using keyword arguments:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span><span class="o">=</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">,</span><span class="n">B</span><span class="o">=</span><span class="p">[</span><span class="s">"M"</span><span class="p">,</span><span class="s">"F"</span><span class="p">,</span><span class="s">"F"</span><span class="p">,</span><span class="s">"M"</span><span class="p">])</span></pre></div><p>It is also possible to construct a <code>DataFrame</code> in stages:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">()</span><span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">A</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span><span class="o">:</span><span class="mi">8</span><span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">B</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="s">"M"</span><span class="p">,</span><span class="s">"F"</span><span class="p">,</span><span class="s">"F"</span><span class="p">,</span><span class="s">"M"</span><span class="p">,</span><span class="s">"F"</span><span class="p">,</span><span class="s">"M"</span><span class="p">,</span><span class="s">"M"</span><span class="p">,</span><span class="s">"F"</span><span class="p">]</span><span class="n">df</span></pre></div><p>The <code>DataFrame</code> we build in this way has 8 rows and 2 columns. You can check this using <code>size</code> function:</p><div class="codehilite"><pre><span></span><span class="n">nrows</span><span class="o">=</span><span class="n">size</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="n">ncols</span><span class="o">=</span><span class="n">size</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span></pre></div><p>We can also look at small subsets of the data in a couple of different ways:</p><div class="codehilite"><pre><span></span><span class="n">head</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="n">tail</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="mi">3</span><span class="p">,</span><span class="o">:</span><span class="p">]</span></pre></div><p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p><div class="codehilite"><pre><span></span><span class="n">describe</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></pre></div><p>To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the <code>DataFrame</code>:</p><div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></pre></div><p>We could also have used column names to access individual columns:</p><div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">A</span><span class="p">])</span><span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="o">:</span><span class="n">A</span><span class="p">])</span></pre></div><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span><span class="o">=</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">,</span><span class="n">B</span><span class="o">=</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span><span class="n">colwise</span><span class="p">(</span><span class="n">cumsum</span><span class="p">,</span><span class="n">df</span><span class="p">)</span></pre></div><p><a id="Accessing-Classic-Data-Sets-1"></a></p><h2 id="accessing-classic-data-sets">Accessing Classic Data Sets</h2><p>To see more of the functionality for working with <code>DataFrame</code> objects, we need a more complex data set to work with. We'll use the <code>RDatasets</code> package, which provides access to many of the classical data sets that are available in R.</p><p>For example, we can access Fisher's iris data set using the following functions:</p><div class="codehilite"><pre><span></span><span class="k">using</span><span class="n">RDatasets</span><span class="n">iris</span><span class="o">=</span><span class="n">dataset</span><span class="p">(</span><span class="s">"datasets"</span><span class="p">,</span><span class="s">"iris"</span><span class="p">)</span><span class="n">head</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span></pre></div><p>In the next section, we'll discuss generic I/O strategy for reading and writing <code>DataFrame</code> objects that you can use to import and export your own data files.</p></article></div></div></main><footer class="md-footer"><div class="md-footer-nav"><nav class="md-footer-nav__inner md-grid"><a class="md-flex md-footer-nav__link md-footer-nav__link--prev" href="../.." rel="prev" title="Introduction"><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-back md-footer-nav__button"></i></div><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Introduction
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../io/" title="IO" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+              </span></div></a><a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="../io/" rel="next" title="IO"><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Next
                 </span>
                 IO
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
+              </span></div><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i></div></a></nav></div><div class="md-footer-meta md-typeset"><div class="md-footer-meta__inner md-grid"><div class="md-footer-copyright">
         
         powered by
         <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
         and
         <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
-          Material for MkDocs</a>
-      </div>
-      
-        
-      
-    </div>
-  </div>
-</footer>
-      
-    </div>
-    
-      <script src="../../assets/javascripts/application-0b7df094bf.js"></script>
-      <script>app.initialize({url:{base:"../.."}})</script>
-      
-        <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-      
-        <script src="../../assets/mathjaxhelper.js"></script>
-      
-    
-    
-      
-    
-  </body>
-</html>
+          Material for MkDocs</a></div></div></div></footer></div><script src="../../assets/javascripts/application-0b7df094bf.js"></script><script>app.initialize({url:{base:"../.."}})</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script><script src="../../assets/mathjaxhelper.js"></script></body></HTML>

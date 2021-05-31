@@ -1,764 +1,129 @@
+<!DOCTYPE html><HTML class="no-js"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta content="package for working with tabular data in Julia" name="description"/><link href="../../assets/images/favicon.png" rel="shortcut icon"/><meta content="mkdocs-0.16.3, mkdocs-material-1.5.4" name="generator"/><title>IO - DataFrames.jl</title><script src="../../assets/javascripts/modernizr-56ade86843.js"></script><link href="../../assets/stylesheets/application-b1a1975878.css" rel="stylesheet"/><link href="../../assets/stylesheets/application-f78e5cb881.palette.css" rel="stylesheet"/><link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono" rel="stylesheet"/><style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/><link href="../../assets/Documenter.css" rel="stylesheet"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
 
-<!DOCTYPE html>
-<html class="no-js">
-  <head>
-    
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="package for working with tabular data in Julia">
-      
-      
-      
-      
-        <link rel="shortcut icon" href="../../assets/images/favicon.png">
-      
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.4">
-    
-    
-      
-        <title>IO - DataFrames.jl</title>
-      
-    
-    
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
-      
-        <link rel="stylesheet" href="../../assets/stylesheets/application-f78e5cb881.palette.css">
-      
-    
-    
-      
-        
-        
-        
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
-        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
-      
-      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    
-    
-      <link rel="stylesheet" href="../../assets/Documenter.css">
-    
-    
-  </head>
-  
-  
-  
-  
-    <body data-md-color-primary="indigo" data-md-color-accent="blue">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
-    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
-    
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <a href="../.." title="DataFrames.jl" class="md-icon md-icon--home md-header-nav__button">
-          </a>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <span class="md-flex__ellipsis md-header-nav__title">
-          
-            
-              
-                <span class="md-header-nav__parent">
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body data-md-color-accent="blue" data-md-color-primary="indigo"><svg class="md-svg"><defs><svg height="448" id="github" viewBox="0 0 416 448" width="416" xmlns="http://www.w3.org/2000/svg"><path d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z" fill="currentColor"></path></svg></defs></svg><input class="md-toggle" data-md-toggle="drawer" id="drawer" type="checkbox"/><input class="md-toggle" data-md-toggle="search" id="search" type="checkbox"/><label class="md-overlay" data-md-component="overlay" for="drawer"></label><header class="md-header" data-md-component="header"><nav class="md-header-nav md-grid"><div class="md-flex"><div class="md-flex__cell md-flex__cell--shrink"><a class="md-icon md-icon--home md-header-nav__button" href="../.." title="DataFrames.jl"></a></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label></div><div class="md-flex__cell md-flex__cell--stretch"><span class="md-flex__ellipsis md-header-nav__title"><span class="md-header-nav__parent">
                   User guide
                 </span>
               
             
             IO
           
-        </span>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
-          
-<div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
-  <div class="md-search__inner">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
-      <label class="md-icon md-search__icon" for="search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
-          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+        </span></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--search md-header-nav__button" for="search"></label><div class="md-search" data-md-component="search"><div class="md-search__overlay"></div><div class="md-search__inner"><form class="md-search__form" name="search"><input accesskey="s" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/><label class="md-icon md-search__icon" for="search"></label><button class="md-icon md-search__icon" data-md-component="reset" type="reset">close</button></form><div class="md-search__output"><div class="md-search__scrollwrap" data-md-scrollfix=""><div class="md-search-result" data-md-component="result"><div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
-          </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-        
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <div class="md-header-nav__source">
-          
-            
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+          </div><ol class="md-search-result__list"></ol></div></div></div></div></div></div><div class="md-flex__cell md-flex__cell--shrink"><div class="md-header-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-          
-        </div>
-      </div>
-    </div>
-  </nav>
-</header>
-    
-    <div class="md-container">
-      
-      
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="drawer">
-    
-      <i class="md-icon md-icon--home md-nav__button"></i>
+    </div></a></div></div></div></nav></header><div class="md-container"><main class="md-main"><div class="md-main__inner md-grid" data-md-component="container"><div class="md-sidebar md-sidebar--primary" data-md-component="navigation"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--primary" data-md-level="0"><label class="md-nav__title md-nav__title--site" for="drawer"><i class="md-icon md-icon--home md-nav__button"></i>
     
     DataFrames.jl
-  </label>
-  
-    <div class="md-nav__source">
-      
-
-
-  
-
-
-  <a href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
+  </label><div class="md-nav__source"><a class="md-source" data-md-source="github" href="https://github.com/JuliaStats/DataFrames.jl" title="Go to repository"><div class="md-source__icon"><svg height="24" viewBox="0 0 24 24" width="24"><use height="24" href="#github" width="24"></use></svg></div><div class="md-source__repository">
       GitHub
-    </div>
-  </a>
-
-    </div>
-  
-  <ul class="md-nav__list" data-md-scrollfix>
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../.." title="Introduction" class="md-nav__link">
+    </div></a></div><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../.." title="Introduction">
       Introduction
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
-    
-    <label class="md-nav__link" for="nav-2">
+    </a></li><li class="md-nav__item md-nav__item--active md-nav__item--nested"><input checked="" class="md-toggle md-nav__toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/><label class="md-nav__link" for="nav-2">
       User guide
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-2">
         User guide
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../getting_started/" title="Getting Started" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../getting_started/" title="Getting Started">
       Getting Started
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
+    </a></li><li class="md-nav__item md-nav__item--active"><input class="md-toggle md-nav__toggle" data-md-toggle="toc" id="toc" type="checkbox"/><label class="md-nav__link md-nav__link--active" for="toc">
         IO
-      </label>
-    
-    <a href="./" title="IO" class="md-nav__link md-nav__link--active">
+      </label><a class="md-nav__link md-nav__link--active" href="./" title="IO">
       IO
-    </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#importing-data-from-tabular-data-files" title="Importing data from tabular data files" class="md-nav__link">
+    </a><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#importing-data-from-tabular-data-files" title="Importing data from tabular data files">
     Importing data from tabular data files
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#exporting-data-to-a-tabular-data-file" title="Exporting data to a tabular data file" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#exporting-data-to-a-tabular-data-file" title="Exporting data to a tabular data file">
     Exporting data to a tabular data file
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#supplying-dataframes-inline-with-non-standard-string-literals" title="Supplying DataFrames inline with non-standard string literals" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#supplying-dataframes-inline-with-non-standard-string-literals" title="Supplying DataFrames inline with non-standard string literals">
     Supplying DataFrames inline with non-standard string literals
-  </a>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-    
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../joins/" title="Joins" class="md-nav__link">
+  </a></li></ul></nav></li><li class="md-nav__item"><a class="md-nav__link" href="../joins/" title="Joins">
       Joins
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../split_apply_combine/" title="Split-apply-combine" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../split_apply_combine/" title="Split-apply-combine">
       Split-apply-combine
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../reshaping_and_pivoting/" title="Reshaping" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../reshaping_and_pivoting/" title="Reshaping">
       Reshaping
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../sorting/" title="Sorting" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../sorting/" title="Sorting">
       Sorting
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../formulas/" title="Formulas" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../formulas/" title="Formulas">
       Formulas
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../pooling/" title="Pooling" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../pooling/" title="Pooling">
       Pooling
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../querying_frameworks/" title="Querying frameworks" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../querying_frameworks/" title="Querying frameworks">
       Querying frameworks
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
-    
-    <label class="md-nav__link" for="nav-3">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/><label class="md-nav__link" for="nav-3">
       API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-3">
         API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../lib/maintypes/" title="Main types" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../../lib/maintypes/" title="Main types">
       Main types
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../lib/utilities/" title="Utilities" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../lib/utilities/" title="Utilities">
       Utilities
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../lib/manipulation/" title="Data manipulation" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../lib/manipulation/" title="Data manipulation">
       Data manipulation
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
+    </a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/><label class="md-nav__link" for="nav-4">
       About
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+    </label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-4">
         About
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../NEWS/" title="Release notes" class="md-nav__link">
+      </label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="../../NEWS/" title="Release notes">
       Release notes
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../LICENSE/" title="License" class="md-nav__link">
+    </a></li><li class="md-nav__item"><a class="md-nav__link" href="../../LICENSE/" title="License">
       License
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-  </ul>
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-            
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#importing-data-from-tabular-data-files" title="Importing data from tabular data files" class="md-nav__link">
+    </a></li></ul></nav></li></ul></nav></div></div></div><div class="md-sidebar md-sidebar--secondary" data-md-component="toc"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix=""><li class="md-nav__item"><a class="md-nav__link" href="#importing-data-from-tabular-data-files" title="Importing data from tabular data files">
     Importing data from tabular data files
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#exporting-data-to-a-tabular-data-file" title="Exporting data to a tabular data file" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#exporting-data-to-a-tabular-data-file" title="Exporting data to a tabular data file">
     Exporting data to a tabular data file
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#supplying-dataframes-inline-with-non-standard-string-literals" title="Supplying DataFrames inline with non-standard string literals" class="md-nav__link">
+  </a></li><li class="md-nav__item"><a class="md-nav__link" href="#supplying-dataframes-inline-with-non-standard-string-literals" title="Supplying DataFrames inline with non-standard string literals">
     Supplying DataFrames inline with non-standard string literals
-  </a>
-  
-</li>
-      
-      
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
-          
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/man/io.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
-                
-                
-                <p><a id='Importing-and-Exporting-(I/O)-1'></a></p>
-<h1 id="importing-and-exporting-io">Importing and Exporting (I/O)</h1>
-<p><a id='Importing-data-from-tabular-data-files-1'></a></p>
-<h2 id="importing-data-from-tabular-data-files">Importing data from tabular data files</h2>
-<p>To read data from a CSV-like file, use the <code>readtable</code> function:</p>
-<p><a id='DataFrames.readtable' href='#DataFrames.readtable'>#</a>
-<strong><code>DataFrames.readtable</code></strong> &mdash; <em>Function</em>.</p>
-<p>Read data from a tabular-file format (CSV, TSV, ...)</p>
-<div class="codehilite"><pre><span></span><span class="n">readtable</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="p">[</span><span class="n">keyword</span> <span class="n">options</span><span class="p">])</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>filename::AbstractString</code> : the filename to be read</li>
-</ul>
-<p><strong>Keyword Arguments</strong></p>
-<ul>
-<li><code>header::Bool</code> – Use the information from the file's header line to determine column names. Defaults to <code>true</code>.</li>
-<li><code>separator::Char</code> – Assume that fields are split by the <code>separator</code> character. If not specified, it will be guessed from the filename: <code>.csv</code> defaults to <code>','</code>, <code>.tsv</code> defaults to <code>'  '</code>, <code>.wsv</code> defaults to <code>' '</code>.</li>
-<li><code>quotemark::Vector{Char}</code> – Assume that fields contained inside of two <code>quotemark</code> characters are quoted, which disables processing of separators and linebreaks. Set to <code>Char[]</code> to disable this feature and slightly improve performance. Defaults to <code>['"']</code>.</li>
-<li><code>decimal::Char</code> – Assume that the decimal place in numbers is written using the <code>decimal</code> character. Defaults to <code>'.'</code>.</li>
-<li><code>nastrings::Vector{String}</code> – Translate any of the strings into this vector into an <code>NA</code>. Defaults to <code>["", "NA"]</code>.</li>
-<li><code>truestrings::Vector{String}</code> – Translate any of the strings into this vector into a Boolean <code>true</code>. Defaults to <code>["T", "t", "TRUE", "true"]</code>.</li>
-<li><code>falsestrings::Vector{String}</code> – Translate any of the strings into this vector into a Boolean <code>false</code>. Defaults to <code>["F", "f", "FALSE", "false"]</code>.</li>
-<li><code>makefactors::Bool</code> – Convert string columns into <code>PooledDataVector</code>'s for use as factors. Defaults to <code>false</code>.</li>
-<li><code>nrows::Int</code> – Read only <code>nrows</code> from the file. Defaults to <code>-1</code>, which indicates that the entire file should be read.</li>
-<li><code>names::Vector{Symbol}</code> – Use the values in this array as the names for all columns instead of or in lieu of the names in the file's header. Defaults to <code>[]</code>, which indicates that the header should be used if present or that numeric names should be invented if there is no header.</li>
-<li><code>eltypes::Vector</code> – Specify the types of all columns. Defaults to <code>[]</code>.</li>
-<li><code>allowcomments::Bool</code> – Ignore all text inside comments. Defaults to <code>false</code>.</li>
-<li><code>commentmark::Char</code> – Specify the character that starts comments. Defaults to <code>'#'</code>.</li>
-<li><code>ignorepadding::Bool</code> – Ignore all whitespace on left and right sides of a field. Defaults to <code>true</code>.</li>
-<li><code>skipstart::Int</code> – Specify the number of initial rows to skip. Defaults to <code>0</code>.</li>
-<li><code>skiprows::Vector{Int}</code> – Specify the indices of lines in the input to ignore. Defaults to <code>[]</code>.</li>
-<li><code>skipblanks::Bool</code> – Skip any blank lines in input. Defaults to <code>true</code>.</li>
-<li><code>encoding::Symbol</code> – Specify the file's encoding as either <code>:utf8</code> or <code>:latin1</code>. Defaults to <code>:utf8</code>.</li>
-<li><code>normalizenames::Bool</code> – Ensure that column names are valid Julia identifiers. For instance this renames a column named <code>"a b"</code> to <code>"a_b"</code> which can then be accessed with <code>:a_b</code> instead of <code>Symbol("a b")</code>. Defaults to <code>true</code>.</li>
-</ul>
-<p><strong>Result</strong></p>
-<ul>
-<li><code>::DataFrame</code></li>
-</ul>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.csv&quot;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.tsv&quot;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.wsv&quot;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.txt&quot;</span><span class="p">,</span> <span class="n">separator</span> <span class="o">=</span> <span class="err">&#39;</span>    <span class="err">&#39;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.txt&quot;</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/dataframe/io.jl#L860-L906' class='documenter-source'>source</a><br></p>
-<p><code>readtable</code> requires that you specify the path of the file that you would like to read as a <code>String</code>. To read data from a non-file source, you may also supply an <code>IO</code> object. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.</p>
-<p><a id='Exporting-data-to-a-tabular-data-file-1'></a></p>
-<h2 id="exporting-data-to-a-tabular-data-file">Exporting data to a tabular data file</h2>
-<p>To write data to a CSV file, use the <code>writetable</code> function:</p>
-<p><a id='DataFrames.writetable' href='#DataFrames.writetable'>#</a>
-<strong><code>DataFrames.writetable</code></strong> &mdash; <em>Function</em>.</p>
-<p>Write data to a tabular-file format (CSV, TSV, ...)</p>
-<div class="codehilite"><pre><span></span><span class="n">writetable</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="p">[</span><span class="n">keyword</span> <span class="n">options</span><span class="p">])</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>filename::AbstractString</code> : the filename to be created</li>
-<li><code>df::AbstractDataFrame</code> : the AbstractDataFrame to be written</li>
-</ul>
-<p><strong>Keyword Arguments</strong></p>
-<ul>
-<li><code>separator::Char</code> – The separator character that you would like to use. Defaults to the output of <code>getseparator(filename)</code>, which uses commas for files that end in <code>.csv</code>, tabs for files that end in <code>.tsv</code> and a single space for files that end in <code>.wsv</code>.</li>
-<li><code>quotemark::Char</code> – The character used to delimit string fields. Defaults to <code>'"'</code>.</li>
-<li><code>header::Bool</code> – Should the file contain a header that specifies the column names from <code>df</code>. Defaults to <code>true</code>.</li>
-<li><code>nastring::AbstractString</code> – What to write in place of missing data. Defaults to <code>"NA"</code>.</li>
-</ul>
-<p><strong>Result</strong></p>
-<ul>
-<li><code>::DataFrame</code></li>
-</ul>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.csv&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-<span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">separator</span> <span class="o">=</span> <span class="sc">&#39;,&#39;</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span>
-<span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">quotemark</span> <span class="o">=</span> <span class="err">&#39;&#39;</span><span class="p">,</span> <span class="n">separator</span> <span class="o">=</span> <span class="sc">&#39;,&#39;</span><span class="p">)</span>
-<span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span>
-</pre></div>
-
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/io.jl#L80-L112' class='documenter-source'>source</a><br></p>
-<p><a id='Supplying-DataFrames-inline-with-non-standard-string-literals-1'></a></p>
-<h2 id="supplying-dataframes-inline-with-non-standard-string-literals">Supplying <code>DataFrame</code>s inline with non-standard string literals</h2>
-<p>You can also provide CSV-like tabular data in a non-standard string literal to construct a new <code>DataFrame</code>, as in the following:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">csv</span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">    name,  age, squidPerWeek</span>
-<span class="s">    Alice,  36,         3.14</span>
-<span class="s">    Bob,    24,         0</span>
-<span class="s">    Carol,  58,         2.71</span>
-<span class="s">    Eve,    49,         7.77</span>
-<span class="s">    &quot;&quot;&quot;</span>
-</pre></div>
-
-
-<p>The <code>csv</code> string literal prefix indicates that the data are supplied in standard comma-separated value format. Common alternative formats are also available as string literals. For semicolon-separated values, with comma as a decimal, use <code>csv2</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">csv2</span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">    name;  age; squidPerWeek</span>
-<span class="s">    Alice;  36;         3,14</span>
-<span class="s">    Bob;    24;         0</span>
-<span class="s">    Carol;  58;         2,71</span>
-<span class="s">    Eve;    49;         7,77</span>
-<span class="s">    &quot;&quot;&quot;</span>
-</pre></div>
-
-
-<p>For whitespace-separated values, use <code>wsv</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">wsv</span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">    name  age squidPerWeek</span>
-<span class="s">    Alice  36         3.14</span>
-<span class="s">    Bob    24         0</span>
-<span class="s">    Carol  58         2.71</span>
-<span class="s">    Eve    49         7.77</span>
-<span class="s">    &quot;&quot;&quot;</span>
-</pre></div>
-
-
-<p>And for tab-separated values, use <code>tsv</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">tsv</span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">    name    age squidPerWeek</span>
-<span class="s">    Alice   36  3.14</span>
-<span class="s">    Bob 24  0</span>
-<span class="s">    Carol   58  2.71</span>
-<span class="s">    Eve 49  7.77</span>
-<span class="s">    &quot;&quot;&quot;</span>
-</pre></div>
-                
-                  
-                
-              
-              
-                
-              
-            </article>
-          </div>
-        </div>
-      </main>
-      
-        
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../getting_started/" title="Getting Started" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+  </a></li></ul></nav></div></div></div><div class="md-content"><article class="md-content__inner md-typeset"><a class="md-icon md-content__icon" href="https://github.com/JuliaStats/DataFrames.jl/edit/master/docs/man/io.md" title="Edit this page">edit</a><p><a id="Importing-and-Exporting-(I/O)-1"></a></p><h1 id="importing-and-exporting-io">Importing and Exporting (I/O)</h1><p><a id="Importing-data-from-tabular-data-files-1"></a></p><h2 id="importing-data-from-tabular-data-files">Importing data from tabular data files</h2><p>To read data from a CSV-like file, use the <code>readtable</code> function:</p><p><a href="#DataFrames.readtable" id="DataFrames.readtable">#</a><strong><code>DataFrames.readtable</code></strong> — <em>Function</em>.</p><p>Read data from a tabular-file format (CSV, TSV, ...)</p><div class="codehilite"><pre><span></span><span class="n">readtable</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="p">[</span><span class="n">keyword</span><span class="n">options</span><span class="p">])</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>filename::AbstractString</code> : the filename to be read</li></ul><p><strong>Keyword Arguments</strong></p><ul><li><code>header::Bool</code> – Use the information from the file's header line to determine column names. Defaults to <code>true</code>.</li><li><code>separator::Char</code> – Assume that fields are split by the <code>separator</code> character. If not specified, it will be guessed from the filename: <code>.csv</code> defaults to <code>','</code>, <code>.tsv</code> defaults to <code>'  '</code>, <code>.wsv</code> defaults to <code>' '</code>.</li><li><code>quotemark::Vector{Char}</code> – Assume that fields contained inside of two <code>quotemark</code> characters are quoted, which disables processing of separators and linebreaks. Set to <code>Char[]</code> to disable this feature and slightly improve performance. Defaults to <code>['"']</code>.</li><li><code>decimal::Char</code> – Assume that the decimal place in numbers is written using the <code>decimal</code> character. Defaults to <code>'.'</code>.</li><li><code>nastrings::Vector{String}</code> – Translate any of the strings into this vector into an <code>NA</code>. Defaults to <code>["", "NA"]</code>.</li><li><code>truestrings::Vector{String}</code> – Translate any of the strings into this vector into a Boolean <code>true</code>. Defaults to <code>["T", "t", "TRUE", "true"]</code>.</li><li><code>falsestrings::Vector{String}</code> – Translate any of the strings into this vector into a Boolean <code>false</code>. Defaults to <code>["F", "f", "FALSE", "false"]</code>.</li><li><code>makefactors::Bool</code> – Convert string columns into <code>PooledDataVector</code>'s for use as factors. Defaults to <code>false</code>.</li><li><code>nrows::Int</code> – Read only <code>nrows</code> from the file. Defaults to <code>-1</code>, which indicates that the entire file should be read.</li><li><code>names::Vector{Symbol}</code> – Use the values in this array as the names for all columns instead of or in lieu of the names in the file's header. Defaults to <code>[]</code>, which indicates that the header should be used if present or that numeric names should be invented if there is no header.</li><li><code>eltypes::Vector</code> – Specify the types of all columns. Defaults to <code>[]</code>.</li><li><code>allowcomments::Bool</code> – Ignore all text inside comments. Defaults to <code>false</code>.</li><li><code>commentmark::Char</code> – Specify the character that starts comments. Defaults to <code>'#'</code>.</li><li><code>ignorepadding::Bool</code> – Ignore all whitespace on left and right sides of a field. Defaults to <code>true</code>.</li><li><code>skipstart::Int</code> – Specify the number of initial rows to skip. Defaults to <code>0</code>.</li><li><code>skiprows::Vector{Int}</code> – Specify the indices of lines in the input to ignore. Defaults to <code>[]</code>.</li><li><code>skipblanks::Bool</code> – Skip any blank lines in input. Defaults to <code>true</code>.</li><li><code>encoding::Symbol</code> – Specify the file's encoding as either <code>:utf8</code> or <code>:latin1</code>. Defaults to <code>:utf8</code>.</li><li><code>normalizenames::Bool</code> – Ensure that column names are valid Julia identifiers. For instance this renames a column named <code>"a b"</code> to <code>"a_b"</code> which can then be accessed with <code>:a_b</code> instead of <code>Symbol("a b")</code>. Defaults to <code>true</code>.</li></ul><p><strong>Result</strong></p><ul><li><code>::DataFrame</code></li></ul><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">readtable</span><span class="p">(</span><span class="s">"data.csv"</span><span class="p">)</span><span class="n">df</span><span class="o">=</span><span class="n">readtable</span><span class="p">(</span><span class="s">"data.tsv"</span><span class="p">)</span><span class="n">df</span><span class="o">=</span><span class="n">readtable</span><span class="p">(</span><span class="s">"data.wsv"</span><span class="p">)</span><span class="n">df</span><span class="o">=</span><span class="n">readtable</span><span class="p">(</span><span class="s">"data.txt"</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="err">'</span><span class="err">'</span><span class="p">)</span><span class="n">df</span><span class="o">=</span><span class="n">readtable</span><span class="p">(</span><span class="s">"data.txt"</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="kc">false</span><span class="p">)</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/dataframe/io.jl#L860-L906" target="_blank">source</a><br/></p><p><code>readtable</code> requires that you specify the path of the file that you would like to read as a <code>String</code>. To read data from a non-file source, you may also supply an <code>IO</code> object. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.</p><p><a id="Exporting-data-to-a-tabular-data-file-1"></a></p><h2 id="exporting-data-to-a-tabular-data-file">Exporting data to a tabular data file</h2><p>To write data to a CSV file, use the <code>writetable</code> function:</p><p><a href="#DataFrames.writetable" id="DataFrames.writetable">#</a><strong><code>DataFrames.writetable</code></strong> — <em>Function</em>.</p><p>Write data to a tabular-file format (CSV, TSV, ...)</p><div class="codehilite"><pre><span></span><span class="n">writetable</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">df</span><span class="p">,</span><span class="p">[</span><span class="n">keyword</span><span class="n">options</span><span class="p">])</span></pre></div><p><strong>Arguments</strong></p><ul><li><code>filename::AbstractString</code> : the filename to be created</li><li><code>df::AbstractDataFrame</code> : the AbstractDataFrame to be written</li></ul><p><strong>Keyword Arguments</strong></p><ul><li><code>separator::Char</code> – The separator character that you would like to use. Defaults to the output of <code>getseparator(filename)</code>, which uses commas for files that end in <code>.csv</code>, tabs for files that end in <code>.tsv</code> and a single space for files that end in <code>.wsv</code>.</li><li><code>quotemark::Char</code> – The character used to delimit string fields. Defaults to <code>'"'</code>.</li><li><code>header::Bool</code> – Should the file contain a header that specifies the column names from <code>df</code>. Defaults to <code>true</code>.</li><li><code>nastring::AbstractString</code> – What to write in place of missing data. Defaults to <code>"NA"</code>.</li></ul><p><strong>Result</strong></p><ul><li><code>::DataFrame</code></li></ul><p><strong>Examples</strong></p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span><span class="o">=</span><span class="mi">1</span><span class="o">:</span><span class="mi">10</span><span class="p">)</span><span class="n">writetable</span><span class="p">(</span><span class="s">"output.csv"</span><span class="p">,</span><span class="n">df</span><span class="p">)</span><span class="n">writetable</span><span class="p">(</span><span class="s">"output.dat"</span><span class="p">,</span><span class="n">df</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="sc">','</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="kc">false</span><span class="p">)</span><span class="n">writetable</span><span class="p">(</span><span class="s">"output.dat"</span><span class="p">,</span><span class="n">df</span><span class="p">,</span><span class="n">quotemark</span><span class="o">=</span><span class="err">''</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="sc">','</span><span class="p">)</span><span class="n">writetable</span><span class="p">(</span><span class="s">"output.dat"</span><span class="p">,</span><span class="n">df</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="kc">false</span><span class="p">)</span></pre></div><p><a class="documenter-source" href="https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/io.jl#L80-L112" target="_blank">source</a><br/></p><p><a id="Supplying-DataFrames-inline-with-non-standard-string-literals-1"></a></p><h2 id="supplying-dataframes-inline-with-non-standard-string-literals">Supplying <code>DataFrame</code>s inline with non-standard string literals</h2><p>You can also provide CSV-like tabular data in a non-standard string literal to construct a new <code>DataFrame</code>, as in the following:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">csv</span><span class="s">"""</span><span class="s">    name,  age, squidPerWeek</span><span class="s">    Alice,  36,         3.14</span><span class="s">    Bob,    24,         0</span><span class="s">    Carol,  58,         2.71</span><span class="s">    Eve,    49,         7.77</span><span class="s">    """</span></pre></div><p>The <code>csv</code> string literal prefix indicates that the data are supplied in standard comma-separated value format. Common alternative formats are also available as string literals. For semicolon-separated values, with comma as a decimal, use <code>csv2</code>:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">csv2</span><span class="s">"""</span><span class="s">    name;  age; squidPerWeek</span><span class="s">    Alice;  36;         3,14</span><span class="s">    Bob;    24;         0</span><span class="s">    Carol;  58;         2,71</span><span class="s">    Eve;    49;         7,77</span><span class="s">    """</span></pre></div><p>For whitespace-separated values, use <code>wsv</code>:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">wsv</span><span class="s">"""</span><span class="s">    name  age squidPerWeek</span><span class="s">    Alice  36         3.14</span><span class="s">    Bob    24         0</span><span class="s">    Carol  58         2.71</span><span class="s">    Eve    49         7.77</span><span class="s">    """</span></pre></div><p>And for tab-separated values, use <code>tsv</code>:</p><div class="codehilite"><pre><span></span><span class="n">df</span><span class="o">=</span><span class="n">tsv</span><span class="s">"""</span><span class="s">    name    age squidPerWeek</span><span class="s">    Alice   36  3.14</span><span class="s">    Bob 24  0</span><span class="s">    Carol   58  2.71</span><span class="s">    Eve 49  7.77</span><span class="s">    """</span></pre></div></article></div></div></main><footer class="md-footer"><div class="md-footer-nav"><nav class="md-footer-nav__inner md-grid"><a class="md-flex md-footer-nav__link md-footer-nav__link--prev" href="../getting_started/" rel="prev" title="Getting Started"><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-back md-footer-nav__button"></i></div><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Getting Started
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../joins/" title="Joins" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+              </span></div></a><a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="../joins/" rel="next" title="Joins"><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">
                   Next
                 </span>
                 Joins
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
+              </span></div><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i></div></a></nav></div><div class="md-footer-meta md-typeset"><div class="md-footer-meta__inner md-grid"><div class="md-footer-copyright">
         
         powered by
         <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
         and
         <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
-          Material for MkDocs</a>
-      </div>
-      
-        
-      
-    </div>
-  </div>
-</footer>
-      
-    </div>
-    
-      <script src="../../assets/javascripts/application-0b7df094bf.js"></script>
-      <script>app.initialize({url:{base:"../.."}})</script>
-      
-        <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
-      
-        <script src="../../assets/mathjaxhelper.js"></script>
-      
-    
-    
-      
-    
-  </body>
-</html>
+          Material for MkDocs</a></div></div></div></footer></div><script src="../../assets/javascripts/application-0b7df094bf.js"></script><script>app.initialize({url:{base:"../.."}})</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script><script src="../../assets/mathjaxhelper.js"></script></body></HTML>

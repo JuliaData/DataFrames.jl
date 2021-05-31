@@ -1,5 +1,46 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Working with DataFrames · DataFrames.jl</title><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/working_with_dataframes/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">DataFrames.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li class="is-active"><a class="tocitem" href>Working with DataFrames</a><ul class="internal"><li><a class="tocitem" href="#Examining-the-Data"><span>Examining the Data</span></a></li><li><a class="tocitem" href="#Taking-a-Subset"><span>Taking a Subset</span></a></li><li><a class="tocitem" href="#Summarizing-Data"><span>Summarizing Data</span></a></li><li><a class="tocitem" href="#Handling-of-Columns-Stored-in-a-DataFrame"><span>Handling of Columns Stored in a <code>DataFrame</code></span></a></li><li><a class="tocitem" href="#Replacing-Data"><span>Replacing Data</span></a></li></ul></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Working with DataFrames</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Working with DataFrames</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/working_with_dataframes.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Working-with-Data-Frames"><a class="docs-heading-anchor" href="#Working-with-Data-Frames">Working with Data Frames</a><a id="Working-with-Data-Frames-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Data-Frames" title="Permalink"></a></h1><h2 id="Examining-the-Data"><a class="docs-heading-anchor" href="#Examining-the-Data">Examining the Data</a><a id="Examining-the-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Examining-the-Data" title="Permalink"></a></h2><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+<!DOCTYPE html><HTML lang="en"><head><meta charset="UTF-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>Working with DataFrames · DataFrames.jl</title><link href="https://juliadata.github.io/DataFrames.jl/stable/man/working_with_dataframes/" rel="canonical"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script data-main="../../assets/documenter.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" data-theme-name="documenter-dark" href="../../assets/themes/documenter-dark.css" rel="stylesheet" type="text/css"/><link class="docs-theme-link" data-theme-name="documenter-light" data-theme-primary="" href="../../assets/themes/documenter-light.css" rel="stylesheet" type="text/css"/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This is an old version of the documentation. <br> <a href="' + href + '">Go to the newest version</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img alt="DataFrames.jl logo" src="../../assets/logo.png"/></a><div class="docs-package-name"><span class="docs-autofit">DataFrames.jl</span></div><form action="../../search/" class="docs-search"><input class="docs-search-query" id="documenter-search-query" name="q" placeholder="Search docs" type="text"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li class="is-active"><a class="tocitem" href="">Working with DataFrames</a><ul class="internal"><li><a class="tocitem" href="#Examining-the-Data"><span>Examining the Data</span></a></li><li><a class="tocitem" href="#Taking-a-Subset"><span>Taking a Subset</span></a></li><li><a class="tocitem" href="#Summarizing-Data"><span>Summarizing Data</span></a></li><li><a class="tocitem" href="#Handling-of-Columns-Stored-in-a-DataFrame"><span>Handling of Columns Stored in a <code>DataFrame</code></span></a></li><li><a class="tocitem" href="#Replacing-Data"><span>Replacing Data</span></a></li></ul></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href="">Working with DataFrames</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href="">Working with DataFrames</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/working_with_dataframes.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" href="#" id="documenter-settings-button" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" href="#" id="documenter-sidebar-button"></a></div></header><article class="content" id="documenter-page"><h1 id="Working-with-Data-Frames"><a class="docs-heading-anchor" href="#Working-with-Data-Frames">Working with Data Frames</a><a id="Working-with-Data-Frames-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Data-Frames" title="Permalink"></a></h1><h2 id="Examining-the-Data"><a class="docs-heading-anchor" href="#Examining-the-Data">Examining the Data</a><a id="Examining-the-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Examining-the-Data" title="Permalink"></a></h2><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
 
 julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
 500×3 DataFrame
@@ -47,7 +88,7 @@ julia&gt; last(df, 6)
    6 │   999     10    500</code></pre><p>Also notice that when <code>DataFrame</code> is printed to the console or rendered in HTML (e.g. in Jupyter Notebook) you get an information about type of elements held in its columns. For example in this case:</p><pre><code class="language-julia-repl">julia&gt; using CategoricalArrays
 
 julia&gt; DataFrame(a = 1:2, b = [1.0, missing],
-                 c = categorical(&#39;a&#39;:&#39;b&#39;), d = [1//2, missing])
+                 c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
  Row │ a      b          c     d
      │ Int64  Float64?   Cat…  Rational…?
@@ -167,7 +208,7 @@ true</code></pre><p>In the first case, <code>[:A]</code> is a vector, indicating
 ─────┼─────────────────────
    1 │     1      2      3
 
-julia&gt; df[!, r&quot;x&quot;]
+julia&gt; df[!, r"x"]
 1×2 DataFrame
  Row │ x1     x2
      │ Int64  Int64
@@ -177,21 +218,21 @@ julia&gt; df[!, r&quot;x&quot;]
  Row │ x2     y
      │ Int64  Int64
 ─────┼──────────────
-   1 │     2      3</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, <code>Cols</code> and <code>All</code> selectors in more complex column selection scenarios (note that <code>Cols()</code> selects no columns while <code>All()</code> selects all columns therefore <code>Cols</code> is a preferred selector if you write generic code). The following examples move all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="language-none">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
+   1 │     2      3</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, <code>Cols</code> and <code>All</code> selectors in more complex column selection scenarios (note that <code>Cols()</code> selects no columns while <code>All()</code> selects all columns therefore <code>Cols</code> is a preferred selector if you write generic code). The following examples move all columns whose names match <code>r"x"</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="language-none">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
  Row │ r      x1     x2     y
      │ Int64  Int64  Int64  Int64
 ─────┼────────────────────────────
    1 │     1      2      3      4
 
-julia&gt; df[:, Cols(r&quot;x&quot;, :)]
+julia&gt; df[:, Cols(r"x", :)]
 1×4 DataFrame
  Row │ x1     x2     r      y
      │ Int64  Int64  Int64  Int64
 ─────┼────────────────────────────
    1 │     2      3      1      4
 
-julia&gt; df[:, Cols(Not(r&quot;x&quot;), :)]
+julia&gt; df[:, Cols(Not(r"x"), :)]
 1×4 DataFrame
  Row │ r      y      x1     x2
      │ Int64  Int64  Int64  Int64
@@ -286,7 +327,7 @@ julia&gt; select(df, Not(:x1)) # drop column :x1 in a new data frame
    1 │     3      5
    2 │     4      6
 
-julia&gt; select(df, r&quot;x&quot;) # select columns containing &#39;x&#39; character
+julia&gt; select(df, r"x") # select columns containing 'x' character
 2×2 DataFrame
  Row │ x1     x2
      │ Int64  Int64
@@ -433,7 +474,7 @@ julia&gt; transform(df, AsTable(:) .=&gt;
 ─────┼─────────────────────────────────────────
    1 │       1        1      2      2      1.0
    2 │       2  missing      2      1      2.0
-   3 │ missing  missing      0      0    NaN</code></pre><p>While the DataFrames.jl package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a</li></ul><p><a href="https://en.wikipedia.org/wiki/Language_Integrated_Query">LINQ</a>-like interface to a large number of data sources</p><ul><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a></li></ul><p>package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></p><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks">Data manipulation frameworks</a> section for more information.</p><h2 id="Summarizing-Data"><a class="docs-heading-anchor" href="#Summarizing-Data">Summarizing Data</a><a id="Summarizing-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Summarizing-Data" title="Permalink"></a></h2><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+   3 │ missing  missing      0      0    NaN</code></pre><p>While the DataFrames.jl package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a</li></ul><p><a href="https://en.wikipedia.org/wiki/Language_Integrated_Query">LINQ</a>-like interface to a large number of data sources</p><ul><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a></li></ul><p>package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></p><p>See the <a href="../querying_frameworks/#Data-manipulation-frameworks">Data manipulation frameworks</a> section for more information.</p><h2 id="Summarizing-Data"><a class="docs-heading-anchor" href="#Summarizing-Data">Summarizing Data</a><a id="Summarizing-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Summarizing-Data" title="Permalink"></a></h2><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 4×2 DataFrame
  Row │ A      B
      │ Int64  String
@@ -534,7 +575,7 @@ julia&gt; x
 3-element Vector{Int64}:
  3
  1
- 2</code></pre><p>Note, that in the above example the original <code>x</code> vector is not mutated in the process as the <code>DataFrame(x=x)</code> constructor makes a copy by default.</p><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code> <code>df</code> using the syntaxes <code>df.col</code>, <code>df[!, :col]</code>, via the <a href="../../lib/functions/#Base.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code>.</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+ 2</code></pre><p>Note, that in the above example the original <code>x</code> vector is not mutated in the process as the <code>DataFrame(x=x)</code> constructor makes a copy by default.</p><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code><code>df</code> using the syntaxes <code>df.col</code>, <code>df[!, :col]</code>, via the <a href="../../lib/functions/#Base.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code>.</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
 
 julia&gt; df = DataFrame(x=x)
 3×1 DataFrame
@@ -552,9 +593,9 @@ julia&gt; df[!, 1] !== x
 true
 
 julia&gt; eachcol(df)[1] === df.x
-true</code></pre><p>Note that a column obtained from a <code>DataFrame</code> using one of these methods should not be mutated without caution.</p><p>The exact rules of handling columns of a <code>DataFrame</code> are explained in <a href="../../lib/types/#man-columnhandling">The design of handling of columns of a <code>DataFrame</code></a> section of the manual.</p><h2 id="Replacing-Data"><a class="docs-heading-anchor" href="#Replacing-Data">Replacing Data</a><a id="Replacing-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Replacing-Data" title="Permalink"></a></h2><p>Several approaches can be used to replace some values with others in a data frame. Some apply the replacement to all values in a data frame, and others to individual columns or subset of columns.</p><p>Do note that in-place replacement requires that the replacement value can be converted to the column&#39;s element type. In particular, this implies that replacing a value with <code>missing</code> requires a call to <code>allowmissing!</code> if the column did not allow for missing values.</p><p>Replacement operations affecting a single column can be performed using <code>replace!</code>:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+true</code></pre><p>Note that a column obtained from a <code>DataFrame</code> using one of these methods should not be mutated without caution.</p><p>The exact rules of handling columns of a <code>DataFrame</code> are explained in <a href="../../lib/types/#man-columnhandling">The design of handling of columns of a <code>DataFrame</code></a> section of the manual.</p><h2 id="Replacing-Data"><a class="docs-heading-anchor" href="#Replacing-Data">Replacing Data</a><a id="Replacing-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Replacing-Data" title="Permalink"></a></h2><p>Several approaches can be used to replace some values with others in a data frame. Some apply the replacement to all values in a data frame, and others to individual columns or subset of columns.</p><p>Do note that in-place replacement requires that the replacement value can be converted to the column's element type. In particular, this implies that replacing a value with <code>missing</code> requires a call to <code>allowmissing!</code> if the column did not allow for missing values.</p><p>Replacement operations affecting a single column can be performed using <code>replace!</code>:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
 
-julia&gt; df = DataFrame(a = [&quot;a&quot;, &quot;None&quot;, &quot;b&quot;, &quot;None&quot;], b = 1:4, c = [&quot;None&quot;, &quot;j&quot;, &quot;k&quot;, &quot;h&quot;], d = [&quot;x&quot;, &quot;y&quot;, &quot;None&quot;, &quot;z&quot;])
+julia&gt; df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
 4×4 DataFrame
  Row │ a       b      c       d
      │ String  Int64  String  String
@@ -564,12 +605,12 @@ julia&gt; df = DataFrame(a = [&quot;a&quot;, &quot;None&quot;, &quot;b&quot;, &q
    3 │ b           3  k       None
    4 │ None        4  h       z
 
-julia&gt; replace!(df.a, &quot;None&quot; =&gt; &quot;c&quot;)
+julia&gt; replace!(df.a, "None" =&gt; "c")
 4-element Vector{String}:
- &quot;a&quot;
- &quot;c&quot;
- &quot;b&quot;
- &quot;c&quot;
+ "a"
+ "c"
+ "b"
+ "c"
 
 julia&gt; df
 4×4 DataFrame
@@ -579,8 +620,8 @@ julia&gt; df
    1 │ a           1  None    x
    2 │ c           2  j       y
    3 │ b           3  k       None
-   4 │ c           4  h       z</code></pre><p>This is equivalent to <code>df.a = replace(df.a, &quot;None&quot; =&gt; &quot;c&quot;)</code>, but operates in-place, without allocating a new column vector.</p><p>Replacement operations on multiple columns or on the whole data frame can be performed in-place using the broadcasting syntax:</p><pre><code class="language-julia-repl"># replacement on a subset of columns [:c, :d]
-julia&gt; df[:, [:c, :d]] .= ifelse.(df[!, [:c, :d]] .== &quot;None&quot;, &quot;c&quot;, df[!, [:c, :d]])
+   4 │ c           4  h       z</code></pre><p>This is equivalent to <code>df.a = replace(df.a, "None" =&gt; "c")</code>, but operates in-place, without allocating a new column vector.</p><p>Replacement operations on multiple columns or on the whole data frame can be performed in-place using the broadcasting syntax:</p><pre><code class="language-julia-repl"># replacement on a subset of columns [:c, :d]
+julia&gt; df[:, [:c, :d]] .= ifelse.(df[!, [:c, :d]] .== "None", "c", df[!, [:c, :d]])
 4×2 SubDataFrame
  Row │ c       d
      │ String  String
@@ -600,7 +641,7 @@ julia&gt; df
    3 │ b           3  k       c
    4 │ c           4  h       z
 
-julia&gt; df .= ifelse.(df .== &quot;c&quot;, &quot;None&quot;, df) # replacement on entire data frame
+julia&gt; df .= ifelse.(df .== "c", "None", df) # replacement on entire data frame
 4×4 DataFrame
  Row │ a       b      c       d
      │ String  Int64  String  String
@@ -608,7 +649,7 @@ julia&gt; df .= ifelse.(df .== &quot;c&quot;, &quot;None&quot;, df) # replacemen
    1 │ a           1  None    x
    2 │ None        2  j       y
    3 │ b           3  k       None
-   4 │ None        4  h       z</code></pre><p>Do note that in the above examples, changing <code>.=</code> to just <code>=</code> will allocate new column vectors instead of applying the operation in-place.</p><p>When replacing values with <code>missing</code>, if the columns do not already allow for missing values, one has to either avoid in-place operation and use <code>=</code> instead of <code>.=</code>, or call <code>allowmissing!</code> beforehand:</p><pre><code class="language-julia-repl">julia&gt; df2 = ifelse.(df .== &quot;None&quot;, missing, df) # do not operate in-place (`df = ` would also work)
+   4 │ None        4  h       z</code></pre><p>Do note that in the above examples, changing <code>.=</code> to just <code>=</code> will allocate new column vectors instead of applying the operation in-place.</p><p>When replacing values with <code>missing</code>, if the columns do not already allow for missing values, one has to either avoid in-place operation and use <code>=</code> instead of <code>.=</code>, or call <code>allowmissing!</code> beforehand:</p><pre><code class="language-julia-repl">julia&gt; df2 = ifelse.(df .== "None", missing, df) # do not operate in-place (`df = ` would also work)
 4×4 DataFrame
  Row │ a        b      c        d
      │ String?  Int64  String?  String?
@@ -628,7 +669,7 @@ julia&gt; allowmissing!(df) # operate in-place after allowing for missing
    3 │ b             3  k        None
    4 │ None          4  h        z
 
-julia&gt; df .= ifelse.(df .== &quot;None&quot;, missing, df)
+julia&gt; df .= ifelse.(df .== "None", missing, df)
 4×4 DataFrame
  Row │ a        b       c        d
      │ String?  Int64?  String?  String?
@@ -636,4 +677,4 @@ julia&gt; df .= ifelse.(df .== &quot;None&quot;, missing, df)
    1 │ a             1  missing  x
    2 │ missing       2  j        y
    3 │ b             3  k        missing
-   4 │ missing       4  h        z</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../importing_and_exporting/">Importing and Exporting Data (I/O) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 21 April 2021 21:32">Wednesday 21 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   4 │ missing       4  h        z</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../importing_and_exporting/">Importing and Exporting Data (I/O) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label></p><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div><p></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 21 April 2021 21:32">Wednesday 21 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></HTML>
