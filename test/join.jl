@@ -1560,25 +1560,161 @@ end
 end
 
 @testset "matchmissing :notequal correctness" begin
-    name = DataFrame(ID = Union{Int, Missing}[1, 2, missing],
-                    Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"])
-    noid = DataFrame(ID = Union{Int, Missing}[], Name = String[])
-    missid = DataFrame(ID = Union{Int, Missing}[missing, missing, missing],
-                    Name = String["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataFrame(ID = Union{Int, Missing}[missing, 2, 2, 4],
-                    Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"]);
+    Random.seed!(1337)
+    names = [
+        DataFrame(ID = Union{Int, Missing}[1, 2, missing],
+            Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"]),
+        DataFrame(ID = Union{Int, Missing}[], Name = String[]),
+        DataFrame(ID = Union{Int, Missing}[missing, missing, missing],
+            Name = String["John Doe", "Jane Doe", "Joe Blogs"]),
+        DataFrame(ID = Union{Int, Missing}[1, 2, 3],
+            Name = Union{String, Missing}[missing, "Jane Doe", missing]),
+        DataFrame(ID = Union{Int, Missing}[1:100; missings(100)],
+            Name = Union{String, Missing}[repeat(["Jane Doe"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[missings(100); 1:100],
+            Name = Union{String, Missing}[repeat(["Jane Doe"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[1:50; missings(100); 51:100],
+            Name = Union{String, Missing}[repeat(["Jane Doe"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[1:64; missings(64); 129:200],
+            Name = Union{String, Missing}[repeat(["Jane Doe"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[1:63; missings(65); 129:200],
+            Name = Union{String, Missing}[repeat(["Jane Doe"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[rand([1:1000; missing], 10000)...],
+            Name = Union{String, Missing}[rand(["John Doe", "Jane Doe", "Joe Blogs", missing], 10000)...]),
+    ]
+    jobs = [
+        DataFrame(ID = Union{Int, Missing}[1, 2, 2, 4],
+            Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"]),
+        DataFrame(ID = Union{Int, Missing}[missing, 2, 2, 4],
+            Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"]),
+        DataFrame(ID = Union{Int, Missing}[missing, 2, 2, 4],
+            Job = Union{String, Missing}["Lawyer", "Doctor", missing, "Farmer"]),
+        DataFrame(ID = Union{Int, Missing}[],
+            Job = Union{String, Missing}[]),
+        DataFrame(ID = Union{Int, Missing}[1:100; missings(100)],
+            Job = Union{String, Missing}[repeat(["Lawyer"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[missings(100); 1:100],
+            Job = Union{String, Missing}[repeat(["Lawyer"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[1:50; missings(100); 51:100],
+            Job = Union{String, Missing}[repeat(["Lawyer"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[1:64; missings(64); 129:200],
+            Job = Union{String, Missing}[repeat(["Lawyer"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[1:63; missings(65); 129:200],
+            Job = Union{String, Missing}[repeat(["Lawyer"], 200)...]),
+        DataFrame(ID = Union{Int, Missing}[rand([1:1000; missing], 10000)...],
+            Job = Union{String, Missing}[rand(["Lawyer", "Doctor", "Florist", missing], 10000)...]),
+    ]
+    for name in names, job in jobs
+        @test leftjoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            leftjoin(name, job, on=:ID, matchmissing=:notequal)
+        @test semijoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            semijoin(name, job, on=:ID, matchmissing=:notequal)
+        @test antijoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            antijoin(name, job, on=:ID, matchmissing=:notequal)
+        @test rightjoin(dropmissing(name, :ID), job, on=:ID, matchmissing=:equal) ≅
+            rightjoin(name, job, on=:ID, matchmissing=:notequal)
+        @test innerjoin(dropmissing(name, :ID), dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            innerjoin(name, job, on=:ID, matchmissing=:notequal)
+    end
 
-    for df in [name, noid, missid]
-        @test leftjoin(df, dropmissing(job), on=:ID, matchmissing=:equal) ≅
-            leftjoin(df, job, on=:ID, matchmissing=:notequal)
-        @test semijoin(df, dropmissing(job), on=:ID, matchmissing=:equal) ≅
-            semijoin(df, job, on=:ID, matchmissing=:notequal)
-        @test antijoin(df, dropmissing(job), on=:ID, matchmissing=:equal) ≅
-            antijoin(df, job, on=:ID, matchmissing=:notequal)
-        @test rightjoin(dropmissing(df), job, on=:ID, matchmissing=:equal) ≅
-            rightjoin(df, job, on=:ID, matchmissing=:notequal)
-        @test innerjoin(dropmissing(df), dropmissing(job), on=:ID, matchmissing=:equal) ≅
-            innerjoin(df, job, on=:ID, matchmissing=:notequal)
+    rl(n) = rand(["a", "b", "c"], n)
+    names2 = [
+        DataFrame(
+            ID1 = Union{Int, Missing}[1, 1, 2],
+            ID2 = Union{String, Missing}["a", "b", "a"],
+            Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1, 1, 2, missing],
+            ID2 = Union{String, Missing}["a", "b", "a", missing],
+            Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs", missing]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[missing, 1, 2, missing],
+            ID2 = Union{String, Missing}["a", "b", missing, missing],
+            Name = Union{String, Missing}[missing, "Jane Doe", "Joe Blogs", missing]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[missing, 1, 2, missing],
+            ID2 = Union{String, Missing}["a", "b", missing, missing],
+            Name = Union{String, Missing}[missings(4)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[missing, 1, 2, missing],
+            ID2 = Union{String, Missing}[missings(4)...],
+            Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs", missing]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:100; missings(100)],
+            ID2 = Union{String, Missing}[rl(100); missings(100)],
+            Name = Union{String, Missing}[rand(["Jane Doe", "Jane Doe"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[missings(100); 1:100],
+            ID2 = Union{String, Missing}[missings(100); rl(100)],
+            Name = Union{String, Missing}[rand(["Jane Doe", "Jane Doe"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:50; missings(100); 51:100],
+            ID2 = Union{String, Missing}[rl(50); missings(100); rl(50)],
+            Name = Union{String, Missing}[rand(["Jane Doe", "Jane Doe"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:64; missings(64); 129:200],
+            ID2 = Union{String, Missing}[rl(64); missings(64); rl(200 - 128)],
+            Name = Union{String, Missing}[rand(["Jane Doe", "Jane Doe"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:63; missings(65); 129:200],
+            ID2 = Union{String, Missing}[rl(64); missings(65); rl(200 - 129)],
+            Name = Union{String, Missing}[rand(["Jane Doe", "Jane Doe"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[rand([1:100; missing], 10000)...],
+            ID2 = Union{String, Missing}[rand(["a", "b", "c", missing], 10000)...],
+            Name = Union{String, Missing}[rand(["John Doe", "Jane Doe", "Joe Blogs", missing], 10000)...]),
+    ]
+    jobs2 = [
+        DataFrame(
+            ID1 = Union{Int, Missing}[1, 2, 2, 4],
+            ID2 = Union{String, Missing}["a", "b", "b", "c"],
+            Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1, 2, 2, 4, missing],
+            ID2 = Union{String, Missing}["a", "b", "b", "c", missing],
+            Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer", missing]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1, 2, missing, 4, missing],
+            ID2 = Union{String, Missing}["a", "b", missing, "c", missing],
+            Job = Union{String, Missing}[missing, "Doctor", "Florist", "Farmer", missing]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:100; missings(100)],
+            ID2 = Union{String, Missing}[rl(100); missings(100)],
+            Job = Union{String, Missing}[rand(["Doctor", "Florist"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[missings(100); 1:100],
+            ID2 = Union{String, Missing}[missings(100); rl(100)],
+            Job = Union{String, Missing}[rand(["Doctor", "Florist"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:50; missings(100); 51:100],
+            ID2 = Union{String, Missing}[rl(50); missings(100); rl(50)],
+            Job = Union{String, Missing}[rand(["Doctor", "Florist"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:64; missings(64); 129:200],
+            ID2 = Union{String, Missing}[rl(64); missings(64); rl(200 - 128)],
+            Job = Union{String, Missing}[rand(["Doctor", "Florist"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[1:63; missings(65); 129:200],
+            ID2 = Union{String, Missing}[rl(64); missings(65); rl(200 - 129)],
+            Job = Union{String, Missing}[rand(["Doctor", "Florist"], 200)...]),
+        DataFrame(
+            ID1 = Union{Int, Missing}[rand([1:100; missing], 10000)...],
+            ID2 = Union{String, Missing}[rand(["a", "b", "c", missing], 10000)...],
+            Job = Union{String, Missing}[rand(["Doctor", "Florist", "Farmer", missing], 10000)...]),
+    ]
+
+    k = [:ID1, :ID2]
+    for name in names2, job in jobs2
+        @test leftjoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            leftjoin(name, job, on=k, matchmissing=:notequal)
+        @test semijoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            semijoin(name, job, on=k, matchmissing=:notequal)
+        @test antijoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            antijoin(name, job, on=k, matchmissing=:notequal)
+        @test rightjoin(dropmissing(name, k), job, on=k, matchmissing=:equal) ≅
+            rightjoin(name, job, on=k, matchmissing=:notequal)
+        @test innerjoin(dropmissing(name, k), dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            innerjoin(name, job, on=k, matchmissing=:notequal)
     end
 end
 
