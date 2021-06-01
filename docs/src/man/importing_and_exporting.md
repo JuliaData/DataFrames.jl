@@ -1,6 +1,6 @@
 # Importing and Exporting Data (I/O)
 
-## CSV files
+## CSV Files
 
 For reading and writing tabular data from CSV and other delimited text files,
 use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
@@ -115,11 +115,12 @@ for data stored in data frames.
 
 ## Other formats
 
-Other, selected, data formats are supported for reading and writing in the
-following packages:
-* Apache Arrow: [Arrow.jl](https://github.com/JuliaData/Arrow.jl)
+Other data formats are supported for reading and writing in the following packages
+(non exhaustive list):
+* Apache Arrow (including Feather v2): [Arrow.jl](https://github.com/JuliaData/Arrow.jl)
+* Apache Feather (v1): [Feather.jl](https://github.com/JuliaData/Feather.jl)
 * Apache Avro: [Avro.jl](https://github.com/JuliaData/Avro.jl)
 * JSON: [JSONTables.jl](https://github.com/JuliaData/JSONTables.jl)
 * Parquet: [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)
 * Stata, SPSS, and SAS: [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)
-* XLSX: [XLSX.jl](https://github.com/felipenoris/XLSX.jl)
+* Microsoft Excel (XLSX): [XLSX.jl](https://github.com/felipenoris/XLSX.jl)
