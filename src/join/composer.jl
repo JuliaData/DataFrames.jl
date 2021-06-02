@@ -46,17 +46,8 @@ struct DataFrameJoiner
                                     "Symbol or Pair{Symbol, Symbol}."))
             end
         end
-        dfl_on = select(dfl, left_on, copycols=false)
-        dfr_on = select(dfr, right_on, copycols=false)
-
-        if matchmissing === :error
-            for df in (dfl_on, dfr_on), col in eachcol(df)
-                if any(ismissing, col)
-                    throw(ArgumentError("missing values in key columns are not allowed " *
-                                        "when matchmissing == :error"))
-                end
-            end
-        elseif matchmissing === :notequal
+        
+        if matchmissing === :notequal
             if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view=true)
                 dfr_on = select(dfr, right_on, copycols=false)
@@ -75,8 +66,20 @@ struct DataFrameJoiner
             else
                 throw(ArgumentError("matchmissing == :notequal not implemented for kind == :$kind"))
             end
-        elseif matchmissing !== :equal
-            throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
+        else
+            dfl_on = select(dfl, left_on, copycols=false)
+            dfr_on = select(dfr, right_on, copycols=false)
+            if matchmissing === :error
+                for df in (dfl_on, dfr_on), col in eachcol(df)
+                    if any(ismissing, col)
+                        throw(ArgumentError("missing values in key columns are not allowed " *
+                                            "when matchmissing == :error"))
+                    end
+                end
+            
+            elseif matchmissing !== :equal
+                throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
+            end
         end
 
         for df in (dfl_on, dfr_on), col in eachcol(df)
