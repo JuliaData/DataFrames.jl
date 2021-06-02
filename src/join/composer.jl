@@ -50,38 +50,32 @@ struct DataFrameJoiner
         if matchmissing === :notequal
             if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view=true)
-                dfr_on = select(dfr, right_on, copycols=false)
             elseif kind === :right
                 dfl = dropmissing(dfl, left_on, view=true)
-                dfl_on = select(dfl, left_on, copycols=false)
             elseif kind === :inner
                 # it possible to drop only left or right df
                 # to gain some performance but needs more testing, see #2724
                 dfl = dropmissing(dfl, left_on, view=true)
-                dfl_on = select(dfl, left_on, copycols=false)
                 dfr = dropmissing(dfr, right_on, view=true)
-                dfr_on = select(dfr, right_on, copycols=false)
             elseif kind === :outer
                 throw(ArgumentError("matchmissing == :notequal for `outerjoin` is not allowed"))
             else
                 throw(ArgumentError("matchmissing == :notequal not implemented for kind == :$kind"))
             end
-        else
-            dfl_on = select(dfl, left_on, copycols=false)
-            dfr_on = select(dfr, right_on, copycols=false)
-            if matchmissing === :error
-                for df in (dfl_on, dfr_on), col in eachcol(df)
-                    if any(ismissing, col)
-                        throw(ArgumentError("missing values in key columns are not allowed " *
-                                            "when matchmissing == :error"))
-                    end
-                end
-            
-            elseif matchmissing !== :equal
-                throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
-            end
         end
-
+        dfl_on = select(dfl, left_on, copycols=false)
+        dfr_on = select(dfr, right_on, copycols=false)
+        if matchmissing === :error
+            for df in (dfl_on, dfr_on), col in eachcol(df)
+                if any(ismissing, col)
+                    throw(ArgumentError("missing values in key columns are not allowed " *
+                                        "when matchmissing == :error"))
+                end
+            end
+        elseif !(matchmissing in (:equal, :notequal))
+            throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
+        end
+    
         for df in (dfl_on, dfr_on), col in eachcol(df)
             if any(x -> (x isa Union{Complex, Real}) &&
                         (isnan(x) || isequal(real(x), -0.0) || isequal(imag(x), -0.0)), col)
