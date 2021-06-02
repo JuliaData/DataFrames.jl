@@ -75,7 +75,6 @@ struct DataFrameJoiner
         elseif !(matchmissing in (:equal, :notequal))
             throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
         end
-    
         for df in (dfl_on, dfr_on), col in eachcol(df)
             if any(x -> (x isa Union{Complex, Real}) &&
                         (isnan(x) || isequal(real(x), -0.0) || isequal(imag(x), -0.0)), col)
