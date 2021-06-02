@@ -46,8 +46,8 @@ struct DataFrameJoiner
                                     "Symbol or Pair{Symbol, Symbol}."))
             end
         end
-        dfl_on = select(dfl, left_on, copycols=true)
-        dfr_on = select(dfr, right_on, copycols=true)
+        dfl_on = select(dfl, left_on, copycols=false)
+        dfr_on = select(dfr, right_on, copycols=false)
 
         if matchmissing === :error
             for df in (dfl_on, dfr_on), col in eachcol(df)
@@ -59,17 +59,17 @@ struct DataFrameJoiner
         elseif matchmissing === :notequal
             if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view=true)
-                dfr_on = select(dfr, right_on, copycols=true)
+                dfr_on = select(dfr, right_on, copycols=false)
             elseif kind === :right
                 dfl = dropmissing(dfl, left_on, view=true)
-                dfl_on = select(dfl, left_on, copycols=true)
+                dfl_on = select(dfl, left_on, copycols=false)
             elseif kind === :inner
                 # it possible to drop only left or right df
                 # to gain some performance but needs more testing, see #2724
                 dfl = dropmissing(dfl, left_on, view=true)
-                dfl_on = select(dfl, left_on, copycols=true)
+                dfl_on = select(dfl, left_on, copycols=false)
                 dfr = dropmissing(dfr, right_on, view=true)
-                dfr_on = select(dfr, right_on, copycols=true)
+                dfr_on = select(dfr, right_on, copycols=false)
             elseif kind === :outer
                 throw(ArgumentError("matchmissing == :notequal for `outerjoin` is not allowed"))
             else
