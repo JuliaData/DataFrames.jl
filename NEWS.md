@@ -1,5 +1,14 @@
 # DataFrames.jl changes on main since last release notes
 
+## New functionalities
+
+* add option `matchmissing=:notequal` in joins;
+  in `leftjoin`, `semijoin` and `antijoin` missings are dropped in right data frame,
+  but preserved in left; in `rightjoin` missings are dropped in left data frame,
+  but preserved in right; in `innerjoin` missings are dropped in both data frames;
+  in `outerjoin` this value of keyword argument is not supported
+  ([#2724](https://github.com/JuliaData/DataFrames.jl/pull/2724))
+
 ## Bug fixes
 
 * fix bug in how `issorted` handles custom orderings and improve performance

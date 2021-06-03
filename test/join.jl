@@ -32,6 +32,8 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
 
     @test_throws ArgumentError innerjoin(name, job)
     @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:errors)
+    @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:weirdmatch)
+    @test_throws ArgumentError outerjoin(name, job, on = :ID, matchmissing=:notequal)
 
     @test innerjoin(name, job, on = :ID) == inner
     @test outerjoin(name, job, on = :ID) ≅ outer
@@ -1555,6 +1557,145 @@ end
     @test antijoin(df1, df2, on=[:id1, :id2]) ≅
           DataFrame(a="a", id2=-(10^7+1:10^7+2), b="b", id1=(10^7+1:10^7+2),
                     c="c", d="d")
+end
+
+@testset "matchmissing :notequal correctness" begin
+    Random.seed!(1337)
+    names = [
+        DataFrame(ID=[1, 2, missing],
+                  Name=["John Doe", "Jane Doe", "Joe Blogs"]),
+        DataFrame(ID=[],
+                  Name=[]),
+        DataFrame(ID=missings(3),
+                  Name=["John Doe", "Jane Doe", "Joe Blogs"]),
+        DataFrame(ID=[1, 2, 3],
+                  Name=[missing, "Jane Doe", missing]),
+        DataFrame(ID=[1:100; missings(100)],
+                  Name=repeat(["Jane Doe"], 200)),
+        DataFrame(ID=[missings(100); 1:100],
+                  Name=repeat(["Jane Doe"], 200)),
+        DataFrame(ID=[1:50; missings(100); 51:100],
+                  Name=repeat(["Jane Doe"], 200)),
+        DataFrame(ID=[1:64; missings(64); 129:200],
+                  Name=repeat(["Jane Doe"], 200)),
+        DataFrame(ID=[1:63; missings(65); 129:200],
+                  Name=repeat(["Jane Doe"], 200)),
+        DataFrame(ID=rand([1:1000; missing], 10000),
+                  Name=rand(["John Doe", "Jane Doe", "Joe Blogs", missing], 10000)),
+    ]
+    jobs = [
+        DataFrame(ID=[1, 2, 2, 4],
+                  Job=["Lawyer", "Doctor", "Florist", "Farmer"]),
+        DataFrame(ID=[missing, 2, 2, 4],
+                  Job=["Lawyer", "Doctor", "Florist", "Farmer"]),
+        DataFrame(ID=[missing, 2, 2, 4],
+                  Job=["Lawyer", "Doctor", missing, "Farmer"]),
+        DataFrame(ID=[],
+                  Job=[]),
+        DataFrame(ID=[1:100; missings(100)],
+                  Job=repeat(["Lawyer"], 200)),
+        DataFrame(ID=[missings(100); 1:100],
+                  Job=repeat(["Lawyer"], 200)),
+        DataFrame(ID=[1:50; missings(100); 51:100],
+                  Job=repeat(["Lawyer"], 200)),
+        DataFrame(ID=[1:64; missings(64); 129:200],
+                  Job=repeat(["Lawyer"], 200)),
+        DataFrame(ID=[1:63; missings(65); 129:200],
+                  Job=repeat(["Lawyer"], 200)),
+        DataFrame(ID=rand([1:1000; missing], 10000),
+                  Job=rand(["Lawyer", "Doctor", "Florist", missing], 10000)),
+    ]
+    for name in names, job in jobs
+        @test leftjoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            leftjoin(name, job, on=:ID, matchmissing=:notequal)
+        @test semijoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            semijoin(name, job, on=:ID, matchmissing=:notequal)
+        @test antijoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            antijoin(name, job, on=:ID, matchmissing=:notequal)
+        @test rightjoin(dropmissing(name, :ID), job, on=:ID, matchmissing=:equal) ≅
+            rightjoin(name, job, on=:ID, matchmissing=:notequal)
+        @test innerjoin(dropmissing(name, :ID), dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
+            innerjoin(name, job, on=:ID, matchmissing=:notequal)
+    end
+
+    rl(n) = rand(["a", "b", "c"], n)
+    names2 = [
+        DataFrame(ID1=[1, 1, 2],
+                  ID2=["a", "b", "a"],
+                  Name=["John Doe", "Jane Doe", "Joe Blogs"]),
+        DataFrame(ID1=[1, 1, 2, missing],
+                  ID2=["a", "b", "a", missing],
+                  Name=["John Doe", "Jane Doe", "Joe Blogs", missing]),
+        DataFrame(ID1=[missing, 1, 2, missing],
+                  ID2=["a", "b", missing, missing],
+                  Name=[missing, "Jane Doe", "Joe Blogs", missing]),
+        DataFrame(ID1=[missing, 1, 2, missing],
+                  ID2=["a", "b", missing, missing],
+                  Name=missings(4)),
+        DataFrame(ID1=[missing, 1, 2, missing],
+                  ID2=missings(4),
+                  Name=["John Doe", "Jane Doe", "Joe Blogs", missing]),
+        DataFrame(ID1=[1:100; missings(100)],
+                  ID2=[rl(100); missings(100)],
+                  Name=rand(["Jane Doe", "Jane Doe"], 200)),
+        DataFrame(ID1=[missings(100); 1:100],
+                  ID2=[missings(100); rl(100)],
+                  Name=rand(["Jane Doe", "Jane Doe"], 200)),
+        DataFrame(ID1=[1:50; missings(100); 51:100],
+                  ID2=[rl(50); missings(100); rl(50)],
+                  Name=rand(["Jane Doe", "Jane Doe"], 200)),
+        DataFrame(ID1=[1:64; missings(64); 129:200],
+                  ID2=[rl(64); missings(64); rl(200 - 128)],
+                  Name=rand(["Jane Doe", "Jane Doe"], 200)),
+        DataFrame(ID1=[1:63; missings(65); 129:200],
+                  ID2=[rl(64); missings(65); rl(200 - 129)],
+                  Name=rand(["Jane Doe", "Jane Doe"], 200)),
+        DataFrame(ID1=rand([1:100; missing], 10000),
+                  ID2=rand(["a", "b", "c", missing], 10000),
+                  Name=rand(["John Doe", "Jane Doe", "Joe Blogs", missing], 10000)),
+    ]
+    jobs2 = [
+        DataFrame(ID1=[1, 2, 2, 4],
+                  ID2=["a", "b", "b", "c"],
+                  Job=["Lawyer", "Doctor", "Florist", "Farmer"]),
+        DataFrame(ID1=[1, 2, 2, 4, missing],
+                  ID2=["a", "b", "b", "c", missing],
+                  Job=["Lawyer", "Doctor", "Florist", "Farmer", missing]),
+        DataFrame(ID1=[1, 2, missing, 4, missing],
+                  ID2=["a", "b", missing, "c", missing],
+                  Job=[missing, "Doctor", "Florist", "Farmer", missing]),
+        DataFrame(ID1=[1:100; missings(100)],
+                  ID2=[rl(100); missings(100)],
+                  Job=rand(["Doctor", "Florist"], 200)),
+        DataFrame(ID1=[missings(100); 1:100],
+                  ID2=[missings(100); rl(100)],
+                  Job=rand(["Doctor", "Florist"], 200)),
+        DataFrame(ID1=[1:50; missings(100); 51:100],
+                  ID2=[rl(50); missings(100); rl(50)],
+                  Job=rand(["Doctor", "Florist"], 200)),
+        DataFrame(ID1=[1:64; missings(64); 129:200],
+                  ID2=[rl(64); missings(64); rl(200 - 128)],
+                  Job=rand(["Doctor", "Florist"], 200)),
+        DataFrame(ID1=[1:63; missings(65); 129:200],
+                  ID2=[rl(64); missings(65); rl(200 - 129)],
+                  Job=rand(["Doctor", "Florist"], 200)),
+        DataFrame(ID1=rand([1:100; missing], 10000),
+                  ID2=rand(["a", "b", "c", missing], 10000),
+                  Job=rand(["Doctor", "Florist", "Farmer", missing], 10000)),
+    ]
+    k = [:ID1, :ID2]
+    for name in names2, job in jobs2
+        @test leftjoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            leftjoin(name, job, on=k, matchmissing=:notequal)
+        @test semijoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            semijoin(name, job, on=k, matchmissing=:notequal)
+        @test antijoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            antijoin(name, job, on=k, matchmissing=:notequal)
+        @test rightjoin(dropmissing(name, k), job, on=k, matchmissing=:equal) ≅
+            rightjoin(name, job, on=k, matchmissing=:notequal)
+        @test innerjoin(dropmissing(name, k), dropmissing(job, k), on=k, matchmissing=:equal) ≅
+            innerjoin(name, job, on=k, matchmissing=:notequal)
+    end
 end
 
 end # module

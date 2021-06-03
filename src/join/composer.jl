@@ -23,7 +23,8 @@ struct DataFrameJoiner
 
     function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame,
                              on::Union{<:OnType, AbstractVector},
-                             matchmissing::Symbol)
+                             matchmissing::Symbol,
+                             kind::Symbol)
         on_cols = isa(on, AbstractVector) ? on : [on]
         left_on = Symbol[]
         right_on = Symbol[]
@@ -45,9 +46,25 @@ struct DataFrameJoiner
                                     "Symbol or Pair{Symbol, Symbol}."))
             end
         end
-        dfl_on = dfl[!, left_on]
-        dfr_on = dfr[!, right_on]
-
+        
+        if matchmissing === :notequal
+            if kind in (:left, :semi, :anti)
+                dfr = dropmissing(dfr, right_on, view=true)
+            elseif kind === :right
+                dfl = dropmissing(dfl, left_on, view=true)
+            elseif kind === :inner
+                # it possible to drop only left or right df
+                # to gain some performance but needs more testing, see #2724
+                dfl = dropmissing(dfl, left_on, view=true)
+                dfr = dropmissing(dfr, right_on, view=true)
+            elseif kind === :outer
+                throw(ArgumentError("matchmissing == :notequal for `outerjoin` is not allowed"))
+            else
+                throw(ArgumentError("matchmissing == :notequal not implemented for kind == :$kind"))
+            end
+        end
+        dfl_on = select(dfl, left_on, copycols=false)
+        dfr_on = select(dfr, right_on, copycols=false)
         if matchmissing === :error
             for df in (dfl_on, dfr_on), col in eachcol(df)
                 if any(ismissing, col)
@@ -55,10 +72,9 @@ struct DataFrameJoiner
                                         "when matchmissing == :error"))
                 end
             end
-        elseif matchmissing !== :equal
-            throw(ArgumentError("matchmissing allows only :error or :equal"))
+        elseif !(matchmissing in (:equal, :notequal))
+            throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
         end
-
         for df in (dfl_on, dfr_on), col in eachcol(df)
             if any(x -> (x isa Union{Complex, Real}) &&
                         (isnan(x) || isequal(real(x), -0.0) || isequal(imag(x), -0.0)), col)
@@ -311,7 +327,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    joiner = DataFrameJoiner(df1, df2, on, matchmissing)
+    joiner = DataFrameJoiner(df1, df2, on, matchmissing, kind)
 
     # Check merge key validity
     left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
@@ -485,7 +501,8 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df1` and `df2`
+  `on` columns; `isequal` is used for comparisons of rows for equality
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -626,7 +643,8 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
+  `isequal` is used for comparisons of rows for equality
 
 All columns of the returned data table will support missing values.
 
@@ -772,7 +790,8 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df1` `on` columns;
+  `isequal` is used for comparisons of rows for equality
 
 All columns of the returned data table will support missing values.
 
@@ -923,7 +942,7 @@ This behavior may change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; `isequal` is used for comparisons of rows for equality
 
 All columns of the returned data table will support missing values.
 
@@ -1071,7 +1090,8 @@ The order of rows in the result is undefined and may change in the future releas
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
+  `isequal` is used for comparisons of rows for equality
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -1176,7 +1196,8 @@ The order of rows in the result is undefined and may change in the future releas
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched (`isequal` is used for comparisons of rows for equality)
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
+  `isequal` is used for comparisons of rows for equality
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
