@@ -30,7 +30,7 @@ end
 
 @testset "Basic show test with allrows and allcols" begin
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
-                   C = Float32[1.0, 2.0, 3.0, 4.0], D = ['\'', '∀', '\$', '\n'])
+                   C = Float32[1.0, 2.0, 3.0, 4.0], D = ['\'', '∀', '$', '\n'])
 
     refstr = """
     4×4 DataFrame
