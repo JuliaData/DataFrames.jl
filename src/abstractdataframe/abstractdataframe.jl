@@ -1369,15 +1369,24 @@ julia> unique!(df)  # modifies df
 """
     hcat(df::AbstractDataFrame...;
          makeunique::Bool=false, copycols::Bool=true)
-    hcat(df::AbstractDataFrame..., vs::AbstractVector;
+    hcat(df::AbstractDataFrame, vs::AbstractVector;
          makeunique::Bool=false, copycols::Bool=true)
     hcat(vs::AbstractVector, df::AbstractDataFrame;
          makeunique::Bool=false, copycols::Bool=true)
+    hcat(df::AbstractDataFrame, table;
+         makeunique::Bool=false, copycols::Bool=true)
+    hcat(table, df::AbstractDataFrame;
+         makeunique::Bool=false, copycols::Bool=true)
 
-Horizontally concatenate `AbstractDataFrames` and optionally `AbstractVector`s.
+Horizontally concatenate `AbstractDataFrames` and optionally `AbstractVector`s
+and Tables.jl tables.
 
 If `AbstractVector` is passed then a column name for it is automatically generated
 as `:x1` by default.
+
+If Tables.jl table is passed then a `DataFrame` is constructed from it and then
+a concatenation is performed (a precise rule is that it is accepted to pass any
+object that single positional `DataFrame` constructor allows).
 
 If `makeunique=false` (the default) column names of passed objects must be unique.
 If `makeunique=true` then duplicate column names will be suffixed
