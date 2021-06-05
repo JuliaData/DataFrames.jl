@@ -10,7 +10,7 @@
   ([#2724](https://github.com/JuliaData/DataFrames.jl/pull/2724))
 * correctly handle selectors of the form `:col => AsTable` and `:col => cols`
   by expanding a single column into multiple columns
-  ([XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
+  ([#2780](https://github.com/JuliaData/DataFrames.jl/pull/2780))
 
 ## Bug fixes
 
