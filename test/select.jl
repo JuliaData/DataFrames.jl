@@ -1616,11 +1616,11 @@ end
     @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]),
                                          [:a] => sum, false) == (1 => (sum => :a))
 
-    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
+    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]),
                                          [:a] => sum => [:new],  false) == (1 => (sum => [:new]))
 
     # Test that target col strings are converted to Symbols
-    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]), 
+    @test DataFrames.normalize_selection(DataFrames.Index(Dict(:a => 1, :b => 2), [:a, :b]),
                                          [:a] => sum => ["new"],  false) == (1 => (sum => [:new]))
 end
 
@@ -1647,5 +1647,22 @@ end
         @test df.a === a
     end
 end
-                                                
+
+@testset ":col => AsTable and :col => cols" begin
+    df = DataFrame(id=1:2, c1=[(a=1, b=2), (a=3, b=4)], c2=[(11, 12), (13, 14)])
+    @test select(df, :c1 => AsTable) == DataFrame(a=[1, 3], b=[2, 4])
+    @test select(df, :c1 => [:p, :q]) == DataFrame(p=[1, 3], q=[2, 4])
+    @test select(df, :c2 => AsTable) == DataFrame(x1=[11, 13], x2=[12, 14])
+    @test select(df, :c2 => [:p, :q]) == DataFrame(p=[11, 13], q=[12, 14])
+    @test_throws ArgumentError select(df, [:c1, :c2] => AsTable)
+    @test_throws ArgumentError select(df, [:c1, :c2] => AsTable)
+    gdf = groupby(df, :id)
+    @test select(gdf, :c1 => AsTable) == DataFrame(id=1:2, a=[1, 3], b=[2, 4])
+    @test select(gdf, :c1 => [:p, :q]) == DataFrame(id=1:2, p=[1, 3], q=[2, 4])
+    @test select(gdf, :c2 => AsTable) == DataFrame(id=1:2, x1=[11, 13], x2=[12, 14])
+    @test select(gdf, :c2 => [:p, :q]) == DataFrame(id=1:2, p=[11, 13], q=[12, 14])
+    @test_throws ArgumentError select(gdf, [:c1, :c2] => AsTable)
+    @test_throws ArgumentError select(gdf, [:c1, :c2] => AsTable)
+end
+
 end # module

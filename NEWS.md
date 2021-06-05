@@ -8,6 +8,9 @@
   but preserved in right; in `innerjoin` missings are dropped in both data frames;
   in `outerjoin` this value of keyword argument is not supported
   ([#2724](https://github.com/JuliaData/DataFrames.jl/pull/2724))
+* correctly handle selectors of the form `:col => AsTable` and `:col => cols`
+  by expanding a single column into multiple columns
+  ([XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
 
 ## Bug fixes
 

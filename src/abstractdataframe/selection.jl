@@ -47,7 +47,7 @@ const TRANSFORMATION_COMMON_RULES =
     3. a `cols => function => target_cols` form additionally explicitly specifying
        the target column or columns.
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
-       must be single name (as a `Symbol` or a string).
+       must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
        in a group; without `target_cols` the new column is called `:nrow`, otherwise
        it must be single name (as a `Symbol` or a string).
@@ -212,7 +212,13 @@ end
 
 normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex, <:AbstractString},
                     renamecols::Bool) =
-    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols::Bool)
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{<:ColumnIndex,
+                                                  <:Union{AbstractVector{Symbol},
+                                                          AbstractVector{<:AbstractString}}},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => identity => last(sel), renamecols)
 
 function normalize_selection(idx::AbstractIndex,
                              @nospecialize(sel::Pair{<:ColumnIndex,
@@ -287,6 +293,11 @@ function normalize_selection(idx::AbstractIndex,
                              @nospecialize(sel::Pair{<:ColumnIndex, <:Base.Callable}), renamecols::Bool)
     c = idx[first(sel)]
     fun = last(sel)
+
+    if fun === AsTable
+        return normalize_selection(idx, first(sel) => identity => AsTable, renamecols)
+    end
+
     if renamecols
         newcol = Symbol(_names(idx)[c], "_", funname(fun))
     else
@@ -320,6 +331,9 @@ function normalize_selection(idx::AbstractIndex,
             end
     end
     fun = last(sel)
+
+    fun === AsTable && throw(ArgumentError("Passing AsTable in $sel is not supported"))
+
     if length(c) > 3
         prefix = join(@views(_names(idx)[c[1:2]]), '_')
         if renamecols

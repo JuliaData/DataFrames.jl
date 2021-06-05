@@ -53,7 +53,7 @@ each subset of the `DataFrame`. This specification can be of the following forms
 3. a `cols => function => target_cols` form additionally explicitly specifying
    the target column or columns.
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
-   must be single name (as a `Symbol` or a string).
+   must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
    in a group; without `target_cols` the new column is called `:nrow`, otherwise
    it must be single name (as a `Symbol` or a string).
