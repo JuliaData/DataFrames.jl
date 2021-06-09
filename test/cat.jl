@@ -66,8 +66,8 @@ end
     answer = answer[:, 1:4]
     @test hcat(gd[1], gd[2], makeunique=true) == answer
 
-    @test_throws ArgumentError hcat("a", df, makeunique=true)
-    @test_throws ArgumentError hcat(df, "a", makeunique=true)
+    @test_throws MethodError hcat("a", df, makeunique=true)
+    @test_throws MethodError hcat(df, "a", makeunique=true)
 end
 
 @testset "hcat: copycols" begin

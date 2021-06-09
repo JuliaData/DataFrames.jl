@@ -1423,22 +1423,19 @@ true
 """
 Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(df, copycols=copycols)
-Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(DataFrame(df, copycols=copycols), x,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
+# TODO: after deprecation remove AbstractVector methods
+Base.hcat(df::AbstractDataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(DataFrame(df, copycols=copycols), x, makeunique=makeunique, copycols=copycols)
+Base.hcat(x::AbstractVector, df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
     hcat!(x, df, makeunique=makeunique, copycols=copycols)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame;
           makeunique::Bool=false, copycols::Bool=true) =
     hcat!(DataFrame(df1, copycols=copycols), df2,
           makeunique=makeunique, copycols=copycols)
-Base.hcat(df::AbstractDataFrame, x, y...;
+Base.hcat(df::AbstractDataFrame, x::Union{AbstractVector, AbstractDataFrame},
+          y::Union{AbstractVector, AbstractDataFrame}...;
           makeunique::Bool=false, copycols::Bool=true) =
     hcat!(hcat(df, x, makeunique=makeunique, copycols=copycols), y...,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(hcat(df1, df2, makeunique=makeunique, copycols=copycols), dfn...,
           makeunique=makeunique, copycols=copycols)
 
 """

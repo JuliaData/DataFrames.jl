@@ -1012,7 +1012,7 @@ end
 
 ##############################################################################
 ##
-## Hcat specialization
+## hcat!
 ##
 ##############################################################################
 
@@ -1026,47 +1026,29 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
     return df1
 end
 
-# definition required to avoid hcat! ambiguity
-hcat!(df1::DataFrame, df2::DataFrame;
-      makeunique::Bool=false, copycols::Bool=true) =
-    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2,
-           makeunique=makeunique, copycols=copycols)::DataFrame
-
-hcat!(df::DataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
-    throw(ArgumentError("x must AbstractDataFrame"))
-hcat!(x, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    throw(ArgumentError("x must AbstractDataFrame"))
+# TODO: after deprecation remove AbstractVector methods
 
 function hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true)
-    Base.depwarn("horizontal concatenation of data frame with a vector is deprecated", :hcat!)
+    Base.depwarn("horizontal concatenation of data frame with a vector is deprecated. " *
+                 "Pass DataFrame(x1=x) instead.", :hcat!)
     return hcat!(df, DataFrame(AbstractVector[x], [:x1], copycols=false),
                  makeunique=makeunique, copycols=copycols)
 end
 
 function hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
-    Base.depwarn("horizontal concatenation of data frame with a vector is deprecated", :hcat!)
+    Base.depwarn("horizontal concatenation of data frame with a vector is deprecated. " *
+                 "Pass DataFrame(x1=x) instead.", :hcat!)
     return hcat!(DataFrame(AbstractVector[x], [:x1], copycols=copycols), df,
                  makeunique=makeunique, copycols=copycols)
 end
 
 # hcat! for 1-n arguments
 hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true) = df
-hcat!(a::DataFrame, b, c...; makeunique::Bool=false, copycols::Bool=true) =
+hcat!(a::DataFrame, b::Union{AbstractDataFrame, AbstractVector},
+      c::Union{AbstractDataFrame, AbstractVector}...;
+      makeunique::Bool=false, copycols::Bool=true) =
     hcat!(hcat!(a, b, makeunique=makeunique, copycols=copycols),
           c..., makeunique=makeunique, copycols=copycols)
-
-# hcat
-Base.hcat(df::DataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(copy(df, copycols=copycols), x,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame;
-          makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(copy(df1, copycols=copycols), df2,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(hcat(df1, df2, makeunique=makeunique, copycols=copycols), dfn...,
-          makeunique=makeunique, copycols=copycols)
 
 ##############################################################################
 ##
