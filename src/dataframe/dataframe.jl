@@ -915,6 +915,12 @@ function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false,
     return df
 end
 
+insertemptycols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:Union{Symbol, AbstractString}, <:Union{DataType, Union}}...; makeunique::Bool=false) = 
+    insertcols!(df, col, (name => Vector{Union{Missing, T}}(missing, nrow(df)) for (name, T) in name_cols)...; makeunique=makeunique)
+    
+insertemptycols!(df::DataFrame, name_cols::Pair{<:Union{Symbol, AbstractString}, <:Union{DataType, Union}}...; makeunique::Bool=false) = 
+    insertemptycols!(df, ncol(df) + 1, name_cols...; makeunique=makeunique)
+
 """
     copy(df::DataFrame; copycols::Bool=true)
 
