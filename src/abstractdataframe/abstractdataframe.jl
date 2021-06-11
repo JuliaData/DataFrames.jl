@@ -1370,7 +1370,7 @@ julia> unique!(df)  # modifies df
     hcat(df::AbstractDataFrame...;
          makeunique::Bool=false, copycols::Bool=true)
 
-Horizontally concatenate `AbstractDataFrames`.
+Horizontally concatenate data frames.
 
 If `makeunique=false` (the default) column names of passed objects must be unique.
 If `makeunique=true` then duplicate column names will be suffixed
