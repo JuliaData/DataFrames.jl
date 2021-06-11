@@ -181,8 +181,16 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, id
     setindex!(sdf, val, idx[1], idx[2])
 end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
-    parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)] = val
-    return sdf
+    if colinds isa SymbolOrString && getfield(sdf, :colindex) isa Index &&
+       && val isa AbstractVector && columnindex(sdf, colinds) == 0 && nrow(sdf) == length(val)
+        T = eltype(val)
+        newcol = Tables.allocatecolumn(Union{T, Missing}, n)
+        fill!(newcol, missing)
+        view(newcol, rows(sdf)) = val
+    else
+        parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)] = val
+    end
+return sdf
 end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
     throw(ArgumentError("setting index of SubDataFrame using ! as row selector is not allowed"))
