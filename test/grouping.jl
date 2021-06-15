@@ -3710,4 +3710,61 @@ end
     end
 end
 
+@testset "aggregation with matrix of Pair" begin
+    df = DataFrame(a=["a", "b","a", "b"], x=1:4, y=11:14)
+    gdf = groupby_checked(df, :a)
+
+    @test combine(df, [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(x_minimum=1, y_minimum=11, x_maximum=4, y_maximum=14)
+    @test combine(gdf, [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b"], x_minimum=[1, 2], y_minimum=[11, 12],
+                    x_maximum=[3, 4], y_maximum=[13, 14])
+    @test select(df, [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(x_minimum=[1, 1, 1, 1],
+                    y_minimum=[11, 11, 11, 11],
+                    x_maximum=[4, 4, 4, 4],
+                    y_maximum=[14, 14, 14, 14])
+    @test select(gdf, [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b", "a", "b"],
+                    x_minimum=[1, 2, 1, 2],
+                    y_minimum=[11, 12, 11, 12],
+                    x_maximum=[3, 4, 3, 4],
+                    y_maximum=[13, 14, 13, 14])
+    @test transform(df, [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b","a", "b"], x=1:4, y=11:14,
+                    x_minimum=[1, 1, 1, 1],
+                    y_minimum=[11, 11, 11, 11],
+                    x_maximum=[4, 4, 4, 4],
+                    y_maximum=[14, 14, 14, 14])
+    @test transform(gdf, [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b","a", "b"], x=1:4, y=11:14,
+                    x_minimum=[1, 2, 1, 2],
+                    y_minimum=[11, 12, 11, 12],
+                    x_maximum=[3, 4, 3, 4],
+                    y_maximum=[13, 14, 13, 14])
+    @test select!(copy(df), [:x, :y] .=> [minimum maximum]) ==
+        DataFrame(x_minimum=[1, 1, 1, 1],
+                    y_minimum=[11, 11, 11, 11],
+                    x_maximum=[4, 4, 4, 4],
+                    y_maximum=[14, 14, 14, 14])
+    @test select!(groupby_checked(copy(df), :a), [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b", "a", "b"],
+                    x_minimum=[1, 2, 1, 2],
+                    y_minimum=[11, 12, 11, 12],
+                    x_maximum=[3, 4, 3, 4],
+                    y_maximum=[13, 14, 13, 14])
+    @test transform!(copy(df), [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b","a", "b"], x=1:4, y=11:14,
+                    x_minimum=[1, 1, 1, 1],
+                    y_minimum=[11, 11, 11, 11],
+                    x_maximum=[4, 4, 4, 4],
+                    y_maximum=[14, 14, 14, 14])
+    @test transform!(groupby_checked(copy(df), :a), [:x, :y] .=> [minimum maximum]) ==
+          DataFrame(a=["a", "b","a", "b"], x=1:4, y=11:14,
+                    x_minimum=[1, 2, 1, 2],
+                    y_minimum=[11, 12, 11, 12],
+                    x_maximum=[3, 4, 3, 4],
+                    y_maximum=[13, 14, 13, 14])
+end
+
 end # module
