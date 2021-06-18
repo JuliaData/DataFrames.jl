@@ -19,6 +19,9 @@
 * fix bug in how `issorted` handles custom orderings and improve performance
   of sorting when complex custom orderings are passed
   ([#2746](https://github.com/JuliaData/DataFrames.jl/pull/2746))
+* fix bug in `combine`, `select`, `select!`, `transform`, and `transform!`
+  that incorrectly disallowed matrices of `Pair`s in `GroupedDataFrame` processing
+  ([#2782](https://github.com/JuliaData/DataFrames.jl/pull/2782))
 
 ## Performance improvements
 
