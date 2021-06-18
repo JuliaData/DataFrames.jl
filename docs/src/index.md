@@ -28,8 +28,8 @@ tool for working with tabular data in Julia -- as noted below, there are some
 other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
-To understand the toolchain in more details, have a look at the tutorials in this manual. New
-users can start with the [First Steps with DataFrames.jl](@ref) tutorial in this manual.
+To understand the toolchain in more detail, have a look at the tutorials in this manual. New
+users can start with the [First Steps with DataFrames.jl](@ref) section.
 
 ## DataFrames.jl and the Julia Data Ecosystem
 

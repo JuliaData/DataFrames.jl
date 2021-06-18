@@ -40,13 +40,13 @@ julia> using DataFrames
 ```
 
 The most fundamental type provided by DataFrames.jl is `DataFrame`, where typically
-that each row is interpreted as an observation and each column as a feature.
+each row is interpreted as an observation and each column as a feature.
 
 # Constructors and Basic Utility Functions
 
 ## Constructors
 
-In this section you will see many ways to create a `DataFrame` using the `DataFrame(...)` constructor.
+In this section you will see many ways to create a `DataFrame` using the constructor.
 First, let's create an empty `DataFrame`:
 ```jldoctest dataframe
 julia> df = DataFrame()
@@ -64,7 +64,7 @@ julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
    2 │     2      6      1
    3 │     3      7      1
 ```
-note that in column `:fixed` scalars get automatically broadcasted.
+note that in column `:fixed` scalars gets automatically broadcasted.
 
 To move forward with the tutorial you need to install the CSV.jl package in your environment.
 In order to do so run the following commands:
@@ -75,15 +75,15 @@ julia> Pkg.add("CSV")
 Make sure you have CSV.jl in a version that is at least 0.8.4.
 
 Now, we will explore how to load a CSV file into a `DataFrame`. Unlike Python's Pandas `read_csv`
-the functions in Julia are separated into two packages - CSV.jl and DataFrames.jl. As the first
-step, you have to declare the libraries you will use. In our case CSV.jl and DataFrames.jl. In order to
+the you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
+step, you have to load the libraries you will use. In our case CSV.jl and DataFrames.jl. In order to
 read the file in we will use the `CSV.read` function.
 ```jldoctest dataframe
 julia> using CSV
 
-julia> german_ref = CSV.read((joinpath(dirname(pathof(DataFrames)),
-                                    "..", "docs", "src", "assets", "german.csv")),
-                                    DataFrame)
+julia> german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
+                                      "..", "docs", "src", "assets", "german.csv"),
+                              DataFrame)
 1000×10 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  Int64  String  Int64  String   String           String          ⋯
@@ -111,9 +111,9 @@ julia> german = copy(german_ref); # It will copy the data frame
 
 Now let's talk about the given code block:
 ```julia
-german_ref = CSV.read((joinpath(dirname(pathof(DataFrames)),
-                                      "..", "docs", "src", "assets", "german.csv")),
-                                      DataFrame)
+german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
+                                      "..", "docs", "src", "assets", "german.csv"),
+                              DataFrame)
 ```
 - we are storing `german.csv` file in the DataFrames.jl repository to make user's life easier and
   avoid having to download it each time;
@@ -161,7 +161,7 @@ julia> german[!, :Sex]
 
 Since `german[!, :Sex]` does not make a copy, changing the elements of the column vector returned by this
 syntax will affect the values stored in the original `german` data frame. To get a **copy** of the column you can use
-`german[:, :Sex]`: changing the vector returned by this syntax does not change `german`.
+`german[:, :Sex]`: changing the vector returned by this syntax does not affect the `german` data frame.
 
 ```jldoctest dataframe
 julia> german.Sex
@@ -187,14 +187,14 @@ julia> german.Sex
  "male"
  "male"
 
-julia> german.Sex === german[!, :Sex] # The `===` function confirms that the construct instance of these operations are actually one and the same
+julia> german.Sex === german[!, :Sex] # The `===` function confirms that both expressions produce the same object. 
 true
 
 julia> german.Sex === german[:, :Sex]
 false
 ```
 
-You can obtain the column names as strings using the `names` function:
+You can obtain the column names of the data frame as `String`s using the `names` function:
 ```jldoctest dataframe
 julia> names(german)
 10-element Vector{String}:
@@ -410,7 +410,7 @@ Note that `mapcols` guarantees not to reuse the columns from `german` in the ret
 its argument then it gets copied before being stored.
 
 ```jldoctest dataframe
-julia> mapcols(id -> id.^2, german) # `mapcols` will sequentially set columns from `id` to `Purpose` and will do square of each columns
+julia> mapcols(id -> id .^2, german) # `mapcols` will sequentially set columns from `id` to `Purpose` and will do square of each columns
 1000×10 DataFrame
   Row │ id      Age    Sex           Job    Housing   Saving accounts       Ch ⋯
       │ Int64   Int64  String        Int64  String    String                St ⋯
@@ -623,6 +623,7 @@ Note that in the first case a vector is required to be passed (not just any iter
 so e.g. `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid.
 
 ### Most elementary get and set operations
+
 Here, "get" means you retrieve a part of the column, and "set" means you put a part of the column in the data frame.
 
 Given the data frame `german` here are various ways to grab one of its columns as vector:
@@ -1113,7 +1114,7 @@ In the above example the number `2` and `5` represents the indices and as we kno
 So, from `2:5` it will access the column from `:Age` to `:Housing`.
 
 ```jldoctest dataframe
-julia> @view german[1:5, 1]
+julia> @view german[1:5, 1] # view the element type in vector form
 5-element view(::Vector{Int64}, 1:5) with eltype Int64:
  0
  1
@@ -1201,7 +1202,7 @@ julia> select(german, r"Sex") # select columns containing 'Sex' string
  1000 │ male
 985 rows omitted
 
-julia> select(german, r"Sex","Job") # Selects more than one column
+julia> select(german, r"Sex", "Job") # Selects more than one column
 1000×2 DataFrame
   Row │ Sex     Job
       │ String  Int64
