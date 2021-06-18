@@ -14,6 +14,8 @@
 
 ## Bug fixes
 
+* fix bug in how `groupby` handles grouping of float columns
+  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
 * fix bug in how `issorted` handles custom orderings and improve performance
   of sorting when complex custom orderings are passed
   ([#2746](https://github.com/JuliaData/DataFrames.jl/pull/2746))

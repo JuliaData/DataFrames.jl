@@ -3710,4 +3710,8 @@ end
     end
 end
 
+@testset "grouping floats" begin
+    @test length(groupby_checked(DataFrame(a=[0.0, -0.0]), :a)) == 2
+end
+
 end # module

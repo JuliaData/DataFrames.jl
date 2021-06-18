@@ -143,8 +143,7 @@ function refpool_and_array(x::AbstractArray)
         else
             return nothing, nothing
         end
-    elseif x isa AbstractArray{<:Union{Real, Missing}} &&
-        all(v -> ismissing(v) | isinteger(v), x) &&
+    elseif x isa AbstractArray{<:Union{Integer, Missing}} &&
         !isempty(skipmissing(x))
         minval, maxval = extrema(skipmissing(x))
         ngroups = big(maxval) - big(minval) + 1
