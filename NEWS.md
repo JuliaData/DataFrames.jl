@@ -1,4 +1,4 @@
-# DataFrames.jl changes on main since last release notes
+# DataFrames.jl v1.2 Release Notes
 
 ## New functionalities
 
@@ -28,6 +28,13 @@
   in internal operations form a continuous block
   ([#2727](https://github.com/JuliaData/DataFrames.jl/pull/2727),
    [#2769](https://github.com/JuliaData/DataFrames.jl/pull/2769))
+
+## Deprecated
+
+* `hcat` of a data frame with a vector is now deprecated to allow consistent
+  handling of horizontal concatenation of data frame with Tables.jl tables
+  in the future
+  ([#2777](https://github.com/JuliaData/DataFrames.jl/pull/2777))
 
 ## Other changes
 

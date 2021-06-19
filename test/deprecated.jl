@@ -1,6 +1,6 @@
 module TestDeprecated
 
-using Test, DataFrames
+using Test, DataFrames, CategoricalArrays
 
 const ≅ = isequal
 
@@ -35,6 +35,99 @@ end
                                        indicator=:source, source=:source)
     @test_throws ArgumentError rightjoin(name, job, on = :ID,
                                          indicator=:source, source=:source)
+end
+
+@testset "hcat with vector" begin
+      df = DataFrame(x=1:3)
+      x = [4, 5, 6]
+      hdf = hcat(df, x)
+      @test hdf[!, 1] == df[!, 1]
+      @test hdf[!, 1] !== df[!, 1]
+      @test hdf[!, 2] !== x
+      hdf = hcat(x, df)
+      @test hdf[!, 2] == df[!, 1]
+      @test hdf[!, 2] !== df[!, 1]
+      @test hdf[!, 1] !== x
+
+      df = DataFrame()
+      DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10), makeunique=true)
+      @test df[!, 1] == CategoricalVector(1:10)
+      DataFrames.hcat!(df, 1:10, makeunique=true)
+      @test df[!, 2] == collect(1:10)
+      DataFrames.hcat!(df, collect(1:10), makeunique=true)
+      @test df[!, 3] == collect(1:10)
+
+      df = DataFrame()
+      df2 = hcat(CategoricalVector{Union{Int, Missing}}(1:10), df, makeunique=true)
+      @test isempty(df)
+      @test df2[!, 1] == collect(1:10)
+      @test names(df2) == ["x1"]
+      ref_df = copy(df2)
+      df3 = hcat(11:20, df2, makeunique=true)
+      @test df2 == ref_df
+      @test df3[!, 1] == collect(11:20)
+      @test names(df3) == ["x1", "x1_1"]
+
+      df1 = DataFrame(a=1:3)
+      df2 = DataFrame(b=1:3)
+      dfv = view(df2, :, :)
+      x = [1, 2, 3]
+
+      df3 = hcat(df1, x)
+      @test propertynames(df3) == [:a, :x1]
+      @test df3.a == df1.a
+      @test df3.x1 == x
+      @test df3.a !== df1.a
+      @test df3.x1 !== x
+      df3 = hcat(df1, x, copycols=true)
+      @test propertynames(df3) == [:a, :x1]
+      @test df3.a == df1.a
+      @test df3.x1 == x
+      @test df3.a !== df1.a
+      @test df3.x1 !== x
+      df3 = hcat(df1, x, copycols=false)
+      @test propertynames(df3) == [:a, :x1]
+      @test df3.a === df1.a
+      @test df3.x1 === x
+
+      df3 = hcat(x, df1)
+      @test propertynames(df3) == [:x1, :a]
+      @test df3.a == df1.a
+      @test df3.x1 == x
+      @test df3.a !== df1.a
+      @test df3.x1 !== x
+      df3 = hcat(x, df1, copycols=true)
+      @test propertynames(df3) == [:x1, :a]
+      @test df3.a == df1.a
+      @test df3.x1 == x
+      @test df3.a !== df1.a
+      @test df3.x1 !== x
+      df3 = hcat(x, df1, copycols=false)
+      @test propertynames(df3) == [:x1, :a]
+      @test df3.a === df1.a
+      @test df3.x1 === x
+
+      df3 = hcat(dfv, x, df1)
+      @test propertynames(df3) == [:b, :x1, :a]
+      @test df3.a == df1.a
+      @test df3.b == dfv.b
+      @test df3.x1 == x
+      @test df3.a !== df1.a
+      @test df3.b !== dfv.b
+      @test df3.x1 !== x
+      df3 = hcat(dfv, x, df1, copycols=true)
+      @test propertynames(df3) == [:b, :x1, :a]
+      @test df3.a == df1.a
+      @test df3.b == dfv.b
+      @test df3.x1 == x
+      @test df3.a !== df1.a
+      @test df3.b !== dfv.b
+      @test df3.x1 !== x
+      df3 = hcat(dfv, x, df1, copycols=false)
+      @test propertynames(df3) == [:b, :x1, :a]
+      @test df3.a === df1.a
+      @test df3.b === dfv.b
+      @test df3.x1 === x
 end
 
 end # module
