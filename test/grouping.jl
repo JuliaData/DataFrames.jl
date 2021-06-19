@@ -751,8 +751,8 @@ end
 
     # Check optimized approach based on refpool method
     for sm in (false, true),
-        S in (Int, BigInt),
-        T in (Int, BigInt),
+        S in (Int, Float64),
+        T in (Int, Float64),
         df in (DataFrame(x=rand(1:10, 1000),
                          y=rand(-3:10, 1000), z=rand(1000)),
                DataFrame(x=rand([1:10; missing], 1000),
@@ -792,8 +792,8 @@ end
 
     # Check fallback to hash table method when range is too wide
     for sm in (false, true),
-        S in (Int, Int32),
-        T in (Int, Int32),
+        S in (Int, Float64),
+        T in (Int, Float64),
         df in (DataFrame(x=rand(1:100_000, 100),
                          y=rand(-50:110_000, 100), z=rand(100)),
                DataFrame(x=rand([1:100_000; missing], 100),
@@ -3712,6 +3712,10 @@ end
 
 @testset "grouping floats" begin
     @test length(groupby_checked(DataFrame(a=[0.0, -0.0]), :a)) == 2
+    @test getindex.(keys(groupby_checked(DataFrame(a=[3.0, 2.0, 0.0]), :a)), 1) ==
+          [0, 2, 3]
+    @test getindex.(keys(groupby_checked(DataFrame(a=[3.0, 2.0, -0.0]), :a)), 1) ==
+          [3, 2, 0]
 end
 
 @testset "aggregation with matrix of Pair" begin

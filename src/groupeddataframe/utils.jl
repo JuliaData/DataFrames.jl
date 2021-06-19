@@ -143,9 +143,28 @@ function refpool_and_array(x::AbstractArray)
         else
             return nothing, nothing
         end
-    elseif x isa AbstractArray{<:Union{Integer, Missing}} &&
-        !isempty(skipmissing(x))
-        minval, maxval = extrema(skipmissing(x))
+    elseif x isa AbstractArray{<:Union{Real, Missing}} && length(x) > 0
+        if !(x isa AbstractArray{<:Union{Integer, Missing}})
+            if !all(v -> (ismissing(v) | isinteger(v)) & (!isequal(v, -0.0)), x)
+                return nothing, nothing
+            end
+        end
+        if Missing <: eltype(x)
+            smx = skipmissing(x)
+            y = iterate(smx)
+            y === nothing && return nothing, nothing
+            (v, s) = y
+            minval, maxval = v
+            while true
+                y = iterate(smx, s)
+                y === nothing && break
+                (v, s) = y
+                maxval = max(v, maxval)
+                minval = min(v, minval)
+            end
+        else
+            minval, maxval = extrema(x)
+        end
         ngroups = big(maxval) - big(minval) + 1
         # Threshold chosen with the same rationale as the row_group_slots refpool method:
         # refpool approach is faster but we should not allocate too much memory either
