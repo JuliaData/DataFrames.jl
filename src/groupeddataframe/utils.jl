@@ -154,7 +154,7 @@ function refpool_and_array(x::AbstractArray)
             y = iterate(smx)
             y === nothing && return nothing, nothing
             (v, s) = y
-            minval, maxval = v
+            minval = maxval = v
             while true
                 y = iterate(smx, s)
                 y === nothing && break
