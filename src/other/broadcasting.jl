@@ -80,8 +80,8 @@ end
 
 ### Broadcasting assignment
 
-struct LazyNewColDataFrame{T}
-    df::DataFrame
+struct LazyNewColDataFrame{T,D}
+    df::D
     col::T
 end
 
@@ -104,6 +104,18 @@ function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
     haskey(index(df), cols) && return view(df, :, cols)
     if !(cols isa SymbolOrString)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
+    end
+    return LazyNewColDataFrame(df, Symbol(cols))
+end
+
+function Base.dotview(df::SubDataFrame, ::Colon, cols::ColumnIndex)
+    haskey(index(df), cols) && return view(df, :, cols)
+    if !(cols isa SymbolOrString)
+        throw(ArgumentError("creating new columns using an integer index is disallowed"))
+    end
+    if !(getfield(df, :colindex) isa Index)
+        throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                            "columns of a parent data frame is disallowed"))
     end
     return LazyNewColDataFrame(df, Symbol(cols))
 end
@@ -144,15 +156,22 @@ if isdefined(Base, :dotgetproperty)
 end
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
+    df = lazydf.df
+    @assert columnindex(df, lazydf.col) == 0
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
         bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())
         v = Base.Broadcast.materialize(bc_tmp)
-        col = similar(Vector{typeof(v)}, nrow(lazydf.df))
+        col = similar(Vector{typeof(v)}, nrow(df))
         copyto!(col, bc)
     else
         col = Base.Broadcast.materialize(bc)
     end
-    lazydf.df[!, lazydf.col] = col
+    if df isa DataFrame
+        return df[!, lazydf.col] = col
+    else
+        @assert df isa SubDataFrame && getfield(df, :colindex) isa Index
+        return df[:, lazydf.col] = col
+    end
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
