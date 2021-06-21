@@ -13,8 +13,8 @@ https://opendatacommons.org/licenses/dbcl/1-0/
 ## Source:
 https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)
 Professor Dr. Hans Hofmann
-Institut f"ur Statistik und "Okonometrie
-Universit"at Hamburg
+Institut für Statistik und Ökonometrie
+Universität Hamburg
 FB Wirtschaftswissenschaften
 Von-Melle-Park 5
 2000 Hamburg 13
