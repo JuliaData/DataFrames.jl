@@ -143,6 +143,9 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
 * `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
+  if `sdf` was created with `:` as column selector, `rows` is `:` and `col` is a `Symbol` or `AbstractString`
+  that is not present in `df` then a new column in `df` is created and holds `v` in rows selected in `sdf`
+  and `missing` in all rows present in `parent(sdf)` but not present in `sdf`.
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
                            `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 
@@ -171,7 +174,6 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
 Note that if broadcasting assignment operation throws an error the target data frame may be partially changed
 so it is unsafe to use it afterwards (the column length correctness will be preserved).
 
-
 Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
 
 It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
@@ -190,6 +192,10 @@ Additional rules:
   `df` is performed in-place; if `rows` is `:` and `col` is `Symbol` or `AbstractString`
   and it is missing from `df` then a new column is allocated and added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
+* in the `sdf[:, col] .= v` if `sdf` was created with `:` as column selector
+  and `col` is a `Symbol` or `AbstractString` that is not present in `df` then a new column in `df`
+  is created and holds contents of `v` broadcasted onto rows selected in `sdf`
+  and `missing` in all rows present in `parent(sdf)` but not present in `sdf`.
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector;
   if `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
