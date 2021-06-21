@@ -11,6 +11,12 @@
 * correctly handle selectors of the form `:col => AsTable` and `:col => cols`
   by expanding a single column into multiple columns
   ([#2780](https://github.com/JuliaData/DataFrames.jl/pull/2780))
+* if `sdf` is a `SubDataFrame` created with `:` as a column selector then
+  `insertcols!`, `sdf[:, col] = v`, and `sdf[:, col] .= v` where `col` is
+  a column not present in `sdf` is allowed and it creates a new column in
+  `parent(sdf)` with `missing` values stored in rows that are filtered-out
+  in `sdf`.
+  ([XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
 
 ## Bug fixes
 
