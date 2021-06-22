@@ -1603,6 +1603,8 @@ they retain all columns that are present in the source data frame and another di
 `transform!` always copy columns when column renaming transformation is passed.
 
 ```jldoctest dataframe
+julia> german = copy(german_ref);
+
 julia> transform(german, :Age => maximum)
 1000×11 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
