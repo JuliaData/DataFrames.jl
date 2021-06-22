@@ -72,7 +72,7 @@ In order to do so run the following commands:
 julia> using Pkg
 julia> Pkg.add("CSV")
 ```
-Make sure you have CSV.jl in a version that is at least 0.8.4.
+Make sure you have CSV.jl in a version that is at least 1.0.
 
 Now, we will explore how to load a CSV file into a `DataFrame`. Unlike Python's Pandas `read_csv`
 the you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
@@ -561,7 +561,11 @@ julia> german[1:5, [:Sex, :Age]]
 ```
 
 Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` return a data frame object,
-while `german[!, :Sex]` and `german[:, :Sex]` return a vector:
+while `german[!, :Sex]` and `german[:, :Sex]` return a vector. In the first case, `[:Sex]` 
+is a vector, indicating that the resulting object should be a data frame. On the other hand,
+`:Sex` is a single symbol, indicating that a single column vector should be extracted. Note 
+that in the first case a vector is required to be passed (not just any iterable), so e.g. 
+`german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid.
 
 ```jldoctest dataframe
 julia> german[!, [:Sex]]
@@ -617,12 +621,7 @@ julia> german[!, :Sex] == german[:, :Sex]
 true
 ```
 
-In the first case, `[:Sex]` is a vector, indicating that the resulting object should be a data frame.
-On the other hand, `:Sex` is a single symbol, indicating that a single column vector should be extracted.
-Note that in the first case a vector is required to be passed (not just any iterable),
-so e.g. `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid.
-
-### Most elementary get and set operations
+## Most elementary get and set operations
 
 Here, "get" means you retrieve a part of the column, and "set" means you put a part of the column in the data frame.
 
@@ -1147,14 +1146,200 @@ julia> @time @view german[2:5, 2:5] # here you can see creation of view is very 
    4 │    53  male        2  free
 ```
 
-## Using `select`, `select!`, `transform`, and `transform!`
+## Using `combine`, `select`, `select!`, `transform`, and `transform!`
+
+In DataFrames.jl we have five functions that we can use to perform transformations of columns 
+of a data frame:
+- `combine`: create a new data frame populated with columns that are results of transformation 
+  applied to the source data frame columns;
+- `select`: create a new data frame that has the same number of rows as the source data frame 
+  populated with columns that are results of transformations applied to the source data frame 
+  columns; (the exception to the above number of rows invariant is `select(german)` which produces
+  an empty data frame);
+- `select!`: the same as `select` but updates the passed data frame in place;
+- `transform`: the same as `select` but keeps the columns that were already present in the data frame
+  (note though that these columns can be potentially modified by the transformation passed to `transform`);
+- `transform!`: the same as `transform` but updates the passed data frame in place.
 
 You can also use the `select` and `select!` functions to select, rename, and transform columns in a data frame.
+The simplest way to specify a transformation is:
 
-The `select` function creates a new data frame:
+- `source_column => transformation => target_column_name`
+  In this scenario the `source_column` is passed as an argument to `transformation` and stored in `target_column_name`
+  column.
+- `source_column => transformation`
+  In this scenario `target_column_name` will be automatically generated.
+- `source_column => target_column_name`
+  a way to rename a column.
 
 ```jldoctest dataframe
 julia> german = copy(german_ref);
+
+julia> using Statistics
+
+julia> select(german, :Age => mean => :mean_age) # our target column was `:Age` to find the mean and then we stored the transformation in `:mean_age` column
+1000×1 DataFrame
+  Row │ mean_age
+      │ Float64
+──────┼──────────
+    1 │   35.546
+    2 │   35.546
+    3 │   35.546
+    4 │   35.546
+    5 │   35.546
+    6 │   35.546
+    7 │   35.546
+    8 │   35.546
+  ⋮   │    ⋮
+  994 │   35.546
+  995 │   35.546
+  996 │   35.546
+  997 │   35.546
+  998 │   35.546
+  999 │   35.546
+ 1000 │   35.546
+ 985 rows omitted
+
+julia> combine(german, :Age => mean => :mean_age)
+1×1 DataFrame
+ Row │ mean_age
+     │ Float64
+─────┼──────────
+   1 │   35.546
+```
+
+In the above example you will observe that `select` produces as many rows in the produced data frame as
+there are rows in the source data frame, a single value is repeated accordingly. This is not the case for 
+`combine`. However, if other columns in `combine` would produce multiple rows the repitition also happens:
+
+```jldcotest dataframe
+julia> combine(german, :Age => mean => :mean_age, :Housing => unique => :housing)
+3×2 DataFrame
+ Row │ mean_age  housing
+     │ Float64   String
+─────┼───────────────────
+   1 │   35.546  own
+   2 │   35.546  free
+   3 │   35.546  rent
+```
+
+Note, however, that it is not allowed to return vectors of different lengths in different transformations:
+
+```jldoctest dataframe
+julia> combine(german, :Age, :Housing => unique => :Housing)
+ERROR: ArgumentError: New columns must have the same length as old columns
+```
+
+Several values that can be returned by a transformation are treated to produce multiple columns by default. 
+Therefore they are not allowed to be returned from a function unless `AsTable` or multiple target column names
+are specified. Let us see an example:
+
+```jldoctest dataframe
+julia> combine(german, :Age => x -> (Age=x, Age2 = x.^2))
+ERROR: ArgumentError: Table returned but a single output column was expected
+
+julia> combine(german, :Age => (x -> (Age=x, Age2 = x.^2)) => AsTable)
+1000×2 DataFrame
+  Row │ Age    Age2
+      │ Int64  Int64
+──────┼──────────────
+    1 │    67   4489
+    2 │    22    484
+    3 │    49   2401
+    4 │    45   2025
+    5 │    53   2809
+    6 │    35   1225
+    7 │    53   2809
+    8 │    35   1225
+  ⋮   │   ⋮      ⋮
+  994 │    30    900
+  995 │    50   2500
+  996 │    31    961
+  997 │    40   1600
+  998 │    38   1444
+  999 │    23    529
+ 1000 │    27    729
+     985 rows omitted
+```
+
+Let us discuss some other examples using `select`. Often we want to apply some function not to the whole
+column of a data frame, but rather to its individual elements. Normally we can achieve this using broadcasting
+like this:
+
+```jldoctest dataframe
+julia> select(german, :Sex => (x -> uppercase.(x)) => :Sex)
+1000×1 DataFrame
+  Row │ Sex
+      │ String
+──────┼────────
+    1 │ MALE
+    2 │ FEMALE
+    3 │ MALE
+    4 │ MALE
+    5 │ MALE
+    6 │ MALE
+    7 │ MALE
+    8 │ MALE
+  ⋮   │   ⋮
+  994 │ MALE
+  995 │ MALE
+  996 │ FEMALE
+  997 │ MALE
+  998 │ MALE
+  999 │ MALE
+ 1000 │ MALE
+985 rows omitted
+
+julia> select(german, :Sex => ByRow(uppercase) => :SEX) # `ByRow` convenience wrapper for a function that creates its broadcasted variant
+1000×1 DataFrame
+  Row │ SEX
+      │ String
+──────┼────────
+    1 │ MALE
+    2 │ FEMALE
+    3 │ MALE
+    4 │ MALE
+    5 │ MALE
+    6 │ MALE
+    7 │ MALE
+    8 │ MALE
+  ⋮   │   ⋮
+  994 │ MALE
+  995 │ MALE
+  996 │ FEMALE
+  997 │ MALE
+  998 │ MALE
+  999 │ MALE
+ 1000 │ MALE
+985 rows omitted
+```
+
+We can skip specifying a taarget column name, in which case it is generated automatically by suffixing source
+column name by function name that is applied to it. For example:
+
+```jldoctest dataframe
+julia> select(german, :Sex => ByRow(uppercase))
+1000×1 DataFrame
+  Row │ Sex_uppercase
+      │ String
+──────┼───────────────
+    1 │ MALE
+    2 │ FEMALE
+    3 │ MALE
+    4 │ MALE
+    5 │ MALE
+    6 │ MALE
+    7 │ MALE
+    8 │ MALE
+  ⋮   │       ⋮
+  994 │ MALE
+  995 │ MALE
+  996 │ FEMALE
+  997 │ MALE
+  998 │ MALE
+  999 │ MALE
+ 1000 │ MALE
+      985 rows omitted
 
 julia> select(german, Not(:Age)) # drop column :Age in a new data frame
 1000×9 DataFrame
@@ -1416,3 +1601,126 @@ julia> german
 `transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
 they retain all columns that are present in the source data frame and another difference is that `transform` and
 `transform!` always copy columns when column renaming transformation is passed.
+
+```jldoctest dataframe
+julia> transform(german, :Age => maximum)
+1000×11 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  male        2  own      NA               little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  5 columns and 985 rows omitted
+
+julia> transform(german, :Age => :Sex, :Sex => :Age)
+1000×10 DataFrame
+  Row │ id     Age     Sex    Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  String  Int64  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0  male       67      2  own      NA               little          ⋯
+    2 │     1  female     22      2  own      little           moderate
+    3 │     2  male       49      1  own      little           NA
+    4 │     3  male       45      2  free     little           little
+    5 │     4  male       53      2  free     little           little          ⋯
+    6 │     5  male       35      1  free     NA               NA
+    7 │     6  male       53      2  own      quite rich       NA
+    8 │     7  male       35      3  rent     little           moderate
+  ⋮   │   ⋮      ⋮       ⋮      ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993  male       30      3  own      little           little          ⋯
+  995 │   994  male       50      2  own      NA               NA
+  996 │   995  female     31      1  own      little           NA
+  997 │   996  male       40      3  own      little           little
+  998 │   997  male       38      2  own      little           NA              ⋯
+  999 │   998  male       23      2  free     little           little
+ 1000 │   999  male       27      2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
+
+julia> german_copy = german[:, [:Age, :Job]]
+1000×2 DataFrame
+  Row │ Age    Job
+      │ Int64  Int64
+──────┼──────────────
+    1 │    67      2
+    2 │    22      2
+    3 │    49      1
+    4 │    45      2
+    5 │    53      2
+    6 │    35      1
+    7 │    53      2
+    8 │    35      3
+  ⋮   │   ⋮      ⋮
+  994 │    30      3
+  995 │    50      2
+  996 │    31      1
+  997 │    40      3
+  998 │    38      2
+  999 │    23      2
+ 1000 │    27      2
+     985 rows omitted
+
+julia> transform(german_copy, [:Age, :Job] => (+) => :res)
+1000×3 DataFrame
+  Row │ Age    Job    res
+      │ Int64  Int64  Int64
+──────┼─────────────────────
+    1 │    67      2     69
+    2 │    22      2     24
+    3 │    49      1     50
+    4 │    45      2     47
+    5 │    53      2     55
+    6 │    35      1     36
+    7 │    53      2     55
+    8 │    35      3     38
+  ⋮   │   ⋮      ⋮      ⋮
+  994 │    30      3     33
+  995 │    50      2     52
+  996 │    31      1     32
+  997 │    40      3     43
+  998 │    38      2     40
+  999 │    23      2     25
+ 1000 │    27      2     29
+            985 rows omitted
+
+julia> transform(groupby(german, :Sex),
+                        :Sex => ByRow(uppercase) => :Sex,
+                        keepkeys=false)
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  MALE        2  own      NA               little          ⋯
+    2 │     1     22  FEMALE      2  own      little           moderate
+    3 │     2     49  MALE        1  own      little           NA
+    4 │     3     45  MALE        2  free     little           little
+    5 │     4     53  MALE        2  free     little           little          ⋯
+    6 │     5     35  MALE        1  free     NA               NA
+    7 │     6     53  MALE        2  own      quite rich       NA
+    8 │     7     35  MALE        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  MALE        3  own      little           little          ⋯
+  995 │   994     50  MALE        2  own      NA               NA
+  996 │   995     31  FEMALE      1  own      little           NA
+  997 │   996     40  MALE        3  own      little           little
+  998 │   997     38  MALE        2  own      little           NA              ⋯
+  999 │   998     23  MALE        2  free     little           little
+ 1000 │   999     27  MALE        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted                                     
+```
+
+In the above example, for `transform` the key columns would be retained in the produced data frame even 
+with `keepkeys=false`, in this case this keyword argument only influences the fact if we check that key
+columns have not changed in this case.
