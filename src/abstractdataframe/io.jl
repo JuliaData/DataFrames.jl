@@ -188,6 +188,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     end
 
     cnames = _names(df)[1:mxcol]
+    write(io, "<div class=\"data-frame\">")
     if summary
         omitmsg = if mxcol < size(df, 2)
                       " (omitted printing of $(size(df, 2)-mxcol) columns)"
@@ -262,6 +263,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     end
     write(io, "</tbody>")
     write(io, "</table>")
+    write(io, "</div>")
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
