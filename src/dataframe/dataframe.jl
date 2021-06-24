@@ -16,7 +16,7 @@ DataFrame(kwargs..., copycols::Bool=true)
 DataFrame(columns::AbstractVecOrMat, names::Union{AbstractVector, Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 
-DataFrame(table; copycols::Bool=true)
+DataFrame(table; copycols=nothing)
 DataFrame(::DataFrameRow)
 DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
@@ -26,7 +26,12 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 - `copycols` : whether vectors passed as columns should be copied; by default set
   to `true` and the vectors are copied; if set to `false` then the constructor
   will still copy the passed columns if it is not possible to construct a
-  `DataFrame` without materializing new columns.
+  `DataFrame` without materializing new columns. Note that `copycols=nothing`
+  in the "table" constructor; certain input table types may have already
+  made a copy of columns or the columns are otherwise immutable, in which
+  case columns are not copied by default. To force a copy anyway, or to
+  get mutable columns from an immutable input table (like `Arrow.Table`),
+  just pass `copycols=true` explicitly.
 - `makeunique` : if `false` (the default), an error will be raised
 
 (note that not all constructors support these keyword arguments)
