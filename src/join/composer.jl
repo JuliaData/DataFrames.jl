@@ -1,6 +1,8 @@
 ##
 ## Join / merge
 ##
+## Implements methods for join functions defined in DataAPI.jl
+##
 
 # Like similar, but returns a array that can have missings and is initialized with missings
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
@@ -46,7 +48,7 @@ struct DataFrameJoiner
                                     "Symbol or Pair{Symbol, Symbol}."))
             end
         end
-        
+
         if matchmissing === :notequal
             if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view=true)
