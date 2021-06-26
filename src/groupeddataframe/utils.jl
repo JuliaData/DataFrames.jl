@@ -151,16 +151,10 @@ function refpool_and_array(x::AbstractArray)
         end
         if Missing <: eltype(x)
             smx = skipmissing(x)
-            y = iterate(smx)
-            y === nothing && return nothing, nothing
-            (v, s) = y
-            minval = maxval = v
-            while true
-                y = iterate(smx, s)
-                y === nothing && break
-                (v, s) = y
-                maxval = max(v, maxval)
-                minval = min(v, minval)
+            if isempty(smx)
+                return nothing, nothing
+            else
+                minval, maxval = extrema(smx)
             end
         else
             minval, maxval = extrema(x)

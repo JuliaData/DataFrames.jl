@@ -79,6 +79,11 @@ an `AbstractDict` can be used to index into a grouped data frame where
 the keys are column names of the data frame. The order of the keys does
 not matter in this case.
 
+A column is considered to be an integer column when deciding on the grouping
+algorithm choice if its `eltype` is a subtype of `Union{Missing, Real}`, all its
+elements are either `missing` or pass `isinteger` test, and none of them is
+equal to `-0.0`.
+
 # See also
 
 [`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
