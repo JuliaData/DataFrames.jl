@@ -1463,14 +1463,14 @@ end
 
     @test sprint(show, "text/html", gd) ==
         "<p><b>GroupedDataFrame with 4 groups based on key: A</b></p>" *
-        "<p><i>First Group (1 row): A = 1</i></p><table class=\"data-frame\">" *
+        "<p><i>First Group (1 row): A = 1</i></p><div class=\"data-frame\"><table class=\"data-frame\">" *
         "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
         "<th title=\"Int64\">Int64</th><th title=\"String\">String</th><th title=\"Float32\">Float32</th></tr></thead>" *
         "<tbody><tr><th>1</th><td>1</td><td>x&quot;</td><td>1.0</td></tr></tbody>" *
-        "</table><p>&vellip;</p><p><i>Last Group (1 row): A = 4</i></p>" *
-        "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr>" *
+        "</table></div><p>&vellip;</p><p><i>Last Group (1 row): A = 4</i></p>" *
+        "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr>" *
         "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"String\">String</th><th title=\"Float32\">Float32</th></tr></thead>" *
-        "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
+        "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table></div>"
 
     @test sprint(show, "text/latex", gd) == """
         GroupedDataFrame with 4 groups based on key: A
@@ -1512,9 +1512,9 @@ end
     @test sprint(show, "text/html", gd) ==
         "<p><b>$summary_str</b></p><p><i>" *
         "First Group (1 row): a = :&amp;, b = &quot;&amp;&quot;</i></p>" *
-        "<table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
+        "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
         "<tr><th></th><th title=\"Symbol\">Symbol</th><th title=\"String\">String</th></tr></thead><tbody><tr><th>1</th>" *
-        "<td>&amp;</td><td>&amp;</td></tr></tbody></table>"
+        "<td>&amp;</td><td>&amp;</td></tr></tbody></table></div>"
 
     @test sprint(show, "text/latex", gd) == """
         $summary_str
