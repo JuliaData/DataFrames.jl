@@ -145,7 +145,7 @@ end
 
     io = IOBuffer()
     show(IOContext(io, :limit => true, :displaysize => (10, 10)), MIME"text/html"(),
-         DataFrame([1 2 3 4 5 6 7 8 9], :auto))
+         DataFrame(Int64[1 2 3 4 5 6 7 8 9], :auto))
     str = String(take!(io))
     @test str == "<div class=\"data-frame\"><p>1 rows × 9 columns (omitted printing of 7 columns)</p>" *
                  "<table class=\"data-frame\"><thead><tr><th></th><th>x1</th><th>x2</th></tr><tr><th></th>" *
