@@ -14,7 +14,9 @@
 
 ## Bug fixes
 
-* fix bug in how `groupby` handles grouping of float columns
+* fix bug in how `groupby` handles grouping of float columns;
+  now `-0.0` is treated as *not integer* when deciding on which
+  grouping algorithm should be used
   ([#2791](https://github.com/JuliaData/DataFrames.jl/pull/2791))
 * fix bug in how `issorted` handles custom orderings and improve performance
   of sorting when complex custom orderings are passed
