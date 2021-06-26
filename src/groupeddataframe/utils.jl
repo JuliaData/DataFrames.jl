@@ -145,7 +145,7 @@ function refpool_and_array(x::AbstractArray)
         end
     elseif x isa AbstractArray{<:Union{Real, Missing}} && length(x) > 0
         if !(x isa AbstractArray{<:Union{Integer, Missing}})
-            if !all(v -> (ismissing(v) | isinteger(v)) & (!isequal(v, -0.0)), x)
+            if !all(v -> (ismissing(v) | isinteger(v)) & !isequal(v, -0.0), x)
                 return nothing, nothing
             end
         end
