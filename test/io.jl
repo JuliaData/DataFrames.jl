@@ -143,6 +143,15 @@ end
                  "<th>Mass</th></tr><tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
                  "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table></div>"
 
+    io = IOBuffer()
+    show(IOContext(io, :limit => true, :displaysize => (10, 10)), MIME"text/html"(),
+         DataFrame([1 2 3 4 5 6 7 8 9], :auto))
+    str = String(take!(io))
+    @test str == "<div class=\"data-frame\"><p>1 rows × 9 columns (omitted printing of 7 columns)</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th></th><th>x1</th><th>x2</th></tr><tr><th></th>" *
+                 "<th title=\"Int64\">Int64</th><th title=\"Int64\">Int64</th></tr></thead>" *
+                 "<tbody><tr><th>1</th><td>1</td><td>2</td></tr></tbody></table></div>"
+
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2), :auto), rowid=10)
 
