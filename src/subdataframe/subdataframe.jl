@@ -176,10 +176,21 @@ Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof(!),
                                        col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=false)
 
+Base.setproperty!(df::SubDataFrame{T, Index}, col_ind::Symbol, v::AbstractVector) where {T} =
+    (df[!, col_ind] = v)
+Base.setproperty!(df::SubDataFrame{T, Index}, col_ind::AbstractString, v::AbstractVector)  where {T} =
+    (df[!, col_ind] = v)
+Base.setproperty!(::SubDataFrame{T, Index}, col_ind::Symbol, v::Any)  where {T} =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
+Base.setproperty!(::SubDataFrame{T, Index}, col_ind::AbstractString, v::Any)  where {T} =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, idx::CartesianIndex{2})
-    setindex!(sdf, val, idx[1], idx[2])
+    return setindex!(sdf, val, idx[1], idx[2])
 end
+
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
     if columnindex(sdf, colinds) == 0
         if !(colinds isa SymbolOrString && getfield(sdf, :colindex) isa Index)
@@ -202,13 +213,66 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::
     end
     return sdf
 end
+
+function Base.setindex!(sdf::SubDataFrame{D, Index}, v::AbstractVector,
+                        ::typeof(!), col_ind::ColumnIndex) where {D}
+    if if columnindex(sdf, col_ind) == 0
+        sdf[:, col_ind] = v
+    else
+        pdf = parent(sdf)
+        old_col = pdf[!, col_ind]
+        T = typeof(old_col)
+        S = typeof(v)
+        newcol = Tables.allocatecolumn(Union{T, S}, length(old_col))
+        newcol .= old_col
+        newcol[rows(sdf)] = v
+        pdf[!, col_ind] = newcol
+    end
+    return sdf
+end
+
+for T in MULTICOLUMNINDEX_TUPLE
+    @eval function Base.setindex!(sdf::SubDataFrame{D, Index},
+                                  new_df::AbstractDataFrame,
+                                  row_inds::typeof(!),
+                                  col_inds::$T) where {D}
+        idxs = index(sdf)[col_inds]
+        if view(_names(sdf), idxs) != _names(new_df)
+            throw(ArgumentError("Column names in source and target data frames do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            # we will make a copy on assignment later
+            sdf[!, col] = new_df[!, j]
+        end
+        return df
+    end
+
+    @eval function Base.setindex!(sdf::SubDataFrame{D, Index},
+                                  mx::AbstractMatrix,
+                                  row_inds::typeof(!),
+                                  col_inds::$T)  where {D}
+        idxs = index(sdf)[col_inds]
+        if size(mx, 2) != length(idxs)
+            throw(DimensionMismatch("number of selected columns ($(length(idxs))) " *
+                                    "and number of columns in " *
+                                    "matrix ($(size(mx, 2))) do not match"))
+        end
+        for (j, col) in enumerate(idxs)
+            sdf[!, col] = view(mx, :, j)
+        end
+        return sdf
+    end
+end
+
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
     throw(ArgumentError("setting index of SubDataFrame using ! as row selector is not allowed"))
 end
+
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)] = val
     return sdf
 end
+
 Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bool, colinds::Any) =
     throw(ArgumentError("invalid row index of type Bool"))
 
