@@ -45,14 +45,8 @@ into row groups.
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : whether to sort groups according to the values of the grouping columns
   `cols`; if `sort=false` then the order of groups in the result is undefined
-  and may change in future releases. In the current implementation
-  groups are ordered following the order of appearance of values in the grouping
-  columns, except when all grouping columns provide non-`nothing`
-  `DataAPI.refpool` in which case the order of groups follows the order of
-  values returned by `DataAPI.refpool`. As a particular application of this rule
-  if all `cols` are `CategoricalVector`s then groups are always sorted
-  Integer columns with a narrow range also use this this optimization, so
-  to the order of groups when grouping on integer columns is undefined.
+  and may change in future releases; below a description of the current
+  implementation is provided.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
@@ -79,10 +73,17 @@ an `AbstractDict` can be used to index into a grouped data frame where
 the keys are column names of the data frame. The order of the keys does
 not matter in this case.
 
+In the current implementation if `sort=false` groups are ordered following the
+order of appearance of values in the grouping columns, except when all grouping
+columns provide non-`nothing` `DataAPI.refpool` in which case the order of groups
+follows the order of values returned by `DataAPI.refpool`. As a particular application
+of this rule if all `cols` are `CategoricalVector`s then groups are always sorted.
+Integer columns with a narrow range also use this this optimization, so to the
+order of groups when grouping on integer columns is undefined.
 A column is considered to be an integer column when deciding on the grouping
-algorithm choice if its `eltype` is a subtype of `Union{Missing, Real}`, all its
-elements are either `missing` or pass `isinteger` test, and none of them is
-equal to `-0.0`.
+algorithm choice if its `eltype` is a subtype of `Union{Missing, Real}`,
+all its elements are either `missing` or pass `isinteger` test,
+and none of them is equal to `-0.0`.
 
 # See also
 
