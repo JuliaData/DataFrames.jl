@@ -355,7 +355,7 @@ end
     @test levels(leftjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(leftjoin(B, A, on=:b).b) == ["a", "b", "c"]
     @test levels(rightjoin(A, B, on=:b).b) == ["a", "b", "c"]
-    @test levels(rightjoin(B, A, on=:b).b) ==  ["d", "c", "b", "a"]
+    @test levels(rightjoin(B, A, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(outerjoin(B, A, on=:b).b) == ["d", "a", "b", "c"]
     @test levels(outerjoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
     @test levels(semijoin(A, B, on=:b).b) == ["d", "c", "b", "a"]
