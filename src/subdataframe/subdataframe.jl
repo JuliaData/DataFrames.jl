@@ -181,8 +181,17 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, id
     setindex!(sdf, val, idx[1], idx[2])
 end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
-    if colinds isa SymbolOrString && getfield(sdf, :colindex) isa Index &&
-        val isa AbstractVector && columnindex(sdf, colinds) == 0 && nrow(sdf) == length(val)
+    if columnindex(sdf, colinds) == 0
+        if !(colinds isa SymbolOrString && getfield(sdf, :colindex) isa Index)
+            throw(ArgumentError("Creation of new columns in the SubDataFrame " *
+                                "is only allowed when a column name is passed " *
+                                "and the SubDataFrame was created using : " *
+                                "as column selector"))
+        end
+        if !(val isa AbstractVector && nrow(sdf) == length(val))
+            throw(ArgumentError("Assigned value must be a vector with length " *
+                                "equal to number of rows in the SubDataFrame"))
+        end
         T = eltype(val)
         newcol = Tables.allocatecolumn(Union{T, Missing}, nrow(parent(sdf)))
         fill!(newcol, missing)

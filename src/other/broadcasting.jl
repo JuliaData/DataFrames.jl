@@ -158,6 +158,7 @@ end
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
     df = lazydf.df
     @assert columnindex(df, lazydf.col) == 0
+    df isa SubDataFrame && @assert getfield(df, :colindex) isa Index
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
         bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())
         v = Base.Broadcast.materialize(bc_tmp)
@@ -166,12 +167,8 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     else
         col = Base.Broadcast.materialize(bc)
     end
-    if df isa DataFrame
-        return df[!, lazydf.col] = col
-    else
-        @assert df isa SubDataFrame && getfield(df, :colindex) isa Index
-        return df[:, lazydf.col] = col
-    end
+
+    return df[!, lazydf.col] = col
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
