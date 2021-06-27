@@ -119,6 +119,15 @@ In particular a description explicitly mentions if the assignment is *in-place*.
 Note that if a `setindex!` operation throws an error the target data frame may be partially changed
 so it is unsafe to use it afterwards (the column length correctness will be preserved).
 
+!!! note
+
+    The rules described below for `DataFrame` also apply to `SubDataFrame` if
+    it was created with `:` as column selector, except that for
+    rows that are filtered-ou in `sdf`:
+    - new columns are created with `missing` values stored in these rows,
+    - assignment to existing columns retains values already stored in them in
+      these rows.
+
 `setindex!` on `DataFrame`:
 * `df[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
 * `df[CartesianIndex(row, col)] = v` -> the same as `df[row, col] = v`;
@@ -138,15 +147,11 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                        `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                        (in the latter case column names must match);
 
-`setindex!` on `SubDataFrame`:
+`setindex!` on `SubDataFrame` (not created with `:` as column selector):
 * `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
 * `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
-  if `rows` is `:` and `col` is a `Symbol` or `AbstractString` that is not present in `df` and
-  `sdf` was created with `:` as column selector, then a new column is added to `df` holding
-  `v` in rows selected in `sdf` and `missing` in all rows present in `parent(sdf)`
-  but not present in `sdf`.
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
                            `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 
@@ -185,6 +190,13 @@ In such an operation `AbstractDataFrame` is considered as two-dimensional and `D
     The rule above means that, similar to single-dimensional objects in Base (e.g. vectors),
     `DataFrameRow` is considered to be column-oriented.
 
+!!! note
+
+    The rules described below for `DataFrame` also apply to `SubDataFrame` if
+    it was created with `:` as column selector following the same approach
+    as for `setindex!`. In the list below when `sdf` is present it is assumed
+    to be created with column selector other than `:`.
+
 Additional rules:
 * in the `df[CartesianIndex(row, col)] .= v`, `df[row, col] .= v` syntaxes `v` is
   broadcasted into the contents of `df[row, col]` (this is consistent with Julia Base);
@@ -193,10 +205,6 @@ Additional rules:
   `df` is performed in-place; if `rows` is `:` and `col` is `Symbol` or `AbstractString`
   and it is missing from `df` then a new column is allocated and added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;
-* in the `sdf[:, col] .= v` if `sdf` was created with `:` as column selector
-  and `col` is a `Symbol` or `AbstractString` that is not present in `df` then a new column in `df`
-  is created and holds contents of `v` broadcasted onto rows selected in `sdf`
-  and `missing` in all rows present in `parent(sdf)` but not present in `sdf`.
 * in the `df[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector;
   if `col` is `Symbol` or `AbstractString` and it is missing from `df` then a new column is allocated added;
   the length of the column is always the value of `nrow(df)` before the assignment takes place;

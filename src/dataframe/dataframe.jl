@@ -736,6 +736,7 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
 end
 
 # insertcols!
+# TODO: move to abstractdataframe/abstractdataframe.jl
 
 """
     insertcols!(df::AbstractDataFrame[, col], (name=>val)::Pair...;
