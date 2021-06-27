@@ -406,6 +406,9 @@ Last Group (2 rows): Age = 75
 Keys can be used as indices to retrieve the corresponding group from their *GroupedDataFrame*:
 
 ```jldoctest dataframe
+julia> k = keys(gd)[1]
+GroupKey: (Age = 19,)
+
 julia> gd[k]
 2×10 SubDataFrame
  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking account ⋯
@@ -769,6 +772,8 @@ Note that for `transform` the key columns would be retained in the produced data
 have not changed in this case:
 
 ```jldoctest dataframe
+julia> using Statistics
+
 julia> select(gd, ["Age"] => cor) # broadcasted to match the number of elements in each group
 1000×2 DataFrame
   Row │ Age    Age_cor
