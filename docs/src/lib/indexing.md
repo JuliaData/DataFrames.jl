@@ -143,9 +143,10 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
 * `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
-  if `sdf` was created with `:` as column selector, `rows` is `:` and `col` is a `Symbol` or `AbstractString`
-  that is not present in `df` then a new column in `df` is created and holds `v` in rows selected in `sdf`
-  and `missing` in all rows present in `parent(sdf)` but not present in `sdf`.
+  if `rows` is `:` and `col` is a `Symbol` or `AbstractString` that is not present in `df` and
+  `sdf` was created with `:` as column selector, then a new column is added to `df` holding
+  `v` in rows selected in `sdf` and `missing` in all rows present in `parent(sdf)`
+  but not present in `sdf`.
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
                            `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
 

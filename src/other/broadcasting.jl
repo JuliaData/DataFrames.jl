@@ -115,7 +115,7 @@ function Base.dotview(df::SubDataFrame, ::Colon, cols::ColumnIndex)
     end
     if !(getfield(df, :colindex) isa Index)
         throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
-                            "columns of a parent data frame is disallowed"))
+                            "columns of its parent data frame is disallowed"))
     end
     return LazyNewColDataFrame(df, Symbol(cols))
 end

@@ -2201,10 +2201,10 @@ If `col` is omitted it is set to `ncol(df)+1`
 
 If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
 
-If `df` is a `SubDataFrame` then it must be created with `:` as column selector
+If `df` is a `SubDataFrame` then it must have been created with `:` as column selector
 (otherwise an error is thrown). In this case the `copycols` keyword argument
-is ignored an added column is always copied and the parent data frame is
-filled with `missing` in rows that are filtered out by `df`.
+is ignored (i.e. the added column is always copied) and the parent data frame's
+column is filled with `missing` in rows that are filtered out by `df`.
 
 If `df` isa `DataFrame` that has no columns and only values
 other than `AbstractVector` are passed then it is used to create a one element
@@ -2249,7 +2249,7 @@ julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
 function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true)
     if !(df isa DataFrame || (df isa SubDataFrame && getfield(df, :colindex) isa Index))
-        throw(ArgumentError("insertcols! is only supported for DataFrame or" *
+        throw(ArgumentError("insertcols! is only supported for DataFrame or " *
                             "SubDataFrame created with `:` as column selector"))
     end
     col_ind = Int(col isa SymbolOrString ? columnindex(df, col) : col)

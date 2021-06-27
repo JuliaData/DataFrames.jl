@@ -182,7 +182,7 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, id
 end
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
     if colinds isa SymbolOrString && getfield(sdf, :colindex) isa Index &&
-       val isa AbstractVector && columnindex(sdf, colinds) == 0 && nrow(sdf) == length(val)
+        val isa AbstractVector && columnindex(sdf, colinds) == 0 && nrow(sdf) == length(val)
         T = eltype(val)
         newcol = Tables.allocatecolumn(Union{T, Missing}, nrow(parent(sdf)))
         fill!(newcol, missing)
