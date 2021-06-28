@@ -211,10 +211,8 @@ If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in the
-`parent` data frame, like in [`select!`](@ref). Also note that in general
-the parent of the passed `GroupedDataFrame` is mutated in place, which means
-that the `GroupedDataFrame` is not safe to use as most likely it will
-get corrupted due to row removal in the parent.
+`parent` data frame, like in [`select!`](@ref). In this case the passed
+`GroupedDataFrame` is updated to have correct groups after its parent is updated.
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 
@@ -296,9 +294,40 @@ end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
                  ungroup::Bool=true)
+    ngroups = length(gdf)
+    groups = gdf.groups
+    lazy_lock = gdf.lazy_lock
     row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
     df = parent(gdf)
     res = delete!(df, findall(!, row_selector))
-    # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
-    return ungroup ? res : groupby(res, groupcols(gdf))
+    if nrow(res) == length(groups) # we have not removed any rows
+        return ungroup ? res : gdf
+    end
+    newgroups = groups[row_selector]
+
+    # TODO: add threading support
+    seen = fill(false, ngroups)
+    @inbounds for gix in newgroups
+        @assert gix > 0 # having dropped groups in gdf is not allowed here
+        seen[gix] = true
+    end
+
+    if sum(seen) < ngroups # subset! has dropped some groups
+        remap = cumsum(seen)
+        @inbounds for i in eachindex(newgroups)
+            newgroups[i] = remap[newgroups[i]]
+        end
+        ngroups = remap[end]
+    end
+
+    # update GroupedDataFrame indices in a thread safe way
+    Threads.lock(lazy_lock) do
+        gdf.groups = newgroups
+        gdf.idx = nothing
+        gdf.starts = nothing
+        gdf.ends = nothing
+        gdf.ngroups = ngroups
+        gdf.keymap = nothing
+    end
+    return ungroup ? res : gdf
 end
