@@ -431,11 +431,12 @@ end
     str2 = String(take!(io.io))
     @test str1 == str2
 
-    @test sprint(show, "text/html", dfr) == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
+    @test sprint(show, "text/html", dfr) == "<p>DataFrameRow (2 columns)</p>" *
+                               "<div class=\"data-frame\"><table class=\"data-frame\">" *
                                "<thead><tr><th></th><th>b</th><th>c</th></tr>" *
                                "<tr><th></th><th title=\"String\">String</th><th title=\"Int64\">Int64</th></tr></thead>" *
                                "<tbody><tr><th>2</th>" *
-                               "<td>b</td><td>0</td></tr></tbody></table>"
+                               "<td>b</td><td>0</td></tr></tbody></table></div>"
 
     @test sprint(show, "text/latex", dfr) == """
         \\begin{tabular}{r|cc}
@@ -478,9 +479,10 @@ end
     io = IOBuffer()
     show(io, MIME("text/html"), dfr, eltypes=false)
     str = String(take!(io))
-    @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
+    @test str == "<p>DataFrameRow (2 columns)</p>" *
+                 "<div class=\"data-frame\"><table class=\"data-frame\">" *
                  "<thead><tr><th></th><th>b</th><th>c</th></tr></thead>" *
-                 "<tbody><tr><th>2</th><td>b</td><td>0</td></tr></tbody></table>"
+                 "<tbody><tr><th>2</th><td>b</td><td>0</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/latex"), dfr, eltypes=false)

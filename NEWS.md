@@ -20,6 +20,8 @@
 * fix bug in `combine`, `select`, `select!`, `transform`, and `transform!`
   that incorrectly disallowed matrices of `Pair`s in `GroupedDataFrame` processing
   ([#2782](https://github.com/JuliaData/DataFrames.jl/pull/2782))
+* fix location of summary in `text/html` output
+  ([#2801](https://github.com/JuliaData/DataFrames.jl/pull/2801))
 
 ## Performance improvements
 
