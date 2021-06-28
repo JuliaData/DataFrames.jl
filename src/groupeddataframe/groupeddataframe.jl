@@ -75,7 +75,7 @@ not matter in this case.
 
 In the current implementation if `sort=false` groups are ordered following the
 order of appearance of values in the grouping columns, except when all grouping
-columns provide non-`nothing` `DataAPI.refpool` in which case the order of groups
+columns provide non-`nothing` `DataAPI.refpool`, in which case the order of groups
 follows the order of values returned by `DataAPI.refpool`. As a particular application
 of this rule if all `cols` are `CategoricalVector`s then groups are always sorted.
 Integer columns with a narrow range also use this this optimization, so to the
