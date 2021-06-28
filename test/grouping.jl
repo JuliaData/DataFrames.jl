@@ -3710,6 +3710,14 @@ end
     end
 end
 
+@testset "grouping floats" begin
+    @test length(groupby_checked(DataFrame(a=[0.0, -0.0]), :a)) == 2
+    @test getindex.(keys(groupby_checked(DataFrame(a=[3.0, 2.0, 0.0]), :a)), 1) ==
+          [0, 2, 3]
+    @test getindex.(keys(groupby_checked(DataFrame(a=[3.0, 2.0, -0.0]), :a)), 1) ==
+          [3, 2, 0]
+end
+
 @testset "aggregation with matrix of Pair" begin
     df = DataFrame(a=["a", "b","a", "b"], x=1:4, y=11:14)
     gdf = groupby_checked(df, :a)
