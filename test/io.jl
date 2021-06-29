@@ -607,7 +607,9 @@ end
                  view(df,1:1, :), # SubDataFrame
                  eachrow(df), # DataFrameColumns
                  eachcol(df), # DataFrameRows
-                 groupby(df, :A),missing,nothing] # GroupedDataFrame
+                 groupby(df, :A), # GroupedDataFrame
+                 missing,
+                 nothing]
 
     io = IOBuffer()
     show(io, df)
@@ -690,6 +692,7 @@ end
     df[end, 2] = "\""
     push!(df, (10, Symbol("\"")))
     push!(df, (11, '"'))
+    df.B[6] = groupby(df, :A)
     io = IOBuffer()
     show(io, MIME("text/csv"), df)
     str = String(take!(io))
@@ -700,7 +703,7 @@ end
     3,"1×2 SubDataFrame"
     4,"11-element DataFrameRows"
     5,"2-element DataFrameColumns"
-    6,"GroupedDataFrame with 9 groups based on key: A"
+    6,"GroupedDataFrame with 11 groups based on key: A"
     7,missing
     8,nothing
     9,"\\""
@@ -718,7 +721,7 @@ end
     3\t"1×2 SubDataFrame"
     4\t"11-element DataFrameRows"
     5\t"2-element DataFrameColumns"
-    6\t"GroupedDataFrame with 9 groups based on key: A"
+    6\t"GroupedDataFrame with 11 groups based on key: A"
     7\tmissing
     8\tnothing
     9\t"\\""

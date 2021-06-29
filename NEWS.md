@@ -11,7 +11,8 @@
 * correctly handle selectors of the form `:col => AsTable` and `:col => cols`
   by expanding a single column into multiple columns
   ([#2780](https://github.com/JuliaData/DataFrames.jl/pull/2780))
-* if `subset!`
+* if `subset!` is passed a `GroupedDataFrame` the grouping in the passed object
+  gets updated to reflect rows removed from the parent data frame
   ([#2809](https://github.com/JuliaData/DataFrames.jl/pull/2809))
 
 ## Bug fixes
