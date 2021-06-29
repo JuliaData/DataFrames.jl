@@ -1,6 +1,6 @@
 # First Steps with DataFrames.jl
 
-The first and important part to work with DataFrames.jl, is to install it.
+If want to use the DataFrames.jl package you need to install it first.
 You can do it using the following commands:
 
 ```julia
@@ -8,18 +8,17 @@ julia> using Pkg
 julia> Pkg.add("DataFrames")
 ```
 
-or,
+or
 
 ```julia
 julia> ] # `]` should be pressed
 
-(@v1.6) pkg>  add DataFrames
+(@v1.6) pkg> add DataFrames
 ```
 
-If you want to make sure everything works as expected you could run the tests bundled
+If you want to make sure everything works as expected you can run the tests bundled
 with DataFrames.jl, but be warned that it will take more than 30 minutes.
 ```julia
-julia> using DataFrames
 julia> using Pkg
 julia> Pkg.test("DataFrames")
 ```
@@ -64,7 +63,7 @@ julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
    2 │     2      6      1
    3 │     3      7      1
 ```
-note that in column `:fixed` scalars gets automatically broadcasted.
+note that in column `:fixed` scalar `1` gets automatically broadcasted.
 
 To move forward with the tutorial you need to install the CSV.jl package in your environment.
 In order to do so run the following commands:
@@ -75,7 +74,7 @@ julia> Pkg.add("CSV")
 Make sure you have CSV.jl in a version that is at least 1.0.
 
 Now, we will explore how to load a CSV file into a `DataFrame`. Unlike Python's Pandas `read_csv`
-the you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
+you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
 step, you have to load the libraries you will use. In our case CSV.jl and DataFrames.jl. In order to
 read the file in we will use the `CSV.read` function.
 ```jldoctest dataframe
@@ -122,13 +121,13 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
 - then from this directory we need to move to the directory where `german.csv` is stored; we use
   `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating
   system independent way  (remember that Widnows and Unix differ as they use either `/` or `\` as path
-  separator - `joinpath` is a function to make sure we are not running into issues with this);
+  separator; the `joinpath` function ensures we are not running into issues with this);
 - then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to
   read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it
   can read-into).
 
-You can see that Julia's representation (unlike Python's Pandas) displays the data type of the column,
-In our case, it is an `Int64`, and a `String`.
+You can see that DataFrames.jl (unlike Python's Pandas) displays the data type of the column,
+In our case, it is an `Int64`, or `String`.
 
 To access the columns directly (i.e. without copying) you can use `german.Sex`, `german."Sex"`,
 `german[!, :Sex]` or `german[!, "Sex"]`. The two latter syntaxes are more flexible as they allow
@@ -365,9 +364,9 @@ julia> describe(german, cols=1:3)
 ```
 
 The default statistics reported are mean, min, median, max, number of missing values, and element type of
-the column. If columns contain `missing` values they are skipped when computing the summary statistics.
+the column. `missing` values are skipped when computing the summary statistics.
 
-You can adjust printing options by calling the `show` function manually: `show(german, allrows=true)`
+You can adjust how data frame is displayed by calling the `show` function manually: `show(german, allrows=true)`
 prints all rows even if they do not fit on screen and `show(german, allcols=true)` does the same for
 columns.
 
@@ -488,9 +487,9 @@ DataFrameRow
                                                                4 columns omitted
 ```
 
-## Taking a subset of `german` data frame
+# Taking a subset of `german` data frame
 
-### Indexing Syntax
+## Indexing Syntax
 
 Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices.
 In the [Indexing](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing) section of the
@@ -545,7 +544,7 @@ julia> german[:, [:Age, :Sex]]
       985 rows omitted
 ```
 
-In this example we have created a `DataFrame` using `:Sex` and `:Age` column for the first five Rows:
+In this example we have created a `DataFrame` using `:Sex` and `:Age` column for the first five rows:
 
 ```jldoctest dataframe
 julia> german[1:5, [:Sex, :Age]]
@@ -621,11 +620,18 @@ julia> german[!, :Sex] == german[:, :Sex]
 true
 ```
 
+As it was explained above the difference between using `!` and `:`
+when passing a row index is that `!` does not perform a copy of columns, while `:` does.
+Therefore `german[!, [:Sex]]` data frame stores the same vector as the source `german` data frame,
+while `german[:, [:Sex]]` stores its copy. The `!` selector normally should be avoided
+as using it can lead to hard to catch bugs. However, when working with very large data frames
+it can be useful to save memory and improve performance of operations.
 ## Most elementary get and set operations
 
 Here, "get" means you retrieve a part of the column, and "set" means you put a part of the column in the data frame.
 
-Given the data frame `german` here are various ways to grab one of its columns as vector:
+Recapping what we have already learned,
+given the data frame `german` here are various ways to grab one of its columns as vector:
 ```jldoctest dataframe
 julia> german
 1000×10 DataFrame
@@ -796,13 +802,13 @@ julia> german[:, 3]
  "male"
 ```
 
-We can get a single cell or element with the same syntax to get an element of an array:
+We can get a single cell of a data frame with the same syntax to get a cell of a matrix:
 ```jldoctest dataframe
 julia> german[4, 4]
 2
 ```
 
-or to get a new `DataFrame` that is subset of rows and columns:
+or to get a new `DataFrame` that is subset of rows and columns do:
 ```jldoctest dataframe
 julia> german[4:5, 4:5]
 2×2 DataFrame
@@ -959,7 +965,7 @@ julia> data
    5 │    78  Economics                5
    6 │    89  Psychology               6
 
-julia> data[3, 1:3] = [78, "Economics", 7] # set row `3` of cols `1:3(:marks, :subject, :semester)` in-place
+julia> data[3, 1:3] = [78, "Economics", 7] # set row `3` and cols `1:3` (`:marks`, `:subject`, `:semester`) in-place
 3-element Vector{Any}:
  78
    "Economics"
@@ -977,14 +983,7 @@ julia> data
    5 │    78  Economics                5
    6 │    89  Psychology               6
 
-julia> dfr = data[2, :] # passed `:`(a column) in a parent DataFrame to get the *DataFrameRow*
-DataFrameRow
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   2 │    85  Computer Science         4
-
-julia> dfr
+julia> dfr = data[2, :] # single row is selected to get the *DataFrameRow*
 DataFrameRow
  Row │ marks  subject           semester
      │ Int64  String            Int64
@@ -1172,9 +1171,9 @@ julia> data
    6 │ Economics  Biology                  1  Anam      Dehradoon
 ```
 
-In mostly cases, above as you can see for getting a column or assigning to a column instead of `data[!, :col]` 
-and `data[!, :col] = val` it is usually better to just write `data.col` and `data.col = val` respectively as 
-it is the same and simpler to type and read.
+In most cases, instead of writing `data[!, :col]` 
+or `data[!, :col] = val` it is usually simpler to just write `data.col` and `data.col = val` respectively as 
+it has the same effect and it is easier to type and read.
 
 ## Not, Between, Cols, and All selectors
 
@@ -1291,7 +1290,7 @@ In the above example `german[:, Cols("Age", Not("Sex"))]`, `:Age` column will co
 removing `:sex` column. For more understanding if we will follow this example `german[:, Cols("Job", Not("Sex"))]`
 then `:Job` column will be placed first and then the remaining order will be same after removing `:Sex` column.
 
-You can also use `Regex` to select columns and `Not` for Rows from [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl):
+You can also use `Regex` to select columns and `Not` for to select rows as in the example below:
 ```jldoctest dataframe
 julia> german[Not(5), r"Sex"]
 999×1 DataFrame
@@ -1465,7 +1464,7 @@ julia> @time @view german[2:5, 2:5] # here you can see creation of view is very 
 In DataFrames.jl we have five functions that we can use to perform transformations of columns 
 of a data frame:
 - `combine`: create a new data frame populated with columns that are results of transformation 
-  applied to the source data frame columns;
+  applied to the source data frame columns, potentially combining its rows;
 - `select`: create a new data frame that has the same number of rows as the source data frame 
   populated with columns that are results of transformations applied to the source data frame 
   columns; (the exception to the above number of rows invariant is `select(german)` which produces
