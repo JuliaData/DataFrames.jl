@@ -884,9 +884,6 @@ In the following example, the operation `data.marks = x` will be performed if
 `ncol(data) == 0 || length(x) == nrow(data)` will be true. 
 
 ```jldoctest dataframe
-julia> ncol(data) == 0 || length(x) == nrow(data)
-true
-
 julia> x = [80, 85, 98, 95, 78, 89]
 6-element Vector{Int64}:
  80
@@ -895,6 +892,9 @@ julia> x = [80, 85, 98, 95, 78, 89]
  95
  78
  89
+
+julia> ncol(data) == 0 || length(x) == nrow(data)
+true
 
 julia> data.marks = x
 6-element Vector{Int64}:
