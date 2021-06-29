@@ -862,6 +862,202 @@ julia> german
                                                   4 columns and 985 rows omitted
 ```
 
+Using `setindex!` on *DataFrame* :  
+
+```jldoctest dataframe
+julia> data = DataFrame(marks = repeat(70:72, inner = 2),
+                         subject = repeat(["English", "Computer Science", "Mathematics"], outer = 2),
+                         semester = 1:6)
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    70  English                  1
+   2 │    70  Computer Science         2
+   3 │    71  Mathematics              3
+   4 │    71  English                  4
+   5 │    72  Computer Science         5
+   6 │    72  Mathematics              6
+```
+
+In the following example, the operation `data.marks = x` will be performed if 
+`ncol(data) == 0 || length(x) == nrow(data)` will be true. 
+
+```jldoctest dataframe
+julia> ncol(data) == 0 || length(x) == nrow(data)
+true
+
+julia> x = [80, 85, 98, 95, 78, 89]
+6-element Vector{Int64}:
+ 80
+ 85
+ 98
+ 95
+ 78
+ 89
+
+julia> data.marks = x
+6-element Vector{Int64}:
+ 80
+ 85
+ 98
+ 95
+ 78
+ 89
+
+julia> data
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    80  English                  1
+   2 │    85  Computer Science         2
+   3 │    98  Mathematics              3
+   4 │    95  English                  4
+   5 │    78  Computer Science         5
+   6 │    89  Mathematics              6
+
+julia> data.marks === x # no copy is performed
+true
+
+julia> data[1:3, :semester] = [2, 4, 6] # set value of `:semester` in row `1:3` to values `[2, 4, 6]` *in-place*
+3-element Vector{Int64}:
+ 2
+ 4
+ 6
+
+julia> data
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    80  English                  2
+   2 │    85  Computer Science         4
+   3 │    98  Mathematics              6
+   4 │    95  English                  4
+   5 │    78  Computer Science         5
+   6 │    89  Mathematics              6
+
+julia> data[!, :subject] = ["English", "Computer Science", "Mathematics", "History", "Economics", "Psychology"] # replaces `:subject` without copying
+6-element Vector{String}:
+ "English"
+ "Computer Science"
+ "Mathematics"
+ "History"
+ "Economics"
+ "Psychology"
+
+julia> data
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    80  English                  2
+   2 │    85  Computer Science         4
+   3 │    98  Mathematics              6
+   4 │    95  History                  4
+   5 │    78  Economics                5
+   6 │    89  Psychology               6
+
+julia> data[3, 1:3] = [78, "Economics", 7] # set row `3` of cols `1:3(:marks, :subject, :semester)` in-place
+3-element Vector{Any}:
+ 78
+   "Economics"
+  7
+
+julia> data
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    80  English                  2
+   2 │    85  Computer Science         4
+   3 │    78  Economics                7
+   4 │    95  History                  4
+   5 │    78  Economics                5
+   6 │    89  Psychology               6
+
+julia> dfr = data[2, :] # passed `:`(a column) in a parent DataFrame to get the *DataFrameRow*
+DataFrameRow
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   2 │    85  Computer Science         4
+
+julia> dfr
+DataFrameRow
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   2 │    85  Computer Science         4
+
+julia> dfr.marks = 98 # set value of col `:marks` in row `2` to `98` in-place
+98
+
+julia> dfr
+DataFrameRow
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   2 │    98  Computer Science         4
+
+julia> dfr[2:3] = ["Mathematics", 5] # set values of entries in columns `:subject` and `:semester` 
+2-element Vector{Any}:
+  "Mathematics"
+ 5
+
+julia> dfr
+DataFrameRow
+ Row │ marks  subject      semester
+     │ Int64  String       Int64
+─────┼──────────────────────────────
+   2 │    98  Mathematics         5
+
+julia> sdf = view(data, :, 2:3) # Column subsetting
+6×2 SubDataFrame
+ Row │ subject      semester
+     │ String       Int64
+─────┼───────────────────────
+   1 │ English             2
+   2 │ Mathematics         5
+   3 │ Economics           7
+   4 │ History             4
+   5 │ Economics           5
+   6 │ Psychology          6
+
+julia> sdf[2, :subject] = "Computer Science" # set value of col `:subject` in second row to `Computer Science` in-place
+"Computer Science"
+
+julia> sdf
+6×2 SubDataFrame
+ Row │ subject           semester
+     │ String            Int64
+─────┼────────────────────────────
+   1 │ English                  2
+   2 │ Computer Science         5
+   3 │ Economics                7
+   4 │ History                  4
+   5 │ Economics                5
+   6 │ Psychology               6
+
+julia> sdf[6, 1:2] = ["Biology", 7] # set value of multiple columns
+2-element Vector{Any}:
+  "Biology"
+ 7
+
+julia> sdf
+6×2 SubDataFrame
+ Row │ subject           semester
+     │ String            Int64
+─────┼────────────────────────────
+   1 │ English                  2
+   2 │ Computer Science         5
+   3 │ Economics                7
+   4 │ History                  4
+   5 │ Economics                5
+   6 │ Biology                  7
+```
+
 ## Not, Between, Cols, and All selectors
 
 Finally, you can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection
@@ -1314,7 +1510,7 @@ julia> select(german, :Sex => ByRow(uppercase) => :SEX) # `ByRow` convenience wr
 985 rows omitted
 ```
 
-We can skip specifying a taarget column name, in which case it is generated automatically by suffixing source
+We can skip specifying a target column name, in which case it is generated automatically by suffixing source
 column name by function name that is applied to it. For example:
 
 ```jldoctest dataframe
@@ -1537,7 +1733,7 @@ julia> df = select(german, :Sex)
  1000 │ male
 985 rows omitted
 
-julia> df.Sex === german.Sex
+julia> df.Sex === german.Sex # copy
 false
 
 julia> df = select(german, :Sex, copycols=false)
@@ -1563,7 +1759,7 @@ julia> df = select(german, :Sex, copycols=false)
  1000 │ male
 985 rows omitted
 
-julia> df.Sex === german.Sex
+julia> df.Sex === german.Sex # no-copy is performed
 true
 ```
 
@@ -1628,7 +1824,7 @@ julia> transform(german, :Age => maximum)
  1000 │   999     27  male        2  own      moderate         moderate
                                                   5 columns and 985 rows omitted
 
-julia> transform(german, :Age => :Sex, :Sex => :Age)
+julia> transform(german, :Age => :Sex, :Sex => :Age) # swapping the value of `:Age` column with `:Sex` column
 1000×10 DataFrame
   Row │ id     Age     Sex    Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  String  Int64  Int64  String   String           String          ⋯
@@ -1651,7 +1847,7 @@ julia> transform(german, :Age => :Sex, :Sex => :Age)
  1000 │   999  male       27      2  own      moderate         moderate
                                                   4 columns and 985 rows omitted
 
-julia> german_copy = german[:, [:Age, :Job]]
+julia> german_copy = german[:, [:Age, :Job]] # getting two columns
 1000×2 DataFrame
   Row │ Age    Job
       │ Int64  Int64
@@ -1674,7 +1870,7 @@ julia> german_copy = german[:, [:Age, :Job]]
  1000 │    27      2
      985 rows omitted
 
-julia> transform(german_copy, [:Age, :Job] => (+) => :res)
+julia> transform(german_copy, [:Age, :Job] => (+) => :res) # put the result of `:Age` and `:Job` column after addition in `:res` column
 1000×3 DataFrame
   Row │ Age    Job    res
       │ Int64  Int64  Int64
@@ -1699,7 +1895,7 @@ julia> transform(german_copy, [:Age, :Job] => (+) => :res)
 
 julia> transform(groupby(german, :Sex),
                         :Sex => ByRow(uppercase) => :Sex,
-                        keepkeys=false)
+                        keepkeys=false) # key columns would retained in the produced dataframe and wrapper `ByRow` will convert the `:Sex` in uppercase
 1000×10 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  Int64  String  Int64  String   String           String          ⋯
