@@ -1056,7 +1056,125 @@ julia> sdf
    4 │ History                  4
    5 │ Economics                5
    6 │ Biology                  7
+
+julia> data[:, 3] = [4, 5, 7, 8, 2, 1]
+6-element Vector{Int64}:
+ 4
+ 5
+ 7
+ 8
+ 2
+ 1
+
+julia> data
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    80  English                  4
+   2 │    98  Computer Science         5
+   3 │    78  Economics                7
+   4 │    95  History                  8
+   5 │    78  Economics                2
+   6 │    89  Biology                  1
+
+julia> data[!, :marks] .= [85, 89, 78, 58, 96, 68] # col `:marks` is replaced freshly allocated vector
+6-element Vector{Int64}:
+ 85
+ 89
+ 78
+ 58
+ 96
+ 68
+
+julia> data
+6×3 DataFrame
+ Row │ marks  subject           semester
+     │ Int64  String            Int64
+─────┼───────────────────────────────────
+   1 │    85  English                  4
+   2 │    89  Computer Science         5
+   3 │    78  Economics                7
+   4 │    58  History                  8
+   5 │    96  Economics                2
+   6 │    68  Biology                  1
+
+julia> data[!, :Students] .= ["Rohit", "Akshat", "Rahul", "Aayush", "Prateek", "Anam"] # allocates a new column `:Students` and adds it
+6-element Vector{String}:
+ "Rohit"
+ "Akshat"
+ "Rahul"
+ "Aayush"
+ "Prateek"
+ "Anam"
+
+julia> data[:, :City] .= ["Kanpur", "Lucknow", "Bhuvneshwar", "Jaipur", "Ranchi", "Dehradoon"] # allocates the column in-place because `:City` is not present in `data`
+6-element Vector{String}:
+ "Kanpur"
+ "Lucknow"
+ "Bhuvneshwar"
+ "Jaipur"
+ "Ranchi"
+ "Dehradoon"
+
+julia> data
+6×5 DataFrame
+ Row │ marks  subject           semester  Students  City
+     │ Int64  String            Int64     String    String
+─────┼──────────────────────────────────────────────────────────
+   1 │    85  English                  4  Rohit     Kanpur
+   2 │    89  Computer Science         5  Akshat    Lucknow
+   3 │    78  Economics                7  Rahul     Bhuvneshwar
+   4 │    58  History                  8  Aayush    Jaipur
+   5 │    96  Economics                2  Prateek   Ranchi
+   6 │    68  Biology                  1  Anam      Dehradoon
 ```
+
+Note that if `:col` is not present in `data` then using `!` and `:` are equivalent. The major difference between in-place 
+and replace operations is that replacing columns is needed if new values have a different type than the old ones. For 
+instance here `!` works and `:` fails:
+
+```jldoctest dataframe
+julia> data
+6×5 DataFrame
+ Row │ marks  subject           semester  Students  City
+     │ Int64  String            Int64     String    String
+─────┼──────────────────────────────────────────────────────────
+   1 │    85  English                  4  Rohit     Kanpur
+   2 │    89  Computer Science         5  Akshat    Lucknow
+   3 │    78  Economics                7  Rahul     Bhuvneshwar
+   4 │    58  History                  8  Aayush    Jaipur
+   5 │    96  Economics                2  Prateek   Ranchi
+   6 │    68  Biology                  1  Anam      Dehradoon
+
+julia> data[:, :marks] .= "Economics"
+ERROR: MethodError: Cannot `convert` an object of type String to an object of type Int64
+
+julia> data[!, :marks] .= "Economics"
+6-element Vector{String}:
+ "Economics"
+ "Economics"
+ "Economics"
+ "Economics"
+ "Economics"
+ "Economics"
+
+julia> data
+6×5 DataFrame
+ Row │ marks      subject           semester  Students  City
+     │ String     String            Int64     String    String
+─────┼──────────────────────────────────────────────────────────────
+   1 │ Economics  English                  4  Rohit     Kanpur
+   2 │ Economics  Computer Science         5  Akshat    Lucknow
+   3 │ Economics  Economics                7  Rahul     Bhuvneshwar
+   4 │ Economics  History                  8  Aayush    Jaipur
+   5 │ Economics  Economics                2  Prateek   Ranchi
+   6 │ Economics  Biology                  1  Anam      Dehradoon
+```
+
+In mostly cases, above as you can see for getting a column or assigning to a column instead of `data[!, :col]` 
+and `data[!, :col] = val` it is usually better to just write `data.col` and `data.col = val` respectively as 
+it is the same and simpler to type and read.
 
 ## Not, Between, Cols, and All selectors
 
