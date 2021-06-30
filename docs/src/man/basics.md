@@ -626,6 +626,7 @@ Therefore `german[!, [:Sex]]` data frame stores the same vector as the source `g
 while `german[:, [:Sex]]` stores its copy. The `!` selector normally should be avoided
 as using it can lead to hard to catch bugs. However, when working with very large data frames
 it can be useful to save memory and improve performance of operations.
+
 ## Most elementary get and set operations
 
 Here, "get" means you retrieve a part of the column, and "set" means you put a part of the column in the data frame.
