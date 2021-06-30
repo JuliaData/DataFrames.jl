@@ -72,6 +72,18 @@ that could perform a transformation without copying the columns). Examples of su
 [`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), `getindex`,
 [`copy`](@ref) or the [`DataFrame`](@ref) constructor mentioned above.
 
+The generic single-argument constructor `DataFrame(table)` has `copycols=nothing`
+by default, meaning that columns are copied unless `table`
+signals that a copy of columns doesn't need to be made (this is done by wrapping
+the source table in `Tables.CopiedColumns`).
+[CSV.jl](https://csv.juliadata.org/stable) does this when
+`CSV.read(file, DataFrame)` is called, since columns are built only for the purpose
+of use in a `DataFrame` constructor.
+Another example is [`Arrow.Table`](https://arrow.juliadata.org/dev/manual/#Arrow.Table),
+where arrow data is inherently immutable so columns can't be accidentally mutated
+anyway. To be able to mutate arrow data, columns must be materialized,
+which can be accomplished via `DataFrame(arrow_table, copycols=true)`.
+
 On the contrary, functions that create a view of a `DataFrame` *do not* by definition make copies of
 the columns, and therefore require particular caution. This includes `view`, which returns
 a `SubDataFrame` or a `DataFrameRow`, and `groupby`, which returns a `GroupedDataFrame`.
