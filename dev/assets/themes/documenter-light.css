@@ -7287,6 +7287,9 @@ h1:hover .docs-heading-anchor-permalink, h2:hover .docs-heading-anchor-permalink
 .content blockquote > ul:first-child, .content blockquote > ol:first-child, .content .admonition-body > ul:first-child, .content .admonition-body > ol:first-child {
   margin-top: 0; }
 
+pre, code {
+  font-variant-ligatures: no-contextual; }
+
 .breadcrumb a.is-disabled {
   cursor: default;
   pointer-events: none; }
