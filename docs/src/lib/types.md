@@ -78,7 +78,7 @@ signals that a copy of columns doesn't need to be made (this is done by wrapping
 the source table in `Tables.CopiedColumns`).
 [CSV.jl](https://csv.juliadata.org/stable) does this when
 `CSV.read(file, DataFrame)` is called, since columns are built only for the purpose
-of use in a `DataFrame`.
+of use in a `DataFrame` constructor.
 Another example is [`Arrow.Table`](https://arrow.juliadata.org/dev/manual/#Arrow.Table),
 where arrow data is inherently immutable so columns can't be accidentally mutated
 anyway. To be able to mutate arrow data, columns must be materialized,
