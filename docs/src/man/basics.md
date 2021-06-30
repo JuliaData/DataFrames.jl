@@ -1,6 +1,6 @@
 # First Steps with DataFrames.jl
 
-The first and important part to work with DataFrames.jl, is to install it.
+If want to use the DataFrames.jl package you need to install it first.
 You can do it using the following commands:
 
 ```julia
@@ -8,18 +8,17 @@ julia> using Pkg
 julia> Pkg.add("DataFrames")
 ```
 
-or,
+or
 
 ```julia
 julia> ] # `]` should be pressed
 
-(@v1.6) pkg>  add DataFrames
+(@v1.6) pkg> add DataFrames
 ```
 
-If you want to make sure everything works as expected you could run the tests bundled
+If you want to make sure everything works as expected you can run the tests bundled
 with DataFrames.jl, but be warned that it will take more than 30 minutes.
 ```julia
-julia> using DataFrames
 julia> using Pkg
 julia> Pkg.test("DataFrames")
 ```
@@ -64,7 +63,7 @@ julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
    2 │     2      6      1
    3 │     3      7      1
 ```
-note that in column `:fixed` scalars gets automatically broadcasted.
+note that in column `:fixed` scalar `1` gets automatically broadcasted.
 
 To move forward with the tutorial you need to install the CSV.jl package in your environment.
 In order to do so run the following commands:
@@ -75,7 +74,7 @@ julia> Pkg.add("CSV")
 Make sure you have CSV.jl in a version that is at least 1.0.
 
 Now, we will explore how to load a CSV file into a `DataFrame`. Unlike Python's Pandas `read_csv`
-the you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
+you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
 step, you have to load the libraries you will use. In our case CSV.jl and DataFrames.jl. In order to
 read the file in we will use the `CSV.read` function.
 ```jldoctest dataframe
@@ -122,13 +121,13 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
 - then from this directory we need to move to the directory where `german.csv` is stored; we use
   `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating
   system independent way  (remember that Widnows and Unix differ as they use either `/` or `\` as path
-  separator - `joinpath` is a function to make sure we are not running into issues with this);
+  separator; the `joinpath` function ensures we are not running into issues with this);
 - then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to
   read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it
   can read-into).
 
-You can see that Julia's representation (unlike Python's Pandas) displays the data type of the column,
-In our case, it is an `Int64`, and a `String`.
+You can see that DataFrames.jl (unlike Python's Pandas) displays the data type of the column,
+In our case, it is an `Int64`, or `String`.
 
 To access the columns directly (i.e. without copying) you can use `german.Sex`, `german."Sex"`,
 `german[!, :Sex]` or `german[!, "Sex"]`. The two latter syntaxes are more flexible as they allow
@@ -365,9 +364,9 @@ julia> describe(german, cols=1:3)
 ```
 
 The default statistics reported are mean, min, median, max, number of missing values, and element type of
-the column. If columns contain `missing` values they are skipped when computing the summary statistics.
+the column. `missing` values are skipped when computing the summary statistics.
 
-You can adjust printing options by calling the `show` function manually: `show(german, allrows=true)`
+You can adjust how data frame is displayed by calling the `show` function manually: `show(german, allrows=true)`
 prints all rows even if they do not fit on screen and `show(german, allcols=true)` does the same for
 columns.
 
@@ -488,9 +487,9 @@ DataFrameRow
                                                                4 columns omitted
 ```
 
-## Taking a subset of `german` data frame
+# Taking a subset of `german` data frame
 
-### Indexing Syntax
+## Indexing Syntax
 
 Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices.
 In the [Indexing](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing) section of the
@@ -545,7 +544,7 @@ julia> german[:, [:Age, :Sex]]
       985 rows omitted
 ```
 
-In this example we have created a `DataFrame` using `:Sex` and `:Age` column for the first five Rows:
+In this example we have created a `DataFrame` using `:Sex` and `:Age` column for the first five rows:
 
 ```jldoctest dataframe
 julia> german[1:5, [:Sex, :Age]]
@@ -621,11 +620,18 @@ julia> german[!, :Sex] == german[:, :Sex]
 true
 ```
 
+As it was explained above the difference between using `!` and `:`
+when passing a row index is that `!` does not perform a copy of columns, while `:` does.
+Therefore `german[!, [:Sex]]` data frame stores the same vector as the source `german` data frame,
+while `german[:, [:Sex]]` stores its copy. The `!` selector normally should be avoided
+as using it can lead to hard to catch bugs. However, when working with very large data frames
+it can be useful to save memory and improve performance of operations.
 ## Most elementary get and set operations
 
 Here, "get" means you retrieve a part of the column, and "set" means you put a part of the column in the data frame.
 
-Given the data frame `german` here are various ways to grab one of its columns as vector:
+Recapping what we have already learned,
+given the data frame `german` here are various ways to grab one of its columns as vector:
 ```jldoctest dataframe
 julia> german
 1000×10 DataFrame
@@ -796,13 +802,13 @@ julia> german[:, 3]
  "male"
 ```
 
-We can get a single cell or element with the same syntax to get an element of an array:
+We can get a single cell of a data frame with the same syntax to get a cell of a matrix:
 ```jldoctest dataframe
 julia> german[4, 4]
 2
 ```
 
-or to get a new `DataFrame` that is subset of rows and columns:
+or to get a new `DataFrame` that is subset of rows and columns do:
 ```jldoctest dataframe
 julia> german[4:5, 4:5]
 2×2 DataFrame
@@ -862,29 +868,57 @@ julia> german
                                                   4 columns and 985 rows omitted
 ```
 
-Using `setindex!` on *DataFrame* :  
+Using `setindex!` on *DataFrame*, *SubDataFrame*, *DataFrameRow* :  
+
+The `setindex!` function is a method from Julia Base that is used to customize the indexing behaviour for
+custom types. Overloading this method allows us to customize the indexing behavior for types that we create.
 
 ```jldoctest dataframe
-julia> data = DataFrame(marks = repeat(70:72, inner = 2),
-                         subject = repeat(["English", "Computer Science", "Mathematics"], outer = 2),
-                         semester = 1:6)
+julia> german = copy(german_ref)
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String           String          ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  male        2  own      NA               little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           NA
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     NA               NA
+    7 │     6     53  male        2  own      quite rich       NA
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      NA               NA
+  996 │   995     31  female      1  own      little           NA
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           NA              ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
+```
+We made a smaller *subset* of a `german` data frame to perform our operations. The `1:6` means we have taken
+the first 6 rows whereas `2:4` means we have taken the three columns form 2 to 4.
+
+```jldoctest dataframe
+julia> df1 = german[1:6, 2:4]
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    70  English                  1
-   2 │    70  Computer Science         2
-   3 │    71  Mathematics              3
-   4 │    71  English                  4
-   5 │    72  Computer Science         5
-   6 │    72  Mathematics              6
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │    67  male        2
+   2 │    22  female      2
+   3 │    49  male        1
+   4 │    45  male        2
+   5 │    53  male        2
+   6 │    35  male        1
 ```
 
-In the following example, the operation `data.marks = x` will be performed if 
-`ncol(data) == 0 || length(x) == nrow(data)` will be true. 
+In the following example, the operation `df1.Age = val` will be performed if 
+`ncol(df1) == 0 || length(val) == nrow(df1)` will be true. 
 
 ```jldoctest dataframe
-julia> x = [80, 85, 98, 95, 78, 89]
+julia> val = [80, 85, 98, 95, 78, 89]
 6-element Vector{Int64}:
  80
  85
@@ -893,10 +927,10 @@ julia> x = [80, 85, 98, 95, 78, 89]
  78
  89
 
-julia> ncol(data) == 0 || length(x) == nrow(data)
+julia> ncol(df1) == 0 || length(val) == nrow(df1)
 true
 
-julia> data.marks = x
+julia> df1.Age = val
 6-element Vector{Int64}:
  80
  85
@@ -905,159 +939,159 @@ julia> data.marks = x
  78
  89
 
-julia> data
+julia> df1
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    80  English                  1
-   2 │    85  Computer Science         2
-   3 │    98  Mathematics              3
-   4 │    95  English                  4
-   5 │    78  Computer Science         5
-   6 │    89  Mathematics              6
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │    80  male        2
+   2 │    85  female      2
+   3 │    98  male        1
+   4 │    95  male        2
+   5 │    78  male        2
+   6 │    89  male        1
 
-julia> data.marks === x # no copy is performed
+julia> df1.Age === val # no copy is performed
 true
 
-julia> data[1:3, :semester] = [2, 4, 6] # set value of `:semester` in row `1:3` to values `[2, 4, 6]` *in-place*
+julia> df1[1:3, :Job] = [2, 3, 2] # set value of `:semester` in row `1:3` to values `[2, 4, 6]` *in-place*
 3-element Vector{Int64}:
  2
- 4
- 6
+ 3
+ 2
 
-julia> data
+julia> df1
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    80  English                  2
-   2 │    85  Computer Science         4
-   3 │    98  Mathematics              6
-   4 │    95  English                  4
-   5 │    78  Computer Science         5
-   6 │    89  Mathematics              6
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │    80  male        2
+   2 │    85  female      3
+   3 │    98  male        2
+   4 │    95  male        2
+   5 │    78  male        2
+   6 │    89  male        1
 
-julia> data[!, :subject] = ["English", "Computer Science", "Mathematics", "History", "Economics", "Psychology"] # replaces `:subject` without copying
+julia> df1[!, :Sex] = ["male", "female", "female", "transgender", "female", "male"] # replaces `:Sex` without copying
 6-element Vector{String}:
- "English"
- "Computer Science"
- "Mathematics"
- "History"
- "Economics"
- "Psychology"
+ "male"
+ "female"
+ "female"
+ "transgender"
+ "female"
+ "male"
 
-julia> data
+julia> df1
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    80  English                  2
-   2 │    85  Computer Science         4
-   3 │    98  Mathematics              6
-   4 │    95  History                  4
-   5 │    78  Economics                5
-   6 │    89  Psychology               6
+ Row │ Age    Sex          Job
+     │ Int64  String       Int64
+─────┼───────────────────────────
+   1 │    80  male             2
+   2 │    85  female           3
+   3 │    98  female           2
+   4 │    95  transgender      2
+   5 │    78  female           2
+   6 │    89  male             1
 
-julia> data[3, 1:3] = [78, "Economics", 7] # set row `3` of cols `1:3(:marks, :subject, :semester)` in-place
+julia> df1[3, 1:3] = [78, "male", 4] # set row `3` of cols `1:3(:Age, :Sex, :Job)` in-place
 3-element Vector{Any}:
  78
-   "Economics"
-  7
+   "male"
+  4
 
-julia> data
+julia> df1
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    80  English                  2
-   2 │    85  Computer Science         4
-   3 │    78  Economics                7
-   4 │    95  History                  4
-   5 │    78  Economics                5
-   6 │    89  Psychology               6
+ Row │ Age    Sex          Job
+     │ Int64  String       Int64
+─────┼───────────────────────────
+   1 │    80  male             2
+   2 │    85  female           3
+   3 │    78  male             4
+   4 │    95  transgender      2
+   5 │    78  female           2
+   6 │    89  male             1
 
-julia> dfr = data[2, :] # passed `:`(a column) in a parent DataFrame to get the *DataFrameRow*
+julia> dfr = df1[2, :] # passed `:`(a column) in a parent DataFrame to get the *DataFrameRow*
 DataFrameRow
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   2 │    85  Computer Science         4
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   2 │    85  female      3
 
 julia> dfr
 DataFrameRow
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   2 │    85  Computer Science         4
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   2 │    85  female      3
 
-julia> dfr.marks = 98 # set value of col `:marks` in row `2` to `98` in-place
+julia> dfr.Age = 98 # set value of col `:Age` in row `2` to `98` in-place
 98
 
 julia> dfr
 DataFrameRow
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   2 │    98  Computer Science         4
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   2 │    98  female      3
 
-julia> dfr[2:3] = ["Mathematics", 5] # set values of entries in columns `:subject` and `:semester` 
+julia> dfr[2:3] = ["male", 2] # set values of entries in columns `:Sex` and `:Job` 
 2-element Vector{Any}:
-  "Mathematics"
- 5
+  "male"
+ 2
 
 julia> dfr
 DataFrameRow
- Row │ marks  subject      semester
-     │ Int64  String       Int64
-─────┼──────────────────────────────
-   2 │    98  Mathematics         5
+ Row │ Age    Sex     Job
+     │ Int64  String  Int64
+─────┼──────────────────────
+   2 │    98  male        2
 
-julia> sdf = view(data, :, 2:3) # Column subsetting
+julia> sdf = view(df1, :, 2:3) # Column subsetting
 6×2 SubDataFrame
- Row │ subject      semester
+ Row │ Sex          Job
      │ String       Int64
-─────┼───────────────────────
-   1 │ English             2
-   2 │ Mathematics         5
-   3 │ Economics           7
-   4 │ History             4
-   5 │ Economics           5
-   6 │ Psychology          6
+─────┼────────────────────
+   1 │ male             2
+   2 │ male             2
+   3 │ male             4
+   4 │ transgender      2
+   5 │ female           2
+   6 │ male             1
 
-julia> sdf[2, :subject] = "Computer Science" # set value of col `:subject` in second row to `Computer Science` in-place
-"Computer Science"
+julia> sdf[2, :Sex] = "female" # set value of col `:Sex` in second row to `female` in-place
+"female"
 
 julia> sdf
 6×2 SubDataFrame
- Row │ subject           semester
-     │ String            Int64
-─────┼────────────────────────────
-   1 │ English                  2
-   2 │ Computer Science         5
-   3 │ Economics                7
-   4 │ History                  4
-   5 │ Economics                5
-   6 │ Psychology               6
+ Row │ Sex          Job
+     │ String       Int64
+─────┼────────────────────
+   1 │ male             2
+   2 │ female           2
+   3 │ male             4
+   4 │ transgender      2
+   5 │ female           2
+   6 │ male             1
 
-julia> sdf[6, 1:2] = ["Biology", 7] # set value of multiple columns
+julia> sdf[6, 1:2] = ["female", 3] # set value of multiple columns
 2-element Vector{Any}:
-  "Biology"
- 7
+  "female"
+ 3
 
 julia> sdf
 6×2 SubDataFrame
- Row │ subject           semester
-     │ String            Int64
-─────┼────────────────────────────
-   1 │ English                  2
-   2 │ Computer Science         5
-   3 │ Economics                7
-   4 │ History                  4
-   5 │ Economics                5
-   6 │ Biology                  7
+ Row │ Sex          Job
+     │ String       Int64
+─────┼────────────────────
+   1 │ male             2
+   2 │ female           2
+   3 │ male             4
+   4 │ transgender      2
+   5 │ female           2
+   6 │ female           3
 
-julia> data[:, 3] = [4, 5, 7, 8, 2, 1]
+julia> df1[:, 3] = [4, 5, 7, 8, 2, 1]
 6-element Vector{Int64}:
  4
  5
@@ -1066,19 +1100,19 @@ julia> data[:, 3] = [4, 5, 7, 8, 2, 1]
  2
  1
 
-julia> data
+julia> df1
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    80  English                  4
-   2 │    98  Computer Science         5
-   3 │    78  Economics                7
-   4 │    95  History                  8
-   5 │    78  Economics                2
-   6 │    89  Biology                  1
+ Row │ Age    Sex          Job
+     │ Int64  String       Int64
+─────┼───────────────────────────
+   1 │    80  male             4
+   2 │    98  female           5
+   3 │    78  male             7
+   4 │    95  transgender      8
+   5 │    78  female           2
+   6 │    89  female           1
 
-julia> data[!, :marks] .= [85, 89, 78, 58, 96, 68] # col `:marks` is replaced freshly allocated vector
+julia> df1[!, :Age] .= [85, 89, 78, 58, 96, 68] # col `:Age` is replaced freshly allocated vector
 6-element Vector{Int64}:
  85
  89
@@ -1087,19 +1121,25 @@ julia> data[!, :marks] .= [85, 89, 78, 58, 96, 68] # col `:marks` is replaced fr
  96
  68
 
-julia> data
+julia> df1
 6×3 DataFrame
- Row │ marks  subject           semester
-     │ Int64  String            Int64
-─────┼───────────────────────────────────
-   1 │    85  English                  4
-   2 │    89  Computer Science         5
-   3 │    78  Economics                7
-   4 │    58  History                  8
-   5 │    96  Economics                2
-   6 │    68  Biology                  1
+ Row │ Age    Sex          Job
+     │ Int64  String       Int64
+─────┼───────────────────────────
+   1 │    85  male             4
+   2 │    89  female           5
+   3 │    78  male             7
+   4 │    58  transgender      8
+   5 │    96  female           2
+   6 │    68  female           1
+```
 
-julia> data[!, :Students] .= ["Rohit", "Akshat", "Rahul", "Aayush", "Prateek", "Anam"] # allocates a new column `:Students` and adds it
+Note that if column name `:Customers` and `:City` is not present in `df1` then using `!` and `:` are equivalent. The 
+major difference between in-place and replace operations is that replacing columns is needed if new values have a 
+different type than the old ones. For instance here `!` works and `:` fails:
+
+```jldoctest dataframe
+julia> df1[!, :Customers] .= ["Rohit", "Akshat", "Rahul", "Aayush", "Prateek", "Anam"] # allocates a new column `:Customers` and adds it
 6-element Vector{String}:
  "Rohit"
  "Akshat"
@@ -1108,7 +1148,7 @@ julia> data[!, :Students] .= ["Rohit", "Akshat", "Rahul", "Aayush", "Prateek", "
  "Prateek"
  "Anam"
 
-julia> data[:, :City] .= ["Kanpur", "Lucknow", "Bhuvneshwar", "Jaipur", "Ranchi", "Dehradoon"] # allocates the column in-place because `:City` is not present in `data`
+julia> df1[:, :City] .= ["Kanpur", "Lucknow", "Bhuvneshwar", "Jaipur", "Ranchi", "Dehradoon"] # allocates the column in-place because `:City` is not present in `data`
 6-element Vector{String}:
  "Kanpur"
  "Lucknow"
@@ -1117,40 +1157,49 @@ julia> data[:, :City] .= ["Kanpur", "Lucknow", "Bhuvneshwar", "Jaipur", "Ranchi"
  "Ranchi"
  "Dehradoon"
 
-julia> data
+julia> df1
 6×5 DataFrame
- Row │ marks  subject           semester  Students  City
-     │ Int64  String            Int64     String    String
-─────┼──────────────────────────────────────────────────────────
-   1 │    85  English                  4  Rohit     Kanpur
-   2 │    89  Computer Science         5  Akshat    Lucknow
-   3 │    78  Economics                7  Rahul     Bhuvneshwar
-   4 │    58  History                  8  Aayush    Jaipur
-   5 │    96  Economics                2  Prateek   Ranchi
-   6 │    68  Biology                  1  Anam      Dehradoon
+ Row │ Age    Sex          Job    Customers  City
+     │ Int64  String       Int64  String     String
+─────┼───────────────────────────────────────────────────
+   1 │    85  male             4  Rohit      Kanpur
+   2 │    89  female           5  Akshat     Lucknow
+   3 │    78  male             7  Rahul      Bhuvneshwar
+   4 │    58  transgender      8  Aayush     Jaipur
+   5 │    96  female           2  Prateek    Ranchi
+   6 │    68  female           1  Anam       Dehradoon
 ```
 
-Note that if `:col` is not present in `data` then using `!` and `:` are equivalent. The major difference between in-place 
-and replace operations is that replacing columns is needed if new values have a different type than the old ones. For 
-instance here `!` works and `:` fails:
+Assignment of a scalar to a data frame can be done in ranges using broadcasting:
 
 ```jldoctest dataframe
-julia> data
-6×5 DataFrame
- Row │ marks  subject           semester  Students  City
-     │ Int64  String            Int64     String    String
-─────┼──────────────────────────────────────────────────────────
-   1 │    85  English                  4  Rohit     Kanpur
-   2 │    89  Computer Science         5  Akshat    Lucknow
-   3 │    78  Economics                7  Rahul     Bhuvneshwar
-   4 │    58  History                  8  Aayush    Jaipur
-   5 │    96  Economics                2  Prateek   Ranchi
-   6 │    68  Biology                  1  Anam      Dehradoon
+julia> df1[:, 3] .= 4 # an in-place replacement of values stored in column number 3 by 4
+6-element view(::Vector{Int64}, :) with eltype Int64:
+ 4
+ 4
+ 4
+ 4
+ 4
+ 4
 
-julia> data[:, :marks] .= "Economics"
+julia> df1
+6×5 DataFrame
+ Row │ Age    Sex          Job    Customers  City
+     │ Int64  String       Int64  String     String
+─────┼───────────────────────────────────────────────────
+   1 │    85  male             4  Rohit      Kanpur
+   2 │    89  female           4  Akshat     Lucknow
+   3 │    78  male             4  Rahul      Bhuvneshwar
+   4 │    58  transgender      4  Aayush     Jaipur
+   5 │    96  female           4  Prateek    Ranchi
+   6 │    68  female           4  Anam       Dehradoon
+```
+
+```jldoctest dataframe
+julia> df1[:, :Age] .= "Economics"
 ERROR: MethodError: Cannot `convert` an object of type String to an object of type Int64
 
-julia> data[!, :marks] .= "Economics"
+julia> df1[!, :Age] .= "Economics"
 6-element Vector{String}:
  "Economics"
  "Economics"
@@ -1159,21 +1208,21 @@ julia> data[!, :marks] .= "Economics"
  "Economics"
  "Economics"
 
-julia> data
+julia> df1
 6×5 DataFrame
- Row │ marks      subject           semester  Students  City
-     │ String     String            Int64     String    String
-─────┼──────────────────────────────────────────────────────────────
-   1 │ Economics  English                  4  Rohit     Kanpur
-   2 │ Economics  Computer Science         5  Akshat    Lucknow
-   3 │ Economics  Economics                7  Rahul     Bhuvneshwar
-   4 │ Economics  History                  8  Aayush    Jaipur
-   5 │ Economics  Economics                2  Prateek   Ranchi
-   6 │ Economics  Biology                  1  Anam      Dehradoon
+ Row │ Age        Sex          Job    Customers  City
+     │ String     String       Int64  String     String
+─────┼───────────────────────────────────────────────────────
+   1 │ Economics  male             4  Rohit      Kanpur
+   2 │ Economics  female           4  Akshat     Lucknow
+   3 │ Economics  male             4  Rahul      Bhuvneshwar
+   4 │ Economics  transgender      4  Aayush     Jaipur
+   5 │ Economics  female           4  Prateek    Ranchi
+   6 │ Economics  female           4  Anam       Dehradoon
 ```
 
-In mostly cases, above as you can see for getting a column or assigning to a column instead of `data[!, :col]` 
-and `data[!, :col] = val` it is usually better to just write `data.col` and `data.col = val` respectively as 
+In mostly cases, above as you can see for getting a column or assigning to a column instead of `df1[!, :col]` 
+and `df1[!, :col] = val` it is usually better to just write `df1.col` and `df1.col = val` respectively as 
 it is the same and simpler to type and read.
 
 ## Not, Between, Cols, and All selectors
@@ -1291,7 +1340,7 @@ In the above example `german[:, Cols("Age", Not("Sex"))]`, `:Age` column will co
 removing `:sex` column. For more understanding if we will follow this example `german[:, Cols("Job", Not("Sex"))]`
 then `:Job` column will be placed first and then the remaining order will be same after removing `:Sex` column.
 
-You can also use `Regex` to select columns and `Not` for Rows from [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl):
+You can also use `Regex` to select columns and `Not` for to select rows as in the example below:
 ```jldoctest dataframe
 julia> german[Not(5), r"Sex"]
 999×1 DataFrame
@@ -1371,8 +1420,9 @@ julia> german[:, Not(2)]
 
 ## Views
 
-You can simply create a `view` of a data frame (it is more memory efficient than creating a materialized selection).
-Here are the possible return value options.
+A `view` is a data structure that acts like an array (it is a subtype of AbstractArray), but the underlying data is
+actually part of another array. We can simply create a `view` of a data frame (it is more memory efficient than creating 
+a materialized selection). Here are the possible return value options.
 
 ```jldoctest dataframe
 julia> german = copy(german_ref);
@@ -1465,7 +1515,7 @@ julia> @time @view german[2:5, 2:5] # here you can see creation of view is very 
 In DataFrames.jl we have five functions that we can use to perform transformations of columns 
 of a data frame:
 - `combine`: create a new data frame populated with columns that are results of transformation 
-  applied to the source data frame columns;
+  applied to the source data frame columns, potentially combining its rows;
 - `select`: create a new data frame that has the same number of rows as the source data frame 
   populated with columns that are results of transformations applied to the source data frame 
   columns; (the exception to the above number of rows invariant is `select(german)` which produces
@@ -2009,34 +2059,5 @@ julia> transform(german_copy, [:Age, :Job] => (+) => :res) # put the result of `
   998 │    38      2     40
   999 │    23      2     25
  1000 │    27      2     29
-            985 rows omitted
-
-julia> transform(groupby(german, :Sex),
-                        :Sex => ByRow(uppercase) => :Sex,
-                        keepkeys=false) # key columns would retained in the produced dataframe and wrapper `ByRow` will convert the `:Sex` in uppercase
-1000×10 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
-      │ Int64  Int64  String  Int64  String   String           String          ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0     67  MALE        2  own      NA               little          ⋯
-    2 │     1     22  FEMALE      2  own      little           moderate
-    3 │     2     49  MALE        1  own      little           NA
-    4 │     3     45  MALE        2  free     little           little
-    5 │     4     53  MALE        2  free     little           little          ⋯
-    6 │     5     35  MALE        1  free     NA               NA
-    7 │     6     53  MALE        2  own      quite rich       NA
-    8 │     7     35  MALE        3  rent     little           moderate
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
-  994 │   993     30  MALE        3  own      little           little          ⋯
-  995 │   994     50  MALE        2  own      NA               NA
-  996 │   995     31  FEMALE      1  own      little           NA
-  997 │   996     40  MALE        3  own      little           little
-  998 │   997     38  MALE        2  own      little           NA              ⋯
-  999 │   998     23  MALE        2  free     little           little
- 1000 │   999     27  MALE        2  own      moderate         moderate
-                                                  4 columns and 985 rows omitted                                     
+            985 rows omitted                                  
 ```
-
-In the above example, for `transform` the key columns would be retained in the produced data frame even 
-with `keepkeys=false`, in this case this keyword argument only influences the fact if we check that key
-columns have not changed in this case.
