@@ -3783,23 +3783,27 @@ end
     subset!(gd, :b => x -> x .> first(x))
     validate_gdf(gd)
     @test gd == groupby(df, :a)
+    @test sort!(unique(gd.groups)) == 1:length(gd)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
     gd = groupby(df, :a)[[2, 1]];
     subset!(gd, :b => x -> x .> first(x))
     validate_gdf(gd)
     @test gd == groupby(df, :a)[[2, 1]]
+    @test sort!(unique(gd.groups)) == 1:length(gd)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
     gd = groupby(df, :a);
     subset!(gd, :a => x -> x .== 1)
     validate_gdf(gd)
+    @test sort!(unique(gd.groups)) == 1:length(gd)
     @test gd == groupby(df, :a)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
     gd = groupby(df, :a)[[2, 1]];
     subset!(gd, :b => x -> x .== 1)
     validate_gdf(gd)
+    @test sort!(unique(gd.groups)) == 1:length(gd)
     @test gd == groupby(df, :a)
 
     function issubsequence(v1, v2, l1, l2)
@@ -3815,6 +3819,7 @@ end
         gd = groupby(df, :a, sort=true)
         subset!(gd, :a => ByRow(x -> rand() < 0.5))
         validate_gdf(gd)
+        @test sort!(unique(gd.groups)) == 1:length(gd)
         @test gd == groupby(df, :a, sort=true)
 
         # below we do not have a well defined order so just validate gd
@@ -3822,6 +3827,7 @@ end
         gd = groupby(df, :a)
         subset!(gd, :a => ByRow(x -> rand() < 0.5))
         validate_gdf(gd)
+        @test sort!(unique(gd.groups)) == 1:length(gd)
 
         df = DataFrame(a=rand(1:j, n))
         gd = groupby(df, :a)
@@ -3830,6 +3836,7 @@ end
         superseq = [first(x.a) for x in gd]
         subset!(gd, :a => ByRow(x -> rand() < 0.5))
         validate_gdf(gd)
+        @test sort!(unique(gd.groups)) == 1:length(gd)
         subseq = [first(x.a) for x in gd]
         @test issubsequence(subseq, superseq, length(subseq), length(superseq))
     end
