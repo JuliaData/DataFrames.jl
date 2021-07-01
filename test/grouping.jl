@@ -3775,4 +3775,78 @@ end
                     y_maximum=[13, 14, 13, 14])
 end
 
+# other tests of subset! are in subset.jl, but for these tests we need
+# validate_gdf function defined in this testset
+@testset "subset! tests" begin
+    df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
+    gd = groupby(df, :a);
+    subset!(gd, :b => x -> x .> first(x))
+    validate_gdf(gd)
+    @test gd == groupby(df, :a)
+    @test sort!(unique(gd.groups)) == 1:length(gd)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
+    gd = groupby(df, :a)[[2, 1]];
+    subset!(gd, :b => x -> x .> first(x))
+    validate_gdf(gd)
+    @test gd == groupby(df, :a)[[2, 1]]
+    @test sort!(unique(gd.groups)) == 1:length(gd)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
+    gd = groupby(df, :a);
+    subset!(gd, :a => x -> x .== 1)
+    validate_gdf(gd)
+    @test sort!(unique(gd.groups)) == 1:length(gd)
+    @test gd == groupby(df, :a)
+
+    df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
+    gd = groupby(df, :a)[[2, 1]];
+    subset!(gd, :b => x -> x .== 1)
+    validate_gdf(gd)
+    @test sort!(unique(gd.groups)) == 1:length(gd)
+    @test gd == groupby(df, :a)
+
+    function issubsequence(v1, v2, l1, l2)
+        l1 == 0 && return true
+        l2 == 0 && return false
+        return issubsequence(v1, v2, l1 - (v1[l1] == v2[l2]), l2 - 1)
+    end
+
+    Random.seed!(1234)
+    for n in 1:10, j in 1:10, _ in 1:100
+        df = DataFrame(a=rand(1:j, n))
+        # need to sort to ensure grouping algorithm stability
+        gd = groupby(df, :a, sort=true)
+        subset!(gd, :a => ByRow(x -> rand() < 0.5))
+        validate_gdf(gd)
+        @test sort!(unique(gd.groups)) == 1:length(gd)
+        @test gd == groupby(df, :a, sort=true)
+
+        # below we do not have a well defined order so just validate gd
+        df = DataFrame(a=rand(1:j, n))
+        gd = groupby(df, :a)
+        subset!(gd, :a => ByRow(x -> rand() < 0.5))
+        validate_gdf(gd)
+        @test sort!(unique(gd.groups)) == 1:length(gd)
+
+        df = DataFrame(a=rand(1:j, n))
+        gd = groupby(df, :a)
+        p = randperm(length(gd))
+        gd = gd[p]
+        superseq = [first(x.a) for x in gd]
+        subset!(gd, :a => ByRow(x -> rand() < 0.5))
+        validate_gdf(gd)
+        @test sort!(unique(gd.groups)) == 1:length(gd)
+        subseq = [first(x.a) for x in gd]
+        @test issubsequence(subseq, superseq, length(subseq), length(superseq))
+    end
+end
+
+@testset "consistency check" begin
+    df = DataFrame(a=1)
+    gdf = groupby(df, :a)
+    push!(df, [2])
+    @test_throws AssertionError gdf[1]
+end
+
 end # module
