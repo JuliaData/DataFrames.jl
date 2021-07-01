@@ -13,7 +13,7 @@
 #   (which is generated internally)
 # * changing Int64 to Int (to handle 32-bit architectures correctly)
 # * disabling precompilation on Julia older than 1.5
-# * run         check for all=true and all=false both on Julia stable and nightly
+# * run @warnpcfail check for all=true and all=false both on Julia stable and nightly
 
 function precompile(all=false)
     VERSION >= v"1.5" || return nothing
