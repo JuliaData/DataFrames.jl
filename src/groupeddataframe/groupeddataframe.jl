@@ -240,16 +240,7 @@ function genkeymap(gd, cols)
     d
 end
 
-corrupt_msg(gd::GroupedDataFrame) =
-    "The current number of rows in the parent data frame is " *
-    "$(nrow(parent(gd))) and it does not match the number of " *
-    "rows it contained when GroupedDataFrame was created which was " *
-    "$(length(getfield(gd, :groups))). The number of rows in the parent " *
-    "data frame has likely been changed unintentionally " *
-    "(e.g. using subset!, filter!, delete!, push!, or append! functions)."
-
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
-    @assert length(getfield(gd, :groups)) == nrow(getfield(gd, :parent)) corrupt_msg(gd)
     if f in (:idx, :starts, :ends)
         # Group indices are computed lazily the first time they are accessed
         # Do not lock when field is already initialized
