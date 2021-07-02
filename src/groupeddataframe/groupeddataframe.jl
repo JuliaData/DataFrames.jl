@@ -18,7 +18,18 @@
 The result of a [`groupby`](@ref) operation on an `AbstractDataFrame`; a
 view into the `AbstractDataFrame` grouped by rows.
 
-Not meant to be constructed directly, see `groupby`.
+Not meant to be constructed directly, see [`groupby`](@ref).
+
+One can get the names of columns used to create `GroupedDataFrame`
+using the [`groupcols`](@ref) function. Similarly the [`groupindices`](@ref)
+function returns a vector of group indices for each row of the parent data frame.
+
+After creation of `GroupedDataFrame` it reflects the grouping of rows that was
+valid at the creation time of `GroupedDataFrame`, even if the parent data frame
+gets mutated. Therefore making changes to grouping columns of the parent data
+frame can lead to hard to catch bugs. However, one can add or remove columns to
+the parent data frame without invalidating the `GroupedDataFrame` provided that
+columns used for grouping are not changed.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
@@ -59,10 +70,9 @@ Within each group, the order of rows in `df` is preserved.
 In particular if it is an empty vector then a single-group `GroupedDataFrame`
 is created.
 
-A `GroupedDataFrame` also supports
-indexing by groups, `select`, `transform`,
-and `combine` (which applies a function to each group
-and combines the result into a data frame).
+A `GroupedDataFrame` also supports indexing by groups, `select`, `transform`,
+and `combine` (which applies a function to each group and combines the result
+into a data frame).
 
 `GroupedDataFrame` also supports the dictionary interface. The keys are
 [`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
