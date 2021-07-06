@@ -3842,4 +3842,11 @@ end
     end
 end
 
+@testset "consistency check" begin
+    df = DataFrame(a=1)
+    gdf = groupby(df, :a)
+    push!(df, [2])
+    @test_throws AssertionError gdf[1]
+end
+
 end # module

@@ -25,11 +25,13 @@ using the [`groupcols`](@ref) function. Similarly the [`groupindices`](@ref)
 function returns a vector of group indices for each row of the parent data frame.
 
 After creation of `GroupedDataFrame` it reflects the grouping of rows that was
-valid at the creation time of `GroupedDataFrame`, even if the parent data frame
-gets mutated. Therefore making changes to grouping columns of the parent data
-frame can lead to hard to catch bugs. However, one can add or remove columns to
-the parent data frame without invalidating the `GroupedDataFrame` provided that
-columns used for grouping are not changed.
+valid at the creation time of `GroupedDataFrame`. Therefore making changes to
+grouping columns of the parent data frame can lead to hard to catch bugs.
+To safeguard the user against such cases, if the number of rows in the parent
+data frame changes then trying to use `GroupedDataFrame` will throw an error.
+However, one can add or remove columns to the parent data frame without
+invalidating the `GroupedDataFrame` provided that columns used for grouping are
+not changed.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
@@ -250,7 +252,16 @@ function genkeymap(gd, cols)
     d
 end
 
+corrupt_msg(gd::GroupedDataFrame) =
+    "The current number of rows in the parent data frame is " *
+    "$(nrow(parent(gd))) and it does not match the number of " *
+    "rows it contained when GroupedDataFrame was created which was " *
+    "$(length(getfield(gd, :groups))). The number of rows in the parent " *
+    "data frame has likely been changed unintentionally " *
+    "(e.g. using subset!, filter!, delete!, push!, or append! functions)."
+
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
+    @assert length(getfield(gd, :groups)) == nrow(getfield(gd, :parent)) corrupt_msg(gd)
     if f in (:idx, :starts, :ends)
         # Group indices are computed lazily the first time they are accessed
         # Do not lock when field is already initialized
