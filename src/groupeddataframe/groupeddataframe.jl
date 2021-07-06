@@ -24,8 +24,8 @@ One can get the names of columns used to create `GroupedDataFrame`
 using the [`groupcols`](@ref) function. Similarly the [`groupindices`](@ref)
 function returns a vector of group indices for each row of the parent data frame.
 
-After creation of `GroupedDataFrame` it reflects the grouping of rows that was
-valid at the creation time of `GroupedDataFrame`. Therefore making changes to
+After its creation, a `GroupedDataFrame` reflects the grouping of rows that was
+valid at the its creation time. Therefore making changes to
 grouping columns of the parent data frame can lead to hard to catch bugs.
 To safeguard the user against such cases, if the number of rows in the parent
 data frame changes then trying to use `GroupedDataFrame` will throw an error.
