@@ -562,8 +562,7 @@ julia> push!(df, [3])
    2 │     2
    3 │     3
 
-julia> gd
-Error showing value of type GroupedDataFrame{DataFrame}:
+julia> gd[1]
 ERROR: AssertionError: The current number of rows in the parent data frame is 3 and it does not match the number of rows it contained when GroupedDataFrame was created which was 2. The number of rows in the parent data frame has likely been changed unintentionally (e.g. using subset!, filter!, delete!, push!, or append! functions).
 ```
 
@@ -604,17 +603,10 @@ julia> push!(df, [3])
    2 │     2
    3 │     3
 
-julia> gd
-GroupedDataFrame with 2 groups based on key: id
-First Group (1 row): id = 1
+julia> gd[1]
+1×1 SubDataFrame
  Row │ id
      │ Int64
 ─────┼───────
    1 │     1
-⋮
-Last Group (1 row): id = 2
- Row │ id
-     │ Int64
-─────┼───────
-   1 │     2
 ```
