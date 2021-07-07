@@ -526,3 +526,89 @@ julia> combine(gd, valuecols(gd) .=> mean)
    3 │ Iris-virginica              6.588            2.974             5.552
                                                                 1 column omitted
 ```
+
+Note that `GroupedDataFrame` is a view: therefore
+grouping columns of its parent data frame must not be mutated, and
+rows must not be added nor removed from it. If the number or rows
+of the parent changes then an error is thrown when a child `GroupedDataFrame`
+is used:
+```jldoctest sac
+julia> df = DataFrame(id=1:2)
+2×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia> gd = groupby(df, :id)
+GroupedDataFrame with 2 groups based on key: id
+First Group (1 row): id = 1
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+⋮
+Last Group (1 row): id = 2
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     2
+
+julia> push!(df, [3])
+3×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia> gd[1]
+ERROR: AssertionError: The current number of rows in the parent data frame is 3 and it does not match the number of rows it contained when GroupedDataFrame was created which was 2. The number of rows in the parent data frame has likely been changed unintentionally (e.g. using subset!, filter!, delete!, push!, or append! functions).
+```
+
+Sometimes it is useful to append rows to the source data frame of a
+`GroupedDataFrame`, without affecting the rows used for grouping.
+In such a scenario you can create the grouped data frame using a `view`
+of the parent data frame to avoid the error:
+
+```jldoctest sac
+julia> df = DataFrame(id=1:2)
+2×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia> gd = groupby(view(df, :, :), :id)
+GroupedDataFrame with 2 groups based on key: id
+First Group (1 row): id = 1
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+⋮
+Last Group (1 row): id = 2
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     2
+
+julia> push!(df, [3])
+3×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia> gd[1]
+1×1 SubDataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+```
