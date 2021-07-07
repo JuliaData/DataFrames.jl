@@ -187,9 +187,14 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          skipmissing::Bool = false,
                          sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     rpa = refpool_and_array.(cols)
-    refpools = first.(rpa)
-    refarrays = last.(rpa)
-    row_group_slots(cols, refpools, refarrays, hash, groups, skipmissing, sort)
+    if sort === false
+        refpools = nothing
+        refarrays = nothing
+    else
+        refpools = first.(rpa)
+        refarrays = last.(rpa)
+    end
+    row_group_slots(cols, refpools, refarrays, hash, groups, skipmissing, sort === true)
 end
 
 # Generic fallback method based on open adressing hash table
