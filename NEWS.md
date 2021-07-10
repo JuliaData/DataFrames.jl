@@ -1,3 +1,21 @@
+# DataFrames.jl v1.3 Release Notes
+
+## New functionalities
+
+* in the `groupby` function the `sort` keyword argument now allows three values
+  - `nothing` (the default) leaves the order of groups undefined and allows
+    `groupby` to pick the fastest available grouping algorithm;
+  - `true` sorts groups by key columns;
+  - `false` creates groups in the order of their appearance in the parent data
+    frame;
+  The old behavior was that the `sort` keyword argument allowed only `Bool` values
+  and if `false` was passed (which was the default) it corresponded to current
+  behavior when `nothing` is passed. Therefore only the user visible change is
+  when `sort=false` is passed explicitly as now instead of the order being
+  undefined it is guaranteed that the groups are in order of their appearance
+  in the parent data frame.
+  ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+
 # DataFrames.jl v1.2 Release Notes
 
 ## New functionalities
