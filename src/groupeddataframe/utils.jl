@@ -258,12 +258,12 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                                    Missings.EachReplaceMissing{
                                        <:AbstractVector{<:Union{Real, Missing}}}}},
                          hash::Val{false},
-                         groups::Union{Vector{Int}, Nothing},
+                         groups::Vector{Int},
                          skipmissing::Bool,
                          sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
     # Computing neither hashes nor groups isn't very useful,
     # and this method needs to allocate a groups vector anyway
-    @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
+    @assert all(col -> length(col) == length(groups), cols)
 
     missinginds = map(refpools) do refpool
         eltype(refpool) >: Missing ?
