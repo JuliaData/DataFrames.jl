@@ -1255,7 +1255,7 @@ function nonunique(df::AbstractDataFrame)
         throw(ArgumentError("finding duplicate rows in data frame with no " *
                             "columns is not allowed"))
     end
-    gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), false, nothing)[3]
+    gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), false, false, nothing)[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
     res = fill(true, nrow(df))
