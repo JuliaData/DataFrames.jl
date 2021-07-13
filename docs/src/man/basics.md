@@ -810,6 +810,7 @@ julia> german[4, 4]
 ```
 
 or to get a new `DataFrame` that is subset of rows and columns do:
+
 ```jldoctest dataframe
 julia> german[4:5, 4:5]
 2×2 DataFrame
@@ -818,55 +819,6 @@ julia> german[4:5, 4:5]
 ─────┼────────────────
    1 │     2  free
    2 │     2  free
-```
-
-Assignment of a scalar to a data frame can be done in ranges using broadcasting:
-```jldoctest dataframe
-julia> german[:, 2] .= 4 # an in-place replacement of values stored in column number 2 by 4
-1000-element view(::Vector{Int64}, :) with eltype Int64:
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- ⋮
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
-
-julia> german
-1000×10 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
-      │ Int64  Int64  String  Int64  String   String           String          ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0      4  male        2  own      NA               little          ⋯
-    2 │     1      4  female      2  own      little           moderate
-    3 │     2      4  male        1  own      little           NA
-    4 │     3      4  male        2  free     little           little
-    5 │     4      4  male        2  free     little           little          ⋯
-    6 │     5      4  male        1  free     NA               NA
-    7 │     6      4  male        2  own      quite rich       NA
-    8 │     7      4  male        3  rent     little           moderate
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
-  994 │   993      4  male        3  own      little           little          ⋯
-  995 │   994      4  male        2  own      NA               NA
-  996 │   995      4  female      1  own      little           NA
-  997 │   996      4  male        3  own      little           little
-  998 │   997      4  male        2  own      little           NA              ⋯
-  999 │   998      4  male        2  free     little           little
- 1000 │   999      4  male        2  own      moderate         moderate
-                                                  4 columns and 985 rows omitted
 ```
 
 Using `setindex!` on *DataFrame*, *SubDataFrame*, *DataFrameRow* :  
@@ -898,6 +850,7 @@ julia> german = copy(german_ref)
  1000 │   999     27  male        2  own      moderate         moderate
                                                   4 columns and 985 rows omitted
 ```
+
 We made a smaller *subset* of a `german` data frame to perform our operations. The `1:6` means we have taken
 the first 6 rows whereas `2:4` means we have taken the three columns form 2 to 4.
 
@@ -915,8 +868,15 @@ julia> df1 = german[1:6, 2:4]
    6 │    35  male        1
 ```
 
-In the following example, the operation `df1.Age = val` will be performed if 
-`ncol(df1) == 0 || length(val) == nrow(df1)` will be true. 
+In the following example, the operation `df1.Age = val` will be performed if `ncol(df1) == 0 || length(val) == nrow(df1)` 
+will be true. In the given condition, the logical OR operator `||` is used to perform operations on variables and values.
+The given condition will be true if either operands `ncol(df1) == 0` or `length(val) == nrow(df1)` will be true. In the case
+of `ncol(df1) == 0` will be true if both are true. Since, we are calculating number of columns using `ncol` function in our 
+data frame `df1` and the number of columns is not equal to zero so the condition is not satisfied and the result for `ncol(df) == 0`
+will be *false*. Now in the second operands which is `length(val) == nrow(df1)`, in this operand we are calculating the length of
+data frame `val` which is 6, using `length` function and calculating the number of rows present in our data frame `df1` using 
+`nrow` function. So, finally this operand tells us that the current condition is true. Result for frist operand is false and for
+second operand is true. Now, according to logical OR operator the given condition will be true.  
 
 ```jldoctest dataframe
 julia> val = [80, 85, 98, 95, 78, 89]
@@ -1011,7 +971,11 @@ julia> df1
    4 │    95  transgender      2
    5 │    78  female           2
    6 │    89  male             1
+```
 
+Now, lets talk about *DataFrameRow*: 
+
+```jldoctest dataframe
 julia> dfr = df1[2, :] # passed `:`(a column) in a parent DataFrame to get the *DataFrameRow*
 DataFrameRow
  Row │ Age    Sex     Job
@@ -1047,7 +1011,13 @@ DataFrameRow
      │ Int64  String  Int64
 ─────┼──────────────────────
    2 │    98  male        2
+```
 
+As mentioned in the title that we will discuss `setindex!` for *DataFrame*, *SubDataFrame*, *DataFrameRow*. So here
+we are talking about *SubDataFrame* and to create a *SubDataFrame* we need of `view` function. To know more about 
+`view` please have a look to **Views** section of this tutorial. 
+
+```jldoctest dataframe
 julia> sdf = view(df1, :, 2:3) # Column subsetting
 6×2 SubDataFrame
  Row │ Sex          Job
@@ -1091,7 +1061,12 @@ julia> sdf
    4 │ transgender      2
    5 │ female           2
    6 │ female           3
+```
 
+In the above examples we have talked about *SubDataFrame*. Now in the given example we set the value 
+of 3rd-column which is `:Job` in our data frame `df1` with `[4, 5, 7, 8, 2, 1]`:
+
+```jldoctest dataframe
 julia> df1[:, 3] = [4, 5, 7, 8, 2, 1]
 6-element Vector{Int64}:
  4
@@ -1112,7 +1087,11 @@ julia> df1
    4 │    95  transgender      8
    5 │    78  female           2
    6 │    89  female           1
+```
 
+Column `:Age` is replaced freshly allocated vector because of broadcasting assignment:
+
+```jldoctest dataframe
 julia> df1[!, :Age] .= [85, 89, 78, 58, 96, 68] # col `:Age` is replaced freshly allocated vector
 6-element Vector{Int64}:
  85
@@ -1367,58 +1346,6 @@ julia> german[Not(5), r"Sex"]
 984 rows omitted
 ```
 
-In the expression `german[!, Not(:Age)]` the `!` indicates that underlying columns are not copied:
-```jldoctest dataframe
-julia> german[!, Not(3)]
-1000×9 DataFrame
-  Row │ id     Age    Job    Housing  Saving accounts  Checking account  Credi ⋯
-      │ Int64  Int64  Int64  String   String           String            Int64 ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0     67      2  own      NA               little                  ⋯
-    2 │     1     22      2  own      little           moderate
-    3 │     2     49      1  own      little           NA
-    4 │     3     45      2  free     little           little
-    5 │     4     53      2  free     little           little                  ⋯
-    6 │     5     35      1  free     NA               NA
-    7 │     6     53      2  own      quite rich       NA
-    8 │     7     35      3  rent     little           moderate
-  ⋮   │   ⋮      ⋮      ⋮       ⋮            ⋮                ⋮                ⋱
-  994 │   993     30      3  own      little           little                  ⋯
-  995 │   994     50      2  own      NA               NA
-  996 │   995     31      1  own      little           NA
-  997 │   996     40      3  own      little           little
-  998 │   997     38      2  own      little           NA                      ⋯
-  999 │   998     23      2  free     little           little
- 1000 │   999     27      2  own      moderate         moderate
-                                                  3 columns and 985 rows omitted
-```
-
-In the given code of block `:` means that the columns will get copied:
-```jldoctest dataframe
-julia> german[:, Not(2)]
-1000×9 DataFrame
-  Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
-      │ Int64  String  Int64  String   String           String            Int6 ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0  male        2  own      NA               little                 ⋯
-    2 │     1  female      2  own      little           moderate
-    3 │     2  male        1  own      little           NA
-    4 │     3  male        2  free     little           little
-    5 │     4  male        2  free     little           little                 ⋯
-    6 │     5  male        1  free     NA               NA
-    7 │     6  male        2  own      quite rich       NA
-    8 │     7  male        3  rent     little           moderate
-  ⋮   │   ⋮      ⋮       ⋮       ⋮            ⋮                ⋮               ⋱
-  994 │   993  male        3  own      little           little                 ⋯
-  995 │   994  male        2  own      NA               NA
-  996 │   995  female      1  own      little           NA
-  997 │   996  male        3  own      little           little
-  998 │   997  male        2  own      little           NA                     ⋯
-  999 │   998  male        2  free     little           little
- 1000 │   999  male        2  own      moderate         moderate
-                                                  3 columns and 985 rows omitted
-```
-
 ## Views
 
 A `view` is a data structure that acts like an array (it is a subtype of AbstractArray), but the underlying data is
@@ -1499,8 +1426,18 @@ DataFrameRow
 ```
 
 ```julia
-julia> @time @view german[2:5, 2:5] # here you can see creation of view is very fast
-  0.000081 seconds (2 allocations: 112 bytes)
+julia> @time german[2:5, 2:5]
+  0.000079 seconds (21 allocations: 1.531 KiB)
+4×4 DataFrame
+ Row │ Age    Sex     Job    Housing
+     │ Int64  String  Int64  String
+─────┼───────────────────────────────
+   1 │    22  female      2  own
+   2 │    49  male        1  own
+   3 │    45  male        2  free
+   4 │    53  male        2  free
+
+julia> @view german[2:5, 2:5] # here you can see creation of view is very fast
 4×4 SubDataFrame
  Row │ Age    Sex     Job    Housing
      │ Int64  String  Int64  String
@@ -1531,11 +1468,12 @@ The simplest way to specify a transformation is:
 
 - `source_column => transformation => target_column_name`
   In this scenario the `source_column` is passed as an argument to `transformation` and stored in `target_column_name`
-  column.
+  column. The valid values of `transformation` argument are `combine`, `select`, `select!`, `transform`, and `transform!`.
 - `source_column => transformation`
-  In this scenario `target_column_name` will be automatically generated.
+  In this scenario we applied the transformation function to our `source_column` and then `target_column_name` will be 
+  automatically generated.
 - `source_column => target_column_name`
-  a way to rename a column.
+  we are renaming our `source_column` with `target_column_name`. So, it is a way to rename a column.
 
 ```jldoctest dataframe
 julia> german = copy(german_ref);
