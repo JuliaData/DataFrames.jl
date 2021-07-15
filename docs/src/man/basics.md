@@ -23,11 +23,11 @@ julia> using Pkg
 julia> Pkg.test("DataFrames")
 ```
 
-Additionally, it is recommended to check the version installed with `st` command (this tutorial is for 1.x releases).
+Additionally, it is recommended to check the version installed with the `status` command.
 ```julia
 julia> ]
 
-(@v1.6) pkg> st DataFrames
+(@v1.6) pkg> status DataFrames
       Status `C:\Users\TeAmp0is0N\.julia\environments\v1.6\Project.toml`
   [a93c6f00] DataFrames v1.1.1
 ```
@@ -48,13 +48,13 @@ each row is interpreted as an observation and each column as a feature.
 In this section you will see many ways to create a `DataFrame` using the constructor.
 First, let's create an empty `DataFrame`:
 ```jldoctest dataframe
-julia> df = DataFrame()
+julia> DataFrame()
 0×0 DataFrame
 ```
 
 Or, we could call the constructor using keyword arguments to add columns to the `DataFrame`:
 ```jldoctest dataframe
-julia> df = DataFrame(A=1:3, B=5:7, fixed=1)
+julia> DataFrame(A=1:3, B=5:7, fixed=1)
 3×3 DataFrame
  Row │ A      B      fixed
      │ Int64  Int64  Int64
@@ -82,7 +82,7 @@ julia> using CSV
 
 julia> german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
                                       "..", "docs", "src", "assets", "german.csv"),
-                              DataFrame)
+                             DataFrame)
 1000×10 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
       │ Int64  Int64  String  Int64  String   String           String          ⋯
@@ -111,8 +111,8 @@ julia> german = copy(german_ref); # It will copy the data frame
 Now let's talk about the given code block:
 ```julia
 german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
-                                      "..", "docs", "src", "assets", "german.csv"),
-                              DataFrame)
+                               "..", "docs", "src", "assets", "german.csv"),
+                      DataFrame)
 ```
 - we are storing `german.csv` file in the DataFrames.jl repository to make user's life easier and
   avoid having to download it each time;
@@ -120,7 +120,7 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
 - first we split the directory part from it using `dirname`;
 - then from this directory we need to move to the directory where `german.csv` is stored; we use
   `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating
-  system independent way  (remember that Widnows and Unix differ as they use either `/` or `\` as path
+  system independent way (remember that Widnows and Unix differ as they use either `/` or `\` as path
   separator; the `joinpath` function ensures we are not running into issues with this);
 - then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to
   read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it
@@ -299,12 +299,16 @@ julia> german
 In the above example `empty` function created a new `DataFrame` with the same column names
 and column element types as `german` but with zero rows. On the other hand `empty!` function
 removed all rows from `german` in-place and made each of its column empty.
+The difference between the behavior of the `empty` and `empty!` functions is an application of the
+[stylistic convention](https://docs.julialang.org/en/v1/manual/variables/#Stylistic-Conventions)
+employed in the Julia language.
+This convention is followed in all functions provided by the DataFrames.jl package.
 
-## Getting Basic Information about a data frame
+## Getting Basic Information about a Data Frame
 
 In this section we will learn about how to get basic information on our `german` `DataFrame`:
 
-The standard `size` function works to get dimensions of the data frame.
+The `size` function returns the dimensions of the data frame.
 First we restore the `german` data frame, as we have just emptied it above.
 ```jldoctest dataframe
 julia> german = copy(german_ref);
@@ -409,7 +413,7 @@ Note that `mapcols` guarantees not to reuse the columns from `german` in the ret
 its argument then it gets copied before being stored.
 
 ```jldoctest dataframe
-julia> mapcols(id -> id .^2, german) # `mapcols` will sequentially set columns from `id` to `Purpose` and will do square of each columns
+julia> mapcols(id -> id .^2, german)
 1000×10 DataFrame
   Row │ id      Age    Sex           Job    Housing   Saving accounts       Ch ⋯
       │ Int64   Int64  String        Int64  String    String                St ⋯
@@ -468,6 +472,8 @@ julia> last(german, 5)
 Using `first` and `last` without number of rows will return a first/last `DataFrameRow` in the data frame.
 `DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference to a parent
 `DataFrame` and information about which row and columns from the parent are selected.
+You can think of `DataFrameRow` as a `NamedTuple` that is mutable,
+i.e. allows to update the source data frame, which is often useful.
 
 ```jldoctest dataframe
 julia> first(german)
@@ -487,7 +493,7 @@ DataFrameRow
                                                                4 columns omitted
 ```
 
-# Taking a subset of `german` data frame
+# Taking a Subset of a Data Frame
 
 ## Indexing Syntax
 
@@ -495,6 +501,9 @@ Specific subsets of a data frame can be extracted using the indexing syntax, sim
 In the [Indexing](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing) section of the
 manual you can find all details about the available options. Here we highlight the basic ones.
 
+The general syntax of indexing is `data_frame[selected_rows, selected_columns]`.
+Observe that, as opposed to matrices in Julia Base,
+it is required to pass both row and column selector.
 The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
 
 ```jldoctest dataframe
@@ -544,7 +553,8 @@ julia> german[:, [:Age, :Sex]]
       985 rows omitted
 ```
 
-In this example we have created a `DataFrame` using `:Sex` and `:Age` column for the first five rows:
+In the example below we created a `DataFrame` having `:Sex` and `:Age` columns
+and the first five rows of the `german` data set:
 
 ```jldoctest dataframe
 julia> german[1:5, [:Sex, :Age]]
@@ -627,9 +637,6 @@ while `german[:, [:Sex]]` stores its copy. The `!` selector normally should be a
 as using it can lead to hard to catch bugs. However, when working with very large data frames
 it can be useful to save memory and improve performance of operations.
 
-## Most elementary get and set operations
-
-Here, "get" means you retrieve a part of the column, and "set" means you put a part of the column in the data frame.
 
 Recapping what we have already learned,
 given the data frame `german` here are various ways to grab one of its columns as vector:
@@ -809,7 +816,7 @@ julia> german[4, 4]
 2
 ```
 
-or to get a new `DataFrame` that is subset of rows and columns do:
+To get a new `DataFrame` that is subset of rows and columns do e.g.:
 
 ```jldoctest dataframe
 julia> german[4:5, 4:5]
@@ -821,10 +828,7 @@ julia> german[4:5, 4:5]
    2 │     2  free
 ```
 
-Using `setindex!` on *DataFrame*, *SubDataFrame*, *DataFrameRow* :  
-
-The `setindex!` function is a method from Julia Base that is used to customize the indexing behaviour for
-custom types. Overloading this method allows us to customize the indexing behavior for types that we create.
+# Changing the Data Stored in a Data Frame
 
 ```jldoctest dataframe
 julia> german = copy(german_ref)
@@ -851,8 +855,7 @@ julia> german = copy(german_ref)
                                                   4 columns and 985 rows omitted
 ```
 
-We made a smaller *subset* of a `german` data frame to perform our operations. The `1:6` means we have taken
-the first 6 rows whereas `2:4` means we have taken the three columns form 2 to 4.
+We make a subset of a `german` data frame and store it in `df1` data frame to show how to perform mutating operations.
 
 ```jldoctest dataframe
 julia> df1 = german[1:6, 2:4]
@@ -868,15 +871,7 @@ julia> df1 = german[1:6, 2:4]
    6 │    35  male        1
 ```
 
-In the following example, the operation `df1.Age = val` will be performed if `ncol(df1) == 0 || length(val) == nrow(df1)` 
-will be true. In the given condition, the logical OR operator `||` is used to perform operations on variables and values.
-The given condition will be true if either operands `ncol(df1) == 0` or `length(val) == nrow(df1)` will be true. In the case
-of `ncol(df1) == 0` will be true if both are true. Since, we are calculating number of columns using `ncol` function in our 
-data frame `df1` and the number of columns is not equal to zero so the condition is not satisfied and the result for `ncol(df) == 0`
-will be *false*. Now in the second operands which is `length(val) == nrow(df1)`, in this operand we are calculating the length of
-data frame `val` which is 6, using `length` function and calculating the number of rows present in our data frame `df1` using 
-`nrow` function. So, finally this operand tells us that the current condition is true. Result for frist operand is false and for
-second operand is true. Now, according to logical OR operator the given condition will be true.  
+In the following example we replace the column `:Age` in our `df1`data frame:
 
 ```jldoctest dataframe
 julia> val = [80, 85, 98, 95, 78, 89]
@@ -887,9 +882,6 @@ julia> val = [80, 85, 98, 95, 78, 89]
  95
  78
  89
-
-julia> ncol(df1) == 0 || length(val) == nrow(df1)
-true
 
 julia> df1.Age = val
 6-element Vector{Int64}:
@@ -954,7 +946,7 @@ julia> df1
    5 │    78  female           2
    6 │    89  male             1
 
-julia> df1[3, 1:3] = [78, "male", 4] # set row `3` of cols `1:3(:Age, :Sex, :Job)` in-place
+julia> df1[3, 1:3] = [78, "male", 4] # set row `3` of columns  1, 2, and 3 in-place
 3-element Vector{Any}:
  78
    "male"
@@ -973,17 +965,10 @@ julia> df1
    6 │    89  male             1
 ```
 
-Now, lets talk about *DataFrameRow*: 
+Now, let us explain how `DataFrameRow` can be used to mutate its parent data frame: 
 
 ```jldoctest dataframe
-julia> dfr = df1[2, :] # passed `:`(a column) in a parent DataFrame to get the *DataFrameRow*
-DataFrameRow
- Row │ Age    Sex     Job
-     │ Int64  String  Int64
-─────┼──────────────────────
-   2 │    85  female      3
-
-julia> dfr
+julia> dfr = df1[2, :] # DataFrameRow with the second row and all columns of df1
 DataFrameRow
  Row │ Age    Sex     Job
      │ Int64  String  Int64
@@ -1013,8 +998,9 @@ DataFrameRow
    2 │    98  male        2
 ```
 
-As mentioned in the title that we will discuss `setindex!` for *DataFrame*, *SubDataFrame*, *DataFrameRow*. So here
-we are talking about *SubDataFrame* and to create a *SubDataFrame* we need of `view` function. To know more about 
+`DataFrameRow` is a view into a single row of a data frame.
+You can also create views into multiple rows of a data frame, which produce `SubDataFrame` objects.
+To learn more about 
 `view` please have a look to **Views** section of this tutorial. 
 
 ```jldoctest dataframe
@@ -1063,7 +1049,7 @@ julia> sdf
    6 │ female           3
 ```
 
-In the above examples we have talked about *SubDataFrame*. Now in the given example we set the value 
+In the above examples we have talked about `SubDataFrame`. Now in the given example we set the value 
 of 3rd-column which is `:Job` in our data frame `df1` with `[4, 5, 7, 8, 2, 1]`:
 
 ```jldoctest dataframe
@@ -1201,18 +1187,18 @@ julia> df1
    6 │ Economics  female           4  Anam       Dehradoon
 ```
 
-In mostly cases, above as you can see for getting a column or assigning to a column instead of `df1[!, :col]` 
+In most cases above, as you can see, for getting a column or assigning to a column instead of `df1[!, :col]` 
 and `df1[!, :col] = val` it is usually better to just write `df1.col` and `df1.col = val` respectively as 
 it is the same and simpler to type and read.
 
-## Not, Between, Cols, and All selectors
+# Not, Between, Cols, and All column selectors
 
-Finally, you can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection
-scenarioes (note that `Cols()` selects no columns while `All()` selects all columns). `All()` allows
+You can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection
+scenarioes. `All()` allows
 us to select all columns of `DataFrame` while `Between` selector allow us to specify a range of columns
 (we can specify the start and stop column using any of the single column selector syntaxes). On the other
 hand, `Not` selector allow us to specify the columns we want to exclude from the resulting data frames. We
-can put any valid other column selector inside `Not`. Finally `Cols()` selector picks a union of other
+can put any valid other column selector inside `Not`. Finally `Cols(...)` selector picks a union of other
 selectors passed as its arguments.
 
 A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/InvertedIndices.jl) package)
@@ -1317,7 +1303,7 @@ julia> german[:, Cols("Age", Not("Sex"))] # Shows all column except `Sex` becaus
 ```
 
 In the above example `german[:, Cols("Age", Not("Sex"))]`, `:Age` column will come first after
-removing `:sex` column. For more understanding if we will follow this example `german[:, Cols("Job", Not("Sex"))]`
+removing the `:Sex` column. For more understanding if we will follow this example `german[:, Cols("Job", Not("Sex"))]`
 then `:Job` column will be placed first and then the remaining order will be same after removing `:Sex` column.
 
 You can also use `Regex` to select columns and `Not` for to select rows as in the example below:
@@ -1348,8 +1334,7 @@ julia> german[Not(5), r"Sex"]
 
 ## Views
 
-A `view` is a data structure that acts like an array (it is a subtype of AbstractArray), but the underlying data is
-actually part of another array. We can simply create a `view` of a data frame (it is more memory efficient than creating 
+We can create a `view` of a data frame (it is more memory efficient than creating 
 a materialized selection). Here are the possible return value options.
 
 ```jldoctest dataframe
@@ -1463,17 +1448,16 @@ of a data frame:
   (note though that these columns can be potentially modified by the transformation passed to `transform`);
 - `transform!`: the same as `transform` but updates the passed data frame in place.
 
-You can also use the `select` and `select!` functions to select, rename, and transform columns in a data frame.
-The simplest way to specify a transformation is:
+The general way to specify a transformation is:
 
 - `source_column => transformation => target_column_name`
   In this scenario the `source_column` is passed as an argument to `transformation` and stored in `target_column_name`
-  column. The valid values of `transformation` argument are `combine`, `select`, `select!`, `transform`, and `transform!`.
+  column. A `transformation` must be a callable (typically a function).
 - `source_column => transformation`
   In this scenario we applied the transformation function to our `source_column` and then `target_column_name` will be 
   automatically generated.
 - `source_column => target_column_name`
-  we are renaming our `source_column` with `target_column_name`. So, it is a way to rename a column.
+  we are renaming our `source_column` to `target_column_name`.
 
 ```jldoctest dataframe
 julia> german = copy(german_ref);
@@ -1513,7 +1497,7 @@ julia> combine(german, :Age => mean => :mean_age)
 
 In the above example you will observe that `select` produces as many rows in the produced data frame as
 there are rows in the source data frame, a single value is repeated accordingly. This is not the case for 
-`combine`. However, if other columns in `combine` would produce multiple rows the repitition also happens:
+`combine`. However, if other columns in `combine` would produce multiple rows the scalar is reused:
 
 ```jldcotest dataframe
 julia> combine(german, :Age => mean => :mean_age, :Housing => unique => :housing)
