@@ -19,7 +19,7 @@ the same.
 
 Previously, we have used German Credit Card dataset. Now let's say you are working
 on a classification problem but we do not have target column in our dataset. We are given two data frames – 
-one which contains data about customer and the other that has taget(risk factor) information. We will 
+one which contains data about customer and the other that has taget (risk factor) information. We will 
 use these data frames  to understand how the different types of *joins* work using `DataFrames.jl`.
 
 For example, suppose that we have the following two data frames:
@@ -241,7 +241,7 @@ julia> outerjoin(persons, earnings, on = :id)
 It loads more `missing` values, but we can see all the `:id`s now. It check out the new `missing` 
 names for `:id`s 6–8. It is known as `outerjoin`.
 
-Now, let's talk about `antijoin`:
+Finally, we can keep only rows that *don't* match with `antijoin`:
 
 ```jldoctest dataframe
 julia> antijoin(persons, earnings, on = :id)
