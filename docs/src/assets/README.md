@@ -19,7 +19,8 @@ FB Wirtschaftswissenschaften
 Von-Melle-Park 5
 2000 Hamburg 13
 
-The original data is from [UCI](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)), and that this data is from [Kaggle](https://www.kaggle.com/uciml/german-credit)
+The original data is from [UCI](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)),
+and the file stored here is from [Kaggle](https://www.kaggle.com/uciml/german-credit)
 
 # Iris data set
 
