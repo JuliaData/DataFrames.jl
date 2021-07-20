@@ -7341,7 +7341,8 @@ html.theme--documenter-dark {
   html.theme--documenter-dark #documenter .docs-main > article {
     overflow-wrap: break-word; }
     html.theme--documenter-dark #documenter .docs-main > article .math-container {
-      overflow-x: auto; }
+      overflow-x: auto;
+      overflow-y: hidden; }
   @media screen and (min-width: 1056px) {
     html.theme--documenter-dark #documenter .docs-main {
       max-width: 52rem;
@@ -7604,6 +7605,90 @@ html.theme--documenter-dark {
     overflow-y: scroll;
     text-rendering: optimizeLegibility;
     text-size-adjust: 100%; }
+  html.theme--documenter-dark .ansi span.sgr1 {
+    font-weight: bolder; }
+  html.theme--documenter-dark .ansi span.sgr2 {
+    font-weight: lighter; }
+  html.theme--documenter-dark .ansi span.sgr3 {
+    font-style: italic; }
+  html.theme--documenter-dark .ansi span.sgr4 {
+    text-decoration: underline; }
+  html.theme--documenter-dark .ansi span.sgr7 {
+    color: #1f2424;
+    background-color: #fff; }
+  html.theme--documenter-dark .ansi span.sgr8 {
+    color: transparent; }
+    html.theme--documenter-dark .ansi span.sgr8 span {
+      color: transparent; }
+  html.theme--documenter-dark .ansi span.sgr9 {
+    text-decoration: line-through; }
+  html.theme--documenter-dark .ansi span.sgr30 {
+    color: #242424; }
+  html.theme--documenter-dark .ansi span.sgr31 {
+    color: #f6705f; }
+  html.theme--documenter-dark .ansi span.sgr32 {
+    color: #4fb43a; }
+  html.theme--documenter-dark .ansi span.sgr33 {
+    color: #f4c72f; }
+  html.theme--documenter-dark .ansi span.sgr34 {
+    color: #7587f0; }
+  html.theme--documenter-dark .ansi span.sgr35 {
+    color: #bc89d3; }
+  html.theme--documenter-dark .ansi span.sgr36 {
+    color: #49b6ca; }
+  html.theme--documenter-dark .ansi span.sgr37 {
+    color: #b3bdbe; }
+  html.theme--documenter-dark .ansi span.sgr40 {
+    background-color: #242424; }
+  html.theme--documenter-dark .ansi span.sgr41 {
+    background-color: #f6705f; }
+  html.theme--documenter-dark .ansi span.sgr42 {
+    background-color: #4fb43a; }
+  html.theme--documenter-dark .ansi span.sgr43 {
+    background-color: #f4c72f; }
+  html.theme--documenter-dark .ansi span.sgr44 {
+    background-color: #7587f0; }
+  html.theme--documenter-dark .ansi span.sgr45 {
+    background-color: #bc89d3; }
+  html.theme--documenter-dark .ansi span.sgr46 {
+    background-color: #49b6ca; }
+  html.theme--documenter-dark .ansi span.sgr47 {
+    background-color: #b3bdbe; }
+  html.theme--documenter-dark .ansi span.sgr90 {
+    color: #92a0a2; }
+  html.theme--documenter-dark .ansi span.sgr91 {
+    color: #ff8674; }
+  html.theme--documenter-dark .ansi span.sgr92 {
+    color: #79d462; }
+  html.theme--documenter-dark .ansi span.sgr93 {
+    color: #ffe76b; }
+  html.theme--documenter-dark .ansi span.sgr94 {
+    color: #8a98ff; }
+  html.theme--documenter-dark .ansi span.sgr95 {
+    color: #d2a4e6; }
+  html.theme--documenter-dark .ansi span.sgr96 {
+    color: #6bc8db; }
+  html.theme--documenter-dark .ansi span.sgr97 {
+    color: #ecf0f1; }
+  html.theme--documenter-dark .ansi span.sgr100 {
+    background-color: #92a0a2; }
+  html.theme--documenter-dark .ansi span.sgr101 {
+    background-color: #ff8674; }
+  html.theme--documenter-dark .ansi span.sgr102 {
+    background-color: #79d462; }
+  html.theme--documenter-dark .ansi span.sgr103 {
+    background-color: #ffe76b; }
+  html.theme--documenter-dark .ansi span.sgr104 {
+    background-color: #8a98ff; }
+  html.theme--documenter-dark .ansi span.sgr105 {
+    background-color: #d2a4e6; }
+  html.theme--documenter-dark .ansi span.sgr106 {
+    background-color: #6bc8db; }
+  html.theme--documenter-dark .ansi span.sgr107 {
+    background-color: #ecf0f1; }
+  html.theme--documenter-dark code.language-julia-repl > span.hljs-meta {
+    color: #4fb43a;
+    font-weight: bolder; }
   html.theme--documenter-dark .hljs {
     background: #2b2b2b;
     color: #f8f8f2; }
