@@ -1,3 +1,10 @@
+# DataFrames.jl v1.2.1 Patch Release Notes
+
+## Bug fixes
+
+* Add workaround for `deleteat!` bug in Julia Base in `delete!` function
+  ([#2820](https://github.com/JuliaData/DataFrames.jl/issues/2820))
+
 # DataFrames.jl v1.2 Release Notes
 
 ## New functionalities
