@@ -966,6 +966,11 @@ function Base.delete!(df::DataFrame, inds)
         throw(BoundsError(df, (inds, :)))
     end
 
+    # workaround https://github.com/JuliaLang/julia/pull/41646
+    if VERSION <= v"1.6.2" && inds isa UnitRange{<:Integer}
+        inds = collect(inds)
+    end
+
     # we require ind to be stored and unique like in Base
     # otherwise an error will be thrown and the data frame will get corrupted
     return _delete!_helper(df, inds)
@@ -976,6 +981,10 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
         throw(BoundsError(df, (inds, :)))
     end
     drop = _findall(inds)
+    # workaround https://github.com/JuliaLang/julia/pull/41646
+    if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
+        drop = collect(drop)
+    end
     return _delete!_helper(df, drop)
 end
 
