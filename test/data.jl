@@ -199,7 +199,7 @@ end
     @test nrow(df) == 6
 
     df = DataFrame(a= Vector{Union{Bool,Missing}}(missing, 10^4));
-    delete!(df, [false; trues(nrow(df)-6); falses(5)])
+    delete!(df, [false; trues(nrow(df) - 6); falses(5)])
     @test nrow(df) == 6
 end
 

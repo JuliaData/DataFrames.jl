@@ -973,7 +973,6 @@ function Base.delete!(df::DataFrame, inds)
 
     # we require ind to be stored and unique like in Base
     # otherwise an error will be thrown and the data frame will get corrupted
-
     return _delete!_helper(df, inds)
 end
 
