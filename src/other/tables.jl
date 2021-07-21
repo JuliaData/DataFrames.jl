@@ -45,17 +45,18 @@ fromcolumns(x, names; copycols::Union{Nothing, Bool}=nothing) =
 fromcolumns(x::Tables.CopiedColumns, names; copycols::Union{Nothing, Bool}=nothing) =
     fromcolumns(Tables.source(x), names; copycols=something(copycols, false))
 
-function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
+function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing,
+                   makeunique::Bool=false) where {T}
     if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
         # here we handle eltypes not specific enough to be dispatched
         # to other DataFrames constructors taking vector of `Pair`s
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
             all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
-                             copycols=something(copycols, true))
+                             copycols=something(copycols, true), makeunique=makeunique)
         end
     end
-    cols = Tables.columns(x)
+    cols = Tables.columns(x, makeunique=true)
     names = collect(Symbol, Tables.columnnames(cols))
     return fromcolumns(cols, names, copycols=copycols)
 end
