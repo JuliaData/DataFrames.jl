@@ -28,7 +28,9 @@ turn on multi-threading only if enough rows in the processed data frame is prese
 (the exact threshold when multi-threading is enabled is considered to be undefined
 and might change in the future).
 
-Except for the list above, where multi-threading is used automatically, all functions provided by DataFrames.jl that update a data frame are not thread safe.
+Except for the list above, where multi-threading is used automatically,
+all functions provided by DataFrames.jl that update a data frame are not thread safe.
+
 ## Index
 ```@index
 Pages = ["functions.md"]
