@@ -1380,7 +1380,7 @@ julia> insertcols!(df1, :Country => "India")
  Row │ Age        Sex          Job    Customers  City         Country
      │ String     String       Int64  String     String       String
 ─────┼────────────────────────────────────────────────────────────────
-   1 │ Economics  male             4  Rohit      kanpur       India
+   1 │ Economics  male             4  Rohit      Kanpur       India
    2 │ Economics  female           4  Akshat     Lucknow      India
    3 │ Economics  male             4  Rahul      Bhuvneshwar  India
    4 │ Economics  transgender      4  Aayush     Jaipur       India
