@@ -56,7 +56,7 @@ function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing,
                              copycols=something(copycols, true), makeunique=makeunique)
         end
     end
-    cols = Tables.columns(x, makeunique=true)
+    cols = makeunique ? Tables.columns(x, makeunique=true) : Tables.columns(x)
     names = collect(Symbol, Tables.columnnames(cols))
     return fromcolumns(cols, names, copycols=copycols)
 end
