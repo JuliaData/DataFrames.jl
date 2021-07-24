@@ -114,7 +114,7 @@ end
                     :auto)
     df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]],
                     :auto)
-    df3 = DataFrame(x = Int[1, 2, 3, 4], y = Union{Int, Missing}[1, missing, 2, 3], 
+    df3 = DataFrame(x = Int[1, 2, 3, 4], y = Union{Int, Missing}[1, missing, 2, 3],
                     z = Missing[missing, missing, missing, missing])
 
     @test completecases(df2) == .!ismissing.(df2.x2)
@@ -190,6 +190,17 @@ end
     df = DataFrame(b=b)
     @test eltype(dropmissing(df).b) == Int
     @test eltype(dropmissing!(df).b) == Int
+end
+
+@testset "delete! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
+    # these tests will crash Julia if they are not correct
+    df = DataFrame(a= Vector{Union{Bool,Missing}}(missing, 10^4));
+    delete!(df, 2:(nrow(df) - 5))
+    @test nrow(df) == 6
+
+    df = DataFrame(a= Vector{Union{Bool,Missing}}(missing, 10^4));
+    delete!(df, [false; trues(nrow(df) - 6); falses(5)])
+    @test nrow(df) == 6
 end
 
 @testset "dropmissing and unique view kwarg test" begin
