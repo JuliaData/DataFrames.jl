@@ -48,7 +48,9 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
 end
 
 """
-    groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
+    groupby(d::AbstractDataFrame, cols;
+            sort::Union{Bool, Nothing}=nothing,
+            skipmissing::Bool=false)
 
 Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
 into row groups.
@@ -57,8 +59,10 @@ into row groups.
 - `df` : an `AbstractDataFrame` to split
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-- `sort` : whether to sort groups according to the values of the grouping columns
-  `cols`; if `sort=false` then the order of groups in the result is undefined
+- `sort` : if `sort=true` sort groups according to the values of the grouping columns
+  `cols`; if `sort=false` groups are created in order of their appereance in `df`
+  if `sort=nothing` (the default) then the fastest available grouping algorithm
+  is picked and in consequence the order of groups in the result is undefined
   and may change in future releases; below a description of the current
   implementation is provided.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
@@ -86,7 +90,7 @@ an `AbstractDict` can be used to index into a grouped data frame where
 the keys are column names of the data frame. The order of the keys does
 not matter in this case.
 
-In the current implementation if `sort=false` groups are ordered following the
+In the current implementation if `sort=nothing` groups are ordered following the
 order of appearance of values in the grouping columns, except when all grouping
 columns provide non-`nothing` `DataAPI.refpool`, in which case the order of groups
 follows the order of values returned by `DataAPI.refpool`. As a particular application
@@ -205,7 +209,7 @@ julia> for g in gd
 ```
 """
 function groupby(df::AbstractDataFrame, cols;
-                 sort::Bool=false, skipmissing::Bool=false)
+                 sort::Union{Bool,Nothing}=nothing, skipmissing::Bool=false)
     _check_consistency(df)
     idxcols = index(df)[cols]
     if isempty(idxcols)
@@ -224,7 +228,7 @@ function groupby(df::AbstractDataFrame, cols;
                           Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
-    if sort && !sorted
+    if sort === true && !sorted
         # Find index of representative row for each group
         idx = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)

@@ -182,24 +182,29 @@ end
 # Optional `groups` vector is set to the group indices of each row (starting at 1)
 # With skipmissing=true, rows with missing values are attributed index 0.
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
-                         hash::Val = Val(true),
-                         groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false,
-                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+                         hash::Val,
+                         groups::Union{Vector{Int}, Nothing},
+                         skipmissing::Bool,
+                         sort::Union{Bool, Nothing})::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     rpa = refpool_and_array.(cols)
-    refpools = first.(rpa)
-    refarrays = last.(rpa)
-    row_group_slots(cols, refpools, refarrays, hash, groups, skipmissing, sort)
+    if sort === false
+        refpools = nothing
+        refarrays = nothing
+    else
+        refpools = first.(rpa)
+        refarrays = last.(rpa)
+    end
+    row_group_slots(cols, refpools, refarrays, hash, groups, skipmissing, sort === true)
 end
 
 # Generic fallback method based on open adressing hash table
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          refpools::Any,  # Ignored
                          refarrays::Any, # Ignored
-                         hash::Val = Val(true),
-                         groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false,
-                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+                         hash::Val,
+                         groups::Union{Vector{Int}, Nothing},
+                         skipmissing::Bool,
+                         sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
@@ -253,12 +258,12 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
                                    Missings.EachReplaceMissing{
                                        <:AbstractVector{<:Union{Real, Missing}}}}},
                          hash::Val{false},
-                         groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false,
-                         sort::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
+                         groups::Vector{Int},
+                         skipmissing::Bool,
+                         sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
     # Computing neither hashes nor groups isn't very useful,
     # and this method needs to allocate a groups vector anyway
-    @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
+    @assert all(col -> length(col) == length(groups), cols)
 
     missinginds = map(refpools) do refpool
         eltype(refpool) >: Missing ?
