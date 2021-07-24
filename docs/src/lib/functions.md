@@ -4,6 +4,31 @@ CurrentModule = DataFrames
 
 # Functions
 
+## Multi-threading support
+
+Selected operations in DataFrames.jl support muliti-threading.
+It is task-based and implemented using the `@spawn` macro form Julia Base.
+
+This is a list of operations that currently support multi-threading:
+- `DataFrame` constructor with `copycols=true`; also recursively all functions
+  that call this constructor, e.g. `copy`.
+- `getindex` when multiple columns are selected.
+- `groupby` (both when hashing is required and when fast path using `DataAPI.refpool`
+  is used).
+- `join*` functions for composing output data frame (but currently not for finding
+  matching rows in joined data frames).
+- in `combine`, `select[!]``, and `transform[!]` on `GroupedDataFrame` when performing
+  multiple transformations (each transformation is spawned in a separate task)
+- in `combine` when a transformation produces one row per group and the passed tranformation
+  is a custom function (i.e. when reduction based aggregation is not performed).
+
+In general at least Julia 1.4 is required to ensure that multi-threading is used
+and the Julia process must be started with more than one thread. Some operations
+turn on multi-threading only if enough rows in the processed data frame is present
+(the exact threshold when multi-threading is enabled is considered to be undefined
+and might change in the future).
+
+## Index
 ```@index
 Pages = ["functions.md"]
 ```
