@@ -3882,7 +3882,7 @@ end
     gd = groupby_checked(df, :id, sort=false)
     @test Vector.(keys(gd)) == [["3"], ["1"], ["2"]]
 
-    # for PooledVector sorted=true is not the same as sorted=nothing
+    # for PooledVector sort=true is not the same as sort=nothing
     df.id[1] = "300"
     df.id[3] = "200"
     gd = groupby_checked(df, :id, sort=nothing)
@@ -3892,7 +3892,7 @@ end
     gd = groupby_checked(df, :id, sort=false)
     @test Vector.(keys(gd)) == [["300"], ["1"], ["200"]]
 
-    # for CategoricalVector sorted=true is the same as sorted=nothing
+    # for CategoricalVector sort=true is the same as sort=nothing
     df = DataFrame(id=categorical(["1", "2", "3"], ordered=true))
     levels!(df.id, ["2", "1", "3"])
     gd = groupby_checked(df, :id, sort=nothing)
