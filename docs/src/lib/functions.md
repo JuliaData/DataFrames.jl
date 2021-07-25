@@ -17,7 +17,7 @@ This is a list of operations that currently make use of multi-threading:
   is used).
 - `join*` functions for composing output data frame (but currently not for finding
   matching rows in joined data frames).
-- `combine`, `select[!]``, and `transform[!]` on `GroupedDataFrame` when performing
+- `combine`, `select[!]`, and `transform[!]` on `GroupedDataFrame` when performing
   multiple transformations (each transformation is spawned in a separate task)
 - `combine` when a transformation produces one row per group and the passed transformation
   is a custom function (i.e. not for standard reductions, which use
