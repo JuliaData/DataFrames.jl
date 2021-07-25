@@ -6,10 +6,10 @@ CurrentModule = DataFrames
 
 ## Multi-threading support
 
-Selected operations in DataFrames.jl support muliti-threading.
-It is task-based and implemented using the `@spawn` macro form Julia Base.
+Selected operations in DataFrames.jl automatically use multiple threads when available.
+It is task-based and implemented using the `@spawn` macro from Julia Base.
 
-This is a list of operations that currently support multi-threading:
+This is a list of operations that currently make use of multi-threading:
 - `DataFrame` constructor with `copycols=true`; also recursively all functions
   that call this constructor, e.g. `copy`.
 - `getindex` when multiple columns are selected.
@@ -17,19 +17,24 @@ This is a list of operations that currently support multi-threading:
   is used).
 - `join*` functions for composing output data frame (but currently not for finding
   matching rows in joined data frames).
-- in `combine`, `select[!]``, and `transform[!]` on `GroupedDataFrame` when performing
+- `combine`, `select[!]``, and `transform[!]` on `GroupedDataFrame` when performing
   multiple transformations (each transformation is spawned in a separate task)
-- in `combine` when a transformation produces one row per group and the passed tranformation
-  is a custom function (i.e. when reduction based aggregation is not performed).
+- `combine` when a transformation produces one row per group and the passed transformation
+  is a custom function (i.e. not for standard reductions, which use
+  optimized single-threaded methods).
 
 In general at least Julia 1.4 is required to ensure that multi-threading is used
 and the Julia process must be started with more than one thread. Some operations
-turn on multi-threading only if enough rows in the processed data frame is present
+turn on multi-threading only if enough rows in the processed data frame are present
 (the exact threshold when multi-threading is enabled is considered to be undefined
 and might change in the future).
 
 Except for the list above, where multi-threading is used automatically,
 all functions provided by DataFrames.jl that update a data frame are not thread safe.
+This means that while they can be called from any thread, the caller is responsible
+for ensuring that a given `DataFrame` object is never modified by one thread while
+others are using it (either for reading or writing). Using the same `DataFrame`
+at the same time from different threads is safe as long as it is not modified.
 
 ## Index
 ```@index
