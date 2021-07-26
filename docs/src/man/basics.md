@@ -1029,27 +1029,20 @@ DataFrameRow
    3 │    49  male        1  own
 ```
 
-```julia
-julia> @time german[2:5, 2:5]
-  0.000079 seconds (21 allocations: 1.531 KiB)
-4×4 DataFrame
- Row │ Age    Sex     Job    Housing
-     │ Int64  String  Int64  String
-─────┼───────────────────────────────
-   1 │    22  female      2  own
-   2 │    49  male        1  own
-   3 │    45  male        2  free
-   4 │    53  male        2  free
+Now, lets have a look on follwogin comparision:
 
-julia> @view german[2:5, 2:5]
-4×4 SubDataFrame
- Row │ Age    Sex     Job    Housing
-     │ Int64  String  Int64  String
-─────┼───────────────────────────────
-   1 │    22  female      2  own
-   2 │    49  male        1  own
-   3 │    45  male        2  free
-   4 │    53  male        2  free
+- we used BenchmarkTools.jl package, which you would need to install to run the test;
+- the `@view` operation is an order of magnitude faster;
+- the `@view` operation allocates much less memory
+
+```julia
+julia> using BenchmarkTools
+
+julia> @btime $german[1:end-1, 1:end-1];
+  9.900 μs (44 allocations: 57.56 KiB)
+  
+julia> @btime @view $german[1:end-1, 1:end-1];
+  67.332 ns (2 allocations: 32 bytes)
 ```
 
 ## Changing the Data Stored in a Data Frame
