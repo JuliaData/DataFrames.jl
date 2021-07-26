@@ -283,7 +283,7 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
 
 Before proceeding copy the reference data frame:
 
-```
+```jldoctest dataframe
 julia> german = copy(german_ref); # we copy the data frame
 ```
 
@@ -300,7 +300,6 @@ The two latter syntaxes using indexing are more flexible as they allow
 us passing a variable holding the name of the column, and not only a literal name
 as in the case of the syntax using a `.`.
 
-```jldoctest dataframe
 ```jldoctest dataframe
 julia> german.Sex
 1000-element PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}:
