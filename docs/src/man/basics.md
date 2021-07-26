@@ -46,13 +46,47 @@ each row is interpreted as an observation and each column as a feature.
 ## Constructors
 
 In this section you will see many ways to create a `DataFrame` using the constructor.
+We can now construct a DataFrame with any of the constructors listed below:
+
+```julia
+DataFrame(pairs::Pair...; makeunique::Bool=false, copycols::Bool=true)
+
+DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
+
+DataFrame(ds::AbstractDict; copycols::Bool=true)
+
+DataFrame(kwargs..., copycols::Bool=true)
+
+DataFrame(columns::AbstractVecOrMat, names::Union{AbstractVector, Symbol};
+          makeunique::Bool=false, copycols::Bool=true)
+
+DataFrame(table; copycols::Union{Bool, Nothing}=nothing)
+```
+
+Lets have a look on keyword arguments:
+
+- `copycols` : whether vectors passed as columns should be copied; by default set
+  to `true` and the vectors are copied; if set to `false` then the constructor
+  will still copy the passed columns if it is not possible to construct a
+  `DataFrame` without materializing new columns. Note the `copycols=nothing`
+  default in the Tables.jl compatible constructor; it is provided as certain
+  input table types may have already made a copy of columns or the columns may
+  otherwise be immutable, in which case columns are not copied by default.
+  To force a copy in such cases, or to get mutable columns from an immutable
+  input table (like `Arrow.Table`), pass `copycols=true` explicitly.
+- `makeunique` : if `false` (the default), an error will be raised
+
+Note that not all constructors support these keyword arguments.
+
 First, let's create an empty `DataFrame`:
+
 ```jldoctest dataframe
 julia> DataFrame()
 0×0 DataFrame
 ```
 
-Or, we could call the constructor using keyword arguments to add columns to the `DataFrame`:
+Or, we could call the constructor using [keyword arguments](https://github.com/JuliaData/DataFrames.jl/blob/main/src/dataframe/dataframe.jl#:~:text=DataFrame(kwargs...%2C%20copycols%3A%3ABool%3Dtrue)) to add columns to the `DataFrame`:
+
 ```jldoctest dataframe
 julia> DataFrame(A=1:3, B=5:7, fixed=1)
 3×3 DataFrame
@@ -63,22 +97,197 @@ julia> DataFrame(A=1:3, B=5:7, fixed=1)
    2 │     2      6      1
    3 │     3      7      1
 ```
+
 note that in column `:fixed` scalar `1` gets automatically broadcasted.
+
+Or, we can construct a data frame with a [tuple of pairs](https://github.com/JuliaData/DataFrames.jl/blob/main/src/dataframe/dataframe.jl#:~:text=DataFrame(pairs%3A%3APair...%3B%20makeunique%3A%3ABool,Bool%3Dfalse%2C%20copycols%3A%3ABool%3Dtrue)):
+
+```jldoctest dataframe
+julia> tuples = (:A => [15, 20, 25], :Name => ["Rohit", "Rahul", "Akshat"])
+(:A => [15, 20, 25], :Name => ["Rohit", "Rahul", "Akshat"])
+
+julia> DataFrame(tuples)
+2×2 DataFrame
+ Row │ first   second
+     │ Symbol  Array…
+─────┼──────────────────────────────────────
+   1 │ A       [15, 20, 25]
+   2 │ Name    ["Rohit", "Rahul", "Akshat"]
+```
+
+Alternatively, we could do the same with a [dictionary](https://github.com/JuliaData/DataFrames.jl/blob/main/src/dataframe/dataframe.jl#:~:text=DataFrame(ds%3A%3AAbstractDict%3B%20copycols%3A%3ABool%3Dtrue)):
+
+```jldoctest dataframe
+julia> dict = Dict("apple"=>5, "banana"=>4, "papaya"=>10, "mango"=>5)
+Dict{String, Int64} with 4 entries:
+  "mango"  => 5
+  "banana" => 4
+  "apple"  => 5
+  "papaya" => 10
+
+julia> DataFrame(dict)
+1×4 DataFrame
+ Row │ apple  banana  mango  papaya
+     │ Int64  Int64   Int64  Int64
+─────┼──────────────────────────────
+   1 │     5       4      5      10
+```
+
+We can create a data frame from a dictionary, in which case keys from the dictionary will be 
+sorted to create the data frame columns:
+
+```jldoctest
+julia> x = Dict("A" => [1,2], "B" => ["Rohit", "Rishika"], "C" => ['a', 'b'], "fixed" => Ref([5,2]))
+Dict{String, Any} with 4 entries:
+  "B"     => ["Rohit", "Rishika"]
+  "A"     => [1, 2]
+  "fixed" => RefValue{Vector{Int64}}([5, 2])
+  "C"     => ['a', 'b']
+
+julia> DataFrame(x)
+2×4 DataFrame
+ Row │ A      B        C     fixed
+     │ Int64  String   Char  Array…
+─────┼──────────────────────────────
+   1 │     1  Rohit    a     [5, 2]
+   2 │     2  Rishika  b     [5, 2]
+```
+
+This time we used `Ref` to protect a vector from being treated as a column and forcing broadcasting 
+it into every row of `:fixed` column (note that the `[1,1]` vector is aliased in each row).
+
+Rather than explicitly creating a dictionary first, as above, we could pass `DataFrame` arguments 
+with the syntax of dictionary key-value pairs. Note that in this case, we use `Symbols` to denote the 
+column names and arguments are not sorted. For example, `:A`, the symbol, produces `A`, the name of 
+the first column here:
+
+```jldoctest dataframe
+julia> DataFrame(:A => [1,2], :B => ["Rohit", "Rishika"], :C => ['a', 'b'])
+2×3 DataFrame
+ Row │ A      B        C
+     │ Int64  String   Char
+─────┼──────────────────────
+   1 │     1  Rohit    a
+   2 │     2  Rishika  b
+```
+
+Although, in general, using `Symbols` rather than strings to denote column names is preferred (as it is 
+faster) DataFrames.jl accepts passing strings as column names, so this also works:
+
+```jldoctest dataframe
+julia> DataFrame("A" => [1,2], "B" => ["Rohit", "Rishika"], "C" => ['a', 'b'])
+2×3 DataFrame
+ Row │ A      B        C
+     │ Int64  String   Char
+─────┼──────────────────────
+   1 │     1  Rohit    a
+   2 │     2  Rishika  b
+```
+
+Now, lets have a look on Tables.jl table constructor:
+
+```jldoctest dataframe
+julia> DataFrame((a=[1, 2], b=[3, 4]))
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+
+julia> DataFrame([(a=1, b=0), (a=2, b=0)])
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+```
+
+Or, lets create a data frame using a Pair constructor:
+
+```jldoctest dataframe
+julia> DataFrame("a" => 1:2, "b" => 0)
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+```
+
+Or, using a vector of Pairs constructor:
+
+```jldoctest dataframe
+julia> DataFrame([:a => 1:2, :b => 0])
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+```
+
+Or, using a vector of vectors constructor:
+
+```jldoctest dataframe
+julia> DataFrame([[1, 2], [0, 0]], [:a, :b])
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+```
+
+Or, using a matrix constructor:
+
+```jldoctest dataframe
+julia> DataFrame([1 0; 2 0], :auto)
+2×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+```
+
+Lets see one more example here where we will create a data frame using matrix constructor.
+I'm creating a matrix `P` and a simple vector `H` with column names here:
+
+```jldoctest dataframe
+julia> P = [1 2 4 5; 15 58 69 41; 23 21 26 69]
+3×4 Matrix{Int64}:
+  1   2   4   5
+ 15  58  69  41
+ 23  21  26  69
+
+julia> H = string.('a':'d')
+4-element Vector{String}:
+ "a"
+ "b"
+ "c"
+ "d"
+
+julia> DataFrame(P, H)
+3×4 DataFrame
+ Row │ a      b      c      d
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      4      5
+   2 │    15     58     69     41
+   3 │    23     21     26     69
+```
 
 To move forward with the tutorial you need to install the CSV.jl package in your environment.
 In order to do so run the following commands:
+
 ```julia
 julia> using Pkg
 julia> Pkg.add("CSV")
 ```
-Make sure you have CSV.jl in a version that is at least 1.0.
 
-Before moving forward, we would like to discuss `Cropping` which you will found in many examples
-that some of the outputs are cropped. The keyword `crop` can be used to define how the output will
-be cropped if the display has limits. The default behavious depends on the property `:limit` of the 
-`io`. If `io` has `:limit => true`, the default value of `crop` is `:both`. Otherwise, if `:limit => false`
-or it is not defined at all, then `crop` defaults to `:none`. To know more about cropping use this 
-[link](https://ronisbr.github.io/PrettyTables.jl/stable/man/text_backend/#Cropping).
+Make sure you have CSV.jl in a version that is at least 1.0.
 
 Now, we will explore how to load a CSV file into a `DataFrame`. Unlike Python's Pandas `read_csv`
 you need two packages to accomplish this: CSV.jl and DataFrames.jl. As the first
@@ -135,6 +344,8 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
 
 You can see that DataFrames.jl (unlike Python's Pandas) displays the data type of the column,
 In our case, it is an `Int64`, or `String`.
+
+## First steps of working with a data frame
 
 To access the columns directly (i.e. without copying) you can use `german.Sex`, `german."Sex"`,
 `german[!, :Sex]` or `german[!, "Sex"]`. The two latter syntaxes are more flexible as they allow
@@ -194,7 +405,7 @@ julia> german.Sex
  "male"
 ```
 
-The `===` function confirms that both expressions produce the same object:
+The `===` function allows us to check if both expressions produce the same object:
 
 ```jldoctest dataframe
 julia> german.Sex === german[!, :Sex]  
@@ -424,10 +635,10 @@ julia> mean(german.Age)
 35.546
 ```
 
-the `mapcols` function returns a `DataFrame` where each column of the source data frame is transformed using a passed function. Note that `mapcols` guarantees not to reuse the columns from `german` in the returned `DataFrame`. If the transformation returns its argument then it gets copied before being stored.
+The `mapcols` function returns a `DataFrame` where each column of the source data frame is transformed using a passed function. Note that `mapcols` guarantees not to reuse the columns from `german` in the returned `DataFrame`. If the transformation returns its argument then it gets copied before being stored.
 
 ```jldoctest dataframe
-julia> mapcols(id -> id .^2, german)
+julia> mapcols(id -> id .^ 2, german)
 1000×10 DataFrame
   Row │ id      Age    Sex           Job    Housing   Saving accounts       Ch ⋯
       │ Int64   Int64  String        Int64  String    String                St ⋯
@@ -583,7 +794,7 @@ julia> german[1:5, [:Sex, :Age]]
 Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` return a data frame object,
 while `german[!, :Sex]` and `german[:, :Sex]` return a vector. In the first case, `[:Sex]` 
 is a vector, indicating that the resulting object should be a data frame. On the other hand,
-`:Sex` is a single symbol, indicating that a single column vector should be extracted. Note 
+`:Sex` is a single `Symbol`, indicating that a single column vector should be extracted. Note 
 that in the first case a vector is required to be passed (not just any iterable), so e.g. 
 `german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid.
 
@@ -650,109 +861,11 @@ it can be useful to save memory and improve performance of operations.
 
 
 Recapping what we have already learned,
-given the data frame `german` here are various ways to grab one of its columns as vector:
+To get the column :Age from the german data frame you can do the following:
 
-```jldoctest dataframe
-julia> german
-1000×10 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
-      │ Int64  Int64  String  Int64  String   String           String          ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0     67  male        2  own      NA               little          ⋯
-    2 │     1     22  female      2  own      little           moderate
-    3 │     2     49  male        1  own      little           NA
-    4 │     3     45  male        2  free     little           little
-    5 │     4     53  male        2  free     little           little          ⋯
-    6 │     5     35  male        1  free     NA               NA
-    7 │     6     53  male        2  own      quite rich       NA
-    8 │     7     35  male        3  rent     little           moderate
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
-  994 │   993     30  male        3  own      little           little          ⋯
-  995 │   994     50  male        2  own      NA               NA
-  996 │   995     31  female      1  own      little           NA
-  997 │   996     40  male        3  own      little           little
-  998 │   997     38  male        2  own      little           NA              ⋯
-  999 │   998     23  male        2  free     little           little
- 1000 │   999     27  male        2  own      moderate         moderate
-                                                  4 columns and 985 rows omitted
-```
-
-We will get the vector stored in our DataFrame without copying it:
-
-```jldoctest dataframe
-julia> german.Age 
-1000-element Vector{Int64}:
- 67
- 22
- 49
- 45
- 53
- 35
- 53
- 35
- 61
- 28
-  ⋮
- 34
- 23
- 30
- 50
- 31
- 40
- 38
- 23
- 27
-```
-
-We will get the vector stored in our data frame without copying it using String:
-
-```jldoctest dataframe
-julia> german."Sex" 
-1000-element PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}:
- "male"
- "female"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- ⋮
- "male"
- "male"
- "male"
- "male"
- "female"
- "male"
- "male"
- "male"
- "male"
-
-julia> german[:, 3] # note that this creates a copy
-1000-element PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}:
- "male"
- "female"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- ⋮
- "male"
- "male"
- "male"
- "male"
- "female"
- "male"
- "male"
- "male"
- "male"
-```
+- to copy the vector: `german[:, :Age]`, `german[:, "Age"]` or `german[:, 2]`;
+- to get a vector without copying: `german.Age`, `german."Age"`, `german[:, :Age]`, 
+  `german[:, "Age"]` or `german[:, 2]`.
 
 To get two columns as a `DataFrame`, we can index as follows:
 
@@ -779,8 +892,12 @@ julia> german[:, 1:2]
   999 │   998     23
  1000 │   999     27
      985 rows omitted
+```
 
-julia> german[:, [3]] # here we have created a single column data frame
+Below we have created a single column data frame:
+
+```jldoctest dataframe
+julia> german[:, [3]] 
 1000×1 DataFrame
   Row │ Sex
       │ String
@@ -804,33 +921,6 @@ julia> german[:, [3]] # here we have created a single column data frame
 985 rows omitted
 ```
 
-Compare this with accessing the vector contained in column `3`:
-
-```jldoctest dataframe
-julia> german[:, 3]
-1000-element PooledArrays.PooledVector{String, UInt32, Vector{UInt32}}:
- "male"
- "female"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- "male"
- ⋮
- "male"
- "male"
- "male"
- "male"
- "female"
- "male"
- "male"
- "male"
- "male"
-```
-
 We can get a single cell of a data frame with the same syntax to get a cell of a matrix:
 
 ```jldoctest dataframe
@@ -838,7 +928,8 @@ julia> german[4, 4]
 2
 ```
 
-To get a new `DataFrame` that is subset of rows and columns do e.g.:
+To get a new `DataFrame` that is subset of rows and columns which we have created using indexes 
+rather than column names but in `german[1:5, [:Sex, :Age]]` we were creating using column names e.g.:
 
 ```jldoctest dataframe
 julia> german[4:5, 4:5]
@@ -856,9 +947,7 @@ We can create a `view` of a data frame (it is more memory efficient than creatin
 a materialized selection). Here are the possible return value options.
 
 ```jldoctest dataframe
-julia> german = copy(german_ref);
-
-julia> s_german1 = view(german, :, 2:5) # column subsetting
+julia> view(german, :, 2:5) # column subsetting
 1000×4 SubDataFrame
   Row │ Age    Sex     Job    Housing
       │ Int64  String  Int64  String
@@ -882,10 +971,10 @@ julia> s_german1 = view(german, :, 2:5) # column subsetting
                       985 rows omitted
 ```
 
-In this example we used both a function call and a macro:
+We can also use a `@view` macro:
 
 ```jldoctest dataframe
-julia> s_german2 = @view german[end:-1:1, [1, 4]] # row and column subsetting
+julia> @view german[end:-1:1, [1, 4]] # row and column subsetting
 1000×2 SubDataFrame
   Row │ id     Job
       │ Int64  Int64
@@ -909,7 +998,7 @@ julia> s_german2 = @view german[end:-1:1, [1, 4]] # row and column subsetting
      985 rows omitted
 ```
 
-We will view the element type in vector form:
+Similarly we can get a view of one column:
 
 ```jldoctest dataframe
 julia> @view german[1:5, 1]
@@ -919,12 +1008,20 @@ julia> @view german[1:5, 1]
  2
  3
  4
+```
 
-julia> @view german[2, 2] # view of the number at 2nd row and 2nd column
+Below we are viewing any element at row and column index 2 using macro `@view`:
+
+```jldoctest dataframe
+julia> @view german[2, 2] 
 0-dimensional view(::Vector{Int64}, 2) with eltype Int64:
 22
+```
 
-julia> @view german[3, 2:5] # a DataFrameRow, the same as for german[3, 2:5] without a view
+Below we are getting a `DataFrameRow`:
+
+```jldoctest dataframe
+julia> @view german[3, 2:5] 
 DataFrameRow
  Row │ Age    Sex     Job    Housing
      │ Int64  String  Int64  String
@@ -1015,7 +1112,7 @@ julia> df1.Age === val # no copy is performed
 true
 ```
 
-Set values of column `:Job` in row `1:3` to values `[2, 4, 6]` *in-place* means write to an existing 
+Below setting values of column `:Job` in rows `1:3` to values `[2, 4, 6]` *in-place* means write to an existing 
 column in a data frame.
 
 ```jldoctest dataframe
@@ -1038,8 +1135,9 @@ julia> df1
    6 │    89  male        1
 ```
 
+In what follows by using `!` as row selector
 We are replacing column `:Sex` with `["male", "female", "female", "transgender", "female", "male"]` 
-without copying (with the exception that if it is an `AbstractRange` it gets converted to a Vector) 
+without copying (with the exception that if it is an `AbstractRange` it gets converted to a `Vector`) 
 and the syntax is like `df[!, col] = val` where `col` in any column name from our parent data frame.
 
 ```jldoctest dataframe
@@ -1065,7 +1163,7 @@ julia> df1
    6 │    89  male             1
 ```
 
-set row 3 of columns `:Age`, `:Sex`, and `:Job` in-place:
+To set row 3 of columns `1:3` in-place write:
 
 ```jldoctest dataframe
 julia> df1[3, 1:3] = [78, "male", 4] 
@@ -1083,6 +1181,31 @@ julia> df1
    2 │    85  female           3
    3 │    78  male             4
    4 │    95  transgender      2
+   5 │    78  female           2
+   6 │    89  male             1
+```
+
+In the given example, set the value of column `:Job` in our parent data frame `df1`:
+
+```jldoctest dataframe
+julia> df1[:, 3] = [4, 5, 7, 8, 2, 1]
+6-element Vector{Int64}:
+ 4
+ 5
+ 7
+ 8
+ 2
+ 1
+
+julia> df1
+6×3 DataFrame
+ Row │ Age    Sex          Job
+     │ Int64  String       Int64
+─────┼───────────────────────────
+   1 │    80  male             4
+   2 │    85  female           5
+   3 │    78  male             7
+   4 │    95  transgender      8
    5 │    78  female           2
    6 │    89  male             1
 ```
@@ -1174,32 +1297,6 @@ julia> sdf
    6 │ female           3
 ```
 
-In the above examples we have talked about `SubDataFrame`. In the given example,
-set the value of column `:Job` in our parent data frame `df1`:
-
-```jldoctest dataframe
-julia> df1[:, 3] = [4, 5, 7, 8, 2, 1]
-6-element Vector{Int64}:
- 4
- 5
- 7
- 8
- 2
- 1
-
-julia> df1
-6×3 DataFrame
- Row │ Age    Sex          Job
-     │ Int64  String       Int64
-─────┼───────────────────────────
-   1 │    80  male             4
-   2 │    98  female           5
-   3 │    78  male             7
-   4 │    95  transgender      8
-   5 │    78  female           2
-   6 │    89  female           1
-```
-
 ## Broadcasting
 
 Apart from normal assignment one can do broadcasting assignment. The following broadcasting rules 
@@ -1217,7 +1314,7 @@ Note that if broadcasting assignment operation throws an error the target data f
 so it is unsafe to use it afterwards (the column length correctness will be preserved).
 
 In Julia base the standard rule to do [broadcasting](https://docs.julialang.org/en/v1/manual/mathematical-operations/#man-dot-operators) 
-is to use `.`. For example, as opposed to `R` this operation fails:
+is to use `.`. For example, as opposed to R this operation fails:
 
 ```jldoctest dataframe
 julia> s = [25, 26, 35, 56]
@@ -1227,14 +1324,14 @@ julia> s = [25, 26, 35, 56]
  35
  56
 
-julia> s[2: 3] = 0
+julia> s[2:3] = 0
 ERROR: ArgumentError: indexed assignment with a single value to many locations is not supported; perhaps use broadcasting `.=` instead?
 ```
 
 Instead we have to write:
 
 ```jldoctest dataframe
-julia> s[2: 3] .= 0
+julia> s[2:3] .= 0
 2-element view(::Vector{Int64}, 2:3) with eltype Int64:
  0
  0
@@ -1363,29 +1460,37 @@ julia> df1
    6 │ Economics  female           4  Anam       Dehradoon
 ```
 
-In most cases above, as you can see, for getting a column or assigning to a column instead of `df1[!, :col]` 
-and `df1[!, :col] = val` it is usually better to just write `df1.col` and `df1.col = val` respectively as 
-it is the same and simpler to type and read.
-
-However, there are some scenarios in `DataFrames.jl`, when we naturally want a broadcasting-like behaviour,
+However, there are some scenarios in DataFrames.jl, when we naturally want a broadcasting-like behaviour,
 but do not allow for the use of `.` operation. These operations are based on `=>` syntax. Lets have a look on 
 some examples:
 
-Adding columns to the data frames. In this example we are creating a column `:Country` with function `insertcols!`
-and then it is broadcasted to all rows in the output data frame:
+Adding columns to the data frames in our desired place. In this example we are creating a column `:Country` 
+with function `insertcols!`and then it is broadcasted to all rows in the output data frame:
 
 ```jldoctest dataframe
-julia> insertcols!(df1, :Country => "India")
+julia> insertcols!(df1, 1, :Country => "India")
 6×6 DataFrame
- Row │ Age        Sex          Job    Customers  City         Country
-     │ String     String       Int64  String     String       String
+ Row │ Country  Age        Sex          Job    Customers  City
+     │ String   String     String       Int64  String     String
 ─────┼────────────────────────────────────────────────────────────────
-   1 │ Economics  male             4  Rohit      Kanpur       India
-   2 │ Economics  female           4  Akshat     Lucknow      India
-   3 │ Economics  male             4  Rahul      Bhuvneshwar  India
-   4 │ Economics  transgender      4  Aayush     Jaipur       India
-   5 │ Economics  female           4  Prateek    Ranchi       India
-   6 │ Economics  female           4  Anam       Dehradoon    India
+   1 │ India    Economics  male             4  Rohit      Kanpur
+   2 │ India    Economics  female           4  Akshat     Lucknow
+   3 │ India    Economics  male             4  Rahul      Bhuvneshwar
+   4 │ India    Economics  transgender      4  Aayush     Jaipur
+   5 │ India    Economics  female           4  Prateek    Ranchi
+   6 │ India    Economics  female           4  Anam       Dehradoon
+
+julia> insertcols!(df1, 4, :b => exp(4))
+6×7 DataFrame
+ Row │ Country  Age        Sex          b        Job    Customers  City        ⋯
+     │ String   String     String       Float64  Int64  String     String      ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ India    Economics  male         54.5982      4  Rohit      Kanpur      ⋯
+   2 │ India    Economics  female       54.5982      4  Akshat     Lucknow
+   3 │ India    Economics  male         54.5982      4  Rahul      Bhuvneshwar
+   4 │ India    Economics  transgender  54.5982      4  Aayush     Jaipur
+   5 │ India    Economics  female       54.5982      4  Prateek    Ranchi      ⋯
+   6 │ India    Economics  female       54.5982      4  Anam       Dehradoon
 ```
 
 # Not, Between, Cols, and All column selectors
@@ -1402,8 +1507,6 @@ A `Not` selector (from the [InvertedIndices](https://github.com/mbauman/Inverted
 can be used to select all columns excluding a specific subset:
 
 ```jldoctest dataframe
-julia> german = copy(german_ref); # because in previous example we had done in-place replacement so our dataframe had changed
-
 julia> german[:, Not(:Age)]
 1000×9 DataFrame
   Row │ id     Sex     Job    Housing  Saving accounts  Checking account  Cred ⋯
@@ -1457,7 +1560,8 @@ julia> german[:, Between(:Sex, :Housing)] # Columns starting from `:Sex` and end
                985 rows omitted
 ```
 
-`Cols` selector is picking a union of `Between()` selector passed as its arguments:
+In the example below `Cols` selector is picking a union of `"Age"` and `Between("Sex", "Job")` 
+selector passed as its arguments:
 
 ```jldoctest dataframe
 julia> german[:, Cols("Age", Between("Sex", "Job"))] 
@@ -1484,9 +1588,9 @@ julia> german[:, Cols("Age", Between("Sex", "Job"))]
              985 rows omitted
 ```
 
-In this example `Cols` selector is picking a union of `Not()` selector which is passed as an 
-argument and `Not()` selector is allowing us to specify column `:Sex` we want to exclude from
-the resulting data frame:
+In this example `Cols` selector is picking a union of `"Age"` and `Not("Sex")` selector which 
+are passed as arguments. `Not("Sex")` selector is allowing us to specify column `:Sex` we want 
+to exclude from the resulting data frame:
 
 ```jldoctest dataframe
 julia> german[:, Cols("Age", Not("Sex"))] 
@@ -1570,17 +1674,14 @@ The general way to specify a transformation is:
 - `source_column => target_column_name`
   we are renaming our `source_column` to `target_column_name`.
 
-In this example, we are performing transformation using `select` and `combine`. In this 
+In the example below, we are performing transformation using `select` and `combine`. In this 
 scenario the source column `:Age` is passed as an argument to transformation function `mean` 
 and stored in the target column name `:mean_age`. 
 
-But we will observe that `select` produces as many rows in the produced data frame as there 
-are rows in the source data frame, a single value will be repeated accordingly but this is 
-not the case for `combine`.
+Observe that `select` produces as many rows in the resulting data frame as there are rows in the 
+source data frame, a single value will be repeated accordingly but this is not the case for `combine`.
 
 ```jldoctest dataframe
-julia> german = copy(german_ref);
-
 julia> using Statistics
 
 julia> select(german, :Age => mean => :mean_age) 
@@ -1627,16 +1728,15 @@ julia> combine(german, :Age => mean => :mean_age, :Housing => unique => :housing
    3 │   35.546  rent
 ```
 
-Note, however, that it is not allowed to return vectors of different lengths in different transformations:
+Note that it is not allowed to return vectors of different lengths in different transformations:
 
 ```jldoctest dataframe
 julia> combine(german, :Age, :Housing => unique => :Housing)
 ERROR: ArgumentError: New columns must have the same length as old columns
 ```
 
-Several values that can be returned by a transformation are treated to produce multiple columns by default. 
-Therefore they are not allowed to be returned from a function unless `AsTable` or multiple target column names
-are specified. Let us see an example:
+To get the value from a function we are using `AsTable` or multiple target column names.
+Let us see an example:
 
 ```jldoctest dataframe
 julia> combine(german, :Age => x -> (Age=x, Age2 = x.^2))
@@ -1666,8 +1766,7 @@ julia> combine(german, :Age => (x -> (Age=x, Age2 = x.^2)) => AsTable)
      985 rows omitted
 ```
 
-In the example above we returned a `NamedTuple`. Note, however, that returning a `NamedTuple` is not the same as 
-returning a vector of `NamedTuples` as this is allowed.
+In the example above we returned a `NamedTuple`. 
 
 Let us discuss some other examples using `select`. Often we want to apply some function not to the whole
 column of a data frame, but rather to its individual elements. Normally we can achieve this using broadcasting
@@ -1755,34 +1854,6 @@ julia> select(german, :Age, :Age => ByRow(sqrt))
         985 rows omitted
 ```
 
-We can skip specifying a target column name, in which case it is generated automatically by suffixing source
-column name by function name that is applied to it. For example:
-
-```jldoctest dataframe
-julia> select(german, :Sex => ByRow(uppercase))
-1000×1 DataFrame
-  Row │ Sex_uppercase
-      │ String
-──────┼───────────────
-    1 │ MALE
-    2 │ FEMALE
-    3 │ MALE
-    4 │ MALE
-    5 │ MALE
-    6 │ MALE
-    7 │ MALE
-    8 │ MALE
-  ⋮   │       ⋮
-  994 │ MALE
-  995 │ MALE
-  996 │ FEMALE
-  997 │ MALE
-  998 │ MALE
-  999 │ MALE
- 1000 │ MALE
-      985 rows omitted
-```
-
 `Not()` selector is allowing us to specify column `:Age` we want to exclude from
 the resulting data frame:
 
@@ -1837,8 +1908,12 @@ julia> select(german, r"Sex")
   999 │ male
  1000 │ male
 985 rows omitted
+```
 
-julia> select(german, r"Sex", "Job") # Selects more than one column
+In order to select more columns we just passed them as argument:
+
+```jldoctest dataframe
+julia> select(german, r"Sex", "Job")
 1000×2 DataFrame
   Row │ Sex     Job
       │ String  Int64
@@ -1862,7 +1937,7 @@ julia> select(german, r"Sex", "Job") # Selects more than one column
       985 rows omitted
 ```
 
-The `r"Sex"` regular expression picks all columns that contain `"Sex"` string in their name, then `:` picks 
+Below, the `r"Sex"` regular expression picks all columns that contain `"Sex"` string in their name, then `:` picks 
 all the remaining columns:
 
 ```jldoctest dataframe
@@ -1890,7 +1965,8 @@ julia> select(german, r"Sex", :)
                                                   4 columns and 985 rows omitted
 ```
 
-We are simply passing source column and target column name to rename it:
+Below, we are simply passing source column and target column name to rename them 
+(without specifying the transformation part):
 
 ```jldoctest dataframe
 julia> select(german, :Sex => :x1, :Age => :x2) # rename columns
@@ -2091,7 +2167,7 @@ julia> transform(df, :Age => maximum)
    8 │     7     35  male        3  rent              67
 ```
 
-We are swapping values of one column with other column:
+Below we are swapping values of one column with other column:
 
 ```jldoctest dataframe
 julia> transform(german, :Age => :Sex, :Sex => :Age) # swapping the value of `:Age` column with `:Sex` column
@@ -2141,8 +2217,9 @@ julia> df1 = german[:, [:Age, :Job]] # getting two columns
      985 rows omitted
 ```
 
-We are applying transformation function `+` to our source columns `:Age` and `:Job` are passed as an arguments to transformation
-and stored in target column name `:res`: 
+If we give more than one column to a transformation they are passed as positional arguments. 
+So `[:Age, :Job] => (+) => :res` evaluates `+(df1.Age, df1.Job)` (which adds two columns) 
+and stores the result in the `:res` column: 
 
 ```jldoctest dataframe
 julia> transform(df1, [:Age, :Job] => (+) => :res) 
