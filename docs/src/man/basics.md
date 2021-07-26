@@ -136,7 +136,7 @@ julia> DataFrame(dict)
 We can create a data frame from a dictionary, in which case keys from the dictionary will be 
 sorted to create the data frame columns:
 
-```jldoctest
+```jldoctest dataframe
 julia> x = Dict("A" => [1,2], "B" => ["Rohit", "Rishika"], "C" => ['a', 'b'], "fixed" => Ref([5,2]))
 Dict{String, Any} with 4 entries:
   "B"     => ["Rohit", "Rishika"]
@@ -1218,7 +1218,7 @@ DataFrameRow
  Row │ Age    Sex     Job
      │ Int64  String  Int64
 ─────┼──────────────────────
-   2 │    85  female      3
+   2 │    85  female      5
 
 julia> dfr.Age = 98 # set value of col `:Age` in row `2` to `98` in-place
 98
@@ -1228,7 +1228,7 @@ DataFrameRow
  Row │ Age    Sex     Job
      │ Int64  String  Int64
 ─────┼──────────────────────
-   2 │    98  female      3
+   2 │    98  female      5
 
 julia> dfr[2:3] = ["male", 2] # set values of entries in columns `:Sex` and `:Job` 
 2-element Vector{Any}:
@@ -1253,10 +1253,10 @@ julia> sdf = view(df1, :, 2:3) # Column subsetting
  Row │ Sex          Job
      │ String       Int64
 ─────┼────────────────────
-   1 │ male             2
+   1 │ male             4
    2 │ male             2
-   3 │ male             4
-   4 │ transgender      2
+   3 │ male             7
+   4 │ transgender      8
    5 │ female           2
    6 │ male             1
 
@@ -1268,10 +1268,10 @@ julia> sdf
  Row │ Sex          Job
      │ String       Int64
 ─────┼────────────────────
-   1 │ male             2
+   1 │ male             4
    2 │ female           2
-   3 │ male             4
-   4 │ transgender      2
+   3 │ male             7
+   4 │ transgender      8
    5 │ female           2
    6 │ male             1
 ```
@@ -1289,10 +1289,10 @@ julia> sdf
  Row │ Sex          Job
      │ String       Int64
 ─────┼────────────────────
-   1 │ male             2
+   1 │ male             4
    2 │ female           2
-   3 │ male             4
-   4 │ transgender      2
+   3 │ male             7
+   4 │ transgender      8
    5 │ female           2
    6 │ female           3
 ```
@@ -1363,11 +1363,11 @@ julia> df1
      │ Int64  String       Int64
 ─────┼───────────────────────────
    1 │    85  male             4
-   2 │    89  female           5
+   2 │    89  female           2
    3 │    78  male             7
    4 │    58  transgender      8
    5 │    96  female           2
-   6 │    68  female           1
+   6 │    68  female           3
 ```
 
 Note that if columns `:Customers` and `:City` are not present in `df1` then using `!` and `:` are equivalent. The 
@@ -1399,11 +1399,11 @@ julia> df1
      │ Int64  String       Int64  String     String
 ─────┼───────────────────────────────────────────────────
    1 │    85  male             4  Rohit      Kanpur
-   2 │    89  female           5  Akshat     Lucknow
+   2 │    89  female           2  Akshat     Lucknow
    3 │    78  male             7  Rahul      Bhuvneshwar
    4 │    58  transgender      8  Aayush     Jaipur
    5 │    96  female           2  Prateek    Ranchi
-   6 │    68  female           1  Anam       Dehradoon
+   6 │    68  female           3  Anam       Dehradoon
 ```
 
 Assignment of a scalar to a data frame can be done in ranges using broadcasting:
