@@ -693,7 +693,7 @@ DataFrameRow
                                                                4 columns omitted
 ```
 
-## Taking a Subset of a Data Frame
+## Getting and Setting Data in a Data Frame
 
 ### Indexing Syntax
 
