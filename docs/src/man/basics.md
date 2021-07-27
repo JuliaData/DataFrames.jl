@@ -2,7 +2,7 @@
 
 **The tutorial section of the manual is still work in progress. Please report any questions or comments as issues in DataFrames.jl GitHub repository. Thank you!**
 
-## Setting up the environment
+## Setting up the Environment
 
 If want to use the DataFrames.jl package you need to install it first.
 You can do it using the following commands:
