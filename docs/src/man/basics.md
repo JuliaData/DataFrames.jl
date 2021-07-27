@@ -323,7 +323,6 @@ julia> german.Sex
  "male"
  "male"
  "male"
-```
 
 julia> colname = "Sex"
 "Sex"
@@ -1105,7 +1104,7 @@ DataFrameRow
  Row │ Age    Sex     Job
      │ Int64  String  Int64
 ─────┼──────────────────────
-   2 │    85  female      5
+   2 │    85  female      3
 
 julia> dfr.Age = 98 # set value of col `:Age` in row `2` to `98` in-place
 98
@@ -1115,7 +1114,7 @@ DataFrameRow
  Row │ Age    Sex     Job
      │ Int64  String  Int64
 ─────┼──────────────────────
-   2 │    98  female      5
+   2 │    98  female      3
 
 julia> dfr[2:3] = ["male", 2] # set values of entries in columns `:Sex` and `:Job`
 2-element Vector{Any}:
@@ -1141,10 +1140,10 @@ julia> sdf = view(df1, :, 2:3)
  Row │ Sex          Job
      │ String       Int64
 ─────┼────────────────────
-   1 │ male             4
+   1 │ male             2
    2 │ male             2
-   3 │ male             7
-   4 │ transgender      8
+   3 │ male             4
+   4 │ transgender      2
    5 │ female           2
    6 │ male             1
 
@@ -1156,10 +1155,10 @@ julia> sdf
  Row │ Sex          Job
      │ String       Int64
 ─────┼────────────────────
-   1 │ male             4
+   1 │ male             2
    2 │ female           2
-   3 │ male             7
-   4 │ transgender      8
+   3 │ male             4
+   4 │ transgender      2
    5 │ female           2
    6 │ male             1
 
@@ -1173,10 +1172,10 @@ julia> sdf
  Row │ Sex          Job
      │ String       Int64
 ─────┼────────────────────
-   1 │ male             4
+   1 │ male             2
    2 │ female           2
-   3 │ male             7
-   4 │ transgender      8
+   3 │ male             4
+   4 │ transgender      2
    5 │ female           2
    6 │ female           3
 ```
@@ -1237,10 +1236,10 @@ julia> df1
  Row │ Age    Sex          Job
      │ Int64  String       Int64
 ─────┼───────────────────────────
-   1 │    85  male             4
+   1 │    85  male             2
    2 │    89  female           2
-   3 │    78  male             7
-   4 │    58  transgender      8
+   3 │    78  male             4
+   4 │    58  transgender      2
    5 │    96  female           2
    6 │    68  female           3
 ```
@@ -1277,10 +1276,10 @@ julia> df1
  Row │ Age    Sex          Job    Customers  City
      │ Int64  String       Int64  String     String
 ─────┼───────────────────────────────────────────────────
-   1 │    85  male             4  Rohit      Kanpur
+   1 │    85  male             2  Rohit      Kanpur
    2 │    89  female           2  Akshat     Lucknow
-   3 │    78  male             7  Rahul      Bhuvneshwar
-   4 │    58  transgender      8  Aayush     Jaipur
+   3 │    78  male             4  Rahul      Bhuvneshwar
+   4 │    58  transgender      2  Aayush     Jaipur
    5 │    96  female           2  Prateek    Ranchi
    6 │    68  female           3  Anam       Dehradoon
 ```
@@ -1321,7 +1320,7 @@ ERROR: MethodError: Cannot `convert` an object of type String to an object of ty
 
 We need to use `!` instead as it replaces the old vector with a freshly allocated one:
 
-```
+```jldoctest dataframe
 julia> df1[!, :Age] .= "Economics"
 6-element Vector{String}:
  "Economics"
