@@ -139,7 +139,7 @@ convenient to pass it as a `Symbol` (you would have to write `Symbol("customer a
 which is verbose) so using a string is more convenient.
 
 It is also quite common to create a `DataFrame` from a `NamedTuple` of vectors
-or a vector of `NamedTuple`. Here are some examples of these operations:
+or a vector of `NamedTuple`s. Here are some examples of these operations:
 
 ```jldoctest dataframe
 julia> DataFrame((a=[1, 2], b=[3, 4]))
@@ -183,7 +183,7 @@ julia> mat = [1 2 4 5; 15 58 69 41; 23 21 26 69]
  15  58  69  41
  23  21  26  69
 
-julia> nms = string.('a':'d')
+julia> nms = ["a", "b", "c", "d"]
 4-element Vector{String}:
  "a"
  "b"
@@ -764,8 +764,8 @@ julia> german[:, [:Age, :Sex]]
       985 rows omitted
 ```
 
-Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` return a data frame object,
-while `german[!, :Sex]` and `german[:, :Sex]` return a vector. In the first case, `[:Sex]`
+Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` returns a data frame object,
+while `german[!, :Sex]` and `german[:, :Sex]` returns a vector. In the first case, `[:Sex]`
 is a vector, indicating that the resulting object should be a data frame. On the other hand,
 `:Sex` is a single `Symbol`, indicating that a single column vector should be extracted. Note
 that in the first case a vector is required to be passed (not just any iterable), so e.g.
