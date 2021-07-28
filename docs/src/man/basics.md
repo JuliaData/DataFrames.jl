@@ -200,9 +200,6 @@ julia> DataFrame(mat, nms)
    3 │    23     21     26     69
 ```
 
-To move forward with the tutorial you need to install the CSV.jl package in your environment.
-In order to do so run the following commands:
-
 You now know how to create a `DataFrame` from data that you already have in your
 Julia session. In the next section we show how to load data to a `DataFrame`
 from disk.
@@ -220,11 +217,7 @@ julia> using Pkg
 julia> Pkg.add("CSV")
 ```
 
-Now, we will explore how to load a CSV file into a `DataFrame`. Unlike Python's Pandas `read_csv`
-you need two packages to accomplish this: CSV.jl and DataFrames.jl.
-
-As the first step, you have to load the libraries you will use.
-In our case CSV.jl and DataFrames.jl. In order to read the file in we will use the `CSV.read` function.
+In order to read the file in we will use the `CSV.read` function.
 
 ```jldoctest dataframe
 julia> using CSV
@@ -260,10 +253,10 @@ got cropped and its 4 rightmost columns and middle 985 rows were not printed.
 Later in the tutorial we will discuss how to force Julia to show the whole
 data frame if we wanted so.
 
-Also observe that DataFrames.jl (unlike Python's Pandas) displays the data type of the column
+Also observe that DataFrames.jl displays the data type of the column
 below its name. In our case, it is an `Int64`, or `String`.
 
-Before moving forward let us explain in detail the following code block:
+Let us now explain in detail the following code block:
 ```julia
 german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
                                "..", "docs", "src", "assets", "german.csv"),
@@ -1021,8 +1014,8 @@ julia> df1.Age === val # no copy is performed
 true
 ```
 
-If select only some rows from a data frame the mutation is peformed in place, i.e.
-writing to an existing vector.
+If in indexing you select a subset of rows from a data frame the mutation is
+performed in place, i.e. writing to an existing vector.
 Below setting values of column `:Job` in rows `1:3` to values `[2, 4, 6]`:
 
 ```jldoctest dataframe
