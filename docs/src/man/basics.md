@@ -1577,7 +1577,7 @@ of the transformation if we have a combination of transformations where some of
 them produce a vector, and other produce scalars then scalars get broadcasted
 exactly like in  `select`. Here is an example:
 
-```jldcotest dataframe
+```jldoctest dataframe
 julia> combine(german, :Age => mean => :mean_age, :Housing => unique => :housing)
 3×2 DataFrame
  Row │ mean_age  housing
