@@ -25,7 +25,7 @@ with DataFrames.jl, but be warned that it will take more than 30 minutes:
 
 ```julia
 julia> using Pkg
-julia> Pkg.test("DataFrames")
+julia> Pkg.test("DataFrames") # Warning! This will take more than 30 minutes.
 ```
 
 Additionally, it is recommended to check the version of DataFrames.jl that
