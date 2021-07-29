@@ -8,7 +8,7 @@ criteria should I consider? What are the different ways I can join these data se
   Some of the part has been taken from [Bence Komarniczky](https://towardsdatascience.com/joining-dataframes-in-julia-c435e3da32f3)
 
 Sound familiar? You may have come across this question plenty of times on online discussion
-forums. Working with one dataframe is fairly straightforward but things become challenging when
+forums. Working with one data frame is fairly straightforward but things become challenging when
 we have data spread across two or more data frames. This is where the concept of *joins* come in.
 
 *Joins* is a very common and important operation that arises in the world of tabulated data. 

@@ -13,15 +13,14 @@ https://opendatacommons.org/licenses/dbcl/1-0/
 ## Source:
 https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)
 Professor Dr. Hans Hofmann
-Institut f"ur Statistik und "Okonometrie
-Universit"at Hamburg
+Institut für Statistik und Ökonometrie
+Universität Hamburg
 FB Wirtschaftswissenschaften
 Von-Melle-Park 5
 2000 Hamburg 13
 
-The original data is from [UCI](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)), and that this data is from [Kaggle](https://www.kaggle.com/uciml/german-credit)
-
-German Credit with Risk column, and this data is from [Kaggle](https://www.kaggle.com/kabure/german-credit-data-with-risk)
+The original data is from [UCI](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)),
+and the file stored here is from [Kaggle](https://www.kaggle.com/uciml/german-credit)
 
 # Iris data set
 
