@@ -19,6 +19,14 @@
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
 
+# DataFrames.jl v1.2.2 Patch Release Notes
+
+## Bug fixes
+
+* fix a bug in `crossjoin` if the first argument is `SubDataFrame` and
+  `makeunique=true`
+  ([#2826](https://github.com/JuliaData/DataFrames.jl/issues/2826))
+
 # DataFrames.jl v1.2.1 Patch Release Notes
 
 ## Bug fixes
