@@ -22,6 +22,10 @@ Von-Melle-Park 5
 The original data is from [UCI](https://archive.ics.uci.edu/ml/datasets/statlog+(german+credit+data)),
 and the file stored here is from [Kaggle](https://www.kaggle.com/uciml/german-credit)
 
+## Risk
+The Risk was not added in the original data. So, it has taken from [Kaggle](https://www.kaggle.com/kabure/german-credit-data-with-risk) which contains the Risk data with the name *German Credit Data with Risk* where 
+we have taken only *Risk* column.
+
 # Iris data set
 
 ## License

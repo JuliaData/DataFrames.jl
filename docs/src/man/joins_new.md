@@ -31,28 +31,44 @@ julia> using CSV
 
 julia> german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
                                        "..", "docs", "src", "assets", "german.csv"),
-                              DataFrame)
+                              DataFrame; missingstring="NA")
 1000×10 DataFrame
   Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
-      │ Int64  Int64  String  Int64  String   String           String          ⋯
+      │ Int64  Int64  String  Int64  String   String?          String?         ⋯
 ──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0     67  male        2  own      NA               little          ⋯
+    1 │     0     67  male        2  own      missing          little          ⋯
     2 │     1     22  female      2  own      little           moderate
-    3 │     2     49  male        1  own      little           NA
+    3 │     2     49  male        1  own      little           missing
     4 │     3     45  male        2  free     little           little
     5 │     4     53  male        2  free     little           little          ⋯
-    6 │     5     35  male        1  free     NA               NA
-    7 │     6     53  male        2  own      quite rich       NA
+    6 │     5     35  male        1  free     missing          missing
+    7 │     6     53  male        2  own      quite rich       missing
     8 │     7     35  male        3  rent     little           moderate
   ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
   994 │   993     30  male        3  own      little           little          ⋯
-  995 │   994     50  male        2  own      NA               NA
-  996 │   995     31  female      1  own      little           NA
+  995 │   994     50  male        2  own      missing          missing
+  996 │   995     31  female      1  own      little           missing
   997 │   996     40  male        3  own      little           little
-  998 │   997     38  male        2  own      little           NA              ⋯
+  998 │   997     38  male        2  own      little           missing         ⋯
   999 │   998     23  male        2  free     little           little
  1000 │   999     27  male        2  own      moderate         moderate
                                                   4 columns and 985 rows omitted
+
+julia> german = view(german_ref, 1:10, 1:5)
+10×5 SubDataFrame
+ Row │ id     Age    Sex     Job    Housing
+     │ Int64  Int64  String  Int64  String
+─────┼──────────────────────────────────────
+   1 │     0     67  male        2  own
+   2 │     1     22  female      2  own
+   3 │     2     49  male        1  own
+   4 │     3     45  male        2  free
+   5 │     4     53  male        2  free
+   6 │     5     35  male        1  free
+   7 │     6     53  male        2  own
+   8 │     7     35  male        3  rent
+   9 │     8     61  male        1  own
+  10 │     9     28  male        3  own
 ```
 
 This table has all the `:id`s of all factors to make comparisions for risk factor. Let’s say we 
@@ -61,33 +77,50 @@ have another data frame, which has the risk (good or bad) of these individuals:
 ```jldoctest dataframe
 julia> risk_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
                                     "..", "docs", "src", "assets", "risk.csv"),
-                           DataFrame)
-1000×2 DataFrame
-  Row │ id     Risk
-      │ Int64  String
-──────┼───────────────
-    1 │     0  good
-    2 │     1  bad
-    3 │     2  good
-    4 │     3  good
-    5 │     4  bad
-    6 │     5  good
-    7 │     6  good
-    8 │     7  good
-  ⋮   │   ⋮      ⋮
-  994 │   993  good
-  995 │   994  good
-  996 │   995  good
-  997 │   996  good
-  998 │   997  good
-  999 │   998  bad
- 1000 │   999  good
-      985 rows omitted
+                           DataFrame);
+
+julia> risk = view(risk_ref, 1:10, :)
+10×2 SubDataFrame
+ Row │ id     Risk
+     │ Int64  String
+─────┼───────────────
+   1 │     0  good
+   2 │     1  bad
+   3 │     2  good
+   4 │     3  good
+   5 │     4  bad
+   6 │     5  good
+   7 │     6  good
+   8 │     7  good
+   9 │     8  good
+  10 │     9  bad
 ```
 
 We now have 2 data frames:
-- `german_ref` holds the `:id`s, `:Age`, `:Sex`, `:Job` and so on
+- `german_ref` holds the `:id`s, `:Age`, `:Sex`, `:Job` and `:Housing`
 - `risk_ref` holds the `:id`s and `:Risk`.
+
+In relational database theory, to combine two datasets referred to as a join. The columns used to 
+determine which rows should be combined during a join are called keys.
+
+The following functions are provided to perform seven kinds of joins:
+
+- `innerjoin`: the output contains rows for values of the key that exist in all passed data frames.
+- `leftjoin`: the output contains rows for values of the key that exist in the first (left) argument, 
+  whether or not that value exists in the second (right) argument.
+- `rightjoin`: the output contains rows for values of the key that exist in the second (right) argument, 
+  whether or not that value exists in the first (left) argument.
+- `outerjoin`: the output contains rows for values of the key that exist in any of the passed data frames.
+- `semijoin`: Like an inner join, but output is restricted to columns from the first (left) argument.
+- `antijoin`: The output contains rows for values of the key that exist in the first (left) but not the 
+   second (right) argument. As with semijoin, output is restricted to columns from the first (left) argument.
+- `crossjoin`: The output is the cartesian product of rows from all passed data frames.
+
+
+## Inner Join
+
+The output contains rows for values of the key that exist in both the first (left) and second (right) 
+arguments to join.
 
 We would like to combine the 2 data frames so that we can see columns of `german_ref` and `risk_ref` together. 
 We do a `innerjoin`!
@@ -106,28 +139,21 @@ Here, we are working with a average (in size) data set that contains both the `:
 We can do this using the `innerjoin` function:
 
 ```jldoctest dataframe
-julia> innerjoin(german_ref, risk_ref, on = :id)
-1000×11 DataFrame
-  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
-      │ Int64  Int64  String  Int64  String   String           String          ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0     67  male        2  own      NA               little          ⋯
-    2 │     1     22  female      2  own      little           moderate
-    3 │     2     49  male        1  own      little           NA
-    4 │     3     45  male        2  free     little           little
-    5 │     4     53  male        2  free     little           little          ⋯
-    6 │     5     35  male        1  free     NA               NA
-    7 │     6     53  male        2  own      quite rich       NA
-    8 │     7     35  male        3  rent     little           moderate
-  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
-  994 │   993     30  male        3  own      little           little          ⋯
-  995 │   994     50  male        2  own      NA               NA
-  996 │   995     31  female      1  own      little           NA
-  997 │   996     40  male        3  own      little           little
-  998 │   997     38  male        2  own      little           NA              ⋯
-  999 │   998     23  male        2  free     little           little
- 1000 │   999     27  male        2  own      moderate         moderate
-                                                  5 columns and 985 rows omitted
+julia> innerjoin(german, risk, on = :id)
+10×6 DataFrame
+ Row │ id     Age    Sex     Job    Housing  Risk
+     │ Int64  Int64  String  Int64  String   String
+─────┼──────────────────────────────────────────────
+   1 │     0     67  male        2  own      good
+   2 │     1     22  female      2  own      bad
+   3 │     2     49  male        1  own      good
+   4 │     3     45  male        2  free     good
+   5 │     4     53  male        2  free     bad
+   6 │     5     35  male        1  free     good
+   7 │     6     53  male        2  own      good
+   8 │     7     35  male        3  rent     good
+   9 │     8     61  male        1  own      good
+  10 │     9     28  male        3  own      bad                                          
 ```
 
 Let’s go through this in detail. Arguments 1 and 2 `german_ref` & `risk_ref` are the two tables we’re 
@@ -137,121 +163,119 @@ beginning and check out how the 2 original data frames looked like. Make sure yo
 with these rows only. Since we’re using `innerjoin`, we’re only keeping `:id`s that appear in both data frames — 
 everything else we throw away.
 
-In relational database theory, the above operation is generally referred to as a join. The columns used to 
-determine which rows should be combined during a join are called keys.
+## Left Join
 
-The following functions are provided to perform seven kinds of joins:
+The output contains rows for values of the key that exist in the first (left) argument to join, whether 
+or not that value exists in the second (right) argument.
 
-- `innerjoin`: the output contains rows for values of the key that exist in all passed data frames.
-- `leftjoin`: the output contains rows for values of the key that exist in the first (left) argument, 
-  whether or not that value exists in the second (right) argument.
-- `rightjoin`: the output contains rows for values of the key that exist in the second (right) argument, 
-  whether or not that value exists in the first (left) argument.
-- `outerjoin`: the output contains rows for values of the key that exist in any of the passed data frames.
-- `semijoin`: Like an inner join, but output is restricted to columns from the first (left) argument.
-- `antijoin`: The output contains rows for values of the key that exist in the first (left) but not the 
-   second (right) argument. As with semijoin, output is restricted to columns from the first (left) argument.
-- `crossjoin`: The output is the cartesian product of rows from all passed data frames.
-
-We will now go through all of these  joins one-by-one! First, let’s do a `leftjoin` and see what happens to 
-`:id`s that are only in the first data frame:
+Now, let’s do a `leftjoin` and see what happens to `:id`s that are only in the first data frame:
 
 ```jldoctest dataframe
-julia> persons = DataFrame(id = 1:5, name = ["Rohit", "Mohit", "Rahul", "Vijay", "Akshat"])
-5×2 DataFrame
- Row │ id     name
+julia> risk1 = view(risk_ref, 5:15, :)
+11×2 SubDataFrame
+ Row │ id     Risk
      │ Int64  String
 ─────┼───────────────
-   1 │     1  Rohit
-   2 │     2  Mohit
-   3 │     3  Rahul
-   4 │     4  Vijay
-   5 │     5  Akshat
+   1 │     4  bad
+   2 │     5  good
+   3 │     6  good
+   4 │     7  good
+   5 │     8  good
+   6 │     9  bad
+   7 │    10  bad
+   8 │    11  bad
+   9 │    12  good
+  10 │    13  bad
+  11 │    14  good
 ```
 
-This data frame has all the `:id`s of individuals and their names. Let’s say we have another dataframe, 
-which has the earnings of these individuals:
-
-```jldoctest dataframe
-julia> earnings = DataFrame(id = 3:8, salary = [5000, 1000, 5000, 8000, 3000, 9000])
-6×2 DataFrame
- Row │ id     salary
-     │ Int64  Int64
-─────┼───────────────
-   1 │     3    5000
-   2 │     4    1000
-   3 │     5    5000
-   4 │     6    8000
-   5 │     7    3000
-   6 │     8    9000
-```
+This data frame has all the `:id`s of individuals and their risk factors. 
 
 Now, lets perform `leftjoin` operation:
 
 ```jldoctest dataframe
-julia> leftjoin(persons, earnings, on = :id)
-5×3 DataFrame
- Row │ id     name    salary
-     │ Int64  String  Int64?
-─────┼────────────────────────
-   1 │     3  Rahul      5000
-   2 │     4  Vijay      1000
-   3 │     5  Akshat     5000
-   4 │     1  Rohit   missing
-   5 │     2  Mohit   missing
+julia> leftjoin(german, risk1, on = :id)
+10×6 DataFrame
+ Row │ id     Age    Sex     Job    Housing  Risk
+     │ Int64  Int64  String  Int64  String   String?
+─────┼───────────────────────────────────────────────
+   1 │     4     53  male        2  free     bad
+   2 │     5     35  male        1  free     good
+   3 │     6     53  male        2  own      good
+   4 │     7     35  male        3  rent     good
+   5 │     8     61  male        1  own      good
+   6 │     9     28  male        3  own      bad
+   7 │     0     67  male        2  own      missing
+   8 │     1     22  female      2  own      missing
+   9 │     2     49  male        1  own      missing
+  10 │     3     45  male        2  free     missing
 ```
 
-Here we kept all of the observations from data frame `persons` no matter what is going on in data frame `earnings`. 
-For records without a match in data frame `persons`, the salary column has `missingas` value. This makes sense 
-as we never actually saw those earning figures. Of course, there is also a `rightjoin`. This keeps all rows 
+Here we kept all of the observations from data frame `german` no matter what is going on in data frame `risk1`. 
+For records without a match in data frame `german`, the `:Risk` column has `missingas` value. This makes sense 
+as we never actually saw those risk figures. Of course, there is also a `rightjoin`. This keeps all rows 
 from the second data frame.
 
+## Right Join
+
+The output contains rows for values of the key that exist in the second (right) argument to join, 
+whether or not that value exists in the first (left) argument.
+
+As above we discussed about *Left Join* which were keeping all of the observations from data frame
+`german` no matter what is going on in data frame `risk1` but *Right Join* keeps all rows from the
+`risk1` data frame. Lets see an example:
+
 ```jldoctest dataframe
-julia> rightjoin(persons, earnings, on = :id)
-6×3 DataFrame
- Row │ id     name     salary
-     │ Int64  String?  Int64
-─────┼────────────────────────
-   1 │     3  Rahul      5000
-   2 │     4  Vijay      1000
-   3 │     5  Akshat     5000
-   4 │     6  missing    8000
-   5 │     7  missing    3000
-   6 │     8  missing    9000
+julia> rightjoin(german, risk1, on = :id)
+11×6 DataFrame
+ Row │ id     Age      Sex      Job      Housing  Risk
+     │ Int64  Int64?   String?  Int64?   String?  String
+─────┼───────────────────────────────────────────────────
+   1 │     4       53  male           2  free     bad
+   2 │     5       35  male           1  free     good
+   3 │     6       53  male           2  own      good
+   4 │     7       35  male           3  rent     good
+   5 │     8       61  male           1  own      good
+   6 │     9       28  male           3  own      bad
+   7 │    10  missing  missing  missing  missing  bad
+   8 │    11  missing  missing  missing  missing  bad
+   9 │    12  missing  missing  missing  missing  good
+  10 │    13  missing  missing  missing  missing  bad
+  11 │    14  missing  missing  missing  missing  good
 ```
+
+## Outer Join
+
+The output contains rows for values of the key that exist in the first (left) or second (right) 
+argument to join.
 
 If we want to have all `:id`s from both data frames, we use an `outerjoin`:
 
 ```jldoctest dataframe
-julia> outerjoin(persons, earnings, on = :id)
-8×3 DataFrame
- Row │ id     name     salary
-     │ Int64  String?  Int64?
-─────┼─────────────────────────
-   1 │     3  Rahul       5000
-   2 │     4  Vijay       1000
-   3 │     5  Akshat      5000
-   4 │     1  Rohit    missing
-   5 │     2  Mohit    missing
-   6 │     6  missing     8000
-   7 │     7  missing     3000
-   8 │     8  missing     9000
+julia> outerjoin(german, risk1, on = :id)
+15×6 DataFrame
+ Row │ id     Age      Sex      Job      Housing  Risk
+     │ Int64  Int64?   String?  Int64?   String?  String?
+─────┼────────────────────────────────────────────────────
+   1 │     4       53  male           2  free     bad
+   2 │     5       35  male           1  free     good
+   3 │     6       53  male           2  own      good
+   4 │     7       35  male           3  rent     good
+   5 │     8       61  male           1  own      good
+   6 │     9       28  male           3  own      bad
+   7 │     0       67  male           2  own      missing
+   8 │     1       22  female         2  own      missing
+   9 │     2       49  male           1  own      missing
+  10 │     3       45  male           2  free     missing
+  11 │    10  missing  missing  missing  missing  bad
+  12 │    11  missing  missing  missing  missing  bad
+  13 │    12  missing  missing  missing  missing  good
+  14 │    13  missing  missing  missing  missing  bad
+  15 │    14  missing  missing  missing  missing  good
 ```
 
 It loads more `missing` values, but we can see all the `:id`s now. It check out the new `missing` 
-names for `:id`s 6–8. It is known as `outerjoin`.
-
-Finally, we can keep only rows that *don't* match with `antijoin`:
-
-```jldoctest dataframe
-julia> antijoin(persons, earnings, on = :id)
-2×2 DataFrame
- Row │ id     name
-     │ Int64  String
-─────┼───────────────
-   1 │     1  Rohit
-   2 │     2  Mohit
-```
+names for `:id`s 10-12. It is known as `outerjoin`.
 
 The above four joins make up the basics of data frame merging. We can remember like this:
 - `innerjoin`: The output contains rows for values of the key that exist in both the first (left) and 
@@ -263,60 +287,69 @@ The above four joins make up the basics of data frame merging. We can remember l
 - `outerjoin`: The output contains rows for values of the key that exist in the first (left) or second 
   (right) argument to `join`.
 
-Now, let’s say we want to look at people’s names for whom we have earnings data, but we don’t actually 
+## Anti Join
+
+The output contains rows for values of the key that exist in the first (left) but not the second 
+(right) argument to join. As with semi joins, output is restricted to columns from the first (left) 
+argument.
+
+Finally, we can keep only rows that *don't* match with `antijoin`:
+
+```jldoctest dataframe
+julia> antijoin(german, risk1, on = :id)
+4×5 DataFrame
+ Row │ id     Age    Sex     Job    Housing
+     │ Int64  Int64  String  Int64  String
+─────┼──────────────────────────────────────
+   1 │     0     67  male        2  own
+   2 │     1     22  female      2  own
+   3 │     2     49  male        1  own
+   4 │     3     45  male        2  free
+```
+
+## Semi Join
+
+It is like an inner join, but output is restricted to columns from the first (left) argument to join.
+
+Now, let’s say we want to look at german’s data for whom we have risk data, but we don’t actually 
 want to have all the columns from the second table. That’s what `semijoin` does. It gives us the same 
 rows as an `innerjoin`, but doesn’t add any columns from the 2nd table:
 
 ```jldoctest dataframe
-julia> semijoin(persons, earnings, on = :id)
-3×2 DataFrame
- Row │ id     name
-     │ Int64  String
-─────┼───────────────
-   1 │     3  Rahul
-   2 │     4  Vijay
-   3 │     5  Akshat
+julia> semijoin(german, risk1, on = :id)
+6×5 DataFrame
+ Row │ id     Age    Sex     Job    Housing
+     │ Int64  Int64  String  Int64  String
+─────┼──────────────────────────────────────
+   1 │     4     53  male        2  free
+   2 │     5     35  male        1  free
+   3 │     6     53  male        2  own
+   4 │     7     35  male        3  rent
+   5 │     8     61  male        1  own
+   6 │     9     28  male        3  own
 ```
 
 The below example will return true, demonstrating that a `semijoin` is the same as `innerjoin` with 
-only columns from persons data frame.
+only columns from `german` data frame.
 
 ```jldoctest dataframe
-julia> semijoin(persons, earnings, on = :id) == innerjoin(persons, earnings, on = :id)[:, names(persons)]
+julia> semijoin(german, risk, on = :id) == innerjoin(german, risk, on = :id)[:, names(german)]
 true
 ```
+
+## Cross Join
+
+The output is the cartesian product of rows from the first (left) and second (right) arguments to join.
 
 Now, let's have a look on `crossjoin`:
 
 ```jldoctest dataframe
-julia> data = crossjoin(persons, earnings, makeunique = true)
-30×4 DataFrame
- Row │ id     name    id_1   salary
-     │ Int64  String  Int64  Int64
-─────┼──────────────────────────────
-   1 │     1  Rohit       3    5000
-   2 │     1  Rohit       4    1000
-   3 │     1  Rohit       5    5000
-   4 │     1  Rohit       6    8000
-   5 │     1  Rohit       7    3000
-   6 │     1  Rohit       8    9000
-   7 │     2  Mohit       3    5000
-   8 │     2  Mohit       4    1000
-  ⋮  │   ⋮      ⋮       ⋮      ⋮
-  24 │     4  Vijay       8    9000
-  25 │     5  Akshat      3    5000
-  26 │     5  Akshat      4    1000
-  27 │     5  Akshat      5    5000
-  28 │     5  Akshat      6    8000
-  29 │     5  Akshat      7    3000
-  30 │     5  Akshat      8    9000
-                     15 rows omitted
+julia> crossjoin(german, risk, makeunique=true);
 ```
 
-In the above example, A `crossjoin` took all the rows from `persons` data frame and for each row, it matches it 
-to every single row of `earnings` data frame. At first impression, this might not make any sense, but it’s a great 
-method for finding all combinations of 2 data frames. Our new data frame has 30 rows, which is 
-5 (rows of persons) x 6 (rows of earnings).
+In the above example, A `crossjoin` took all the rows from `german` data frame and for each row, it matches it 
+to every single row of `risk` data frame. At first impression, this might not make any sense, but it’s a great 
+method for finding all combinations of 2 data frames. Our new data frame has 100 rows.
 
 !!! note
 
@@ -388,39 +421,57 @@ symbols or strings to the `on` argument of the `join` functions. To demonstrate 
 and add another column to both of our data frames. This will contain city names where the users live.
 
 ```jldoctest dataframe
-julia> C_names= copy(persons) # It make sure we don't mess with the original table
-5×2 DataFrame
- Row │ id     name
+julia> C_names= copy(german) # It make sure we don't mess with the original table
+10×5 DataFrame
+ Row │ id     Age    Sex     Job    Housing
+     │ Int64  Int64  String  Int64  String
+─────┼──────────────────────────────────────
+   1 │     0     67  male        2  own
+   2 │     1     22  female      2  own
+   3 │     2     49  male        1  own
+   4 │     3     45  male        2  free
+   5 │     4     53  male        2  free
+   6 │     5     35  male        1  free
+   7 │     6     53  male        2  own
+   8 │     7     35  male        3  rent
+   9 │     8     61  male        1  own
+  10 │     9     28  male        3  own
+
+julia> C_names.city = ["Orai", "Gwalior"][mod1.(1:10, 2)]
+10-element Vector{String}:
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
+ "Orai"
+ "Gwalior"
+
+julia> D_earnings = copy(risk) # do the same for earnings
+10×2 DataFrame
+ Row │ id     Risk
      │ Int64  String
 ─────┼───────────────
-   1 │     1  Rohit
-   2 │     2  Mohit
-   3 │     3  Rahul
-   4 │     4  Vijay
-   5 │     5  Akshat
+   1 │     0  good
+   2 │     1  bad
+   3 │     2  good
+   4 │     3  good
+   5 │     4  bad
+   6 │     5  good
+   7 │     6  good
+   8 │     7  good
+   9 │     8  good
+  10 │     9  bad
 
-julia> C_names.city = ["Orai", "Gwalior"][mod1.(1:5, 2)]
-5-element Vector{String}:
+julia> D_earnings.city = ["Orai", "Gwalior"][mod1.(1:10, 2)]
+10-element Vector{String}:
  "Orai"
  "Gwalior"
  "Orai"
  "Gwalior"
- "Orai"
-
-julia> D_earnings = copy(earnings) # do the same for earnings
-6×2 DataFrame
- Row │ id     salary
-     │ Int64  Int64
-─────┼───────────────
-   1 │     3    5000
-   2 │     4    1000
-   3 │     5    5000
-   4 │     6    8000
-   5 │     7    3000
-   6 │     8    9000
-
-julia> D_earnings.city = ["Orai", "Gwalior"][mod1.(1:6, 2)]
-6-element Vector{String}:
  "Orai"
  "Gwalior"
  "Orai"
@@ -429,27 +480,36 @@ julia> D_earnings.city = ["Orai", "Gwalior"][mod1.(1:6, 2)]
  "Gwalior"
 
 julia> C_names
-5×3 DataFrame
- Row │ id     name    city
-     │ Int64  String  String
-─────┼────────────────────────
-   1 │     1  Rohit   Orai
-   2 │     2  Mohit   Gwalior
-   3 │     3  Rahul   Orai
-   4 │     4  Vijay   Gwalior
-   5 │     5  Akshat  Orai
+10×6 DataFrame
+ Row │ id     Age    Sex     Job    Housing  city
+     │ Int64  Int64  String  Int64  String   String
+─────┼───────────────────────────────────────────────
+   1 │     0     67  male        2  own      Orai
+   2 │     1     22  female      2  own      Gwalior
+   3 │     2     49  male        1  own      Orai
+   4 │     3     45  male        2  free     Gwalior
+   5 │     4     53  male        2  free     Orai
+   6 │     5     35  male        1  free     Gwalior
+   7 │     6     53  male        2  own      Orai
+   8 │     7     35  male        3  rent     Gwalior
+   9 │     8     61  male        1  own      Orai
+  10 │     9     28  male        3  own      Gwalior
 
 julia> D_earnings
-6×3 DataFrame
- Row │ id     salary  city
-     │ Int64  Int64   String
+10×3 DataFrame
+ Row │ id     Risk    city
+     │ Int64  String  String
 ─────┼────────────────────────
-   1 │     3    5000  Orai
-   2 │     4    1000  Gwalior
-   3 │     5    5000  Orai
-   4 │     6    8000  Gwalior
-   5 │     7    3000  Orai
-   6 │     8    9000  Gwalior
+   1 │     0  good    Orai
+   2 │     1  bad     Gwalior
+   3 │     2  good    Orai
+   4 │     3  good    Gwalior
+   5 │     4  bad     Orai
+   6 │     5  good    Gwalior
+   7 │     6  good    Orai
+   8 │     7  good    Gwalior
+   9 │     8  good    Orai
+  10 │     9  bad     Gwalior
 ```
 
 One way we can think of this is that we have 2 separate data frames. One in Orai and another Gwalior. 
@@ -460,16 +520,21 @@ user `:id`s but also on the database name. Let’s do some joining on both colum
 
 ```jldoctest dataframe
 julia> innerjoin(C_names, D_earnings, on = [:id, :city])
-3×4 DataFrame
- Row │ id     name    city     salary
-     │ Int64  String  String   Int64
-─────┼────────────────────────────────
-   1 │     3  Rahul   Orai       5000
-   2 │     4  Vijay   Gwalior    1000
-   3 │     5  Akshat  Orai       5000
+10×7 DataFrame
+ Row │ id     Age    Sex     Job    Housing  city     Risk
+     │ Int64  Int64  String  Int64  String   String   String
+─────┼───────────────────────────────────────────────────────
+   1 │     0     67  male        2  own      Orai     good
+   2 │     1     22  female      2  own      Gwalior  bad
+   3 │     2     49  male        1  own      Orai     good
+   4 │     3     45  male        2  free     Gwalior  good
+   5 │     4     53  male        2  free     Orai     bad
+   6 │     5     35  male        1  free     Gwalior  good
+   7 │     6     53  male        2  own      Orai     good
+   8 │     7     35  male        3  rent     Gwalior  good
+   9 │     8     61  male        1  own      Orai     good
+  10 │     9     28  male        3  own      Gwalior  bad
 ```
-
-As we can see, only Rahul appears in both data frames and lives in the same place.
 
 ## Different column names
 
@@ -479,6 +544,17 @@ If that’s the case then we have 2 options:
 - or we can pass a mapping of names as the `on` parameter
 
 ```jldoctest dataframe
+julia> persons = DataFrame(id = 1:5, name = ["Rohit", "Mohit", "Rahul", "Vijay", "Akshat"])
+5×2 DataFrame
+ Row │ id     name
+     │ Int64  String
+─────┼───────────────
+   1 │     1  Rohit
+   2 │     2  Mohit
+   3 │     3  Rahul
+   4 │     4  Vijay
+   5 │     5  Akshat
+
 julia> another_earnings = DataFrame(another_id = 3:8, salary = [1500, 1600, 1700, 1800, 1900, 2800])
 6×2 DataFrame
  Row │ another_id  salary
@@ -612,3 +688,192 @@ julia> outerjoin(persons, earnings, on=:id, validate=(true, true), source=:sourc
 
 Note that this time we also used the `validate` keyword argument and it did not produce errors as the keys 
 defined in both source data frames were unique.
+
+## `matchmissing` keyword argument
+
+Now we have enough idea about kind of joins. In this section you may see any join at any time. So,
+we are considering that you will be comfortable with the different kind of Joins which we have 
+discussed above. 
+
+The `matchmissing` keyword argument allows us to decide how `missing` value is handled in `on`
+columns in joins. In general you have three options:
+
+- `:error` (the default): throw an error if `missing` value is present in any of the `on` columns;
+  the rationale is that `missing` indicates unknown value so if we knew it could match to any of 
+  the non-missing values in the `on` columns in the other data frame we join;
+- `:equal`: `missing` values are allowed and they are matched to `missing` values only; in this scenario
+  we treat `missing` as any other value without giving it a special treatment;
+- `:notequal` (a new option): in this case `missing` is considered to be not equal to any other value
+  (including `missing`).
+
+But there are some consequences of the `:notequal` rule. In `innerjoin` this means that rows with `missing`
+values will be dropped both in left and right table. In `leftjoin`, `semijoin`, and `antijoin` they are 
+dropped from the right table only (which means that if `missing` is present in the left table it is retained
+in processing but considered not to match any row in right table). Similarly in `rightjoin` rows with `missing`
+are dropped from left table only. The case that is most difficult to handle is `outerjoin`. The reason is that
+if `missing` would be present in both left and right table they would be considered not equal and produced 
+separate rows in the output table. 
+
+Lets move to the examples showing `matchmissing`:
+
+Here, we are creating a *SubDataFrame* from our parent dataframe `german_ref` to include `missing`
+values as well.
+
+```jldoctest dataframe
+julia> df1 = view(german_ref, 1:16, ["id", "Saving accounts", "Checking account"])
+16×3 SubDataFrame
+ Row │ id     Saving accounts  Checking account
+     │ Int64  String?          String?
+─────┼──────────────────────────────────────────
+   1 │     0  missing          little
+   2 │     1  little           moderate
+   3 │     2  little           missing
+   4 │     3  little           little
+   5 │     4  little           little
+   6 │     5  missing          missing
+   7 │     6  quite rich       missing
+   8 │     7  little           moderate
+   9 │     8  rich             missing
+  10 │     9  little           moderate
+  11 │    10  little           moderate
+  12 │    11  little           little
+  13 │    12  little           moderate
+  14 │    13  little           little
+  15 │    14  little           little
+  16 │    15  moderate         little
+
+julia> df2 = view(risk_ref, 10:26, :)
+17×2 SubDataFrame
+ Row │ id     Risk
+     │ Int64  String
+─────┼───────────────
+   1 │     9  bad
+   2 │    10  bad
+   3 │    11  bad
+   4 │    12  good
+   5 │    13  bad
+   6 │    14  good
+   7 │    15  bad
+   8 │    16  good
+   9 │    17  good
+  10 │    18  bad
+  11 │    19  good
+  12 │    20  good
+  13 │    21  good
+  14 │    22  good
+  15 │    23  good
+  16 │    24  good
+  17 │    25  good
+```
+
+Now, we will investigate all the possible join operations:
+
+```jldoctest dataframe
+julia> innerjoin(df1, df2, on=:id, matchmissing=:notequal)
+7×4 DataFrame
+ Row │ id     Saving accounts  Checking account  Risk
+     │ Int64  String?          String?           String
+─────┼──────────────────────────────────────────────────
+   1 │     9  little           moderate          bad
+   2 │    10  little           moderate          bad
+   3 │    11  little           little            bad
+   4 │    12  little           moderate          good
+   5 │    13  little           little            bad
+   6 │    14  little           little            good
+   7 │    15  moderate         little            bad
+```
+
+As you can see for `innerjoin` only rows with `:id` equal to `9` to `15` are retained. Let us
+move forward:
+
+```jldoctest dataframe
+julia> leftjoin(df1, df2, on=:id, matchmissing=:notequal, source=:source)
+16×5 DataFrame
+ Row │ id     Saving accounts  Checking account  Risk     source
+     │ Int64  String?          String?           String?  String
+─────┼──────────────────────────────────────────────────────────────
+   1 │     9  little           moderate          bad      both
+   2 │    10  little           moderate          bad      both
+   3 │    11  little           little            bad      both
+   4 │    12  little           moderate          good     both
+   5 │    13  little           little            bad      both
+   6 │    14  little           little            good     both
+   7 │    15  moderate         little            bad      both
+   8 │     0  missing          little            missing  left_only
+   9 │     1  little           moderate          missing  left_only
+  10 │     2  little           missing           missing  left_only
+  11 │     3  little           little            missing  left_only
+  12 │     4  little           little            missing  left_only
+  13 │     5  missing          missing           missing  left_only
+  14 │     6  quite rich       missing           missing  left_only
+  15 │     7  little           moderate          missing  left_only
+  16 │     8  rich             missing           missing  left_only
+
+julia> rightjoin(df1, df2, on=:id, matchmissing=:notequal, source=:source)
+17×5 DataFrame
+ Row │ id     Saving accounts  Checking account  Risk    source
+     │ Int64  String?          String?           String  String
+─────┼──────────────────────────────────────────────────────────────
+   1 │     9  little           moderate          bad     both
+   2 │    10  little           moderate          bad     both
+   3 │    11  little           little            bad     both
+   4 │    12  little           moderate          good    both
+   5 │    13  little           little            bad     both
+   6 │    14  little           little            good    both
+   7 │    15  moderate         little            bad     both
+   8 │    16  missing          missing           good    right_only
+   9 │    17  missing          missing           good    right_only
+  10 │    18  missing          missing           bad     right_only
+  11 │    19  missing          missing           good    right_only
+  12 │    20  missing          missing           good    right_only
+  13 │    21  missing          missing           good    right_only
+  14 │    22  missing          missing           good    right_only
+  15 │    23  missing          missing           good    right_only
+  16 │    24  missing          missing           good    right_only
+  17 │    25  missing          missing           good    right_only
+```
+
+For `leftjoin` and `rightjoin` we retained `missing` but only in the table for which all 
+rows must be retained. Therefore in `leftjoin` at `:id` 0  for `:Saving accounts` equal to 
+`missing` but `:Risk` also equal to `missing` (signalling that there was no match which we 
+can also see in `:source` column). The same happens for `rightjoin` at `:id` 16 `:Risk` is
+`good` but `:Saving accounts` and `:Checking account` are `missing`. 
+
+The same rules work with `semijoin` and `antijoin` as you can see here:
+
+```jldoctest dataframe
+julia> semijoin(df1, df2, on=:id, matchmissing=:notequal)
+7×3 DataFrame
+ Row │ id     Saving accounts  Checking account
+     │ Int64  String?          String?
+─────┼──────────────────────────────────────────
+   1 │     9  little           moderate
+   2 │    10  little           moderate
+   3 │    11  little           little
+   4 │    12  little           moderate
+   5 │    13  little           little
+   6 │    14  little           little
+   7 │    15  moderate         little
+
+julia> antijoin(df1, df2, on=:id, matchmissing=:notequal)
+9×3 DataFrame
+ Row │ id     Saving accounts  Checking account
+     │ Int64  String?          String?
+─────┼──────────────────────────────────────────
+   1 │     0  missing          little
+   2 │     1  little           moderate
+   3 │     2  little           missing
+   4 │     3  little           little
+   5 │     4  little           little
+   6 │     5  missing          missing
+   7 │     6  quite rich       missing
+   8 │     7  little           moderate
+   9 │     8  rich             missing
+```
+
+But `outerjoin` just throws an error:
+
+```jldoctest dataframe
+julia> outerjoin(df1, df2, on=:id, matchmissing=:notequal)
+ERROR: ArgumentError: matchmissing == :notequal for `outerjoin` is not allowed
+```
