@@ -217,7 +217,7 @@ end
         @test combine(f8, gd) == sres4
 
         # combine() with ungroup without and with groups sorting
-        for dosort in (false, true, nothing)
+        for dosort in (false, true)
             gd = groupby_checked(df, cols, sort=dosort)
             v = validate_gdf(combine(d -> d[:, [:x]], gd, ungroup=false))
             @test length(gd) == length(v)
@@ -1876,7 +1876,7 @@ end
                        b = repeat(1:2, inner=6), c = 1:12)
     Random.seed!(1234)
     for df in [df_ref, df_ref[randperm(nrow(df_ref)), :]], grpcols = [[:a, :b], :a, :b],
-        dosort in (true, false, nothing), doskipmissing in (true, false)
+        dosort in [true, false], doskipmissing in [true, false]
 
         gd = groupby_checked(df, grpcols, sort=dosort, skipmissing=doskipmissing)
 
@@ -2214,7 +2214,7 @@ end
     df_ref = DataFrame(rand(10, 4), :auto)
     df_ref.g = shuffle!([1, 2, 2, 3, 3, 3, 4, 4, 4, 4])
 
-    for i in 0:nrow(df_ref), dosort in (true, false, nothing), dokeepkeys in (true, false)
+    for i in 0:nrow(df_ref), dosort in [true, false], dokeepkeys in [true, false]
         df = df_ref[1:i, :]
         gdf = groupby_checked(df, :g, sort=dosort)
         @test combine(gdf, :x1 => sum => :x1, :x2 => identity => :x2,
@@ -2460,7 +2460,7 @@ end
 @testset "select and transform GroupedDataFrame" begin
     for df in (DataFrame(g=[3, 1, 1, missing], x=1:4, y=5:8),
                DataFrame(g=categorical([3, 1, 1, missing]), x=1:4, y=5:8)),
-        dosort in (true, false, nothing)
+        dosort in (true, false)
 
         gdf = groupby_checked(df, :g, sort=dosort, skipmissing=false)
 
@@ -2539,7 +2539,7 @@ end
     Random.seed!(1)
     for df in (DataFrame(g=rand(1:20, 1000), x=rand(1000), id=1:1000),
                DataFrame(g=categorical(rand(1:20, 1000)), x=rand(1000), id=1:1000)),
-        dosort in (true, false, nothing)
+        dosort in (true, false)
 
         gdf = groupby_checked(df, :g, sort=dosort)
 
@@ -2549,7 +2549,7 @@ end
         @test res1.x_mean + res1.x_function ≈ df.x
 
         res2 = combine(gdf, :x => mean, :x => x -> x .- mean(x), :id)
-        @test sort(unique(res2.g)) == sort(unique(df.g))
+        @test unique(res2.g) == sort(unique(df.g))
         for i in unique(res2.g)
             @test issorted(filter(:g => x -> x == i, res2).id)
         end
@@ -2559,7 +2559,7 @@ end
 @testset "select! and transform! GroupedDataFrame" begin
     for df in (DataFrame(g=[3, 1, 1, missing], x=1:4, y=5:8),
                DataFrame(g=categorical([3, 1, 1, missing]), x=1:4, y=5:8)),
-        dosort in (true, false, nothing)
+        dosort in (true, false)
 
         @test_throws MethodError select!(groupby_checked(view(df, :, :), :g), :x)
         @test_throws MethodError transform!(groupby_checked(view(df, :, :), :g), :x)
@@ -3779,32 +3779,32 @@ end
 # validate_gdf function defined in this testset
 @testset "subset! tests" begin
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
-    gd = groupby_checked(df, :a);
+    gd = groupby(df, :a);
     subset!(gd, :b => x -> x .> first(x))
     validate_gdf(gd)
-    @test gd == groupby_checked(df, :a)
+    @test gd == groupby(df, :a)
     @test sort!(unique(gd.groups)) == 1:length(gd)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
-    gd = groupby_checked(df, :a)[[2, 1]];
+    gd = groupby(df, :a)[[2, 1]];
     subset!(gd, :b => x -> x .> first(x))
     validate_gdf(gd)
-    @test gd == groupby_checked(df, :a)[[2, 1]]
+    @test gd == groupby(df, :a)[[2, 1]]
     @test sort!(unique(gd.groups)) == 1:length(gd)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
-    gd = groupby_checked(df, :a);
+    gd = groupby(df, :a);
     subset!(gd, :a => x -> x .== 1)
     validate_gdf(gd)
     @test sort!(unique(gd.groups)) == 1:length(gd)
-    @test gd == groupby_checked(df, :a)
+    @test gd == groupby(df, :a)
 
     df = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4]);
-    gd = groupby_checked(df, :a)[[2, 1]];
+    gd = groupby(df, :a)[[2, 1]];
     subset!(gd, :b => x -> x .== 1)
     validate_gdf(gd)
     @test sort!(unique(gd.groups)) == 1:length(gd)
-    @test gd == groupby_checked(df, :a)
+    @test gd == groupby(df, :a)
 
     function issubsequence(v1, v2, l1, l2)
         l1 == 0 && return true
@@ -3816,21 +3816,21 @@ end
     for n in 1:10, j in 1:10, _ in 1:100
         df = DataFrame(a=rand(1:j, n))
         # need to sort to ensure grouping algorithm stability
-        gd = groupby_checked(df, :a, sort=true)
+        gd = groupby(df, :a, sort=true)
         subset!(gd, :a => ByRow(x -> rand() < 0.5))
         validate_gdf(gd)
         @test sort!(unique(gd.groups)) == 1:length(gd)
-        @test gd == groupby_checked(df, :a, sort=true)
+        @test gd == groupby(df, :a, sort=true)
 
         # below we do not have a well defined order so just validate gd
         df = DataFrame(a=rand(1:j, n))
-        gd = groupby_checked(df, :a)
+        gd = groupby(df, :a)
         subset!(gd, :a => ByRow(x -> rand() < 0.5))
         validate_gdf(gd)
         @test sort!(unique(gd.groups)) == 1:length(gd)
 
         df = DataFrame(a=rand(1:j, n))
-        gd = groupby_checked(df, :a)
+        gd = groupby(df, :a)
         p = randperm(length(gd))
         gd = gd[p]
         superseq = [first(x.a) for x in gd]
@@ -3844,107 +3844,9 @@ end
 
 @testset "consistency check" begin
     df = DataFrame(a=1)
-    gdf = groupby_checked(df, :a)
+    gdf = groupby(df, :a)
     push!(df, [2])
     @test_throws AssertionError gdf[1]
-end
-
-@testset "check sort keyword argument of groupby" begin
-    df = DataFrame(id=[3, 1, 2])
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) == [[1], [2], [3]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) == [[1], [2], [3]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) == [[3], [1], [2]]
-
-    df = DataFrame(id=[300, 1, 2])
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) == [[300], [1], [2]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) == [[1], [2], [300]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) == [[300], [1], [2]]
-
-    df = DataFrame(id=["3", "1", "2"])
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) == [["3"], ["1"], ["2"]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) == [["1"], ["2"], ["3"]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) == [["3"], ["1"], ["2"]]
-
-    df.id = PooledArray(df.id)
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) == [["3"], ["1"], ["2"]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) == [["1"], ["2"], ["3"]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) == [["3"], ["1"], ["2"]]
-
-    # for PooledVector sort=true is not the same as sort=nothing
-    df.id[1] = "300"
-    df.id[3] = "200"
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) == [["1"], ["300"], ["200"]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) == [["1"], ["200"], ["300"]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) == [["300"], ["1"], ["200"]]
-
-    # for CategoricalVector sort=true is the same as sort=nothing
-    df = DataFrame(id=categorical(["1", "2", "3"], ordered=true))
-    levels!(df.id, ["2", "1", "3"])
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) == [["2"], ["1"], ["3"]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) == [["2"], ["1"], ["3"]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) == [["1"], ["2"], ["3"]]
-
-    df = DataFrame(id1=[2, 2, 1, 1], id2=[1, 2, 2, 1])
-    gd = groupby_checked(df, [:id1, :id2], sort=nothing)
-    @test Vector.(keys(gd)) == [[1, 1], [1, 2], [2, 1], [2, 2]]
-    gd = groupby_checked(df, [:id1, :id2], sort=true)
-    @test Vector.(keys(gd)) == [[1, 1], [1, 2], [2, 1], [2, 2]]
-    gd = groupby_checked(df, [:id1, :id2], sort=false)
-    @test Vector.(keys(gd)) == [[2, 1], [2, 2], [1, 2], [1, 1]]
-
-    df = DataFrame(id1=[200, 200, 1, 1], id2=[1, 2, 2, 1])
-    gd = groupby_checked(df, [:id1, :id2], sort=nothing)
-    @test Vector.(keys(gd)) == [[200, 1], [200, 2], [1, 2], [1, 1]]
-    gd = groupby_checked(df, [:id1, :id2], sort=true)
-    @test Vector.(keys(gd)) == [[1, 1], [1, 2], [200, 1], [200, 2]]
-    gd = groupby_checked(df, [:id1, :id2], sort=false)
-    @test Vector.(keys(gd)) == [[200, 1], [200, 2], [1, 2], [1, 1]]
-
-    df = DataFrame(id=[3, 1, missing, 2])
-    gd = groupby_checked(df, :id, sort=nothing, skipmissing=true)
-    @test Vector.(keys(gd)) == [[1], [2], [3]]
-    gd = groupby_checked(df, :id, sort=true, skipmissing=true)
-    @test Vector.(keys(gd)) == [[1], [2], [3]]
-    gd = groupby_checked(df, :id, sort=false, skipmissing=true)
-    @test Vector.(keys(gd)) == [[3], [1], [2]]
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) ≅ [[1], [2], [3], [missing]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) ≅ [[1], [2], [3], [missing]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) ≅ [[3], [1], [missing], [2]]
-
-    df = DataFrame(id=[300, missing, 1, 2])
-    gd = groupby_checked(df, :id, sort=nothing, skipmissing=true)
-    @test Vector.(keys(gd)) == [[300], [1], [2]]
-    gd = groupby_checked(df, :id, sort=true, skipmissing=true)
-    @test Vector.(keys(gd)) == [[1], [2], [300]]
-    gd = groupby_checked(df, :id, sort=false, skipmissing=true)
-    @test Vector.(keys(gd)) == [[300], [1], [2]]
-    gd = groupby_checked(df, :id, sort=nothing)
-    @test Vector.(keys(gd)) ≅ [[300], [missing], [1], [2]]
-    gd = groupby_checked(df, :id, sort=true)
-    @test Vector.(keys(gd)) ≅ [[1], [2], [300], [missing]]
-    gd = groupby_checked(df, :id, sort=false)
-    @test Vector.(keys(gd)) ≅ [[300], [missing], [1], [2]]
 end
 
 end # module
