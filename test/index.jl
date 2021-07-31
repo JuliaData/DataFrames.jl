@@ -509,9 +509,9 @@ end
     @test merge(i1, si22) isa Index
     @test names(merge(i1, si22)) == ["a", "b", "c", "d", "e"]
     @test merge(si11, i2) isa Index
-    @test names(merge(si1, i2)) == ["a", "b", "c", "d", "e"]
+    @test names(merge(si11, i2)) == ["a", "b", "c", "d", "e"]
     @test merge(si11, si22) isa Index
-    @test names(merge(si1, si22)) == ["a", "b", "d", "e"]
+    @test names(merge(si11, si22)) == ["a", "b", "d", "e"]
     @test_throws ArgumentError merge(si12, si21)
     @test merge(si12, si21, makeunique=true) isa Index
     @test names(merge(si12, si21, makeunique=true)) == ["b", "c", "c_1", "d"]
