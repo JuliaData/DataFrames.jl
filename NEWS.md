@@ -18,6 +18,10 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+* the `unstack` function receives new keyword argument `fillvalue` 
+  (with `missing` default) that fills combination of not encountered
+  rows and columns. This feature allows to distinguish between missings in
+  value column and just missing row/column combinations.
 
 # DataFrames.jl v1.2.1 Patch Release Notes
 

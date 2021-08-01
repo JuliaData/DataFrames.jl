@@ -654,4 +654,27 @@ end
     @test IndexStyle(DataFrames.StackedVector) == IndexLinear()
 end
 
+@testset "unstack with fillvalue" begin
+    df = DataFrame(
+        :factory =>  ["Fac1", "Fac1", "Fac2", "Fac2"],
+        :variable => ["Var1", "Var2", "Var1", "Var2"],
+        :value => [1, 2, 3, 4]
+    )
+    dfu1 = DataFrame(
+        :factory => ["Fac1", "Fac2"],
+        :Var1 => allowmissing([1, 3]),
+        :Var2 => allowmissing([2, 4])
+    )
+    dfu = unstack(df, :variable, :value)
+    @test dfu ≅ dfu1
+    @test eltype(dfu[!, :Var1]) == Union{Missing, Int}
+
+    delete!(df, 4)
+    for (sentinel, fcoltype) in zip([1, 1., "1", nothing], [Int, Float64, Any, Union{Int, Nothing}])
+        dfu_m = unstack(df, :variable, :value, fillvalue=sentinel)
+        @test dfu_m[2, :Var2] == sentinel
+        @test eltype(dfu_m[!, :Var2]) == fcoltype
+    end
+end
+
 end # module
