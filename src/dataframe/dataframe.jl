@@ -803,8 +803,8 @@ julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
 
 julia> insertcols!(df, :b, :d => 7:9, after=true)
 3×5 DataFrame
- Row │ b     d      c      c_1    a     
-     │ Char  Int64  Int64  Int64  Int64 
+ Row │ b     d      c      c_1    a
+     │ Char  Int64  Int64  Int64  Int64
 ─────┼──────────────────────────────────
    1 │ a         7      2      3      1
    2 │ b         8      3      4      2
@@ -813,7 +813,7 @@ julia> insertcols!(df, :b, :d => 7:9, after=true)
 """
 function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
-    
+
     if col isa SymbolOrString
         col_ind = Int(columnindex(df, col))
         if col_ind == 0
@@ -822,7 +822,7 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:
     else
         col_ind = Int(col)
     end
-    
+
     if after
         col_ind += 1
     end
@@ -923,7 +923,7 @@ insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <
 
 insertcols!(df::DataFrame, name_cols::Pair{Symbol, <:Any}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
-    insertcols!(df, ncol(df)+1, name_cols..., after=after, 
+    insertcols!(df, ncol(df)+1, name_cols..., after=after,
                 makeunique=makeunique, copycols=copycols)
 
 insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString, <:Any}...;

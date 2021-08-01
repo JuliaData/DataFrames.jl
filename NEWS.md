@@ -18,7 +18,7 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
-* the `insertcols!` function receives new keyword argument `after` 
+* the `insertcols!` function receives new keyword argument `after`
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
 

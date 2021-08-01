@@ -372,7 +372,7 @@ end
     insertcols!(df, 1, :b=>2:4, :c=>7:9, after=true)
     @test df == DataFrame(a=1:3, b=2:4, c=7:9)
     insertcols!(df, "b", :b=>2:4, :c=>7:9, after=true, makeunique=true)
-    @test df == DataFrame(a=1:3, b=2:4, b_1=2:4, c_1=7:9, c=7:9)    
+    @test df == DataFrame(a=1:3, b=2:4, b_1=2:4, c_1=7:9, c=7:9)
 end
 
 @testset "DataFrame constructors" begin
