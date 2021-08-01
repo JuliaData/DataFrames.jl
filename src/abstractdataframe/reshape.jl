@@ -340,8 +340,8 @@ julia> df = DataFrame(
     :value => [1, 2, 3]
 )
 3×3 DataFrame
- Row │ id      variable  value 
-     │ String  String    Int64 
+ Row │ id      variable  value
+     │ String  String    Int64
 ─────┼─────────────────────────
    1 │ 1       Var1          1
    2 │ 1       Var2          2
@@ -349,8 +349,8 @@ julia> df = DataFrame(
 
 julia> unstack(df, :variable, :value, fillvalue=42)
 2×3 DataFrame
- Row │ id      Var1   Var2  
-     │ String  Int64  Int64 
+ Row │ id      Var1   Var2
+     │ String  Int64  Int64
 ─────┼──────────────────────
    1 │ 1           1      2
    2 │ 2           3     42
