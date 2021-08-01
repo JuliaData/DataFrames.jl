@@ -21,6 +21,8 @@ makedocs(
     pages = Any[
         "Introduction" => "index.md",
         "First Steps with DataFrames.jl" => "man/basics.md",
+        "Joins" => "man/joins_new.md",
+        "Reshaping and Pivoting Data" => "man/reshaping_new.md",
         "User Guide" => Any[
             "Getting Started" => "man/getting_started.md",
             "Working with DataFrames" => "man/working_with_dataframes.md",

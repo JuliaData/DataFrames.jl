@@ -5,7 +5,7 @@ criteria should I consider? What are the different ways I can join these data se
 
 !!! note
 
-  Some of the part has been taken from [Bence Komarniczky](https://towardsdatascience.com/joining-dataframes-in-julia-c435e3da32f3)
+    Some of the part has been taken from [Bence Komarniczky](https://towardsdatascience.com/joining-dataframes-in-julia-c435e3da32f3)
 
 Sound familiar? You may have come across this question plenty of times on online discussion
 forums. Working with one data frame is fairly straightforward but things become challenging when
@@ -353,8 +353,8 @@ method for finding all combinations of 2 data frames. Our new data frame has 100
 
 !!! note
 
-  Cross joins are the only kind of join that does not use a `on` key:
-  `crossjoin(persons, earnings, makeunique = true)`
+    Cross joins are the only kind of join that does not use a `on` key:
+    `crossjoin(persons, earnings, makeunique = true)`
 
 For more clarification, now let’s say we want to design a new data frame by changing the ingredients. To 
 understand profitability, we also need to figure out the total costs of the chocolate:

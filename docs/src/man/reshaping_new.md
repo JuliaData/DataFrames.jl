@@ -118,7 +118,7 @@ julia> stack(german, [:Age, :Job, :Housing], [:Sex])
 ```
 
 Below we have omitted second argument in `stack`, so all other columns are assumed to be the
-`[id_variables](https://github.com/JuliaData/DataFrames.jl/blob/f690aa49e958f51e0c3c579b6def1f11be214d98/src/abstractdataframe/reshape.jl#:~:text=id_vars%60%20%3A%20the%20identifier,are%20not%20%60measure_vars%60)`:
+[id_variables](https://github.com/JuliaData/DataFrames.jl/blob/f690aa49e958f51e0c3c579b6def1f11be214d98/src/abstractdataframe/reshape.jl#:~:text=id_vars%60%20%3A%20the%20identifier,are%20not%20%60measure_vars%60):
 
 ```jldoctest dataframe
 julia> stack(german, Not([:Sex, :id]))
