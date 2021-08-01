@@ -1,466 +1,304 @@
 # Reshaping Data
 
-*DataFrames.jl* is a popular julia library for tabular data which makes easier to read and transform data.
-It provides the abstractions of data frames and series, similar to those in *R*, and *Pandas*.
-
-In *DataFrames.jl* data reshaping means the transformaton of the structure of the table or vector (for example 
-data frames or series) to make it suitable for further analysis. Let us assume we have a data frame with 
-multiindices on the rows and columns. In `DataFrames.jl` currently we have two functions: `stack`, and `unstack`
+In `DataFrames.jl` currently we have two functions: `stack`, and `unstack`
 that we can use for reshaping our data. Their goals are very simple:
 - `stack` allows us to go from wide to long data format;
 - `unstack` allows us to go from long to wide data format. 
 
-!!! note
+In wide data it has a column for each variable whereas long format data has 
+a column for possible variable types & a column for the values of those variables.
 
-  Parts of this section has been taken from [Bogumił Kamiński](https://bkamins.github.io/julialang/2021/05/28/pivot.html)
-
-First we will have a look that how to create multiple indices. There is a simplest way to create a multi index 
-data frame object is by passing a list of two or more arrays to the constructor. Have a look to the below example:
+Reshape data from wide to long format using the stack function:
 
 ```jldoctest dataframe
 julia> using DataFrames
 
-julia> grocessary = DataFrame(year = repeat(2019:2021, inner=4),
-                                list = repeat(["Sugar", "Soap", "Fruits", "Oil"], outer=3),
-                                month=1:12, Date=15:26)
-12×4 DataFrame
- Row │ year   list    month  Date
-     │ Int64  String  Int64  Int64
-─────┼─────────────────────────────
-   1 │  2019  Sugar       1     15
-   2 │  2019  Soap        2     16
-   3 │  2019  Fruits      3     17
-   4 │  2019  Oil         4     18
-   5 │  2020  Sugar       5     19
-   6 │  2020  Soap        6     20
-   7 │  2020  Fruits      7     21
-   8 │  2020  Oil         8     22
-   9 │  2021  Sugar       9     23
-  10 │  2021  Soap       10     24
-  11 │  2021  Fruits     11     25
-  12 │  2021  Oil        12     26
+julia> using CSV
 
-julia> costs = select(grocessary, :year, :list, [:month, :Date] .=> x -> x/2,
-                             renamecols=false)
-12×4 DataFrame
- Row │ year   list    month    Date
-     │ Int64  String  Float64  Float64
-─────┼─────────────────────────────────
-   1 │  2019  Sugar       0.5      7.5
-   2 │  2019  Soap        1.0      8.0
-   3 │  2019  Fruits      1.5      8.5
-   4 │  2019  Oil         2.0      9.0
-   5 │  2020  Sugar       2.5      9.5
-   6 │  2020  Soap        3.0     10.0
-   7 │  2020  Fruits      3.5     10.5
-   8 │  2020  Oil         4.0     11.0
-   9 │  2021  Sugar       4.5     11.5
-  10 │  2021  Soap        5.0     12.0
-  11 │  2021  Fruits      5.5     12.5
-  12 │  2021  Oil         6.0     13.0
+julia> german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
+                                       "..", "docs", "src", "assets", "german.csv"),
+                              DataFrame; missingstring="NA")
+1000×10 DataFrame
+  Row │ id     Age    Sex     Job    Housing  Saving accounts  Checking accoun ⋯
+      │ Int64  Int64  String  Int64  String   String?          String?         ⋯
+──────┼─────────────────────────────────────────────────────────────────────────
+    1 │     0     67  male        2  own      missing          little          ⋯
+    2 │     1     22  female      2  own      little           moderate
+    3 │     2     49  male        1  own      little           missing
+    4 │     3     45  male        2  free     little           little
+    5 │     4     53  male        2  free     little           little          ⋯
+    6 │     5     35  male        1  free     missing          missing
+    7 │     6     53  male        2  own      quite rich       missing
+    8 │     7     35  male        3  rent     little           moderate
+  ⋮   │   ⋮      ⋮      ⋮       ⋮       ⋮            ⋮                ⋮        ⋱
+  994 │   993     30  male        3  own      little           little          ⋯
+  995 │   994     50  male        2  own      missing          missing
+  996 │   995     31  female      1  own      little           missing
+  997 │   996     40  male        3  own      little           little
+  998 │   997     38  male        2  own      little           missing         ⋯
+  999 │   998     23  male        2  free     little           little
+ 1000 │   999     27  male        2  own      moderate         moderate
+                                                  4 columns and 985 rows omitted
+
+julia> german = view(german_ref, 1:10, 1:6)
+10×6 SubDataFrame
+ Row │ id     Age    Sex     Job    Housing  Saving accounts
+     │ Int64  Int64  String  Int64  String   String?
+─────┼───────────────────────────────────────────────────────
+   1 │     0     67  male        2  own      missing
+   2 │     1     22  female      2  own      little
+   3 │     2     49  male        1  own      little
+   4 │     3     45  male        2  free     little
+   5 │     4     53  male        2  free     little
+   6 │     5     35  male        1  free     missing
+   7 │     6     53  male        2  own      quite rich
+   8 │     7     35  male        3  rent     little
+   9 │     8     61  male        1  own      rich
+  10 │     9     28  male        3  own      little                                                  
 ```
-
-Now before moving further let's practice a bit basic data transformation skills:
-
-```jldoctest dataframe
-julia> long_grocessary = stack(grocessary, [:month, :Date], [:year, :list],
-                          variable_name=:days, value_name=:grocessary) 
-24×4 DataFrame
- Row │ year   list    days    grocessary
-     │ Int64  String  String  Int64
-─────┼───────────────────────────────────
-   1 │  2019  Sugar   month            1
-   2 │  2019  Soap    month            2
-   3 │  2019  Fruits  month            3
-   4 │  2019  Oil     month            4
-   5 │  2020  Sugar   month            5
-   6 │  2020  Soap    month            6
-   7 │  2020  Fruits  month            7
-   8 │  2020  Oil     month            8
-  ⋮  │   ⋮      ⋮       ⋮         ⋮
-  18 │  2020  Soap    Date            20
-  19 │  2020  Fruits  Date            21
-  20 │  2020  Oil     Date            22
-  21 │  2021  Sugar   Date            23
-  22 │  2021  Soap    Date            24
-  23 │  2021  Fruits  Date            25
-  24 │  2021  Oil     Date            26
-                           9 rows omitted
-
-julia> long_costs = stack(costs, [:month, :Date], [:year, :list],
-                                 variable_name=:days, value_name=:costs)
-24×4 DataFrame
- Row │ year   list    days    costs
-     │ Int64  String  String  Float64
-─────┼────────────────────────────────
-   1 │  2019  Sugar   month       0.5
-   2 │  2019  Soap    month       1.0
-   3 │  2019  Fruits  month       1.5
-   4 │  2019  Oil     month       2.0
-   5 │  2020  Sugar   month       2.5
-   6 │  2020  Soap    month       3.0
-   7 │  2020  Fruits  month       3.5
-   8 │  2020  Oil     month       4.0
-  ⋮  │   ⋮      ⋮       ⋮        ⋮
-  18 │  2020  Soap    Date       10.0
-  19 │  2020  Fruits  Date       10.5
-  20 │  2020  Oil     Date       11.0
-  21 │  2021  Sugar   Date       11.5
-  22 │  2021  Soap    Date       12.0
-  23 │  2021  Fruits  Date       12.5
-  24 │  2021  Oil     Date       13.0
-                        9 rows omitted
-
-julia> long = innerjoin(long_grocessary, long_costs, on=[:year, :list, :days])
-24×5 DataFrame
- Row │ year   list    days    grocessary  costs
-     │ Int64  String  String  Int64       Float64
-─────┼────────────────────────────────────────────
-   1 │  2019  Sugar   month            1      0.5
-   2 │  2019  Soap    month            2      1.0
-   3 │  2019  Fruits  month            3      1.5
-   4 │  2019  Oil     month            4      2.0
-   5 │  2020  Sugar   month            5      2.5
-   6 │  2020  Soap    month            6      3.0
-   7 │  2020  Fruits  month            7      3.5
-   8 │  2020  Oil     month            8      4.0
-  ⋮  │   ⋮      ⋮       ⋮         ⋮          ⋮
-  18 │  2020  Soap    Date            20     10.0
-  19 │  2020  Fruits  Date            21     10.5
-  20 │  2020  Oil     Date            22     11.0
-  21 │  2021  Sugar   Date            23     11.5
-  22 │  2021  Soap    Date            24     12.0
-  23 │  2021  Fruits  Date            25     12.5
-  24 │  2021  Oil     Date            26     13.0
-                                    9 rows omitted
-```                                           
 
 ## The basics of `stack`
 
-The concept of stacking comes in handy when we have data with multi indices. We use the `stack()` function 
-to reshape the data frame by converting the data into the stacked form. Reshaping the data from wide to 
-long format using the `stack` function means moving (also rotating or pivoting) the innermost column index 
-to become the innermost row index.
+Stack return the long-format `DataFrame` with columns for each of the ID variables, column 
+value name holding the values of the stacked columns, and column variable name a vector holding 
+the name of the corresponding measurement variables.
 
-```
-julia> stack(grocessary, 1:3)
-36×3 DataFrame
- Row │ Date   variable  value
-     │ Int64  String    Any
-─────┼────────────────────────
-   1 │    15  year      2019
-   2 │    16  year      2019
-   3 │    17  year      2019
-   4 │    18  year      2019
-   5 │    19  year      2020
-   6 │    20  year      2020
-   7 │    21  year      2020
-   8 │    22  year      2020
-  ⋮  │   ⋮       ⋮        ⋮
-  30 │    20  month     6
-  31 │    21  month     7
-  32 │    22  month     8
-  33 │    23  month     9
-  34 │    24  month     10
-  35 │    25  month     11
-  36 │    26  month     12
-               21 rows omitted
-```
-
-The second optional argument to `stack` indicates the columns to be stacked. These are normally referred 
-to as the measured variables. Column names can also be given:
+Here, `german` is the `AbstractDataFrame` which has to be stacked and the columns to
+be stacked are `:Age`, `:Job`, `:Housing`, `:Sex` which is known as the measurement variables;
+`:variable` is the name of our new stacked columns which are holding the names of each of the
+measurement variables, and `value` is the name of the new stacked columns containing the values
+from each of the measurement variables:
 
 ```jldoctest dataframe
-julia> stack(grocessary, [:year, :list, :month])
-36×3 DataFrame
- Row │ Date   variable  value
-     │ Int64  String    Any
-─────┼────────────────────────
-   1 │    15  year      2019
-   2 │    16  year      2019
-   3 │    17  year      2019
-   4 │    18  year      2019
-   5 │    19  year      2020
-   6 │    20  year      2020
-   7 │    21  year      2020
-   8 │    22  year      2020
-  ⋮  │   ⋮       ⋮        ⋮
-  30 │    20  month     6
-  31 │    21  month     7
-  32 │    22  month     8
-  33 │    23  month     9
-  34 │    24  month     10
-  35 │    25  month     11
-  36 │    26  month     12
-               21 rows omitted
-```
+julia> stack(german, [:Age, :Job, :Housing])
+30×5 DataFrame
+ Row │ id     Sex     Saving accounts  variable  value
+     │ Int64  String  String?          String    Any
+─────┼─────────────────────────────────────────────────
+   1 │     0  male    missing          Age       67
+   2 │     1  female  little           Age       22
+   3 │     2  male    little           Age       49
+   4 │     3  male    little           Age       45
+   5 │     4  male    little           Age       53
+   6 │     5  male    missing          Age       35
+   7 │     6  male    quite rich       Age       53
+   8 │     7  male    little           Age       35
+  ⋮  │   ⋮      ⋮            ⋮            ⋮        ⋮
+  24 │     3  male    little           Housing   free
+  25 │     4  male    little           Housing   free
+  26 │     5  male    missing          Housing   free
+  27 │     6  male    quite rich       Housing   own
+  28 │     7  male    little           Housing   rent
+  29 │     8  male    rich             Housing   own
+  30 │     9  male    little           Housing   own
+                                        15 rows omitted
 
-Note that all columns can be of different types. Type promotion follows the rules of `vcat`.
-The stacked `DataFrame` that results includes all of the columns not specified to be stacked. 
-These are repeated for each stacked column. These are normally refered to as identifier (id) 
-columns. In addition to the id columns, two additional columns labeled `:variable` and `:value` 
-contains the column identifier and the stacked columns.
-
-A third optional argument to `stack` represents the id columns that are repeated. This makes it 
-easier to specify which variables you want included in the long format:
-
-```jldoctest dataframe
-julia> stack(grocessary, [:year, :list], :Date) # first pass `:year` and `:list` variable then `:Date` variable
-24×3 DataFrame
- Row │ Date   variable  value
-     │ Int64  String    Any
+julia> stack(german, [:Age, :Job, :Housing], [:Sex])
+30×3 DataFrame
+ Row │ Sex     variable  value
+     │ String  String    Any
 ─────┼─────────────────────────
-   1 │    15  year      2019
-   2 │    16  year      2019
-   3 │    17  year      2019
-   4 │    18  year      2019
-   5 │    19  year      2020
-   6 │    20  year      2020
-   7 │    21  year      2020
-   8 │    22  year      2020
-  ⋮  │   ⋮       ⋮        ⋮
-  18 │    20  list      Soap
-  19 │    21  list      Fruits
-  20 │    22  list      Oil
-  21 │    23  list      Sugar
-  22 │    24  list      Soap
-  23 │    25  list      Fruits
-  24 │    26  list      Oil
-                 9 rows omitted
+   1 │ male    Age       67
+   2 │ female  Age       22
+   3 │ male    Age       49
+   4 │ male    Age       45
+   5 │ male    Age       53
+   6 │ male    Age       35
+   7 │ male    Age       53
+   8 │ male    Age       35
+  ⋮  │   ⋮        ⋮        ⋮
+  24 │ male    Housing   free
+  25 │ male    Housing   free
+  26 │ male    Housing   free
+  27 │ male    Housing   own
+  28 │ male    Housing   rent
+  29 │ male    Housing   own
+  30 │ male    Housing   own
+                15 rows omitted
 ```
 
-To make a view add `view=true` keyword argument; in that case columns of the resulting data frame share 
-memory with columns of the source data frame, so the operation is potentially unsafe.
+Below we have omitted second argument in `stack`, so all other columns are assumed to be the
+`[id_variables](https://github.com/JuliaData/DataFrames.jl/blob/f690aa49e958f51e0c3c579b6def1f11be214d98/src/abstractdataframe/reshape.jl#:~:text=id_vars%60%20%3A%20the%20identifier,are%20not%20%60measure_vars%60)`:
 
 ```jldoctest dataframe
-julia> stack(grocessary, ["year", "list"], "Date", variable_name="key", value_name="data") # optionally we can rename columns
-24×3 DataFrame
- Row │ Date   key     data
-     │ Int64  String  Any
-─────┼───────────────────────
-   1 │    15  year    2019
-   2 │    16  year    2019
-   3 │    17  year    2019
-   4 │    18  year    2019
-   5 │    19  year    2020
-   6 │    20  year    2020
-   7 │    21  year    2020
-   8 │    22  year    2020
-  ⋮  │   ⋮      ⋮       ⋮
-  18 │    20  list    Soap
-  19 │    21  list    Fruits
-  20 │    22  list    Oil
-  21 │    23  list    Sugar
-  22 │    24  list    Soap
-  23 │    25  list    Fruits
-  24 │    26  list    Oil
-               9 rows omitted
+julia> stack(german, Not([:Sex, :id]))
+40×4 DataFrame
+ Row │ id     Sex     variable         value
+     │ Int64  String  String           Any
+─────┼────────────────────────────────────────────
+   1 │     0  male    Age              67
+   2 │     1  female  Age              22
+   3 │     2  male    Age              49
+   4 │     3  male    Age              45
+   5 │     4  male    Age              53
+   6 │     5  male    Age              35
+   7 │     6  male    Age              53
+   8 │     7  male    Age              35
+  ⋮  │   ⋮      ⋮            ⋮             ⋮
+  34 │     3  male    Saving accounts  little
+  35 │     4  male    Saving accounts  little
+  36 │     5  male    Saving accounts  missing
+  37 │     6  male    Saving accounts  quite rich
+  38 │     7  male    Saving accounts  little
+  39 │     8  male    Saving accounts  rich
+  40 │     9  male    Saving accounts  little
+                                   25 rows omitted
 ```
 
-if second argument is omitted in `stack` , all other columns are assumed to be the id-variables:
+We can rename columns:
 
 ```jldoctest dataframe
-julia> stack(grocessary, Not([:Date, :month]))
-24×4 DataFrame
- Row │ month  Date   variable  value
-     │ Int64  Int64  String    Any
-─────┼────────────────────────────────
-   1 │     1     15  year      2019
-   2 │     2     16  year      2019
-   3 │     3     17  year      2019
-   4 │     4     18  year      2019
-   5 │     5     19  year      2020
-   6 │     6     20  year      2020
-   7 │     7     21  year      2020
-   8 │     8     22  year      2020
-  ⋮  │   ⋮      ⋮       ⋮        ⋮
-  18 │     6     20  list      Soap
-  19 │     7     21  list      Fruits
-  20 │     8     22  list      Oil
-  21 │     9     23  list      Sugar
-  22 │    10     24  list      Soap
-  23 │    11     25  list      Fruits
-  24 │    12     26  list      Oil
-                        9 rows omitted
-```
+julia> stack(german, Not([:Sex, :id]), variable_name=:x, value_name=:y)
+40×4 DataFrame
+ Row │ id     Sex     x                y
+     │ Int64  String  String           Any
+─────┼────────────────────────────────────────────
+   1 │     0  male    Age              67
+   2 │     1  female  Age              22
+   3 │     2  male    Age              49
+   4 │     3  male    Age              45
+   5 │     4  male    Age              53
+   6 │     5  male    Age              35
+   7 │     6  male    Age              53
+   8 │     7  male    Age              35
+  ⋮  │   ⋮      ⋮            ⋮             ⋮
+  34 │     3  male    Saving accounts  little
+  35 │     4  male    Saving accounts  little
+  36 │     5  male    Saving accounts  missing
+  37 │     6  male    Saving accounts  quite rich
+  38 │     7  male    Saving accounts  little
+  39 │     8  male    Saving accounts  rich
+  40 │     9  male    Saving accounts  little
+                                   25 rows omitted
+```                                           
 
-We can use index instead of symbols:
+## The basics of `unstack`
 
-```jldoctest dataframe
-julia> stack(grocessary, Not([3, 4]))
-24×4 DataFrame
- Row │ month  Date   variable  value
-     │ Int64  Int64  String    Any
-─────┼────────────────────────────────
-   1 │     1     15  year      2019
-   2 │     2     16  year      2019
-   3 │     3     17  year      2019
-   4 │     4     18  year      2019
-   5 │     5     19  year      2020
-   6 │     6     20  year      2020
-   7 │     7     21  year      2020
-   8 │     8     22  year      2020
-  ⋮  │   ⋮      ⋮       ⋮        ⋮
-  18 │     6     20  list      Soap
-  19 │     7     21  list      Fruits
-  20 │     8     22  list      Oil
-  21 │     9     23  list      Sugar
-  22 │    10     24  list      Soap
-  23 │    11     25  list      Fruits
-  24 │    12     26  list      Oil
-                        9 rows omitted
-```
-
-## Basics of `unstack`
-
-Now, if we do inverse operation then it is known as unstacking. It means moving the innermost row index to 
-become the innermost column index.                                                                         
-
-We will reshape the data from long to wide using `unstack()` function:
+*Unstack* converts the data frame `german` from it long to wide format. Row and column 
+keys will be ordered in the order of their first appearance.    
 
 ```jldoctest dataframe
-julia> grocessary = DataFrame(year = repeat(2019:2021, inner=4),
-                                list = repeat(["Sugar", "Soap", "Fruits", "Oil"], outer=3),
-                                month=1:12, Date=15:26)
-12×4 DataFrame
- Row │ year   list    month  Date
-     │ Int64  String  Int64  Int64
-─────┼─────────────────────────────
-   1 │  2019  Sugar       1     15
-   2 │  2019  Soap        2     16
-   3 │  2019  Fruits      3     17
-   4 │  2019  Oil         4     18
-   5 │  2020  Sugar       5     19
-   6 │  2020  Soap        6     20
-   7 │  2020  Fruits      7     21
-   8 │  2020  Oil         8     22
-   9 │  2021  Sugar       9     23
-  10 │  2021  Soap       10     24
-  11 │  2021  Fruits     11     25
-  12 │  2021  Oil        12     26
-
-julia> grocessary1 = stack(grocessary, [:year, :list, :month])
-36×3 DataFrame
- Row │ Date   variable  value
-     │ Int64  String    Any
-─────┼────────────────────────
-   1 │    15  year      2019
-   2 │    16  year      2019
-   3 │    17  year      2019
-   4 │    18  year      2019
-   5 │    19  year      2020
-   6 │    20  year      2020
-   7 │    21  year      2020
-   8 │    22  year      2020
-  ⋮  │   ⋮       ⋮        ⋮
-  30 │    20  month     6
-  31 │    21  month     7
-  32 │    22  month     8
-  33 │    23  month     9
-  34 │    24  month     10
-  35 │    25  month     11
-  36 │    26  month     12
-               21 rows omitted
-
-julia> grocessary_ref = unstack(grocessary1) # here we got the original data frame
-12×4 DataFrame
- Row │ Date   year  list    month
-     │ Int64  Any   Any     Any
-─────┼────────────────────────────
-   1 │    15  2019  Sugar   1
-   2 │    16  2019  Soap    2
-   3 │    17  2019  Fruits  3
-   4 │    18  2019  Oil     4
-   5 │    19  2020  Sugar   5
-   6 │    20  2020  Soap    6
-   7 │    21  2020  Fruits  7
-   8 │    22  2020  Oil     8
-   9 │    23  2021  Sugar   9
-  10 │    24  2021  Soap    10
-  11 │    25  2021  Fruits  11
-  12 │    26  2021  Oil     12
-
-julia> df = unstack(grocessary_ref, :year, :list, :month) # we did the unstack with specified keys
-3×5 DataFrame
- Row │ year  Sugar  Soap  Fruits  Oil
-     │ Any   Any    Any   Any     Any
-─────┼────────────────────────────────
-   1 │ 2019  1      2     3       4
-   2 │ 2020  5      6     7       8
-   3 │ 2021  9      10    11      12
-
-julia> df1 = unstack(grocessary1, renamecols=n->string("unstacked_", n)) # we renamed the unstacked columns
-12×4 DataFrame
- Row │ Date   unstacked_year  unstacked_list  unstacked_month
-     │ Int64  Any             Any             Any
-─────┼────────────────────────────────────────────────────────
-   1 │    15  2019            Sugar           1
-   2 │    16  2019            Soap            2
-   3 │    17  2019            Fruits          3
-   4 │    18  2019            Oil             4
-   5 │    19  2020            Sugar           5
-   6 │    20  2020            Soap            6
-   7 │    21  2020            Fruits          7
-   8 │    22  2020            Oil             8
-   9 │    23  2021            Sugar           9
-  10 │    24  2021            Soap            10
-  11 │    25  2021            Fruits          11
-  12 │    26  2021            Oil             12
+julia> long = stack(german, [:Age, :Sex, :Job, :Housing])
+40×4 DataFrame
+ Row │ id     Saving accounts  variable  value
+     │ Int64  String?          String    Any
+─────┼─────────────────────────────────────────
+   1 │     0  missing          Age       67
+   2 │     1  little           Age       22
+   3 │     2  little           Age       49
+   4 │     3  little           Age       45
+   5 │     4  little           Age       53
+   6 │     5  missing          Age       35
+   7 │     6  quite rich       Age       53
+   8 │     7  little           Age       35
+  ⋮  │   ⋮           ⋮            ⋮        ⋮
+  34 │     3  little           Housing   free
+  35 │     4  little           Housing   free
+  36 │     5  missing          Housing   free
+  37 │     6  quite rich       Housing   own
+  38 │     7  little           Housing   rent
+  39 │     8  rich             Housing   own
+  40 │     9  little           Housing   own
+                                25 rows omitted
 ```
 
-Lets dive deep in `unstack`:
+We can even skip passing the `:variable` and `:value` values as positional arguments, as they 
+will be used by default. In this case all columns other than named `:variable` and `:value` 
+are treated as keys:
 
 ```jldoctest dataframe
-julia> long = innerjoin(long_grocessary, long_costs, on=[:year, :list, :days]);
+julia> unstack(long)
+10×6 DataFrame
+ Row │ id     Saving accounts  Age  Sex     Job  Housing
+     │ Int64  String?          Any  Any     Any  Any
+─────┼───────────────────────────────────────────────────
+   1 │     0  missing          67   male    2    own
+   2 │     1  little           22   female  2    own
+   3 │     2  little           49   male    1    own
+   4 │     3  little           45   male    2    free
+   5 │     4  little           53   male    2    free
+   6 │     5  missing          35   male    1    free
+   7 │     6  quite rich       53   male    2    own
+   8 │     7  little           35   male    3    rent
+   9 │     8  rich             61   male    1    own
+  10 │     9  little           28   male    3    own
 ```
 
-Assume we want to get the grocessary_ref table back. We need to unstack our long table putting `:year` and 
-`:list` in rows and `:days` in columns, while taking `:grocessary` as values:
-
-julia> unstack(long, [:year, :list], :days, :grocessary)
-12×4 DataFrame
- Row │ year   list    month   Date
-     │ Int64  String  Int64?  Int64?
-─────┼───────────────────────────────
-   1 │  2019  Sugar        1      15
-   2 │  2019  Soap         2      16
-   3 │  2019  Fruits       3      17
-   4 │  2019  Oil          4      18
-   5 │  2020  Sugar        5      19
-   6 │  2020  Soap         6      20
-   7 │  2020  Fruits       7      21
-   8 │  2020  Oil          8      22
-   9 │  2021  Sugar        9      23
-  10 │  2021  Soap        10      24
-  11 │  2021  Fruits      11      25
-  12 │  2021  Oil         12      26
-```
-
-We can also check that whatever we have got that is same as *grocessary* or not:
+If the remaining columns are unique, we can skip the id variable and use:
 
 ```jldoctest dataframe
-julia> unstack(long, [:year, :list], :days, :grocessary) == grocessary
-true
+julia> unstack(long, :variable, :value)
+10×6 DataFrame
+ Row │ id     Saving accounts  Age  Sex     Job  Housing
+     │ Int64  String?          Any  Any     Any  Any
+─────┼───────────────────────────────────────────────────
+   1 │     0  missing          67   male    2    own
+   2 │     1  little           22   female  2    own
+   3 │     2  little           49   male    1    own
+   4 │     3  little           45   male    2    free
+   5 │     4  little           53   male    2    free
+   6 │     5  missing          35   male    1    free
+   7 │     6  quite rich       53   male    2    own
+   8 │     7  little           35   male    3    rent
+   9 │     8  rich             61   male    1    own
+  10 │     9  little           28   male    3    own
 ```
 
-now we will put only `:year` in rows after dropping `:list` and we will see what we get:
+Below all other columns are treated as keys:
 
 ```jldoctest dataframe
-julia> unstack(long, :year, :list, :grocessary)
-ERROR: ArgumentError: Duplicate entries in unstack at row 13 for key (2019,) and variable Sugar. Pass allowduplicates=true to allow them.
+julia> unstack(long, :id, :variable, :value)
+10×5 DataFrame
+ Row │ id     Age  Sex     Job  Housing
+     │ Int64  Any  Any     Any  Any
+─────┼──────────────────────────────────
+   1 │     0  67   male    2    own
+   2 │     1  22   female  2    own
+   3 │     2  49   male    1    own
+   4 │     3  45   male    2    free
+   5 │     4  53   male    2    free
+   6 │     5  35   male    1    free
+   7 │     6  53   male    2    own
+   8 │     7  35   male    3    rent
+   9 │     8  61   male    1    own
+  10 │     9  28   male    3    own
 
-julia> unstack(long, :year, :list, :grocessary, allowduplicates = true)
-3×5 DataFrame
- Row │ year   Sugar   Soap    Fruits  Oil
-     │ Int64  Int64?  Int64?  Int64?  Int64?
-─────┼───────────────────────────────────────
-   1 │  2019      15      16      17      18
-   2 │  2020      19      20      21      22
-   3 │  2021      23      24      25      26
+julia> unstack(long, [:1, :2], :variable, :value)
+10×6 DataFrame
+ Row │ id     Saving accounts  Age  Sex     Job  Housing
+     │ Int64  String?          Any  Any     Any  Any
+─────┼───────────────────────────────────────────────────
+   1 │     0  missing          67   male    2    own
+   2 │     1  little           22   female  2    own
+   3 │     2  little           49   male    1    own
+   4 │     3  little           45   male    2    free
+   5 │     4  little           53   male    2    free
+   6 │     5  missing          35   male    1    free
+   7 │     6  quite rich       53   male    2    own
+   8 │     7  little           35   male    3    rent
+   9 │     8  rich             61   male    1    own
+  10 │     9  little           28   male    3    own
 ```
 
-Clearly we can see even if we pass `allowduplicates=true` then we do not geet our desired result. 
-This leads us to the first case.
+We can rename the unstacked columns:
+
+```jldoctest dataframe
+julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
+10×5 DataFrame
+ Row │ id     _Age  _Sex    _Job  _Housing
+     │ Int64  Any   Any     Any   Any
+─────┼─────────────────────────────────────
+   1 │     0  67    male    2     own
+   2 │     1  22    female  2     own
+   3 │     2  49    male    1     own
+   4 │     3  45    male    2     free
+   5 │     4  53    male    2     free
+   6 │     5  35    male    1     free
+   7 │     6  53    male    2     own
+   8 │     7  35    male    3     rent
+   9 │     8  61    male    1     own
+  10 │     9  28    male    3     own
+```
 
 ### Pivot tables with `unstack`
 
@@ -469,30 +307,31 @@ table task. In DataFrames.jl currently one does it in two steps: first aggregate
 is how we can do it (We are showing two separate steps, but you could use e.g. [Chain.jl](https://github.com/jkrumbiegel/Chain.jl) to streamline the processing):
 
 ```jldoctest dataframe
-julia> df = combine(groupby(long, [:year, :list]), :grocessary => sum => :grocessary)
-12×3 DataFrame
- Row │ year   list    grocessary
+julia> df = combine(groupby(german, [:Age, :Sex]), :Job => sum => :Job)
+8×3 DataFrame
+ Row │ Age    Sex     Job
      │ Int64  String  Int64
-─────┼───────────────────────────
-   1 │  2019  Sugar           16
-   2 │  2019  Soap            18
-   3 │  2019  Fruits          20
-   4 │  2019  Oil             22
-   5 │  2020  Sugar           24
-   6 │  2020  Soap            26
-   7 │  2020  Fruits          28
-   8 │  2020  Oil             30
-   9 │  2021  Sugar           32
-  10 │  2021  Soap            34
-  11 │  2021  Fruits          36
-  12 │  2021  Oil             38
+─────┼──────────────────────
+   1 │    67  male        2
+   2 │    22  female      2
+   3 │    49  male        1
+   4 │    45  male        2
+   5 │    53  male        4
+   6 │    35  male        4
+   7 │    61  male        1
+   8 │    28  male        3
 
-julia> unstack(df, :year, :list, :grocessary)
-3×5 DataFrame
- Row │ year   Sugar   Soap    Fruits  Oil
-     │ Int64  Int64?  Int64?  Int64?  Int64?
-─────┼───────────────────────────────────────
-   1 │  2019      16      18      20      22
-   2 │  2020      24      26      28      30
-   3 │  2021      32      34      36      38
+julia> unstack(df, :Age, :Sex, :Job)
+8×3 DataFrame
+ Row │ Age    male     female
+     │ Int64  Int64?   Int64?
+─────┼─────────────────────────
+   1 │    67        2  missing
+   2 │    22  missing        2
+   3 │    49        1  missing
+   4 │    45        2  missing
+   5 │    53        4  missing
+   6 │    35        4  missing
+   7 │    61        1  missing
+   8 │    28        3  missing
 ```
