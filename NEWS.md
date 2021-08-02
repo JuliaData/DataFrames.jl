@@ -21,6 +21,7 @@
 * the `insertcols!` function receives new keyword argument `after`
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
+  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
 
 # DataFrames.jl v1.2.1 Patch Release Notes
 
