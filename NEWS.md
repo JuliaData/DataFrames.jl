@@ -23,6 +23,7 @@
   rows and columns. This feature allows to distinguish between missings in
   value column and just missing row/column combinations.
   ([#2828](https://github.com/JuliaData/DataFrames.jl/pull/2828))
+
 # DataFrames.jl v1.2.1 Patch Release Notes
 
 ## Bug fixes
