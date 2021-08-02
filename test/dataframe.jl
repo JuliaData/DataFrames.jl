@@ -351,27 +351,27 @@ end
 
 @testset "insertcols! after" begin
     df = DataFrame(a=1:3)
-    insertcols!(df, :a, "b"=>2:4, after=true)
+    insertcols!(df, :a, "b" => 2:4, after=true)
     @test df == DataFrame(a=1:3, b=2:4)
-    insertcols!(df, :b, "b"=>2:4, after=true, makeunique=true)
+    insertcols!(df, :b, "b" => 2:4, after=true, makeunique=true)
     @test df == DataFrame(a=1:3, b=2:4, b_1=2:4)
-    insertcols!(df, 0, :e=>1:3, after=true)
+    insertcols!(df, 0, :e => 1:3, after=true)
     @test df == DataFrame(e=1:3, a=1:3, b=2:4, b_1=2:4)
 
-    @test_throws ArgumentError insertcols!(df, :a, "b"=>2:4, after=true)
-    @test_throws DimensionMismatch insertcols!(df, :a, :c=>2:5, after=true)
-    @test_throws ArgumentError insertcols!(df, :c, :b=>2:4, after=true, makeunique=true)
-    @test_throws ArgumentError insertcols!(df, ncol(df)+1, :d=>1:3, after=true)
-    @test_throws ArgumentError insertcols!(df, -1, :d=>1:3, after=true)
+    @test_throws ArgumentError insertcols!(df, :a, "b" => 2:4, after=true)
+    @test_throws DimensionMismatch insertcols!(df, :a, :c => 2:5, after=true)
+    @test_throws ArgumentError insertcols!(df, :c, :b => 2:4, after=true, makeunique=true)
+    @test_throws ArgumentError insertcols!(df, ncol(df)+1, :d => 1:3, after=true)
+    @test_throws ArgumentError insertcols!(df, -1, :d => 1:3, after=true)
 
     df = DataFrame(a=1:3, b=2:4)
-    insertcols!(df, 1, :c=>7:9, after=true)
+    insertcols!(df, 1, :c => 7:9, after=true)
     @test df == DataFrame(a=1:3, c=7:9, b=2:4)
 
     df = DataFrame(a=1:3)
-    insertcols!(df, 1, :b=>2:4, :c=>7:9, after=true)
+    insertcols!(df, 1, :b => 2:4, :c => 7:9, after=true)
     @test df == DataFrame(a=1:3, b=2:4, c=7:9)
-    insertcols!(df, "b", :b=>2:4, :c=>7:9, after=true, makeunique=true)
+    insertcols!(df, "b", :b => 2:4, :c => 7:9, after=true, makeunique=true)
     @test df == DataFrame(a=1:3, b=2:4, b_1=2:4, c_1=7:9, c=7:9)
 end
 
