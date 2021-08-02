@@ -931,7 +931,7 @@ insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
     insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
                 after=after, makeunique=makeunique, copycols=copycols)
 
-function insertcols!(df::DataFrame, col::Int=ncol(df)+1; after::Bool=false, makeunique::Bool=false, name_cols...)
+function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
     if !(0 < col <= ncol(df) + 1)
         throw(ArgumentError("attempt to insert a column to a data frame with " *
                             "$(ncol(df)) columns at index $col"))
