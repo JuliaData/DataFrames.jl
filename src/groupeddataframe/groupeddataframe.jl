@@ -18,7 +18,21 @@
 The result of a [`groupby`](@ref) operation on an `AbstractDataFrame`; a
 view into the `AbstractDataFrame` grouped by rows.
 
-Not meant to be constructed directly, see `groupby`.
+Not meant to be constructed directly, see [`groupby`](@ref).
+
+One can get the names of columns used to create `GroupedDataFrame`
+using the [`groupcols`](@ref) function. Similarly the [`groupindices`](@ref)
+function returns a vector of group indices for each row of the parent data frame.
+
+After its creation, a `GroupedDataFrame` reflects the grouping of rows that was
+valid at the its creation time. Therefore
+grouping columns of its parent data frame must not be mutated, and
+rows must not be added nor removed from it.
+To safeguard the user against such cases, if the number of rows in the parent
+data frame changes then trying to use `GroupedDataFrame` will throw an error.
+However, one can add or remove columns to the parent data frame without
+invalidating the `GroupedDataFrame` provided that columns used for grouping are
+not changed.
 """
 mutable struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
@@ -34,7 +48,9 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
 end
 
 """
-    groupby(d::AbstractDataFrame, cols; sort=false, skipmissing=false)
+    groupby(d::AbstractDataFrame, cols;
+            sort::Union{Bool, Nothing}=nothing,
+            skipmissing::Bool=false)
 
 Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
 into row groups.
@@ -43,16 +59,12 @@ into row groups.
 - `df` : an `AbstractDataFrame` to split
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-- `sort` : whether to sort groups according to the values of the grouping columns
-  `cols`; if `sort=false` then the order of groups in the result is undefined
-  and may change in future releases. In the current implementation
-  groups are ordered following the order of appearance of values in the grouping
-  columns, except when all grouping columns provide non-`nothing`
-  `DataAPI.refpool` in which case the order of groups follows the order of
-  values returned by `DataAPI.refpool`. As a particular application of this rule
-  if all `cols` are `CategoricalVector`s then groups are always sorted
-  Integer columns with a narrow range also use this this optimization, so
-  to the order of groups when grouping on integer columns is undefined.
+- `sort` : if `sort=true` sort groups according to the values of the grouping columns
+  `cols`; if `sort=false` groups are created in order of their appereance in `df`
+  if `sort=nothing` (the default) then the fastest available grouping algorithm
+  is picked and in consequence the order of groups in the result is undefined
+  and may change in future releases; below a description of the current
+  implementation is provided.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
@@ -65,10 +77,9 @@ Within each group, the order of rows in `df` is preserved.
 In particular if it is an empty vector then a single-group `GroupedDataFrame`
 is created.
 
-A `GroupedDataFrame` also supports
-indexing by groups, `select`, `transform`,
-and `combine` (which applies a function to each group
-and combines the result into a data frame).
+A `GroupedDataFrame` also supports indexing by groups, `select`, `transform`,
+and `combine` (which applies a function to each group and combines the result
+into a data frame).
 
 `GroupedDataFrame` also supports the dictionary interface. The keys are
 [`GroupKey`](@ref) objects returned by [`keys(::GroupedDataFrame)`](@ref),
@@ -78,6 +89,18 @@ same order as the `cols` argument) are also accepted as indices. Finally,
 an `AbstractDict` can be used to index into a grouped data frame where
 the keys are column names of the data frame. The order of the keys does
 not matter in this case.
+
+In the current implementation if `sort=nothing` groups are ordered following the
+order of appearance of values in the grouping columns, except when all grouping
+columns provide non-`nothing` `DataAPI.refpool`, in which case the order of groups
+follows the order of values returned by `DataAPI.refpool`. As a particular application
+of this rule if all `cols` are `CategoricalVector`s then groups are always sorted.
+Integer columns with a narrow range also use this this optimization, so to the
+order of groups when grouping on integer columns is undefined.
+A column is considered to be an integer column when deciding on the grouping
+algorithm choice if its `eltype` is a subtype of `Union{Missing, Real}`,
+all its elements are either `missing` or pass `isinteger` test,
+and none of them is equal to `-0.0`.
 
 # See also
 
@@ -186,7 +209,7 @@ julia> for g in gd
 ```
 """
 function groupby(df::AbstractDataFrame, cols;
-                 sort::Bool=false, skipmissing::Bool=false)
+                 sort::Union{Bool,Nothing}=nothing, skipmissing::Bool=false)
     _check_consistency(df)
     idxcols = index(df)[cols]
     if isempty(idxcols)
@@ -205,7 +228,7 @@ function groupby(df::AbstractDataFrame, cols;
                           Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
-    if sort && !sorted
+    if sort === true && !sorted
         # Find index of representative row for each group
         idx = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
@@ -234,7 +257,16 @@ function genkeymap(gd, cols)
     d
 end
 
+corrupt_msg(gd::GroupedDataFrame) =
+    "The current number of rows in the parent data frame is " *
+    "$(nrow(parent(gd))) and it does not match the number of " *
+    "rows it contained when GroupedDataFrame was created which was " *
+    "$(length(getfield(gd, :groups))). The number of rows in the parent " *
+    "data frame has likely been changed unintentionally " *
+    "(e.g. using subset!, filter!, delete!, push!, or append! functions)."
+
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
+    @assert length(getfield(gd, :groups)) == nrow(getfield(gd, :parent)) corrupt_msg(gd)
     if f in (:idx, :starts, :ends)
         # Group indices are computed lazily the first time they are accessed
         # Do not lock when field is already initialized

@@ -188,6 +188,14 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     end
 
     cnames = _names(df)[1:mxcol]
+    write(io, "<div class=\"data-frame\">")
+    if summary
+        write(io, "<p>$(digitsep(nrow(df))) rows × $(digitsep(ncol(df))) columns")
+        if mxcol < size(df, 2)
+            write(io, " (omitted printing of $(size(df, 2)-mxcol) columns)")
+        end
+        write(io, "</p>")
+    end
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
     write(io, "<tr>")
@@ -213,14 +221,6 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     end
     write(io, "</thead>")
     write(io, "<tbody>")
-    if summary
-        omitmsg = if mxcol < size(df, 2)
-                      " (omitted printing of $(size(df, 2)-mxcol) columns)"
-                  else
-                      ""
-                  end
-        write(io, "<p>$(digitsep(nrow(df))) rows × $(digitsep(ncol(df))) columns$omitmsg</p>")
-    end
     for row in 1:mxrow
         write(io, "<tr>")
         if rowid === nothing
@@ -262,6 +262,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     end
     write(io, "</tbody>")
     write(io, "</table>")
+    write(io, "</div>")
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;

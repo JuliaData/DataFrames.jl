@@ -16,7 +16,7 @@ DataFrame(kwargs..., copycols::Bool=true)
 DataFrame(columns::AbstractVecOrMat, names::Union{AbstractVector, Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 
-DataFrame(table; copycols::Bool=true)
+DataFrame(table; copycols::Union{Bool, Nothing}=nothing)
 DataFrame(::DataFrameRow)
 DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 ```
@@ -26,7 +26,12 @@ DataFrame(::GroupedDataFrame; keepkeys::Bool=true)
 - `copycols` : whether vectors passed as columns should be copied; by default set
   to `true` and the vectors are copied; if set to `false` then the constructor
   will still copy the passed columns if it is not possible to construct a
-  `DataFrame` without materializing new columns.
+  `DataFrame` without materializing new columns. Note the `copycols=nothing`
+  default in the Tables.jl compatible constructor; it is provided as certain
+  input table types may have already made a copy of columns or the columns may
+  otherwise be immutable, in which case columns are not copied by default.
+  To force a copy in such cases, or to get mutable columns from an immutable
+  input table (like `Arrow.Table`), pass `copycols=true` explicitly.
 - `makeunique` : if `false` (the default), an error will be raised
 
 (note that not all constructors support these keyword arguments)
@@ -988,6 +993,11 @@ function Base.delete!(df::DataFrame, inds)
         throw(BoundsError(df, (inds, :)))
     end
 
+    # workaround https://github.com/JuliaLang/julia/pull/41646
+    if VERSION <= v"1.6.2" && inds isa UnitRange{<:Integer}
+        inds = collect(inds)
+    end
+
     # we require ind to be stored and unique like in Base
     # otherwise an error will be thrown and the data frame will get corrupted
     return _delete!_helper(df, inds)
@@ -998,6 +1008,10 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
         throw(BoundsError(df, (inds, :)))
     end
     drop = _findall(inds)
+    # workaround https://github.com/JuliaLang/julia/pull/41646
+    if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
+        drop = collect(drop)
+    end
     return _delete!_helper(df, drop)
 end
 
@@ -1039,7 +1053,7 @@ end
 
 ##############################################################################
 ##
-## Hcat specialization
+## hcat!
 ##
 ##############################################################################
 
@@ -1053,41 +1067,29 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
     return df1
 end
 
-# definition required to avoid hcat! ambiguity
-hcat!(df1::DataFrame, df2::DataFrame;
-      makeunique::Bool=false, copycols::Bool=true) =
-    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2,
-           makeunique=makeunique, copycols=copycols)::DataFrame
+# TODO: after deprecation remove AbstractVector methods
 
-hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(df, DataFrame(AbstractVector[x], [:x1], copycols=copycols),
-          makeunique=makeunique, copycols=copycols)
-hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(DataFrame(AbstractVector[x], [:x1], copycols=copycols), df,
-          makeunique=makeunique, copycols=copycols)
-hcat!(x, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
-hcat!(df::DataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
-    throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
+function hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true)
+    Base.depwarn("horizontal concatenation of data frame with a vector is deprecated. " *
+                 "Pass DataFrame(x1=x) instead.", :hcat!)
+    return hcat!(df, DataFrame(AbstractVector[x], [:x1], copycols=false),
+                 makeunique=makeunique, copycols=copycols)
+end
+
+function hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
+    Base.depwarn("horizontal concatenation of data frame with a vector is deprecated. " *
+                 "Pass DataFrame(x1=x) instead.", :hcat!)
+    return hcat!(DataFrame(AbstractVector[x], [:x1], copycols=copycols), df,
+                 makeunique=makeunique, copycols=copycols)
+end
 
 # hcat! for 1-n arguments
 hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true) = df
-hcat!(a::DataFrame, b, c...; makeunique::Bool=false, copycols::Bool=true) =
+hcat!(a::DataFrame, b::Union{AbstractDataFrame, AbstractVector},
+      c::Union{AbstractDataFrame, AbstractVector}...;
+      makeunique::Bool=false, copycols::Bool=true) =
     hcat!(hcat!(a, b, makeunique=makeunique, copycols=copycols),
           c..., makeunique=makeunique, copycols=copycols)
-
-# hcat
-Base.hcat(df::DataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(copy(df, copycols=copycols), x,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame;
-          makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(copy(df1, copycols=copycols), df2,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(hcat(df1, df2, makeunique=makeunique, copycols=copycols), dfn...,
-          makeunique=makeunique, copycols=copycols)
 
 ##############################################################################
 ##

@@ -56,85 +56,101 @@ end
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
+    @test str == "<div class=\"data-frame\">" *
                  "<p>2 rows × 2 columns</p>" *
-                 "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>Amir</td><td><em>missing</em></td></tr></tbody></table>"
+                 "<table class=\"data-frame\">" *
+                 "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th title=\"String\">String</th>" *
+                 "<th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
+                 "<tbody><tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>Amir</td><td><em>missing</em></td></tr>" *
+                 "</tbody></table></div>"
 
     df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
+    @test str == "<div class=\"data-frame\">" *
                  "<p>2 rows × 2 columns</p>" *
-                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
+                 "<table class=\"data-frame\">" *
+                 "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr>" *
+                 "<tr><th></th><th title=\"String\">String</th>" *
+                 "<th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
+                 "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr>" *
+                 "</tbody></table></div>"
 
     io = IOBuffer()
     show(io, "text/html", eachrow(df))
     str = String(take!(io))
     @test str == "<p>2×2 DataFrameRows</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th>" *
+                 "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, "text/html", eachcol(df))
     str = String(take!(io))
     @test str == "<p>2×2 DataFrameColumns</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th>" *
+                 "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, "text/html", df[1, :])
     str = String(take!(io))
-    @test str == "<p>DataFrameRow (2 columns)</p><table class=\"data-frame\">" *
+    @test str == "<p>DataFrameRow (2 columns)</p>" *
+                 "<div class=\"data-frame\"><table class=\"data-frame\">" *
                  "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th></th>" *
                  "<th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody><tr><th>1</th>" *
-                 "<td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
+                 "<td><em>#undef</em></td><td>1.5</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df, summary=false)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), eachrow(df), summary=false)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), eachcol(df), summary=false)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr>" *
                  "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table>"
+                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df[1, :], summary=false)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
+    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
                  "<th>Mass</th></tr><tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
-                 "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table>"
+                 "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table></div>"
+
+    io = IOBuffer()
+    show(IOContext(io, :limit => true, :displaysize => (10, 10)), MIME"text/html"(),
+         DataFrame(Int64[1 2 3 4 5 6 7 8 9], :auto))
+    str = String(take!(io))
+    @test str == "<div class=\"data-frame\"><p>1 rows × 9 columns (omitted printing of 7 columns)</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th></th><th>x1</th><th>x2</th></tr><tr><th></th>" *
+                 "<th title=\"Int64\">Int64</th><th title=\"Int64\">Int64</th></tr></thead>" *
+                 "<tbody><tr><th>1</th><td>1</td><td>2</td></tr></tbody></table></div>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2), :auto), rowid=10)
@@ -149,15 +165,15 @@ end
     )
 
     @test repr(MIME("text/html"), df) ==
-        "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
-        "<th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr></thead><tbody><p>4 rows × 2 columns</p><tr><th>1</th>" *
-        "<td>1</td><td><div class=\"markdown\">" *
-        "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a>" *
-        "</p>\n</div></td></tr><tr><th>2</th><td>4</td><td><div class=\"markdown\">" *
-        "<p>###A</p>\n</div></td></tr><tr><th>3</th><td>9</td><td><div class=\"markdown\">" *
-        "<p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>\n</div></td></tr><tr><th>4</th>" *
-        "<td>16</td><td><div class=\"markdown\"><p><em>A</em>b<strong>A</strong></p>"*
-        "\n</div></td></tr></tbody></table>"
+    "<div class=\"data-frame\"><p>4 rows × 2 columns</p>" *
+    "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
+    "<th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr></thead>" *
+    "<tbody><tr><th>1</th><td>1</td>" *
+    "<td><div class=\"markdown\"><p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
+    "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>###A</p>\n</div></td></tr>" *
+    "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>\n</div></td></tr>" *
+    "<tr><th>4</th><td>16</td><td><div class=\"markdown\"><p><em>A</em>b<strong>A</strong></p>\n</div></td></tr>" *
+    "</tbody></table></div>"
 
     # Test that single and double quotes get escaped properly
     df = DataFrame(
@@ -169,6 +185,7 @@ end
     show(io, "text/html", df)
     str = String(take!(io))
     @test str ==
+        "<div class=\"data-frame\"><p>3 rows × 3 columns</p>" *
         "<table class=\"data-frame\"><thead>" *
             "<tr>" *
                 "<th></th>" *
@@ -182,7 +199,6 @@ end
                 "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTe…</th>" *
             "</tr>" *
         "</thead><tbody>" *
-            "<p>3 rows × 3 columns</p>" *
             "<tr>" *
                 "<th>1</th>" *
                 "<td>&apos;</td>" *
@@ -199,7 +215,7 @@ end
                 "<td>QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>" *
                 "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
             "</tr>" *
-        "</tbody></table>"
+        "</tbody></table></div>"
 end
 
 # test limit attribute of IOContext is used
@@ -336,11 +352,12 @@ end
         ]
     )
     @test sprint(show,"text/html",df) ==
+        "<div class=\"data-frame\"><p>8 rows × 2 columns</p>" *
         "<table class=\"data-frame\"><thead>" *
             "<tr><th></th><th>A</th><th>B</th></tr>" *
             "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr>" *
         "</thead>" *
-        "<tbody>" * "<p>8 rows × 2 columns</p>" *
+        "<tbody>" *
         "<tr><th>1</th><td>1</td><td><div class=\"markdown\">" *
             "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
         "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>\n</div></td></tr>" *
@@ -360,7 +377,7 @@ end
             "\n<ul>\n" *
                 "<li><p>γ∞1∫α</p>\n</li>\n" *
                 "<li><p>γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n</li>\n" *
-        "</ul>\n" * "</div></td></tr></tbody></table>"
+        "</ul>\n" * "</div></td></tr></tbody></table></div>"
 end
 
 @testset "empty data frame and DataFrameRow" begin
@@ -369,24 +386,26 @@ end
     @test sprint(show, "text/csv", df[:, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", df[:, 2:1]) == ""
     @test sprint(show, "text/html", df[:, 2:1]) ==
+          "<div class=\"data-frame\"><p>0 rows × 0 columns</p>" *
           "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
-          "</thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+          "</thead><tbody></tbody></table></div>"
     @test sprint(show, "text/latex", df[:, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 
     @test sprint(show, "text/csv", @view df[:, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", @view df[:, 2:1]) == ""
     @test sprint(show, "text/html", @view df[:, 2:1]) ==
+          "<div class=\"data-frame\"><p>0 rows × 0 columns</p>" *
           "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
-          "</thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+          "</thead><tbody></tbody></table></div>"
     @test sprint(show, "text/latex", @view df[:, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 
     @test sprint(show, "text/csv", df[1, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", df[1, 2:1]) == ""
     @test sprint(show, "text/html", df[1, 2:1]) ==
-          "<p>DataFrameRow (0 columns)</p><table class=\"data-frame\">" *
-          "<thead><tr><th></th></tr><tr><th></th></tr></thead><tbody></tbody></table>"
+          "<p>DataFrameRow (0 columns)</p><div class=\"data-frame\"><table class=\"data-frame\">" *
+          "<thead><tr><th></th></tr><tr><th></th></tr></thead><tbody></tbody></table></div>"
     @test sprint(show, "text/latex", df[1, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 end
@@ -500,55 +519,55 @@ end
     io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=true)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<div class=\"data-frame\"><p>3 rows × 2 columns</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr>" *
                  "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
-                 "<p>3 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachcol(df), eltypes=true)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameColumns</p><table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<p>3×2 DataFrameColumns</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr>" *
                  "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachrow(df), eltypes=true)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameRows</p><table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<p>3×2 DataFrameRows</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr>" *
                  "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=false)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<div class=\"data-frame\"><p>3 rows × 2 columns</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr></thead><tbody>" *
-                 "<p>3 rows × 2 columns</p>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachcol(df), eltypes=false)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameColumns</p><table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<p>3×2 DataFrameColumns</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachrow(df), eltypes=false)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameRows</p><table class=\"data-frame\"><thead><tr><th>" *
+    @test str == "<p>3×2 DataFrameRows</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>A</th><th>B</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
 
     for x in [df, eachcol(df), eachrow(df)]
         io = IOBuffer()
@@ -588,7 +607,9 @@ end
                  view(df,1:1, :), # SubDataFrame
                  eachrow(df), # DataFrameColumns
                  eachcol(df), # DataFrameRows
-                 groupby(df, :A),missing,nothing] # GroupedDataFrame
+                 groupby(df, :A), # GroupedDataFrame
+                 missing,
+                 nothing]
 
     io = IOBuffer()
     show(io, df)
@@ -630,9 +651,10 @@ end
     io = IOBuffer()
     show(io, MIME("text/html"), df)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr>" *
+    @test str == "<div class=\"data-frame\"><p>9 rows × 2 columns</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr>" *
                  "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Any\">Any</th></tr></thead>" *
-                 "<tbody><p>9 rows × 2 columns</p>" *
+                 "<tbody>" *
                  "<tr><th>1</th><td>1</td><td><em>9×2 DataFrame</em></td></tr>" *
                  "<tr><th>2</th><td>2</td><td><em>2-element DataFrameRow</em></td></tr>" *
                  "<tr><th>3</th><td>3</td><td><em>1×2 SubDataFrame</em></td></tr>" *
@@ -641,7 +663,7 @@ end
                  "<tr><th>6</th><td>6</td><td><em>GroupedDataFrame with 9 groups based on key: A</em></td></tr>" *
                  "<tr><th>7</th><td>7</td><td><em>missing</em></td></tr>" *
                  "<tr><th>8</th><td>8</td><td></td></tr>" *
-                 "<tr><th>9</th><td>9</td><td><em>#undef</em></td></tr></tbody></table>"
+                 "<tr><th>9</th><td>9</td><td><em>#undef</em></td></tr></tbody></table></div>"
 
     io = IOBuffer()
     show(io, MIME("text/latex"), df)
@@ -670,6 +692,7 @@ end
     df[end, 2] = "\""
     push!(df, (10, Symbol("\"")))
     push!(df, (11, '"'))
+    df.B[6] = groupby(df, :A)
     io = IOBuffer()
     show(io, MIME("text/csv"), df)
     str = String(take!(io))
@@ -680,7 +703,7 @@ end
     3,"1×2 SubDataFrame"
     4,"11-element DataFrameRows"
     5,"2-element DataFrameColumns"
-    6,"GroupedDataFrame with 9 groups based on key: A"
+    6,"GroupedDataFrame with 11 groups based on key: A"
     7,missing
     8,nothing
     9,"\\""
@@ -698,7 +721,7 @@ end
     3\t"1×2 SubDataFrame"
     4\t"11-element DataFrameRows"
     5\t"2-element DataFrameColumns"
-    6\t"GroupedDataFrame with 9 groups based on key: A"
+    6\t"GroupedDataFrame with 11 groups based on key: A"
     7\tmissing
     8\tnothing
     9\t"\\""
@@ -714,12 +737,13 @@ end
     io = IOBuffer()
     show(io, MIME("text/html"), df)
     str = String(take!(io))
-    @test str == "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
+    @test str == "<div class=\"data-frame\"><p>1 rows × 1 columns</p>" *
+                 "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
                  "<tr><th></th><th title=\"String\">String</th></tr></thead>" *
-                 "<tbody><p>1 rows × 1 columns</p><tr><th>1</th>" *
+                 "<tbody><tr><th>1</th>" *
                  "<td>01234567890123456789012345678901234567890123456789" *
                  "01234567890123456789012345678901234567890123456789</td>"*
-                 "</tr></tbody></table>"
+                 "</tr></tbody></table></div>"
 
     # no truncation
     io = IOBuffer()

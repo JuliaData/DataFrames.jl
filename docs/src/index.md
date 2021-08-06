@@ -11,7 +11,11 @@ other packages you can check-out the following resources
 * [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/)
 * [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
 * [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
-* [JuliaCon 2019](https://github.com/bkamins/JuliaCon2019-DataFrames-Tutorial), [JuliaCon 2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial), [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020), and [ODSC Europe 2021](https://github.com/bkamins/ODSC-EUROPE-2021) tutorials
+* [JuliaCon 2019](https://github.com/bkamins/JuliaCon2019-DataFrames-Tutorial),
+  [JuliaCon 2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial),
+  [JuliaCon 2021](https://github.com/bkamins/JuliaCon2021-DataFrames-Tutorial),
+  [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020),
+  and [ODSC Europe 2021](https://github.com/bkamins/ODSC-EUROPE-2021) tutorials
 * [DataFrames.jl showcase](https://github.com/bkamins/DataFrames-Showcase)
 
 ## What is DataFrames.jl?
@@ -27,6 +31,9 @@ integrations with a range of different libraries. DataFrames.jl isn't the only
 tool for working with tabular data in Julia -- as noted below, there are some
 other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
+
+To understand the toolchain in more detail, have a look at the tutorials in this manual. New
+users can start with the [First Steps with DataFrames.jl](@ref) section.
 
 ## DataFrames.jl and the Julia Data Ecosystem
 
@@ -180,7 +187,8 @@ page](https://github.com/JuliaData/DataFrames.jl/releases).
 ## Package Manual
 
 ```@contents
-Pages = ["man/getting_started.md",
+Pages = ["man/basics.md",
+         "man/getting_started.md",
          "man/joins.md",
          "man/split_apply_combine.md",
          "man/reshaping_and_pivoting.md",

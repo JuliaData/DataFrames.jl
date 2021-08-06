@@ -1255,7 +1255,7 @@ function nonunique(df::AbstractDataFrame)
         throw(ArgumentError("finding duplicate rows in data frame with no " *
                             "columns is not allowed"))
     end
-    gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true))[3]
+    gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), nothing, false, nothing)[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
     res = fill(true, nrow(df))
@@ -1369,15 +1369,8 @@ julia> unique!(df)  # modifies df
 """
     hcat(df::AbstractDataFrame...;
          makeunique::Bool=false, copycols::Bool=true)
-    hcat(df::AbstractDataFrame..., vs::AbstractVector;
-         makeunique::Bool=false, copycols::Bool=true)
-    hcat(vs::AbstractVector, df::AbstractDataFrame;
-         makeunique::Bool=false, copycols::Bool=true)
 
-Horizontally concatenate `AbstractDataFrames` and optionally `AbstractVector`s.
-
-If `AbstractVector` is passed then a column name for it is automatically generated
-as `:x1` by default.
+Horizontally concatenate data frames.
 
 If `makeunique=false` (the default) column names of passed objects must be unique.
 If `makeunique=true` then duplicate column names will be suffixed
@@ -1430,22 +1423,19 @@ true
 """
 Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
     DataFrame(df, copycols=copycols)
-Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(DataFrame(df, copycols=copycols), x,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
+# TODO: after deprecation remove AbstractVector methods
+Base.hcat(df::AbstractDataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(DataFrame(df, copycols=copycols), x, makeunique=makeunique, copycols=copycols)
+Base.hcat(x::AbstractVector, df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
     hcat!(x, df, makeunique=makeunique, copycols=copycols)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame;
           makeunique::Bool=false, copycols::Bool=true) =
     hcat!(DataFrame(df1, copycols=copycols), df2,
           makeunique=makeunique, copycols=copycols)
-Base.hcat(df::AbstractDataFrame, x, y...;
+Base.hcat(df::AbstractDataFrame, x::Union{AbstractVector, AbstractDataFrame},
+          y::Union{AbstractVector, AbstractDataFrame}...;
           makeunique::Bool=false, copycols::Bool=true) =
     hcat!(hcat(df, x, makeunique=makeunique, copycols=copycols), y...,
-          makeunique=makeunique, copycols=copycols)
-Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(hcat(df1, df2, makeunique=makeunique, copycols=copycols), dfn...,
           makeunique=makeunique, copycols=copycols)
 
 """

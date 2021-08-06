@@ -1,6 +1,6 @@
 name = "DataFrames"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.1.1"
+version = "1.2.2"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -23,9 +23,9 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [compat]
-CategoricalArrays = "0.9.3"
+CategoricalArrays = "0.10.0"
 Compat = "3.17"
-DataAPI = "1.6"
+DataAPI = "1.7"
 InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = "0.4.2, 1"

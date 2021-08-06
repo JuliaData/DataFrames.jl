@@ -1,4 +1,49 @@
-# DataFrames.jl changes on main since last release notes
+# DataFrames.jl v1.3 Release Notes
+
+## New functionalities
+
+* in the `groupby` function the `sort` keyword argument now allows three values
+  - `nothing` (the default) leaves the order of groups undefined and allows
+    `groupby` to pick the fastest available grouping algorithm;
+  - `true` sorts groups by key columns;
+  - `false` creates groups in the order of their appearance in the parent data
+    frame;
+  In previous versions, the `sort` keyword argument allowed only `Bool` values
+  and `false` (which was the default) corresponded to the new
+  behavior when `nothing` is passed. Therefore only the user visible change
+  affecting existing code is when `sort=false` is passed explicitly.
+  The order of groups was undefined in that case, but in practice
+  groups were already created in their order of appearance, *except*
+  when grouping columns implemented the `DataAPI.refpool` API
+  (notably `PooledArray` and `CategoricalArray`) or when they contained only
+  integers in a small range.
+  ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+* if `sdf` is a `SubDataFrame` created with `:` as a column selector then
+  `insertcols!`, `setindex!`, broadcasted assignment, `select!` and `transform!`
+  (also on `GroupedDataFrame` created from such a `SubDataFrame`)
+  works exactly the same like for parent `DataFrame` except that for
+  rows that are filtered-ou in `sdf`:
+  - new columns are created with `missing` values stored in these rows;
+  - assignment to existing columns retains values already stored in them in
+    these rows;
+  ([2794](https://github.com/JuliaData/DataFrames.jl/pull/2794))
+
+# DataFrames.jl v1.2.2 Patch Release Notes
+
+## Bug fixes
+
+* fix a bug in `crossjoin` if the first argument is `SubDataFrame` and
+  `makeunique=true`
+  ([#2826](https://github.com/JuliaData/DataFrames.jl/issues/2826))
+
+# DataFrames.jl v1.2.1 Patch Release Notes
+
+## Bug fixes
+
+* Add workaround for `deleteat!` bug in Julia Base in `delete!` function
+  ([#2820](https://github.com/JuliaData/DataFrames.jl/issues/2820))
+
+# DataFrames.jl v1.2 Release Notes
 
 ## New functionalities
 
@@ -11,21 +56,24 @@
 * correctly handle selectors of the form `:col => AsTable` and `:col => cols`
   by expanding a single column into multiple columns
   ([#2780](https://github.com/JuliaData/DataFrames.jl/pull/2780))
-* if `sdf` is a `SubDataFrame` created with `:` as a column selector then
-  `insertcols!`, `setindex!`, broadcasted assignment, `select!` and `transform!`
-  (also on `GroupedDataFrame` created from such a `SubDataFrame`)
-  works exactly the same like for parent `DataFrame` except that for
-  rows that are filtered-ou in `sdf`:
-  - new columns are created with `missing` values stored in these rows;
-  - assignment to existing columns retains values already stored in them in
-    these rows;
-  ([XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
+* if `subset!` is passed a `GroupedDataFrame` the grouping in the passed object
+  gets updated to reflect rows removed from the parent data frame
+  ([#2809](https://github.com/JuliaData/DataFrames.jl/pull/2809))
 
 ## Bug fixes
 
+* fix bug in how `groupby` handles grouping of float columns;
+  now `-0.0` is treated as *not integer* when deciding on which
+  grouping algorithm should be used
+  ([#2791](https://github.com/JuliaData/DataFrames.jl/pull/2791))
 * fix bug in how `issorted` handles custom orderings and improve performance
   of sorting when complex custom orderings are passed
   ([#2746](https://github.com/JuliaData/DataFrames.jl/pull/2746))
+* fix bug in `combine`, `select`, `select!`, `transform`, and `transform!`
+  that incorrectly disallowed matrices of `Pair`s in `GroupedDataFrame` processing
+  ([#2782](https://github.com/JuliaData/DataFrames.jl/pull/2782))
+* fix location of summary in `text/html` output
+  ([#2801](https://github.com/JuliaData/DataFrames.jl/pull/2801))
 
 ## Performance improvements
 
@@ -34,6 +82,13 @@
   in internal operations form a continuous block
   ([#2727](https://github.com/JuliaData/DataFrames.jl/pull/2727),
    [#2769](https://github.com/JuliaData/DataFrames.jl/pull/2769))
+
+## Deprecated
+
+* `hcat` of a data frame with a vector is now deprecated to allow consistent
+  handling of horizontal concatenation of data frame with Tables.jl tables
+  in the future
+  ([#2777](https://github.com/JuliaData/DataFrames.jl/pull/2777))
 
 ## Other changes
 
