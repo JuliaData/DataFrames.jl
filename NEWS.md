@@ -2,12 +2,13 @@
 
 ## New functionalities
 
-* in the `groupby` function the `sort` keyword argument now allows three values
+* in the `groupby` function the `sort` keyword argument now allows three values:
   - `nothing` (the default) leaves the order of groups undefined and allows
     `groupby` to pick the fastest available grouping algorithm;
   - `true` sorts groups by key columns;
   - `false` creates groups in the order of their appearance in the parent data
     frame;
+
   In previous versions, the `sort` keyword argument allowed only `Bool` values
   and `false` (which was the default) corresponded to the new
   behavior when `nothing` is passed. Therefore only the user visible change
@@ -25,7 +26,7 @@
   rows that are filtered-ou in `sdf`:
   - new columns are created with `missing` values stored in these rows;
   - assignment to existing columns retains values already stored in them in
-    these rows;
+    these rows.
   ([2794](https://github.com/JuliaData/DataFrames.jl/pull/2794))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
