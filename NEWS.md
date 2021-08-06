@@ -2,7 +2,10 @@
 
 ## New functionalities
 
-* in the `groupby` function the `sort` keyword argument now allows three values:
+* Improve `sort` keyword argument in `groupby`
+  ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812)).
+
+  In the `groupby` function the `sort` keyword argument now allows three values:
   - `nothing` (the default) leaves the order of groups undefined and allows
     `groupby` to pick the fastest available grouping algorithm;
   - `true` sorts groups by key columns;
@@ -19,8 +22,10 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
 
-  ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
-* if `sdf` is a `SubDataFrame` created with `:` as a column selector then
+* Allow adding columns to a `SubDataFrame` created with `:` as column selector
+  ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
+
+  If `sdf` is a `SubDataFrame` created with `:` as a column selector then
   `insertcols!`, `setindex!`, broadcasted assignment, `select!` and `transform!`
   (also on `GroupedDataFrame` created from such a `SubDataFrame`)
   works exactly the same like for parent `DataFrame` except that for
@@ -28,8 +33,6 @@
   - new columns are created with `missing` values stored in these rows;
   - assignment to existing columns retains values already stored in them in
     these rows.
-
-  ([2794](https://github.com/JuliaData/DataFrames.jl/pull/2794))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 
