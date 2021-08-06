@@ -18,6 +18,7 @@
   when grouping columns implemented the `DataAPI.refpool` API
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
+
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
 * if `sdf` is a `SubDataFrame` created with `:` as a column selector then
   `insertcols!`, `setindex!`, broadcasted assignment, `select!` and `transform!`
@@ -27,6 +28,7 @@
   - new columns are created with `missing` values stored in these rows;
   - assignment to existing columns retains values already stored in them in
     these rows.
+
   ([2794](https://github.com/JuliaData/DataFrames.jl/pull/2794))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
