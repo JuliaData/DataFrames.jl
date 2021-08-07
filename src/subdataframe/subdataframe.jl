@@ -176,28 +176,15 @@ Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof(!),
                                        col_inds::MultiColumnIndex) =
     select(df, col_inds, copycols=false)
 
-Base.setproperty!(df::SubDataFrame{T, Index}, col_ind::Symbol, v::AbstractVector) where {T} =
-    (df[!, col_ind] = v)
-Base.setproperty!(df::SubDataFrame{T, Index}, col_ind::AbstractString, v::AbstractVector)  where {T} =
-    (df[!, col_ind] = v)
-Base.setproperty!(::SubDataFrame{T, Index}, col_ind::Symbol, v::Any)  where {T} =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
-                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
-Base.setproperty!(::SubDataFrame{T, Index}, col_ind::AbstractString, v::Any)  where {T} =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
-                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
-
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, idx::CartesianIndex{2})
     return setindex!(sdf, val, idx[1], idx[2])
 end
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
-    if columnindex(sdf, colinds) == 0
-        if !(colinds isa SymbolOrString && getfield(sdf, :colindex) isa Index)
-            throw(ArgumentError("Creation of new columns in the SubDataFrame " *
-                                "is only allowed when a column name is passed " *
-                                "and the SubDataFrame was created using : " *
-                                "as column selector"))
+    if colinds isa SymbolOrString && columnindex(sdf, colinds) == 0
+        if !is_column_adding_allowed(sdf)
+            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                                "columns of its parent data frame is disallowed"))
         end
         if !(val isa AbstractVector && nrow(sdf) == length(val))
             throw(ArgumentError("Assigned value must be a vector with length " *
@@ -214,16 +201,23 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::
     return sdf
 end
 
-function Base.setindex!(sdf::SubDataFrame{D, Index}, v::AbstractVector,
-                        ::typeof(!), col_ind::ColumnIndex) where {D}
-    if if columnindex(sdf, col_ind) == 0
+function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
+                        ::typeof(!), col_ind::ColumnIndex)
+    if col_ind isa Union{Signed, Unsigned} && !(1 <= col_ind <= ncol(sdf))
+        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
+    end
+    if col_ind isa SymbolOrString && columnindex(sdf, col_ind) == 0
+        if !is_column_adding_allowed(sdf)
+            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                                "columns of its parent data frame is disallowed"))
+        end
         sdf[:, col_ind] = v
     else
         pdf = parent(sdf)
         old_col = pdf[!, col_ind]
-        T = typeof(old_col)
-        S = typeof(v)
-        newcol = Tables.allocatecolumn(Union{T, S}, length(old_col))
+        T = eltype(old_col)
+        S = eltype(v)
+        newcol = Tables.allocatecolumn(promote_type(T, S), length(old_col))
         newcol .= old_col
         newcol[rows(sdf)] = v
         pdf[!, col_ind] = newcol
@@ -232,10 +226,10 @@ function Base.setindex!(sdf::SubDataFrame{D, Index}, v::AbstractVector,
 end
 
 for T in MULTICOLUMNINDEX_TUPLE
-    @eval function Base.setindex!(sdf::SubDataFrame{D, Index},
+    @eval function Base.setindex!(sdf::SubDataFrame,
                                   new_df::AbstractDataFrame,
                                   row_inds::typeof(!),
-                                  col_inds::$T) where {D}
+                                  col_inds::$T)
         idxs = index(sdf)[col_inds]
         if view(_names(sdf), idxs) != _names(new_df)
             throw(ArgumentError("Column names in source and target data frames do not match"))
@@ -247,10 +241,10 @@ for T in MULTICOLUMNINDEX_TUPLE
         return df
     end
 
-    @eval function Base.setindex!(sdf::SubDataFrame{D, Index},
+    @eval function Base.setindex!(sdf::SubDataFrame,
                                   mx::AbstractMatrix,
                                   row_inds::typeof(!),
-                                  col_inds::$T)  where {D}
+                                  col_inds::$T)
         idxs = index(sdf)[col_inds]
         if size(mx, 2) != length(idxs)
             throw(DimensionMismatch("number of selected columns ($(length(idxs))) " *
@@ -264,10 +258,6 @@ for T in MULTICOLUMNINDEX_TUPLE
     end
 end
 
-Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::typeof(!), colinds::Any)
-    throw(ArgumentError("setting index of SubDataFrame using ! as row selector is not allowed"))
-end
-
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)] = val
     return sdf
@@ -276,14 +266,16 @@ end
 Base.@propagate_inbounds Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Bool, colinds::Any) =
     throw(ArgumentError("invalid row index of type Bool"))
 
-Base.setproperty!(::SubDataFrame, ::Symbol, ::Any) =
-    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed. " *
-                        "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
-                        "to perform an in-place assignment."))
-Base.setproperty!(::SubDataFrame, ::AbstractString, ::Any) =
-    throw(ArgumentError("Replacing or adding of columns of a SubDataFrame is not allowed. " *
-                        "Instead use `df[:, col_ind] = v` or `df[:, col_ind] .= v` " *
-                        "to perform an in-place assignment."))
+Base.setproperty!(df::SubDataFrame, col_ind::Symbol, v::AbstractVector) =
+    (df[!, col_ind] = v)
+Base.setproperty!(df::SubDataFrame, col_ind::AbstractString, v::AbstractVector) =
+    (df[!, col_ind] = v)
+Base.setproperty!(::SubDataFrame, col_ind::Symbol, v::Any) =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
+Base.setproperty!(::SubDataFrame, col_ind::AbstractString, v::Any) =
+    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
+                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
 
 ##############################################################################
 ##
@@ -305,3 +297,15 @@ function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
 end
 
 Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)
+
+# this function tests if it is allowed to add columns to passed sdf
+# currently it is only allowed when sdf is created with : as column selector
+# which results in using Index as its index (as opposed to other columns selectors
+# which result in SubIndex)
+function is_column_adding_allowed(df::AbstractDataFrame)
+    df isa DataFrame && return true
+    if df isa SubDataFrame
+        return getfield(df, :colindex) isa Index
+    end
+    throw(ArgumentError("Unsupported data frame type"))
+end

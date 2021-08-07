@@ -815,7 +815,7 @@ julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
 """
 function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true)
-    if !(df isa DataFrame || (df isa SubDataFrame && getfield(df, :colindex) isa Index))
+    if !is_column_adding_allowed(df)
         throw(ArgumentError("insertcols! is only supported for DataFrame or " *
                             "SubDataFrame created with `:` as column selector"))
     end

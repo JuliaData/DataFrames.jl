@@ -22,17 +22,21 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
 
-* Allow adding columns to a `SubDataFrame` created with `:` as column selector
+* Allow adding new columns to a `SubDataFrame` created with `:` as column selector
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
 
   If `sdf` is a `SubDataFrame` created with `:` as a column selector then
-  `insertcols!`, `setindex!`, broadcasted assignment, `select!` and `transform!`
-  (also on `GroupedDataFrame` created from such a `SubDataFrame`)
-  works exactly the same like for parent `DataFrame` except that for
-  rows that are filtered-ou in `sdf`:
-  - new columns are created with `missing` values stored in these rows;
-  - assignment to existing columns retains values already stored in them in
-    these rows.
+  `insertcols!`, `setindex!`, broadcasted assignment allow for creation
+  of new columns with `missing` values stored in filtered-out rows;
+
+* Allow replacing existing columns in a `SubDataFrame` with `!` as row selector in assignment and broadcasted assignment
+  ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
+
+  Assignment to existing columns retains allocates a new column. Values already stored in filtered-out rows are retained.
+
+* TODO DESIGN: Allow `SubDataFrame` to be passed as argument of , `select!` and `transform!`
+  (also on `GroupedDataFrame` created a `SubDataFrame`)
+  ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 
