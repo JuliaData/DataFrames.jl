@@ -88,13 +88,13 @@ end
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 Base.ndims(::Type{<:LazyNewColDataFrame}) = 1
 
-struct ColReplaceDataFrame
-    df::DataFrame
+struct ColReplaceDataFrame{T<:AbstractDataFrame}
+    df::T
     cols::Vector{Int}
 end
 
 Base.axes(x::ColReplaceDataFrame) = (axes(x.df, 1), Base.OneTo(length(x.cols)))
-Base.ndims(::Type{ColReplaceDataFrame}) = 2
+Base.ndims(::Type{<:ColReplaceDataFrame}) = 2
 
 Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
 Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
@@ -114,7 +114,7 @@ end
 
 function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
-        return ColReplaceDataFrame(df, index(df)[cols])
+        return ColReplaceDataFrame(df, convert(Vector{Int}, index(df)[cols]))
     end
     if cols isa SymbolOrString
         if columnindex(df, cols) == 0 && !is_column_adding_allowed(df)

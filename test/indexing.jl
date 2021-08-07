@@ -2492,8 +2492,6 @@ end
 end
 
 @testset "mutating SubDataFrame with assignment to [!, cols]" begin
-(:AbstractVector, :Regex, :Not, :Between, :All, :Cols, :Colon)
-
     for sel in (:, 1:3)
         df = DataFrame(a=1:5, b=11:15, c=21:25)
         sdf = @view df[[3, 2], sel]
@@ -2508,9 +2506,10 @@ end
         @test eltype(df.c) == Any
 
         @test_throws ArgumentError sdf[!, [:c, :b, :a]] = DataFrame(d=["c", "d"], b=[1.0, 2.0], a=[13, 12])
+        @test_throws ArgumentError sdf[!, [:c, :b, :a]] = DataFrame(a=["c", "d"], b=[1.0, 2.0], c=[13, 12])
     end
 
-    for sel in (:, 1:3), cols in (Between(:a, :b), Not(:c), r"[ab]")
+    for sel in (:, 1:3), cols in (Between(:a, :b), Not(:c), r"[ab]", [true, true, false])
         df = DataFrame(a=1:5, b=11:15, c=21:25)
         sdf = @view df[[3, 2], sel]
         tmpa = df.a
@@ -2538,15 +2537,166 @@ end
         @test eltype(df.b) == Float64
         @test_throws ArgumentError sdf[!, cols] = DataFrame(a=[13, 12], b=[1.0, 2.0], c=1)
     end
+
+    for sel in (:, 1:3)
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], sel]
+        tmpa = df.a
+        sdf[!, [:c, :b, :a]] = ["b" "d" "f"; "a" "c" "e"]
+        @test df == DataFrame(a=[1, "e", "f", 4, 5],
+                            b=[11.0, "c", "d", 14.0, 15.0],
+                            c=[21, "a", "b", 24, 25])
+        @test tmpa !== df.a
+        @test eltype(df.a) == Any
+        @test eltype(df.b) == Any
+        @test eltype(df.c) == Any
+
+        @test_throws DimensionMismatch sdf[!, [:c, :b, :a]] = ones(2, 2)
+        @test_throws DimensionMismatch sdf[!, [:c, :b, :a]] = ones(1, 3)
+    end
+
+    for sel in (:, 1:3), cols in (Between(:a, :b), Not(:c), r"[ab]", [true, true, false])
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], sel]
+        tmpa = df.a
+        sdf[!, cols] = [1.0 3.0; 2.0 4.0]
+        @test df == DataFrame(a=[1, 2.0, 1.0, 4, 5],
+                            b=[11.0, 4.0, 3.0, 14.0, 15.0],
+                            c=21:25)
+        @test tmpa !== df.a
+        @test eltype(df.a) == Float64
+        @test eltype(df.b) == Float64
+
+        @test_throws DimensionMismatch sdf[!, cols] = ones(1, 3)
+        @test_throws DimensionMismatch sdf[!, cols] = ones(3, 1)
+    end
+
+    for cols in (All(), :, Cols(:a, :b))
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], 1:2]
+        tmpa = df.a
+        sdf[!, cols] = [1.0 3.0; 2.0 4.0]
+        @test df == DataFrame(a=[1, 2.0, 1.0, 4, 5],
+                            b=[11.0, 4.0, 3.0, 14.0, 15.0],
+                            c=21:25)
+        @test tmpa !== df.a
+        @test eltype(df.a) == Float64
+        @test eltype(df.b) == Float64
+        @test_throws DimensionMismatch sdf[!, cols] = ones(1, 3)
+        @test_throws DimensionMismatch sdf[!, cols] = ones(3, 1)
+    end
 end
 
 @testset "mutating SubDataFrame with broadcasting assignment to [!, cols]" begin
+    for sel in (:, 1:3)
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], sel]
+        tmpa = df.a
+        sdf[!, [:c, :b, :a]] .= DataFrame(c=["c", "d"], b=[1.0, 2.0], a=[13, 12])
+        @test df == DataFrame(a=[1, 12, 13, 4, 5],
+                            b=[11.0, 2.0, 1.0, 14.0, 15.0],
+                            c=[21, "d", "c", 24, 25])
+        @test tmpa !== df.a
+        @test eltype(df.a) == Int
+        @test eltype(df.b) == Float64
+        @test eltype(df.c) == Any
 
-    df = DataFrame(a=1:5, b=11:15, c=21:25)
-    sdf = @view df[[3, 2], :]
+        sdf[!, [:c, :b, :a]] .= [100, 200]
+        @test df == DataFrame(a=[1, 200, 100, 4, 5],
+                            b=[11.0, 200.0, 100.0, 14.0, 15.0],
+                            c=[21, 200, 100, 24, 25])
 
-    sdf[!, [:c, :b, :a]] .= DataFrame(c=["c", "d"], b=[1.0, 2.0], a=[13, 12])
+        @test_throws ArgumentError sdf[!, [:c, :b, :a]] .= DataFrame(d=["c", "d"], b=[1.0, 2.0], a=[13, 12])
+        @test_throws ArgumentError sdf[!, [:c, :b, :a]] .= DataFrame(a=["c", "d"], b=[1.0, 2.0], c=[13, 12])
+    end
 
+    for sel in (:, 1:3), cols in (Between(:a, :b), Not(:c), r"[ab]", [true, true, false])
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], sel]
+        tmpa = df.a
+        sdf[!, cols] .= DataFrame(a=[13, 12], b=[1.0, 2.0])
+        @test df == DataFrame(a=[1, 12, 13, 4, 5],
+                            b=[11.0, 2.0, 1.0, 14.0, 15.0],
+                            c=21:25)
+        @test tmpa !== df.a
+        @test eltype(df.a) == Int
+        @test eltype(df.b) == Float64
+
+        sdf[!, cols] .= [100 200]
+        @test df == DataFrame(a=[1, 100, 100, 4, 5],
+                            b=[11.0, 200.0, 200.0, 14.0, 15.0],
+                            c=21:25)
+
+        @test_throws ArgumentError sdf[!, cols] .= DataFrame(b=[1.0, 2.0], a=[13, 12])
+    end
+
+    for cols in (All(), :, Cols(:a, :b))
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], 1:2]
+        tmpa = df.a
+        sdf[!, cols] .= DataFrame(a=[13, 12], b=[1.0, 2.0])
+        @test df == DataFrame(a=[1, 12, 13, 4, 5],
+                            b=[11.0, 2.0, 1.0, 14.0, 15.0],
+                            c=21:25)
+        @test tmpa !== df.a
+        @test eltype(df.a) == Int
+        @test eltype(df.b) == Float64
+
+        sdf[!, cols] .= 100
+        @test df == DataFrame(a=[1, 100, 100, 4, 5],
+                            b=[11.0, 100.0, 100.0, 14.0, 15.0],
+                            c=21:25)
+
+        @test_throws DimensionMismatch sdf[!, cols] .= DataFrame(a=[13, 12], b=[1.0, 2.0], c=1)
+    end
+
+    for sel in (:, 1:3)
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], sel]
+        tmpa = df.a
+        sdf[!, [:c, :b, :a]] .= ["b" "d" "f"; "a" "c" "e"]
+        @test df == DataFrame(a=[1, "e", "f", 4, 5],
+                            b=[11.0, "c", "d", 14.0, 15.0],
+                            c=[21, "a", "b", 24, 25])
+        @test tmpa !== df.a
+        @test eltype(df.a) == Any
+        @test eltype(df.b) == Any
+        @test eltype(df.c) == Any
+
+        @test_throws DimensionMismatch sdf[!, [:c, :b, :a]] .= ones(2, 2)
+        @test_throws DimensionMismatch sdf[!, [:c, :b, :a]] .= ones(4, 3)
+    end
+
+    for sel in (:, 1:3), cols in (Between(:a, :b), Not(:c), r"[ab]", [true, true, false])
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], sel]
+        tmpa = df.a
+        sdf[!, cols] .= [1.0 3.0; 2.0 4.0]
+        @test df == DataFrame(a=[1, 2.0, 1.0, 4, 5],
+                            b=[11.0, 4.0, 3.0, 14.0, 15.0],
+                            c=21:25)
+        @test tmpa !== df.a
+        @test eltype(df.a) == Float64
+        @test eltype(df.b) == Float64
+
+        @test_throws DimensionMismatch sdf[!, cols] .= ones(4, 3)
+        @test_throws DimensionMismatch sdf[!, cols] .= ones(3, 4)
+    end
+
+    for cols in (All(), :, Cols(:a, :b))
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        sdf = @view df[[3, 2], 1:2]
+        tmpa = df.a
+        sdf[!, cols] .= [1.0 3.0; 2.0 4.0]
+        @test df == DataFrame(a=[1, 2.0, 1.0, 4, 5],
+                            b=[11.0, 4.0, 3.0, 14.0, 15.0],
+                            c=21:25)
+        @test tmpa !== df.a
+        @test eltype(df.a) == Float64
+        @test eltype(df.b) == Float64
+        @test_throws DimensionMismatch sdf[!, cols] .= ones(4, 3)
+        @test_throws DimensionMismatch sdf[!, cols] .= ones(3, 4)
+    end
 end
 
 @testset "mutating SubDataFrame with assignment to [:, col]" begin
