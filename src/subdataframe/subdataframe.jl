@@ -235,10 +235,9 @@ for T in MULTICOLUMNINDEX_TUPLE
             throw(ArgumentError("Column names in source and target data frames do not match"))
         end
         for (j, col) in enumerate(idxs)
-            # we will make a copy on assignment later
             sdf[!, col] = new_df[!, j]
         end
-        return df
+        return sdf
     end
 
     @eval function Base.setindex!(sdf::SubDataFrame,
