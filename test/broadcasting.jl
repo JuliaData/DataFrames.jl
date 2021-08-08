@@ -148,7 +148,11 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, 1] .+= 1
+    dfv[!, 1] .+= 100
+    @test df.x2 == [104.5, 105.5, 6.5]
+    df.x1 -= [1, 1, 1]
+    df.x2 -= [100, 100, 0]
+    @test df == refdf
 
     df = copy(refdf)
     df[:, 1] .+= 1
@@ -220,7 +224,8 @@ end
     @test df[:, Not("x1")] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, 1] .+= [0, 1] .+ 1
+    dfv[!, 1] .+= [0, 1] .+ 1
+    @test df.x2 == [5.5, 7.5, 6.5]
 
     dfv = @view df[1:2, 2:end]
     @test_throws ArgumentError dfv[!, "x1"] .+= [0, 1] .+ 1
@@ -287,13 +292,13 @@ end
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
+    @test_throws DimensionMismatch dfv[!, 1] .= fill(100, 2, 1)
+    @test_throws DimensionMismatch dfv[!, 1] .= reshape(fill(200, 2), :, 1)
     @test_throws DimensionMismatch df[!, 1] .= rand(1, 2)
-    @test_throws ArgumentError dfv[!, 1] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= rand(3, 1)
     @test_throws DimensionMismatch df[:, 1] .= rand(1, 3)
     @test_throws DimensionMismatch dfv[:, 1] .= rand(1, 2)
     @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), 1, :)
-    @test_throws ArgumentError dfv[!, 1] .= reshape(rand(2), :, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), 1, :, 1)
     @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), 1, :, 1)
@@ -304,13 +309,13 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, :x2] .+= 1
+    dfv[!, :x2] .+= 1
 
     dfr = df[1, 3:end]
     dfr[[:x4, :x5]] .= 10
     @test Vector(dfr) == [7.5, 10.0, 10.0]
-    @test Matrix(df) == [2.5  4.5  7.5  10.0  10.0
-                         3.5  5.5  8.5  11.5  14.5
+    @test Matrix(df) == [2.5  5.5  7.5  10.0  10.0
+                         3.5  6.5  8.5  11.5  14.5
                          4.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
@@ -319,13 +324,13 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, "x2"] .+= 1
+    dfv[!, "x2"] .+= 1
 
     dfr = df[1, 3:end]
     dfr[["x4", "x5"]] .= 10
     @test Vector(dfr) == [7.5, 10.0, 10.0]
-    @test Matrix(df) == [2.5  4.5  7.5  10.0  10.0
-                         3.5  5.5  8.5  11.5  14.5
+    @test Matrix(df) == [2.5  5.5  7.5  10.0  10.0
+                         3.5  6.5  8.5  11.5  14.5
                          4.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
@@ -360,13 +365,13 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, :x2] .+= [1, 2]
+    dfv[!, :x2] .+= [1, 2]
 
     dfr = df[1, 3:end]
     dfr[[:x4, :x5]] .= [10, 11]
     @test Vector(dfr) == [7.5, 10.0, 11.0]
-    @test Matrix(df) == [2.5  4.5  7.5  10.0  11.0
-                         4.5  5.5  8.5  11.5  14.5
+    @test Matrix(df) == [2.5  5.5  7.5  10.0  11.0
+                         4.5  7.5  8.5  11.5  14.5
                          6.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
@@ -375,13 +380,13 @@ end
     @test df[:, 2:end] == refdf[:, 2:end]
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, :x2] .+= [1, 2]
+    dfv[!, :x2] .+= [1, 2]
 
     dfr = df[1, 3:end]
     dfr[["x4", "x5"]] .= [10, 11]
     @test Vector(dfr) == [7.5, 10.0, 11.0]
-    @test Matrix(df) == [2.5  4.5  7.5  10.0  11.0
-                         4.5  5.5  8.5  11.5  14.5
+    @test Matrix(df) == [2.5  5.5  7.5  10.0  11.0
+                         4.5  7.5  8.5  11.5  14.5
                          6.5  6.5  9.5  12.5  15.5]
 
     df = copy(refdf)
@@ -413,18 +418,19 @@ end
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
+
+    @test_throws DimensionMismatch dfv[!, :x2] .= fill(100, 2, 1)
+    @test_throws DimensionMismatch dfv[!, 1] .= reshape(fill(200, 2), :, 1)
+    @test_throws DimensionMismatch dfv[!, "x2"] .= fill(100, 2, 1)
     @test_throws DimensionMismatch df[!, :x1] .= rand(1, 3)
-    @test_throws ArgumentError dfv[!, :x2] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[[:x4, :x5]] .= rand(3, 1)
     @test_throws DimensionMismatch df[:, :x1] .= rand(1, 3)
     @test_throws DimensionMismatch dfv[:, :x2] .= rand(1, 2)
     @test_throws DimensionMismatch df[!, 1] .= reshape(rand(3), 1, :)
-    @test_throws ArgumentError dfv[!, 1] .= reshape(rand(2), :, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= reshape(rand(3), :, 1)
     @test_throws DimensionMismatch df[:, 1] .= reshape(rand(3), 1, :)
     @test_throws DimensionMismatch dfv[:, 1] .= reshape(rand(2), 1, :)
     @test_throws DimensionMismatch df[!, "x1"] .= rand(1, 3)
-    @test_throws ArgumentError dfv[!, "x2"] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[["x4", "x5"]] .= rand(3, 1)
     @test_throws DimensionMismatch df[:, "x1"] .= rand(1, 3)
     @test_throws DimensionMismatch dfv[:, "x2"] .= rand(1, 2)
@@ -1566,16 +1572,19 @@ end
     @test v2 == [103.0, 104.0, 105.0]
 
     df = view(copy(refdf), :, :)
-    @test_throws ArgumentError df[!, 1] .= 100.0
-    @test df == refdf
+    df[!, 1] .= 100
+    @test parent(df).x1 == [100, 100, 100]
+    @test eltype(parent(df).x1) == Float64
 
     df = view(copy(refdf), :, :)
-    @test_throws ArgumentError df[!, :x1] .= 100.0
-    @test df == refdf
+    df[!, :x1] .= 100.0
+    @test parent(df).x1 == [100, 100, 100]
+    @test eltype(parent(df).x1) == Float64
 
     df = view(copy(refdf), :, :)
-    @test_throws ArgumentError df[!, :newcol] .= 100.0
-    @test df == refdf
+    df[!, :newcol] .= 100.0
+    @test parent(df).newcol == [100, 100, 100]
+    @test eltype(parent(df).newcol) == Union{Float64, Missing}
 
     df = view(copy(refdf), :, :)
     @test_throws ArgumentError df[!, 10] .= 'a'
@@ -1586,8 +1595,9 @@ end
     @test df == refdf
 
     df = view(copy(refdf), :, :)
-    @test_throws ArgumentError df[!, 1:2] .= 'a'
-    @test df == refdf
+    df[!, 1:2] .= 'a'
+    @test parent(df).x1 == parent(df).x2 == ['a', 'a', 'a']
+    @test eltype(parent(df).x1) === Any
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]

@@ -214,13 +214,14 @@ function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
         sdf[:, col_ind] = v
     else
         pdf = parent(sdf)
-        old_col = pdf[!, col_ind]
+        p_col_ind = parentcols(index(sdf), col_ind)
+        old_col = pdf[!, p_col_ind]
         T = eltype(old_col)
         S = eltype(v)
         newcol = Tables.allocatecolumn(promote_type(T, S), length(old_col))
         newcol .= old_col
         newcol[rows(sdf)] = v
-        pdf[!, col_ind] = newcol
+        pdf[!, p_col_ind] = newcol
     end
     return sdf
 end
