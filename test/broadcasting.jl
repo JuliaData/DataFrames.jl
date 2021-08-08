@@ -1609,8 +1609,13 @@ end
     @test v1 == [100.0, 100.0, 100.0]
 
     df = view(copy(refdf), :, :)
-    @test_throws ArgumentError df.newcol .= 'd'
-    @test df == refdf
+    if VERSION >= v"1.7"
+        df.newcol .= 'd'
+        df.newcol == fill('d', 3)
+    else
+        @test_throws ArgumentError df.newcol .= 'd'
+        @test df == refdf
+    end
 end
 
 @testset "DataFrameRow getproperty broadcasted assignment" begin
