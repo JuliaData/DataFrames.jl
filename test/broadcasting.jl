@@ -292,8 +292,8 @@ end
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
-    @test_throws DimensionMismatch dfv[!, 1] .= fill(100, 2, 1)
-    @test_throws DimensionMismatch dfv[!, 1] .= reshape(fill(200, 2), :, 1)
+    @test_throws DimensionMismatch dfv[!, 1] .= fill(100, 2, 2)
+    @test_throws DimensionMismatch dfv[!, 1] .= reshape(fill(200, 4), :, 2)
     @test_throws DimensionMismatch df[!, 1] .= rand(1, 2)
     @test_throws DimensionMismatch dfr[end-1:end] .= rand(3, 1)
     @test_throws DimensionMismatch df[:, 1] .= rand(1, 3)
@@ -419,8 +419,8 @@ end
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
 
-    @test_throws DimensionMismatch dfv[!, :x2] .= fill(100, 2, 1)
-    @test_throws DimensionMismatch dfv[!, 1] .= reshape(fill(200, 2), :, 1)
+    @test_throws DimensionMismatch dfv[!, :x2] .= fill(100, 2, 2)
+    @test_throws DimensionMismatch dfv[!, 1] .= reshape(fill(200, 4), :, 2)
     @test_throws DimensionMismatch dfv[!, "x2"] .= fill(100, 2, 1)
     @test_throws DimensionMismatch df[!, :x1] .= rand(1, 3)
     @test_throws DimensionMismatch dfr[[:x4, :x5]] .= rand(3, 1)
