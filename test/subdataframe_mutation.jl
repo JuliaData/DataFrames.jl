@@ -1422,4 +1422,170 @@ end
     @test eltype(df.d) === Union{Int, Missing}
 end
 
+@testset "select! on SubDataFrame" begin
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    @test_throws ArgumentError select!(sdf, :c => :b, :b => :c)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+    select!(sdf, :b => :c, :c => :b)
+    @test df == DataFrame(a=1:5,
+                          b=[11, 22, 23, 14, 15],
+                          c=[21, 12, 13, 24, 25])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    @test_throws ArgumentError select!(sdf, :b => x -> ["b3", "b2"], :c => (x -> ["c3", "c2"]), renamecols=false)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+    select!(sdf, :c => x -> ["c3", "c2"], :b => (x -> ["b3", "b2"]), renamecols=false)
+    @test df == DataFrame(a=1:5,
+                          b=[11, "b2", "b3", 14, 15],
+                          c=[21, "c2", "c3", 24, 25])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], :]
+    select!(sdf, :a, :b => :c, :c => :b)
+    @test df == DataFrame(a=1:5,
+                          c=[21, 12, 13, 24, 25],
+                          b=[11, 22, 23, 14, 15])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], :]
+    select!(sdf, :b => :d, :c => :b)
+    @test df ≅ DataFrame(d=[missing, 12, 13, missing, missing],
+                         b=[11, 22, 23, 14, 15])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    @test_throws ArgumentError select!(sdf)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], :]
+    select!(sdf)
+    @test df == DataFrame()
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[3:2, [3, 2]]
+    @test_throws ArgumentError select!(sdf, :c => (x -> Int[]) => :d)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[3:2, :]
+    select!(sdf, :c => (x -> Int[]) => :d)
+    @test df ≅ DataFrame(d=missings(Int, 5))
+    @test df.d isa Vector{Union{Int, Missing}}
+end
+
+@testset "transform! on SubDataFrame" begin
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    transform!(sdf, :c => :b, :b => :c)
+    @test df == DataFrame(a=1:5,
+                          b=[11, 22, 23, 14, 15],
+                          c=[21, 12, 13, 24, 25])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    transform!(sdf, :b => :c, :c => :b)
+    @test df == DataFrame(a=1:5,
+                          b=[11, 22, 23, 14, 15],
+                          c=[21, 12, 13, 24, 25])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    transform!(sdf, :b => x -> ["b3", "b2"], :c => (x -> ["c3", "c2"]), renamecols=false)
+    @test df == DataFrame(a=1:5,
+                          b=[11, "b2", "b3", 14, 15],
+                          c=[21, "c2", "c3", 24, 25])
+    transform!(sdf, :c => x -> ["c3", "c2"], :b => (x -> ["b3", "b2"]), renamecols=false)
+    @test df == DataFrame(a=1:5,
+                          b=[11, "b2", "b3", 14, 15],
+                          c=[21, "c2", "c3", 24, 25])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], :]
+    transform!(sdf, :b => :c, :c => :b)
+    @test df == DataFrame(a=1:5,
+                          b=[11, 22, 23, 14, 15],
+                          c=[21, 12, 13, 24, 25])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], :]
+    transform!(sdf, :b => :d, :c => :b)
+    @test df ≅ DataFrame(a=1:5,
+                         b=[11, 22, 23, 14, 15],
+                         c=21:25,
+                         d=[missing, 12, 13, missing, missing])
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], [3, 2]]
+    transform!(sdf)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[[3, 2], :]
+    transform!(sdf)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[3:2, [3, 2]]
+    @test_throws ArgumentError transform!(sdf, :c => (x -> Int[]) => :d)
+    @test df == DataFrame(a=1:5, b=11:15, c=21:25)
+    sdf = @view df[3:2, :]
+    transform!(sdf, :c => (x -> Int[]) => :d)
+    @test df ≅ DataFrame(a=1:5, b=11:15, c=21:25, d=missings(Int, 5))
+    @test df.d isa Vector{Union{Int, Missing}}
+end
+
+@testset "select! on GroupedDataFrame{SubDataFrame}" begin
+    df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[2:4, [2, 1, 3]]
+    gsdf = groupby(sdf, :a)
+    @test_throws ArgumentError select!(gsdf, :b => x -> x .+ 100, renamecols=false)
+    @test df == DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[2:4, [2, 1]]
+    gsdf = groupby(sdf, :a)
+    @test_throws ArgumentError select!(gsdf, :b => x -> x .+ 100, renamecols=false)
+    @test df == DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[2:4, [1, 3, 2]]
+    gsdf = groupby(sdf, :a)
+    @test select!(gsdf, :c, :b => x -> x .+ 100, renamecols=false, ungroup=false) === gsdf
+    @test df == DataFrame(a=[1, 1, 1, 2, 2, 3],
+                          b=[11, 112, 113, 114, 15, 16], c=21:26, d=31:36)
+
+    df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[[3, 4, 2], :]
+    gsdf = groupby(sdf, :a)
+    @test select!(gsdf, :b => x -> x .+ 100, :c => :e, renamecols=false) === sdf
+    @test df ≅ DataFrame(a=[1, 1, 1, 2, 2, 3],
+                         b=[11, 112, 113, 114, 15, 16],
+                         e=[missing, 22, 23, 24, missing, missing])
+end
+
+@testset "transform! on GroupedDataFrame{SubDataFrame}" begin
+    df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[2:4, [2, 1, 3]]
+    gsdf = groupby(sdf, :a)
+    transform!(gsdf, :b => x -> x .+ 100, renamecols=false)
+    @test df == DataFrame(a=[1, 1, 1, 2, 2, 3],
+                          b=[11, 112, 113, 114, 15, 16], c=21:26, d=31:36)
+
+    df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[2:4, [2, 1]]
+    gsdf = groupby(sdf, :a)
+    transform!(gsdf, :b => x -> x .+ 100, renamecols=false)
+    @test df == DataFrame(a=[1, 1, 1, 2, 2, 3],
+                          b=[11, 112, 113, 114, 15, 16], c=21:26, d=31:36)
+
+    df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[2:4, [1, 3, 2]]
+    gsdf = groupby(sdf, :a)
+    @test transform!(gsdf, :c, :b => x -> x .+ 100, renamecols=false, ungroup=false) == gsdf
+    @test df == DataFrame(a=[1, 1, 1, 2, 2, 3],
+                          b=[11, 112, 113, 114, 15, 16], c=21:26, d=31:36)
+
+    df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=11:16, c=21:26, d=31:36)
+    sdf = @view df[[3, 4, 2], :]
+    gsdf = groupby(sdf, :a)
+    @test transform!(gsdf, :b => x -> x .+ 100, :c => :e, renamecols=false) === sdf
+    @test df ≅ DataFrame(a=[1, 1, 1, 2, 2, 3],
+                         b=[11, 112, 113, 114, 15, 16],
+                         c=21:26, d=31:36,
+                         e=[missing, 22, 23, 24, missing, missing])
+end
+
 end # module

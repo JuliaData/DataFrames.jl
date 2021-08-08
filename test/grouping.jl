@@ -2561,8 +2561,12 @@ end
                DataFrame(g=categorical([3, 1, 1, missing]), x=1:4, y=5:8)),
         dosort in (true, false, nothing)
 
-        @test_throws MethodError select!(groupby_checked(view(df, :, :), :g), :x)
-        @test_throws MethodError transform!(groupby_checked(view(df, :, :), :g), :x)
+        dfc = copy(df)
+        select!(groupby_checked(view(dfc, :, :), :g), :x)
+        @test dfc ≅ df[!, [:g, :x]]
+        dfc = copy(df)
+        transform!(groupby_checked(view(dfc, :, :), :g), :x)
+        @test dfc ≅ df
 
         dfc = copy(df)
         g = dfc.g

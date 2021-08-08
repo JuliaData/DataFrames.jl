@@ -102,9 +102,10 @@ const TRANSFORMATION_COMMON_RULES =
     rows. As a particular rule, values wrapped in a `Ref` or a `0`-dimensional
     `AbstractArray` are unwrapped and then treated as a single row.
 
-    `select`/`select!` and `transform`/`transform!` always return a `DataFrame`
+    `select`/`select!` and `transform`/`transform!` always return a data frame
     with the same number and order of rows as the source (even if `GroupedDataFrame`
-    had its groups reordered).
+    had its groups reordered), except when selection results in zero columns
+    in the resulting data frame.
 
     For `combine`, rows in the returned object appear in the order of groups in the
     `GroupedDataFrame`. The functions can return an arbitrary number of rows for
@@ -618,15 +619,25 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
 end
 
 """
-    select!(df::DataFrame, args...; renamecols::Bool=true)
+    select!(df::AbstractDataFrame, args...; renamecols::Bool=true)
     select!(args::Base.Callable, df::DataFrame; renamecols::Bool=true)
-    select!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true, renamecols::Bool=true)
+    select!(gd::GroupedDataFrame, args...; ungroup::Bool=true, renamecols::Bool=true)
     select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
 
 Mutate `df` or `gd` in place to retain only columns or transformations specified by `args...` and
 return it. The result is guaranteed to have the same number of rows as `df` or
 parent of `gd`, except when no columns are selected (in which case the result
 has zero rows).
+
+If `SubDataFrame` or `GroupedDataFrame{SubDataFrame}` is passed the resulting
+operation follows the same rules as indexing:
+- for existing columns filtered-out rows are filled with values present in the
+  old columns
+- for new columns (which is only allowed if `SubDataFrame` was created with `:`
+  as column selector) filtered-out rows are filled with `missing`
+- if `SubDataFrame` was not created with `:` as column selector then `select!`
+  is only allowed if the transformations keep exactly the same sequence of column
+  names as is in the passed `df`
 
 If `gd` is passed then it is updated to reflect the new rows of its updated
 parent. If there are independent `GroupedDataFrame` objects constructed using
@@ -645,6 +656,9 @@ See [`select`](@ref) for examples.
 select!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
+select!(df::SubDataFrame, @nospecialize(args...); renamecols::Bool=true) =
+    _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols))
+
 function select!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
@@ -653,14 +667,15 @@ function select!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renam
 end
 
 """
-    transform!(df::DataFrame, args...; renamecols::Bool=true)
-    transform!(args::Callable, df::DataFrame; renamecols::Bool=true)
-    transform!(gd::GroupedDataFrame{DataFrame}, args...; ungroup::Bool=true, renamecols::Bool=true)
+    transform!(df::AbstractDataFrame, args...; renamecols::Bool=true)
+    transform!(args::Callable, df::AbstractDataFrame; renamecols::Bool=true)
+    transform!(gd::GroupedDataFrame, args...; ungroup::Bool=true, renamecols::Bool=true)
     transform!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
 
 Mutate `df` or `gd` in place to add columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`.
-Equivalent to `select!(df, :, args...)` or `select!(gd, :, args...)`.
+Equivalent to `select!(df, :, args...)` or `select!(gd, :, args...)`,
+except that column renaming performs a copy.
 
 $TRANSFORMATION_COMMON_RULES
 
@@ -672,7 +687,7 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-function transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true)
+function transform!(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true)
     idx = index(df)
     newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
                       idx[first(sel)] => copy => last(sel)

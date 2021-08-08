@@ -309,3 +309,26 @@ function is_column_adding_allowed(df::AbstractDataFrame)
     end
     throw(ArgumentError("Unsupported data frame type"))
 end
+
+function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
+    if _names(sdf) == _names(newdf)
+        for col in _names(newdf)
+            sdf[!, col] = newdf[!, col]
+        end
+        return sdf
+    end
+
+    if !is_column_adding_allowed(sdf)
+        throw(ArgumentError("changing the sequence of column names in a SubDataFrame " *
+                            "that subsets columns of its parent data frame is disallowed"))
+    end
+
+    psdf = parent(sdf)
+    @assert psdf isa DataFrame
+    for colname in _names(newdf)
+        sdf[!, colname] = newdf[!, colname]
+    end
+    select!(psdf, _names(newdf))
+
+    return sdf
+end

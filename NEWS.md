@@ -34,9 +34,14 @@
 
   Assignment to existing columns retains allocates a new column. Values already stored in filtered-out rows are retained.
 
-* TODO DESIGN: Allow `SubDataFrame` to be passed as argument of , `select!` and `transform!`
+* Allow `SubDataFrame` to be passed as argument of , `select!` and `transform!`
   (also on `GroupedDataFrame` created a `SubDataFrame`)
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
+
+  Assignment to existing columns retains allocates a new column. Values already stored in filtered-out rows are retained.
+  In case of creation of new columns `missing` values stored in filtered-out rows;
+  If `SubDataFrame` is not created with `:` as column selector the resulting operation
+  must produce the same column names as stored in the source `SubDataFrame` or an error is thrown.
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 

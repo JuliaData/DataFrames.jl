@@ -108,9 +108,10 @@ In all of these cases, `function` can return either a single row or multiple
 rows. As a particular rule, values wrapped in a `Ref` or a `0`-dimensional
 `AbstractArray` are unwrapped and then treated as a single row.
 
-`select`/`select!` and `transform`/`transform!` always return a `DataFrame`
+`select`/`select!` and `transform`/`transform!` always return a data frame
 with the same number and order of rows as the source (even if `GroupedDataFrame`
-had its groups reordered).
+had its groups reordered), except when selection results in zero columns
+in the resulting data frame.
 
 For `combine`, rows in the returned object appear in the order of groups in the
 `GroupedDataFrame`. The functions can return an arbitrary number of rows for
@@ -611,4 +612,167 @@ julia> gd[1]
      │ Int64
 ─────┼───────
    1 │     1
+```
+
+# Simulating the SQL `where` clause
+
+You can conveniently work on subsets of a data frame by using `SubDataFrame`s.
+Operations performed on such objects can both create a new data frame and be
+performed in-place. Here are some examples:
+
+```jldoctest sac
+julia> df = DataFrame(a=1:5)
+5×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+   4 │     4
+   5 │     5
+
+julia> sdf = @view df[2:3, :]
+2×1 SubDataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     2
+   2 │     3
+
+julia> transform(sdf, :a => ByRow(string)) # create a new data frame
+2×2 DataFrame
+ Row │ a      a_string
+     │ Int64  String
+─────┼─────────────────
+   1 │     2  2
+   2 │     3  3
+
+julia> transform!(sdf, :a => ByRow(string)) # update the source df in-place
+2×2 SubDataFrame
+ Row │ a      a_string
+     │ Int64  String?
+─────┼─────────────────
+   1 │     2  2
+   2 │     3  3
+
+julia> df # new column was created filled with missing in filtered-out rows
+5×2 DataFrame
+ Row │ a      a_string
+     │ Int64  String?
+─────┼─────────────────
+   1 │     1  missing
+   2 │     2  2
+   3 │     3  3
+   4 │     4  missing
+   5 │     5  missing
+
+julia> select!(sdf, :a => -, renamecols=false) # update the source df in-place
+2×1 SubDataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │    -2
+   2 │    -3
+
+julia> df # the column replaced an existing column; previously stored values are re-used in filtered-out rows
+5×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │    -2
+   3 │    -3
+   4 │     4
+   5 │     5
+```
+
+Similar operations can be performed on `GroupedDataFrame` as well:
+```jldoctest sac
+julia> df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=1:6)
+6×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     1      2
+   3 │     1      3
+   4 │     2      4
+   5 │     2      5
+   6 │     3      6
+
+julia> sdf = @view df[2:4, :]
+3×2 SubDataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     1      3
+   3 │     2      4
+
+julia> gsdf = groupby(sdf, :a)
+GroupedDataFrame with 2 groups based on key: a
+First Group (2 rows): a = 1
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     1      3
+⋮
+Last Group (1 row): a = 2
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      4
+
+julia> transform(gsdf, nrow) # create a new data frame
+3×3 DataFrame
+ Row │ a      b      nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      2
+   2 │     1      3      2
+   3 │     2      4      1
+
+julia> transform!(gsdf, nrow, :b => :b_copy)
+3×4 SubDataFrame
+ Row │ a      b      nrow    b_copy
+     │ Int64  Int64  Int64?  Int64?
+─────┼──────────────────────────────
+   1 │     1      2       2       2
+   2 │     1      3       2       3
+   3 │     2      4       1       4
+
+julia> df
+6×4 DataFrame
+ Row │ a      b      nrow     b_copy
+     │ Int64  Int64  Int64?   Int64?
+─────┼────────────────────────────────
+   1 │     1      1  missing  missing
+   2 │     1      2        2        2
+   3 │     1      3        2        3
+   4 │     2      4        1        4
+   5 │     2      5  missing  missing
+   6 │     3      6  missing  missing
+
+julia> select!(gsdf, :b_copy, :b => sum, renamecols=false)
+3×3 SubDataFrame
+ Row │ a      b_copy  b
+     │ Int64  Int64?  Int64
+─────┼──────────────────────
+   1 │     1       2      5
+   2 │     1       3      5
+   3 │     2       4      4
+
+julia> df
+6×3 DataFrame
+ Row │ a      b_copy   b
+     │ Int64  Int64?   Int64
+─────┼───────────────────────
+   1 │     1  missing      1
+   2 │     1        2      5
+   3 │     1        3      5
+   4 │     2        4      4
+   5 │     2  missing      5
+   6 │     3  missing      6
 ```

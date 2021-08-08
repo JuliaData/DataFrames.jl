@@ -1748,6 +1748,7 @@ end
 
 # This is not exactly copy! as in general we allow axes to be different
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
+    @assert ncol(newdf) == 0 || nrow(df) == nrow(newdf)
     copy!(_columns(df), _columns(newdf))
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
