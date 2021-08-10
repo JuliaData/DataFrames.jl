@@ -1665,4 +1665,14 @@ end
     @test_throws ArgumentError select(gdf, [:c1, :c2] => AsTable)
 end
 
+@testset "fix ByRow on PooledArray" begin
+    id = 0
+    df = DataFrame(a=PooledArray([1, 1, 1]))
+    function f(x)
+        id += 1
+        return id
+    end
+    @test select(df, :a => ByRow(f) => :a) == DataFrame(a=1:3)
+end
+
 end # module
