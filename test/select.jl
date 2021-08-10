@@ -1,6 +1,6 @@
 module TestSelect
 
-using DataFrames, Test, Random, Statistics, CategoricalArrays
+using DataFrames, Test, Random, Statistics, CategoricalArrays, PooledArrays
 
 const ≅ = isequal
 
