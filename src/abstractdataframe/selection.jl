@@ -60,7 +60,7 @@ const TRANSFORMATION_COMMON_RULES =
 
     Note! If the expression of the form `x => y` is passed then except for the special
     convenience form `nrow => target_cols` it is always interpreted as
-    `cols => function`. In particular the following expression `fun => :some_column`
+    `cols => function`. In particular the following expression `function => target_cols`
     is not a valid transformation specification.
 
     All functions have two types of signatures. One of them takes a `GroupedDataFrame`
