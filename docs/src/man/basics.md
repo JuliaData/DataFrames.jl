@@ -1386,7 +1386,7 @@ scenarios:
   of the single column selector syntaxes);
 - `Cols(...)` selector picks a union of other selectors passed as its arguments;
 - `All()` allows us to select all columns of `DataFrame`; this is the same as passing `:`;
-- regular expression to select columns whose names math it.
+- regular expression to select columns whose names match it.
 
 Let us give some examples of these selectors.
 
