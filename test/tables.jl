@@ -305,4 +305,22 @@ end
     @test DataFrame(Any[SubString("a", 1) => [1]]) == DataFrame(a=1)
 end
 
+@testset "materializer" begin
+    df = DataFrame(a=1)
+    sdf1 = view(df, :, :)
+    sdf2 = view(df, 1:1, 1:1)
+    ec = eachcol(df)
+    er = eachrow(df)
+
+    for x in (df, sdf1, sdf2, ec, er)
+        @test DataFrame === @inferred Tables.materializer(x)
+        @test DataFrame === @inferred Tables.materializer(typeof(x))
+    end
+
+    @test DataFrame === @inferred Tables.materializer(AbstractDataFrame)
+    @test DataFrame === @inferred Tables.materializer(SubDataFrame)
+    @test DataFrame === @inferred Tables.materializer(DataFrames.DataFrameRows)
+    @test DataFrame === @inferred Tables.materializer(DataFrames.DataFrameColumns)
+end
+
 end # module
