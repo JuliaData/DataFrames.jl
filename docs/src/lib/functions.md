@@ -17,11 +17,11 @@ This is a list of operations that currently make use of multi-threading:
   is used).
 - `join*` functions for composing output data frame (but currently not for finding
   matching rows in joined data frames).
-- `combine`, `select[!]`, and `transform[!]` on `GroupedDataFrame` when performing
-  multiple transformations (each transformation is spawned in a separate task)
-- `combine` when a transformation produces one row per group and the passed transformation
-  is a custom function (i.e. not for standard reductions, which use
-  optimized single-threaded methods).
+- `combine`, `select[!]`, and `transform[!]` on `GroupedDataFrame` when either of the conditions below is met:
+  * multiple transformations are performed (each transformation is spawned in a separate task)
+  * a transformation produces one row per group and the passed transformation
+    is a custom function (i.e. not for standard reductions, which use
+    optimized single-threaded methods).
 
 In general at least Julia 1.4 is required to ensure that multi-threading is used
 and the Julia process must be started with more than one thread. Some operations
