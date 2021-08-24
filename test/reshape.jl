@@ -654,4 +654,12 @@ end
     @test IndexStyle(DataFrames.StackedVector) == IndexLinear()
 end
 
+@testset "empty unstack" begin
+    df = DataFrame(a = [], b = [], c = [])
+    dfu = unstack(df, :b, :c)
+    @test isempty(dfu)
+    @test names(dfu) == ["a"]
+    @test dfu.a isa Vector{Any}
+end
+
 end # module

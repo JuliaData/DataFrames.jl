@@ -19,6 +19,11 @@
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
 
+## Bug fixes
+
+* fix a problem with `unstack` on empty data frame
+  ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
+
 # DataFrames.jl v1.2.2 Patch Release Notes
 
 ## Bug fixes
