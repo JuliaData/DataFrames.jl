@@ -1391,6 +1391,8 @@ end
 
     df = DataFrame(a=1:5, b=11:15)
     sdf = @view df[:, :]
+    @test_throws ArgumentError insertcols!(sdf, :c => 1, copycols=false)
+    @test df == DataFrame(a=1:5, b=11:15)
     insertcols!(sdf, :c => 1)
     @test df == DataFrame(a=1:5, b=11:15, c=1)
     @test eltype(df.c) === Union{Int, Missing}

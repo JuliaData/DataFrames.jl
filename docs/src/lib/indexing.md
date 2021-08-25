@@ -138,13 +138,14 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                        `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                        (in the latter case column names must match);
 
-`setindex!` on `SubDataFrame` (not created with `:` as column selector):
+`setindex!` on `SubDataFrame`:
 * `sdf[row, col] = v` -> set value of `col` in row `row` to `v` in-place;
 * `sdf[CartesianIndex(row, col)] = v` -> the same as `sdf[row, col] = v`;
 * `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
 * `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
-                           `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
+                           `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame`
+                           when column names must match;
 * `sdf[!, col] = v` -> replaces `col` with `v` with copying; if `col` is present in `sdf`
                        then filtered-out rows in newly created vector are filled with
                        values already present in that column;
@@ -158,6 +159,13 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                        (in the latter case column names must match);
                        filtered-out rows in newly created vectors are filled with
                        values already present in respective columns;
+
+!!! note
+
+    The rules above mean that `sdf[:, col] = v` is an in-place operation if `col` is present in `sdf`,
+    therefore it will be fast in general. On the other hand using `sdf[!, col] = v`
+    or `sdf.col = v` will always allocate a new vector which is more expensive computationally.
+
 
 `setindex!` on `DataFrameRow`:
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;

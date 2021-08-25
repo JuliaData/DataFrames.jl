@@ -815,9 +815,12 @@ julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
 """
 function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      makeunique::Bool=false, copycols::Bool=true)
-    if !is_column_adding_allowed(df)
+    if !is_column_insertion_allowed(df)
         throw(ArgumentError("insertcols! is only supported for DataFrame, or for " *
                             "SubDataFrame created with `:` as column selector"))
+    end
+    if !(copycols || df isa DataFrame)
+        throw(ArgumentError("copycols=false is only allowed if df isa DataFrame "))
     end
     col_ind = Int(col isa SymbolOrString ? columnindex(df, col) : col)
     if !(0 < col_ind <= ncol(df) + 1)
@@ -887,12 +890,13 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         if df isa DataFrame
             dfp = df
         else
+            @assert df isa SubDataFrame
             dfp = parent(df)
-            T = eltype(item_new)
-            newcol = Tables.allocatecolumn(Union{T, Missing}, nrow(dfp))
-            fill!(newcol, missing)
-            newcol[rows(df)] = item_new
-            item_new = newcol
+            item_new_df = item_new
+            T = eltype(item_new_df)
+            item_new = similar(item_new_df, Union{T, Missing}, nrow(dfp))
+            fill!(item_new, missing)
+            item_new[rows(df)] = item_new_df
         end
 
         firstindex(item_new) != 1 && _onebased_check_error()

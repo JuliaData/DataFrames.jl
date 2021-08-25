@@ -105,7 +105,7 @@ function Base.dotview(df::AbstractDataFrame, ::Colon, cols::ColumnIndex)
     if !(cols isa SymbolOrString)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
-    if !is_column_adding_allowed(df)
+    if !is_column_insertion_allowed(df)
         throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
                             "columns of its parent data frame is disallowed"))
     end
@@ -117,7 +117,7 @@ function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols)
         return ColReplaceDataFrame(df, convert(Vector{Int}, index(df)[cols]))
     end
     if cols isa SymbolOrString
-        if columnindex(df, cols) == 0 && !is_column_adding_allowed(df)
+        if columnindex(df, cols) == 0 && !is_column_insertion_allowed(df)
             throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
                                 "columns of its parent data frame is disallowed"))
         end
@@ -132,10 +132,11 @@ end
 if isdefined(Base, :dotgetproperty)
     function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
         if columnindex(df, col) == 0
-            if !is_column_adding_allowed(df)
+            if !is_column_insertion_allowed(df)
                 throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
                                     "columns of its parent data frame is disallowed"))
             end
+            # TODO: double check that this is tested
             return LazyNewColDataFrame(df, Symbol(col))
         else
             Base.depwarn("In the future this operation will allocate a new column " *
@@ -148,7 +149,7 @@ end
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
     df = lazydf.df
     if !haskey(index(df), lazydf.col) && df isa SubDataFrame && lazydf.col isa SymbolOrString
-        @assert is_column_adding_allowed(df)
+        @assert is_column_insertion_allowed(df)
     end
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
         bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())

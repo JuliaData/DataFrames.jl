@@ -182,7 +182,7 @@ end
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::Colon, colinds::Any)
     if colinds isa SymbolOrString && columnindex(sdf, colinds) == 0
-        if !is_column_adding_allowed(sdf)
+        if !is_column_insertion_allowed(sdf)
             throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
                                 "columns of its parent data frame is disallowed"))
         end
@@ -191,7 +191,7 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::
                                 "equal to number of rows in the SubDataFrame"))
         end
         T = eltype(val)
-        newcol = Tables.allocatecolumn(Union{T, Missing}, nrow(parent(sdf)))
+        newcol = similar(val, Union{T, Missing}, nrow(parent(sdf)))
         fill!(newcol, missing)
         newcol[rows(sdf)] = val
         parent(sdf)[!, colinds] = newcol
@@ -207,7 +207,7 @@ function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
         throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
     end
     if col_ind isa SymbolOrString && columnindex(sdf, col_ind) == 0
-        if !is_column_adding_allowed(sdf)
+        if !is_column_insertion_allowed(sdf)
             throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
                                 "columns of its parent data frame is disallowed"))
         end
@@ -218,6 +218,7 @@ function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
         old_col = pdf[!, p_col_ind]
         T = eltype(old_col)
         S = eltype(v)
+        # TODO: change to similar when promote_type vs Base.promote_typejoin decision is made
         newcol = Tables.allocatecolumn(promote_type(T, S), length(old_col))
         newcol .= old_col
         newcol[rows(sdf)] = v
@@ -302,7 +303,7 @@ Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)
 # currently it is only allowed when SubDataFrame was created with : as column selector
 # which results in using Index as its index (as opposed to other columns selectors
 # which result in SubIndex)
-function is_column_adding_allowed(df::AbstractDataFrame)
+function is_column_insertion_allowed(df::AbstractDataFrame)
     if df isa DataFrame
         return true
     elseif df isa SubDataFrame
@@ -312,24 +313,40 @@ function is_column_adding_allowed(df::AbstractDataFrame)
 end
 
 function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
-    if _names(sdf) == _names(newdf)
-        for col in _names(newdf)
-            sdf[!, col] = newdf[!, col]
-        end
-        return sdf
-    end
+    colsmatch = _names(sdf) == _names(newdf)
 
-    if !is_column_adding_allowed(sdf)
+    if !(colsmatch || is_column_insertion_allowed(sdf))
         throw(ArgumentError("changing the sequence of column names in a SubDataFrame " *
                             "that subsets columns of its parent data frame is disallowed"))
     end
 
-    psdf = parent(sdf)
-    @assert psdf isa DataFrame
     for colname in _names(newdf)
-        sdf[!, colname] = newdf[!, colname]
+        oldcol = sdf[!, colname]
+        newcol = newdf[!, colname]
+        # We perform an in-place operation if possible for performance.
+        # This has an additional effect that for CategoricalVector levels
+        # and ordering will be retained or not depending on which code patch is taken.
+
+        # TODO: add tests when promote_type vs Base.promote_typejoin decision is made
+        if eltype(newcol) <: eltype(oldcol)
+            sdf[:, colname] = newcol
+        else
+            sdf[!, colname] = newcol
+        end
     end
-    select!(psdf, _names(newdf))
+
+    # If columns did not match this means that we have either:
+    # 1. inserted some columns into pdf
+    # or
+    # 2. requested to reorder the existing columns
+    # and that operation was allowed.
+    # Therefore we need to update the parent of sdf in place to make sure
+    # it holds only the required target columns in a correct order.
+    if !colsmatch
+        pdf = parent(sdf)
+        @assert pdf isa DataFrame
+        select!(pdf, _names(newdf))
+    end
 
     return sdf
 end
