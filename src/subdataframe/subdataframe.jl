@@ -321,17 +321,19 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
     end
 
     for colname in _names(newdf)
-        oldcol = sdf[!, colname]
+        oldcol_idx = columnindex(sdf, colname)
         newcol = newdf[!, colname]
         # We perform an in-place operation if possible for performance.
         # This has an additional effect that for CategoricalVector levels
         # and ordering will be retained or not depending on which code patch is taken.
 
         # TODO: add tests when promote_type vs Base.promote_typejoin decision is made
-        if eltype(newcol) <: eltype(oldcol)
+        if oldcol_idx == 0
             sdf[:, colname] = newcol
+        elseif eltype(newcol) <: eltype(sdf[!, oldcol_idx])
+            sdf[:, oldcol_idx] = newcol
         else
-            sdf[!, colname] = newcol
+            sdf[!, oldcol_idx] = newcol
         end
     end
 
