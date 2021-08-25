@@ -18,6 +18,9 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+* `Tables.materializer` when passed the following types or their subtypes:
+  `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
+  ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
 
 ## Bug fixes
 
