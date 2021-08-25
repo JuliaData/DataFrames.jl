@@ -26,21 +26,24 @@
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
 
   If `sdf` is a `SubDataFrame` created with `:` as a column selector then
-  `insertcols!`, `setindex!`, broadcasted assignment allow for creation
-  of new columns with `missing` values stored in filtered-out rows;
+  `insertcols!`, `setindex!`, and broadcasted assignment allow for creation
+  of new columns, automatically filling filtered-out rows with `missing` values;
 
 * Allow replacing existing columns in a `SubDataFrame` with `!` as row selector in assignment and broadcasted assignment
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
 
-  Assignment to existing columns retains allocates a new column. Values already stored in filtered-out rows are retained.
+  Assignment to existing columns allocates a new column.
+  Values already stored in filtered-out rows are copied.
 
-* Allow `SubDataFrame` to be passed as argument of , `select!` and `transform!`
-  (also on `GroupedDataFrame` created a `SubDataFrame`)
+* Allow `SubDataFrame` to be passed as an argument to `select!` and `transform!`
+  (also on `GroupedDataFrame` created from a `SubDataFrame`)
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
 
-  Assignment to existing columns retains allocates a new column. Values already stored in filtered-out rows are retained.
-  In case of creation of new columns `missing` values stored in filtered-out rows;
-  If `SubDataFrame` is not created with `:` as column selector the resulting operation
+  Assignment to existing columns allocates a new column.
+  Values already stored in filtered-out rows are copied.
+  In case of creation of new columns, filtered-out rows are automatically
+  filled with `missing` values.
+  If `SubDataFrame` was not created with `:` as column selector the resulting operation
   must produce the same column names as stored in the source `SubDataFrame` or an error is thrown.
 
 # DataFrames.jl v1.2.2 Patch Release Notes

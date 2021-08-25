@@ -111,7 +111,7 @@ rows. As a particular rule, values wrapped in a `Ref` or a `0`-dimensional
 `select`/`select!` and `transform`/`transform!` always return a data frame
 with the same number and order of rows as the source (even if `GroupedDataFrame`
 had its groups reordered), except when selection results in zero columns
-in the resulting data frame.
+in the resulting data frame (in which case the result has zero rows).
 
 For `combine`, rows in the returned object appear in the order of groups in the
 `GroupedDataFrame`. The functions can return an arbitrary number of rows for
@@ -617,7 +617,7 @@ julia> gd[1]
 # Simulating the SQL `where` clause
 
 You can conveniently work on subsets of a data frame by using `SubDataFrame`s.
-Operations performed on such objects can both create a new data frame and be
+Operations performed on such objects can either create a new data frame or be
 performed in-place. Here are some examples:
 
 ```jldoctest sac

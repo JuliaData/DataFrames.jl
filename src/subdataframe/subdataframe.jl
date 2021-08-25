@@ -298,13 +298,14 @@ end
 
 Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)
 
-# this function tests if it is allowed to add columns to passed sdf
-# currently it is only allowed when sdf is created with : as column selector
+# this function tests if it is allowed to add columns to passed SubDataFrame
+# currently it is only allowed when SubDataFrame was created with : as column selector
 # which results in using Index as its index (as opposed to other columns selectors
 # which result in SubIndex)
 function is_column_adding_allowed(df::AbstractDataFrame)
-    df isa DataFrame && return true
-    if df isa SubDataFrame
+    if df isa DataFrame
+        return true
+    elseif df isa SubDataFrame
         return getfield(df, :colindex) isa Index
     end
     throw(ArgumentError("Unsupported data frame type"))
