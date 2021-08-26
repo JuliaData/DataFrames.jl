@@ -150,10 +150,9 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
 end
 
 function _map_leftjoin_ixs(out_len::Int,
-                            left_ixs_inner::Vector{Int},
-                            right_ixs_inner::Vector{Int})
+                           left_ixs_inner::Vector{Int},
+                           right_ixs_inner::Vector{Int})
     right_ixs = zeros(Int, out_len)
-
     @inbounds for (li, ri) in zip(left_ixs_inner, right_ixs_inner)
         if right_ixs[li] > 0
             throw(ArgumentError("duplicate rows found in right table"))
