@@ -21,6 +21,9 @@
 * `Tables.materializer` when passed the following types or their subtypes:
   `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
   ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
+* `leftjoin!` performing a left join of two data frame objects by updating the
+  left data frame with the joined columns from right data frame.
+  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/pull/XXXX))
 
 ## Bug fixes
 
