@@ -149,6 +149,9 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return df1
 end
 
+# TODO: in the future add performance optimizations
+#  * sorted on-columns
+#  * integer/refarray on-columns
 function _leftjoin!_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
     dict = Dict{T, Int}()
 
