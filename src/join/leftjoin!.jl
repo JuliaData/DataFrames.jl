@@ -5,7 +5,7 @@
 Perform a left join of two data frame objects by updating the `df1` with the
 joined columns from `df2`.
 
-The rows in `on` columns of `df2` must be unique.
+The rows in `on` columns of `df2` that match rows in `df1` must be unique.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -110,9 +110,9 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
                             "make it unique using a suffix automatically."))
     end
 
-    left_col = prepare_on_col(eachcol(joiner.dfl_on)...)
-    right_col = prepare_on_col(eachcol(joiner.dfr_on)...)
-    right_ixs = _leftjoin!_unsorted(left_col, right_col)
+    left_ixs_inner, right_ixs_inner = find_inner_rows(joiner)
+
+    right_ixs = _map_leftjoin_ixs(nrow(df1), left_ixs_inner, right_ixs_inner)
 
     # TODO: consider adding threading support in the future
     for colname in right_noon_names
@@ -149,39 +149,17 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return df1
 end
 
-# TODO: in the future add performance optimizations
-#  * sorted on-columns
-#  * integer/refarray on-columns
-function _leftjoin!_unsorted(left::AbstractArray, right::AbstractArray{T}) where {T}
-    dict = Dict{T, Int}()
+function _map_leftjoin_ixs(out_len::Int,
+                            left_ixs_inner::Vector{Int},
+                            right_ixs_inner::Vector{Int})
+    right_ixs = zeros(Int, out_len)
 
-    # we make sure that:
-    # * we do not preallocate dict of size larger than half of size of Int
-    #   (this is relevant in 32 bit architectures)
-    # * dict has at least 2x more slots than the number of values we
-    #   might store in it to avoid reallocations of internal structures when
-    #   we populate it later and to minimize the number of hash collisions;
-    #   typically Dict allows for 16 probes;
-    #   the value of multiplier is heuristic was determined by empirical tests
-    sizehint!(dict, 2 * min(length(right), typemax(Int) >> 2))
-
-    right isa OnCol && _prehash(right)
-    left isa OnCol && _prehash(left)
-
-    for (idx_r, val_r) in enumerate(right)
-        if haskey(dict, val_r)
+    @inbounds for (li, ri) in zip(left_ixs_inner, right_ixs_inner)
+        if right_ixs[li] > 0
             throw(ArgumentError("duplicate rows found in right table"))
         end
-        dict[val_r] = idx_r
+        right_ixs[li] = ri
     end
-
-    right_ixs = Vector{Int}(undef, length(left))
-
-    for (i, val_l) in enumerate(left)
-        # we know that dict contains only positive values
-        right_ixs[i] = get(dict, val_l, 0)
-    end
-
     return right_ixs
 end
 

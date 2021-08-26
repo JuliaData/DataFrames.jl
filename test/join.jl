@@ -1860,7 +1860,6 @@ end
         @test leftjoin!(copy(name_w_special), jobdf2, on=:ID, matchmissing=:equal) ≅
               hcat(name_w_special, DataFrame(Job=["Lawyer", "Doctor", missing, "Farmer"]))
     end
-
     for special in [NaN, -0.0]
         name_w_special = DataFrame(ID = categorical([1, 2, 3, special]),
                                    Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
@@ -1889,8 +1888,9 @@ end
     job_multi = DataFrame(ID1 = [1, 2, 2, 4],
                           ID2 = ["a", "b", "b", "c"],
                           Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
-
-    @test_throws ArgumentError leftjoin!(name_multi, job_multi, on=[:ID1, :ID2])
+    # job_multi has non-offending duplicates
+    @test leftjoin!(copy(name_multi), job_multi, on=[:ID1, :ID2]) ≅
+          hcat(name_multi, DataFrame(Job=["Lawyer", missing, missing]))
     @test leftjoin!(copy(job_multi), name_multi, on=[:ID1, :ID2]) ≅
           hcat(job_multi, DataFrame(Name=["John Doe", missing, missing, missing]))
 
@@ -1952,7 +1952,8 @@ end
                            DataFrame(id=Missing[]))
     @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
                            DataFrame(id=Union{Int, Missing}[]))
-    @test_throws ArgumentError leftjoin!(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal)
+    @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
     @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
                                     on=:id, matchmissing=:equal) ,
                            DataFrame(id=Union{Int, Missing}[missing]))
