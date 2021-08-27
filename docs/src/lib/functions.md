@@ -109,6 +109,7 @@ antijoin
 crossjoin
 innerjoin
 leftjoin
+leftjoin!
 outerjoin
 rightjoin
 semijoin
