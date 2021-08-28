@@ -418,10 +418,11 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         mask_filled[row_id, col_id] = true
     end
 
-    # note that Symbol.(renamecols.(colref_map)) must produce unique column names
+    # note that Symbol(renamecols(x)) must produce unique column names
     # and names between df1 and df2 must be unique
     df1 = df[row_group_row_idxs, g_rowkey.cols]
-    df2 = DataFrame(unstacked_val, Symbol.(renamecols.(colref_map)), copycols=false)
+    df2 = DataFrame(unstacked_val, Symbol[Symbol(renamecols(x)) for x in colref_map],
+                    copycols=false)
 
     @assert length(col_group_row_idxs) == ncol(df2)
     # avoid reordering when col_group_row_idxs was already ordered

@@ -1198,7 +1198,7 @@ Base.isless(::TestType, ::TestType) = false
         @test typeof(res.y) == typeof(expected.y)
         if m
             gd[1][:, :x1c] .= missing
-            @test_throws ArgumentError combine(gd, :x1c => f∘skipmissing => :y)
+            @test_throws Union{MethodError, ArgumentError} combine(gd, :x1c => f∘skipmissing => :y)
         end
     end
     @test combine(gd, :x1 => maximum => :y, :x2 => sum => :z) ≅

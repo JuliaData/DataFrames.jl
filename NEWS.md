@@ -21,6 +21,7 @@
   when grouping columns implemented the `DataAPI.refpool` API
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
+  ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
 
 * Allow adding new columns to a `SubDataFrame` created with `:` as column selector
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
@@ -45,6 +46,14 @@
   filled with `missing` values.
   If `SubDataFrame` was not created with `:` as column selector the resulting operation
   must produce the same column names as stored in the source `SubDataFrame` or an error is thrown.
+* `Tables.materializer` when passed the following types or their subtypes:
+  `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
+  ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
+
+## Bug fixes
+
+* fix a problem with `unstack` on empty data frame
+  ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 
