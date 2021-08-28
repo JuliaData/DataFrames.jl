@@ -492,4 +492,36 @@ end
     @test DataFrames.index(dfv)[[:a, :c]] == [1, 2]
 end
 
+@testset "merge" begin
+    i1 = Index([:a, :b, :c])
+    si11 = SubIndex(i1, 1:2)
+    si12 = SubIndex(i1, 2:3)
+    i2 = Index([:c, :d, :e])
+    si21 = SubIndex(i2, 1:2)
+    si22 = SubIndex(i2, 2:3)
+
+    @test_throws ArgumentError merge(i1, i2)
+    @test merge(i1, i2, makeunique=true) isa Index
+    @test names(merge(i1, i2, makeunique=true)) == ["a", "b", "c", "c_1", "d", "e"]
+    @test_throws ArgumentError merge(i1, si21)
+    @test merge(i1, si21, makeunique=true) isa Index
+    @test names(merge(i1, si21, makeunique=true)) == ["a", "b", "c", "c_1", "d"]
+    @test merge(i1, si22) isa Index
+    @test names(merge(i1, si22)) == ["a", "b", "c", "d", "e"]
+    @test merge(si11, i2) isa Index
+    @test names(merge(si11, i2)) == ["a", "b", "c", "d", "e"]
+    @test merge(si11, si22) isa Index
+    @test names(merge(si11, si22)) == ["a", "b", "d", "e"]
+    @test_throws ArgumentError merge(si12, si21)
+    @test merge(si12, si21, makeunique=true) isa Index
+    @test names(merge(si12, si21, makeunique=true)) == ["b", "c", "c_1", "d"]
+
+    df = DataFrame(a=1)
+    dfv = view(df, 1:1, 1:1)
+    @test_throws ArgumentError crossjoin(df, df)
+    @test_throws ArgumentError crossjoin(dfv, dfv)
+    @test crossjoin(df, df, makeunique=true) == DataFrame(a=1, a_1=1)
+    @test crossjoin(dfv, dfv, makeunique=true) == DataFrame(a=1, a_1=1)
+end
+
 end # module

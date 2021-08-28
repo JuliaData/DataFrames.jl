@@ -132,7 +132,7 @@ function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
     return x
 end
 
-Base.merge(x::Index, y::AbstractIndex; makeunique::Bool=false) =
+Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique::Bool=false) =
     merge!(copy(x), y, makeunique=makeunique)
 
 function Base.delete!(x::Index, idx::Integer)

@@ -18,10 +18,26 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+* `Tables.materializer` when passed the following types or their subtypes:
+  `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
+  ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
 * the `insertcols!` function receives new keyword argument `after`
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
+
+## Bug fixes
+
+* fix a problem with `unstack` on empty data frame
+  ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
+
+# DataFrames.jl v1.2.2 Patch Release Notes
+
+## Bug fixes
+
+* fix a bug in `crossjoin` if the first argument is `SubDataFrame` and
+  `makeunique=true`
+  ([#2826](https://github.com/JuliaData/DataFrames.jl/issues/2826))
 
 # DataFrames.jl v1.2.1 Patch Release Notes
 
