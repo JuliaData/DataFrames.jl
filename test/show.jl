@@ -215,7 +215,8 @@ end
 end
 
 @testset "Test colors and non-standard values: missing and nothing" begin
-    if Base.get_have_color()
+    # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
+    if if VERSION >= v"1.6" && Base.get_have_color()
         df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m

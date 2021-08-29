@@ -630,7 +630,8 @@ end
        8 │     8
        9 │     9  #undef"""
 
-    if Base.get_have_color()
+    # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
+    if VERSION >= v"1.6" && Base.get_have_color()
         io = IOBuffer()
         show(IOContext(io, :color => true), df)
         str = String(take!(io))
