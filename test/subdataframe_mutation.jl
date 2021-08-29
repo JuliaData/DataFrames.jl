@@ -1146,8 +1146,8 @@ end
         tmpa = df.a
         sdf[:, [:c, :b, :a]] = DataFrame(c=[5, 6], b=[1.0, 2.0], a=[13, 12])
         @test df == DataFrame(a=[1, 12, 13, 4, 5],
-                            b=[11.0, 2.0, 1.0, 14.0, 15.0],
-                            c=[21, 6, 5, 24, 25])
+                              b=[11.0, 2.0, 1.0, 14.0, 15.0],
+                              c=[21, 6, 5, 24, 25])
         @test tmpa === df.a
 
         @test_throws ArgumentError sdf[:, [:c, :b, :a]] = DataFrame(d=["c", "d"], b=[1.0, 2.0], a=[13, 12])
@@ -1160,8 +1160,8 @@ end
         tmpa = df.a
         sdf[:, cols] = DataFrame(a=[13, 12], b=[1.0, 2.0])
         @test df == DataFrame(a=[1, 12, 13, 4, 5],
-                            b=[11, 2, 1, 14, 15],
-                            c=21:25)
+                              b=[11, 2, 1, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1175,8 +1175,8 @@ end
         tmpa = df.a
         sdf[:, cols] = DataFrame(a=[13, 12], b=[1.0, 2.0])
         @test df == DataFrame(a=[1, 12, 13, 4, 5],
-                            b=[11, 2, 1, 14, 15],
-                            c=21:25)
+                              b=[11, 2, 1, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1189,8 +1189,8 @@ end
         tmpa = df.a
         sdf[:, [:c, :b, :a]] = [100 101 102; 103 104 105]
         @test df == DataFrame(a=[1, 105, 102, 4, 5],
-                            b=[11.0, 104, 101, 14.0, 15.0],
-                            c=[21, 103, 100, 24, 25])
+                              b=[11.0, 104, 101, 14.0, 15.0],
+                              c=[21, 103, 100, 24, 25])
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1206,8 +1206,8 @@ end
         tmpa = df.a
         sdf[:, cols] = [1.0 3.0; 2.0 4.0]
         @test df == DataFrame(a=[1, 2, 1, 4, 5],
-                            b=[11, 4, 3, 14, 15],
-                            c=21:25)
+                              b=[11, 4, 3, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1222,8 +1222,8 @@ end
         tmpa = df.a
         sdf[:, cols] = [1.0 3.0; 2.0 4.0]
         @test df == DataFrame(a=[1, 2, 1, 4, 5],
-                            b=[11, 4, 3, 14, 15],
-                            c=21:25)
+                              b=[11, 4, 3, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1239,8 +1239,8 @@ end
         tmpa = df.a
         sdf[:, [:c, :b, :a]] .= DataFrame(c=[100, 101], b=[1.0, 2.0], a=[13, 12])
         @test df == DataFrame(a=[1, 12, 13, 4, 5],
-                            b=[11, 2, 1, 14, 15],
-                            c=[21, 101, 100, 24, 25])
+                              b=[11, 2, 1, 14, 15],
+                              c=[21, 101, 100, 24, 25])
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1248,8 +1248,8 @@ end
 
         sdf[:, [:c, :b, :a]] .= [100, 200]
         @test df == DataFrame(a=[1, 200, 100, 4, 5],
-                            b=[11, 200, 100, 14, 15],
-                            c=[21, 200, 100, 24, 25])
+                              b=[11, 200, 100, 14, 15],
+                              c=[21, 200, 100, 24, 25])
 
         @test_throws ArgumentError sdf[:, [:c, :b, :a]] .= DataFrame(d=["c", "d"], b=[1.0, 2.0], a=[13, 12])
         @test_throws ArgumentError sdf[:, [:c, :b, :a]] .= DataFrame(a=["c", "d"], b=[1.0, 2.0], c=[13, 12])
@@ -1261,16 +1261,16 @@ end
         tmpa = df.a
         sdf[:, cols] .= DataFrame(a=[13, 12], b=[1.0, 2.0])
         @test df == DataFrame(a=[1, 12, 13, 4, 5],
-                            b=[11, 2, 1, 14, 15],
-                            c=21:25)
+                              b=[11, 2, 1, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
 
         sdf[:, cols] .= [100 200]
         @test df == DataFrame(a=[1, 100, 100, 4, 5],
-                            b=[11, 200, 200, 14, 15],
-                            c=21:25)
+                              b=[11, 200, 200, 14, 15],
+                              c=21:25)
 
         @test_throws ArgumentError sdf[:, cols] .= DataFrame(b=[1.0, 2.0], a=[13, 12])
     end
@@ -1281,16 +1281,16 @@ end
         tmpa = df.a
         sdf[:, cols] .= DataFrame(a=[13, 12], b=[1.0, 2.0])
         @test df == DataFrame(a=[1, 12, 13, 4, 5],
-                            b=[11, 2, 1, 14, 15],
-                            c=21:25)
+                              b=[11, 2, 1, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
 
         sdf[:, cols] .= 100
         @test df == DataFrame(a=[1, 100, 100, 4, 5],
-                            b=[11, 100, 100, 14, 15],
-                            c=21:25)
+                              b=[11, 100, 100, 14, 15],
+                              c=21:25)
 
         @test_throws DimensionMismatch sdf[:, cols] .= DataFrame(a=[13, 12], b=[1.0, 2.0], c=1)
     end
@@ -1301,8 +1301,8 @@ end
         tmpa = df.a
         sdf[:, [:c, :b, :a]] .= [100 101 102; 103 104 105]
         @test df == DataFrame(a=[1, 105, 102, 4, 5],
-                            b=[11.0, 104, 101, 14.0, 15.0],
-                            c=[21, 103, 100, 24, 25])
+                              b=[11.0, 104, 101, 14.0, 15.0],
+                              c=[21, 103, 100, 24, 25])
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1318,8 +1318,8 @@ end
         tmpa = df.a
         sdf[:, cols] .= [1.0 3.0; 2.0 4.0]
         @test df == DataFrame(a=[1, 2, 1, 4, 5],
-                            b=[11, 4, 3, 14, 15],
-                            c=21:25)
+                              b=[11, 4, 3, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1334,8 +1334,8 @@ end
         tmpa = df.a
         sdf[:, cols] .= [1.0 3.0; 2.0 4.0]
         @test df == DataFrame(a=[1, 2, 1, 4, 5],
-                            b=[11, 4, 3, 14, 15],
-                            c=21:25)
+                              b=[11, 4, 3, 14, 15],
+                              c=21:25)
         @test tmpa === df.a
         @test eltype(df.a) == Int
         @test eltype(df.b) == Int
@@ -1592,9 +1592,18 @@ end
 
 @testset "promote_type tests" begin
     df = DataFrame(a=1:4)
+    a = df.a
     sdf = @view df[1:1, :]
+    sdf[!, 1] = [0]
+    @test df.a == [0, 2, 3, 4]
+    @test df.a != a
+    @test a == 1:4
+    @test eltype(df.a) === Int
+    a = df.a
     sdf[!, 1] = [1.5]
     @test df.a == [1.5, 2, 3, 4]
+    @test df.a != a
+    @test a == [0, 2, 3, 4]
     @test eltype(df.a) === Float64
 
     # note that CategoricalVector is dropped as
@@ -1611,15 +1620,21 @@ end
     sdf[!, 1] = categorical(["a"])
     @test df.a isa CategoricalVector{String}
     @test df.a == ["a", "2", "3", "4"]
-    # we first copy old data and then add new data so "1" is in levels
-    # although it is not present in df.a
     @test levels(df.a) == ["1", "2", "3", "4", "a"]
 
     df = DataFrame(a=1:4)
     a = df.a
     sdf = @view df[1:1, :]
     select!(sdf, :a => (x -> x) => :a)
-    @test df.a === a
+    @test df.a !== a
+    @test df.a == a == 1:4
+    @test eltype(df.a) === Int
+    a = df.a
+    select!(sdf, :a => (x -> [1]) => :a)
+    @test df.a !== a
+    @test df.a == a == 1:4
+    @test eltype(df.a) === Int
+    a = df.a
     select!(sdf, :a => (x -> [1.5]) => :a)
     @test df.a == [1.5, 2, 3, 4]
     @test eltype(df.a) === Float64
@@ -1629,10 +1644,22 @@ end
     a = df.a
     sdf = @view df[1:1, :]
     select!(sdf, :a => (x -> x) => :a)
-    @test df.a === a
+    @test df.a == a
+    @test a == 1:4
+    @test df.a !== a
+    @test eltype(df.a) === Any
+    a = df.a
+    select!(sdf, :a => (x -> [1]) => :a)
+    @test df.a == a
+    @test a == 1:4
+    @test df.a !== a
+    @test eltype(df.a) === Any
+    a = df.a
     select!(sdf, :a => (x -> [1.5]) => :a)
     @test df.a == [1.5, 2, 3, 4]
-    @test df.a === a
+    @test df.a !== a
+    @test a == 1:4
+    @test eltype(df.a) === Any
 
     df = DataFrame(a=PooledArray(1:4))
     a = df.a
@@ -1640,8 +1667,20 @@ end
     select!(sdf, :a => (x -> x) => :a)
     @test df.a == a
     @test df.a !== a
+    @test a == 1:4
     # we keep PooledVector though as similar of PooledVector is PooledVector
     @test df.a isa PooledVector{Int}
+    select!(sdf, :a => (x -> [1]) => :a)
+    @test df.a == a
+    @test a == 1:4
+    @test df.a !== a
+    @test df.a isa PooledVector{Int}
+    a = df.a
+    select!(sdf, :a => (x -> [1.5]) => :a)
+    @test df.a == [1.5, 2, 3, 4]
+    @test df.a !== a
+    @test a == 1:4
+    @test df.a isa PooledVector{Float64}
 end
 
 end # module

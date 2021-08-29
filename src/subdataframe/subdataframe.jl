@@ -325,23 +325,8 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
     end
 
     for colname in _names(newdf)
-        oldcol_idx = columnindex(sdf, colname)
-        newcol = newdf[!, colname]
-        # We perform an in-place operation if possible for performance.
-        # This has an additional effect that for CategoricalVector levels
-        # and ordering will be retained or not depending on which code patch is taken.
-        if oldcol_idx == 0
-            sdf[:, colname] = newcol
-        else
-            oldcol = sdf[!, oldcol_idx]
-            # if oldcol is a view of Vector and the eltype of new values is supported
-            # by eltype of old values we perform an in-place operation as it will be faster
-            if parent(oldcol) isa Vector && eltype(newcol) <: eltype(oldcol)
-                sdf[:, oldcol_idx] = newcol
-            else
-                sdf[!, oldcol_idx] = newcol
-            end
-        end
+        # This will allocate a fresh column in parent(sdf) for each colname
+        sdf[!, colname] = newdf[!, colname]
     end
 
     # If columns did not match this means that we have either:

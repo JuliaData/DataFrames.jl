@@ -1302,6 +1302,7 @@ end
         @test_throws BoundsError sdf[:, 4] = ["a", "b", "c"]
         @test_throws DimensionMismatch sdf[:, 1] = [1]
         @test_throws MethodError sdf[:, 1] = 1
+        @test DataFrames.is_column_insertion_allowed(sdf) == (DataFrames.index(sdf) isa DataFrames.Index)
         if DataFrames.is_column_insertion_allowed(sdf)
             sdf[:, :z] = ["a", "b", "c"]
             @test df.z == ["a", "b", "c"]
@@ -1320,6 +1321,7 @@ end
         sdf[:, names(sdf)[1]] = 10:12
         @test df == DataFrame(a=10:12, b=4:6, c=7:9)
         @test_throws MethodError sdf[:, names(sdf)[1]] = ["a", "b", "c"]
+        @test DataFrames.is_column_insertion_allowed(sdf) == (DataFrames.index(sdf) isa DataFrames.Index)
         if DataFrames.is_column_insertion_allowed(sdf)
             sdf[:, "z"] = ["a", "b", "c"]
             @test df.z == ["a", "b", "c"]

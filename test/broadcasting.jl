@@ -150,9 +150,10 @@ end
     dfv = @view df[1:2, 2:end]
     dfv[!, 1] .+= 100
     @test df.x2 == [104.5, 105.5, 6.5]
+    # reverse the performed operations
     df.x1 -= [1, 1, 1]
     df.x2 -= [100, 100, 0]
-    @test df == refdf
+    @test df == DataFrame(reshape(1.5:15.5, (3, 5)), :auto)
 
     df = copy(refdf)
     df[:, 1] .+= 1
@@ -215,20 +216,26 @@ end
     # test a more complex broadcasting pattern
     df = copy(refdf)
     df[!, 1] .+= [0, 1, 2] .+ 1
-    @test df.x1 == [2.5, 4.5, 6.5]
+    @test df.x1 == df[!, 1] == [2.5, 4.5, 6.5]
     @test df[:, 2:end] == refdf[:, 2:end]
 
     df = copy(refdf)
     df[!, "x1"] .+= [0, 1, 2] .+ 1
-    @test df."x1" == [2.5, 4.5, 6.5]
+    @test df."x1" == df[!, 1] == [2.5, 4.5, 6.5]
     @test df[:, Not("x1")] == refdf[:, 2:end]
 
+    df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfv[!, 1] .+= [0, 1] .+ 1
-    @test df.x2 == [5.5, 7.5, 6.5]
+    @test df == DataFrame([1.5  5.5  7.5  10.5  13.5
+                           2.5  7.5  8.5  11.5  14.5
+                           3.5  6.5  9.5  12.5  15.5], :auto)
 
     dfv = @view df[1:2, 2:end]
     @test_throws ArgumentError dfv[!, "x1"] .+= [0, 1] .+ 1
+    @test df == DataFrame([1.5  5.5  7.5  10.5  13.5
+                           2.5  7.5  8.5  11.5  14.5
+                           3.5  6.5  9.5  12.5  15.5], :auto)
 
     df = copy(refdf)
     df.x1 .+= [0, 1, 2] .+ 1
