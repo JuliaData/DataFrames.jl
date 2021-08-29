@@ -1590,4 +1590,58 @@ end
                          e=[missing, 22, 23, 24, missing, missing])
 end
 
+@testset "promote_type tests" begin
+    df = DataFrame(a=1:4)
+    sdf = @view df[1:1, :]
+    sdf[!, 1] = [1.5]
+    @test df.a == [1.5, 2, 3, 4]
+    @test eltype(df.a) === Float64
+
+    # note that CategoricalVector is dropped as
+    # similar(::CategoricalVector, String, length)
+    # produces a Vector{String}
+    df = DataFrame(a=categorical(string.(1:4)))
+    sdf = @view df[1:1, :]
+    sdf[!, 1] = ["a"]
+    @test df.a == ["a", "2", "3", "4"]
+    @test df.a isa Vector{String}
+
+    df = DataFrame(a=categorical(string.(1:4)))
+    sdf = @view df[1:1, :]
+    sdf[!, 1] = categorical(["a"])
+    @test df.a isa CategoricalVector{String}
+    @test df.a == ["a", "2", "3", "4"]
+    # we first copy old data and then add new data so "1" is in levels
+    # although it is not present in df.a
+    @test levels(df.a) == ["1", "2", "3", "4", "a"]
+
+    df = DataFrame(a=1:4)
+    a = df.a
+    sdf = @view df[1:1, :]
+    select!(sdf, :a => (x -> x) => :a)
+    @test df.a === a
+    select!(sdf, :a => (x -> [1.5]) => :a)
+    @test df.a == [1.5, 2, 3, 4]
+    @test eltype(df.a) === Float64
+    @test a == 1:4
+
+    df = DataFrame(a=collect(Any, 1:4))
+    a = df.a
+    sdf = @view df[1:1, :]
+    select!(sdf, :a => (x -> x) => :a)
+    @test df.a === a
+    select!(sdf, :a => (x -> [1.5]) => :a)
+    @test df.a == [1.5, 2, 3, 4]
+    @test df.a === a
+
+    df = DataFrame(a=PooledArray(1:4))
+    a = df.a
+    sdf = @view df[1:1, :]
+    select!(sdf, :a => (x -> x) => :a)
+    @test df.a == a
+    @test df.a !== a
+    # we keep PooledVector though as similar of PooledVector is PooledVector
+    @test df.a isa PooledVector{Int}
+end
+
 end # module

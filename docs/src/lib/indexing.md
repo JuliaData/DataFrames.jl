@@ -148,7 +148,8 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                            in which case column names must match;
 * `sdf[!, col] = v` -> replaces `col` with `v` with copying; if `col` is present in `sdf`
                        then filtered-out rows in newly created vector are filled with
-                       values already present in that column;
+                       values already present in that column and `promote_type` is used
+                       to determine the `eltype` of the new column;
                        if `col` is not present in `sdf` then the operation is only allowed
                        if `sdf` was created with `:` as column selector, in which case
                        filtered-out rows are filled with `missing`;
@@ -158,7 +159,8 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
                        `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
                        (in the latter case column names must match);
                        filtered-out rows in newly created vectors are filled with
-                       values already present in respective columns;
+                       values already present in respective columns
+                       and `promote_type` is used to determine the `eltype` of the new columns;
 
 !!! note
 

@@ -201,6 +201,11 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::
     return sdf
 end
 
+# TODO: in the future, when refactoring source code
+# (presumably when we would first define all the types that the package provides
+#  and then define methods for them)
+# consider merging SubDataFrame and DataFrame setindex! methods
+
 function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
                         ::typeof(!), col_ind::ColumnIndex)
     if col_ind isa Union{Signed, Unsigned} && !(1 <= col_ind <= ncol(sdf))
@@ -218,8 +223,7 @@ function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
         old_col = pdf[!, p_col_ind]
         T = eltype(old_col)
         S = eltype(v)
-        # TODO: change to similar when promote_type vs Base.promote_typejoin decision is made
-        newcol = Tables.allocatecolumn(promote_type(T, S), length(old_col))
+        newcol = similar(old_col, promote_type(T, S), length(old_col))
         newcol .= old_col
         newcol[rows(sdf)] = v
         pdf[!, p_col_ind] = newcol
@@ -326,14 +330,17 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
         # We perform an in-place operation if possible for performance.
         # This has an additional effect that for CategoricalVector levels
         # and ordering will be retained or not depending on which code patch is taken.
-
-        # TODO: add tests when promote_type vs Base.promote_typejoin decision is made
         if oldcol_idx == 0
             sdf[:, colname] = newcol
-        elseif eltype(newcol) <: eltype(sdf[!, oldcol_idx])
-            sdf[:, oldcol_idx] = newcol
         else
-            sdf[!, oldcol_idx] = newcol
+            oldcol = sdf[!, oldcol_idx]
+            # if oldcol is a view of Vector and the eltype of new values is supported
+            # by eltype of old values we perform an in-place operation as it will be faster
+            if parent(oldcol) isa Vector && eltype(newcol) <: eltype(oldcol)
+                sdf[:, oldcol_idx] = newcol
+            else
+                sdf[!, oldcol_idx] = newcol
+            end
         end
     end
 

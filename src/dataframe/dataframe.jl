@@ -892,11 +892,11 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         else
             @assert df isa SubDataFrame
             dfp = parent(df)
-            item_new_df = item_new
-            T = eltype(item_new_df)
-            item_new = similar(item_new_df, Union{T, Missing}, nrow(dfp))
+            item_new_orig = item_new
+            T = eltype(item_new_orig)
+            item_new = similar(item_new_orig, Union{T, Missing}, nrow(dfp))
             fill!(item_new, missing)
-            item_new[rows(df)] = item_new_df
+            item_new[rows(df)] = item_new_orig
         end
 
         firstindex(item_new) != 1 && _onebased_check_error()
