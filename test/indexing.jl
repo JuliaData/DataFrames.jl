@@ -1855,6 +1855,7 @@ end
     dfv = @view df[:, :]
     dfv.a = [5]
     @test df == DataFrame(a=5)
+    @test eltype(df.a) === Int
     dfv."a" = [6]
     @test df == DataFrame(a=6)
     @test eltype(df.a) === Int

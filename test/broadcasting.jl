@@ -1611,7 +1611,7 @@ end
     df = view(copy(refdf), :, :)
     if VERSION >= v"1.7"
         df.newcol .= 'd'
-        df.newcol == fill('d', 3)
+        @test df.newcol == fill('d', 3)
     else
         @test_throws ArgumentError df.newcol .= 'd'
         @test df == refdf
