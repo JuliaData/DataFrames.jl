@@ -1,6 +1,6 @@
 module TestIndexing
 
-using Test, DataFrames, CategoricalArrays
+using Test, DataFrames, CategoricalArrays, PooledArrays
 
 const ≅ = isequal
 
