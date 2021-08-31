@@ -630,23 +630,26 @@ end
        8 │     8
        9 │     9  #undef"""
 
-    io = IOBuffer()
-    show(IOContext(io, :color => true), df)
-    str = String(take!(io))
-    @test str == """
-    \e[1m9×2 DataFrame\e[0m
-    \e[1m Row \e[0m│\e[1m A     \e[0m\e[1m B                                 \e[0m
-    \e[1m     \e[0m│\e[90m Int64 \e[0m\e[90m Any                               \e[0m
-    ─────┼──────────────────────────────────────────
-       1 │     1 \e[90m 9×2 DataFrame                     \e[0m
-       2 │     2 \e[90m 2-element DataFrameRow            \e[0m
-       3 │     3 \e[90m 1×2 SubDataFrame                  \e[0m
-       4 │     4 \e[90m 9-element DataFrameRows           \e[0m
-       5 │     5 \e[90m 2-element DataFrameColumns        \e[0m
-       6 │     6 \e[90m GroupedDataFrame with 9 groups b… \e[0m
-       7 │     7 \e[90m missing                           \e[0m
-       8 │     8 \e[90m                                   \e[0m
-       9 │     9 \e[90m #undef                            \e[0m"""
+    # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
+    if VERSION >= v"1.6" && Base.get_have_color()
+        io = IOBuffer()
+        show(IOContext(io, :color => true), df)
+        str = String(take!(io))
+        @test str == """
+        \e[1m9×2 DataFrame\e[0m
+        \e[1m Row \e[0m│\e[1m A     \e[0m\e[1m B                                 \e[0m
+        \e[1m     \e[0m│\e[90m Int64 \e[0m\e[90m Any                               \e[0m
+        ─────┼──────────────────────────────────────────
+           1 │     1 \e[90m 9×2 DataFrame                     \e[0m
+           2 │     2 \e[90m 2-element DataFrameRow            \e[0m
+           3 │     3 \e[90m 1×2 SubDataFrame                  \e[0m
+           4 │     4 \e[90m 9-element DataFrameRows           \e[0m
+           5 │     5 \e[90m 2-element DataFrameColumns        \e[0m
+           6 │     6 \e[90m GroupedDataFrame with 9 groups b… \e[0m
+           7 │     7 \e[90m missing                           \e[0m
+           8 │     8 \e[90m                                   \e[0m
+           9 │     9 \e[90m #undef                            \e[0m"""
+    end
 
     io = IOBuffer()
     show(io, MIME("text/html"), df)
