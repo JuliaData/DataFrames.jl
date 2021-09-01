@@ -2,12 +2,16 @@
 
 ## New functionalities
 
-* in the `groupby` function the `sort` keyword argument now allows three values
+* Improve `sort` keyword argument in `groupby`
+  ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812)).
+
+  In the `groupby` function the `sort` keyword argument now allows three values:
   - `nothing` (the default) leaves the order of groups undefined and allows
     `groupby` to pick the fastest available grouping algorithm;
   - `true` sorts groups by key columns;
   - `false` creates groups in the order of their appearance in the parent data
     frame;
+
   In previous versions, the `sort` keyword argument allowed only `Bool` values
   and `false` (which was the default) corresponded to the new
   behavior when `nothing` is passed. Therefore only the user visible change
@@ -18,9 +22,38 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+
+* Allow adding new columns to a `SubDataFrame` created with `:` as column selector
+  ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
+
+  If `sdf` is a `SubDataFrame` created with `:` as a column selector then
+  `insertcols!`, `setindex!`, and broadcasted assignment allow for creation
+  of new columns, automatically filling filtered-out rows with `missing` values;
+
+* Allow replacing existing columns in a `SubDataFrame` with `!` as row selector
+  in assignment and broadcasted assignment
+  ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
+
+  Assignment to existing columns allocates a new column.
+  Values already stored in filtered-out rows are copied.
+
+* Allow `SubDataFrame` to be passed as an argument to `select!` and `transform!`
+  (also on `GroupedDataFrame` created from a `SubDataFrame`)
+  ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
+
+  Assignment to existing columns allocates a new column.
+  Values already stored in filtered-out rows are copied.
+  In case of creation of new columns, filtered-out rows are automatically
+  filled with `missing` values.
+  If `SubDataFrame` was not created with `:` as column selector the resulting operation
+  must produce the same column names as stored in the source `SubDataFrame` or an error is thrown.
 * `Tables.materializer` when passed the following types or their subtypes:
   `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
   ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
+* the `insertcols!` function receives new keyword argument `after`
+  (with `false` default) that specifies if columns should be inserted after
+  or before `col`.
+  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
 * `leftjoin!` performing a left join of two data frame objects by updating the
   left data frame with the joined columns from right data frame.
   ([#2843](https://github.com/JuliaData/DataFrames.jl/pull/2843))

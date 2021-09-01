@@ -215,26 +215,29 @@ end
 end
 
 @testset "Test colors and non-standard values: missing and nothing" begin
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
-    @test sprint(show, df, context=:color=>true) == """
-        \e[1m2×2 DataFrame\e[0m
-        \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
-        \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
-        ─────┼───────────────────
-           1 │ Suzy          1.5
-           2 │ Amir   \e[90m missing   \e[0m"""
+    # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
+    if VERSION >= v"1.6" && Base.get_have_color()
+        df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
+        @test sprint(show, df, context=:color=>true) == """
+            \e[1m2×2 DataFrame\e[0m
+            \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
+            \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
+            ─────┼───────────────────
+               1 │ Suzy          1.5
+               2 │ Amir   \e[90m missing   \e[0m"""
 
-    df = DataFrame(A = [:Symbol, missing, :missing],
-                   B = [missing, "String", "missing"],
-                   C = [:missing, "missing", missing])
-    @test sprint(show, df, context=:color=>true) == """
-        \e[1m3×3 DataFrame\e[0m
-        \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
-        \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
-        ─────┼───────────────────────────
-           1 │ Symbol  \e[90m missing \e[0m missing
-           2 │\e[90m missing \e[0m String   missing
-           3 │ missing  missing \e[90m missing \e[0m"""
+        df = DataFrame(A = [:Symbol, missing, :missing],
+                       B = [missing, "String", "missing"],
+                       C = [:missing, "missing", missing])
+        @test sprint(show, df, context=:color=>true) == """
+            \e[1m3×3 DataFrame\e[0m
+            \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
+            \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
+            ─────┼───────────────────────────
+               1 │ Symbol  \e[90m missing \e[0m missing
+               2 │\e[90m missing \e[0m String   missing
+               3 │ missing  missing \e[90m missing \e[0m"""
+    end
 
     df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])
     @test sprint(show, df_nothing) == """

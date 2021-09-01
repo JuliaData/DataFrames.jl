@@ -749,12 +749,17 @@ function select!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; ungroup:
     return select!(gd, f, ungroup=ungroup)
 end
 
-function select!(gd::GroupedDataFrame{DataFrame},
+function select!(gd::GroupedDataFrame,
                  @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                            AbstractVecOrMat{<:Pair}}...);
                  ungroup::Bool=true, renamecols::Bool=true)
-    newdf = select(gd, args..., copycols=false, renamecols=renamecols)
     df = parent(gd)
+    if df isa DataFrame
+        newdf = select(gd, args..., copycols=false, renamecols=renamecols)
+    else
+        @assert df isa SubDataFrame
+        newdf = select(gd, args..., copycols=true, renamecols=renamecols)
+    end
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
@@ -766,12 +771,17 @@ function transform!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; ungro
     return transform!(gd, f, ungroup=ungroup)
 end
 
-function transform!(gd::GroupedDataFrame{DataFrame},
+function transform!(gd::GroupedDataFrame,
                     @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                               AbstractVecOrMat{<:Pair}}...);
                     ungroup::Bool=true, renamecols::Bool=true)
-    newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
     df = parent(gd)
+    if df isa DataFrame
+        newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
+    else
+        @assert df isa SubDataFrame
+        newdf = select(gd, :, args..., copycols=true, renamecols=renamecols)
+    end
     select!(newdf, propertynames(df), :)
     _replace_columns!(df, newdf)
     return ungroup ? df : gd

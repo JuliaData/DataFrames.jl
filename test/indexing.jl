@@ -1299,10 +1299,18 @@ end
         sdf[:, 1] = 10:12
         @test df == DataFrame(a=10:12, b=4:6, c=7:9)
         @test_throws MethodError sdf[:, 1] = ["a", "b", "c"]
-        @test_throws ArgumentError sdf[:, :z] = ["a", "b", "c"]
         @test_throws BoundsError sdf[:, 4] = ["a", "b", "c"]
         @test_throws DimensionMismatch sdf[:, 1] = [1]
         @test_throws MethodError sdf[:, 1] = 1
+        @test DataFrames.is_column_insertion_allowed(sdf) == (DataFrames.index(sdf) isa DataFrames.Index)
+        if DataFrames.is_column_insertion_allowed(sdf)
+            sdf[:, :z] = ["a", "b", "c"]
+            @test df.z == ["a", "b", "c"]
+            @test eltype(df.z) == Union{String, Missing}
+            select!(df, 1:3)
+        else
+            @test_throws ArgumentError sdf[:, :z] = ["a", "b", "c"]
+        end
     end
 
     df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -1313,7 +1321,14 @@ end
         sdf[:, names(sdf)[1]] = 10:12
         @test df == DataFrame(a=10:12, b=4:6, c=7:9)
         @test_throws MethodError sdf[:, names(sdf)[1]] = ["a", "b", "c"]
-        @test_throws ArgumentError sdf[:, "z"] = ["a", "b", "c"]
+        @test DataFrames.is_column_insertion_allowed(sdf) == (DataFrames.index(sdf) isa DataFrames.Index)
+        if DataFrames.is_column_insertion_allowed(sdf)
+            sdf[:, "z"] = ["a", "b", "c"]
+            @test df.z == ["a", "b", "c"]
+            select!(df, 1:3)
+        else
+            @test_throws ArgumentError sdf[:, "z"] = ["a", "b", "c"]
+        end
     end
 
     # `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
@@ -1346,14 +1361,13 @@ end
         @test df == df2
     end
 
-    # Note that `sdf[!, col] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
     for (row_sel, col_sel) in [(:, :), (:, 1:3), (1:3, :), (1:3, 1:3), (1:3, ["a", "b", "c"])]
         df = DataFrame(a=1:3, b=4:6, c=7:9)
         sdf = view(df, row_sel, col_sel)
-        @test_throws ArgumentError sdf[!, 1] = [1, 2, 3]
-        @test_throws ArgumentError sdf[!, "a"] = [1, 2, 3]
-        @test_throws ArgumentError sdf[!, 1:3] = ones(Int, 3, 3)
-        @test_throws ArgumentError sdf[!, 1] = [1, 2, 3]
+        sdf[!, 1] = [11, 12, 13]
+        sdf[!, "b"] = [14, 15, 16]
+        sdf[!, 3:3] = ones(Int, 3, 1)
+        @test df == DataFrame(a=11:13, b=14:16, c=1)
     end
 end
 
@@ -1581,8 +1595,10 @@ end
     @test df[:, 1:3] == DataFrame(reshape(1:12, 3, :), :auto)[:, 1:3]
 
     dfv = view(df, :, :)
-    @test_throws ArgumentError dfv[!, :] = DataFrame(reshape(1:12, 3, :), :auto)
-    @test_throws ArgumentError dfv[!, :] = reshape(1:12, 3, :)
+    dfv[!, :] = DataFrame(reshape(1:12, 3, :), :auto)
+    @test df == DataFrame(reshape(1:12, 3, :), :auto)
+    dfv[!, :] = reshape(1:12, 3, :)
+    @test df == DataFrame(reshape(1:12, 3, :), :auto)
 
     for rows in [:, 1:3], cols in [:, r"", Not(r"xx"), 1:4]
         df = DataFrame(ones(3, 4), :auto)
@@ -1662,12 +1678,8 @@ end
         @test df[1:2, "a"] == [20, 30]
         df[:, "a"] = [30, 40]
         @test df[:, "a"] == [30, 40]
-        if df isa DataFrame
-            df[!, "a"] = [1, 2]
-            @test df[!, "a"] == [1, 2]
-        else
-            @test_throws ArgumentError df[!, "a"] = [1, 2]
-        end
+        df[!, "a"] = [1, 2]
+        @test df[!, "a"] == [1, 2]
 
         df[1, ["a", "b"]] = (a=1000, b=2000)
         @test copy(df[1, ["a", "b"]]) == (a=1000, b=2000)
@@ -1843,8 +1855,12 @@ end
     @test_throws ArgumentError df.a = 1
     @test_throws ArgumentError df."a" = 1
     dfv = @view df[:, :]
-    @test_throws ArgumentError dfv.a = [1]
-    @test_throws ArgumentError dfv."a" = [1]
+    dfv.a = [5]
+    @test df == DataFrame(a=5)
+    @test eltype(df.a) === Int
+    dfv."a" = [6]
+    @test df == DataFrame(a=6)
+    @test eltype(df.a) === Int
     @test_throws ArgumentError dfv.a = 1
     @test_throws ArgumentError dfv."a" = 1
 end
@@ -2019,5 +2035,6 @@ end
         end
     end
 end
+
 
 end # module

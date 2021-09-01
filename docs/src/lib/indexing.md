@@ -144,9 +144,30 @@ so it is unsafe to use it afterwards (the column length correctness will be pres
 * `sdf[row, cols] = v` -> the same as `dfr = df[row, cols]; dfr[:] = v` in-place;
 * `sdf[rows, col] = v` -> set rows `rows` of column `col`, in-place; `v` must be an abstract vector;
 * `sdf[rows, cols] = v` -> set rows `rows` of columns `cols` in-place;
-                           `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame` when column names must match;
+                           `v` can be an `AbstractMatrix` or `v` can be `AbstractDataFrame`
+                           in which case column names must match;
+* `sdf[!, col] = v` -> replaces `col` with `v` with copying; if `col` is present in `sdf`
+                       then filtered-out rows in newly created vector are filled with
+                       values already present in that column and `promote_type` is used
+                       to determine the `eltype` of the new column;
+                       if `col` is not present in `sdf` then the operation is only allowed
+                       if `sdf` was created with `:` as column selector, in which case
+                       filtered-out rows are filled with `missing`;
+                       equivalent to `sdf.col = v` if `col` is a valid identifier;
+                       operation is allowed if `length(v) == nrow(sdf)`;
+* `sdf[!, cols] = v` -> replaces existing columns `cols` in data frame `sdf` with copying;
+                       `v` must be an `AbstractMatrix` or an `AbstractDataFrame`
+                       (in the latter case column names must match);
+                       filtered-out rows in newly created vectors are filled with
+                       values already present in respective columns
+                       and `promote_type` is used to determine the `eltype` of the new columns;
 
-Note that `sdf[!, col] = v`, `sdf[!, cols] = v` and `sdf.col = v` are not allowed as `sdf` can be only modified in-place.
+!!! note
+
+    The rules above mean that `sdf[:, col] = v` is an in-place operation if `col` is present in `sdf`,
+    therefore it will be fast in general. On the other hand using `sdf[!, col] = v`
+    or `sdf.col = v` will always allocate a new vector, which is more expensive computationally.
+
 
 `setindex!` on `DataFrameRow`:
 * `dfr[col] = v` -> set value of `col` in row `row` to `v` in-place;
@@ -170,7 +191,6 @@ The following broadcasting rules apply to `AbstractDataFrame` objects:
 
 Note that if broadcasting assignment operation throws an error the target data frame may be partially changed
 so it is unsafe to use it afterwards (the column length correctness will be preserved).
-
 
 Broadcasting `DataFrameRow` is currently not allowed (which is consistent with `NamedTuple`).
 
@@ -199,8 +219,21 @@ Additional rules:
   Starting from Julia 1.7 if `:col` is not present in `df` then a new column will be created in `df`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
 * in the `sdf[rows, col] .= v` and `sdf[rows, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
-* `sdf.col .= v` syntax is performs an in-place assignment to an existing vector `sdf.col` and is deprecated;
-  in the future this operation will not be allowed.
+  if `rows` is `:` and `col` is a `Symbol` or `AbstractString`
+  referring to a column missing from `sdf` and `sdf` was created with `:` as column selector
+  then a new column is allocated and added;
+  the filtered-out rows are filled with `missing`;
+* in the `sdf[!, col] .= v` syntax column `col` is replaced by a freshly allocated vector;
+  the filtered-out rows are filled with values already present in `col`;
+  if `col` is a `Symbol` or `AbstractString` referring to a column missing from `sdf`
+  and was `sdf` created with `:` as column selector then a new column is allocated and added;
+  in this case the filtered-out rows are filled with `missing`;
+* the `sdf[!, cols] .= v` syntax replaces existing columns `cols` in data frame `sdf` with freshly allocated vectors;
+  the filtered-out rows are filled with values already present in `cols`;
+* `sdf.col .= v` syntax currently performs in-place assignment to an existing vector `sdf.col`;
+  this behavior is deprecated and a new column will be allocated in the future.
+  Starting from Julia 1.7 if `:col` is not present in `sdf` then a new column will be created in `sdf`
+  if `sdf` was created with `:` as a column selector.
 * `dfr.col .= v` syntax is allowed and performs in-place assignment to a value extracted by `dfr.col`.
 
 Note that `sdf[!, col] .= v` and `sdf[!, cols] .= v` syntaxes are not allowed as `sdf` can be only modified in-place.
