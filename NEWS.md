@@ -30,7 +30,8 @@
   `insertcols!`, `setindex!`, and broadcasted assignment allow for creation
   of new columns, automatically filling filtered-out rows with `missing` values;
 
-* Allow replacing existing columns in a `SubDataFrame` with `!` as row selector in assignment and broadcasted assignment
+* Allow replacing existing columns in a `SubDataFrame` with `!` as row selector
+  in assignment and broadcasted assignment
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
 
   Assignment to existing columns allocates a new column.
