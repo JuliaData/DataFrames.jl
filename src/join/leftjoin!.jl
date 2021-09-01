@@ -105,9 +105,11 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     right_noon_names = names(joiner.dfr, Not(joiner.right_on))
     if !(makeunique || isempty(intersect(right_noon_names, names(df1))))
-        throw(ArgumentError("left data frame has duplicate column names with " *
-                            "right data frame. Pass makeunique=true to " *
-                            "make it unique using a suffix automatically."))
+        throw(ArgumentError("the following columns are present in both " *
+                            "left and right data frames but not listed in `on`: " *
+                            join(intersect(right_noon_names, names(df1))), ", ") *
+                            ". Pass makeunique=true to add a suffix automatically to " *
+                            "columns names from the right data frame."))
     end
 
     left_ixs_inner, right_ixs_inner = find_inner_rows(joiner)
@@ -116,7 +118,7 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     # TODO: consider adding threading support in the future
     for colname in right_noon_names
-        rcol = joiner.dfr[!, colname] # note that it does not have to be df2
+        rcol = joiner.dfr[!, colname] # note that joiner.dfr does not have to be df2
         rcol_joined = compose_joined_rcol!(rcol, similar_missing(rcol, nrow(df1)),
                                           right_ixs)
         insertcols!(df1, colname => rcol_joined, makeunique=makeunique, copycols=false)
@@ -140,7 +142,7 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
 
         if hasproperty(df1, unique_indicator)
-            throw(ArgumentError("updated left data frame already has column " *
+            throw(ArgumentError("joined data frame already has column " *
                                 ":$unique_indicator. Pass makeunique=true to " *
                                 "make it unique using a suffix automatically."))
         end
@@ -163,8 +165,8 @@ function _map_leftjoin_ixs(out_len::Int,
 end
 
 function compose_joined_rcol!(rcol::AbstractVector,
-                             rcol_joined::AbstractVector,
-                             right_ixs::Vector{Int})
+                              rcol_joined::AbstractVector,
+                              right_ixs::Vector{Int})
     @assert length(rcol_joined) == length(right_ixs)
     @inbounds for (i, idx) in enumerate(right_ixs)
         if idx > 0

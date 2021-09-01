@@ -1095,8 +1095,9 @@ end
         insertcols!(df_semi3, 4, :id3 => df_semi3.id)
         insertcols!(df_anti3, 4, :id3 => df_anti3.id)
 
-        test_leftjoin! = (any(nonunique(df2, :id)) ||
-                          df_left ≅ sort(leftjoin!(copy(df1), df2, on=:id, matchmissing=:equal), [:x, :y])) &&
+        test_leftjoin! =
+            (any(nonunique(df2, :id)) ||
+             df_left ≅ sort(leftjoin!(copy(df1), df2, on=:id, matchmissing=:equal), [:x, :y])) &&
             (any(nonunique(df2x, [:id, :id2])) ||
              df_left2 ≅ sort(leftjoin!(copy(df1x), df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y])) &&
             (any(nonunique(df2x2, [:id, :id2, :id3])) ||
@@ -1720,19 +1721,17 @@ end
     @test leftjoin!(df1, df2, on=[:A, :B]) === df1
     @test df1 == DataFrame(A = 1, B = 2, C = 3, D = 4)
 
-    simple_df1(len::Int, col=:A) = (df = DataFrame();
-                                   df[!, col]=Vector{Union{Int, Missing}}(1:len);
-                                   df)
+    simple_df1(len::Int) = DataFrame(A=allowmissing(1:len))
     @test leftjoin!(simple_df1(0), simple_df1(0), on=:A) == simple_df1(0)
     @test leftjoin!(simple_df1(2), simple_df1(0), on=:A) == simple_df1(2)
 
-    simple_df2(len::Int, col=:A) = (df = DataFrame(); df[!, col]=collect(1:len); df)
+    simple_df2(len::Int) = DataFrame(A=1:len)
     @test leftjoin!(simple_df2(0), simple_df2(0), on=:A) ==  simple_df2(0)
     @test leftjoin!(simple_df2(2), simple_df2(0), on=:A) ==  simple_df2(2)
     @test leftjoin!(simple_df2(0), simple_df2(2), on=:A) ==  simple_df2(0)
 
     df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],
-                Mass = [1.5, 2.2, 1.1])
+                   Mass = [1.5, 2.2, 1.1])
     df2 = DataFrame(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
     @test leftjoin!(df2, df, on=:Name) == DataFrame(Name = ["A", "B", "C", "A"],
@@ -1741,7 +1740,7 @@ end
 
     df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
     df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
-    l(on) = leftjoin!(copy(df1), df2, on = on, makeunique=true)
+    l(on) = leftjoin!(copy(df1), df2, on=on, makeunique=true)
     on = :id
     @test l(on) ≅ DataFrame(id = [1, 3, 5],
                             fid = [1, 3, 5],
