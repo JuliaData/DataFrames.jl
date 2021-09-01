@@ -249,8 +249,9 @@ end
     @test_throws ArgumentError select!(df, :f)
     @test_throws BoundsError select!(df, [true, false])
 
-    @test_throws MethodError select!(view(df, :, :), 1:2)
+    @test select!(view(df, :, :), 1:2) == DataFrame(a=1, b=2)
 
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
     d = copy(df, copycols=false)
     @test select!(d, 1:0) == DataFrame()
     @test select!(d, Not(r"")) == DataFrame()
@@ -403,8 +404,9 @@ end
     @test_throws BoundsError select(df, 6)
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
-    @test_throws MethodError select!(df, [true, false])
+    @test_throws BoundsError select!(df, [true, false])
 
+    df = view(DataFrame(a=1, b=2, c=3, d=4, e=5), :, :)
     @test select(df, 1:0) == DataFrame()
     @test select(df, Not(r"")) == DataFrame()
     @test select(df, 1:0, copycols=false) == DataFrame()
@@ -1315,8 +1317,9 @@ end
     @test df == DataFrame(x=1:3, y=4:6)
 
     dfv = view(df, [2, 1], [2, 1])
-    @test_throws MethodError select!(dfv, 1)
-    @test_throws MethodError transform!(dfv, 1)
+    @test_throws ArgumentError select!(dfv, 1)
+    @test transform!(dfv, 1) == dfv
+    @test df == DataFrame(x=1:3, y=4:6)
 end
 
 @testset "renamecols=false tests" begin

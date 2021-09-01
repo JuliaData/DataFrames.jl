@@ -740,22 +740,19 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
     end
 end
 
-##############################################################################
-##
-## Mutating methods
-##
-##############################################################################
+# insertcols!
+# TODO: move to abstractdataframe/abstractdataframe.jl
 
 """
-    insertcols!(df::DataFrame[, col], (name=>val)::Pair...;
+    insertcols!(df::AbstractDataFrame[, col], (name=>val)::Pair...;
                 after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
 
-Insert a column into a data frame in place. Return the updated `DataFrame`.
+Insert a column into a data frame in place. Return the updated data frame.
 If `col` is omitted it is set to `ncol(df)+1`
 (the column is inserted as the last column).
 
 # Arguments
-- `df` : the DataFrame to which we want to add columns
+- `df` : the data frame to which we want to add columns
 - `col` : a position at which we want to insert a column, passed as an integer
   or a column name (a string or a `Symbol`); the column selected with `col`
   and columns following it are shifted to the right in `df` after the operation
@@ -771,6 +768,21 @@ If `col` is omitted it is set to `ncol(df)+1`
 - `copycols` : whether vectors passed as columns should be copied
 
 If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
+
+If `df` is a `SubDataFrame` then it must have been created with `:` as column selector
+(otherwise an error is thrown). In this case the `copycols` keyword argument
+is ignored (i.e. the added column is always copied) and the parent data frame's
+column is filled with `missing` in rows that are filtered out by `df`.
+
+If `df` isa `DataFrame` that has no columns and only values
+other than `AbstractVector` are passed then it is used to create a one-element
+column.
+If `df` isa `DataFrame` that has no columns and at least one `AbstractVector` is
+passed then its length is used to determine the number of elements in all
+created columns.
+In all other cases the number of rows in all created columns must match
+`nrow(df)`.
+.
 
 # Examples
 ```jldoctest
@@ -811,9 +823,15 @@ julia> insertcols!(df, :b, :d => 7:9, after=true)
    3 │ c         9      4      5      3
 ```
 """
-function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
+function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
                      after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
-
+    if !is_column_insertion_allowed(df)
+        throw(ArgumentError("insertcols! is only supported for DataFrame, or for " *
+                            "SubDataFrame created with `:` as column selector"))
+    end
+    if !(copycols || df isa DataFrame)
+        throw(ArgumentError("copycols=false is only allowed if df isa DataFrame "))
+    end
     if col isa SymbolOrString
         col_ind = Int(columnindex(df, col))
         if col_ind == 0
@@ -845,7 +863,7 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:
         end
     end
 
-    if ncol(df) == 0
+    if ncol(df) == 0 && df isa DataFrame
         target_row_count = -1
     else
         target_row_count = nrow(df)
@@ -885,53 +903,65 @@ function insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:
             end
         elseif item isa AbstractRange
             item_new = collect(item)
-        elseif copycols
+        elseif copycols && df isa DataFrame
             item_new = copy(item)
         else
             item_new = item
         end
 
+        if df isa DataFrame
+            dfp = df
+        else
+            @assert df isa SubDataFrame
+            dfp = parent(df)
+            item_new_orig = item_new
+            T = eltype(item_new_orig)
+            item_new = similar(item_new_orig, Union{T, Missing}, nrow(dfp))
+            fill!(item_new, missing)
+            item_new[rows(df)] = item_new_orig
+        end
+
         firstindex(item_new) != 1 && _onebased_check_error()
 
-        if ncol(df) == 0
-            df[!, name] = item_new
+        if ncol(dfp) == 0
+            dfp[!, name] = item_new
         else
-            if hasproperty(df, name)
+            if hasproperty(dfp, name)
                 @assert makeunique
                 k = 1
                 while true
                     nn = Symbol("$(name)_$k")
-                    if !hasproperty(df, nn)
+                    if !hasproperty(dfp, nn)
                         name = nn
                         break
                     end
                     k += 1
                 end
             end
-            insert!(index(df), col_ind, name)
-            insert!(_columns(df), col_ind, item_new)
+            insert!(index(dfp), col_ind, name)
+            insert!(_columns(dfp), col_ind, item_new)
         end
         col_ind += 1
     end
     return df
 end
 
-insertcols!(df::DataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <:Any}...;
+insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <:Any}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, col, (Symbol(n) => v for (n, v) in name_cols)...,
                 after=after, makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::DataFrame, name_cols::Pair{Symbol, <:Any}...;
+insertcols!(df::AbstractDataFrame, name_cols::Pair{Symbol, <:Any}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, ncol(df)+1, name_cols..., after=after,
                 makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::DataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
+insertcols!(df::AbstractDataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
                 after=after, makeunique=makeunique, copycols=copycols)
 
-function insertcols!(df::DataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
+function insertcols!(df::AbstractDataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
     if !(0 < col <= ncol(df) + 1)
         throw(ArgumentError("attempt to insert a column to a data frame with " *
                             "$(ncol(df)) columns at index $col"))
@@ -1745,6 +1775,7 @@ end
 
 # This is not exactly copy! as in general we allow axes to be different
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
+    @assert ncol(newdf) == 0 || nrow(df) == nrow(newdf)
     copy!(_columns(df), _columns(newdf))
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
