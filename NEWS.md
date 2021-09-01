@@ -49,6 +49,10 @@
 * `Tables.materializer` when passed the following types or their subtypes:
   `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
   ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
+* the `insertcols!` function receives new keyword argument `after`
+  (with `false` default) that specifies if columns should be inserted after
+  or before `col`.
+  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
 
 ## Bug fixes
 
