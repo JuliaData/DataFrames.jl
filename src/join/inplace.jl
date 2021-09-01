@@ -94,11 +94,13 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
                    source::Union{Nothing, Symbol, AbstractString}=nothing,
                    matchmissing::Symbol=:error)
 
-    # TODO: add a check if df1 allows adding columns if it is a SubDataFrame
-    #       after https://github.com/JuliaData/DataFrames.jl/pull/2794 is merged
-
     _check_consistency(df1)
     _check_consistency(df2)
+
+    if !is_column_insertion_allowed(df1)
+        throw(ArgumentError("leftjoin! is only supported if `df1` is a `DataFrame`, " *
+                            "or a SubDataFrame created with `:` as column selector"))
+    end
 
     if on == []
         throw(ArgumentError("Missing join argument 'on'."))
@@ -124,7 +126,9 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         rcol = joiner.dfr[!, colname] # note that joiner.dfr does not have to be df2
         rcol_joined = compose_joined_rcol!(rcol, similar_missing(rcol, nrow(df1)),
                                           right_ixs)
-        insertcols!(df1, colname => rcol_joined, makeunique=makeunique, copycols=false)
+        # if df1 isa SubDataFrame we must copy columns
+        insertcols!(df1, colname => rcol_joined, makeunique=makeunique,
+                    copycols=!(df1 isa DataFrame))
     end
 
     if source !== nothing

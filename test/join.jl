@@ -1973,8 +1973,26 @@ end
     @test_throws ArgumentError leftjoin!(DataFrame(), DataFrame(), on=Symbol[])
     @test_throws ArgumentError leftjoin!(DataFrame(a=1, b=2), DataFrame(a=1, b=2), on=:a)
 
-    # TODO: add tests of mixing SubDataFrame and DataFrame
-    #       after https://github.com/JuliaData/DataFrames.jl/pull/2794 is merged
+    @test_throws ArgumentError leftjoin!(view(DataFrame(a=1, b=2), :, 1:2), DataFrame(a=1, c=2), on=:a)
+
+    df1 = DataFrame(id=1:5, x=1:5)
+    df2 = DataFrame(id=1:5, y=1:5)
+    df1v = view(df1, [3, 2], :)
+    @test leftjoin!(df1v, df2, on=:id) == DataFrame(id=[3, 2], x=[3, 2], y=[3, 2])
+    @test df1 ≅ DataFrame(id=1:5, x=1:5, y=[missing, 2, 3, missing, missing])
+
+    df1 = DataFrame(id=1, x=1:5)
+    df2 = DataFrame(id=1:5, y=1:5)
+    df1v = view(df1, [3, 2], :)
+    @test leftjoin!(df1v, df2, on=:id) == DataFrame(id=[1, 1], x=[3, 2], y=[1, 1])
+    @test df1 ≅ DataFrame(id=1, x=1:5, y=[missing, 1, 1, missing, missing])
+
+    df1 = DataFrame(id=1:5, x=1:5)
+    df2 = DataFrame(id=1:5, y=1:5)
+    df1v = view(df1, 1:0, :)
+    @test leftjoin!(df1v, df2, on=:id) == DataFrame(id=[], x=[], y=[])
+    @test df1 ≅ DataFrame(id=1:5, x=1:5, y=[missing, missing, missing, missing, missing])
+    @test df1.y isa Vector{Union{Int, Missing}}
 end
 
 end # module
