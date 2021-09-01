@@ -2,10 +2,13 @@
     leftjoin!(df1, df2; on, makeunique=false, source=nothing,
               matchmissing=:error)
 
+
 Perform a left join of two data frame objects by updating the `df1` with the
 joined columns from `df2`.
 
-The rows in `on` columns of `df2` that match rows in `df1` must be unique.
+A left join includes all rows from `df1`.
+Rows and columns from `df1` are left untouched.
+Each row in `df1` must have at most one match in `df2` based on `on` columns.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -87,9 +90,9 @@ julia> leftjoin!(name, job2, on = :ID => :identifier, makeunique=true, source=:s
 ```
 """
 function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         source::Union{Nothing, Symbol, AbstractString}=nothing,
-         matchmissing::Symbol=:error)
+                   on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+                   source::Union{Nothing, Symbol, AbstractString}=nothing,
+                   matchmissing::Symbol=:error)
 
     # TODO: add a check if df1 allows adding columns if it is a SubDataFrame
     #       after https://github.com/JuliaData/DataFrames.jl/pull/2794 is merged
@@ -107,7 +110,7 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
     if !(makeunique || isempty(intersect(right_noon_names, names(df1))))
         throw(ArgumentError("the following columns are present in both " *
                             "left and right data frames but not listed in `on`: " *
-                            join(intersect(right_noon_names, names(df1))), ", ") *
+                            join(intersect(right_noon_names, names(df1)), ", ") *
                             ". Pass makeunique=true to add a suffix automatically to " *
                             "columns names from the right data frame."))
     end

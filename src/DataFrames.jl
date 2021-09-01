@@ -133,7 +133,7 @@ include("abstractdataframe/reshape.jl")
 
 include("join/composer.jl")
 include("join/core.jl")
-include("join/leftjoin!.jl")
+include("join/inplace.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
 include("groupeddataframe/callprocessing.jl")
