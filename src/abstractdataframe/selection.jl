@@ -170,7 +170,7 @@ struct ByRow{T} <: Function
     fun::T
 end
 
-(f::ByRow)(cols::AbstractVector...) = collect(Base.Generator(f.fun, cols...))
+(f::ByRow)(cols::AbstractVector...) = map(f.fun, cols...)
 (f::ByRow)(table::NamedTuple) = [f.fun(nt) for nt in Tables.namedtupleiterator(table)]
 
 # add a method to funname defined in other/utils.jl

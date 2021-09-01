@@ -1,10 +1,5 @@
 # DataFrames.jl v1.3 Release Notes
 
-## Bug fixes
-
-* make sure `ByRow` does not use `map` for `PooledVector` argument
-  ([#2837](https://github.com/JuliaData/DataFrames.jl/issues/2837))
-
 ## New functionalities
 
 * in the `groupby` function the `sort` keyword argument now allows three values
