@@ -40,7 +40,7 @@ julia> select(df2, :a_b_identity => AsTable)
    2 │     2     12
    3 │     3     13
 
-julia> select(df, AsTable([:a, :b]) => ByRow(nt -> map(x -> x^2, nt)) => AsTable)
+julia> select(df1, AsTable([:a, :b]) => ByRow(nt -> map(x -> x^2, nt)) => AsTable)
 3×2 DataFrame       
  Row │ a      b     
      │ Int64  Int64 
