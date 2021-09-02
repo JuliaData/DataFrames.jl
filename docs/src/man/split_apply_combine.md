@@ -571,7 +571,7 @@ julia> push!(df, [3])
    3 │     3
 
 julia> gd[1]
-ERROR: AssertionError: The current number of rows in the parent data frame is 3 and it does not match the number of rows it contained when GroupedDataFrame was created which was 2. The number of rows in the parent data frame has likely been changed unintentionally (e.g. using subset!, filter!, delete!, push!, or append! functions).
+ERROR: AssertionError: The current number of rows in the parent data frame is 3 and it does not match the number of rows it contained when GroupedDataFrame was created which was 2. The number of rows in the parent data frame has likely been changed unintentionally (e.g. using subset!, filter!, deleteat!, keepat!, push!, or append! functions).
 ```
 
 Sometimes it is useful to append rows to the source data frame of a

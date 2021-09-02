@@ -47,6 +47,7 @@
   filled with `missing` values.
   If `SubDataFrame` was not created with `:` as column selector the resulting operation
   must produce the same column names as stored in the source `SubDataFrame` or an error is thrown.
+
 * `Tables.materializer` when passed the following types or their subtypes:
   `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
   ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
@@ -54,11 +55,18 @@
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
+* Added support fro `deleteat!` and `keepat!`
+  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/issues/XXXX))
 
 ## Bug fixes
 
 * fix a problem with `unstack` on empty data frame
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
+
+## Deprecations
+
+* `delete!` is deprecated in favor of `deleteat!`
+  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/issues/XXXX))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 

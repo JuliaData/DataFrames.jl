@@ -937,7 +937,7 @@ function dropmissing!(df::AbstractDataFrame,
                       disallowmissing::Bool=true)
     inds = completecases(df, cols)
     inds .= .!(inds)
-    delete!(df, inds)
+    deleteat!(df, inds)
     disallowmissing && disallowmissing!(df, cols)
     df
 end
@@ -1124,7 +1124,7 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
    3 │     1  b
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
+Base.filter!(f, df::AbstractDataFrame) = deleteat!(df, findall(!f, eachrow(df)))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
@@ -1142,20 +1142,20 @@ function _filter!_helper(df::AbstractDataFrame, f, cols...)
     else
         rowidxs = findall(((x...) -> !(f(x...)::Bool)).(cols...))
     end
-    return delete!(df, rowidxs)
+    return deleteat!(df, rowidxs)
 end
 
 function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
     dff = select(df, cols.cols, copycols=false)
     if ncol(dff) == 0
-        return delete!(df, findall(x -> !f(NamedTuple()), axes(df, 1)))
+        return deleteat!(df, findall(x -> !f(NamedTuple()), axes(df, 1)))
     else
         return _filter!_helper_astable(df, Tables.namedtupleiterator(dff), f)
     end
 end
 
 _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f) =
-    delete!(df, _findall((x -> !(f(x)::Bool)).(nti)))
+    deleteat!(df, _findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.Matrix(df::AbstractDataFrame)
     T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
@@ -1267,11 +1267,11 @@ end
 
 nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
-Base.unique!(df::AbstractDataFrame) = delete!(df, _findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame) = deleteat!(df, _findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
-    delete!(df, _findall(nonunique(df, cols)))
+    deleteat!(df, _findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
-    delete!(df, _findall(nonunique(df, cols)))
+    deleteat!(df, _findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 @inline function Base.unique(df::AbstractDataFrame; view::Bool=false)

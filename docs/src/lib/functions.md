@@ -127,12 +127,13 @@ valuecols
 
 ## Filtering rows
 ```@docs
-delete!
+deleteat!
 empty
 empty!
 filter
 filter!
 first
+keepat!
 last
 only
 nonunique
