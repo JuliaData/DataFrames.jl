@@ -8,9 +8,10 @@ selection operations supported by [`combine`](@ref), [`select`](@ref), [`select!
 If `AsTable(cols)` is used in `source` position it signals that the columns selected
 by the wrapped selector `cols` should be passed as a `NamedTuple` to the function.
 
-If `AsTable` is used in `destination` position it means that the result of the `transformation` operation
-is a vector of containers (or a single container if `ByRow` is used) that should be expanded 
-into multiple columns using `keys` to get column names.
+If `AsTable` is used in `destination` position it means that the result of
+the `transformation` operation is a vector of containers
+(or a single container if `ByRow(transformation)` is used)
+that should be expanded  into multiple columns using `keys` to get column names.
 
 # Examples
 ```jldoctest
