@@ -648,7 +648,7 @@ change in future releases.
   matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
   `isequal` is used for comparisons of rows for equality
 
-All columns of the returned data table will support missing values.
+All columns of the returned data frame will support missing values.
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -795,7 +795,7 @@ change in future releases.
   matched; if equal to `:notequal` then missings are dropped in `df1` `on` columns;
   `isequal` is used for comparisons of rows for equality
 
-All columns of the returned data table will support missing values.
+All columns of the returned data frame will support missing values.
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -946,7 +946,7 @@ This behavior may change in future releases.
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; `isequal` is used for comparisons of rows for equality
 
-All columns of the returned data table will support missing values.
+All columns of the returned data frame will support missing values.
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
