@@ -675,6 +675,13 @@ end
         @test dfu_m[2, :Var2] == sentinel
         @test eltype(dfu_m[!, :Var2]) == fcoltype
     end
+                          
+@testset "empty unstack" begin
+    df = DataFrame(a = [], b = [], c = [])
+    dfu = unstack(df, :b, :c)
+    @test isempty(dfu)
+    @test names(dfu) == ["a"]
+    @test dfu.a isa Vector{Any}
 end
 
 end # module

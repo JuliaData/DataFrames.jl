@@ -22,7 +22,7 @@ Tables.columnindex(df::Union{AbstractDataFrame, DataFrameRow}, idx::AbstractStri
     columnindex(df, Symbol(idx))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(_names(df), [eltype(col) for col in eachcol(df)])
-Tables.materializer(df::AbstractDataFrame) = DataFrame
+Tables.materializer(::Type{<:AbstractDataFrame}) = DataFrame
 
 Tables.getcolumn(df::AbstractDataFrame, i::Int) = df[!, i]
 Tables.getcolumn(df::AbstractDataFrame, nm::Symbol) = df[!, nm]
@@ -82,8 +82,8 @@ Tables.schema(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.schema(paren
 Tables.rowtable(itr::Union{DataFrameRows, DataFrameColumns}) = Tables.rowtable(parent(itr))
 Tables.namedtupleiterator(itr::Union{DataFrameRows, DataFrameColumns}) =
     Tables.namedtupleiterator(parent(itr))
-Tables.materializer(itr::Union{DataFrameRows, DataFrameColumns}) =
-    Tables.materializer(parent(itr))
+Tables.materializer(::Type{<:Union{DataFrameRows, DataFrameColumns}}) =
+    DataFrame
 
 Tables.getcolumn(itr::Union{DataFrameRows, DataFrameColumns}, i::Int) =
     Tables.getcolumn(parent(itr), i)

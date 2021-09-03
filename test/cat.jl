@@ -455,7 +455,7 @@ end
     df2 = @view df[:, 1:2]
     @test typeof(df1) != typeof(df2)
 
-    @test_throws ArgumentError reduce(vcat, ())
+    @test_throws Union{MethodError, ArgumentError} reduce(vcat, ())
     @test reduce(vcat, DataFrame[]) == DataFrame()
     @test reduce(vcat, SubDataFrame[]) == DataFrame()
     @test reduce(vcat, AbstractDataFrame[]) == DataFrame()

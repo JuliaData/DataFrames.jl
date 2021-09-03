@@ -1198,7 +1198,7 @@ Base.isless(::TestType, ::TestType) = false
         @test typeof(res.y) == typeof(expected.y)
         if m
             gd[1][:, :x1c] .= missing
-            @test_throws ArgumentError combine(gd, :x1c => f∘skipmissing => :y)
+            @test_throws Union{MethodError, ArgumentError} combine(gd, :x1c => f∘skipmissing => :y)
         end
     end
     @test combine(gd, :x1 => maximum => :y, :x2 => sum => :z) ≅
@@ -2561,8 +2561,12 @@ end
                DataFrame(g=categorical([3, 1, 1, missing]), x=1:4, y=5:8)),
         dosort in (true, false, nothing)
 
-        @test_throws MethodError select!(groupby_checked(view(df, :, :), :g), :x)
-        @test_throws MethodError transform!(groupby_checked(view(df, :, :), :g), :x)
+        dfc = copy(df)
+        select!(groupby_checked(view(dfc, :, :), :g), :x)
+        @test dfc ≅ df[!, [:g, :x]]
+        dfc = copy(df)
+        transform!(groupby_checked(view(dfc, :, :), :g), :x)
+        @test dfc ≅ df
 
         dfc = copy(df)
         g = dfc.g

@@ -80,53 +80,63 @@ end
 
 ### Broadcasting assignment
 
-struct LazyNewColDataFrame{T}
-    df::DataFrame
+struct LazyNewColDataFrame{T,D}
+    df::D
     col::T
 end
 
 Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 Base.ndims(::Type{<:LazyNewColDataFrame}) = 1
 
-struct ColReplaceDataFrame
-    df::DataFrame
+struct ColReplaceDataFrame{T<:AbstractDataFrame}
+    df::T
     cols::Vector{Int}
 end
 
 Base.axes(x::ColReplaceDataFrame) = (axes(x.df, 1), Base.OneTo(length(x.cols)))
-Base.ndims(::Type{ColReplaceDataFrame}) = 2
+Base.ndims(::Type{<:ColReplaceDataFrame}) = 2
 
 Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
 Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
 Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
 
-function Base.dotview(df::DataFrame, ::Colon, cols::ColumnIndex)
+function Base.dotview(df::AbstractDataFrame, ::Colon, cols::ColumnIndex)
     haskey(index(df), cols) && return view(df, :, cols)
     if !(cols isa SymbolOrString)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
+    if !is_column_insertion_allowed(df)
+        throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                            "columns of its parent data frame is disallowed"))
+    end
     return LazyNewColDataFrame(df, Symbol(cols))
 end
 
-function Base.dotview(df::DataFrame, ::typeof(!), cols)
+function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols)
     if !(cols isa ColumnIndex)
-        return ColReplaceDataFrame(df, index(df)[cols])
+        return ColReplaceDataFrame(df, convert(Vector{Int}, index(df)[cols]))
     end
-    if !(cols isa SymbolOrString) && cols > ncol(df)
+    if cols isa SymbolOrString
+        if columnindex(df, cols) == 0 && !is_column_insertion_allowed(df)
+            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                                "columns of its parent data frame is disallowed"))
+        end
+    elseif !(1 <= cols <= ncol(df))
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
     return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
 end
 
-Base.dotview(df::SubDataFrame, ::typeof(!), idxs) =
-    throw(ArgumentError("broadcasting with ! row selector is not allowed for SubDataFrame"))
-
-
 # TODO: remove the deprecations when Julia 1.7 functionality is commonly used
 #       by the community
 if isdefined(Base, :dotgetproperty)
-    function Base.dotgetproperty(df::DataFrame, col::SymbolOrString)
+    function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
         if columnindex(df, col) == 0
+            if !is_column_insertion_allowed(df)
+                throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                                    "columns of its parent data frame is disallowed"))
+            end
+            # TODO: double check that this is tested
             return LazyNewColDataFrame(df, Symbol(col))
         else
             Base.depwarn("In the future this operation will allocate a new column " *
@@ -134,25 +144,23 @@ if isdefined(Base, :dotgetproperty)
             return getproperty(df, col)
         end
     end
-
-    function Base.dotgetproperty(df::SubDataFrame, col::SymbolOrString)
-        Base.depwarn("broadcasting getproperty is deprecated for SubDataFrame and " *
-                     "will be disallowed in  the future. Use `df[:, $(repr(col))] .= ... instead",
-                     :dotgetproperty)
-        return getproperty(df, col)
-    end
 end
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
+    df = lazydf.df
+    if !haskey(index(df), lazydf.col) && df isa SubDataFrame && lazydf.col isa SymbolOrString
+        @assert is_column_insertion_allowed(df)
+    end
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}
         bc_tmp = Base.Broadcast.Broadcasted{T}(bc.f, bc.args, ())
         v = Base.Broadcast.materialize(bc_tmp)
-        col = similar(Vector{typeof(v)}, nrow(lazydf.df))
+        col = similar(Vector{typeof(v)}, nrow(df))
         copyto!(col, bc)
     else
         col = Base.Broadcast.materialize(bc)
     end
-    lazydf.df[!, lazydf.col] = col
+
+    return df[!, lazydf.col] = col
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
