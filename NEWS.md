@@ -23,9 +23,10 @@
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
 * the `unstack` function receives new keyword argument `fillvalue`
-  (with `missing` default) that fills combination of not encountered
+  (with `missing` default) that is used to fill combinations of not encountered
   rows and columns. This feature allows to distinguish between missings in
-  value column and just missing row/column combinations.
+  value column and just missing row/column combinations and to easily fill 
+  with zeros non existing combinations in case of counting.
   ([#2828](https://github.com/JuliaData/DataFrames.jl/pull/2828))
 
 * Allow adding new columns to a `SubDataFrame` created with `:` as column selector
