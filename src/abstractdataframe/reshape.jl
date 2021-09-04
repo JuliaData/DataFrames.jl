@@ -425,10 +425,10 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
                             "Pass `allowmissing=true` to skip missings."))
     end
-    unstacked_val = [fill!(
-        similar(valuecol, promote_type(eltype(valuecol), typeof(fillvalue)), Nrow),
-        fillvalue
-    ) for _ in 1:Ncol]
+    unstacked_val = [fill!(similar(valuecol,
+                                   promote_type(eltype(valuecol), typeof(fillvalue)),
+                                   Nrow),
+                           fillvalue) for _ in 1:Ncol]
 
     mask_filled = falses(Nrow, Ncol)
 

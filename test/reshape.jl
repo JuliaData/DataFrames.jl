@@ -655,27 +655,45 @@ end
 end
 
 @testset "unstack with fillvalue" begin
-    df = DataFrame(
-        :factory =>  ["Fac1", "Fac1", "Fac2", "Fac2"],
-        :variable => ["Var1", "Var2", "Var1", "Var2"],
-        :value => [1, 2, 3, 4]
-    )
-    dfu1 = DataFrame(
-        :factory => ["Fac1", "Fac2"],
-        :Var1 => allowmissing([1, 3]),
-        :Var2 => allowmissing([2, 4])
-    )
+    df = DataFrame(factory=["Fac1", "Fac1", "Fac2", "Fac2"],
+                   variable=["Var1", "Var2", "Var1", "Var2"],
+                   value=[1, 2, 3, 4])
+    dfu1 = DataFrame(factory=["Fac1", "Fac2"],
+                     Var1=allowmissing([1, 3]),
+                     Var2=allowmissing([2, 4]))
     dfu = unstack(df, :variable, :value)
     @test dfu ≅ dfu1
-    @test eltype(dfu[!, :Var1]) == Union{Missing, Int}
+    @test eltype(dfu.Var1) === Union{Missing, Int}
+    @test eltype(dfu.Var2) === Union{Missing, Int}
 
-    delete!(df, 4)
-    for (sentinel, fcoltype) in zip([1, 1., "1", nothing], [Int, Float64, Any, Union{Int, Nothing}])
-        dfu_m = unstack(df, :variable, :value, fillvalue=sentinel)
-        @test dfu_m[2, :Var2] == sentinel
-        @test eltype(dfu_m[!, :Var2]) == fcoltype
+    for (sentinel, coleltype) in zip([1, 1., "1", nothing], [Int, Float64, Any, Union{Int, Nothing}])
+        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        @test dfu ≅ dfu1
+        @test eltype(dfu.Var1) === coleltype
+        @test eltype(dfu.Var2) === coleltype
     end
-                          
+
+    df = DataFrame(factory=["Fac1", "Fac1", "Fac2"],
+                   variable=["Var1", "Var2", "Var1"],
+                   value=[1, 2, 3])
+    for (sentinel, coleltype) in zip([1, 1.0, "1", nothing], [Int, Float64, Any, Union{Int, Nothing}])
+        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        @test dfu.Var1 == [1, 3]
+        @test eltype(dfu.Var1) === coleltype
+        @test dfu.Var2 == [2, sentinel]
+        @test eltype(dfu.Var2) === coleltype
+    end
+
+    df = DataFrame(factory=["Fac1", "Fac1", "Fac2"],
+                   variable=["Var1", "Var2", "Var1"],
+                   value=categorical([1, 2, 3], ordered=true))
+    for (sentinel, coltype) in zip([0, 0.0, "", nothing, missing], [Int, Float64, Any, Union{Int, Nothing}])
+        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        @test dfu.Var1 == [1, 3]
+        @test dfu.Var2 == [2, sentinel]
+    end
+end
+
 @testset "empty unstack" begin
     df = DataFrame(a = [], b = [], c = [])
     dfu = unstack(df, :b, :c)
