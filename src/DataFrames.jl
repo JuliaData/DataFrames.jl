@@ -21,6 +21,8 @@ import DataAPI,
        DataAPI.semijoin,
        DataAPI.antijoin,
        DataAPI.crossjoin,
+       DataAPI.nrow,
+       DataAPI.ncol,
        Tables,
        Tables.columnindex,
        Future.copy!
