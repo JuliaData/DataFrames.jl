@@ -1665,7 +1665,7 @@ end
     @test_throws ArgumentError select(gdf, [:c1, :c2] => AsTable)
 end
 
-@testset "fix ByRow on PooledArray" begin
+@testset "ByRow on PooledArray calls function on each entry" begin
     id = 0
     df = DataFrame(a=PooledArray([1, 1, 1]))
     function f(x)
