@@ -13,7 +13,8 @@ DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(kwargs..., copycols::Bool=true)
 
-DataFrame(columns::AbstractVecOrMat, names::Union{AbstractVector, Symbol};
+DataFrame(columns::AbstractVecOrMat,
+          names::AbstractVector{<:Union{AbstractVector, Symbol}};
           makeunique::Bool=false, copycols::Bool=true)
 
 DataFrame(table; copycols::Union{Bool, Nothing}=nothing)
