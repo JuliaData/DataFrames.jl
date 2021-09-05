@@ -687,11 +687,39 @@ end
     df = DataFrame(factory=["Fac1", "Fac1", "Fac2"],
                    variable=["Var1", "Var2", "Var1"],
                    value=categorical([1, 2, 3], ordered=true))
-    for (sentinel, coltype) in zip([0, 0.0, "", nothing, missing], [Int, Float64, Any, Union{Int, Nothing}])
+    # categorical is dropped here
+    for (sentinel, coleltype) in zip([0, 0.0, "", nothing], [Int, Float64, Any, Union{Int, Nothing}])
         dfu = unstack(df, :variable, :value, fillvalue=sentinel)
         @test dfu.Var1 == [1, 3]
+        @test typeof(dfu.Var1) === Vector{coleltype}
         @test dfu.Var2 == [2, sentinel]
+        @test typeof(dfu.Var2) === Vector{coleltype}
     end
+    # categorical is kept here
+    for (sentinel, coleltype) in zip([missing, CategoricalValue(1, df.value), ], [Union{Int, Missing}, Int])
+        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        @test dfu.Var1 == [1, 3]
+        @test typeof(dfu.Var1) <: CategoricalVector{coleltype}
+        @test dfu.Var2 ≅ [2, sentinel]
+        @test typeof(dfu.Var2) <: CategoricalVector{coleltype}
+        @test levels(dfu.Var1) == levels(dfu.Var2) == levels(df.value)
+    end
+
+    df = DataFrame(factory=["Fac1", "Fac1", "Fac2"],
+                   variable=["Var1", "Var2", "Var1"],
+                   value=categorical([1, 2, 3]))
+    dfu = unstack(df, :variable, :value, fillvalue=CategoricalValue(0, categorical([0])))
+    @test dfu.Var1 == [1, 3]
+    @test typeof(dfu.Var1) <: CategoricalVector{Int}
+    @test dfu.Var2 ≅ [2, 0]
+    @test typeof(dfu.Var2) <: CategoricalVector{Int}
+    @test levels(dfu.Var1) == levels(dfu.Var2) == 0:3
+    dfu = unstack(df, :variable, :value, fillvalue=CategoricalValue("0", categorical(["0"])))
+    @test dfu.Var1 == [1, 3]
+    @test typeof(dfu.Var1) <: CategoricalVector{Union{Int,String}}
+    @test dfu.Var2 ≅ [2, "0"]
+    @test typeof(dfu.Var2) <: CategoricalVector{Union{Int,String}}
+    @test levels(dfu.Var1) == levels(dfu.Var2) == ["0"; 1:3]
 end
 
 @testset "empty unstack" begin

@@ -230,7 +230,9 @@ Row and column keys will be ordered in the order of their first appearance.
   if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
   then  then the last encountered `value` will be retained.
 - `fillvalue`: missing row/column combinations are filled with this value; The default
-  is `missing`.
+  is `missing`. If the `value` column is a `CategoricalVector` and `fillvalue`
+  is not `missing` then in order to keep unstacked value columns also
+  `CategoricalVector` the `fillvalue` must be passed as `CategoricalValue`
 
 # Examples
 
@@ -334,11 +336,9 @@ julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
    5 │     5       2.0       1.0       3.0
    6 │     6       2.0       1.0       3.0
 
-julia> df = DataFrame(
-    :id => ["1", "1", "2"],
-    :variable => ["Var1", "Var2", "Var1"],
-    :value => [1, 2, 3]
-)
+julia> df = DataFrame(id= ["1", "1", "2"],
+                      variable=["Var1", "Var2", "Var1"],
+                      value=[1, 2, 3])
 3×3 DataFrame
  Row │ id      variable  value
      │ String  String    Int64
@@ -347,13 +347,13 @@ julia> df = DataFrame(
    2 │ 1       Var2          2
    3 │ 2       Var1          3
 
-julia> unstack(df, :variable, :value, fillvalue=42)
+julia> unstack(df, :variable, :value, fillvalue=0)
 2×3 DataFrame
  Row │ id      Var1   Var2
      │ String  Int64  Int64
 ─────┼──────────────────────
    1 │ 1           1      2
-   2 │ 2           3     42
+   2 │ 2           3      0
 ```
 Note that there are some differences between the widened results above.
 """
