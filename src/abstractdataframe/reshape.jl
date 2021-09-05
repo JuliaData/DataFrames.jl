@@ -336,7 +336,7 @@ julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
    5 │     5       2.0       1.0       3.0
    6 │     6       2.0       1.0       3.0
 
-julia> df = DataFrame(id= ["1", "1", "2"],
+julia> df = DataFrame(id=["1", "1", "2"],
                       variable=["Var1", "Var2", "Var1"],
                       value=[1, 2, 3])
 3×3 DataFrame
