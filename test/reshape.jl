@@ -654,7 +654,7 @@ end
     @test IndexStyle(DataFrames.StackedVector) == IndexLinear()
 end
 
-@testset "unstack with fillvalue" begin
+@testset "unstack with fill" begin
     df = DataFrame(factory=["Fac1", "Fac1", "Fac2", "Fac2"],
                    variable=["Var1", "Var2", "Var1", "Var2"],
                    value=[1, 2, 3, 4])
@@ -667,7 +667,7 @@ end
     @test eltype(dfu.Var2) === Union{Missing, Int}
 
     for (sentinel, coleltype) in zip([1, 1., "1", nothing], [Int, Float64, Any, Union{Int, Nothing}])
-        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        dfu = unstack(df, :variable, :value, fill=sentinel)
         @test dfu ≅ dfu1
         @test eltype(dfu.Var1) === coleltype
         @test eltype(dfu.Var2) === coleltype
@@ -677,7 +677,7 @@ end
                    variable=["Var1", "Var2", "Var1"],
                    value=[1, 2, 3])
     for (sentinel, coleltype) in zip([1, 1.0, "1", nothing], [Int, Float64, Any, Union{Int, Nothing}])
-        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        dfu = unstack(df, :variable, :value, fill=sentinel)
         @test dfu.Var1 == [1, 3]
         @test eltype(dfu.Var1) === coleltype
         @test dfu.Var2 == [2, sentinel]
@@ -689,7 +689,7 @@ end
                    value=categorical([1, 2, 3], ordered=true))
     # categorical is dropped here
     for (sentinel, coleltype) in zip([0, 0.0, "", nothing], [Int, Float64, Any, Union{Int, Nothing}])
-        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        dfu = unstack(df, :variable, :value, fill=sentinel)
         @test dfu.Var1 == [1, 3]
         @test typeof(dfu.Var1) === Vector{coleltype}
         @test dfu.Var2 == [2, sentinel]
@@ -697,7 +697,7 @@ end
     end
     # categorical is kept here
     for (sentinel, coleltype) in zip([missing, CategoricalValue(1, df.value), ], [Union{Int, Missing}, Int])
-        dfu = unstack(df, :variable, :value, fillvalue=sentinel)
+        dfu = unstack(df, :variable, :value, fill=sentinel)
         @test dfu.Var1 == [1, 3]
         @test typeof(dfu.Var1) <: CategoricalVector{coleltype}
         @test dfu.Var2 ≅ [2, sentinel]
@@ -708,13 +708,13 @@ end
     df = DataFrame(factory=["Fac1", "Fac1", "Fac2"],
                    variable=["Var1", "Var2", "Var1"],
                    value=categorical([1, 2, 3]))
-    dfu = unstack(df, :variable, :value, fillvalue=CategoricalValue(0, categorical([0])))
+    dfu = unstack(df, :variable, :value, fill=CategoricalValue(0, categorical([0])))
     @test dfu.Var1 == [1, 3]
     @test typeof(dfu.Var1) <: CategoricalVector{Int}
     @test dfu.Var2 ≅ [2, 0]
     @test typeof(dfu.Var2) <: CategoricalVector{Int}
     @test levels(dfu.Var1) == levels(dfu.Var2) == 0:3
-    dfu = unstack(df, :variable, :value, fillvalue=CategoricalValue("0", categorical(["0"])))
+    dfu = unstack(df, :variable, :value, fill=CategoricalValue("0", categorical(["0"])))
     @test dfu.Var1 == [1, 3]
     @test typeof(dfu.Var1) <: CategoricalVector{Union{Int,String}}
     @test dfu.Var2 ≅ [2, "0"]
