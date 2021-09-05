@@ -54,6 +54,10 @@
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
+* the `DataFrame` constructor when column names are passed to it as a second
+  argument now determines if a passed vector of column names is valid based on
+  its contents and not element type
+  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2859))
 
 ## Bug fixes
 

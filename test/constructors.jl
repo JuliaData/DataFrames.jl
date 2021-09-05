@@ -363,6 +363,8 @@ end
     @test_throws ArgumentError DataFrame([Int, Float64], [:a, :b], 2)
     @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"])
     @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"], 2)
+    @test_throws ArgumentError DataFrame([Int, Float64], ["a", :b])
+    @test_throws MethodError DataFrame([Int, Float64], ["a", :b], 2)
 end
 
 @testset "threading correctness tests" begin
@@ -370,6 +372,23 @@ end
         df = DataFrame(rand(x, y), :auto)
         @test df == copy(df)
     end
+end
+
+@testset "non-specific vector of column names" begin
+    ref = DataFrame(a=1:2, b=3:4)
+    for x in ([1 3; 2 4], [[1, 2], [3, 4]], [1:2, 3:4], Any[[1, 2], [3, 4]], Any[1:2, 3:4])
+        @test DataFrame(x, Any[:a, :b]) == ref
+        @test DataFrame(x, Any["a", "b"]) == ref
+        @test DataFrame(x, Union{String, Symbol}[:a, :b]) == ref
+        @test DataFrame(x, Union{String, Symbol}["a", "b"]) == ref
+        @test_throws ArgumentError DataFrame(x, Any["a", :b])
+        @test_throws ArgumentError DataFrame(x, Union{String, Symbol}["a", :b])
+    end
+    @test DataFrame([], []) == DataFrame()
+    @test DataFrame(fill(0, 0, 0), []) == DataFrame()
+    @test_throws ArgumentError DataFrame(Type[], Symbol[])
+    @test_throws ArgumentError DataFrame(Type[], String[])
+    @test_throws MethodError DataFrame(Type[], [])
 end
 
 end # module

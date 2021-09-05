@@ -322,9 +322,16 @@ function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
                      copycols=copycols)
 end
 
-DataFrame(columns::AbstractVector, cnames::AbstractVector{<:AbstractString};
+function _name2symbol(str::AbstractVector)
+    if !(all(x -> x isa AbstractString, str) || all(x -> x isa Symbol, str))
+        throw(ArgumentError("All passed column names must be strings or Symbols"))
+    end
+    return Symbol[Symbol(s) for s in str]
+end
+
+DataFrame(columns::AbstractVector, cnames::AbstractVector;
           makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(columns, Symbol.(cnames), makeunique=makeunique, copycols=copycols)
+    DataFrame(columns, _name2symbol(cnames), makeunique=makeunique, copycols=copycols)
 
 DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{Symbol};
           makeunique::Bool=false, copycols::Bool=true)::DataFrame =
@@ -332,9 +339,9 @@ DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{Symb
               Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
               copycols=copycols)
 
-DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{<:AbstractString};
+DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector;
           makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(columns, Symbol.(cnames); makeunique=makeunique, copycols=copycols)
+    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique, copycols=copycols)
 
 function DataFrame(columns::AbstractVector, cnames::Symbol; copycols::Bool=true)
     if cnames !== :auto
@@ -350,9 +357,9 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol}; makeunique::B
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)
 
-DataFrame(columns::AbstractMatrix, cnames::AbstractVector{<:AbstractString};
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector;
           makeunique::Bool=false) =
-    DataFrame(columns, Symbol.(cnames); makeunique=makeunique)
+    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique)
 
 function DataFrame(columns::AbstractMatrix, cnames::Symbol)
     if cnames !== :auto
@@ -387,7 +394,6 @@ DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:Abstr
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
                         "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))
-
 
 ##############################################################################
 ##
