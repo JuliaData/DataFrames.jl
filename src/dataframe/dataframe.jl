@@ -14,7 +14,7 @@ DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(kwargs..., copycols::Bool=true)
 
 DataFrame(columns::AbstractVecOrMat,
-          names::AbstractVector{<:Union{AbstractVector, Symbol}};
+          names::AbstractVector;
           makeunique::Bool=false, copycols::Bool=true)
 
 DataFrame(table; copycols::Union{Bool, Nothing}=nothing)
@@ -56,7 +56,9 @@ the appropriate length. As a particular rule values stored in a `Ref` or a
 It is also allowed to pass a vector of vectors or a matrix as as the first
 argument. In this case the second argument must be
 a vector of `Symbol`s or strings specifying column names, or the symbol `:auto`
-to generate column names `x1`, `x2`, ... automatically.
+to generate column names `x1`, `x2`, ... automatically. Note that in this case
+if the first argument is a matrix and `copycols=false` the columns of the created
+`DataFrame` will be views of columns the source matrix.
 
 If a single positional argument is passed to a `DataFrame` constructor then it
 is assumed to be of type that implements the
@@ -353,22 +355,25 @@ function DataFrame(columns::AbstractVector, cnames::Symbol; copycols::Bool=true)
     return DataFrame(columns, gennames(length(columns)), copycols=copycols)
 end
 
-DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol}; makeunique::Bool=false) =
-    DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
-              makeunique=makeunique, copycols=false)
+function DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
+                   makeunique::Bool=false, copycols::Bool=true)
+    getter = copycols ? getindex : view
+    return DataFrame(AbstractVector[getter(columns, :, i) for i in 1:size(columns, 2)],
+              cnames, makeunique=makeunique, copycols=false)
+end
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector;
-          makeunique::Bool=false) =
-    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique)
+          makeunique::Bool=false, copycols::Bool=true) =
+    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique, copycols=copycols)
 
-function DataFrame(columns::AbstractMatrix, cnames::Symbol)
+function DataFrame(columns::AbstractMatrix, cnames::Symbol; copycols::Bool=true)
     if cnames !== :auto
         throw(ArgumentError("if the first positional argument to DataFrame " *
                             "constructor is a matrix and a second " *
                             "positional argument is passed then the second " *
                             "argument must be a vector of column names or :auto"))
     end
-    return DataFrame(columns, gennames(size(columns, 2)), makeunique=false)
+    return DataFrame(columns, gennames(size(columns, 2)), makeunique=false, copycols=copycols)
 end
 
 # Discontinued constructors

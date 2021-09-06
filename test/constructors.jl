@@ -391,4 +391,25 @@ end
     @test_throws MethodError DataFrame(Type[], [])
 end
 
+@testset "DataFrame matrix constructor copycols kwarg" begin
+    m = [1 4; 2 5; 3 6]
+    refdf = DataFrame(x1=1:3, x2=4:6)
+    for cnames in ([:x1, :x2], ["x1", "x2"], Any[:x1, :x2], Any["x1", "x2"], :auto)
+        df = DataFrame(m, cnames)
+        @test df == refdf
+        @test df.x1 isa Vector{Int}
+        @test df.x2 isa Vector{Int}
+        df = DataFrame(m, cnames, copycols=true)
+        @test df == refdf
+        @test df.x1 isa Vector{Int}
+        @test df.x2 isa Vector{Int}
+        df = DataFrame(m, cnames, copycols=false)
+        @test df == refdf
+        @test df.x1 isa SubArray{Int,1, Matrix{Int}}
+        @test df.x2 isa SubArray{Int,1, Matrix{Int}}
+        @test parent(df.x1) === m
+        @test parent(df.x2) === m
+    end
+end
+
 end # module
