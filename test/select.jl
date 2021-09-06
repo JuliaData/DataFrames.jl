@@ -1,6 +1,6 @@
 module TestSelect
 
-using DataFrames, Test, Random, Statistics, CategoricalArrays
+using DataFrames, Test, Random, Statistics, CategoricalArrays, PooledArrays
 
 const ≅ = isequal
 
@@ -1666,6 +1666,16 @@ end
     @test select(gdf, :c2 => [:p, :q]) == DataFrame(id=1:2, p=[11, 13], q=[12, 14])
     @test_throws ArgumentError select(gdf, [:c1, :c2] => AsTable)
     @test_throws ArgumentError select(gdf, [:c1, :c2] => AsTable)
+end
+
+@testset "ByRow on PooledArray calls function on each entry" begin
+    id = 0
+    df = DataFrame(a=PooledArray([1, 1, 1]))
+    function f(x)
+        id += 1
+        return id
+    end
+    @test select(df, :a => ByRow(f) => :a) == DataFrame(a=1:3)
 end
 
 end # module

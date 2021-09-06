@@ -92,16 +92,6 @@ struct DataFrameJoiner
     end
 end
 
-# helper map between the row indices in original and joined table
-struct RowIndexMap
-    "row indices in the original table"
-    orig::Vector{Int}
-    "row indices in the resulting joined table"
-    join::Vector{Int}
-end
-
-Base.length(x::RowIndexMap) = length(x.orig)
-
 _rename_cols(old_names::AbstractVector{Symbol},
              renamecols::Union{Function, Symbol, AbstractString},
              exclude::AbstractVector{Symbol} = Symbol[]) =
@@ -332,9 +322,6 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     joiner = DataFrameJoiner(df1, df2, on, matchmissing, kind)
 
     # Check merge key validity
-    left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
-    right_invalid = validate[2] ? any(nonunique(joiner.dfr, joiner.right_on)) : false
-
     if validate[1]
         non_unique_left = nonunique(joiner.dfl, joiner.left_on)
         if any(non_unique_left)
@@ -441,7 +428,7 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
             try_idx = 0
             while hasproperty(joined, unique_indicator)
                 try_idx += 1
-                unique_indicator = Symbol(string(indicator, "_", try_idx))
+                unique_indicator = Symbol(indicator, "_", try_idx)
             end
         end
 
@@ -628,8 +615,8 @@ change in future releases.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
-  column with the given name, for whether a row appeared in only `df1` (`"left_only"`),
-  only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
+  column with the given name, for whether a row appeared in only `df1` (`"left_only"`)
+  or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
   define unique keys in each input data frame (according to `isequal`).
@@ -775,8 +762,8 @@ change in future releases.
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
-  column with the given name for whether a row appeared in only `df1` (`"left_only"`),
-  only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
+  column with the given name for whether a row appeared in only `df2` (`"right_only"`)
+  or in both (`"both"`). If the name is already in use,
   the column name will be modified if `makeunique=true`.
 - `validate` : whether to check that columns passed as the `on` argument
   define unique keys in each input data frame (according to `isequal`).
