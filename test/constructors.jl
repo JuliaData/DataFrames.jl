@@ -403,8 +403,8 @@ end
         @test df.x2 isa Vector{Int}
         df = DataFrame(m, cnames, copycols=false)
         @test df == refdf
-        @test df.x1 isa SubArray{Int,1, Matrix{Int}}
-        @test df.x2 isa SubArray{Int,1, Matrix{Int}}
+        @test df.x1 isa SubArray{Int, 1, Matrix{Int}}
+        @test df.x2 isa SubArray{Int, 1, Matrix{Int}}
         @test parent(df.x1) === m
         @test parent(df.x2) === m
     end

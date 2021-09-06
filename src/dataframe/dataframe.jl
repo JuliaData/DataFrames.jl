@@ -359,7 +359,7 @@ function DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
                    makeunique::Bool=false, copycols::Bool=true)
     getter = copycols ? getindex : view
     return DataFrame(AbstractVector[getter(columns, :, i) for i in 1:size(columns, 2)],
-              cnames, makeunique=makeunique, copycols=false)
+                     cnames, makeunique=makeunique, copycols=false)
 end
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector;
