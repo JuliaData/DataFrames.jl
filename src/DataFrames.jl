@@ -55,6 +55,7 @@ export AbstractDataFrame,
        innerjoin,
        insertcols!,
        leftjoin,
+       leftjoin!,
        mapcols,
        mapcols!,
        ncol,
@@ -134,6 +135,7 @@ include("abstractdataframe/reshape.jl")
 
 include("join/composer.jl")
 include("join/core.jl")
+include("join/inplace.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
 include("groupeddataframe/callprocessing.jl")
