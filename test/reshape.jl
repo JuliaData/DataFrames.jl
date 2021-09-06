@@ -584,7 +584,7 @@ end
 @testset "permutedims" begin
     df1 = DataFrame(a=["x", "y"], b=rand(2), c=[1, 2], d=rand(Bool, 2))
 
-    @test_throws MethodError transpose(df1)
+    @test_throws ArgumentError transpose(df1)
     @test_throws ArgumentError permutedims(df1, :bar)
 
     df1_pd = permutedims(df1, 1)

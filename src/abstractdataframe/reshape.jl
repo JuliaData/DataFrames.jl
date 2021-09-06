@@ -542,7 +542,7 @@ Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(parent(v), T, dim
 Base.unique(v::RepeatedVector) = unique(parent(v))
 
 Base.transpose(::AbstractDataFrame, args...; kwargs...) =
-    MethodError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead")
+    throw(ArgumentError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead"))
 
 """
     permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, AbstractString},

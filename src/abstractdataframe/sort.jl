@@ -325,7 +325,7 @@ Sort.defalg(df::AbstractDataFrame, col_ord::UserColOrdering, o::Ordering) =
     Sort.defalg(df, col_ord.col, o)
 Sort.defalg(df::AbstractDataFrame, cols, o::Ordering) = Sort.defalg(df)
 Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
-    alg != nothing ? alg : Sort.defalg(df, cols, o)
+    alg !== nothing ? alg : Sort.defalg(df, cols, o)
 
 ########################
 ## Actual sort functions
