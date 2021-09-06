@@ -315,8 +315,6 @@ end
         @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
-
-    @test_throws MethodError DataFrame([1 2; 3 4], :auto, copycols=false)
 end
 
 @testset "column types" begin
