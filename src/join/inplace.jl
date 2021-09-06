@@ -90,7 +90,7 @@ julia> leftjoin!(name, job2, on = :ID => :identifier, makeunique=true, source=:s
 ```
 """
 function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
-                   on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+                   on::Union{<:OnType, AbstractVector}=Symbol[], makeunique::Bool=false,
                    source::Union{Nothing, Symbol, AbstractString}=nothing,
                    matchmissing::Symbol=:error)
 
