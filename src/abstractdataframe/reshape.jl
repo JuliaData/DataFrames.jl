@@ -229,7 +229,7 @@ Row and column keys will be ordered in the order of their first appearance.
 - `allowduplicates`: if `false` (the default) then an error an error will be thrown
   if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
   then  then the last encountered `value` will be retained.
-- `fill`: missing row/column combinations are filled with this value; The default
+- `fill`: missing row/column combinations are filled with this value. The default
   is `missing`. If the `value` column is a `CategoricalVector` and `fill`
   is not `missing` then in order to keep unstacked value columns also
   `CategoricalVector` the `fill` must be passed as `CategoricalValue`
