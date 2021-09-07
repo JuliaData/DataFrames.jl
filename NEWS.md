@@ -57,6 +57,13 @@
 * `leftjoin!` performing a left join of two data frame objects by updating the
   left data frame with the joined columns from right data frame.
   ([#2843](https://github.com/JuliaData/DataFrames.jl/pull/2843))
+* the `DataFrame` constructor when column names are passed to it as a second
+  argument now determines if a passed vector of column names is valid based on
+  its contents and not element type
+  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+* the `DataFrame` constructor when matrix is passed to it as a first
+  argument now allows `copycols` keyword argument
+  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2859))
 
 ## Bug fixes
 

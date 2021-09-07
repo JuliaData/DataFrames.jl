@@ -315,8 +315,6 @@ end
         @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
-
-    @test_throws MethodError DataFrame([1 2; 3 4], :auto, copycols=false)
 end
 
 @testset "column types" begin
@@ -363,12 +361,52 @@ end
     @test_throws ArgumentError DataFrame([Int, Float64], [:a, :b], 2)
     @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"])
     @test_throws ArgumentError DataFrame([Int, Float64], ["a", "b"], 2)
+    @test_throws ArgumentError DataFrame([Int, Float64], ["a", :b])
+    @test_throws MethodError DataFrame([Int, Float64], ["a", :b], 2)
 end
 
 @testset "threading correctness tests" begin
     for x in (10, 2*10^6), y in 1:4
         df = DataFrame(rand(x, y), :auto)
         @test df == copy(df)
+    end
+end
+
+@testset "non-specific vector of column names" begin
+    ref = DataFrame(a=1:2, b=3:4)
+    for x in ([1 3; 2 4], [[1, 2], [3, 4]], [1:2, 3:4], Any[[1, 2], [3, 4]], Any[1:2, 3:4])
+        @test DataFrame(x, Any[:a, :b]) == ref
+        @test DataFrame(x, Any["a", "b"]) == ref
+        @test DataFrame(x, Union{String, Symbol}[:a, :b]) == ref
+        @test DataFrame(x, Union{String, Symbol}["a", "b"]) == ref
+        @test_throws ArgumentError DataFrame(x, Any["a", :b])
+        @test_throws ArgumentError DataFrame(x, Union{String, Symbol}["a", :b])
+    end
+    @test DataFrame([], []) == DataFrame()
+    @test DataFrame(fill(0, 0, 0), []) == DataFrame()
+    @test_throws ArgumentError DataFrame(Type[], Symbol[])
+    @test_throws ArgumentError DataFrame(Type[], String[])
+    @test_throws MethodError DataFrame(Type[], [])
+end
+
+@testset "DataFrame matrix constructor copycols kwarg" begin
+    m = [1 4; 2 5; 3 6]
+    refdf = DataFrame(x1=1:3, x2=4:6)
+    for cnames in ([:x1, :x2], ["x1", "x2"], Any[:x1, :x2], Any["x1", "x2"], :auto)
+        df = DataFrame(m, cnames)
+        @test df == refdf
+        @test df.x1 isa Vector{Int}
+        @test df.x2 isa Vector{Int}
+        df = DataFrame(m, cnames, copycols=true)
+        @test df == refdf
+        @test df.x1 isa Vector{Int}
+        @test df.x2 isa Vector{Int}
+        df = DataFrame(m, cnames, copycols=false)
+        @test df == refdf
+        @test df.x1 isa SubArray{Int, 1, Matrix{Int}}
+        @test df.x2 isa SubArray{Int, 1, Matrix{Int}}
+        @test parent(df.x1) === m
+        @test parent(df.x2) === m
     end
 end
 
