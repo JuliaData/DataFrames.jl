@@ -10,7 +10,7 @@ julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
                        DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -33,7 +33,7 @@ julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
 julia> sort!(iris)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.3         3.0          1.1         0.1  Iris-setosa
    2 │         4.4         2.9          1.4         0.2  Iris-setosa
@@ -65,7 +65,7 @@ Here are some examples showing most of the possible options:
 julia> sort!(iris, rev = true)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         7.9         3.8          6.4         2.0  Iris-virginica
    2 │         7.7         3.8          6.7         2.2  Iris-virginica
@@ -88,7 +88,7 @@ julia> sort!(iris, rev = true)
 julia> sort!(iris, [:Species, :SepalWidth])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.5         2.3          1.3         0.3  Iris-setosa
    2 │         4.4         2.9          1.4         0.2  Iris-setosa
@@ -111,7 +111,7 @@ julia> sort!(iris, [:Species, :SepalWidth])
 julia> sort!(iris, [order(:Species, by=length), order(:SepalLength, rev=true)])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼───────────────────────────────────────────────────────────────────
    1 │         5.8         4.0          1.2         0.2  Iris-setosa
    2 │         5.7         3.8          1.7         0.3  Iris-setosa
@@ -148,7 +148,7 @@ rows will be sorted by increasing `:PetalLength`:
 julia> sort!(iris, [:Species, :PetalLength], rev=(true, false))
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.9         2.5          4.5         1.7  Iris-virginica
    2 │         6.2         2.8          4.8         1.8  Iris-virginica
@@ -171,7 +171,7 @@ julia> sort!(iris, [:Species, :PetalLength], rev=(true, false))
 julia> sort!(iris, [order(:Species, rev=true), :PetalLength])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     InlineSt…
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.9         2.5          4.5         1.7  Iris-virginica
    2 │         6.2         2.8          4.8         1.8  Iris-virginica
