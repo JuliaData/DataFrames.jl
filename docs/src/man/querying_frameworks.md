@@ -24,10 +24,10 @@ The major benefit of the package is that it allows you to refer to columns of a
 expressions. Additionally you can chain a sequence of transformations of a
 `DataFrame` using the `@linq` macro.
 
-When a DataFramesMeta.jl macro such as `@select`, `@transform`, `@by`, `@combine`, 
+When a DataFramesMeta.jl macro such as `@select`, `@transform`, `@by`, `@combine`,
 `@where`, or `@orderby` is called inside a `@linq` block, you can omit
 the `@`. Therefore `transform` inside `@linq` is not the same as `transform`
-outside of a `@linq` block. 
+outside of a `@linq` block.
 
 Here is a minimal example of usage of the package. Observe that we refer to
 names of columns using only their names and that chaining is performed using the

@@ -10,7 +10,7 @@ julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
                        DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     InlineSt…
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -33,7 +33,7 @@ julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
 julia> stack(iris, 1:4)
 600×3 DataFrame
  Row │ Species         variable     value
-     │ InlineSt…       String       Float64
+     │ String15        String       Float64
 ─────┼──────────────────────────────────────
    1 │ Iris-setosa     SepalLength      5.1
    2 │ Iris-setosa     SepalLength      4.9
@@ -62,7 +62,7 @@ be given:
 julia> stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth])
 600×3 DataFrame
  Row │ Species         variable     value
-     │ InlineSt…       String       Float64
+     │ String15        String       Float64
 ─────┼──────────────────────────────────────
    1 │ Iris-setosa     SepalLength      5.1
    2 │ Iris-setosa     SepalLength      4.9
@@ -100,7 +100,7 @@ the long format:
 julia> stack(iris, [:SepalLength, :SepalWidth], :Species)
 300×3 DataFrame
  Row │ Species         variable     value
-     │ InlineSt…       String       Float64
+     │ String15        String       Float64
 ─────┼──────────────────────────────────────
    1 │ Iris-setosa     SepalLength      5.1
    2 │ Iris-setosa     SepalLength      4.9
@@ -127,7 +127,7 @@ If you prefer to specify the id columns then use `Not` with `stack` like this:
 julia> stack(iris, Not(:Species))
 600×3 DataFrame
  Row │ Species         variable     value
-     │ InlineSt…       String       Float64
+     │ String15        String       Float64
 ─────┼──────────────────────────────────────
    1 │ Iris-setosa     SepalLength      5.1
    2 │ Iris-setosa     SepalLength      4.9
@@ -159,7 +159,7 @@ julia> iris.id = 1:size(iris, 1)
 julia> longdf = stack(iris, Not([:Species, :id]))
 600×4 DataFrame
  Row │ Species         id     variable     value
-     │ InlineSt…       Int64  String       Float64
+     │ String15        Int64  String       Float64
 ─────┼─────────────────────────────────────────────
    1 │ Iris-setosa         1  SepalLength      5.1
    2 │ Iris-setosa         2  SepalLength      4.9
@@ -209,7 +209,7 @@ If the remaining columns are unique, you can skip the id variable and use:
 julia> unstack(longdf, :variable, :value)
 150×6 DataFrame
  Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth ⋯
-     │ InlineSt…       Int64  Float64?     Float64?    Float64?     Float64?   ⋯
+     │ String15        Int64  Float64?     Float64?    Float64?     Float64?   ⋯
 ─────┼──────────────────────────────────────────────────────────────────────────
    1 │ Iris-setosa         1          5.1         3.5          1.4         0.2 ⋯
    2 │ Iris-setosa         2          4.9         3.0          1.4         0.2
@@ -236,7 +236,7 @@ arguments, as they will be used by default, and write:
 julia> unstack(longdf)
 150×6 DataFrame
  Row │ Species         id     SepalLength  SepalWidth  PetalLength  PetalWidth ⋯
-     │ InlineSt…       Int64  Float64?     Float64?    Float64?     Float64?   ⋯
+     │ String15        Int64  Float64?     Float64?    Float64?     Float64?   ⋯
 ─────┼──────────────────────────────────────────────────────────────────────────
    1 │ Iris-setosa         1          5.1         3.5          1.4         0.2 ⋯
    2 │ Iris-setosa         2          4.9         3.0          1.4         0.2
@@ -264,7 +264,7 @@ the original wide data frame. Here is an example:
 julia> stack(iris, view=true)
 600×4 DataFrame
  Row │ Species         id     variable     value
-     │ InlineSt…       Int64  String       Float64
+     │ String15        Int64  String       Float64
 ─────┼─────────────────────────────────────────────
    1 │ Iris-setosa         1  SepalLength      5.1
    2 │ Iris-setosa         2  SepalLength      4.9
@@ -306,7 +306,7 @@ julia> using Statistics
 julia> d = stack(iris, Not(:Species))
 750×3 DataFrame
  Row │ Species         variable     value
-     │ InlineSt…       String       Float64
+     │ String15        String       Float64
 ─────┼──────────────────────────────────────
    1 │ Iris-setosa     SepalLength      5.1
    2 │ Iris-setosa     SepalLength      4.9
@@ -329,7 +329,7 @@ julia> d = stack(iris, Not(:Species))
 julia> x = combine(groupby(d, [:variable, :Species]), :value => mean => :vsum)
 15×3 DataFrame
  Row │ variable     Species          vsum
-     │ String       InlineSt…        Float64
+     │ String       String15         Float64
 ─────┼───────────────────────────────────────
    1 │ SepalLength  Iris-setosa        5.006
    2 │ SepalLength  Iris-versicolor    5.936
