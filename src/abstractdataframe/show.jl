@@ -106,12 +106,12 @@ function compacttype(T::Type, maxwidth::Int=8)
     T === Any && return "Any"
     T === Missing && return "Missing"
 
-    sT = string(nameof(T))
+    sT = string(T isa Union ? T : nameof(T))
     textwidth(sT) ≤ maxwidth && return sT
 
     if T >: Missing
         T = nonmissingtype(T)
-        sT = string(nameof(T))
+        sT = string(T isa Union ? T : nameof(T))
         suffix = "?"
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
