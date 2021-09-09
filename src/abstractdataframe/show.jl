@@ -138,7 +138,7 @@ function compacttype(T::Type, maxwidth::Int=8)
 
     # handle the case when the type printed is not parametric but string(T)
     # prefixed it with the module name which caused it to be overlong
-    textwidth(sT) ≤ maxwidth && endswith(sTfull, sT) && return sT
+    textwidth(sT) ≤ maxwidth + 1 && endswith(sTfull, sT) && return sT
 
     cumwidth = 0
     stop = 0
