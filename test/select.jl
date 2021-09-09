@@ -1678,4 +1678,26 @@ end
     @test select(df, :a => ByRow(f) => :a) == DataFrame(a=1:3)
 end
 
+@testset "wide reductions" begin
+    Random.seed!(1234)
+    df = DataFrame(rand(Int, 2, 20_000), :auto)
+    df.x100 = [1, 2]
+    df.x1000 = Union{Int, Missing}[1, 2]
+    df.x10000 = Union{Float64, Missing}[1, missing]
+
+    @test @elapsed(select(df, All() => (+) => :res)) < 10.0
+    @test @elapsed(select(df, Between(:x2,:x19999) => ByRow(+) => :res)) < 10.0
+    @test @elapsed(select(df, AsTable(All()) => sum => :res)) < 10.0
+    @test @elapsed(select(df, AsTable(Not(:x99)) => ByRow(sum) => :res)) < 10.0
+
+    for sel in (All(), Between(:x2,:x19999), Not(:x99))
+        @show sel
+        @test select(df, sel => (+) => :res) ≅
+              select(df, sel => ByRow(+) => :res) ≅
+              select(df, AsTable(sel) => sum => :res) ≅
+              select(df, AsTable(sel) => ByRow(sum) => :res) ≅
+              DataFrame(res=sum(collect(eachcol(select(df, sel)))))
+    end
+end
+
 end # module

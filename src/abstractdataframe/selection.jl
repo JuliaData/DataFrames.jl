@@ -376,12 +376,17 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
+@noinline _table_transformation(df_sel::AbstractDataFrame, fun) = fun(Tables.columntable(df_sel))
+
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
-    tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
-    if isempty(tbl) && fun isa ByRow
+    df_sel = select(df, col_idx.cols, copycols=false)
+    if ncol(df_sel) == 0 && fun isa ByRow
         return _empty_astable_helper(fun.fun, nrow(df))
+    elseif typeof(fun) === typeof(Base.sum) || typeof(fun) === ByRow{typeof(Base.sum)}
+        # apply map to get consistency of results with the method in the non-AsTable case
+        return sum(map(identity, eachcol(df_sel)))
     else
-        return fun(tbl)
+        return _table_transformation(df_sel, fun)
     end
 end
 
@@ -392,6 +397,9 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
         return _empty_selector_helper(fun.fun, nrow(df))
     else
         cdf = eachcol(df)
+        if typeof(fun) === typeof(Base.:+) || typeof(fun) === ByRow{typeof(Base.:+)}
+            return sum(map(c -> cdf[c], col_idx))
+        end
         return fun(map(c -> cdf[c], col_idx)...)
     end
 end
