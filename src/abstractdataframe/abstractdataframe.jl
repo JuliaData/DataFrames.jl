@@ -1124,7 +1124,7 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
    3 │     1  b
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
+Base.filter!(f::Function, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =

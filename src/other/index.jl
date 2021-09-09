@@ -84,8 +84,13 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
         if !haskey(xbackup, from)
             copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
-                                "does not exist in the Index."))
+            if length(x) == 0
+                throw(ArgumentError("Tried renaming :$from to :$to, when " *
+                                    "Index is empty."))
+            else
+                throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
+                                    "does not exist in the Index."))
+            end
         end
         if haskey(x, to)
             toholder[to] = x.lookup[to]
