@@ -49,7 +49,7 @@ function getmaxwidths(df::AbstractDataFrame,
 
     undefstrwidth = ourstrwidth(io, "#undef", buffer, truncstring)
 
-    ct = show_eltype ? batch_compacttype(Any[eltype(c) for c in eachcol(df)]) : String[]
+    ct = show_eltype ? batch_compacttype(Any[eltype(c) for c in eachcol(df)], 9) : String[]
     j = 1
     for (col_idx, (name, col)) in enumerate(pairs(eachcol(df)))
         # (1) Consider length of column name
@@ -211,7 +211,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         # which the users can hover over. The limit of 256 characters is arbitrary, but
         # we want some maximum limit, since the types can sometimes get really-really long.
         types = Any[eltype(df[!, idx]) for idx in 1:mxcol]
-        ct, ct_title = batch_compacttype(types), batch_compacttype(types, 256)
+        ct, ct_title = batch_compacttype(types, 9), batch_compacttype(types, 256)
         for j in 1:mxcol
             s = html_escape(ct[j])
             title = html_escape(ct_title[j])
@@ -380,7 +380,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     write(io, "\t\\hline\n")
     if eltypes
         write(io, "\t& ")
-        ct = batch_compacttype(Any[eltype(df[!, idx]) for idx in 1:mxcol])
+        ct = batch_compacttype(Any[eltype(df[!, idx]) for idx in 1:mxcol], 9)
         header = join(latex_escape.(ct), " & ")
         write(io, header)
         mxcol < size(df, 2) && write(io, " & ")
