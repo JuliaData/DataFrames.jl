@@ -106,12 +106,12 @@ function compacttype(T::Type, maxwidth::Int=8)
     T === Any && return "Any"
     T === Missing && return "Missing"
 
-    sT = string(T)
+    sT = string(nameof(T))
     textwidth(sT) ≤ maxwidth && return sT
 
     if T >: Missing
         T = nonmissingtype(T)
-        sT = string(T)
+        sT = string(nameof(T))
         suffix = "?"
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
@@ -122,17 +122,10 @@ function compacttype(T::Type, maxwidth::Int=8)
 
     # This is only type display shortening so we
     # are OK with any T whose name starts with CategoricalValue here
-    if startswith(sT, "CategoricalValue") || startswith(sT, "CategoricalArrays.CategoricalValue")
-        sT = string(nameof(T))
-        if textwidth(sT) ≤ maxwidth
-            return sT * "…" * suffix
-        else
-            return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
-        end
+    if startswith(sT, "CategoricalValue")
+        return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
     elseif T isa Union
         return "Union…" * suffix
-    else
-        sT = string(nameof(T))
     end
 
     cumwidth = 0

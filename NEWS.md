@@ -76,6 +76,11 @@
 * fix a problem with `unstack` on empty data frame
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
 
+## Other changes
+
+* Column element type now always only shows the type name (without module name prefix)
+  ([#2865](https://github.com/JuliaData/DataFrames.jl/issues/2865))
+
 # DataFrames.jl v1.2.2 Patch Release Notes
 
 ## Bug fixes
