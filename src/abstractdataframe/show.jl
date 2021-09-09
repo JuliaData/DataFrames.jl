@@ -106,12 +106,12 @@ function compacttype(T::Type, maxwidth::Int=8)
     T === Any && return "Any"
     T === Missing && return "Missing"
 
-    sT = string(T isa Union ? T : nameof(T))
+    sT = string(T)
     textwidth(sT) ≤ maxwidth && return sT
 
     if T >: Missing
         T = nonmissingtype(T)
-        sT = string(T isa Union ? T : nameof(T))
+        sT = string(T)
         suffix = "?"
         textwidth(sT) ≤ maxwidth && return sT * suffix
     else
@@ -122,11 +122,23 @@ function compacttype(T::Type, maxwidth::Int=8)
 
     # This is only type display shortening so we
     # are OK with any T whose name starts with CategoricalValue here
-    if startswith(sT, "CategoricalValue")
-        return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+    if startswith(sT, "CategoricalValue") || startswith(sT, "CategoricalArrays.CategoricalValue")
+        sT = string(nameof(T))
+        if textwidth(sT) ≤ maxwidth
+            return sT * "…" * suffix
+        else
+            return (maxwidth ≥ 11 ? "Categorical…" : "Cat…") * suffix
+        end
     elseif T isa Union
         return "Union…" * suffix
+    else
+        sTfull = sT
+        sT = string(nameof(T))
     end
+
+    # handle the case when the type printed is not parametric but string(T)
+    # prefixed it with the module name which caused it to be overlong
+    textwidth(sT) ≤ maxwidth && endswith(sTfull, sT) && return sT
 
     cumwidth = 0
     stop = 0
