@@ -22,7 +22,7 @@ import Main: QuoteTestType
         \\begin{tabular}{r|ccccccc}
         \t& A & B & C & D & E & F & G\\\\
         \t\\hline
-        \t& Int64 & String & String & Float64? & Cat…? & String & MD…\\\\
+        \t& Int64 & String & String & Float64? & Cat…? & String & MD\\\\
         \t\\hline
         \t1 & 1 & \\\$10.0 & A & 1.0 & a & \\emph{\\#undef} & \\href{http://juliadata.github.io/DataFrames.jl}{DataFrames.jl} \\\\
         \t2 & 2 & M\\&F & B & 2.0 & \\emph{missing} & \\emph{\\#undef} & \\#\\#\\#A \\\\
@@ -167,7 +167,7 @@ end
     @test repr(MIME("text/html"), df) ==
     "<div class=\"data-frame\"><p>4 rows × 2 columns</p>" *
     "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
-    "<th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr></thead>" *
+    "<th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD</th></tr></thead>" *
     "<tbody><tr><th>1</th><td>1</td>" *
     "<td><div class=\"markdown\"><p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
     "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>###A</p>\n</div></td></tr>" *
@@ -196,7 +196,7 @@ end
                 "<th></th>" *
                 "<th title=\"String\">String</th>" *
                 "<th title=\"Any\">Any</th>" *
-                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTe…</th>" *
+                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTes…</th>" *
             "</tr>" *
         "</thead><tbody>" *
             "<tr>" *
@@ -290,7 +290,7 @@ end
             """
             8×2 DataFrame
              Row │ A      B
-                 │ Int64  MD…
+                 │ Int64  MD
             ─────┼──────────────────────────────────────────
                1 │     1    DataFrames.jl (http://juliadat…
                2 │     4    \\frac{x^2}{x^2+y^2}
@@ -305,7 +305,7 @@ end
             """
             8×2 DataFrame
              Row │ A      B
-                 │ Int64  MD…
+                 │ Int64  MD
             ─────┼──────────────────────────────────────────
                1 │     1    DataFrames.jl (http://juliadat…
                2 │     4    \\frac{x^2}{x^2+y^2}
@@ -355,7 +355,7 @@ end
         "<div class=\"data-frame\"><p>8 rows × 2 columns</p>" *
         "<table class=\"data-frame\"><thead>" *
             "<tr><th></th><th>A</th><th>B</th></tr>" *
-            "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD…</th></tr>" *
+            "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD</th></tr>" *
         "</thead>" *
         "<tbody>" *
         "<tr><th>1</th><td>1</td><td><div class=\"markdown\">" *

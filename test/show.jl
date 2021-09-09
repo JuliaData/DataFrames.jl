@@ -301,8 +301,8 @@ end
     @test sprint(show, df) == """
         1×3 DataFrame
          Row │ a           b                    c
-             │ Date        DateTime             Day
-        ─────┼────────────────────────────────────────
+             │ Date        DateTime             Dates.Day
+        ─────┼────────────────────────────────────────────
            1 │ 2020-02-11  2020-02-11T15:00:00  1 day"""
 
     # Irrational
