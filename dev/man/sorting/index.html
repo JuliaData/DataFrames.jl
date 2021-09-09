@@ -6,7 +6,7 @@ julia&gt; iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
                        DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -29,7 +29,7 @@ julia&gt; iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
 julia&gt; sort!(iris)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.3         3.0          1.1         0.1  Iris-setosa
    2 │         4.4         2.9          1.4         0.2  Iris-setosa
@@ -50,7 +50,7 @@ julia&gt; sort!(iris)
                                                         135 rows omitted</code></pre><p>Observe that all columns are taken into account lexicographically when sorting the <code>DataFrame</code>.</p><p>You can also call the <code>sort</code> function to create a new <code>DataFrame</code> with freshly allocated sorted vectors.</p><p>In sorting <code>DataFrame</code>s, you may want to sort different columns with different options. Here are some examples showing most of the possible options:</p><pre><code class="language-julia-repl hljs">julia&gt; sort!(iris, rev = true)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         7.9         3.8          6.4         2.0  Iris-virginica
    2 │         7.7         3.8          6.7         2.2  Iris-virginica
@@ -73,7 +73,7 @@ julia&gt; sort!(iris)
 julia&gt; sort!(iris, [:Species, :SepalWidth])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.5         2.3          1.3         0.3  Iris-setosa
    2 │         4.4         2.9          1.4         0.2  Iris-setosa
@@ -96,7 +96,7 @@ julia&gt; sort!(iris, [:Species, :SepalWidth])
 julia&gt; sort!(iris, [order(:Species, by=length), order(:SepalLength, rev=true)])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼───────────────────────────────────────────────────────────────────
    1 │         5.8         4.0          1.2         0.2  Iris-setosa
    2 │         5.7         3.8          1.7         0.3  Iris-setosa
@@ -117,7 +117,7 @@ julia&gt; sort!(iris, [order(:Species, by=length), order(:SepalLength, rev=true)
                                                          135 rows omitted</code></pre><p>Keywords used above include <code>rev</code> (to sort in reverse), and <code>by</code> (to apply a function to values before comparing them). Each keyword can either be a single value, a vector with values corresponding to individual columns, or a selector: <code>:</code>, <code>Cols</code>, <code>All</code>, <code>Not</code>, <code>Between</code>, or <code>Regex</code>.</p><p>As an alternative to using a vector values you can use <code>order</code> to specify an ordering for a particular column within a set of columns.</p><p>The following two examples show two ways to sort the <code>iris</code> dataset with the same result: <code>:Species</code> will be ordered in reverse order, and within groups, rows will be sorted by increasing <code>:PetalLength</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; sort!(iris, [:Species, :PetalLength], rev=(true, false))
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.9         2.5          4.5         1.7  Iris-virginica
    2 │         6.2         2.8          4.8         1.8  Iris-virginica
@@ -140,7 +140,7 @@ julia&gt; sort!(iris, [order(:Species, by=length), order(:SepalLength, rev=true)
 julia&gt; sort!(iris, [order(:Species, rev=true), :PetalLength])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         4.9         2.5          4.5         1.7  Iris-virginica
    2 │         6.2         2.8          4.8         1.8  Iris-virginica
@@ -158,4 +158,4 @@ julia&gt; sort!(iris, [order(:Species, rev=true), :PetalLength])
  148 │         5.1         3.3          1.7         0.5  Iris-setosa
  149 │         5.1         3.8          1.9         0.4  Iris-setosa
  150 │         4.8         3.4          1.9         0.2  Iris-setosa
-                                                        135 rows omitted</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../reshaping_and_pivoting/">« Reshaping</a><a class="docs-footer-nextpage" href="../categorical/">Categorical Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 7 September 2021 05:35">Tuesday 7 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+                                                        135 rows omitted</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../reshaping_and_pivoting/">« Reshaping</a><a class="docs-footer-nextpage" href="../categorical/">Categorical Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.6 on <span class="colophon-date" title="Thursday 9 September 2021 12:57">Thursday 9 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
