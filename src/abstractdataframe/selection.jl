@@ -391,7 +391,9 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     catch e
         if e isa MethodError && e.f === Base.zero
             throw(ArgumentError("The reduced element type $T does not support " *
-                                "zero that is required to perform summation."))
+                                "zero that is required to perform summation. " *
+                                "Narrowing down element types of passed columns " *
+                                "should be performed first."))
         else
             throw(e)
         end
