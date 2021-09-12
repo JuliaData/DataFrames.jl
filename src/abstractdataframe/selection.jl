@@ -385,19 +385,29 @@ end
 
 function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
-    T = nonmissingtype(mapreduce(eltype, promote_type, cols))
-    init = try
-        zeros(T, length(cols[1]))
-    catch e
-        if e isa MethodError && e.f === Base.zero
-            throw(ArgumentError("The reduced element type $T does not support " *
-                                "zero that is required to perform summation. " *
-                                "Narrowing down element types of passed columns " *
-                                "should be performed first."))
-        else
-            throw(e)
+    sumz = nothing
+    for col in cols
+        try
+            zi = zero(eltype(col))
+            if isnothing(sumz)
+                sumz = zi
+            elseif !ismissing(zi) # zi is missing if eltype is Missing
+                sumz += zi
+            end
+        catch e
+            if e isa MethodError && e.f === Base.zero
+                sumz = nothing
+                break
+            else
+                throw(e)
+            end
         end
     end
+    # this will happen if eltype of some columns do not support zero
+    # or all columns have eltype Missing
+    isnothing(sumz) && return nothing
+    init = fill(sumz, length(cols[1]))
+
     return foldl(cols, init=init) do l, r
         l .= ifelse.(ismissing.(r), l, l .+ r)
     end
@@ -410,7 +420,12 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,):
     elseif typeof(fun) === typeof(Base.sum) || typeof(fun) === ByRow{typeof(Base.sum)}
         return _sum_fast(map(identity, eachcol(df_sel)))
     elseif typeof(fun) === ByRow{typeof(Base.:∘(Base.sum, Base.skipmissing))}
-        return _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
+        fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
+        if isnothing(fastsum)
+            return _table_transformation(df_sel, fun)
+        else
+            return fastsum
+        end
     else
         return _table_transformation(df_sel, fun)
     end
