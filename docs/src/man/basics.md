@@ -400,7 +400,7 @@ julia> names(german, AbstractString)
  "Purpose"
 ```
 
-You can explore more options of filtering column naes in the documentation of
+You can explore more options of filtering column names in the documentation of
 the [`names`](@ref) function.
 
 If instead you wanted to get column names of a data frame as `Symbol`s use the `propertynames` function:
