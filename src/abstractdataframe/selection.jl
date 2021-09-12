@@ -422,7 +422,9 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,):
     elseif typeof(fun) === ByRow{typeof(Base.:∘(Base.sum, Base.skipmissing))}
         fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
         if isnothing(fastsum)
-            return _table_transformation(df_sel, fun)
+            slowsum = _table_transformation(df_sel, fun)
+            T = mapreduce(typeof, promote_type, slowsum)
+            return convert(Vector{T}, slowsum)
         else
             return fastsum
         end
