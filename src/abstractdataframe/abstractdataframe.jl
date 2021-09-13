@@ -1158,7 +1158,7 @@ _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f
     delete!(df, _findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.Matrix(df::AbstractDataFrame)
-    T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
+    T = reduce(promote_type, (eltype(v) for v in eachcol(df)), init=Union{})
     return Matrix{T}(df)
 end
 
