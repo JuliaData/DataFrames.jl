@@ -62,7 +62,7 @@ abstract type AbstractDataFrame end
 
 """
     names(df::AbstractDataFrame)
-    names(df::AbstractDataFrame, cols)
+    names(df::AbstractDataFrame, cols, content::Bool = false)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
@@ -74,6 +74,8 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
   are returned
 * a `Function` predicate taking the column name as a string and returning `true`
   for columns that should be kept
+
+`content` is only specified to `true` when a predicate `Function` is applied on columns rather than names of them.
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 """
@@ -89,7 +91,7 @@ end
 Base.names(df::AbstractDataFrame, T::Type) =
     [String(n) for (n, c) in pairs(eachcol(df)) if eltype(c) <: T]
 #Base.names(df::AbstractDataFrame, fun::Function) = filter!(fun, names(df))
-Base.names(df::AbstractDataFrame, fun::Function, predicate = 0) = predicate == 0 ? filter!(fun, names(df)) : names(df, fun.(eachcol(df)))
+Base.names(df::AbstractDataFrame, fun::Function, content::Bool = false) = content == false ? filter!(fun, names(df)) : names(df, fun.(eachcol(df)))
 
 # _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))
