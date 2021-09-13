@@ -6,7 +6,8 @@ const ≅ = isequal
 
 @testset "Constructors to Base types" begin
     df = DataFrame()
-    @test isa(Matrix(df), Matrix)
+    @test Matrix(df) isa Matrix{Union{}}
+    @test size(Matrix(df)) == (0, 0)
     df[!, :A] = 1:5
     df[!, :B] = 1.0:5.0
     @test isa(Matrix(df), Matrix{Float64})
