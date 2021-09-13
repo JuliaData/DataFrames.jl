@@ -88,7 +88,8 @@ end
 
 Base.names(df::AbstractDataFrame, T::Type) =
     [String(n) for (n, c) in pairs(eachcol(df)) if eltype(c) <: T]
-Base.names(df::AbstractDataFrame, fun::Function) = filter!(fun, names(df))
+#Base.names(df::AbstractDataFrame, fun::Function) = filter!(fun, names(df))
+Base.names(df::AbstractDataFrame, fun::Function, predicate = 0) = predicate == 0 ? filter!(fun, names(df)) : names(df, fun.(eachcol(df)))
 
 # _names returns Vector{Symbol} without copying
 _names(df::AbstractDataFrame) = _names(index(df))
