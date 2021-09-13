@@ -221,6 +221,17 @@ end
     isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported: use Cols(args...) instead"))
 @inline Base.getindex(x::AbstractIndex, idx::Cols) =
     isempty(idx.cols) ? Int[] : union(getindex.(Ref(x), idx.cols)...)
+@inline Base.getindex(x::AbstractIndex, idx::Cols{Tuple{typeof(:)}}) = x[:]
+@inline Base.getindex(x::AbstractIndex, idx::Cols{<:Tuple{Function}}) =
+    findall(idx.cols[1], names(x))
+
+"""
+    Cols(f::Function)
+
+Select the columns whose names passed to the `f` predicate as strings return `true`.
+As a special case if `:` is passed (the `Colon` function) select all columns.
+"""
+Cols
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)

@@ -70,6 +70,8 @@
 * the `DataFrame` constructor when matrix is passed to it as a first
   argument now allows `copycols` keyword argument
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+* `Cols` now accepts a predicate accepting column names as strings.
+  ([#2880](https://github.com/JuliaData/DataFrames.jl/pull/2880))
 
 ## Bug fixes
 
