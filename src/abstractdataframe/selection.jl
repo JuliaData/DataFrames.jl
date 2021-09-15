@@ -406,7 +406,7 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     # this will happen if eltype of some columns do not support zero
     # or all columns have eltype Missing
     isnothing(sumz) && return nothing
-    init = fill(sumz, length(cols[1]))
+    init = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
 
     return foldl(cols, init=init) do l, r
         l .= ifelse.(ismissing.(r), l, l .+ r)
