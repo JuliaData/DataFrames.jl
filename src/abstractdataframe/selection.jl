@@ -424,7 +424,7 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,):
         if isnothing(fastsum)
             slowsum = _table_transformation(df_sel, fun)
             T = mapreduce(typeof, promote_type, slowsum)
-            return convert(Vector{T}, slowsum)
+            return convert(AbstractVector{T}, slowsum)
         else
             return fastsum
         end
