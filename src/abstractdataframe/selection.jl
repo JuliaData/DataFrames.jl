@@ -423,16 +423,12 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,):
         return _sum_fast(map(identity, eachcol(df_sel)))
     elseif fun === ByRow(sum∘skipmissing)
         fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
-        if isnothing(fastsum)
-            slowsum = _table_transformation(df_sel, fun)
-            T = mapreduce(typeof, promote_type, slowsum)
-            return convert(AbstractVector{T}, slowsum)
-        else
-            return fastsum
-        end
+        isnothing(fastsum) || return fastsum
     else
-        return _table_transformation(df_sel, fun)
-    end
+    slowsum = _table_transformation(df_sel, fun)
+    isconcretetype(nonmissingtype(eltype(slowsum))) && return slowsum
+    T = mapreduce(typeof, promote_type, slowsum)
+    return convert(AbstractVector{T}, slowsum)
 end
 
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
