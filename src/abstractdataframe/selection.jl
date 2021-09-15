@@ -385,18 +385,20 @@ end
 
 function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
-    sumz = nothing
+    local sumz
+    sumz_undefined = true
     for col in cols
         try
             zi = zero(eltype(col))
-            if isnothing(sumz)
+            if sumz_undefined
+                sumz_undefined = false
                 sumz = zi
             elseif !ismissing(zi) # zi is missing if eltype is Missing
                 sumz += zi
             end
         catch e
             if e isa MethodError && e.f === Base.zero
-                sumz = nothing
+                sumz_undefined = true
                 break
             else
                 throw(e)
@@ -405,8 +407,8 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     end
     # this will happen if eltype of some columns do not support zero
     # or all columns have eltype Missing
-    isnothing(sumz) && return nothing
-    init = fill(sumz, length(cols[1]))
+    sumz_undefined && return nothing
+    init = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
 
     return foldl(cols, init=init) do l, r
         l .= ifelse.(ismissing.(r), l, l .+ r)
