@@ -440,7 +440,7 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
         return _empty_selector_helper(fun.fun, nrow(df))
     else
         cdf = eachcol(df)
-        if typeof(fun) === typeof(Base.:+) || typeof(fun) === ByRow{typeof(Base.:+)}
+        if fun === + || fun === ByRow(+)
             return _sum_fast(map(c -> cdf[c], col_idx))
         end
         return fun(map(c -> cdf[c], col_idx)...)
