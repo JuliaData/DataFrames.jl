@@ -395,7 +395,7 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
                 sumz += zi
             end
         catch e
-            if e isa MethodError && e.f === Base.zero
+            if e isa MethodError && e.f === zero
                 sumz = nothing
                 break
             else
