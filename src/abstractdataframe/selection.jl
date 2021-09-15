@@ -417,9 +417,9 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,):
     df_sel = select(df, col_idx.cols, copycols=false)
     if ncol(df_sel) == 0 && fun isa ByRow
         return _empty_astable_helper(fun.fun, nrow(df))
-    elseif typeof(fun) === typeof(Base.sum) || typeof(fun) === ByRow{typeof(Base.sum)}
+    elseif fun === sum || fun === ByRow(sum)
         return _sum_fast(map(identity, eachcol(df_sel)))
-    elseif typeof(fun) === ByRow{typeof(Base.:∘(Base.sum, Base.skipmissing))}
+    elseif fun === ByRow(sum∘skipmissing)
         fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
         if isnothing(fastsum)
             slowsum = _table_transformation(df_sel, fun)
