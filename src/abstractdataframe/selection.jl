@@ -404,7 +404,7 @@ The `df_sel` argument is a data frame storing columns selected by
 default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
-@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof{sum}) =
+@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof(sum)) =
     _sum_fast(map(identity, eachcol(df_sel)))
 
 @noinline table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(sum)}) =
