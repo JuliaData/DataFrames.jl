@@ -376,11 +376,31 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
-@noinline _table_transformation(df_sel::AbstractDataFrame, fun) = fun(Tables.columntable(df_sel))
+@noinline table_transformation(df_sel::AbstractDataFrame, fun) =
+    default_table_transformation(df_sel, fun)
+
+default_table_transformation(df_sel::AbstractDataFrame, fun) =
+    fun(Tables.columntable(df_sel))
+
+@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof{sum}) =
+    _sum_fast(map(identity, eachcol(df_sel)))
+
+@noinline table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(sum)}) =
+    table_transformation(df_sel, sum)
 
 function _sum_fast(cols::Vector{<:AbstractVector})
     isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
     return sum(cols)
+end
+
+@noinline function table_transformation(df_sel::AbstractDataFrame,
+                                         fun::typeof(ByRow(sum∘skipmissing)))
+    fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
+    isnothing(fastsum) || return fastsum
+    slowsum = default_table_transformation(df_sel, fun)
+    isconcretetype(nonmissingtype(eltype(slowsum))) && return slowsum
+    T = mapreduce(typeof, promote_type, slowsum)
+    return convert(AbstractVector{T}, slowsum)
 end
 
 function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
@@ -419,16 +439,9 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,):
     df_sel = select(df, col_idx.cols, copycols=false)
     if ncol(df_sel) == 0 && fun isa ByRow
         return _empty_astable_helper(fun.fun, nrow(df))
-    elseif fun === sum || fun === ByRow(sum)
-        return _sum_fast(map(identity, eachcol(df_sel)))
-    elseif fun === ByRow(sum∘skipmissing)
-        fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
-        isnothing(fastsum) || return fastsum
+    else
+        return table_transformation(df_sel, fun)
     end
-    slowsum = _table_transformation(df_sel, fun)
-    isconcretetype(nonmissingtype(eltype(slowsum))) && return slowsum
-    T = mapreduce(typeof, promote_type, slowsum)
-    return convert(AbstractVector{T}, slowsum)
 end
 
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
