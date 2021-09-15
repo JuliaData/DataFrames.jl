@@ -255,11 +255,9 @@ julia> df[!, Not(:x1)]
 Finally, you can use `Not`, `Between`, `Cols` and `All` selectors in more
 complex column selection scenarios (note that `Cols()` selects no columns while
 `All()` selects all columns therefore `Cols` is a preferred selector if you
-write generic code). The following examples move all columns whose names match
-`r"x"` regular expression respectively to the front and to the end of a data
-frame:
+write generic code). Here are examples of using each of these selectors:
 
-```
+```jldoctest dataframe
 julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
  Row │ r      x1     x2     y
@@ -267,6 +265,39 @@ julia> df = DataFrame(r=1, x1=2, x2=3, y=4)
 ─────┼────────────────────────────
    1 │     1      2      3      4
 
+julia> df[:, Not(:r)] # drop :r column
+1×3 DataFrame
+ Row │ x1     x2     y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      3      4
+
+julia> df[:, Between(:r, :x2)] # keep columns between :r and :x2
+1×3 DataFrame
+ Row │ r      x1     x2
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+
+julia> df[:, All()] # keep all columns
+1×4 DataFrame
+ Row │ r      x1     x2     y
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      3      4
+
+julia> df[:, Cols(x -> startswith(x, "x"))] # keep columns whose name starts with "x"
+1×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      3
+```
+
+The following examples show a more complex use of `Cols` selector and move all
+columns whose names match `r"x"` regular expression respectively to the front
+and to the end of a data frame:
+```jldoctest dataframe
 julia> df[:, Cols(r"x", :)]
 1×4 DataFrame
  Row │ x1     x2     r      y

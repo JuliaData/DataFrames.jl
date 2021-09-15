@@ -26,7 +26,17 @@ The rules for a valid type of index into a column are the following:
     * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
     * a regular expression, which gets expanded to a vector of matching column names;
     * a `Not` expression (see [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl));
-    * an `Cols`, `All` or `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+      the `Not(idx)` selects all indices not in the passed `idx`;
+    * an `Cols` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+      the `Cols(idxs...)` selects the union of the selections in `idxs`; in particular
+      `Cols()` selects no columns and `Cols(:)` selects all columns; a special rule is
+      `Cols(predicate)`, where `precicate` is a predicate function; in this case
+      the columns whose names passed to the `predicate` predicate as strings return `true`
+      are selected.
+    * `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+       the `Between(first, last)` selects the columns between `first` and `last`;
+    * `All` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+      the `All()` selects all columns, equivalent to `:`;
     * a colon literal `:`.
 
 The rules for a valid type of index into a row are the following:
