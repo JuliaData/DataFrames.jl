@@ -376,9 +376,31 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
+"""
+    table_transformation(df_sel::AbstractDataFrame, fun)
+
+This is a default function called when `AsTable(...) => fun` is requested. The
+`df_sel` argument is a data frame storing columns selected by `AsTable(...)`
+selector. By default it calls `default_table_transformation`. However, it is
+allowed to add special methods for specific types of `fun` with the reservation
+that the produced result must match the result that would be produced by
+`default_table_transformation`, except that it is allowed to perform `eltype`
+conversion of the resulting vectors or value type promotions that are consistent
+with `promote_type`.
+
+The main use of special `table_transformation` methods is to provide more
+efficient than the default implementations of requested `fun` transformation.
+"""
 @noinline table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
+"""
+    default_table_transformation(df_sel::AbstractDataFrame, fun)
+
+This is a default implementation called when `AsTable(...) => fun` is requested.
+The `df_sel` argument is a data frame storing columns selected by
+`AsTable(...)` selector.
+"""
 default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
