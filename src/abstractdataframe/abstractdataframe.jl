@@ -96,6 +96,12 @@ julia> disallowmissing!(df, 2)
    2 │ missing      2  missing       4
    3 │ missing      4        2       4
 
+julia> names(df)
+4-element Vector{String}:
+ "x1"
+ "x2"
+ "x3"
+ "x4"
 julia> names(df, Int64)
 1-element Vector{String}:
  "x2"
