@@ -70,7 +70,7 @@ abstract type AbstractDataFrame end
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
-`df` can be some type other than `AbstractDataFrame`, but do not call `names(df)` for a `GroupKeys`.
+For all supported types of `df` except `GroupKeys` you can optionally pass a `cols` positional argument.
 
 If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Cols`, `Not`, and `Between`).
