@@ -102,7 +102,8 @@ julia> names(df)
  "x2"
  "x3"
  "x4"
-julia> names(df, Int64)
+
+julia> names(df, Int) # pick columns whose element type is Int
 1-element Vector{String}:
  "x2"
 
