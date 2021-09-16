@@ -81,8 +81,6 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
 * a `Function` predicate taking the column name as a string and returning `true`
   for columns that should be kept
 
-Note that for a `GroupKey`, `cols` cannot be passed.
-
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 
 # Examples
