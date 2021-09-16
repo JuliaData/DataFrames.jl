@@ -127,18 +127,20 @@ julia> names(df)
  "B"
 ```
 
-You can also extract column names by regular expression, indices or `Symbol`s:
+You can also filter column names by column selector condition that is passed as a second argument.
+See [`names`](@ref) docstring for a detailed list of available conditions.
+Here we give some selected examples:
 
 ```jldoctest dataframe
-julia> names(df, r"A")
+julia> names(df, r"A") # a regular expression selector
 1-element Vector{String}:
  "A"
 
-julia> names(df, 1)
+julia> names(df, Int) # a selector using column element type
 1-element Vector{String}:
  "A"
 
-julia> names(df, :A)
+julia> names(df, Not(:B)) # selector keeping all columns except :B
 1-element Vector{String}:
  "A"
 ```
