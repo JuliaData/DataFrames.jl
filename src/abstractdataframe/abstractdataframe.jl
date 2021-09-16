@@ -76,6 +76,11 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
   for columns that should be kept
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
+
+#Examples
+```jldoctest
+
+```
 """
 Base.names(df::AbstractDataFrame, cols::Colon=:) = names(index(df))
 

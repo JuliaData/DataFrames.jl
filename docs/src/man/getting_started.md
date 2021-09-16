@@ -127,8 +127,25 @@ julia> names(df)
  "B"
 ```
 
-To get column names as `Symbol`s use the `propertynames` function:
+You can also extract column names by regular expression, indices or `Symbol`s:
+
+```jldoctest dataframe
+julia> names(df, r"A")
+1-element Vector{String}:
+ "A"
+
+julia> names(df, 1)
+1-element Vector{String}:
+ "A"
+
+julia> names(df, :A)
+1-element Vector{String}:
+ "A"
 ```
+
+To get column names as `Symbol`s use the `propertynames` function:
+
+```jldoctest dataframe
 julia> propertynames(df)
 2-element Vector{Symbol}:
  :A
