@@ -85,14 +85,7 @@ See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame([1 3 3 2; missing 2 missing 4; missing 4 2 4], :auto)
-3×4 DataFrame
- Row │ x1       x2      x3       x4
-     │ Int64?   Int64?  Int64?   Int64?
-─────┼──────────────────────────────────
-   1 │       1       3        3       2
-   2 │ missing       2  missing       4
-   3 │ missing       4        2       4
+julia> df = DataFrame([1 3 3 2; missing 2 missing 4; missing 4 2 4], :auto);
 
 julia> disallowmissing!(df, 2)
 3×4 DataFrame
