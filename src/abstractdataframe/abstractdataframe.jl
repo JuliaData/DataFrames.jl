@@ -107,29 +107,24 @@ julia> names(df, Int) # pick columns whose element type is Int
 1-element Vector{String}:
  "x2"
 
-julia> names(df, x -> x[2] == '2')
+julia> names(df, x -> x[end] == '2') # pick columns for which last character in their name is '2'
 1-element Vector{String}:
  "x2"
 
 julia> fun(col) = sum(skipmissing(col)) >= 10
 fun (generic function with 1 method)
 
-julia> names(df, fun.(eachcol(df)))
+julia> names(df, fun.(eachcol(df))) # pick columns for which sum of their elements is at least 10
 1-element Vector{String}:
  "x4"
 
-julia> names(df, .>:(eltype.(eachcol(df)), Missing))
+julia> names(df, .>:(eltype.(eachcol(df)), Missing)) # pick columns that allow missing values
 3-element Vector{String}:
  "x1"
  "x3"
  "x4"
 
-julia> names(df, [any(map(ismissing, col)) for col in eachcol(df)])
-2-element Vector{String}:
- "x1"
- "x3"
-
-julia> names(df, any.(ismissing, eachcol(df)))
+julia> names(df, any.(ismissing, eachcol(df))) # pick columns that contain missing values
 2-element Vector{String}:
  "x1"
  "x3"
