@@ -63,8 +63,15 @@ abstract type AbstractDataFrame end
 """
     names(df::AbstractDataFrame)
     names(df::AbstractDataFrame, cols)
+    names(df::GroupDataFrame, cols)
+    names(df::GroupKey)
+    names(df::DataFrameRows, cols)
+    names(df::DataFrameRow, cols)
+    names(df::DataFrameColumns, cols)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
+
+`df` can be some type other than `AbstractDataFrame`, but do not call `names(df)` for a `GroupKeys`.
 
 If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Cols`, `Not`, and `Between`).
@@ -75,11 +82,60 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
 * a `Function` predicate taking the column name as a string and returning `true`
   for columns that should be kept
 
+Note that for a `GroupKey`, `cols` cannot be passed.
+
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 
-#Examples
+# Examples
 ```jldoctest
+julia> df = DataFrame([1 3 3 2; missing 2 missing 4; missing 4 2 4], :auto)
+3×4 DataFrame
+ Row │ x1       x2      x3       x4
+     │ Int64?   Int64?  Int64?   Int64?
+─────┼──────────────────────────────────
+   1 │       1       3        3       2
+   2 │ missing       2  missing       4
+   3 │ missing       4        2       4
 
+julia> disallowmissing!(df, 2)
+3×4 DataFrame
+ Row │ x1       x2     x3       x4
+     │ Int64?   Int64  Int64?   Int64?
+─────┼─────────────────────────────────
+   1 │       1      3        3       2
+   2 │ missing      2  missing       4
+   3 │ missing      4        2       4
+
+julia> names(df, Int64)
+1-element Vector{String}:
+ "x2"
+
+julia> names(df, x -> x[2] == '2')
+1-element Vector{String}:
+ "x2"
+
+julia> fun(col) = sum(skipmissing(col)) >= 10
+fun (generic function with 1 method)
+
+julia> names(df, fun.(eachcol(df)))
+1-element Vector{String}:
+ "x4"
+
+julia> names(df, .>:(eltype.(eachcol(df)), Missing))
+3-element Vector{String}:
+ "x1"
+ "x3"
+ "x4"
+
+julia> names(df, [any(map(ismissing, col)) for col in eachcol(df)])
+2-element Vector{String}:
+ "x1"
+ "x3"
+
+julia> names(df, any.(ismissing, eachcol(df)))
+2-element Vector{String}:
+ "x1"
+ "x3"
 ```
 """
 Base.names(df::AbstractDataFrame, cols::Colon=:) = names(index(df))
