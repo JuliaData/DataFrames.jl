@@ -61,13 +61,12 @@ abstract type AbstractDataFrame end
 ##############################################################################
 
 """
-    names(df::AbstractDataFrame)
-    names(df::AbstractDataFrame, cols)
-    names(df::GroupDataFrame, cols)
+    names(df::AbstractDataFrame, cols=:)
+    names(df::DataFrameRow, cols=:)
+    names(df::GroupDataFrame, cols=:)
+    names(df::DataFrameRows, cols=:)
+    names(df::DataFrameColumns, cols=:)
     names(df::GroupKey)
-    names(df::DataFrameRows, cols)
-    names(df::DataFrameRow, cols)
-    names(df::DataFrameColumns, cols)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
