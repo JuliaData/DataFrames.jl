@@ -426,7 +426,7 @@ end
 end
 
 function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
-    isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
+    @assert !isempty(cols)
     local sumz
     sumz_undefined = true
     for col in cols
@@ -455,6 +455,24 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     return foldl(cols, init=init) do l, r
         l .= ifelse.(ismissing.(r), l, l .+ r)
     end
+end
+
+@noinline function table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)})
+    @assert ncol(df) > 0
+    fill(ncol(df_sel), nrow(df_sel))
+end
+
+@noinline table_transformation(df_sel::AbstractDataFrame,
+                               ::ByRow{typeof(length∘skipmissing)}) =
+    _length_skipmissing_fast(map(identity, eachcol(df_sel)))
+
+function _length_skipmissing_fast(cols::Vector{<:AbstractVector})
+    @assert !isempty(cols)
+    len = fill(length(cols), length(cols[1]))
+    for col in cols
+        (Missing <: eltype(col)) && (len .-= ismissing.(col))
+    end
+    return len
 end
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
