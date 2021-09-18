@@ -150,3 +150,31 @@ function _mean_skipmissing_fast(cols::Vector{<:AbstractVector})
     sumv ./= lenv
     return sumv
 end
+
+@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(minimum))) =
+    _minmax_row_fast(map(identity, eachcol(df_sel)), min)
+
+@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(maximum))) =
+    _minmax_row_fast(map(identity, eachcol(df_sel)), max)
+
+function _minmax_row_fast(cols::Vector{<:AbstractVector},
+                          fun::Union{typeof(min), typeof(max)})
+    isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
+    T = mapreduce(typeof, promote_type, cols)
+    res = Tables.allocatecolumn(T, length(cols[1]))
+    res .= cols[1]
+    for i in 2:length(cols)
+        res .= fun.(res, cols[i])
+    end
+    return res
+end
+
+@noinline function table_transformation(df_sel::AbstractDataFrame, ::typeof(minimum))
+    @assert ncol(df_sel) > 0
+    return reduce(min, map(identity, eachcol(df_sel)))
+end
+
+@noinline function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
+    @assert ncol(df_sel) > 0
+    return reduce(max, map(identity, eachcol(df_sel)))
+end
