@@ -416,7 +416,7 @@ function _sum_fast(cols::Vector{<:AbstractVector})
 end
 
 @noinline function table_transformation(df_sel::AbstractDataFrame,
-                                         fun::typeof(ByRow(sum∘skipmissing)))
+                                        fun::typeof(ByRow(sum∘skipmissing)))
     fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
     isnothing(fastsum) || return fastsum
     slowsum = default_table_transformation(df_sel, fun)
@@ -473,6 +473,60 @@ function _length_skipmissing_fast(cols::Vector{<:AbstractVector})
         (Missing <: eltype(col)) && (len .-= ismissing.(col))
     end
     return len
+end
+
+@noinline function table_transformation(df_sel::AbstractDataFrame, ::typeof(mean))
+    @assert ncol(df_sel) > 0
+    return mean(map(identity, eachcol(df_sel)))
+end
+
+@noinline table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(mean)}) =
+    table_transformation(df_sel, mean)
+
+@noinline function table_transformation(df_sel::AbstractDataFrame,
+                                        fun::typeof(ByRow(mean∘skipmissing)))
+    fastmean = _mean_skipmissing_fast(map(identity, eachcol(df_sel)))
+    isnothing(fastmean) || return fastmean
+    slowmean = default_table_transformation(df_sel, fun)
+    isconcretetype(nonmissingtype(eltype(slowmean))) && return slowmean
+    T = mapreduce(typeof, promote_type, slowmean)
+    return convert(AbstractVector{T}, slowmean)
+end
+
+function _mean_skipmissing_fast(cols::Vector{<:AbstractVector})
+    @assert !isempty(cols)
+    local sumz
+    sumz_undefined = true
+    for col in cols
+        try
+            zi = zero(eltype(col))
+            if sumz_undefined
+                sumz_undefined = false
+                sumz = zi
+            elseif !ismissing(zi) # zi is missing if eltype is Missing
+                sumz += zi
+            end
+        catch e
+            if e isa MethodError && e.f === zero
+                sumz_undefined = true
+                break
+            else
+                throw(e)
+            end
+        end
+    end
+    # this will happen if eltype of some columns do not support zero
+    # or all columns have eltype Missing
+    sumz_undefined && return nothing
+    sumv = fill!(Tables.allocatecolumn(typeof(sumz / 0), length(cols[1])), sumz)
+    lenv = zeros(Int, length(sumv))
+
+    for col in cols
+        sumv .= ifelse.(ismissing.(col), sumv, sumv .+ col)
+        lenv .+= .!ismissing.(col)
+    end
+    sumv ./= lenv
+    return sumv
 end
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
