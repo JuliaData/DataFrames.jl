@@ -83,7 +83,7 @@ See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x1=[1, missing, missing], x2=[3, 2, 4], x3=[3, missing, 2], x4=[2, 4, 4])
+julia> df = DataFrame(x1=[1, missing, missing], x2=[3, 2, 4], x3=[3, missing, 2], x4=Union{Int, Missing}[2, 4, 4])
 3×4 DataFrame
  Row │ x1       x2     x3       x4
      │ Int64?   Int64  Int64?   Int64?
