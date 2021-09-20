@@ -399,8 +399,9 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
             return _minmax_row_fast(cols, min)
         elseif fun === ByRow(max)
             return _minmax_row_fast(cols, max)
+        else
+            return fun(cols...)
         end
-        return fun(cols...)
     end
 end
 

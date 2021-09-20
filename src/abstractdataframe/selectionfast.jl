@@ -58,7 +58,7 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
                 sumz_undefined = false
                 sumz = zi
             elseif !ismissing(zi) # zi is missing if eltype is Missing
-                sumz += zi
+                sumz = Base.add_sum(sumz, zi)
             end
         catch e
             if e isa MethodError && e.f === zero
@@ -81,7 +81,7 @@ end
 
 @noinline function table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)})
     @assert ncol(df) > 0
-    fill(ncol(df_sel), nrow(df_sel))
+    return fill(ncol(df_sel), nrow(df_sel))
 end
 
 @noinline table_transformation(df_sel::AbstractDataFrame,
