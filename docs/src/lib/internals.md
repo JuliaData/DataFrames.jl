@@ -16,5 +16,4 @@ getmaxwidths
 ourshow
 ourstrwidth
 @spawn_for_chunks
-Cols
 ```
