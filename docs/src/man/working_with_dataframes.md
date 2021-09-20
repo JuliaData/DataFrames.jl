@@ -294,9 +294,9 @@ julia> df[:, Cols(x -> startswith(x, "x"))] # keep columns whose name starts wit
    1 │     2      3
 ```
 
-The following examples show a more complex use of `Cols` selector and move all
+The following examples show a more complex use of the `Cols` selector, which moves all
 columns whose names match `r"x"` regular expression respectively to the front
-and to the end of a data frame:
+and to the end of the data frame:
 ```jldoctest dataframe
 julia> df[:, Cols(r"x", :)]
 1×4 DataFrame

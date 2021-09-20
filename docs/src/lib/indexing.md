@@ -27,16 +27,16 @@ The rules for a valid type of index into a column are the following:
     * a regular expression, which gets expanded to a vector of matching column names;
     * a `Not` expression (see [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl));
       the `Not(idx)` selects all indices not in the passed `idx`;
-    * an `Cols` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
-      the `Cols(idxs...)` selects the union of the selections in `idxs`; in particular
+    * a `Cols` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+      `Cols(idxs...)` selects the union of the selections in `idxs`; in particular
       `Cols()` selects no columns and `Cols(:)` selects all columns; a special rule is
-      `Cols(predicate)`, where `precicate` is a predicate function; in this case
-      the columns whose names passed to the `predicate` predicate as strings return `true`
+      `Cols(predicate)`, where `predicate` is a predicate function; in this case
+      the columns whose names passed to `predicate` as strings return `true`
       are selected.
-    * `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
-       the `Between(first, last)` selects the columns between `first` and `last`;
-    * `All` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
-      the `All()` selects all columns, equivalent to `:`;
+    * a `Between` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+       `Between(first, last)` selects the columns between `first` and `last`;
+    * an `All` expression (see [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
+      `All()` selects all columns, equivalent to `:`;
     * a colon literal `:`.
 
 The rules for a valid type of index into a row are the following:
