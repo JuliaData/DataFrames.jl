@@ -71,7 +71,7 @@
   argument now allows `copycols` keyword argument
   ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
 * `Cols` now accepts a predicate accepting column names as strings.
-  ([#2880](https://github.com/JuliaData/DataFrames.jl/pull/2880))
+  ([#2881](https://github.com/JuliaData/DataFrames.jl/pull/2881))
 
 ## Bug fixes
 
