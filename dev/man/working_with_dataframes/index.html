@@ -177,14 +177,40 @@ julia&gt; df[!, r&quot;x&quot;]
  Row │ x2     y
      │ Int64  Int64
 ─────┼──────────────
-   1 │     2      3</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, <code>Cols</code> and <code>All</code> selectors in more complex column selection scenarios (note that <code>Cols()</code> selects no columns while <code>All()</code> selects all columns therefore <code>Cols</code> is a preferred selector if you write generic code). The following examples move all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of a data frame:</p><pre><code class="nohighlight hljs">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
+   1 │     2      3</code></pre><p>Finally, you can use <code>Not</code>, <code>Between</code>, <code>Cols</code> and <code>All</code> selectors in more complex column selection scenarios (note that <code>Cols()</code> selects no columns while <code>All()</code> selects all columns therefore <code>Cols</code> is a preferred selector if you write generic code). Here are examples of using each of these selectors:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(r=1, x1=2, x2=3, y=4)
 1×4 DataFrame
  Row │ r      x1     x2     y
      │ Int64  Int64  Int64  Int64
 ─────┼────────────────────────────
    1 │     1      2      3      4
 
-julia&gt; df[:, Cols(r&quot;x&quot;, :)]
+julia&gt; df[:, Not(:r)] # drop :r column
+1×3 DataFrame
+ Row │ x1     x2     y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      3      4
+
+julia&gt; df[:, Between(:r, :x2)] # keep columns between :r and :x2
+1×3 DataFrame
+ Row │ r      x1     x2
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+
+julia&gt; df[:, All()] # keep all columns
+1×4 DataFrame
+ Row │ r      x1     x2     y
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      2      3      4
+
+julia&gt; df[:, Cols(x -&gt; startswith(x, &quot;x&quot;))] # keep columns whose name starts with &quot;x&quot;
+1×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      3</code></pre><p>The following examples show a more complex use of the <code>Cols</code> selector, which moves all columns whose names match <code>r&quot;x&quot;</code> regular expression respectively to the front and to the end of the data frame:</p><pre><code class="language-julia-repl hljs">julia&gt; df[:, Cols(r&quot;x&quot;, :)]
 1×4 DataFrame
  Row │ x1     x2     r      y
      │ Int64  Int64  Int64  Int64
@@ -636,4 +662,4 @@ julia&gt; df .= ifelse.(df .== &quot;None&quot;, missing, df)
    1 │ a             1  missing  x
    2 │ missing       2  j        y
    3 │ b             3  k        missing
-   4 │ missing       4  h        z</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../importing_and_exporting/">Importing and Exporting Data (I/O) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.6 on <span class="colophon-date" title="Monday 20 September 2021 17:42">Monday 20 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   4 │ missing       4  h        z</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../importing_and_exporting/">Importing and Exporting Data (I/O) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.6 on <span class="colophon-date" title="Monday 20 September 2021 18:14">Monday 20 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
