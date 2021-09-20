@@ -63,14 +63,12 @@ abstract type AbstractDataFrame end
 """
     names(df::AbstractDataFrame, cols=:)
     names(df::DataFrameRow, cols=:)
-    names(df::GroupDataFrame, cols=:)
+    names(df::GroupedDataFrame, cols=:)
     names(df::DataFrameRows, cols=:)
     names(df::DataFrameColumns, cols=:)
     names(df::GroupKey)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
-
-For all supported types of `df` except `GroupKeys` you can optionally pass a `cols` positional argument.
 
 If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Cols`, `Not`, and `Between`).
@@ -85,9 +83,7 @@ See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame([1 3 3 2; missing 2 missing 4; missing 4 2 4], :auto);
-
-julia> disallowmissing!(df, 2)
+julia> df = DataFrame(x1=[1, missing, missing], x2=[3, 2, 4], x3=[3, missing, 2], x4=[2, 4, 4])
 3×4 DataFrame
  Row │ x1       x2     x3       x4
      │ Int64?   Int64  Int64?   Int64?
@@ -118,7 +114,7 @@ julia> names(df, fun.(eachcol(df))) # pick columns for which sum of their elemen
 1-element Vector{String}:
  "x4"
 
-julia> names(df, .>:(eltype.(eachcol(df)), Missing)) # pick columns that allow missing values
+julia> names(df, eltype.(eachcol(df)) .>: Missing) # pick columns that allow missing values
 3-element Vector{String}:
  "x1"
  "x3"

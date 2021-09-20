@@ -127,8 +127,8 @@ julia> names(df)
  "B"
 ```
 
-You can also filter column names by column selector condition that is passed as a second argument.
-See [`names`](@ref) docstring for a detailed list of available conditions.
+You can also filter column names by passing a column selector condition as a second argument.
+See the [`names`](@ref) docstring for a detailed list of available conditions.
 Here we give some selected examples:
 
 ```jldoctest dataframe
