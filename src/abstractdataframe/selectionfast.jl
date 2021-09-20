@@ -13,7 +13,7 @@ with `promote_type`.
 The main use of special `table_transformation` methods is to provide more
 efficient than the default implementations of requested `fun` transformation.
 """
-@noinline table_transformation(df_sel::AbstractDataFrame, fun) =
+table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
 """
@@ -23,13 +23,13 @@ This is a default implementation called when `AsTable(...) => fun` is requested.
 The `df_sel` argument is a data frame storing columns selected by
 `AsTable(...)` selector.
 """
-default_table_transformation(df_sel::AbstractDataFrame, fun) =
+@noinline default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
-@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof(sum)) =
+table_transformation(df_sel::AbstractDataFrame, ::typeof(sum)) =
     _sum_fast(map(identity, eachcol(df_sel)))
 
-@noinline table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(sum)}) =
+table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(sum)}) =
     table_transformation(df_sel, sum)
 
 function _sum_fast(cols::Vector{<:AbstractVector})
@@ -37,8 +37,8 @@ function _sum_fast(cols::Vector{<:AbstractVector})
     return sum(cols)
 end
 
-@noinline function table_transformation(df_sel::AbstractDataFrame,
-                                        fun::typeof(ByRow(sum∘skipmissing)))
+function table_transformation(df_sel::AbstractDataFrame,
+                              fun::typeof(ByRow(sum∘skipmissing)))
     fastsum = _sum_skipmissing_fast(map(identity, eachcol(df_sel)))
     isnothing(fastsum) || return fastsum
     slowsum = default_table_transformation(df_sel, fun)
@@ -53,7 +53,8 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     sumz_undefined = true
     for col in cols
         try
-            zi = zero(eltype(col))
+            zec = zero(eltype(col))
+            zi = Base.add_sum(zec, zec)
             if sumz_undefined
                 sumz_undefined = false
                 sumz = zi
@@ -79,13 +80,13 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     end
 end
 
-@noinline function table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)})
+function table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)})
     @assert ncol(df) > 0
     return fill(ncol(df_sel), nrow(df_sel))
 end
 
-@noinline table_transformation(df_sel::AbstractDataFrame,
-                               ::ByRow{typeof(length∘skipmissing)}) =
+table_transformation(df_sel::AbstractDataFrame,
+                     ::ByRow{typeof(length∘skipmissing)}) =
     _length_skipmissing_fast(map(identity, eachcol(df_sel)))
 
 function _length_skipmissing_fast(cols::Vector{<:AbstractVector})
@@ -97,15 +98,15 @@ function _length_skipmissing_fast(cols::Vector{<:AbstractVector})
     return len
 end
 
-@noinline function table_transformation(df_sel::AbstractDataFrame, ::typeof(mean))
+function table_transformation(df_sel::AbstractDataFrame, ::typeof(mean))
     @assert ncol(df_sel) > 0
     return mean(map(identity, eachcol(df_sel)))
 end
 
-@noinline table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(mean)}) =
+table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(mean)}) =
     table_transformation(df_sel, mean)
 
-@noinline function table_transformation(df_sel::AbstractDataFrame,
+function table_transformation(df_sel::AbstractDataFrame,
                                         fun::typeof(ByRow(mean∘skipmissing)))
     fastmean = _mean_skipmissing_fast(map(identity, eachcol(df_sel)))
     isnothing(fastmean) || return fastmean
@@ -151,10 +152,10 @@ function _mean_skipmissing_fast(cols::Vector{<:AbstractVector})
     return sumv
 end
 
-@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(minimum))) =
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(minimum))) =
     _minmax_row_fast(map(identity, eachcol(df_sel)), min)
 
-@noinline table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(maximum))) =
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(maximum))) =
     _minmax_row_fast(map(identity, eachcol(df_sel)), max)
 
 function _minmax_row_fast(cols::Vector{<:AbstractVector},
@@ -169,12 +170,12 @@ function _minmax_row_fast(cols::Vector{<:AbstractVector},
     return res
 end
 
-@noinline function table_transformation(df_sel::AbstractDataFrame, ::typeof(minimum))
+function table_transformation(df_sel::AbstractDataFrame, ::typeof(minimum))
     @assert ncol(df_sel) > 0
     return reduce(min, map(identity, eachcol(df_sel)))
 end
 
-@noinline function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
+function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
     @assert ncol(df_sel) > 0
     return reduce(max, map(identity, eachcol(df_sel)))
 end
