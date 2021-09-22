@@ -77,6 +77,8 @@
 
 * fix a problem with `unstack` on empty data frame
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
+* fix a problem with not specialized `Pair` arguments passed as transformations
+  ([#2889](https://github.com/JuliaData/DataFrames.jl/issues/2889))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 
