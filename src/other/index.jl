@@ -86,10 +86,10 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
             x.names .= xbackup.names
             if length(x) == 0
                 throw(ArgumentError("Tried renaming :$from to :$to, when " *
-                                    "Index is empty."))
+                                    "data frame has no columns."))
             else
                 throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
-                                    "does not exist in the Index."))
+                                    "does not exist in the data frame."))
             end
         end
         if haskey(x, to)
@@ -103,7 +103,7 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
         copy!(x.lookup, xbackup.lookup)
         x.names .= xbackup.names
         throw(ArgumentError("Tried renaming to :$(first(keys(toholder))), " *
-                            "when it already exists in the Index."))
+                            "when it already exists in the data frame."))
     end
     return x
 end
@@ -120,7 +120,7 @@ Base.haskey(x::Index, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 
 function Base.push!(x::Index, nm::Symbol)
-    haskey(x.lookup, nm) && throw(ArgumentError(":$nm already exists in Index"))
+    haskey(x.lookup, nm) && throw(ArgumentError(":$nm already exists in the data frame"))
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
     return x
@@ -290,6 +290,10 @@ end
     if i === nothing
         candidates = fuzzymatch(l, idx)
         if isempty(candidates)
+            if isempty(l)
+                throw(ArgumentError("column name :$idx not found in the " *
+                                    "data frame with no columns"))
+            end
             throw(ArgumentError("column name :$idx not found in the data frame"))
         end
         candidatesstr = join(string.(':', candidates), ", ", " and ")
