@@ -182,13 +182,9 @@ end
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
 
-function make_pair_concrete(@nospecialize(x))
-    if x isa Pair
-        return make_pair_concrete(x.first) => make_pair_concrete(x.second)
-    else
-        return x
-    end
-end
+make_pair_concrete(@nospecialize(x::Pair)) =
+    make_pair_concrete(x.first) => make_pair_concrete(x.second)
+make_pair_concrete(@nospecialize(x)) = x
 
 normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
     try

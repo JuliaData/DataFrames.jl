@@ -1678,7 +1678,7 @@ end
     @test select(df, :a => ByRow(f) => :a) == DataFrame(a=1:3)
 end
 
-@testset "making Pair concrete" begin
+@testset "vectors of pairs with non-specific type are accepted" begin
     df = DataFrame(x=[1,2,3])
     @test combine(df, [1 => length => :a, 1 => length => "b"]) == DataFrame(a=3, b=3)
     @test combine(df, [:x => length => :a, 1 => :b]) == DataFrame(a=3, b=1:3)
