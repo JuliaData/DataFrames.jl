@@ -292,7 +292,7 @@ end
         if isempty(candidates)
             if isempty(l)
                 throw(ArgumentError("column name :$idx not found in the " *
-                                    "data frame with no columns"))
+                                    "data frame since it has no columns"))
             end
             throw(ArgumentError("column name :$idx not found in the data frame"))
         end
