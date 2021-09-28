@@ -61,8 +61,12 @@ abstract type AbstractDataFrame end
 ##############################################################################
 
 """
-    names(df::AbstractDataFrame)
-    names(df::AbstractDataFrame, cols)
+    names(df::AbstractDataFrame, cols=:)
+    names(df::DataFrameRow, cols=:)
+    names(df::GroupedDataFrame, cols=:)
+    names(df::DataFrameRows, cols=:)
+    names(df::DataFrameColumns, cols=:)
+    names(df::GroupKey)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
@@ -76,6 +80,51 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
   for columns that should be kept
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x1=[1, missing, missing], x2=[3, 2, 4], x3=[3, missing, 2], x4=Union{Int, Missing}[2, 4, 4])
+3×4 DataFrame
+ Row │ x1       x2     x3       x4
+     │ Int64?   Int64  Int64?   Int64?
+─────┼─────────────────────────────────
+   1 │       1      3        3       2
+   2 │ missing      2  missing       4
+   3 │ missing      4        2       4
+
+julia> names(df)
+4-element Vector{String}:
+ "x1"
+ "x2"
+ "x3"
+ "x4"
+
+julia> names(df, Int) # pick columns whose element type is Int
+1-element Vector{String}:
+ "x2"
+
+julia> names(df, x -> x[end] == '2') # pick columns for which last character in their name is '2'
+1-element Vector{String}:
+ "x2"
+
+julia> fun(col) = sum(skipmissing(col)) >= 10
+fun (generic function with 1 method)
+
+julia> names(df, fun.(eachcol(df))) # pick columns for which sum of their elements is at least 10
+1-element Vector{String}:
+ "x4"
+
+julia> names(df, eltype.(eachcol(df)) .>: Missing) # pick columns that allow missing values
+3-element Vector{String}:
+ "x1"
+ "x3"
+ "x4"
+
+julia> names(df, any.(ismissing, eachcol(df))) # pick columns that contain missing values
+2-element Vector{String}:
+ "x1"
+ "x3"
+```
 """
 Base.names(df::AbstractDataFrame, cols::Colon=:) = names(index(df))
 
@@ -1124,7 +1173,7 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
    3 │     1  b
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
+Base.filter!(f::Function, df::AbstractDataFrame) = delete!(df, findall(!f, eachrow(df)))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
@@ -1158,7 +1207,7 @@ _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f
     delete!(df, _findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.Matrix(df::AbstractDataFrame)
-    T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
+    T = reduce(promote_type, (eltype(v) for v in eachcol(df)), init=Union{})
     return Matrix{T}(df)
 end
 

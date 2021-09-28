@@ -400,7 +400,7 @@ julia> names(german, AbstractString)
  "Purpose"
 ```
 
-You can explore more options of filtering column naes in the documentation of
+You can explore more options of filtering column names in the documentation of
 the [`names`](@ref) function.
 
 If instead you wanted to get column names of a data frame as `Symbol`s use the `propertynames` function:
@@ -834,8 +834,8 @@ Recapping what we have already learned,
 To get the column `:Age` from the `german` data frame you can do the following:
 
 - to copy the vector: `german[:, :Age]`, `german[:, "Age"]` or `german[:, 2]`;
-- to get a vector without copying: `german.Age`, `german."Age"`, `german[:, :Age]`,
-  `german[:, "Age"]` or `german[:, 2]`.
+- to get a vector without copying: `german.Age`, `german."Age"`, `german[!, :Age]`,
+  `german[!, "Age"]` or `german[!, 2]`.
 
 To get the first two columns as a `DataFrame`, we can index as follows:
 - to get the copied columns: `german[:, 1:2]`, `german[:, [:id, :Age]]`, or `german[:, ["id", "Age"]]`;

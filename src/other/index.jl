@@ -84,8 +84,13 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
         if !haskey(xbackup, from)
             copy!(x.lookup, xbackup.lookup)
             x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
-                                "does not exist in the Index."))
+            if length(x) == 0
+                throw(ArgumentError("Tried renaming :$from to :$to, when " *
+                                    "data frame has no columns."))
+            else
+                throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
+                                    "does not exist in the data frame."))
+            end
         end
         if haskey(x, to)
             toholder[to] = x.lookup[to]
@@ -98,7 +103,7 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
         copy!(x.lookup, xbackup.lookup)
         x.names .= xbackup.names
         throw(ArgumentError("Tried renaming to :$(first(keys(toholder))), " *
-                            "when it already exists in the Index."))
+                            "when it already exists in the data frame."))
     end
     return x
 end
@@ -115,7 +120,7 @@ Base.haskey(x::Index, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 
 function Base.push!(x::Index, nm::Symbol)
-    haskey(x.lookup, nm) && throw(ArgumentError(":$nm already exists in Index"))
+    haskey(x.lookup, nm) && throw(ArgumentError(":$nm already exists in the data frame"))
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
     return x
@@ -221,6 +226,9 @@ end
     isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported: use Cols(args...) instead"))
 @inline Base.getindex(x::AbstractIndex, idx::Cols) =
     isempty(idx.cols) ? Int[] : union(getindex.(Ref(x), idx.cols)...)
+@inline Base.getindex(x::AbstractIndex, idx::Cols{Tuple{typeof(:)}}) = x[:]
+@inline Base.getindex(x::AbstractIndex, idx::Cols{<:Tuple{Function}}) =
+    findall(idx.cols[1], names(x))
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
@@ -285,6 +293,10 @@ end
     if i === nothing
         candidates = fuzzymatch(l, idx)
         if isempty(candidates)
+            if isempty(l)
+                throw(ArgumentError("column name :$idx not found in the " *
+                                    "data frame since it has no columns"))
+            end
             throw(ArgumentError("column name :$idx not found in the data frame"))
         end
         candidatesstr = join(string.(':', candidates), ", ", " and ")
