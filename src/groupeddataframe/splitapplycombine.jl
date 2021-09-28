@@ -62,7 +62,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
     cs_norm = []
     optional_transform = Bool[]
     for c in cs_vec
-        arg = normalize_selection(index(parent(gd)), c, renamecols)
+        arg = normalize_selection(index(parent(gd)), make_pair_concrete(c), renamecols)
         if arg isa AbstractVector{Int}
             for col_idx in arg
                 push!(cs_norm, col_idx => identity => _names(gd)[col_idx])

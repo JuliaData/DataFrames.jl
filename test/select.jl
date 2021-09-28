@@ -1700,4 +1700,18 @@ end
     end
 end
 
+@testset "vectors of pairs with non-specific type are accepted" begin
+    df = DataFrame(x=[1,2,3])
+    @test combine(df, [1 => length => :a, 1 => length => "b"]) == DataFrame(a=3, b=3)
+    @test combine(df, [:x => length => :a, 1 => :b]) == DataFrame(a=3, b=1:3)
+    gdf = groupby(df, :x)
+    @test combine(gdf, [1 => length => :a, 1 => length => "b"]) == DataFrame(x=1:3, a=1, b=1)
+    @test combine(gdf, [:x => length => :a, 1 => :b]) == DataFrame(x=1:3, a=1, b=1:3)
+    sdf = view(df, :, :)
+    @test select(sdf, [1 => length => :a, 1 => length => "b"]) == DataFrame(a=[3, 3, 3], b=[3, 3, 3])
+    @test select(sdf, [:x => length => :a, 1 => :b]) == DataFrame(a=3, b=1:3)
+    @test_throws ArgumentError select(sdf, [1 => length => :a, 1 => length => "b"], copycols=false)
+    @test_throws ArgumentError select(sdf, [:x => length => :a, 1 => :b], copycols=false)
+end
+
 end # module

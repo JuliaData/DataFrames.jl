@@ -66,15 +66,19 @@
 * the `DataFrame` constructor when column names are passed to it as a second
   argument now determines if a passed vector of column names is valid based on
   its contents and not element type
-  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+  ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
 * the `DataFrame` constructor when matrix is passed to it as a first
   argument now allows `copycols` keyword argument
-  ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+  ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+* `Cols` now accepts a predicate accepting column names as strings.
+  ([#2881](https://github.com/JuliaData/DataFrames.jl/pull/2881))
 
 ## Bug fixes
 
 * fix a problem with `unstack` on empty data frame
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
+* fix a problem with not specialized `Pair` arguments passed as transformations
+  ([#2889](https://github.com/JuliaData/DataFrames.jl/issues/2889))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 

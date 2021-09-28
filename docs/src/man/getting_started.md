@@ -127,8 +127,27 @@ julia> names(df)
  "B"
 ```
 
-To get column names as `Symbol`s use the `propertynames` function:
+You can also filter column names by passing a column selector condition as a second argument.
+See the [`names`](@ref) docstring for a detailed list of available conditions.
+Here we give some selected examples:
+
+```jldoctest dataframe
+julia> names(df, r"A") # a regular expression selector
+1-element Vector{String}:
+ "A"
+
+julia> names(df, Int) # a selector using column element type
+1-element Vector{String}:
+ "A"
+
+julia> names(df, Not(:B)) # selector keeping all columns except :B
+1-element Vector{String}:
+ "A"
 ```
+
+To get column names as `Symbol`s use the `propertynames` function:
+
+```jldoctest dataframe
 julia> propertynames(df)
 2-element Vector{Symbol}:
  :A

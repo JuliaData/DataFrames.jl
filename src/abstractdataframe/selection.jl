@@ -182,6 +182,10 @@ end
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
 
+make_pair_concrete(@nospecialize(x::Pair)) =
+    make_pair_concrete(x.first) => make_pair_concrete(x.second)
+make_pair_concrete(@nospecialize(x)) = x
+
 normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
     try
         idx[sel]
@@ -1337,7 +1341,7 @@ function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprow
             push!(cs_vec, v)
         end
     end
-    return _manipulate(df, Any[normalize_selection(index(df), c, renamecols) for c in cs_vec],
+    return _manipulate(df, Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec],
                     copycols, keeprows)
 end
 
@@ -1427,7 +1431,8 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                 push!(cs_vec, v)
             end
         end
-        return _manipulate(dfv, Any[normalize_selection(index(dfv), c, renamecols) for c in cs_vec],
+        return _manipulate(dfv, Any[normalize_selection(index(dfv),
+                                    make_pair_concrete(c), renamecols) for c in cs_vec],
                            true, keeprows)
     else
         # we do not support transformations here
@@ -1445,7 +1450,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                     push!(seen_single_column, ind_idx)
                 end
             else
-                newind = normalize_selection(index(dfv), ind, renamecols)
+                newind = normalize_selection(index(dfv), make_pair_concrete(ind), renamecols)
                 if newind isa Pair
                     throw(ArgumentError("transforming and renaming columns of a " *
                                         "SubDataFrame is not allowed when `copycols=false`"))

@@ -474,6 +474,11 @@ end
     df = DataFrame(a1=1, a2=2, b1=3, b2=4)
     @test df[:, Cols(r"a", Not(r"1"))] == df[:, [1, 2, 4]]
     @test df[:, Cols(Not(r"1"), r"a")] == df[:, [2, 4, 1]]
+    @test df[:, Cols(x -> x[1] == 'a')] == df[:, [1, 2]]
+    @test df[:, Cols(x -> x[end] == '1')] == df[:, [1, 3]]
+    @test df[:, Cols(x -> x[end] == '3')] == DataFrame()
+    @test_throws MethodError df[:, Cols(x -> true, 1)] == DataFrame()
+    @test_throws MethodError df[:, Cols(1, x -> true)] == DataFrame()
 end
 
 @testset "views" begin
