@@ -10,10 +10,12 @@ that the produced result must match the result that would be produced by
 conversion of the resulting vectors or value type promotions that are consistent
 with `promote_type`.
 
+It is guaranteed that `df_sel` has at least one column.
+
 The main use of special `table_transformation` methods is to provide more
 efficient than the default implementations of requested `fun` transformation.
 """
-table_transformation(df_sel::AbstractDataFrame, fun) =
+functiotable_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
 """
@@ -26,15 +28,55 @@ The `df_sel` argument is a data frame storing columns selected by
 @noinline default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
-table_transformation(df_sel::AbstractDataFrame, ::typeof(sum)) =
-    _sum_fast(map(identity, eachcol(df_sel)))
+function table_transformation(df_sel::AbstractDataFrame, ::typeof(sum))
+    @assert ncol(df_sel) > 0
+    return sum(map(identity, eachcol(df_sel)))
+end
 
-table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(sum)}) =
-    table_transformation(df_sel, sum)
+function table_transformation(df_sel::AbstractDataFrame, fun::ByRow{typeof(sum)})
+    fastsum = _sum_fast(map(identity, eachcol(df_sel)))
+    isnothing(fastsum) || return fastsum
+    slowsum = default_table_transformation(df_sel, fun)
+    isconcretetype(nonmissingtype(eltype(slowsum))) && return slowsum
+    T = mapreduce(typeof, promote_type, slowsum)
+    return convert(AbstractVector{T}, slowsum)
+end
 
 function _sum_fast(cols::Vector{<:AbstractVector})
-    isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
-    return sum(cols)
+    local sumz
+    sumz_undefined = true
+    for col in cols
+        try
+            zec = zero(eltype(col))
+            zi = Base.add_sum(zec, zec)
+            if sumz_undefined
+                sumz_undefined = false
+                sumz = zi
+            else
+                sumz = Base.add_sum(sumz, zi)
+            end
+        catch e
+            if e isa MethodError && e.f === zero
+                sumz_undefined = true
+                break
+            else
+                throw(e)
+            end
+        end
+    end
+    # this will happen if eltype of some columns do not support zero
+    sumz_undefined && return nothing
+    res = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
+
+    for (i, col) in enumerate(cols)
+        if i == 1
+            res .= col
+        else
+            res .= Base.add_sum.(res, col)
+        end
+    end
+
+    return res
 end
 
 function table_transformation(df_sel::AbstractDataFrame,
@@ -48,7 +90,6 @@ function table_transformation(df_sel::AbstractDataFrame,
 end
 
 function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
-    @assert !isempty(cols)
     local sumz
     sumz_undefined = true
     for col in cols
@@ -73,11 +114,13 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     # this will happen if eltype of some columns do not support zero
     # or all columns have eltype Missing
     sumz_undefined && return nothing
-    init = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
+    res = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
 
-    return foldl(cols, init=init) do l, r
-        l .= ifelse.(ismissing.(r), l, l .+ r)
+    for col in cols
+        res .= ifelse.(ismissing.(col), res, Base.add_sum.(res, col))
     end
+
+    return res
 end
 
 function table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)})
@@ -117,16 +160,19 @@ function table_transformation(df_sel::AbstractDataFrame,
 end
 
 function _mean_skipmissing_fast(cols::Vector{<:AbstractVector})
-    @assert !isempty(cols)
     local sumz
     sumz_undefined = true
     for col in cols
+        T = nonmissingtype(eltype(col))
+        T === Union{} && continue
+        # if T is not concrete we cannot reliably implement fast path
+        isconcretetype(T) || return nothing
         try
-            zi = zero(eltype(col))
+            zi = zero(T) / 1
             if sumz_undefined
                 sumz_undefined = false
                 sumz = zi
-            elseif !ismissing(zi) # zi is missing if eltype is Missing
+            else
                 sumz += zi
             end
         catch e
@@ -141,7 +187,7 @@ function _mean_skipmissing_fast(cols::Vector{<:AbstractVector})
     # this will happen if eltype of some columns do not support zero
     # or all columns have eltype Missing
     sumz_undefined && return nothing
-    sumv = fill!(Tables.allocatecolumn(typeof(sumz / 0), length(cols[1])), sumz)
+    sumv = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
     lenv = zeros(Int, length(sumv))
 
     for col in cols
@@ -171,11 +217,27 @@ function _minmax_row_fast(cols::Vector{<:AbstractVector},
 end
 
 function table_transformation(df_sel::AbstractDataFrame, ::typeof(minimum))
-    @assert ncol(df_sel) > 0
     return reduce(min, map(identity, eachcol(df_sel)))
 end
 
 function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
-    @assert ncol(df_sel) > 0
     return reduce(max, map(identity, eachcol(df_sel)))
 end
+
+# TODO:
+# cols => ByRow(coalesce)
+# cols => *
+# AsTable(cols) => prod
+# AsTable(cols) => ByRow(prod)
+# AsTable(cols) => ByRow(minimum∘skipmissing)
+# AsTable(cols) => ByRow(maximum∘skipmissing)
+# AsTable(cols) => ByRow(first)
+# AsTable(cols) => ByRow(first∘skipmissing)
+# AsTable(cols) => ByRow(last)
+# AsTable(cols) => ByRow(last∘skipmissing)
+# AsTable(cols) => var
+# AsTable(cols) => std
+# AsTable(cols) => ByRow(var)
+# AsTable(cols) => ByRow(std)
+# AsTable(cols) => ByRow(var∘skipmissing)
+# AsTable(cols) => ByRow(std∘skipmissing)

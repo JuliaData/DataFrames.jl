@@ -398,7 +398,7 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
         cdf = eachcol(df)
         cols = map(c -> cdf[c], col_idx)
         if (fun === +) || fun === ByRow(+)
-            return _sum_fast(cols)
+            return reduce(+, cols)
         elseif fun === ByRow(min)
             return _minmax_row_fast(cols, min)
         elseif fun === ByRow(max)
