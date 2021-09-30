@@ -155,8 +155,8 @@ end
 
 function _show(io::IO,
                df::AbstractDataFrame;
-               allrows::Bool = !get(io, :limit, false),
-               allcols::Bool = !get(io, :limit, false),
+               allrows::Bool = get(io, :limit, true),
+               allcols::Bool = get(io, :limit, true),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
                eltypes::Bool = true,
@@ -289,9 +289,9 @@ end
 
 """
     show([io::IO, ]df::AbstractDataFrame;
-         allrows::Bool = !get(io, :limit, false),
-         allcols::Bool = !get(io, :limit, false),
-         allgroups::Bool = !get(io, :limit, false),
+         allrows::Bool = get(io, :limit, true),
+         allcols::Bool = get(io, :limit, true),
+         allgroups::Bool = get(io, :limit, true),
          rowlabel::Symbol = :Row,
          summary::Bool = true,
          eltypes::Bool = true,
@@ -344,8 +344,8 @@ julia> show(df, show_row_number=false)
 """
 Base.show(io::IO,
           df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
+          allrows::Bool = get(io, :limit, true),
+          allcols::Bool = get(io, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
@@ -355,8 +355,8 @@ Base.show(io::IO,
           summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 Base.show(df::AbstractDataFrame;
-          allrows::Bool = !get(stdout, :limit, true),
-          allcols::Bool = !get(stdout, :limit, true),
+          allrows::Bool = get(stdout, :limit, false),
+          allcols::Bool = get(stdout, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
           eltypes::Bool = true,
