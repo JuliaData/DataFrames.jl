@@ -6,9 +6,10 @@
 Perform a left join of two data frame objects by updating the `df1` with the
 joined columns from `df2`.
 
-A left join includes all rows from `df1`.
-Rows and columns from `df1` are left untouched.
-Each row in `df1` must have at most one match in `df2` based on `on` columns.
+A left join includes all rows from `df1` and leaves all rows and columns from `df1`
+untouched. Note that each row in `df1` must have at most one match in `df2`. Otherwise,
+this function would not be able to execute the join in-place since new rows need to be
+added to `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
