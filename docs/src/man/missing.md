@@ -1,6 +1,7 @@
 # Missing Data
 
-In Julia, missing values in data are represented using the special object `missing`, which is the single instance of the type `Missing`.
+In Julia, missing values in data are represented using the special object
+`missing`, which is the single instance of the type `Missing`.
 
 ```jldoctest
 julia> missing
@@ -8,10 +9,11 @@ missing
 
 julia> typeof(missing)
 Missing
-
 ```
 
-The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missing, Int64}`.
+The `Missing` type lets users create `Vector`s and `DataFrame` columns with
+missing values. Here we create a vector with a missing value and the
+element-type of the returned vector is `Union{Missing, Int64}`.
 
 ```jldoctest missings
 julia> x = [1, 2, missing]
@@ -28,18 +30,19 @@ Union{Missing, Int64}
 
 julia> eltype(x) == Union{Missing, Int}
 true
-
 ```
 
-`missing` values can be excluded when performing operations by using `skipmissing`, which returns a memory-efficient iterator.
+`missing` values can be excluded when performing operations by using
+`skipmissing`, which returns a memory-efficient iterator.
 
 ```jldoctest missings
 julia> skipmissing(x)
 skipmissing(Union{Missing, Int64}[1, 2, missing])
-
 ```
 
-The output of `skipmissing` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-missing values or `collect` the non-missing values into a new missing-free vector.
+The output of `skipmissing` can be passed directly into functions as an
+argument. For example, we can find the `sum` of all non-missing values or
+`collect` the non-missing values into a new missing-free vector.
 
 ```jldoctest missings
 julia> sum(skipmissing(x))
@@ -49,10 +52,11 @@ julia> collect(skipmissing(x))
 2-element Vector{Int64}:
  1
  2
-
 ```
 
-The function `coalesce` can be used to replace missing values with another value (note the dot, indicating that the replacement should be applied to all entries in `x`):
+The function `coalesce` can be used to replace missing values with another value
+(note the dot, indicating that the replacement should be applied to all entries
+in `x`):
 
 ```jldoctest missings
 julia> coalesce.(x, 0)
@@ -60,10 +64,11 @@ julia> coalesce.(x, 0)
  1
  2
  0
-
 ```
 
-The functions `dropmissing` and `dropmissing!` can be used to remove the rows containing `missing` values from a `DataFrame` and either create a new `DataFrame` or mutate the original in-place respectively.
+The functions [`dropmissing`](@ref) and [`dropmissing!`](@ref) can be used to
+remove the rows containing `missing` values from a data frame and either create
+a new `DataFrame` or mutate the original in-place respectively.
 
 ```jldoctest missings
 julia> using DataFrames
@@ -90,7 +95,8 @@ julia> dropmissing(df)
    2 │     5      1  e
 ```
 
-One can specify the column(s) in which to search for rows containing `missing` values to be removed.
+One can specify the column(s) in which to search for rows containing `missing`
+values to be removed.
 
 ```jldoctest missings
 julia> dropmissing(df, :x)
@@ -103,10 +109,10 @@ julia> dropmissing(df, :x)
    3 │     5      1  e
 ```
 
-By default the `dropmissing` and `dropmissing!` functions keep the
-`Union{T, Missing}` element type in columns selected for row removal. To remove
-the `Missing` part, if present, set the `disallowmissing` option to `true` (it
-will become the default behavior in the future).
+By default the [`dropmissing`](@ref) and [`dropmissing!`](@ref) functions keep
+the `Union{T, Missing}` element type in columns selected for row removal. To
+remove the `Missing` part, if present, set the `disallowmissing` keyword
+argument to `true` (it will become the default behavior in the future).
 
 ```jldoctest missings
 julia> dropmissing(df, disallowmissing=true)
@@ -118,8 +124,116 @@ julia> dropmissing(df, disallowmissing=true)
    2 │     5      1  e
 ```
 
+Sometimes it is useful to allow or disallow support of missing values in some
+columns of a data frame. These operations are supported by
+[`allowmissing`](@ref), [`allowmissing!`](@ref), [`disallowmissing`](@ref), and
+[`disallowmissing!`](@ref) functions. Here is an example:
+
+```jldoctest missings
+julia> df = DataFrame(x=1:3, y=4:6)
+3×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> allowmissing!(df)
+3×2 DataFrame
+ Row │ x       y
+     │ Int64?  Int64?
+─────┼────────────────
+   1 │      1       4
+   2 │      2       5
+   3 │      3       6
+```
+
+Now `df` allows missing values in all its columns (we could have passed a column
+selector as a second argument to [`allowmissing!`](@ref) to restrict the change
+to only some columns in our data frame). We can take advantage of this fact
+and set some of the values in `df` to `missing`, e.g.:
+
+```
+julia> df[1, 1] = missing
+missing
+
+julia> df
+3×2 DataFrame
+ Row │ x        y
+     │ Int64?   Int64?
+─────┼─────────────────
+   1 │ missing       4
+   2 │       2       5
+   3 │       3       6
+```
+
+Now let us perform a reverse operation by disallowing missing values in `df`.
+We know that column `:y` does not contain missing values so we can do:
+
+```
+julia> disallowmissing(df, :y)
+3×2 DataFrame
+ Row │ x        y
+     │ Int64?   Int64
+─────┼────────────────
+   1 │ missing      4
+   2 │       2      5
+   3 │       3      6
+```
+
+If we tried to disallow missings in the whole data frame we would get an error:
+
+```
+julia> disallowmissing(df)
+ERROR: MethodError: Cannot `convert` an object of type Missing to an object of type Int64
+Closest candidates are:
+  convert(::Type{T}, ::Ptr) where T<:Integer at pointer.jl:23
+  convert(::Type{T}, ::T) where T<:Number at number.jl:6
+  convert(::Type{T}, ::Number) where T<:Number at number.jl:7
+```
+
+However, it is often useful to disallow missings in all columns that actually do
+not contain them but keep the columns that have some `missing` values unchanged.
+This can be accomplished by passing `error=false` keyword argument:
+
+```
+julia> disallowmissing(df, error=false)
+3×2 DataFrame
+ Row │ x        y
+     │ Int64?   Int64
+─────┼────────────────
+   1 │ missing      4
+   2 │       2      5
+   3 │       3      6
+```
+
 The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a
 few convenience functions to work with missing values.
+
+One of the more commonly used is `passmissing`. It is a higher order function
+that takes some function `f` as its argument and returns a new function. This
+new function returns `missing` if any of its positional arguments are `missing`
+and otherwise applies the function `f` to these arguments. This functionality
+is useful in combination with functions that do not support passing `missing`
+values as their arguments, for example:
+
+```
+julia> uppercase(missing)
+ERROR: MethodError: no method matching uppercase(::Missing)
+Closest candidates are:
+  uppercase(::T) where T<:AbstractChar at strings/unicode.jl:251
+  uppercase(::AbstractString) at strings/unicode.jl:530
+Stacktrace:
+ [1] top-level scope
+   @ REPL[19]:1
+
+julia> passmissing(uppercase)("a")
+"A"
+
+julia> passmissing(uppercase)(missing)
+missing
+```
 
 The function `Missings.replace` returns an iterator which replaces `missing`
 elements with another value:
@@ -138,7 +252,6 @@ julia> collect(Missings.replace(x, 1))
 
 julia> collect(Missings.replace(x, 1)) == coalesce.(x, 1)
 true
-
 ```
 
 The function `nonmissingtype` returns the element-type `T` in `Union{T, Missing}`.
@@ -149,7 +262,6 @@ Union{Missing, Int64}
 
 julia> nonmissingtype(eltype(x))
 Int64
-
 ```
 
 The `missings` function constructs `Vector`s and `Array`s supporting missing
@@ -173,7 +285,7 @@ julia> missings(1, 3)
 julia> missings(Int, 1, 3)
 1×3 Matrix{Union{Missing, Int64}}:
  missing  missing  missing
-
 ```
 
-See the [Julia manual](https://docs.julialang.org/en/v1/manual/missing/) for more information about missing values.
+See the [Julia manual](https://docs.julialang.org/en/v1/manual/missing/) for
+more information about missing values.
