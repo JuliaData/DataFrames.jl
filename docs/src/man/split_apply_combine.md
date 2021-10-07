@@ -51,7 +51,11 @@ each subset of the `DataFrame`. This specification can be of the following forms
    `function` returns a single value or a vector; the generated name is created by
    concatenating source column name and `function` name by default (see examples below).
 3. a `cols => function => target_cols` form additionally explicitly specifying
-   the target column or columns.
+   the target column or columns, which must be single name (as a `Symbol` or a string),
+   a vector of names or `AsTable`. Additionally it can be a `Function` which
+   takes a string or a vector of strings as an argument containing names of columns
+   selected by `cols`, in which case `target_cols` becomes a return value of this function
+   (all accepted types of values except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows

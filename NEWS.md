@@ -72,6 +72,11 @@
   ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
 * `Cols` now accepts a predicate accepting column names as strings.
   ([#2881](https://github.com/JuliaData/DataFrames.jl/pull/2881))
+* In `source => transformation => destination` transformation specification
+  minilanguage now `destination` can be also a `Function` generating
+  target column names and taking column names specified by `source`
+  as an argument.
+  ([#2897](https://github.com/JuliaData/DataFrames.jl/pull/2897))
 
 ## Bug fixes
 

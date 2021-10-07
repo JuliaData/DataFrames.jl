@@ -1692,4 +1692,33 @@ end
     @test_throws ArgumentError select(sdf, [:x => length => :a, 1 => :b], copycols=false)
 end
 
+@testset "function as target column names specifier" begin
+    df_ref = DataFrame(x=[[1, 2], [3, 4]], id=1:2)
+    for v in (df_ref, groupby(df_ref, :id))
+        @test select(v, :id, :x => ByRow(first) => identity) == DataFrame(id=1:2, x=[1, 3])
+        @test select(v, :id, "x" => ByRow(first) => identity) == DataFrame(id=1:2, x=[1, 3])
+        @test select(v, :id, 1 => ByRow(first) => identity) == DataFrame(id=1:2, x=[1, 3])
+        @test select(v, :id, 1 => ByRow(first) => uppercase) == DataFrame(id=1:2, X=[1, 3])
+        @test select(v, :id, 1 => ByRow(first) => string) == DataFrame(id=1:2, x=[1, 3])
+        @test select(v, :id, 1 => ByRow(first) => x -> Symbol(x)) == DataFrame(id=1:2, x=[1, 3])
+        @test select(v, :id, 1 => identity => x -> ["p", "q"]) ==
+              DataFrame(id=1:2, p=[1, 3], q=[2, 4])
+        @test select(v, :id, 1 => identity => x -> [:p, :q]) ==
+              DataFrame(id=1:2, p=[1, 3], q=[2, 4])
+        @test_throws ArgumentError select(v, :id, 1 => identity => x -> [:p, "q"])
+        @test_throws ArgumentError select(v, :id, 1 => identity => x -> AsTable)
+        @test select(v, :id, AsTable(1) => first => string) ==
+              DataFrame("id" => 1:2, "[\"x\"]" => [[1, 2], [3, 4]])
+        @test select(v, :id, ["x", "x"] => ByRow((p,q) -> first(p)) => string) ==
+            DataFrame("id" => 1:2, "[\"x\", \"x\"]" => [1, 3])
+        @test select(v, :id, 1:2 => ((p, q) -> q) => x -> join(x, "_")) ==
+              DataFrame(id=1:2, x_id=1:2)
+        @test select(v, :id, AsTable(1:2) => last => x -> join(x, "_")) ==
+              DataFrame(id=1:2, x_id=1:2)
+        # we could make this work, but I skip it to keep the code simpler
+        # The problem is that Symbol and String are not Function
+        @test_throws ArgumentError select(v, :id, 1 => ByRow(first) => Symbol)
+        @test_throws ArgumentError select(v, :id, 1 => ByRow(first) => String)
+    end
+end
 end # module
