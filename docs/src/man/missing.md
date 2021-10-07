@@ -154,7 +154,7 @@ selector as a second argument to [`allowmissing!`](@ref) to restrict the change
 to only some columns in our data frame). We can take advantage of this fact
 and set some of the values in `df` to `missing`, e.g.:
 
-```
+```jldoctest missings
 julia> df[1, 1] = missing
 missing
 
