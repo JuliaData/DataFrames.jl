@@ -182,20 +182,11 @@ julia> disallowmissing(df, :y)
    3 │       3      6
 ```
 
-If we tried to disallow missings in the whole data frame we would get an error:
-
-```jldoctest missings
-julia> disallowmissing(df)
-ERROR: MethodError: Cannot `convert` an object of type Missing to an object of type Int64
-Closest candidates are:
-  convert(::Type{T}, ::Ptr) where T<:Integer at pointer.jl:23
-  convert(::Type{T}, ::T) where T<:Number at number.jl:6
-  convert(::Type{T}, ::Number) where T<:Number at number.jl:7
-```
-
-However, it is often useful to disallow missings in all columns that actually do
-not contain them but keep the columns that have some `missing` values unchanged.
-This can be accomplished by passing `error=false` keyword argument:
+If we tried to disallow missings in the whole data frame using
+`disallowmissing(df)` we would get an error. However, it is often useful to
+disallow missings in all columns that actually do not contain them but keep the
+columns that have some `missing` values unchanged without having to list them
+explicitly. This can be accomplished by passing `error=false` keyword argument:
 
 ```jldoctest missings
 julia> disallowmissing(df, error=false)
