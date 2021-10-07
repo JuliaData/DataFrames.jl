@@ -216,18 +216,10 @@ that takes some function `f` as its argument and returns a new function. This
 new function returns `missing` if any of its positional arguments are `missing`
 and otherwise applies the function `f` to these arguments. This functionality
 is useful in combination with functions that do not support passing `missing`
-values as their arguments, for example:
+values as their arguments, for example trying `uppercase(missing)` would
+produce an error, while the following works:
 
 ```
-julia> uppercase(missing)
-ERROR: MethodError: no method matching uppercase(::Missing)
-Closest candidates are:
-  uppercase(::T) where T<:AbstractChar at strings/unicode.jl:251
-  uppercase(::AbstractString) at strings/unicode.jl:530
-Stacktrace:
- [1] top-level scope
-   @ REPL[19]:1
-
 julia> passmissing(uppercase)("a")
 "A"
 
