@@ -154,7 +154,7 @@ selector as a second argument to [`allowmissing!`](@ref) to restrict the change
 to only some columns in our data frame). We can take advantage of this fact
 and set some of the values in `df` to `missing`, e.g.:
 
-```
+```jldoctest missings
 julia> df[1, 1] = missing
 missing
 
@@ -171,7 +171,7 @@ julia> df
 Now let us perform a reverse operation by disallowing missing values in `df`.
 We know that column `:y` does not contain missing values so we can do:
 
-```
+```jldoctest missings
 julia> disallowmissing(df, :y)
 3×2 DataFrame
  Row │ x        y
@@ -184,7 +184,7 @@ julia> disallowmissing(df, :y)
 
 If we tried to disallow missings in the whole data frame we would get an error:
 
-```
+```jldoctest missings
 julia> disallowmissing(df)
 ERROR: MethodError: Cannot `convert` an object of type Missing to an object of type Int64
 Closest candidates are:
@@ -197,7 +197,7 @@ However, it is often useful to disallow missings in all columns that actually do
 not contain them but keep the columns that have some `missing` values unchanged.
 This can be accomplished by passing `error=false` keyword argument:
 
-```
+```jldoctest missings
 julia> disallowmissing(df, error=false)
 3×2 DataFrame
  Row │ x        y
@@ -219,7 +219,7 @@ is useful in combination with functions that do not support passing `missing`
 values as their arguments, for example trying `uppercase(missing)` would
 produce an error, while the following works:
 
-```
+```jldoctest missings
 julia> passmissing(uppercase)("a")
 "A"
 
