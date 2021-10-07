@@ -2,7 +2,8 @@
 
 ## Examining the Data
 
-The default printing of `DataFrame` objects only includes a sample of rows and columns that fits on screen:
+The default printing of `DataFrame` objects only includes a sample of rows and
+columns that fits on screen:
 
 ```jldoctest dataframe
 julia> using DataFrames
@@ -85,9 +86,12 @@ julia> DataFrame(a = 1:2, b = [1.0, missing],
 we can observe that:
 
 * the first column `:a` can hold elements of type `Int64`;
-* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `?` printed after the name of type;
-* the third column `:c` can hold categorical data; here we notice `…`, which indicates that the actual name of the type was long and got truncated;
-* the type information in fourth column `:d` presents a situation where the name is both truncated and the type allows `Missing`.
+* the second column `:b` can hold `Float64` or `Missing`, which is indicated by
+  `?` printed after the name of type;
+* the third column `:c` can hold categorical data; here we notice `…`, which
+  indicates that the actual name of the type was long and got truncated;
+* the type information in fourth column `:d` presents a situation where the name
+  is both truncated and the type allows `Missing`.
 
 ## Taking a Subset
 
@@ -160,7 +164,8 @@ julia> df[[3, 1], [:C]]
    2 │     1
 ```
 
-Do note that `df[!, [:A]]` and `df[:, [:A]]` return a `DataFrame` object, while `df[!, :A]` and `df[:, :A]` return a vector:
+Do note that `df[!, [:A]]` and `df[:, [:A]]` return a `DataFrame` object, while
+`df[!, :A]` and `df[:, :A]` return a vector:
 
 ```jldoctest dataframe
 julia> df[!, [:A]]
@@ -222,7 +227,8 @@ that a single column vector should be extracted. Note that in the first case a
 vector is required to be passed (not just any iterable), so e.g. `df[:, (:x1,
 :x2)]` is not allowed, but `df[:, [:x1, :x2]]` is valid.
 
-It is also possible to use a regular expression as a selector of columns matching it:
+It is also possible to use a regular expression as a selector of columns
+matching it:
 ```jldoctest dataframe
 julia> df = DataFrame(x1=1, x2=2, y=3)
 1×3 DataFrame
@@ -294,9 +300,9 @@ julia> df[:, Cols(x -> startswith(x, "x"))] # keep columns whose name starts wit
    1 │     2      3
 ```
 
-The following examples show a more complex use of the `Cols` selector, which moves all
-columns whose names match `r"x"` regular expression respectively to the front
-and to the end of the data frame:
+The following examples show a more complex use of the `Cols` selector, which
+moves all columns whose names match `r"x"` regular expression respectively to
+the front and to the end of the data frame:
 ```jldoctest dataframe
 julia> df[:, Cols(r"x", :)]
 1×4 DataFrame
@@ -313,7 +319,8 @@ julia> df[:, Cols(Not(r"x"), :)]
    1 │     1      4      2      3
 ```
 
-The indexing syntax can also be used to select rows based on conditions on variables:
+The indexing syntax can also be used to select rows based on conditions on
+variables:
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
@@ -385,7 +392,9 @@ julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
   99 │   797      8    399
             84 rows omitted
 ```
-Where a specific subset of values needs to be matched, the `in()` function can be applied:
+
+Where a specific subset of values needs to be matched, the `in()` function can
+be applied:
 
 ```jldoctest dataframe
 julia> df[in.(df.A, Ref([1, 5, 601])), :]
@@ -409,7 +418,8 @@ a function object that tests whether each value belongs to the subset
 
     The only indexing situations where data frames will **not** return a copy are:
 
-    - when a `!` is placed in the first indexing position (`df[!, :A]`, or `df[!, [:A, :B]]`),
+    - when a `!` is placed in the first indexing position
+      (`df[!, :A]`, or `df[!, [:A, :B]]`),
     - when using `.` (`getpropery`) notation (`df.A`),
     - when a single row is selected using an integer (`df[1, [:A, :B]]`)
     - when `view` or `@view` is used (e.g. `@view df[1:3, :A]`).
@@ -417,11 +427,72 @@ a function object that tests whether each value belongs to the subset
     More details on copies, views, and references can be found
     in the [`getindex` and `view`](@ref) section.
 
+An alternative approach to row subsetting in a data frame is to use
+[`filter`](@ref), [`filter!`](@ref), [`subset`](@ref), or [`subset!`](@ref)
+functions (the functions with names ending with `!` are in-place variants).
+
+The [`filter`](@ref) function can be applied using two alternative syntaxes.
+The first one assumes that a predicate function taking a `DataFrameRow` is
+passed as a first positional argument to it:
+
+```jldoctest dataframe
+julia> filter(row -> 5 < row.A < 10, df)
+2×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     7      1      4
+   2 │     9      1      5
+```
+
+The second syntax assumes that the user passes a `Pair` of column name and
+predicate function taking a single value as an argument:
+
+```jldoctest dataframe
+julia> filter(:A => a -> 5 < a < 10, df)
+2×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     7      1      4
+   2 │     9      1      5
+```
+
+The latter syntax is faster because the performed operation is type stable,
+so it is preferred for large data frames.
+
+The [`subset`](@ref) function differs from the [`filter`](@ref) function in that
+it takes a data frame as its first argument, it operates on whole columns, and
+allows to pass more than one condition at a time. Each condition should be passed
+as a `Pair` consisting of source column and a function specifying the filtering
+condition:
+
+```jldoctest dataframe
+julia> subset(df, :A => a -> a .< 10, :C => c -> isodd.(c))
+3×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      1      1
+   2 │     5      1      3
+   3 │     9      1      5
+```
+
+Please check the documentation strings of the [`filter`](@ref),
+[`filter!`](@ref), [`subset`](@ref), and [`subset!`](@ref) functions to learn
+about all options that these functions provide.
+
+It is worth to mention that the [`subset`](@ref) was designed in a way that is
+consistent how column transformations are specified in functions like
+[`combine`](@ref), [`select`](@ref), and [`transform`](@ref). Examples of column
+transformations accepted by these functions are provided in the following
+section.
+
 ### Selecting and transforming columns
 
 You can also use the [`select`](@ref)/[`select!`](@ref) and
-[`transform`](@ref)/[`transform!`](@ref) functions to select, rename and transform
-columns in a data frame.
+[`transform`](@ref)/[`transform!`](@ref) functions to select, rename and
+transform columns in a data frame.
 
 The `select` function creates a new data frame:
 ```jldoctest dataframe
@@ -538,11 +609,12 @@ julia> df
    2 │     4      6
 ```
 
-`transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
-they retain all columns that are present in the source data frame. Here are some more advanced examples.
+`transform` and `transform!` functions work identically to `select` and
+`select!` with the only difference that they retain all columns that are present
+in the source data frame. Here are some more advanced examples.
 
-First we show how to generate a column that is a sum of all other columns in the data frame
-using the `All()` selector:
+First we show how to generate a column that is a sum of all other columns in the
+data frame using the `All()` selector:
 
 ```jldoctest dataframe
 julia> df = DataFrame(x1=[1, 2], x2=[3, 4], y=[5, 6])
@@ -561,7 +633,10 @@ julia> transform(df, All() => +)
    1 │     1      3      5          9
    2 │     2      4      6         12
 ```
-Using the `ByRow` wrapper, we can easily compute for each row the name of column with the highest score:
+
+Using the `ByRow` wrapper, we can easily compute for each row the name of column
+with the highest score:
+
 ```
 julia> using Random
 
@@ -599,8 +674,10 @@ julia> transform(df, AsTable(:) => ByRow(argmax) => :prediction)
    9 │ 0.251662    0.287702   0.0856352  b
   10 │ 0.986666    0.859512   0.553206   a
 ```
-In the following, most complex, example below we compute row-wise sum, number of elements, and mean,
-while ignoring missing values.
+
+In the following, most complex, example below we compute row-wise sum, number of
+elements, and mean, while ignoring missing values.
+
 ```
 julia> using Statistics
 
@@ -628,17 +705,21 @@ julia> transform(df, AsTable(:) .=>
 ```
 
 While the DataFrames.jl package provides basic data manipulation capabilities,
-users are encouraged to use querying frameworks for more convenient and powerful operations:
+users are encouraged to use querying frameworks for more convenient and powerful
+operations:
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a
-[LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query)-like interface to a large number of data sources
+  [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query)-like interface
+  to a large number of data sources
 - the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl)
-package provides interfaces similar to LINQ and [dplyr](https://dplyr.tidyverse.org)
+  package provides interfaces similar to LINQ and
+  [dplyr](https://dplyr.tidyverse.org)
 
 See the [Data manipulation frameworks](@ref) section for more information.
 
 ## Summarizing Data
 
-The `describe` function returns a data frame summarizing the elementary statistics and information about each column:
+The `describe` function returns a data frame summarizing the elementary
+statistics and information about each column:
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
@@ -660,8 +741,10 @@ julia> describe(df)
    2 │ B                 F            M           0  String
 ```
 
-If you are interested in describing only a subset of columns then the easiest way
-to do it is to pass a subset of an original data frame to `describe` like this:
+If you are interested in describing only a subset of columns then the easiest
+way to do it is to pass a subset of an original data frame to `describe` like
+this:
+
 ```jldoctest dataframe
 julia> describe(df[!, [:A]])
 1×7 DataFrame
@@ -671,7 +754,9 @@ julia> describe(df[!, [:A]])
    1 │ A             2.5      1      2.5      4         0  Int64
 ```
 
-Of course, one can also compute descriptive statistics directly on individual columns:
+Of course, one can also compute descriptive statistics directly on individual
+columns:
+
 ```jldoctest dataframe
 julia> using Statistics
 
@@ -679,7 +764,9 @@ julia> mean(df.A)
 2.5
 ```
 
-We can also apply a function to each column of a `DataFrame` using `combine`. For example:
+We can also apply a function to each column of a `DataFrame` using `combine`.
+For example:
+
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
@@ -706,8 +793,8 @@ julia> combine(df, names(df) .=> sum, names(df) .=> prod)
    1 │    10     10.0      24     24.0
 ```
 
-If you would prefer the result to have the same number of rows as the source data
-frame use `select` instead of `combine`.
+If you would prefer the result to have the same number of rows as the source
+data frame use `select` instead of `combine`.
 
 ## Handling of Columns Stored in a `DataFrame`
 
@@ -731,8 +818,8 @@ julia> df2.A === df.A
 false
 ```
 
-On the other hand, in-place functions, whose names end with `!`, may mutate the column vectors of the
-`DataFrame` they take as an argument, for example:
+On the other hand, in-place functions, whose names end with `!`, may mutate the
+column vectors of the `DataFrame` they take as an argument, for example:
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
@@ -817,8 +904,9 @@ true
 Note that a column obtained from a `DataFrame` using one of these methods should
 not be mutated without caution.
 
-The exact rules of handling columns of a `DataFrame` are explained in
-[The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
+The exact rules of handling columns of a `DataFrame` are explained in [The
+design of handling of columns of a `DataFrame`](@ref man-columnhandling) section
+of the manual.
 
 
 ## Replacing Data
@@ -836,7 +924,8 @@ Replacement operations affecting a single column can be performed using `replace
 ```jldoctest replace
 julia> using DataFrames
 
-julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4, c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
+julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4,
+                      c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
 4×4 DataFrame
  Row │ a       b      c       d
      │ String  Int64  String  String
