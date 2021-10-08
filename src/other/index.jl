@@ -288,9 +288,28 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         return [s for (d, s) in dist if d <= maxd]
 end
 
+function normalizedmatch(l::Dict{Symbol, Int}, idx::Symbol)
+    idxs = Unicode.normalize(string(idx))
+    for x in keys(l)
+        Unicode.normalize(string(x)) == idxs && return true
+    end
+    return false
+end
+
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
     i = get(l, idx, nothing)
     if i === nothing
+        if normalizedmatch(l, idx)
+            throw(ArgumentError("column name :$idx not found in the " *
+                                    "data frame. However there is a match of " *
+                                    "Unicode normalized passed column name with " *
+                                    "a normalized column name found in the " *
+                                    "data frame. It is recommended to use " *
+                                    "normalized column names to avoid ambiguity. " *
+                                    "In order to normalize column names in " *
+                                    "an existing data frame `df` do " *
+                                    "`using Unicode; rename!(Unicode.normalize, df)`."))
+        end
         candidates = fuzzymatch(l, idx)
         if isempty(candidates)
             if isempty(l)

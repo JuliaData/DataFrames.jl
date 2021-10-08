@@ -2036,5 +2036,20 @@ end
     end
 end
 
+@testset "name normalization" begin
+    d1 = DataFrame("no\u00EBl" => 1)
+    d2 = DataFrame("noe\u0308l" => 1)
+    @test d1[:, "no\u00EBl"] == [1]
+    @test_throws ArgumentError d1[:, "noe\u0308l"]
+    @test_throws ArgumentError d2[:, "no\u00EBl"]
+    @test d2[:, "noe\u0308l"] == [1]
+
+    rename!(DataFrames.Unicode.normalize, d1)
+    rename!(DataFrames.Unicode.normalize, d2)
+    @test d1[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
+    @test d1[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
+    @test d2[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
+    @test d2[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
+end
 
 end # module
