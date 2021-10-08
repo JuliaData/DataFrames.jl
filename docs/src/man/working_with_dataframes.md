@@ -427,6 +427,8 @@ a function object that tests whether each value belongs to the subset
     More details on copies, views, and references can be found
     in the [`getindex` and `view`](@ref) section.
 
+### Subsetting functions
+
 An alternative approach to row subsetting in a data frame is to use
 [`filter`](@ref), [`filter!`](@ref), [`subset`](@ref), or [`subset!`](@ref)
 functions (the functions with names ending with `!` are in-place variants).
@@ -445,7 +447,7 @@ julia> filter(row -> 5 < row.A < 10, df)
    2 │     9      1      5
 ```
 
-The second syntax assumes that the user passes a `Pair` of column name and
+The second syntax assumes that the user passes a `Pair` of column(s) and
 predicate function taking a single value as an argument:
 
 ```jldoctest dataframe
@@ -464,7 +466,7 @@ so it is preferred for large data frames.
 The [`subset`](@ref) function differs from the [`filter`](@ref) function in that
 it takes a data frame as its first argument, it operates on whole columns, and
 allows to pass more than one condition at a time. Each condition should be passed
-as a `Pair` consisting of source column and a function specifying the filtering
+as a `Pair` consisting of source column(s) and a function specifying the filtering
 condition:
 
 ```jldoctest dataframe
