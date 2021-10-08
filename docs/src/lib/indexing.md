@@ -89,8 +89,7 @@ returns a `DataFrameRow` (which is a view type).
 * `df[CartesianIndex(row, col)]` -> the same as `df[row, col]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df`;
 * `df[rows, col]` -> a copy of the vector `df[!, col]` with only the entries
-                     corresponding to `rows` selected, the same as `df[!,
-                     col][rows]`;
+                     corresponding to `rows` selected, the same as `df[!, col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with
                       only the entries corresponding to `rows` selected;
 * `df[!, col]` -> the vector contained in column `col` returned without copying;
