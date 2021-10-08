@@ -125,7 +125,7 @@ julia> dropmissing(df, disallowmissing=true)
 ```
 
 Sometimes it is useful to allow or disallow support of missing values in some
-columns of a data frame. These operations are supported by
+columns of a data frame. These operations are supported by the
 [`allowmissing`](@ref), [`allowmissing!`](@ref), [`disallowmissing`](@ref), and
 [`disallowmissing!`](@ref) functions. Here is an example:
 
@@ -186,7 +186,7 @@ If we tried to disallow missings in the whole data frame using
 `disallowmissing(df)` we would get an error. However, it is often useful to
 disallow missings in all columns that actually do not contain them but keep the
 columns that have some `missing` values unchanged without having to list them
-explicitly. This can be accomplished by passing `error=false` keyword argument:
+explicitly. This can be accomplished by passing the `error=false` keyword argument:
 
 ```jldoctest missings
 julia> disallowmissing(df, error=false)
@@ -202,12 +202,12 @@ julia> disallowmissing(df, error=false)
 The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a
 few convenience functions to work with missing values.
 
-One of the more commonly used is `passmissing`. It is a higher order function
-that takes some function `f` as its argument and returns a new function. This
-new function returns `missing` if any of its positional arguments are `missing`
+One of the most commonly used is `passmissing`. It is a higher order function
+that takes some function `f` as its argument and returns a new function
+which returns `missing` if any of its positional arguments are `missing`
 and otherwise applies the function `f` to these arguments. This functionality
 is useful in combination with functions that do not support passing `missing`
-values as their arguments, for example trying `uppercase(missing)` would
+values as their arguments. For example, trying `uppercase(missing)` would
 produce an error, while the following works:
 
 ```jldoctest missings
