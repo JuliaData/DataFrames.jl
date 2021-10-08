@@ -149,10 +149,8 @@ julia> allowmissing!(df)
    3 │      3       6
 ```
 
-Now `df` allows missing values in all its columns (we could have passed a column
-selector as a second argument to [`allowmissing!`](@ref) to restrict the change
-to only some columns in our data frame). We can take advantage of this fact
-and set some of the values in `df` to `missing`, e.g.:
+Now `df` allows missing values in all its columns. We can take advantage of this
+fact and set some of the values in `df` to `missing`, e.g.:
 
 ```jldoctest missings
 julia> df[1, 1] = missing
@@ -168,8 +166,14 @@ julia> df
    3 │       3       6
 ```
 
-Now let us perform a reverse operation by disallowing missing values in `df`.
-We know that column `:y` does not contain missing values so we can do:
+Note that a column selector can be passed as a second positional argument to
+[`allowmissing`](@ref) and [`allowmissing!`](@ref) to restrict the change to
+only some columns in our data frame).
+
+Now let us perform a reverse operation by disallowing missing values in `df`. We
+know that column `:y` does not contain missing values so we can use the
+[`disallowmissing`](@ref) function passing a column selector as a second
+positional argument:
 
 ```jldoctest missings
 julia> disallowmissing(df, :y)
@@ -181,6 +185,9 @@ julia> disallowmissing(df, :y)
    2 │       2      5
    3 │       3      6
 ```
+
+This operation created a new `DataFrame`. If we wanted to update the `df`
+in-place the [`disallowmissing!`](@ref) function should be used.
 
 If we tried to disallow missings in the whole data frame using
 `disallowmissing(df)` we would get an error. However, it is often useful to
