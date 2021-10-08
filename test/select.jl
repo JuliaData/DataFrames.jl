@@ -1721,4 +1721,5 @@ end
         @test_throws ArgumentError select(v, :id, 1 => ByRow(first) => String)
     end
 end
+
 end # module
