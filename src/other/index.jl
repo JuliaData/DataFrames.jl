@@ -288,6 +288,7 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         return [s for (d, s) in dist if d <= maxd]
 end
 
+TODO: revisit after JuliaLang/julia#42561 has been merged
 const _julia_charmap = Dict{Char,Char}(
     Char(0x025B) => Char(0x03B5),
     Char(0x00B5) => Char(0x03BC),
@@ -304,20 +305,18 @@ function _norm_eq(a1::String, a2::String, idx::Symbol)
         c1, i1 = s1
         c2, i2 = s2
         if c1 != c2
-            refc = get(_julia_charmap, c1, c1)
-            refc == get(_julia_charmap, c2, c2) || return false
+            refc1 = get(_julia_charmap, c1, c1)
+            refc2 = get(_julia_charmap, c2, c2)
+            refc1 == refc2 || return false
             throw(ArgumentError("column name :$idx not found in the " *
                                 "data frame. However there is a similar " *
                                 "column name in the data frame where character $c1 " *
-                                "is used is instead of $c2. Note that these " *
-                                "characters are displayed very similarly but are " *
-                                "different as their normalized codepoints are " *
-                                "$(UInt32(c1)) and $(UInt32(c2)) respectively. The " *
+                                "(codepoint: $(UInt32(c1))) is used is instead of $c2 " *
+                                "(codepoint: $(UInt32(c2))). The " *
                                 "error is most likely caused by the Julia parser which " *
                                 "normalizes `Symbol` literals containing such " *
                                 "characters. In order to avoid such problems use only " *
-                                "$refc (codepoint: $(UInt32(refc))) character " *
-                                "when naming columns."))
+                                "$refc1 (codepoint: $(UInt32(refc1))) in column names."))
         end
         s1 = iterate(a1, i1)
         s2 = iterate(a2, i2)
