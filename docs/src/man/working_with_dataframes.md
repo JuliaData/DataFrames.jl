@@ -430,44 +430,14 @@ a function object that tests whether each value belongs to the subset
 ### Subsetting functions
 
 An alternative approach to row subsetting in a data frame is to use
-[`filter`](@ref), [`filter!`](@ref), [`subset`](@ref), or [`subset!`](@ref)
-functions (the functions with names ending with `!` are in-place variants).
+the [`subset`](@ref) function, or the [`subset!`](@ref) function,
+which is its in-place variant.
 
-The [`filter`](@ref) function can be applied using two alternative syntaxes.
-The first one assumes that a predicate function taking a `DataFrameRow` is
-passed as a first positional argument to it:
-
-```jldoctest dataframe
-julia> filter(row -> 5 < row.A < 10, df)
-2×3 DataFrame
- Row │ A      B      C
-     │ Int64  Int64  Int64
-─────┼─────────────────────
-   1 │     7      1      4
-   2 │     9      1      5
-```
-
-The second syntax assumes that the user passes a `Pair` of column(s) and
-predicate function taking a single value as an argument:
-
-```jldoctest dataframe
-julia> filter(:A => a -> 5 < a < 10, df)
-2×3 DataFrame
- Row │ A      B      C
-     │ Int64  Int64  Int64
-─────┼─────────────────────
-   1 │     7      1      4
-   2 │     9      1      5
-```
-
-The latter syntax is faster because the performed operation is type stable,
-so it is preferred for large data frames.
-
-The [`subset`](@ref) function differs from the [`filter`](@ref) function in that
-it takes a data frame as its first argument, it operates on whole columns, and
-allows to pass more than one condition at a time. Each condition should be passed
-as a `Pair` consisting of source column(s) and a function specifying the filtering
-condition:
+The [`subset`](@ref) function takes a data frame as its first argument. The
+following one or more positional arguments are filtering condition
+specifications that must be jointly met. Each condition should be passed as a
+`Pair` consisting of source column(s) and a function specifying the filtering
+condition taking this column(s) as arguments:
 
 ```jldoctest dataframe
 julia> subset(df, :A => a -> a .< 10, :C => c -> isodd.(c))
@@ -480,9 +450,43 @@ julia> subset(df, :A => a -> a .< 10, :C => c -> isodd.(c))
    3 │     9      1      5
 ```
 
-Please check the documentation strings of the [`filter`](@ref),
-[`filter!`](@ref), [`subset`](@ref), and [`subset!`](@ref) functions to learn
-about all options that these functions provide.
+It is a frequent situation that when performing filtering `missing` values
+might be present in the filtered columns which could then lead `missing`
+value as a filtering condition instead of expected `true` or `false`. In order
+to handle this situation one can either use the `coalesce` function or pass
+`skipmissing=true` keyword argument to `subset`. Here is an example:
+
+```jldoctest dataframe
+julia> df = DataFrame(x=[1, 2, missing, 4])
+4×1 DataFrame
+ Row │ x
+     │ Int64?
+─────┼─────────
+   1 │       1
+   2 │       2
+   3 │ missing
+   4 │       4
+
+julia> subset(df, :x => x -> coalesce.(iseven.(x), false))
+2×1 DataFrame
+ Row │ x
+     │ Int64?
+─────┼────────
+   1 │      2
+   2 │      4
+
+julia> subset(df, :x => x -> iseven.(x), skipmissing=true)
+2×1 DataFrame
+ Row │ x
+     │ Int64?
+─────┼────────
+   1 │      2
+   2 │      4
+```
+
+Additionally DataFrames.jl extends the [`filter`](@ref), [`filter!`](@ref)
+functions provided in Julia Base and they also allow to subset a data frame.
+Please refer to their documentation for the details.
 
 It is worth to mention that the [`subset`](@ref) was designed in a way that is
 consistent how column transformations are specified in functions like
