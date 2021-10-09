@@ -2084,7 +2084,7 @@ end
                               "column name in the data frame where character $b " *
                               "is used is instead of $a. Note that these " *
                               "characters are displayed very similarly but are " *
-                              "different as their codepoints are $(UInt32(b)) and " *
+                              "different as their normalized codepoints are $(UInt32(b)) and " *
                               "$(UInt32(a)) respectively. The error is most " *
                               "likely caused by the Julia parser which normalizes " *
                               "`Symbol` literals containing such characters. " *
@@ -2101,7 +2101,7 @@ end
                               "column name in the data frame where character $a " *
                               "is used is instead of $b. Note that these " *
                               "characters are displayed very similarly but are " *
-                              "different as their codepoints are $(UInt32(a)) and " *
+                              "different as their normalized codepoints are $(UInt32(a)) and " *
                               "$(UInt32(b)) respectively. The error is most " *
                               "likely caused by the Julia parser which normalizes " *
                               "`Symbol` literals containing such characters. " *
