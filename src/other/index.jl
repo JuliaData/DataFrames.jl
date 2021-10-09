@@ -305,7 +305,8 @@ end
                                     "Unicode normalized passed column name with " *
                                     "a normalized column name found in the " *
                                     "data frame. It is recommended to use " *
-                                    "normalized column names to avoid ambiguity. " *
+                                    "normalized column names and then refer to them " *
+                                    "using normalized names to avoid ambiguity. "
                                     "In order to normalize column names in " *
                                     "an existing data frame `df` do " *
                                     "`using Unicode; rename!(Unicode.normalize, df)`."))
