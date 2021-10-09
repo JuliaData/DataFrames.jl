@@ -2059,17 +2059,23 @@ end
 
     d1 = DataFrame("no\u00EBl" => 1)
     d2 = DataFrame("noe\u0308l" => 1)
+    d3 = DataFrame("noe\u0308\u00EBl" => 1)
     @test d1[:, "no\u00EBl"] == [1]
     @test_throws ArgumentError d1[:, "noe\u0308l"]
     @test_throws ArgumentError d2[:, "no\u00EBl"]
     @test d2[:, "noe\u0308l"] == [1]
+    @test_throws ArgumentError d3[:, "no\u00EBe\u0308l"]
+    @test d3[:, "noe\u0308\u00EBl"] == [1]
 
     rename!(DataFrames.Unicode.normalize, d1)
     rename!(DataFrames.Unicode.normalize, d2)
+    rename!(DataFrames.Unicode.normalize, d3)
     @test d1[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
     @test d1[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
     @test d2[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
     @test d2[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
+    @test d3[:, DataFrames.Unicode.normalize("no\u00EBe\u0308l")] == [1]
+    @test d3[:, DataFrames.Unicode.normalize("noe\u0308\u00EBl")] == [1]
 
     d = DataFrame("power_µW" => 1:3)
     @test_throws ArgumentError d.power_µW
@@ -2079,35 +2085,29 @@ end
         # needed for cdot
         a = Unicode.normalize(string(a))[1]
         idx = Symbol(b)
-        referr =ArgumentError("column name :$idx not found in the " *
-                              "data frame. However there is a similar " *
-                              "column name in the data frame where character $b " *
-                              "is used is instead of $a. Note that these " *
-                              "characters are displayed very similarly but are " *
-                              "different as their normalized codepoints are $(UInt32(b)) and " *
-                              "$(UInt32(a)) respectively. The error is most " *
-                              "likely caused by the Julia parser which normalizes " *
-                              "`Symbol` literals containing such characters. " *
-                              "In order to avoid such problems use only " *
-                              "$b (codepoint: $(UInt32(b))) character " *
-                              "when naming columns.")
+        referr = ArgumentError("column name :$idx not found in the " *
+                                "data frame. However there is a similar " *
+                                "column name in the data frame where character $a " *
+                                "(codepoint: $(UInt32(a))) is used is instead of $b " *
+                                "(codepoint: $(UInt32(b))). The " *
+                                "error is most likely caused by the Julia parser which " *
+                                "normalizes `Symbol` literals containing such " *
+                                "characters. In order to avoid such problems use only " *
+                                "$b (codepoint: $(UInt32(b))) in column names.")
         d = DataFrame(string(a) => 1)
         @test_throws referr d[:, string(b)]
         @test d[:, string(a)] == [1]
 
         idx = Symbol(a)
-        referr =ArgumentError("column name :$idx not found in the " *
-                              "data frame. However there is a similar " *
-                              "column name in the data frame where character $a " *
-                              "is used is instead of $b. Note that these " *
-                              "characters are displayed very similarly but are " *
-                              "different as their normalized codepoints are $(UInt32(a)) and " *
-                              "$(UInt32(b)) respectively. The error is most " *
-                              "likely caused by the Julia parser which normalizes " *
-                              "`Symbol` literals containing such characters. " *
-                              "In order to avoid such problems use only " *
-                              "$b (codepoint: $(UInt32(b))) character " *
-                              "when naming columns.")
+        referr = ArgumentError("column name :$idx not found in the " *
+                                "data frame. However there is a similar " *
+                                "column name in the data frame where character $b " *
+                                "(codepoint: $(UInt32(b))) is used is instead of $a " *
+                                "(codepoint: $(UInt32(a))). The " *
+                                "error is most likely caused by the Julia parser which " *
+                                "normalizes `Symbol` literals containing such " *
+                                "characters. In order to avoid such problems use only " *
+                                "$b (codepoint: $(UInt32(b))) in column names.")
         d = DataFrame(string(b) => 1)
         @test_throws referr d[:, string(a)]
         @test d[:, string(b)] == [1]
