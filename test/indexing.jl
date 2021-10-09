@@ -1,6 +1,6 @@
 module TestIndexing
 
-using Test, DataFrames
+using Test, DataFrames, Unicode, Random
 
 @testset "getindex DataFrame" begin
     df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -2037,6 +2037,26 @@ end
 end
 
 @testset "name normalization" begin
+    Random.seed!(1234)
+
+    for (a1, a2) in [("", ""), ("", "1"), ("1", ""),
+                     ("a", "a"), ("a", "a1"), ("a1", "a"),
+                     ("ab", "ab"), ("ab", "ac"), ("ab", "ab1"), ("ab1", "ab"),]
+        @test DataFrames._norm_eq(a1, a2, Symbol(a1)) == (a1 == a2)
+    end
+
+    for _ in 1:100
+        x = randstring(5)
+        y1 = String(chop(x))
+        y2 = y1 * "α"
+        y3 = x * "α"
+
+        @test DataFrames._norm_eq(x, x, :x)
+        @test !DataFrames._norm_eq(x, y1, :x)
+        @test !DataFrames._norm_eq(x, y2, :x)
+        @test !DataFrames._norm_eq(x, y3, :x)
+    end
+
     d1 = DataFrame("no\u00EBl" => 1)
     d2 = DataFrame("noe\u0308l" => 1)
     @test d1[:, "no\u00EBl"] == [1]
@@ -2050,6 +2070,60 @@ end
     @test d1[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
     @test d2[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
     @test d2[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
+
+    d = DataFrame("power_µW" => 1:3)
+    @test_throws ArgumentError d.power_µW
+    @test d."power_µW" == 1:3
+
+    for (a, b) in pairs(DataFrames._julia_charmap)
+        # needed for cdot
+        a = Unicode.normalize(string(a))[1]
+        idx = Symbol(b)
+        referr =ArgumentError("column name :$idx not found in the " *
+                              "data frame. However there is a similar " *
+                              "column name in the data frame where character $b " *
+                              "is used is instead of $a. Note that these " *
+                              "characters are displayed very similarly but are " *
+                              "different as their codepoints are $(UInt32(b)) and " *
+                              "$(UInt32(a)) respectively. The error is most " *
+                              "likely caused by the Julia parser which normalizes " *
+                              "`Symbol` literals containing such characters. " *
+                              "In order to avoid such problems use only " *
+                              "$b (codepoint: $(UInt32(b))) character " *
+                              "when naming columns.")
+        d = DataFrame(string(a) => 1)
+        @test_throws referr d[:, string(b)]
+        @test d[:, string(a)] == [1]
+
+        idx = Symbol(a)
+        referr =ArgumentError("column name :$idx not found in the " *
+                              "data frame. However there is a similar " *
+                              "column name in the data frame where character $a " *
+                              "is used is instead of $b. Note that these " *
+                              "characters are displayed very similarly but are " *
+                              "different as their codepoints are $(UInt32(a)) and " *
+                              "$(UInt32(b)) respectively. The error is most " *
+                              "likely caused by the Julia parser which normalizes " *
+                              "`Symbol` literals containing such characters. " *
+                              "In order to avoid such problems use only " *
+                              "$b (codepoint: $(UInt32(b))) character " *
+                              "when naming columns.")
+        d = DataFrame(string(b) => 1)
+        @test_throws referr d[:, string(a)]
+        @test d[:, string(b)] == [1]
+    end
+
+    for a in keys(DataFrames._julia_charmap)
+        d = DataFrame(string(a) => 1)
+        @test d[:, string(a)] == [1]
+        @test d[:, Symbol(a)] == [1]
+    end
+
+    for a in values(DataFrames._julia_charmap)
+        d = DataFrame(string(a) => 1)
+        @test d[:, string(a)] == [1]
+        @test d[:, Symbol(a)] == [1]
+    end
 end
 
 end # module

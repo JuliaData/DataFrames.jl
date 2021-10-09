@@ -288,10 +288,47 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         return [s for (d, s) in dist if d <= maxd]
 end
 
+const _julia_charmap = Dict{Char,Char}(
+    Char(0x025B) => Char(0x03B5),
+    Char(0x00B5) => Char(0x03BC),
+    Char(0x00B7) => Char(0x22C5),
+    Char(0x0387) => Char(0x22C5),
+    Char(0x2212) => Char(0x002D)
+)
+
+function _norm_eq(a1::String, a2::String, idx::Symbol)
+    s1 = iterate(a1)
+    s2 = iterate(a2)
+
+    while !(s1 === nothing || s2 === nothing)
+        c1, i1 = s1
+        c2, i2 = s2
+        if c1 != c2
+            refc = get(_julia_charmap, c1, c1)
+            refc == get(_julia_charmap, c2, c2) || return false
+            throw(ArgumentError("column name :$idx not found in the " *
+                                "data frame. However there is a similar " *
+                                "column name in the data frame where character $c1 " *
+                                "is used is instead of $c2. Note that these " *
+                                "characters are displayed very similarly but are " *
+                                "different as their normalized codepoints are " *
+                                "$(UInt32(c1)) and $(UInt32(c2)) respectively. The " *
+                                "error is most likely caused by the Julia parser which " *
+                                "normalizes `Symbol` literals containing such " *
+                                "characters. In order to avoid such problems use only " *
+                                "$refc (codepoint: $(UInt32(refc))) character " *
+                                "when naming columns."))
+        end
+        s1 = iterate(a1, i1)
+        s2 = iterate(a2, i2)
+    end
+    return s1 === nothing && s2 === nothing
+end
+
 function normalizedmatch(l::Dict{Symbol, Int}, idx::Symbol)
     idxs = Unicode.normalize(string(idx))
     for x in keys(l)
-        Unicode.normalize(string(x)) == idxs && return true
+        _norm_eq(idxs, Unicode.normalize(string(x)), idx) && return true
     end
     return false
 end
@@ -301,15 +338,15 @@ end
     if i === nothing
         if normalizedmatch(l, idx)
             throw(ArgumentError("column name :$idx not found in the " *
-                                    "data frame. However there is a match of " *
-                                    "Unicode normalized passed column name with " *
-                                    "a normalized column name found in the " *
-                                    "data frame. It is recommended to use " *
-                                    "normalized column names and then refer to them " *
-                                    "using normalized names to avoid ambiguity. "
-                                    "In order to normalize column names in " *
-                                    "an existing data frame `df` do " *
-                                    "`using Unicode; rename!(Unicode.normalize, df)`."))
+                                "data frame. However there is a match of " *
+                                "Unicode normalized passed column name with " *
+                                "a normalized column name found in the " *
+                                "data frame. It is recommended to use " *
+                                "normalized column names and then refer to them " *
+                                "using normalized names to avoid ambiguity. " *
+                                "In order to normalize column names in " *
+                                "an existing data frame `df` do " *
+                                "`using Unicode; rename!(Unicode.normalize, df)`."))
         end
         candidates = fuzzymatch(l, idx)
         if isempty(candidates)
