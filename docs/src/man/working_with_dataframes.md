@@ -433,11 +433,11 @@ An alternative approach to row subsetting in a data frame is to use
 the [`subset`](@ref) function, or the [`subset!`](@ref) function,
 which is its in-place variant.
 
-The [`subset`](@ref) function takes a data frame as its first argument. The
-following one or more positional arguments are filtering condition
+These functions take a data frame as their first argument. The
+following positional arguments (one or more) are filtering condition
 specifications that must be jointly met. Each condition should be passed as a
 `Pair` consisting of source column(s) and a function specifying the filtering
-condition taking this column(s) as arguments:
+condition taking this or these column(s) as arguments:
 
 ```jldoctest dataframe
 julia> subset(df, :A => a -> a .< 10, :C => c -> isodd.(c))
@@ -450,11 +450,11 @@ julia> subset(df, :A => a -> a .< 10, :C => c -> isodd.(c))
    3 │     9      1      5
 ```
 
-It is a frequent situation that when performing filtering `missing` values
-might be present in the filtered columns which could then lead `missing`
-value as a filtering condition instead of expected `true` or `false`. In order
+It is a frequent situation that `missing` values might be present in the
+filtering columns, which could then lead the filtering condition to return
+`missing` instead of the expected `true` or `false`. In order
 to handle this situation one can either use the `coalesce` function or pass
-`skipmissing=true` keyword argument to `subset`. Here is an example:
+the `skipmissing=true` keyword argument to `subset`. Here is an example:
 
 ```jldoctest dataframe
 julia> df = DataFrame(x=[1, 2, missing, 4])
@@ -484,9 +484,9 @@ julia> subset(df, :x => x -> iseven.(x), skipmissing=true)
    2 │      4
 ```
 
-Additionally DataFrames.jl extends the [`filter`](@ref), [`filter!`](@ref)
+Additionally DataFrames.jl extends the [`filter`](@ref) and [`filter!`](@ref)
 functions provided in Julia Base and they also allow to subset a data frame.
-Please refer to their documentation for the details.
+Please refer to their documentation for details.
 
 It is worth to mention that the [`subset`](@ref) was designed in a way that is
 consistent how column transformations are specified in functions like
