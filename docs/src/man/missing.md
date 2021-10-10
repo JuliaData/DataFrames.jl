@@ -166,13 +166,13 @@ julia> df
    3 │       3       6
 ```
 
-Note that a column selector can be passed as a second positional argument to
+Note that a column selector can be passed as the second positional argument to
 [`allowmissing`](@ref) and [`allowmissing!`](@ref) to restrict the change to
-only some columns in our data frame).
+only some columns in our data frame.
 
-Now let us perform a reverse operation by disallowing missing values in `df`. We
+Now let us perform the reverse operation by disallowing missing values in `df`. We
 know that column `:y` does not contain missing values so we can use the
-[`disallowmissing`](@ref) function passing a column selector as a second
+[`disallowmissing`](@ref) function passing a column selector as the second
 positional argument:
 
 ```jldoctest missings
