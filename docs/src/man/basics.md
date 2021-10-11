@@ -1510,31 +1510,57 @@ julia> german[Not(5), r"S"]
 
 ## Basic Usage of Transformation Functions
 
-In DataFrames.jl we have five functions that we can be used to perform transformations of columns
+In DataFrames.jl there are five functions that can be used to transform the columns
 of a data frame:
 
-- `combine`: creates a new data frame populated with columns that are results of transformation
-  applied to the source data frame columns, potentially combining its rows;
-- `select`: creates a new data frame that has the same number of rows as the source data frame
-  populated with columns that are results of transformations applied to the source data frame
-  columns;
-- `select!`: the same as `select` but updates the passed data frame in place;
-- `transform`: the same as `select` but keeps the columns that were already present in the data frame
-  (note though that these columns can be potentially modified by the transformation passed to `transform`);
-- `transform!`: the same as `transform` but updates the passed data frame in place.
+- `transform`: creates a new data frame containing all source columns and columns
+ that result from the transformation;
+- `transform!`: adds columns that result from the transformation to an existing data frame;
+- `select`: creates a new data frame with only columns that result from the transformation;
+- `select!`: modifies an existing data frame in place, retaining only columns that result
+ from the transformation;
+- `combine`: the same as `select` but the number of rows may be reduced by the transformation;
 
-The fundamental ways to specify a transformation are:
+!!! Note
+    `combine` is the only transformation function to return a different number of rows
+     than the source data frame. The difference in behavior between `combine` and `select` 
+     will become clear in the following examples. There is no `combine!` function because ...
 
-- `source_column => transformation => target_column_name`;
-  In this scenario the `source_column` is passed as an argument to `transformation` function
-  and stored in `target_column_name` column.
-- `source_column => transformation`;
-  In this scenario we apply the transformation function to `source_column` and the
-  target column names is automatically generated.
-- `source_column => target_column_name` renames the `source_column` to `target_column_name`.
-- `source_column` just keep the source column as is in the result without any transformation;
+All of the functions above use the same syntax which is commonly
+ `transform(source_dataframe, transformation)`.
+ The `transformation` argument is a `Pair` which defines the transformation to be applied
+  to the `source_dataframe`, and it can take any of the forms listed below:
 
-These rules are typically called transformation mini-language.
+- `source_column_selector => function => new_column_name`:  
+passes source column(s) to function and names the
+resulting column(s) `new_column_name`;
+- `source_column_selector => function`:  
+passes source column(s) to function and automatically names the resulting column(s);
+- `source_column_selector => new_column_name`:  
+renames source column(s);
+- `source_column_selector`:  
+selects source column(s) without transforming them
+(used often with `select` for moving or deleting columns);
+
+The most basic `source_column_selector` is a column name, but there are many more ways to
+select columns as explained in the
+[Indexing API documentation](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing).
+`function` is a function which operates on data frame column(s) passed to it as type `Vector`.
+If you instead want to apply a function to every element in the column, then you must wrap
+your function in the `ByRow` function i.e. `function = ByRow(my_elementwise_function)`.
+When multiple columns are selected, the `function` will receive the columns as multiple
+arguments. In this case, the `function` itself can use column selectors in its definition
+to enable advanced usage. `new_column_name` may be a `String` or a `Symbol`.
+(*Soon `new_column_name` will also accept a renaming function.*)
+If `source_column_selector => function` is used, then `new_column_name` will be the function
+name appended to the source column name with an underscore. However, if keyword argument
+`renamecols=false` is passed to the transformation function, then the new columns will
+retain their original source names instead of using automatically generated names.
+
+!!! Note
+    Any of the transformation syntaxes shown above can also use broadcasting with `.=>` to transform multiple columns at once in a similar manner. See the next section for examples.
+
+This transformation pair syntax is sometimes referred to as a mini-language. More details and examples of the transformation mini-language can be found in [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
 
 Let us move to the examples of application of these rules
 
@@ -2068,3 +2094,7 @@ options of the transformation mini-language. More advanced examples, in particul
 showing how to pass or produce multiple columns using the `AsTable` operation
 (which you might have seen in some DataFrames.jl demos) are given in the later
 sections of the manual.
+
+## Broadcasting with Transformation Functions
+
+...
