@@ -1545,13 +1545,16 @@ selects source column(s) without transforming them
 The most basic `source_column_selector` is a column name, but there are many more ways to
 select columns as explained in the
 [Indexing API documentation](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing).
+
 `function` is a function which operates on data frame column(s) passed to it as type `Vector`.
 If you instead want to apply a function to every element in the column, then you must wrap
 your function in the `ByRow` function i.e. `function = ByRow(my_elementwise_function)`.
 When multiple columns are selected, the `function` will receive the columns as multiple arguments in the order they are selected like
 `function(column1, column2, column3)`. Alternatively, the selected columns can be "slurped" into a single argument using `function(columns...)`.
 In more advanced usage, the `function` itself can use column selectors
-in its definition. `new_column_name` may be a `String` or a `Symbol`.
+in its definition.
+
+`new_column_name` may be a `String` or a `Symbol`.
 (*Soon `new_column_name` will also accept a renaming function.*)
 If `source_column_selector => function` is used, then `new_column_name`
 will be the function name appended to the source column name with an underscore. However, if keyword argument `renamecols=false` is passed
