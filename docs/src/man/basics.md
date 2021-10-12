@@ -1548,14 +1548,16 @@ select columns as explained in the
 `function` is a function which operates on data frame column(s) passed to it as type `Vector`.
 If you instead want to apply a function to every element in the column, then you must wrap
 your function in the `ByRow` function i.e. `function = ByRow(my_elementwise_function)`.
-When multiple columns are selected, the `function` will receive the columns as multiple
-arguments. In this case, the `function` itself can use column selectors in its definition
-to enable advanced usage. `new_column_name` may be a `String` or a `Symbol`.
+When multiple columns are selected, the `function` will receive the columns as multiple arguments in the order they are selected like
+`function(column1, column2, column3)`. Alternatively, the selected columns can be "slurped" into a single argument using `function(columns...)`.
+In more advanced usage, the `function` itself can use column selectors
+in its definition. `new_column_name` may be a `String` or a `Symbol`.
 (*Soon `new_column_name` will also accept a renaming function.*)
-If `source_column_selector => function` is used, then `new_column_name` will be the function
-name appended to the source column name with an underscore. However, if keyword argument
-`renamecols=false` is passed to the transformation function, then the new columns will
-retain their original source names instead of using automatically generated names.
+If `source_column_selector => function` is used, then `new_column_name`
+will be the function name appended to the source column name with an underscore. However, if keyword argument `renamecols=false` is passed
+to the transformation function, then the new columns will
+retain their original source names instead of using automatically
+generated names.
 
 !!! Note
     Any of the transformation syntaxes shown above can also use broadcasting with `.=>` to transform multiple columns at once in a similar manner. See the next section for examples.
