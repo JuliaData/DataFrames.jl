@@ -1546,11 +1546,18 @@ The most basic `source_column_selector` is a column name, but there are many mor
 select columns as explained in the
 [Indexing API documentation](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing).
 
-`function` is a function which operates on data frame column(s) passed to it as type `Vector`.
-If you instead want to apply a function to every element in the column, then you must wrap
-your function in the `ByRow` function i.e. `function = ByRow(my_elementwise_function)`.
-When multiple columns are selected, the `function` will receive the columns as multiple arguments in the order they are selected like
-`function(column1, column2, column3)`. Alternatively, the selected columns can be "slurped" into a single argument using `function(columns...)`.
+Here `function` is a function which operates on an entire data frame
+column passed as type `Vector`.
+If you instead want to apply a function to each element in the column,
+then you can wrap your element-wise function in `ByRow` like
+`function = ByRow(my_elementwise_function)`,
+which will conveniently collect your element-wise function results
+into a `Vector`.
+When multiple columns are selected,
+the `function` will receive the columns as multiple arguments in the
+order they are selected like `function(column1, column2, column3)`.
+Alternatively, the selected columns can be "slurped" into a
+single argument using `function(columns...)`.
 In more advanced usage, the `function` itself can use column selectors
 in its definition.
 
