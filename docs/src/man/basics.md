@@ -1510,27 +1510,22 @@ julia> german[Not(5), r"S"]
 
 ## Basic Usage of Transformation Functions
 
-In DataFrames.jl there are five functions that can be used to transform columns
-of a data frame:
+In DataFrames.jl there are seven functions that can be used to transform data frame columns:
 
-- `transform`: creates a new data frame containing all source columns and columns
- that result from the transformation;
-- `transform!`: adds columns that result from the transformation to an existing data frame;
-- `select`: creates a new data frame with only columns that result from the transformation;
-- `select!`: modifies an existing data frame in place, retaining only columns that result
- from the transformation;
-- `combine`: the same as `select` but the number of rows may be changed by the transformation;
-
-!!! Note
-    `combine` is the only transformation function to return a different number of rows than the source data frame.
-    (This is also why `combine!` does not exist.)
-    The difference in behavior between `combine` and `select` 
-    will become clear in the following examples.
+| Function     | Memory Usage                     | Column Retention | Row Retention |
+| ------------ | -------------------------------- | ---------------- | ----------- |
+| `transform`  | Creates a new data frame.        | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
+| `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
+| `select`     | Creates a new data frame.        | Retains only transformed columns. | Retains same number of rows as source data frame. |
+| `select!`    | Modifies an existing data frame. | Retains only transformed columns. | Retains same number of rows as source data frame. |
+| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows may change.                        |
+| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows may change.                        |
+| `combine`    | Creates a new data frame.        | Retains only transformed columns. | Number of rows may change.                        |
 
 All of the functions above use the same syntax which is commonly
- `transform(source_dataframe, transformation)`.
- The `transformation` argument is a `Pair` which defines the transformation to be applied
-  to the `source_dataframe`, and it can take any of the forms listed below:
+`transformation_function(source_dataframe, transformation)`.
+The `transformation` argument is a `Pair` which defines the transformation to be applied
+to the `source_dataframe`, and it can take any of the forms listed below:
 
 - `source_column_selector => function => new_column_name`:  
 passes source column(s) to function and names the
@@ -1542,6 +1537,9 @@ renames source column(s);
 - `source_column_selector`:  
 selects source column(s) without transforming them
 (used often with `select` for moving or deleting columns);
+
+!!! Note
+    `subset` and `subset!` cannot use pair forms with `new_column_name`.
 
 The most basic `source_column_selector` is a column name, but there are many more ways to
 select columns as explained in the
