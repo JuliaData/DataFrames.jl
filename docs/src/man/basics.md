@@ -1513,7 +1513,7 @@ julia> german[Not(5), r"S"]
 In DataFrames.jl there are seven functions that can be used to transform data frame columns:
 
 | Function     | Memory Usage                     | Column Retention | Row Retention |
-| ------------ | -------------------------------- | ---------------- | ----------- |
+| ------------ | -------------------------------- | ---------------- | ------------ |
 | `transform`  | Creates a new data frame.        | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
 | `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
 | `select`     | Creates a new data frame.        | Retains only transformed columns. | Retains same number of rows as source data frame. |
@@ -1524,8 +1524,9 @@ In DataFrames.jl there are seven functions that can be used to transform data fr
 
 All of the functions above use the same syntax which is commonly
 `transformation_function(source_dataframe, transformation)`.
-The `transformation` argument is a `Pair` which defines the transformation to be applied
-to the `source_dataframe`, and it can take any of the forms listed below:
+The `transformation` argument is a `Pair` which defines the
+transformation to be applied to the `source_dataframe`,
+and it can take any of the forms listed below:
 
 - `source_column_selector => function => new_column_name`:  
 passes source column(s) to function and names the
@@ -1539,7 +1540,7 @@ selects source column(s) without transforming them
 (used often with `select` for moving or deleting columns);
 
 !!! Note
-    `subset` and `subset!` cannot use pair forms with `new_column_name`.
+    `subset` and `subset!` cannot use pair forms with `new_column_name`. 
 
 The most basic `source_column_selector` is a column name, but there are many more ways to
 select columns as explained in the
@@ -1556,9 +1557,7 @@ When multiple columns are selected,
 the `function` will receive the columns as multiple positional arguments in the
 order they are selected like `function(column1, column2, column3)`.
 Alternatively, the selected columns can be "slurped" into a
-single argument using `function(columns...)`.
-In more advanced usage, the `function` itself can use column selectors
-in its definition.
+single argument by defining `function(columns...)`.
 
 `new_column_name` may be a string or a `Symbol`.
 (*Soon `new_column_name` will also accept a renaming function.*)
@@ -1568,10 +1567,17 @@ to the transformation function, then the new columns will
 retain their original source names instead of using automatically
 generated names.
 
-!!! Note
-    Any of the transformation syntaxes shown above can also use broadcasting with `.=>` to transform multiple columns at once in a similar manner. See the next section for examples.
-
 This transformation pair syntax is sometimes referred to as a mini-language. More details and examples of the transformation mini-language can be found in [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
+
+!!! Note
+    Any of the `transformation` pair syntax forms shown above can also use broadcasting with `.=>` to transform multiple columns at once in a similar manner. See the next section for examples.
+
+!!! Note 
+    Multiple transformations may be applied at once using the syntax
+    `transformation_function(source_dataframe, transformation1, transformation2, transformation3)`.
+
+!!! Note
+    More complex transformations are available through the syntax `transformation_function(function, source_dataframe)`. This usage is more advanced, so it is discussed in a separate section [here](need link).
 
 Let us move to the examples of application of these rules
 
