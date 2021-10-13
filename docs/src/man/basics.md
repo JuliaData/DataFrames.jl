@@ -1552,16 +1552,16 @@ If you instead want to apply a function to each element in the column,
 then you can wrap your element-wise function in `ByRow` like
 `function = ByRow(my_elementwise_function)`,
 which will conveniently collect your element-wise function results
-into a `Vector`.
+into a vector.
 When multiple columns are selected,
-the `function` will receive the columns as multiple arguments in the
+the `function` will receive the columns as multiple positional arguments in the
 order they are selected like `function(column1, column2, column3)`.
 Alternatively, the selected columns can be "slurped" into a
 single argument using `function(columns...)`.
 In more advanced usage, the `function` itself can use column selectors
 in its definition.
 
-`new_column_name` may be a `String` or a `Symbol`.
+`new_column_name` may be a string or a `Symbol`.
 (*Soon `new_column_name` will also accept a renaming function.*)
 If `source_column_selector => function` is used, then `new_column_name`
 will be the function name appended to the source column name with an underscore. However, if keyword argument `renamecols=false` is passed
