@@ -1510,7 +1510,7 @@ julia> german[Not(5), r"S"]
 
 ## Basic Usage of Transformation Functions
 
-In DataFrames.jl there are five functions that can be used to transform the columns
+In DataFrames.jl there are five functions that can be used to transform columns
 of a data frame:
 
 - `transform`: creates a new data frame containing all source columns and columns
@@ -1519,12 +1519,13 @@ of a data frame:
 - `select`: creates a new data frame with only columns that result from the transformation;
 - `select!`: modifies an existing data frame in place, retaining only columns that result
  from the transformation;
-- `combine`: the same as `select` but the number of rows may be reduced by the transformation;
+- `combine`: the same as `select` but the number of rows may be changed by the transformation;
 
 !!! Note
-    `combine` is the only transformation function to return a different number of rows
-     than the source data frame. The difference in behavior between `combine` and `select` 
-     will become clear in the following examples. There is no `combine!` function because ...
+    `combine` is the only transformation function to return a different number of rows than the source data frame.
+    (This is also why `combine!` does not exist.)
+    The difference in behavior between `combine` and `select` 
+    will become clear in the following examples.
 
 All of the functions above use the same syntax which is commonly
  `transform(source_dataframe, transformation)`.
@@ -1547,7 +1548,7 @@ select columns as explained in the
 [Indexing API documentation](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing).
 
 Here `function` is a function which operates on an entire data frame
-column passed as type `Vector`.
+column passed as a vector.
 If you instead want to apply a function to each element in the column,
 then you can wrap your element-wise function in `ByRow` like
 `function = ByRow(my_elementwise_function)`,
