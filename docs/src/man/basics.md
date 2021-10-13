@@ -1522,30 +1522,34 @@ In DataFrames.jl there are seven functions that can be used to transform data fr
 | `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows may change.                        |
 | `combine`    | Creates a new data frame.        | Retains only transformed columns. | Number of rows may change.                        |
 
+### Constructing Transformation Pairs
 All of the functions above use the same syntax which is commonly
 `transformation_function(source_dataframe, transformation)`.
 The `transformation` argument is a `Pair` which defines the
 transformation to be applied to the `source_dataframe`,
 and it can take any of the forms listed below:
 
-- `source_column_selector => function => new_column_name`:  
-passes source column(s) to function and names the
-resulting column(s) `new_column_name`;
-- `source_column_selector => function`:  
-passes source column(s) to function and automatically names the resulting column(s);
-- `source_column_selector => new_column_name`:  
-renames source column(s);
-- `source_column_selector`:  
-selects source column(s) without transforming them
-(used often with `select` for moving or deleting columns);
+- `source_column_selector => function`
+  - passes source column(s) to function
+  - automatically names the resulting column(s)
+- `source_column_selector => function => new_column_names`
+  - passes source column(s) to function
+  - names the resulting column(s) `new_column_names`
+  - *(cannot be used with `subset` or `subset!`)*
+- `source_column_selector => new_column_names`
+  - renames source column
+  - *(may only select one column unless broadcasting)*
+  - *(cannot be used with `subset` or `subset!`)*
+- `source_column_selector`
+  - selects source column(s) without transforming them
+  - *(often used with `select` or `select!` for isolating or moving columns)*
 
-!!! Note
-    `subset` and `subset!` cannot use pair forms with `new_column_name`. 
-
+#### `source_column_selector`
 The most basic `source_column_selector` is a column name, but there are many more ways to
 select columns as explained in the
 [Indexing API documentation](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing).
 
+#### `function`
 Here `function` is a function which operates on an entire data frame
 column passed as a vector.
 If you instead want to apply a function to each element in the column,
@@ -1559,34 +1563,33 @@ order they are selected like `function(column1, column2, column3)`.
 Alternatively, the selected columns can be "slurped" into a
 single argument by defining `function(columns...)`.
 
-`new_column_name` may be a string or a `Symbol`.
-(*Soon `new_column_name` will also accept a renaming function.*)
-If `source_column_selector => function` is used, then `new_column_name`
+#### `new_column_names`
+`new_column_names` may be be defined with string(s), symbol(s), or renaming function(s).
+**TODO: Add information about renaming function.**
+If `source_column_selector => function` is used, then `new_column_names`
 will be the function name appended to the source column name with an underscore.
 However, if keyword argument `renamecols=false` is passed
 to the transformation function, then the new columns will
 retain their original source names instead of using automatically
 generated names.
 
+#### More Information
 This transformation pair syntax is sometimes referred to as a mini-language.
 More details and examples of the transformation mini-language can be found in
 [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
 
-!!! Note
-    Any of the `transformation` pair syntax forms shown above can also use broadcasting
-    with `.=>` to transform multiple columns at once in a similar manner.
-    See the next section for examples.
+!!! Note Notes
+    - Any of the `transformation` pair syntax forms shown above can also use broadcasting
+      with `.=>` to send multiple columns through the same `function` or rename multiple columns.
+      See the next section for examples.
+    - Multiple transformations may be applied at once using the following syntax:
+      `transformation_function(source_dataframe, transformation1, transformation2, transformation3)`
+    - More complex transformations are available through the syntax
+      `transformation_function(function, source_dataframe)`.
+      This usage is more advanced,
+      so it is discussed in a separate section [here](need link).
 
-!!! Note 
-    Multiple transformations may be applied at once using the following syntax:  
-    `transformation_function(source_dataframe, transformation1, transformation2, transformation3)`
-
-!!! Note
-    More complex transformations are available through the syntax
-    `transformation_function(function, source_dataframe)`.
-    This usage is more advanced,
-    so it is discussed in a separate section [here](need link).
-
+#### Examples
 Let us move to the examples of application of these rules
 
 ```jldoctest dataframe
