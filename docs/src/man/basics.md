@@ -1562,22 +1562,30 @@ single argument by defining `function(columns...)`.
 `new_column_name` may be a string or a `Symbol`.
 (*Soon `new_column_name` will also accept a renaming function.*)
 If `source_column_selector => function` is used, then `new_column_name`
-will be the function name appended to the source column name with an underscore. However, if keyword argument `renamecols=false` is passed
+will be the function name appended to the source column name with an underscore.
+However, if keyword argument `renamecols=false` is passed
 to the transformation function, then the new columns will
 retain their original source names instead of using automatically
 generated names.
 
-This transformation pair syntax is sometimes referred to as a mini-language. More details and examples of the transformation mini-language can be found in [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
+This transformation pair syntax is sometimes referred to as a mini-language.
+More details and examples of the transformation mini-language can be found in
+[this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
 
 !!! Note
-    Any of the `transformation` pair syntax forms shown above can also use broadcasting with `.=>` to transform multiple columns at once in a similar manner. See the next section for examples.
+    Any of the `transformation` pair syntax forms shown above can also use broadcasting
+    with `.=>` to transform multiple columns at once in a similar manner.
+    See the next section for examples.
 
 !!! Note 
-    Multiple transformations may be applied at once using the syntax
-    `transformation_function(source_dataframe, transformation1, transformation2, transformation3)`.
+    Multiple transformations may be applied at once using the following syntax:  
+    `transformation_function(source_dataframe, transformation1, transformation2, transformation3)`
 
 !!! Note
-    More complex transformations are available through the syntax `transformation_function(function, source_dataframe)`. This usage is more advanced, so it is discussed in a separate section [here](need link).
+    More complex transformations are available through the syntax
+    `transformation_function(function, source_dataframe)`.
+    This usage is more advanced,
+    so it is discussed in a separate section [here](need link).
 
 Let us move to the examples of application of these rules
 
