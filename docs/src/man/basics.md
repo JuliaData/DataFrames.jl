@@ -1579,15 +1579,18 @@ More details and examples of the transformation mini-language can be found in
 [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
 
 !!! Note Notes
-    - Any of the `transformation` pair syntax forms shown above can also use broadcasting
-      with `.=>` to send multiple columns through the same `function` or rename multiple columns.
-      See the next section for examples.
-    - Multiple transformations may be applied at once using the following syntax:
-      `transformation_function(source_dataframe, transformation1, transformation2, transformation3)`
+    - Multiple transformations may be applied at once using any of the following:
+      - `transformation_function(source_dataframe, transformation1, transformation2)`
+      - `transformation_function(source_dataframe, [transformation1, transformation2])`
+      - `transformation_function(source_dataframe, [transformation1 transformation2])`
+    - Any of the `transformation` pair syntax forms shown above can also use
+      broadcasting with `.=>` to send multiple columns through the same `function`
+      or rename multiple columns. See the next section for examples.
     - More complex transformations are available through the syntax
       `transformation_function(function, source_dataframe)`.
       This usage is more advanced,
-      so it is discussed in a separate section [here](need link).
+      so it is discussed in a separate section
+      [here](**TODO: Add a link to relevant info.**).
 
 #### Examples
 Let us move to the examples of application of these rules
@@ -2125,4 +2128,6 @@ sections of the manual.
 
 ## Broadcasting with Transformation Functions
 
-...
+**TODO: Add broadcasting examples.**
+
+**TODO: Add - as this is crucial - that broadcasting is applied before the DataFrames.jl function is invoked so one can change exactly what happens.**
