@@ -11,7 +11,7 @@ julia> typeof(missing)
 Missing
 ```
 
-The `Missing` type lets users create `Vector`s and `DataFrame` columns with
+The `Missing` type lets users create vectors and `DataFrame` columns with
 missing values. Here we create a vector with a missing value and the
 element-type of the returned vector is `Union{Missing, Int64}`.
 
