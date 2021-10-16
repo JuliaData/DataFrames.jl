@@ -1804,6 +1804,22 @@ end
           fill(missing, 10)
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
           fill(0, 10)
+
+    m = rand([big(1),big(2)], 10, 100)
+    df = DataFrame(m, :auto)
+    df.x10 = fill(1.5, 10)
+    @test combine(df, AsTable(:) => sum => :sum).sum ==
+          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+          sum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => sum => :sum).sum isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{BigFloat}
+
+    df.x20 = fill('a', 10)
+    @test_throws MethodError combine(df, AsTable(:) => sum => :sum)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(sum) => :sum)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum)
 end
 
 @testset "fast reductions: AsTable(cols)=>length variants" begin
