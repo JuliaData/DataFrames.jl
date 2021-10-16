@@ -703,10 +703,23 @@ function get_stats(@nospecialize(col::Union{AbstractVector, Base.SkipMissing}),
     d = Dict{Symbol, Any}()
 
     if :q25 in stats || :median in stats || :q75 in stats
-        q = try quantile(col, [.25, .5, .75]) catch; (nothing, nothing, nothing) end
-        d[:q25] = q[1]
-        d[:median] = q[2]
-        d[:q75] = q[3]
+        # types that do not support basic arithmetic (like strings) will only fail
+        # after sorting the data, so check this beforehand to fail early
+        T = eltype(col)
+        if isconcretetype(T) && !hasmethod(-, Tuple{T, T})
+            d[:q25] = d[:median] = d[:q75] = nothing
+        else
+            mcol = Base.copymutable(col)
+            if :q25 in stats
+                d[:q25] = try quantile!(mcol, 0.25) catch; nothing; end
+            end
+            if :median in stats
+                d[:median] = try quantile!(mcol, 0.50) catch; nothing; end
+            end
+            if :q75 in stats
+                d[:q75] = try quantile!(mcol, 0.75) catch; nothing; end
+            end
+        end
     end
 
     if :min in stats || :max in stats
