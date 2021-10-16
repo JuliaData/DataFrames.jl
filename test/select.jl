@@ -1714,7 +1714,7 @@ end
     @test_throws ArgumentError select(sdf, [:x => length => :a, 1 => :b], copycols=false)
 end
 
-@testset "fast reductions positional" begin
+@testset "fast reductions positional: cols => ..." begin
     Random.seed!(1234)
     m = rand(10, 10000)
     df = DataFrame(m, :auto)
@@ -1749,6 +1749,22 @@ end
     @test_throws MethodError combine(df, All() => ByRow(+) => :sum)
     @test_throws MethodError combine(df, All() => ByRow(min) => :min)
     @test_throws MethodError combine(df, All() => ByRow(max) => :max)
+end
+
+@testset "fast reductions: AsTable(cols)=>length variants" begin
+    Random.seed!(1234)
+    m = rand([1, missing], 10, 10000)
+    df = DataFrame(m, :auto)
+    @test combine(df, AsTable(:) => length => :len) == DataFrame(len=10000)
+    @test combine(df, AsTable(:) => ByRow(length) => :len) ==
+          DataFrame(len=fill(10000, 10))
+    @test combine(df, AsTable(:) => ByRow(length∘skipmissing) => :len) ==
+          DataFrame(len=count.(!ismissing, eachrow(m)))
+    @test select(df, AsTable(:) => length => :len) ==
+          select(df, AsTable(:) => ByRow(length) => :len) ==
+          DataFrame(len=fill(10000, 10))
+    @test select(df, AsTable(:) => ByRow(length∘skipmissing) => :len) ==
+          DataFrame(len=count.(!ismissing, eachrow(m)))
 end
 
 end # module

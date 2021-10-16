@@ -19,7 +19,8 @@ This function is a part of a public API of DataFrames.jl.
 
 Fast paths are implemented within DataFrames.jl for the following functions `fun`:
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
-* `length`, `length∘skipmissing`
+* `length`, `length∘skipmissing` (this is not supported in Julia Base, but is a
+   convenient way to count number of non-missing entries)
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
@@ -129,6 +130,8 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
 
     return res
 end
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(length)) = ncol(df_sel)
 
 table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)}) =
     fill(ncol(df_sel), nrow(df_sel))
