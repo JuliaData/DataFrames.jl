@@ -306,7 +306,8 @@ function _max_missing(a, b)
 end
 
 function _minmax_row_fast_skipmissing(cols::Vector{<:AbstractVector},
-                                      fun::Union{typeof(min), typeof(max)})
+                                      fun::Union{typeof(_min_missing),
+                                                 typeof(_max_missing)})
     T = mapreduce(eltype, promote_type, cols)
     res = Tables.allocatecolumn(Union{Missing, T}, length(cols[1]))
     fill!(res, missing)

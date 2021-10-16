@@ -1776,6 +1776,18 @@ end
           combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
           mean.(eachrow(df))
 
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+          minimum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ==
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
+          minimum.(eachrow(df))
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+          maximum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ==
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
+          maximum.(eachrow(df))
+
     m = fill(UInt8(1), 10, 10000)
     df = DataFrame(m, :auto)
 
@@ -1793,6 +1805,22 @@ end
           combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
           fill(1.0, 10)
 
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ==
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
+          fill(1, 10)
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum isa Vector{UInt8}
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ==
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
+          fill(1, 10)
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum isa Vector{UInt8}
+
     m = rand([1, missing], 10, 10000)
     df = DataFrame(m, :auto)
     @test combine(df, AsTable(:) => sum => :sum).sum ≅
@@ -1807,6 +1835,23 @@ end
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
           fill(1.0, 10)
 
+    m = rand([1, 2, missing], 10, 10000)
+    df = DataFrame(m, :auto)
+
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
+          minimum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
+          fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
+          fill(1, 10)
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
+          maximum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
+          fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
+          fill(2, 10)
+
     m = fill(missing, 10, 100)
     df = DataFrame(m, :auto)
     @test combine(df, AsTable(:) => sum => :sum).sum ≅
@@ -1818,6 +1863,16 @@ end
           combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
           fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean
+
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
+          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
+          fill(missing, 10)
+    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
+          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
+          fill(missing, 10)
+    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum
 
     m = missings(Int, 10, 10000)
     df = DataFrame(m, :auto)
@@ -1832,6 +1887,16 @@ end
           fill(missing, 10)
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≅
           fill(NaN, 10)
+
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
+          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
+          fill(missing, 10)
+    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
+          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
+          fill(missing, 10)
+    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum
 
     m = rand([big(1),big(2)], 10, 100)
     df = DataFrame(m, :auto)
@@ -1852,6 +1917,24 @@ end
     @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean isa Vector{BigFloat}
 
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+          minimum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ==
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
+          fill(1.0, 10)
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum isa Vector{BigInt}
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum isa Vector{BigFloat}
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+          maximum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ==
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
+          fill(2.0, 10)
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum isa Vector{BigInt}
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum isa Vector{BigFloat}
+
     df.x20 = fill('a', 10)
     @test_throws MethodError combine(df, AsTable(:) => sum => :sum)
     @test_throws MethodError combine(df, AsTable(:) => ByRow(sum) => :sum)
@@ -1860,6 +1943,14 @@ end
     @test_throws MethodError combine(df, AsTable(:) => mean => :mean)
     @test_throws MethodError combine(df, AsTable(:) => ByRow(mean) => :mean)
     @test_throws MethodError combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean)
+
+    @test_throws MethodError combine(df, AsTable(:) => minimum => :minimum)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(minimum) => :minimum)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum)
+
+    @test_throws MethodError combine(df, AsTable(:) => minimum => :minimum)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(minimum) => :minimum)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum)
 
     m = rand(Any[1], 10, 100)
     df = DataFrame(m, :auto)
@@ -1872,6 +1963,21 @@ end
           combine(df, AsTable(:) => ByRow(mean) => :mean) ==
           combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean) ==
           DataFrame(mean=fill(1.0, 10))
+
+    m = rand(Any[1, 2], 10, 100)
+    df = DataFrame(m, :auto)
+
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+          minimum(eachcol(df))
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum) ==
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum) ==
+          DataFrame(minimum=fill(1, 10))
+
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+          maximum(eachcol(df))
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum) ==
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum) ==
+          DataFrame(maximum=fill(2, 10))
 end
 
 @testset "fast reductions: AsTable(cols)=>length variants" begin
