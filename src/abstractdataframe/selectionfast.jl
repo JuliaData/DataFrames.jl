@@ -208,7 +208,7 @@ table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(maximum))) =
 
 function _minmax_row_fast(cols::Vector{<:AbstractVector},
                           fun::Union{typeof(min), typeof(max)})
-    T = mapreduce(typeof, promote_type, cols)
+    T = mapreduce(eltype, promote_type, cols)
     res = Tables.allocatecolumn(T, length(cols[1]))
     res .= cols[1]
     for i in 2:length(cols)
@@ -237,7 +237,7 @@ end
 
 function _minmax_row_fast_skipmissing(cols::Vector{<:AbstractVector},
                                       fun::Union{typeof(min), typeof(max)})
-    T = mapreduce(typeof, promote_type, cols)
+    T = mapreduce(eltype, promote_type, cols)
     res = Tables.allocatecolumn(Union{Missing, T}, length(cols[1]))
     fill!(res, missing)
     res .= cols[1]

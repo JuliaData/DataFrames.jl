@@ -401,10 +401,8 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
             isempty(cols) && return +() # to make sure we produce a consistent error
             return reduce(+, cols)
         elseif fun === ByRow(min)
-            isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
             return _minmax_row_fast(cols, min)
         elseif fun === ByRow(max)
-            isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
             return _minmax_row_fast(cols, max)
         else
             return fun(cols...)

@@ -1714,4 +1714,41 @@ end
     @test_throws ArgumentError select(sdf, [:x => length => :a, 1 => :b], copycols=false)
 end
 
+@testset "fast reductions positional" begin
+    Random.seed!(1234)
+    m = rand(10, 10000)
+    df = DataFrame(m, :auto)
+    @test combine(df, All() => (+) => :sum).sum ==
+          combine(df, All() => ByRow(+) => :sum).sum ==
+          reduce(+, collect(eachcol(df)))
+    @test combine(df, All() => ByRow(min) => :min).min == minimum.(eachrow(m))
+    @test combine(df, All() => ByRow(max) => :max).max == maximum.(eachrow(m))
+
+    df = DataFrame(ones(UInt8, 10, 256), :auto)
+    @test combine(df, All() => (+) => :sum).sum ==
+          combine(df, All() => ByRow(+) => :sum).sum ==
+          zeros(UInt8, 10)
+    @test combine(df, All() => (+) => :sum).sum isa Vector{UInt8}
+    @test combine(df, All() => ByRow(+) => :sum).sum isa Vector{UInt8}
+
+    m = rand([big(1),big(2)], 10, 10000)
+    df = DataFrame(m, :auto)
+    df.x1000 = fill(1.5, 10)
+    @test combine(df, All() => (+) => :sum).sum ==
+          combine(df, All() => ByRow(+) => :sum).sum ==
+          reduce(+, collect(eachcol(df)))
+    @test combine(df, All() => ByRow(min) => :min).min == minimum.(eachrow(m))
+    @test combine(df, All() => ByRow(max) => :max).max == maximum.(eachrow(m))
+    @test combine(df, All() => (+) => :sum).sum isa Vector{BigFloat}
+    @test combine(df, All() => ByRow(+) => :sum).sum isa Vector{BigFloat}
+    @test combine(df, All() => ByRow(min) => :min).min isa Vector{BigFloat}
+    @test combine(df, All() => ByRow(max) => :max).max isa Vector{BigFloat}
+
+    df.x2000 = fill('a', 10)
+    @test_throws MethodError combine(df, All() => (+) => :sum)
+    @test_throws MethodError combine(df, All() => ByRow(+) => :sum)
+    @test_throws MethodError combine(df, All() => ByRow(min) => :min)
+    @test_throws MethodError combine(df, All() => ByRow(max) => :max)
+end
+
 end # module
