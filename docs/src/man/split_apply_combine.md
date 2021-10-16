@@ -75,10 +75,19 @@ as following arguments. The second type of signature is when a `Function` or a `
 is passed as the first argument and a `GroupedDataFrame` as the second argument
 (similar to `map`).
 
-As a special rule, with the `cols => function` and `cols => function =>
-target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
+As a special rule, with the `cols => function` and
+`cols => function => target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
 object then a `NamedTuple` containing columns selected by `cols` is passed to
 `function`.
+
+Note! When `AsTable` is used as source column selector it is possible to
+override the default processing performed by function `function` by adding
+a [`table_transformation`](@ref) method for this function. This is most useful
+for custom reductions over columns of `NamedTuple` created by `AsTable`,
+especially in cases when the user expects that very many (over 1000 as a rule of
+thumb) would be selected by `AsTable` selector in which case avoiding creation
+of `NamedTuple` object significantly reduces compilation time (which is often
+more longer than computation time in such cases).
 
 What is allowed for `function` to return is determined by the `target_cols` value:
 1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),

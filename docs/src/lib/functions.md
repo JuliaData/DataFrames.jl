@@ -82,6 +82,7 @@ repeat
 repeat!
 select
 select!
+table_transformation
 transform
 transform!
 vcat

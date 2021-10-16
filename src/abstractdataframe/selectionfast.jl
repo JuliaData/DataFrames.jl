@@ -14,8 +14,17 @@ It is guaranteed that `df_sel` has at least one column.
 
 The main use of special `table_transformation` methods is to provide more
 efficient than the default implementations of requested `fun` transformation.
+
+This function is a part of a public API of DataFrames.jl.
+
+Fast paths are implemented within DataFrames.jl for the following functions `fun`:
+* `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
+* `length`, `length∘skipmissing`
+* `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
+* `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
+* `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
 """
-functiotable_transformation(df_sel::AbstractDataFrame, fun) =
+table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
 """
@@ -28,10 +37,8 @@ The `df_sel` argument is a data frame storing columns selected by
 @noinline default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
-function table_transformation(df_sel::AbstractDataFrame, ::typeof(sum))
-    @assert ncol(df_sel) > 0
-    return sum(map(identity, eachcol(df_sel)))
-end
+table_transformation(df_sel::AbstractDataFrame, ::typeof(sum)) =
+    sum(map(identity, eachcol(df_sel)))
 
 function table_transformation(df_sel::AbstractDataFrame, fun::ByRow{typeof(sum)})
     fastsum = _sum_fast(map(identity, eachcol(df_sel)))
@@ -123,17 +130,14 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
     return res
 end
 
-function table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)})
-    @assert ncol(df) > 0
-    return fill(ncol(df_sel), nrow(df_sel))
-end
+table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(length)}) =
+    fill(ncol(df_sel), nrow(df_sel))
 
 table_transformation(df_sel::AbstractDataFrame,
                      ::ByRow{typeof(length∘skipmissing)}) =
     _length_skipmissing_fast(map(identity, eachcol(df_sel)))
 
 function _length_skipmissing_fast(cols::Vector{<:AbstractVector})
-    @assert !isempty(cols)
     len = fill(length(cols), length(cols[1]))
     for col in cols
         (Missing <: eltype(col)) && (len .-= ismissing.(col))
@@ -141,10 +145,8 @@ function _length_skipmissing_fast(cols::Vector{<:AbstractVector})
     return len
 end
 
-function table_transformation(df_sel::AbstractDataFrame, ::typeof(mean))
-    @assert ncol(df_sel) > 0
-    return mean(map(identity, eachcol(df_sel)))
-end
+table_transformation(df_sel::AbstractDataFrame, ::typeof(mean)) =
+    mean(map(identity, eachcol(df_sel)))
 
 table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(mean)}) =
     table_transformation(df_sel, mean)
@@ -206,7 +208,6 @@ table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(maximum))) =
 
 function _minmax_row_fast(cols::Vector{<:AbstractVector},
                           fun::Union{typeof(min), typeof(max)})
-    isempty(cols) && throw(ArgumentError("No columns selected for reduction"))
     T = mapreduce(typeof, promote_type, cols)
     res = Tables.allocatecolumn(T, length(cols[1]))
     res .= cols[1]
@@ -214,6 +215,39 @@ function _minmax_row_fast(cols::Vector{<:AbstractVector},
         res .= fun.(res, cols[i])
     end
     return res
+end
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(minimum∘skipmissing))) =
+    _minmax_row_fast_skipmissing(map(identity, eachcol(df_sel)), _min_missing)
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(maximum∘skipmissing))) =
+    _minmax_row_fast_skipmissing(map(identity, eachcol(df_sel)), _max_missing)
+
+function _min_missing(a, b)
+    ismissing(b) && return a
+    ismissing(a) && return b
+    return min(a, b)
+end
+
+function _max_missing(a, b)
+    ismissing(b) && return a
+    ismissing(a) && return b
+    return max(a, b)
+end
+
+function _minmax_row_fast_skipmissing(cols::Vector{<:AbstractVector},
+                                      fun::Union{typeof(min), typeof(max)})
+    T = mapreduce(typeof, promote_type, cols)
+    res = Tables.allocatecolumn(Union{Missing, T}, length(cols[1]))
+    fill!(res, missing)
+    res .= cols[1]
+    for i in 2:length(cols)
+        res .= fun.(res, cols[i])
+    end
+    if any(ismissing, res)
+        throw(ArgumentError("some rows of selected columns contained only missing values"))
+    end
+    return disallowmissing(res)
 end
 
 function table_transformation(df_sel::AbstractDataFrame, ::typeof(minimum))
@@ -225,19 +259,20 @@ function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
 end
 
 # TODO:
-# cols => ByRow(coalesce)
-# cols => *
-# AsTable(cols) => prod
-# AsTable(cols) => ByRow(prod)
-# AsTable(cols) => ByRow(minimum∘skipmissing)
-# AsTable(cols) => ByRow(maximum∘skipmissing)
-# AsTable(cols) => ByRow(first)
-# AsTable(cols) => ByRow(first∘skipmissing)
-# AsTable(cols) => ByRow(last)
-# AsTable(cols) => ByRow(last∘skipmissing)
-# AsTable(cols) => var
-# AsTable(cols) => std
-# AsTable(cols) => ByRow(var)
-# AsTable(cols) => ByRow(std)
-# AsTable(cols) => ByRow(var∘skipmissing)
-# AsTable(cols) => ByRow(std∘skipmissing)
+# Add these transformations in the future
+# - cols => ByRow(coalesce)
+# - cols => *
+# - AsTable(cols) => prod
+# - AsTable(cols) => ByRow(prod)
+# - AsTable(cols) => first
+# - AsTable(cols) => ByRow(first)
+# - AsTable(cols) => ByRow(first∘skipmissing)
+# - AsTable(cols) => last
+# - AsTable(cols) => ByRow(last)
+# - AsTable(cols) => ByRow(last∘skipmissing)
+# - AsTable(cols) => var
+# - AsTable(cols) => ByRow(var)
+# - AsTable(cols) => ByRow(var∘skipmissing)
+# - AsTable(cols) => std
+# - AsTable(cols) => ByRow(std)
+# - AsTable(cols) => ByRow(std∘skipmissing)

@@ -16,6 +16,5 @@ getmaxwidths
 ourshow
 ourstrwidth
 @spawn_for_chunks
-table_transformation
 default_table_transformation
 ```
