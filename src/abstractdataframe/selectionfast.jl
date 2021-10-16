@@ -38,6 +38,9 @@ The `df_sel` argument is a data frame storing columns selected by
 @noinline default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
+# this is slower than _sum_fast below, but is required if we want
+# to produce the same results as we would without using fast path
+# due to the differences in the implementation in Julia Base of sum aggregation
 table_transformation(df_sel::AbstractDataFrame, ::typeof(sum)) =
     sum(map(identity, eachcol(df_sel)))
 
@@ -52,10 +55,15 @@ end
 
 function _sum_fast(cols::Vector{<:AbstractVector})
     local sumz
+    hadmissing = false
     sumz_undefined = true
     for col in cols
         try
-            zec = zero(eltype(col))
+            ec = eltype(col)
+            if ec >: Missing
+                hadmissing = true
+            end
+            zec = zero(ec)
             zi = Base.add_sum(zec, zec)
             if sumz_undefined
                 sumz_undefined = false
@@ -74,7 +82,12 @@ function _sum_fast(cols::Vector{<:AbstractVector})
     end
     # this will happen if eltype of some columns do not support zero
     sumz_undefined && return nothing
-    res = fill!(Tables.allocatecolumn(typeof(sumz), length(cols[1])), sumz)
+    if hadmissing
+        Tres = Union{Missing, typeof(sumz)}
+    else
+        Tres = typeof(sumz)
+    end
+    res = fill!(Tables.allocatecolumn(Tres, length(cols[1])), sumz)
 
     for (i, col) in enumerate(cols)
         if i == 1
@@ -104,11 +117,13 @@ function _sum_skipmissing_fast(cols::Vector{<:AbstractVector})
         try
             zec = zero(eltype(col))
             zi = Base.add_sum(zec, zec)
-            if sumz_undefined
-                sumz_undefined = false
-                sumz = zi
-            elseif !ismissing(zi) # zi is missing if eltype is Missing
-                sumz = Base.add_sum(sumz, zi)
+            if !ismissing(zi)
+                if sumz_undefined
+                    sumz_undefined = false
+                    sumz = zi
+                else
+                    sumz = Base.add_sum(sumz, zi)
+                end
             end
         catch e
             if e isa MethodError && e.f === zero

@@ -1749,6 +1749,61 @@ end
     @test_throws MethodError combine(df, All() => ByRow(+) => :sum)
     @test_throws MethodError combine(df, All() => ByRow(min) => :min)
     @test_throws MethodError combine(df, All() => ByRow(max) => :max)
+
+    m = rand([1, missing], 10, 10000)
+    df = DataFrame(m, :auto)
+    @test combine(df, All() => (+) => :sum).sum ≅ fill(missing, 10)
+    @test combine(df, All() => ByRow(+) => :sum).sum ≅ fill(missing, 10)
+    @test combine(df, All() => ByRow(min) => :min).min ≅ fill(missing, 10)
+    @test combine(df, All() => ByRow(max) => :max).max ≅ fill(missing, 10)
+end
+
+@testset "fast reductions: AsTable(cols)=>sum variants" begin
+    Random.seed!(1234)
+    m = rand(10, 10000)
+    df = DataFrame(m, :auto)
+
+    # note that the sums below are not the same due to how Julia Base works
+    @test combine(df, AsTable(:) => sum => :sum).sum ==
+          sum(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+          sum.(eachrow(df))
+
+    m = fill(UInt8(1), 10, 10000)
+    df = DataFrame(m, :auto)
+
+    # note that the sums below are not the same due to how Julia Base works
+    @test combine(df, AsTable(:) => sum => :sum).sum == fill(0x10, 10)
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+          fill(10000, 10)
+    @test combine(df, AsTable(:) => sum => :sum).sum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{UInt64}
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{UInt64}
+
+    m = rand([1, missing], 10, 10000)
+    df = DataFrame(m, :auto)
+    @test combine(df, AsTable(:) => sum => :sum).sum ≅
+          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
+          fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+          count.(!ismissing, eachrow(m))
+
+    m = fill(missing, 10, 100)
+    df = DataFrame(m, :auto)
+    @test combine(df, AsTable(:) => sum => :sum).sum ≅
+          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
+          fill(missing, 10)
+    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
+
+    m = missings(Int, 10, 10000)
+    df = DataFrame(m, :auto)
+    @test combine(df, AsTable(:) => sum => :sum).sum ≅
+          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
+          fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+          fill(0, 10)
 end
 
 @testset "fast reductions: AsTable(cols)=>length variants" begin
