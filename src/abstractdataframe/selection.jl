@@ -45,7 +45,11 @@ const TRANSFORMATION_COMMON_RULES =
        `function` returns a single value or a vector; the generated name is created by
        concatenating source column name and `function` name by default (see examples below).
     3. a `cols => function => target_cols` form additionally explicitly specifying
-       the target column or columns.
+       the target column or columns, which must be a single name (as a `Symbol` or a string),
+       a vector of names or `AsTable`. Additionally it can be a `Function` which
+       takes a string or a vector of strings as an argument containing names of columns
+   selected by `cols`, and returns the target columns names (all accepted types
+   except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
@@ -244,7 +248,8 @@ function normalize_selection(idx::AbstractIndex,
                                                      <:Pair{<:Base.Callable,
                                                             <:Union{Symbol, AbstractString, DataType,
                                                                     AbstractVector{Symbol},
-                                                                    AbstractVector{<:AbstractString}}}}),
+                                                                    AbstractVector{<:AbstractString},
+                                                                    Function}}}),
                              renamecols::Bool)
     lls = last(last(sel))
 
@@ -276,6 +281,20 @@ function normalize_selection(idx::AbstractIndex,
             end
     end
 
+    if lls isa Function
+        fun_colnames = _names(idx)[c]
+        # if AsTable was used as source we always treat it as multicolumn selector
+        if wanttable && fun_colnames isa Symbol
+            fun_colnames = [fun_colnames]
+        end
+        lls = lls(string.(fun_colnames))
+        if !(lls isa Union{Symbol, AbstractString, AbstractVector{Symbol},
+                           AbstractVector{<:AbstractString}})
+            throw(ArgumentError("function producing target column names must " *
+                                "return a Symbol, a string, a vector of Symbols " *
+                                "or a vector of strings"))
+        end
+    end
     if lls isa AbstractString
         combine_target_col = Symbol(lls)
     elseif lls isa AbstractVector{<:AbstractString}
@@ -808,6 +827,15 @@ julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
    2 │     3.5
    3 │     4.5
 
+julia> select(df, AsTable(:) => ByRow(mean) => x -> join(x, "_"))
+3×1 DataFrame
+ Row │ a_b
+     │ Float64
+─────┼─────────
+   1 │     2.5
+   2 │     3.5
+   3 │     4.5
+
 julia> select(first, df)
 3×2 DataFrame
  Row │ a      b
@@ -1127,6 +1155,15 @@ julia> combine(df, names(df) .=> [minimum maximum])
 julia> using Statistics
 
 julia> combine(df, AsTable(:) => ByRow(mean), renamecols=false)
+3×1 DataFrame
+ Row │ a_b
+     │ Float64
+─────┼─────────
+   1 │     2.5
+   2 │     3.5
+   3 │     4.5
+
+julia> combine(df, AsTable(:) => ByRow(mean) => x -> join(x, "_"))
 3×1 DataFrame
  Row │ a_b
      │ Float64
