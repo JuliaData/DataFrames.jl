@@ -19,8 +19,8 @@ This function is a part of a public API of DataFrames.jl.
 
 Fast paths are implemented within DataFrames.jl for the following functions `fun`:
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
-* `length`, `length∘skipmissing` (this is not supported in Julia Base, but is a
-   convenient way to count number of non-missing entries)
+* `length`, `ByRow(length)`, ByRow(length∘skipmissing)` (last is not supported
+   in Julia Base, but is a convenient way to count number of non-missing entries)
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
@@ -166,8 +166,60 @@ end
 table_transformation(df_sel::AbstractDataFrame, ::typeof(mean)) =
     mean(map(identity, eachcol(df_sel)))
 
-table_transformation(df_sel::AbstractDataFrame, ::ByRow{typeof(mean)}) =
-    table_transformation(df_sel, mean)
+function table_transformation(df_sel::AbstractDataFrame, fun::ByRow{typeof(mean)})
+    fastmean = _mean_fast(map(identity, eachcol(df_sel)))
+    isnothing(fastmean) || return fastmean
+    slowmean = default_table_transformation(df_sel, fun)
+    isconcretetype(nonmissingtype(eltype(slowmean))) && return slowmean
+    T = mapreduce(typeof, promote_type, slowmean)
+    return convert(AbstractVector{T}, slowmean)
+end
+
+function _mean_fast(cols::Vector{<:AbstractVector})
+    local sumz
+    hadmissing = false
+    sumz_undefined = true
+    for col in cols
+        try
+            ec = eltype(col)
+            if ec >: Missing
+                hadmissing = true
+            end
+            zi = zero(ec) / 1
+            if sumz_undefined
+                sumz_undefined = false
+                sumz = zi
+            else
+                sumz += zi
+            end
+        catch e
+            if e isa MethodError && e.f === zero
+                sumz_undefined = true
+                break
+            else
+                throw(e)
+            end
+        end
+    end
+    # this will happen if eltype of some columns do not support zero
+    sumz_undefined && return nothing
+    if hadmissing
+        Tres = Union{Missing, typeof(sumz)}
+    else
+        Tres = typeof(sumz)
+    end
+    res = fill!(Tables.allocatecolumn(Tres, length(cols[1])), sumz)
+
+    for (i, col) in enumerate(cols)
+        if i == 1
+            res .= col
+        else
+            res .+= col
+        end
+    end
+    res ./= length(cols)
+    return res
+end
 
 function table_transformation(df_sel::AbstractDataFrame,
                                         fun::typeof(ByRow(mean∘skipmissing)))

@@ -1758,7 +1758,7 @@ end
     @test combine(df, All() => ByRow(max) => :max).max ≅ fill(missing, 10)
 end
 
-@testset "fast reductions: AsTable(cols)=>sum variants" begin
+@testset "fast reductions: AsTable(cols)=>sum, mean, minimum, maximum variants" begin
     Random.seed!(1234)
     m = rand(10, 10000)
     df = DataFrame(m, :auto)
@@ -1769,6 +1769,12 @@ end
     @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
           combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
           sum.(eachrow(df))
+
+    @test combine(df, AsTable(:) => mean => :mean).mean ==
+          mean(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+          mean.(eachrow(df))
 
     m = fill(UInt8(1), 10, 10000)
     df = DataFrame(m, :auto)
@@ -1782,6 +1788,11 @@ end
     @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{UInt64}
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{UInt64}
 
+    @test combine(df, AsTable(:) => mean => :mean).mean == fill(1.0, 10) ==
+          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+          fill(1.0, 10)
+
     m = rand([1, missing], 10, 10000)
     df = DataFrame(m, :auto)
     @test combine(df, AsTable(:) => sum => :sum).sum ≅
@@ -1790,12 +1801,23 @@ end
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
           count.(!ismissing, eachrow(m))
 
+    @test combine(df, AsTable(:) => mean => :mean).mean ≅
+          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
+          fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+          fill(1.0, 10)
+
     m = fill(missing, 10, 100)
     df = DataFrame(m, :auto)
     @test combine(df, AsTable(:) => sum => :sum).sum ≅
           combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
           fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
+
+    @test combine(df, AsTable(:) => mean => :mean).mean ≅
+          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
+          fill(missing, 10)
+    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean
 
     m = missings(Int, 10, 10000)
     df = DataFrame(m, :auto)
@@ -1804,6 +1826,12 @@ end
           fill(missing, 10)
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
           fill(0, 10)
+
+    @test combine(df, AsTable(:) => mean => :mean).mean ≅
+          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
+          fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≅
+          fill(NaN, 10)
 
     m = rand([big(1),big(2)], 10, 100)
     df = DataFrame(m, :auto)
@@ -1816,10 +1844,34 @@ end
     @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{BigFloat}
 
+    @test combine(df, AsTable(:) => mean => :mean).mean ==
+          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+          mean(collect(eachcol(df)))
+    @test combine(df, AsTable(:) => mean => :mean).mean isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean isa Vector{BigFloat}
+
     df.x20 = fill('a', 10)
     @test_throws MethodError combine(df, AsTable(:) => sum => :sum)
     @test_throws MethodError combine(df, AsTable(:) => ByRow(sum) => :sum)
     @test_throws MethodError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum)
+
+    @test_throws MethodError combine(df, AsTable(:) => mean => :mean)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(mean) => :mean)
+    @test_throws MethodError combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean)
+
+    m = rand(Any[1], 10, 100)
+    df = DataFrame(m, :auto)
+    @test combine(df, AsTable(:) => sum => :sum) ==
+          combine(df, AsTable(:) => ByRow(sum) => :sum) ==
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum) ==
+          DataFrame(sum=fill(100, 10))
+
+    @test combine(df, AsTable(:) => mean => :mean) ==
+          combine(df, AsTable(:) => ByRow(mean) => :mean) ==
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean) ==
+          DataFrame(mean=fill(1.0, 10))
 end
 
 @testset "fast reductions: AsTable(cols)=>length variants" begin
