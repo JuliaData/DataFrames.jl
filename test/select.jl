@@ -1691,7 +1691,6 @@ end
     @test @elapsed(select(df, AsTable(Not(:x99)) => ByRow(sum) => :res)) < 10.0
 
     for sel in (All(), Between(:x2,:x19999), Not(:x99))
-        @show sel
         @test select(df, sel => (+) => :res) ≅
               select(df, sel => ByRow(+) => :res) ≅
               select(df, AsTable(sel) => sum => :res) ≅
