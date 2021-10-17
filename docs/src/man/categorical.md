@@ -32,7 +32,7 @@ The difference between `PooledVector` and `CategoricalVector` is the following:
   functionality for working with categorical variables, both with unordered
   (nominal variables) and ordered categories (ordinal variables) at the expense
   of allowing only `AbstractString`, `AbstractChar`, or `Number` element types
-  (optionally in an union with `Missing`).
+  (optionally in a union with `Missing`).
 
 Using `CategoricalVector` is important for working with the
 [GLM.jl](https://github.com/JuliaStats/GLM.jl) package. When fitting regression
