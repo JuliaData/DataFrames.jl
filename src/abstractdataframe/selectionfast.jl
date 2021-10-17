@@ -24,6 +24,26 @@ Fast paths are implemented within DataFrames.jl for the following functions `fun
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
+
+Note that `ByRow(sum), `ByRow(sum∘skipmissing)`, `ByRow(mean),
+and `ByRow(mean∘skipmissing)`, in order to improve the performance of the
+calculations perform all operations using the target element type of the
+operation. In some very rare cases (like mixing very large `Int64` values
+and `Float64` values) it potentially can lead to a result different that would
+be obtained using a standard use of the called function. The way to
+avoid this precision loss is to use an anonymous function, e.g. instead of
+`ByRow(sum)` use `ByRow(x -> sum(x))`. However, in general for such
+scenarios even standard aggregation functions should not be considered to
+provide reliable output, and users are recommended to switch to higher precision
+calculations. An example of a case when standard `sum` is affected by the
+situation discussed is:
+```
+julia> sum(Any[typemax(Int), typemax(Int), 1.0])
+-1.0
+
+julia> sum(Any[1.0, typemax(Int), typemax(Int)])
+1.8446744073709552e19
+```
 """
 table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)

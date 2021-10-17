@@ -1680,7 +1680,7 @@ end
 
 @testset "wide reductions" begin
     Random.seed!(1234)
-    df = DataFrame(rand(Int, 2, 20_000), :auto)
+    df = DataFrame(rand(1:10^6, 2, 20_000), :auto)
     df.x100 = [1, 2]
     df.x1000 = Union{Int, Missing}[1, 2]
     df.x10000 = Union{Float64, Missing}[1, missing]
@@ -1696,6 +1696,9 @@ end
               select(df, AsTable(sel) => sum => :res) ≅
               select(df, AsTable(sel) => ByRow(sum) => :res) ≅
               DataFrame(res=sum(collect(eachcol(select(df, sel)))))
+        @test select(df, AsTable(sel) => mean => :res) ≅
+              select(df, AsTable(sel) => ByRow(mean) => :res) ≅
+              DataFrame(res=mean(collect(eachcol(select(df, sel)))))
     end
 end
 
