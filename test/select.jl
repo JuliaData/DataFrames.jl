@@ -1680,7 +1680,7 @@ end
 
 @testset "wide reductions" begin
     Random.seed!(1234)
-    df = DataFrame(rand(1:10^6, 2, 20_000), :auto)
+    df = DataFrame(rand(Int64.(1:10^6), 2, 20_000), :auto)
     df.x100 = [1, 2]
     df.x1000 = Union{Int, Missing}[1, 2]
     df.x10000 = Union{Float64, Missing}[1, missing]
@@ -1802,8 +1802,11 @@ end
     @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{UInt64}
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{UInt64}
 
-    @test combine(df, AsTable(:) => mean => :mean).mean == fill(1.0, 10) ==
-          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => mean => :mean).mean == fill(1.0, 10)
+    end
+
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
           combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
           fill(1.0, 10)
 
