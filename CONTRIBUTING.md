@@ -85,6 +85,9 @@ It is recommended to add the header `# Examples` above the doctests.
   Therefore if you would want to propose a new functionality (which is encouraged) it is
   strongly recommended to open an issue first and reach a decision on the final design.
   Then a pull request serves an implementation of the agreed way how things should work.
+* If you are a new contributor and would like to get a guidance on what area
+  you could focus your first PR please do not hesitate to ask and JuliaData members
+  would help you with picking a topic matching your experience.
 * Feel free to open, or comment on, an issue and solicit feedback early on,
   especially if you're unsure about aligning with design goals and direction,
   or if relevant historical comments are ambiguous.
