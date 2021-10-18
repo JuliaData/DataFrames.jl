@@ -419,7 +419,7 @@ function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{I
     else
         cdf = eachcol(df)
         cols = map(c -> cdf[c], col_idx)
-        if fun === + || fun === ByRow(+)
+        if (fun === +) || fun === ByRow(+) # removing parentheses leads to a parsing error
             isempty(cols) && return +() # to make sure we produce a consistent error
             return reduce(+, cols)
         elseif fun === ByRow(min)

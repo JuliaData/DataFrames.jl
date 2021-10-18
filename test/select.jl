@@ -1681,6 +1681,7 @@ end
 @testset "wide reductions" begin
     Random.seed!(1234)
     df = DataFrame(rand(Int64(1):Int64(10^6), 2, 20_000), :auto)
+    df2 = Int32.(df)
     df.x100 = [1, 2]
     df.x1000 = Union{Int, Missing}[1, 2]
     df.x10000 = Union{Float64, Missing}[1, missing]
@@ -1699,6 +1700,34 @@ end
         @test select(df, AsTable(sel) => mean => :res) ≅
               select(df, AsTable(sel) => ByRow(mean) => :res) ≅
               DataFrame(res=mean(collect(eachcol(select(df, sel)))))
+    end
+
+    df2.x100 = Int32[1, 2]
+    df2.x1000 = Union{Int32, Missing}[1, 2]
+    df2.x10000 = Union{Float64, Missing}[1, missing]
+
+    @test @elapsed(select(df2, All() => (+) => :res)) < 10.0
+    @test @elapsed(select(df2, Between(:x2,:x19999) => ByRow(+) => :res)) < 10.0
+    @test @elapsed(select(df2, AsTable(All()) => sum => :res)) < 10.0
+    @test @elapsed(select(df2, AsTable(Not(:x99)) => ByRow(sum) => :res)) < 10.0
+
+    for sel in (All(), Between(:x2,:x19999), Not(:x99))
+        @test select(df2, sel => (+) => :res) ≅
+              select(df2, sel => ByRow(+) => :res) ≅
+              select(df2, AsTable(sel) => sum => :res) ≅
+              DataFrame(res=sum(collect(eachcol(select(df2, sel)))))
+
+        # Note that this is exact as opposed to other options for Int32 type
+        @test select(df2, AsTable(sel) => ByRow(sum) => :res) ≅
+              select(df, AsTable(sel) => ByRow(sum) => :res)
+
+        @test select(df2, AsTable(sel) => mean => :res) ≅
+              DataFrame(res=mean(collect(eachcol(select(df2, sel)))))
+
+        # Note that this is exact as opposed to other options for
+        # Int32 type on Julia 1.0
+        @test select(df2, AsTable(sel) => ByRow(mean) => :res) ≅
+              select(df, AsTable(sel) => ByRow(mean) => :res)
     end
 end
 
