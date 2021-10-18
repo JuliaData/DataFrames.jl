@@ -1799,8 +1799,8 @@ end
           combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
           fill(10000, 10)
     @test combine(df, AsTable(:) => sum => :sum).sum isa Vector{UInt8}
-    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{UInt64}
-    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{UInt64}
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{UInt}
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{UInt}
 
     if VERSION >= v"1.6"
         @test combine(df, AsTable(:) => mean => :mean).mean == fill(1.0, 10)
