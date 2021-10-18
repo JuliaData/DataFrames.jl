@@ -48,8 +48,8 @@ const TRANSFORMATION_COMMON_RULES =
        the target column or columns, which must be a single name (as a `Symbol` or a string),
        a vector of names or `AsTable`. Additionally it can be a `Function` which
        takes a string or a vector of strings as an argument containing names of columns
-   selected by `cols`, and returns the target columns names (all accepted types
-   except `AsTable` are allowed).
+       selected by `cols`, and returns the target columns names (all accepted types
+       except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
@@ -61,6 +61,9 @@ const TRANSFORMATION_COMMON_RULES =
        this form should be avoided due to its poor performance unless the number of groups
        is small or a very large number of columns are processed
        (in which case `SubDataFrame` avoids excessive compilation)
+
+    In order to improve the performance of the operations some transformations
+    invoke optimized implementation, see [`table_transformation`](@ref) for details.
 
     Note! If the expression of the form `x => y` is passed then except for the special
     convenience form `nrow => target_cols` it is always interpreted as
