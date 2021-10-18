@@ -1843,15 +1843,19 @@ end
     m = rand([1, 2, missing], 10, 10000)
     df = DataFrame(m, :auto)
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
-          minimum(collect(eachcol(df)))
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
+            minimum(collect(eachcol(df)))
+    end
     @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
           fill(missing, 10)
     @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
           fill(1, 10)
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
-          maximum(collect(eachcol(df)))
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
+            maximum(collect(eachcol(df)))
+    end
     @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
           fill(missing, 10)
     @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
@@ -1862,21 +1866,26 @@ end
     @test combine(df, AsTable(:) => sum => :sum).sum ≅
           combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
           fill(missing, 10)
-    @test_throws ArgumentError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
-
+    if VERSION >= v"1.6"
+        @test_throws ArgumentError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
+    else
+        @test_throws MethodError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
+    end
     @test combine(df, AsTable(:) => mean => :mean).mean ≅
           combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
           fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
-          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
-          fill(missing, 10)
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅ fill(missing, 10)
+    end
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
-          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
-          fill(missing, 10)
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅ fill(missing, 10)
+    end
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum
 
     m = missings(Int, 10, 10000)
@@ -1893,14 +1902,16 @@ end
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≅
           fill(NaN, 10)
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
-          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
-          fill(missing, 10)
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅ fill(missing, 10)
+    end
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
-          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
-          fill(missing, 10)
+    if VERSION >= v"1.6"
+        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅ fill(missing, 10)
+    end
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum
 
     m = rand([big(1),big(2)], 10, 100)
