@@ -1,11 +1,13 @@
 """
     table_transformation(df_sel::AbstractDataFrame, fun)
 
-This is a default function called when `AsTable(...) => fun` is requested. The
-`df_sel` argument is a data frame storing columns selected by `AsTable(...)`
-selector. By default it calls `default_table_transformation`. However, it is
-allowed to add special methods for specific types of `fun` with the reservation
-that the produced result must match the result that would be produced by
+This is the function called when `AsTable(...) => fun` is requested. The
+`df_sel` argument is a data frame storing columns selected by the `AsTable(...)`
+selector.
+
+By default it calls `default_table_transformation`. However, it is
+allowed to add special methods for specific types of `fun`, as long as
+the result matches what would be produced by
 `default_table_transformation`, except that it is allowed to perform `eltype`
 conversion of the resulting vectors or value type promotions that are consistent
 with `promote_type`.
@@ -15,22 +17,21 @@ It is guaranteed that `df_sel` has at least one column.
 The main use of special `table_transformation` methods is to provide more
 efficient than the default implementations of requested `fun` transformation.
 
-This function is a part of a public API of DataFrames.jl.
+This function is part of the public API of DataFrames.jl.
 
 Fast paths are implemented within DataFrames.jl for the following functions `fun`:
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
-* `length`, `ByRow(length)`, ByRow(length∘skipmissing)` (last is not supported
-   in Julia Base, but is a convenient way to count number of non-missing entries)
+* `length`, `ByRow(length)`, `ByRow(length∘skipmissing)`
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
 
-Note that `ByRow(sum), `ByRow(sum∘skipmissing)`, `ByRow(mean),
-and `ByRow(mean∘skipmissing)`, in order to improve the performance of the
-calculations perform all operations using the target element type of the
-operation. In some very rare cases (like mixing very large `Int64` values
-and `Float64` values) it potentially can lead to a result different that would
-be obtained using a standard use of the called function. The way to
+Note that in order to improve the performance `ByRow(sum)`,
+`ByRow(sum∘skipmissing)`, `ByRow(mean)`, and `ByRow(mean∘skipmissing)`
+perform all operations in the target element type. In some very rare cases
+(like mixing very large `Int64` values and `Float64` values)
+it can lead to a result different from the one that would
+be obtained by calling the function outside of DataFrames.jl. The way to
 avoid this precision loss is to use an anonymous function, e.g. instead of
 `ByRow(sum)` use `ByRow(x -> sum(x))`. However, in general for such
 scenarios even standard aggregation functions should not be considered to
@@ -55,7 +56,7 @@ This is a default implementation called when `AsTable(...) => fun` is requested.
 The `df_sel` argument is a data frame storing columns selected by
 `AsTable(...)` selector.
 """
-@noinline default_table_transformation(df_sel::AbstractDataFrame, fun) =
+default_table_transformation(df_sel::AbstractDataFrame, fun) =
     fun(Tables.columntable(df_sel))
 
 # this is slower than _sum_fast below, but is required if we want
@@ -242,7 +243,7 @@ function _mean_fast(cols::Vector{<:AbstractVector})
 end
 
 function table_transformation(df_sel::AbstractDataFrame,
-                                        fun::typeof(ByRow(mean∘skipmissing)))
+                              fun::typeof(ByRow(mean∘skipmissing)))
     fastmean = _mean_skipmissing_fast(map(identity, eachcol(df_sel)))
     isnothing(fastmean) || return fastmean
     slowmean = default_table_transformation(df_sel, fun)
