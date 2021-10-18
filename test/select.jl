@@ -1680,7 +1680,7 @@ end
 
 @testset "wide reductions" begin
     Random.seed!(1234)
-    df = DataFrame(rand(Int64(1):Int64(10^6)), 2, 20_000), :auto)
+    df = DataFrame(rand(Int64(1):Int64(10^6), 2, 20_000), :auto)
     df.x100 = [1, 2]
     df.x1000 = Union{Int, Missing}[1, 2]
     df.x10000 = Union{Float64, Missing}[1, missing]
