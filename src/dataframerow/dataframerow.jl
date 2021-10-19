@@ -278,7 +278,9 @@ Base.names(r::DataFrameRow, fun::Function) = filter!(fun, names(r))
 
 _names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
-Base.haskey(r::DataFrameRow, key::Bool) =
+Base.haskey(::DataFrameRow, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
+Base.haskey(::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 
