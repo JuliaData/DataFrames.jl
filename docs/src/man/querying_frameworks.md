@@ -9,7 +9,7 @@ DataFramesMeta.jl and Query.jl. They implement a functionality similar to
 
 The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package
 provides a convenient yet fast macro-based interface to work with `DataFrame`s.
-The instructions below are for version 0.6.0 of DataFramesMeta.jl.
+The instructions below are for version 0.10.0 of DataFramesMeta.jl.
 
 First install the DataFramesMeta.jl package:
 
@@ -27,10 +27,10 @@ DataFramesMeta.jl also reexports the `@chain` macro from
 pipe the output of one transformation as an input to another, as with 
 `|>` and `%>%` in R. 
 
-Here is a minimal example of usage of the package. Observe that we no 
-no longer need to construct complicated anonymous functions to 
-perform transformations.
+Below we present several selected examples of usage of the package.
 
+First we subset rows of the source data frame using a logical condition
+and select its two columns, renaming one of them:
 
 ```jldoctest dataframesmeta
 julia> using DataFramesMeta
