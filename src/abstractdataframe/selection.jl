@@ -62,9 +62,6 @@ const TRANSFORMATION_COMMON_RULES =
        is small or a very large number of columns are processed
        (in which case `SubDataFrame` avoids excessive compilation)
 
-    In order to improve the performance of the operations some transformations
-    invoke optimized implementation, see [`table_transformation`](@ref) for details.
-
     Note! If the expression of the form `x => y` is passed then except for the special
     convenience form `nrow => target_cols` it is always interpreted as
     `cols => function`. In particular the following expression `function => target_cols`
@@ -169,6 +166,9 @@ const TRANSFORMATION_COMMON_RULES =
     variables (i.e. they should be pure), or use locks to control parallel accesses.
     In the future, parallelism may be extended to other cases, so this requirement
     also holds for `DataFrame` inputs.
+
+    In order to improve the performance of the operations some transformations
+    invoke optimized implementation, see [`table_transformation`](@ref) for details.
     """
 
 """

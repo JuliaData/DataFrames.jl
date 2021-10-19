@@ -4,9 +4,13 @@ using DataFrames, Test, Random, Statistics, CategoricalArrays, PooledArrays
 
 const ≅ = isequal
 
-"""Check if passed data frames are `isequal` and have the same types of columns"""
 isequal_coltyped(df1::AbstractDataFrame, df2::AbstractDataFrame) =
     isequal(df1, df2) && typeof.(eachcol(df1)) == typeof.(eachcol(df2))
+
+isequal_coltyped(v1::AbstractVector, v2::AbstractVector) =
+    isequal(v1, v2) && typeof(v1) == typeof(v2)
+
+const ≃ = isequal_coltyped
 
 Random.seed!(1234)
 
@@ -902,14 +906,14 @@ end
         @test select(df2, (:) => (+) => :d, :x1 => (x -> x) => :b, [] => (() -> v) => :a) ==
               DataFrame([6 1 9], [:d, :b, :a])
 
-        @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1 => x -> []),
-                               DataFrame(a=Int[], x1_function=Any[]))
-        @test isequal_coltyped(select(df3, :x1 => x -> [], [] => (() -> v) => :a),
-                               DataFrame(x1_function=Any[], a=Int[]))
-        @test isequal_coltyped(select(df3, [] => (() -> v) => :a, :x1),
-                               DataFrame(a=Int[], x1=Char[]))
-        @test isequal_coltyped(select(df3, :x1, [] => (() -> v) => :a),
-                               DataFrame(x1=Char[], a=Int[]))
+        @test select(df3, [] => (() -> v) => :a, :x1 => x -> []) ≃
+              DataFrame(a=Int[], x1_function=Any[])
+        @test select(df3, :x1 => x -> [], [] => (() -> v) => :a) ≃
+              DataFrame(x1_function=Any[], a=Int[])
+        @test select(df3, [] => (() -> v) => :a, :x1) ≃
+              DataFrame(a=Int[], x1=Char[])
+        @test select(df3, :x1, [] => (() -> v) => :a) ≃
+              DataFrame(x1=Char[], a=Int[])
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
     @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
@@ -1543,18 +1547,18 @@ end
         @test eltype(combine(df, [] => ByRow(() -> 1)).function) == Int
         @test eltype(transform(df, [] => ByRow(() -> 1)).function) == Int
 
-        @test isequal_coltyped(select(df, [] => ByRow(() -> (a=1, b="1")) => AsTable),
-                               DataFrame(a=Int[], b=String[]))
-        @test isequal_coltyped(select(df, [] => ByRow(() -> (a=1, b="1")) => [:p, :q]),
-                               DataFrame(p=Int[], q=String[]))
+        @test select(df, [] => ByRow(() -> (a=1, b="1")) => AsTable) ≃
+              DataFrame(a=Int[], b=String[])
+        @test select(df, [] => ByRow(() -> (a=1, b="1")) => [:p, :q]) ≃
+              DataFrame(p=Int[], q=String[])
 
         # here this follows Tables.jl behavior
         @test select(df, [] => ByRow(() -> [1, "1"]) => AsTable) == DataFrame()
         @test_throws ArgumentError select(df, [] => ByRow(() -> [1, "1"]) => [:p, :q])
-        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => AsTable),
-                               DataFrame(Column1=Int[], Column2=String[]))
-        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => [:p, :q]),
-                               DataFrame(p=Int[], q=String[]))
+        @test select(df, [] => ByRow(() -> (1, "1")) => AsTable) ≃
+              DataFrame(Column1=Int[], Column2=String[])
+        @test select(df, [] => ByRow(() -> (1, "1")) => [:p, :q]) ≃
+              DataFrame(p=Int[], q=String[])
     end
 
     @test select(df, AsTable([]) => ByRow(x -> 1)) == DataFrame("function" => [1, 1, 1])
@@ -1573,18 +1577,18 @@ end
         @test eltype(combine(df, AsTable([]) => ByRow(x -> 1)).function) == Int
         @test eltype(transform(df, AsTable([]) => ByRow(x -> 1)).function) == Int
 
-        @test isequal_coltyped(select(df, AsTable([]) => ByRow(x -> (a=1, b="1")) => AsTable),
-                               DataFrame(a=Int[], b=String[]))
-        @test isequal_coltyped(select(df, AsTable([]) => ByRow(x -> (a=1, b="1")) => [:p, :q]),
-                               DataFrame(p=Int[], q=String[]))
+        @test select(df, AsTable([]) => ByRow(x -> (a=1, b="1")) => AsTable) ≃
+              DataFrame(a=Int[], b=String[])
+        @test select(df, AsTable([]) => ByRow(x -> (a=1, b="1")) => [:p, :q]) ≃
+              DataFrame(p=Int[], q=String[])
 
         # here this follows Tables.jl behavior
         @test select(df, [] => ByRow(() -> [1, "1"]) => AsTable) == DataFrame()
         @test_throws ArgumentError select(df, [] => ByRow(() -> [1, "1"]) => [:p, :q])
-        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => AsTable),
-                               DataFrame(Column1=Int[], Column2=String[]))
-        @test isequal_coltyped(select(df, [] => ByRow(() -> (1, "1")) => [:p, :q]),
-                               DataFrame(p=Int[], q=String[]))
+        @test select(df, [] => ByRow(() -> (1, "1")) => AsTable) ≃
+              DataFrame(Column1=Int[], Column2=String[])
+        @test select(df, [] => ByRow(() -> (1, "1")) => [:p, :q]) ≃
+              DataFrame(p=Int[], q=String[])
     end
 end
 
@@ -1601,8 +1605,8 @@ end
     @test_throws ArgumentError transform!(:, df)
     @test combine(df, :a => (x -> 1) => :x1, :a => (x -> [1, 2]) => :x2) ==
           DataFrame(x1=1, x2=[1, 2])
-    @test isequal_coltyped(combine(df, :a => (x -> 1) => :x1, :a => (x -> []) => :x2),
-                           DataFrame(x1=Int[], x2=[]))
+    @test combine(df, :a => (x -> 1) => :x1, :a => (x -> []) => :x2) ≃
+          DataFrame(x1=Int[], x2=[])
 end
 
 @testset "test resizing via a vector of columns after scalars" begin
@@ -1749,24 +1753,22 @@ end
     Random.seed!(1234)
     m = rand(10, 10000)
     df = DataFrame(m, :auto)
-    @test combine(df, All() => (+) => :sum).sum ==
-          combine(df, All() => ByRow(+) => :sum).sum ==
+    @test combine(df, All() => (+) => :sum).sum ≃
+          combine(df, All() => ByRow(+) => :sum).sum ≃
           reduce(+, collect(eachcol(df)))
-    @test combine(df, All() => ByRow(min) => :min).min == minimum.(eachrow(m))
-    @test combine(df, All() => ByRow(max) => :max).max == maximum.(eachrow(m))
+    @test combine(df, All() => ByRow(min) => :min).min ≃ minimum.(eachrow(m))
+    @test combine(df, All() => ByRow(max) => :max).max ≃ maximum.(eachrow(m))
 
     df = DataFrame(ones(UInt8, 10, 256), :auto)
-    @test combine(df, All() => (+) => :sum).sum ==
-          combine(df, All() => ByRow(+) => :sum).sum ==
+    @test combine(df, All() => (+) => :sum).sum ≃
+          combine(df, All() => ByRow(+) => :sum).sum ≃
           zeros(UInt8, 10)
-    @test combine(df, All() => (+) => :sum).sum isa Vector{UInt8}
-    @test combine(df, All() => ByRow(+) => :sum).sum isa Vector{UInt8}
 
     m = rand([big(1),big(2)], 10, 10000)
     df = DataFrame(m, :auto)
     df.x1000 = fill(1.5, 10)
-    @test combine(df, All() => (+) => :sum).sum ==
-          combine(df, All() => ByRow(+) => :sum).sum ==
+    @test combine(df, All() => (+) => :sum).sum ≃
+          combine(df, All() => ByRow(+) => :sum).sum ≃
           reduce(+, collect(eachcol(df)))
     @test combine(df, All() => ByRow(min) => :min).min == minimum.(eachrow(m))
     @test combine(df, All() => ByRow(max) => :max).max == maximum.(eachrow(m))
@@ -1783,10 +1785,10 @@ end
 
     m = rand([1, missing], 10, 10000)
     df = DataFrame(m, :auto)
-    @test combine(df, All() => (+) => :sum).sum ≅ fill(missing, 10)
-    @test combine(df, All() => ByRow(+) => :sum).sum ≅ fill(missing, 10)
-    @test combine(df, All() => ByRow(min) => :min).min ≅ fill(missing, 10)
-    @test combine(df, All() => ByRow(max) => :max).max ≅ fill(missing, 10)
+    @test combine(df, All() => (+) => :sum).sum ≃ fill(missing, 10)
+    @test combine(df, All() => ByRow(+) => :sum).sum ≃ fill(missing, 10)
+    @test combine(df, All() => ByRow(min) => :min).min ≃ missings(Int, 10)
+    @test combine(df, All() => ByRow(max) => :max).max ≃ missings(Int, 10)
 end
 
 @testset "fast reductions: AsTable(cols)=>sum, mean, minimum, maximum variants" begin
@@ -1795,187 +1797,164 @@ end
     df = DataFrame(m, :auto)
 
     # note that the sums below are not the same due to how Julia Base works
-    @test combine(df, AsTable(:) => sum => :sum).sum ==
+    @test combine(df, AsTable(:) => sum => :sum).sum ≃
           sum(collect(eachcol(df)))
-    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
-          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≃
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ≃
           sum.(eachrow(df))
 
-    @test combine(df, AsTable(:) => mean => :mean).mean ==
+    @test combine(df, AsTable(:) => mean => :mean).mean ≃
           mean(collect(eachcol(df)))
-    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
-          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≃
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≃
           mean.(eachrow(df))
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃
           minimum(collect(eachcol(df)))
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ==
-          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≃
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ≃
           minimum.(eachrow(df))
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃
           maximum(collect(eachcol(df)))
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ==
-          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≃
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ≃
           maximum.(eachrow(df))
 
     m = fill(UInt8(1), 10, 10000)
     df = DataFrame(m, :auto)
 
     # note that the sums below are not the same due to how Julia Base works
-    @test combine(df, AsTable(:) => sum => :sum).sum == fill(0x10, 10)
-    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
-          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
-          fill(10000, 10)
-    @test combine(df, AsTable(:) => sum => :sum).sum isa Vector{UInt8}
-    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{UInt}
-    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{UInt}
+    @test combine(df, AsTable(:) => sum => :sum).sum ≃ fill(0x10, 10)
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≃
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ≃
+          fill(UInt(10000), 10)
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => mean => :mean).mean == fill(1.0, 10)
+        @test combine(df, AsTable(:) => mean => :mean).mean ≃ fill(1.0, 10)
     end
 
-    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
-          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≃
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≃
           fill(1.0, 10)
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
-          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ==
-          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
-          fill(1, 10)
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum isa Vector{UInt8}
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum isa Vector{UInt8}
-    @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃
+          combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≃
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ≃
+          fill(0x1, 10)
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
-          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ==
-          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
-          fill(1, 10)
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum isa Vector{UInt8}
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum isa Vector{UInt8}
-    @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum isa Vector{UInt8}
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃
+          combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≃
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ≃
+          fill(0x1, 10)
 
     m = rand([1, missing], 10, 10000)
     df = DataFrame(m, :auto)
-    @test combine(df, AsTable(:) => sum => :sum).sum ≅
-          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
-          fill(missing, 10)
-    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
-          count.(!ismissing, eachrow(m))
+    @test combine(df, AsTable(:) => sum => :sum).sum ≃ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≃ missings(Int, 10)
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ≃ count.(!ismissing, eachrow(m))
 
-    @test combine(df, AsTable(:) => mean => :mean).mean ≅
-          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
-          fill(missing, 10)
-    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
-          fill(1.0, 10)
+    @test combine(df, AsTable(:) => mean => :mean).mean ≃ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≃ missings(Float64, 10)
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≃ fill(1.0, 10)
 
     m = rand([1, 2, missing], 10, 10000)
     df = DataFrame(m, :auto)
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅
+        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃
             minimum(collect(eachcol(df)))
     end
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅
-          fill(missing, 10)
-    @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
-          fill(1, 10)
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≃ missings(Int, 10)
+    @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ≃ fill(1, 10)
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅
+        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃
             maximum(collect(eachcol(df)))
     end
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅
-          fill(missing, 10)
-    @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
-          fill(2, 10)
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≃ missings(Int, 10)
+    @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ≃ fill(2, 10)
 
     m = fill(missing, 10, 100)
     df = DataFrame(m, :auto)
-    @test combine(df, AsTable(:) => sum => :sum).sum ≅
-          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
-          fill(missing, 10)
+    @test combine(df, AsTable(:) => sum => :sum).sum ≃ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≃ fill(missing, 10)
     if VERSION >= v"1.6"
         @test_throws ArgumentError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
     else
         @test_throws MethodError combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum
     end
-    @test combine(df, AsTable(:) => mean => :mean).mean ≅
-          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
-          fill(missing, 10)
+    @test combine(df, AsTable(:) => mean => :mean).mean ≃ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≃ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅ fill(missing, 10)
+        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃ fill(missing, 10)
     end
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≃ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅ fill(missing, 10)
+        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃ fill(missing, 10)
     end
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≃ fill(missing, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum
 
     m = missings(Int, 10, 10000)
     df = DataFrame(m, :auto)
-    @test combine(df, AsTable(:) => sum => :sum).sum ≅
-          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≅
-          fill(missing, 10)
-    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
-          fill(0, 10)
+    @test combine(df, AsTable(:) => sum => :sum).sum ≃ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≃ missings(Int, 10)
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ≃ fill(0, 10)
 
-    @test combine(df, AsTable(:) => mean => :mean).mean ≅
-          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≅
-          fill(missing, 10)
-    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≅
-          fill(NaN, 10)
+    @test combine(df, AsTable(:) => mean => :mean).mean ≃ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≃ missings(Float64, 10)
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≃ fill(NaN, 10)
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≅ fill(missing, 10)
+        @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃ missings(Int, 10)
     end
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≅ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≃ missings(Int, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum
 
     if VERSION >= v"1.6"
-        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≅ fill(missing, 10)
+        @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃ missings(Int, 10)
     end
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≅ fill(missing, 10)
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≃ missings(Int, 10)
     @test_throws ArgumentError combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum
 
     m = rand([big(1),big(2)], 10, 100)
     df = DataFrame(m, :auto)
     df.x10 = fill(1.5, 10)
-    @test combine(df, AsTable(:) => sum => :sum).sum ==
-          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ==
-          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ==
+    @test combine(df, AsTable(:) => sum => :sum).sum ≃
+          combine(df, AsTable(:) => ByRow(sum) => :sum).sum ≃
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum ≃
           sum(collect(eachcol(df)))
     @test combine(df, AsTable(:) => sum => :sum).sum isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(sum) => :sum).sum isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum).sum isa Vector{BigFloat}
 
-    @test combine(df, AsTable(:) => mean => :mean).mean ==
-          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ==
-          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ==
+    @test combine(df, AsTable(:) => mean => :mean).mean ≃
+          combine(df, AsTable(:) => ByRow(mean) => :mean).mean ≃
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean ≃
           mean(collect(eachcol(df)))
     @test combine(df, AsTable(:) => mean => :mean).mean isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(mean) => :mean).mean isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean).mean isa Vector{BigFloat}
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃
           minimum(collect(eachcol(df)))
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ==
-          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ==
-          fill(1.0, 10)
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum ≃
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum ≃
+          fill(big(1.0), 10)
     @test combine(df, AsTable(:) => minimum => :minimum).minimum isa Vector{BigInt}
     @test combine(df, AsTable(:) => ByRow(minimum) => :minimum).minimum isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum).minimum isa Vector{BigFloat}
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃
           maximum(collect(eachcol(df)))
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ==
-          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ==
-          fill(2.0, 10)
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum ≃
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum ≃
+          fill(big(2.0), 10)
     @test combine(df, AsTable(:) => maximum => :maximum).maximum isa Vector{BigInt}
     @test combine(df, AsTable(:) => ByRow(maximum) => :maximum).maximum isa Vector{BigFloat}
     @test combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum).maximum isa Vector{BigFloat}
@@ -1999,46 +1978,56 @@ end
 
     m = rand(Any[1], 10, 100)
     df = DataFrame(m, :auto)
-    @test combine(df, AsTable(:) => sum => :sum) ==
-          combine(df, AsTable(:) => ByRow(sum) => :sum) ==
-          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum) ==
+    @test combine(df, AsTable(:) => sum => :sum) ≃
+          combine(df, AsTable(:) => ByRow(sum) => :sum) ≃
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :sum) ≃
           DataFrame(sum=fill(100, 10))
 
-    @test combine(df, AsTable(:) => mean => :mean) ==
-          combine(df, AsTable(:) => ByRow(mean) => :mean) ==
-          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean) ==
+    @test combine(df, AsTable(:) => mean => :mean) ≃
+          combine(df, AsTable(:) => ByRow(mean) => :mean) ≃
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :mean) ≃
           DataFrame(mean=fill(1.0, 10))
 
     m = rand(Any[1, 2], 10, 100)
     df = DataFrame(m, :auto)
 
-    @test combine(df, AsTable(:) => minimum => :minimum).minimum ==
+    @test combine(df, AsTable(:) => minimum => :minimum).minimum ≃
           minimum(eachcol(df))
-    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum) ==
-          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum) ==
-          DataFrame(minimum=fill(1, 10))
+    @test combine(df, AsTable(:) => ByRow(minimum) => :minimum) ≃
+          combine(df, AsTable(:) => ByRow(minimum∘skipmissing) => :minimum) ≃
+          DataFrame(minimum=Any[1 for i in 1:10])
 
-    @test combine(df, AsTable(:) => maximum => :maximum).maximum ==
+    @test combine(df, AsTable(:) => maximum => :maximum).maximum ≃
           maximum(eachcol(df))
-    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum) ==
-          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum) ==
-          DataFrame(maximum=fill(2, 10))
+    @test combine(df, AsTable(:) => ByRow(maximum) => :maximum) ≃
+          combine(df, AsTable(:) => ByRow(maximum∘skipmissing) => :maximum) ≃
+          DataFrame(maximum=Any[2 for i in 1:10])
 end
 
 @testset "fast reductions: AsTable(cols)=>length variants" begin
     Random.seed!(1234)
     m = rand([1, missing], 10, 10000)
     df = DataFrame(m, :auto)
-    @test combine(df, AsTable(:) => length => :len) == DataFrame(len=10000)
-    @test combine(df, AsTable(:) => ByRow(length) => :len) ==
+    @test combine(df, AsTable(:) => length => :len) ≃ DataFrame(len=10000)
+    @test combine(df, AsTable(:) => ByRow(length) => :len) ≃
           DataFrame(len=fill(10000, 10))
-    @test combine(df, AsTable(:) => ByRow(length∘skipmissing) => :len) ==
+    @test combine(df, AsTable(:) => ByRow(length∘skipmissing) => :len) ≃
           DataFrame(len=count.(!ismissing, eachrow(m)))
-    @test select(df, AsTable(:) => length => :len) ==
-          select(df, AsTable(:) => ByRow(length) => :len) ==
+    @test select(df, AsTable(:) => length => :len) ≃
+          select(df, AsTable(:) => ByRow(length) => :len) ≃
           DataFrame(len=fill(10000, 10))
-    @test select(df, AsTable(:) => ByRow(length∘skipmissing) => :len) ==
+    @test select(df, AsTable(:) => ByRow(length∘skipmissing) => :len) ≃
           DataFrame(len=count.(!ismissing, eachrow(m)))
+end
+
+@testset "pathological cases that get custom eltype promotion" begin
+    # in this tests we make sure that result columns with concrete eltype are created
+    df = DataFrame(a = Any[1, 1.0], b=Any[1, 1.0])
+    @test combine(df, AsTable(:) => ByRow(sum) => :res).res ≃  [2.0, 2.0]
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :res).res ≃ [2.0, 2.0]
+    df = DataFrame(a = Any[big(1), 1//1], b=Any[big(1), 1//1])
+    @test combine(df, AsTable(:) => ByRow(mean) => :res).res ≃ BigFloat[1, 1]
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res ≃ BigFloat[1, 1]
 end
 
 @testset "function as target column names specifier" begin
@@ -2069,20 +2058,6 @@ end
         @test_throws ArgumentError select(v, :id, 1 => ByRow(first) => Symbol)
         @test_throws ArgumentError select(v, :id, 1 => ByRow(first) => String)
     end
-end
-
-@testset "pathological cases that get custom eltype promotion" begin
-    # in this tests we make sure that result columns with concrete eltype are created
-    df = DataFrame(a = Any[1, 1.0], b=Any[1, 1.0])
-    @test combine(df, AsTable(:) => ByRow(sum) => :res).res isa Vector{Float64}
-    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :res).res isa Vector{Float64}
-    @test combine(df, AsTable(:) => ByRow(sum) => :res).res ==
-          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :res).res == [2, 2]
-    df = DataFrame(a = Any[big(1), 1//1], b=Any[big(1), 1//1])
-    @test combine(df, AsTable(:) => ByRow(mean) => :res).res isa Vector{BigFloat}
-    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res isa Vector{BigFloat}
-    @test combine(df, AsTable(:) => ByRow(mean) => :res).res ==
-          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res == [1, 1]
 end
 
 end # module
