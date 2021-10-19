@@ -19,7 +19,7 @@ ourstrwidth
 default_table_transformation
 ```
 
-Note! When `AsTable` is used as source column selector in the
+When `AsTable` is used as source column selector in the
 `source => function => target` mini-language supported by `select` and related
 functions it is possible to override the default processing performed by
 function `function` by adding a [`table_transformation`](@ref) method for this
