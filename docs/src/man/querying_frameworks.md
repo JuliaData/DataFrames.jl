@@ -81,10 +81,7 @@ julia> df = DataFrame(key=repeat(1:3, 4), value=1:12)
 
 julia> @chain df begin
            @rsubset :value > 3 
-           @by :key begin 
-               :min = minimum(:value)
-               :max = maximum(:value)
-           end
+           @by(:key, :min = minimum(:value), :max = maximum(:value))
            @select(:key, :range = :max - :min)
         end
 3×2 DataFrame
