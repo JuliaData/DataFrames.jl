@@ -168,6 +168,106 @@ const TRANSFORMATION_COMMON_RULES =
     also holds for `DataFrame` inputs.
     """
 
+broadcast_pair(df::AbstractDataFrame, p::Any) = p
+
+function broadcast_pair(df::AbstractDataFrame, p::Pair)
+    src, second = p
+    src_broadcast = src isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                                  DataAPI.BroadcastedSelector}
+    second_broadcast = second isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                                        DataAPI.BroadcastedSelector}
+    if second isa Pair
+        fun, dst = second
+        dst_broadcast = dst isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                                      DataAPI.BroadcastedSelector}
+        if src_broadcast || dst_broadcast
+            new_src = src_broadcast ? names(df, src.sel) : src
+            new_dst = dst_broadcast ? names(df, dst.sel) : dst
+            return new_src .=> fun .=> new_dst
+        else
+            return p
+        end
+    else
+        if src_broadcast || second_broadcast
+            new_src = src_broadcast ? names(df, src.sel) : src
+            new_second = second_broadcast ? names(df, second.sel) : second
+            return new_src .=> new_second
+        else
+            return p
+        end
+    end
+end
+
+function broadcast_pair(df::AbstractDataFrame, p::AbstractVecOrMat{<:Pair})
+    isempty(p) && return p
+    need_broadcast = false
+
+    src = first.(p)
+    first_src = first(src)
+    if first_src isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                           DataAPI.BroadcastedSelector}
+        if any (!=(first_src), src)
+            throw(ArgumentError("when broadcasting column selector it must " *
+                                "have a constant value"))
+        end
+        need_broadcast = true
+        new_names = names(df, first_src)
+        if !(length(new_names) == size(first_src, 1) || size(new_names, 1) == 1)
+            throw(ArgumentError("broadcasted dimension does not match the " *
+                                "number of selected columns"))
+        end
+        new_src = ndims(p) == 1 ? new_names : repeat(new_names, inner=(1, size(p, 2)))
+    else
+        new_src = src
+    end
+
+    second = last.(src)
+    first_second = first(src)
+    if first_second isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                              DataAPI.BroadcastedSelector}
+        if any (!=(first_second), src)
+            throw(ArgumentError("when using broadcasted column selector it " *
+                                "must have a constant value"))
+        end
+        need_broadcast = true
+        new_names = names(df, first_second)
+        if !(length(new_names) == size(first_second, 1) || size(new_names, 1) == 1)
+            throw(ArgumentError("broadcasted dimension does not match the " *
+                                "number of selected columns"))
+        end
+        new_second = ndims(p) == 1 ? new_names : repeat(new_names, inner=(1, size(p, 2)))
+    else
+        if first_second isa Pair
+            fun, dst = first_second
+            if dst isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                             DataAPI.BroadcastedSelector}
+                if !all(x -> x isa Pair && last(x) == dst, second)
+                    throw(ArgumentError("when using broadcasted column selector " *
+                                        "it must have a constant value"))
+                end
+                need_broadcast = true
+                new_names = names(df, dst)
+                if !(length(new_names) == size(first_second, 1) || size(new_names, 1) == 1)
+                    throw(ArgumentError("broadcasted dimension does not match the " *
+                                        "number of selected columns"))
+                end
+                new_dst = ndims(p) == 1 ? new_names : repeat(new_names, inner=(1, size(p, 2)))
+                new_second = first.(second) .=> new_dst
+            else
+                new_second = second
+            end
+        else
+            new_second = second
+        end
+    end
+
+    if need_broadcast
+        return new_src .=> new_second
+    else
+        return p
+    end
+end
+
 """
     ByRow
 
