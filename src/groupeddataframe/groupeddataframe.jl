@@ -524,6 +524,9 @@ Base.names(key::GroupKey) = string.(parent(key).cols)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = copy(parent(key).cols)
 Base.keys(key::GroupKey) = propertynames(key)
+# a generic fallback for values not handled explicitly
+Base.haskey(::GroupKey, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
 Base.haskey(key::GroupKey, idx::Symbol) = idx in parent(key).cols
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
 Base.haskey(key::GroupKey, idx::Union{Signed, Unsigned}) = 1 <= idx <= length(key)
@@ -857,6 +860,10 @@ Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
 
 Base.in(key::Union{GroupKeyTypes, Signed, Unsigned}, gk::GroupKeys) =
     haskey(parent(gk), key)
+
+# a generic fallback for values not handled explicitly
+Base.haskey(::GroupedDataFrame, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
 
 function Base.haskey(gd::GroupedDataFrame, key::GroupKey)
     if gd === parent(key)
