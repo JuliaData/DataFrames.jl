@@ -22,31 +22,29 @@ memory. The second is that they can be efficiently grouped using the `groupby`
 function.
 
 There are two common types that allow to perform level pooling:
-* the `PooledVector` from PooledArrays.jl;
-* the `CategoricalVector` from CategoricalArrays.jl.
+* `PooledVector` from PooledArrays.jl;
+* `CategoricalVector` from CategoricalArrays.jl.
 
 The difference between `PooledVector` and `CategoricalVector` is the following:
-* the `PooledVector` is used if data compression is the only objective of the
-  user;
-* the `CategoricalVector` is designed to additionally provide a full
-  functionality for working with categorical variables, both with unordered
+* `PooledVector` is intended for cases where data compression is the only objective;
+* `CategoricalVector` is designed to additionally provide full support
+   for working with categorical variables, both with unordered
   (nominal variables) and ordered categories (ordinal variables) at the expense
   of allowing only `AbstractString`, `AbstractChar`, or `Number` element types
   (optionally in a union with `Missing`).
 
-Using `CategoricalVector` is important for working with the
-[GLM.jl](https://github.com/JuliaStats/GLM.jl) package. When fitting regression
-models, `CategoricalVector` columns in the input are translated into 0/1 indicator
-columns in the `ModelMatrix` with one column for each of the levels of the
-`CategoricalVector`. This allows one to analyze categorical data efficiently.
-Therefore below we show selected examples of working with CategoricalArrays.jl
-package.
+`CategoricalVector` is useful in particular when unique values in the array
+(levels) should respect a meaningful ordering, like when printing tables, drawing plots or
+fitting regression models. CategoricalArrays.jl provides functions to set and retrieve
+this order and compare values according to it. On the contrary, the `PooledVector` type
+is essentially a drop-in replacement for `Vector` with almost no user-visible differences
+except for lower memory use and higher performance. 
 
-See the [CategoricalArrays.jl](https://github.com/JuliaData/CategoricalArrays.jl)
-package for more information regarding categorical arrays and the
-[PooledArrays.jl](https://github.com/JuliaData/PooledArrays.jl) for examples
-of working with pooled data. Also note that in this section we discuss only
-vectors because we are considering a data frame context of the data. However, in
+Below we show selected examples of working with CategoricalArrays.jl.
+See the [CategoricalArrays.jl documentation](https://categoricalarrays.juliadata.org/stable/)
+package for more information regarding categorical arrays.
+Also note that in this section we discuss only vectors because
+we are considering a data frame context. However, in
 general both packages allow to work with arrays of any dimensionality.
 
 In order to follow the examples below you need to install the
