@@ -84,8 +84,8 @@ julia> @chain df begin
            @by :key begin 
                :min = minimum(:value)
                :max = maximum(:value)
-            end
-           @select(:key, range=:max - :min)
+           end
+           @select(:key, :range = :max - :min)
         end
 3×2 DataFrame
  Row │ key    range
