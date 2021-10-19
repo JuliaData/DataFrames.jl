@@ -2071,4 +2071,18 @@ end
     end
 end
 
+@testset "pathological cases that get custom eltype promotion" begin
+    # in this tests we make sure that result columns with concrete eltype are created
+    df = DataFrame(a = Any[1, 1.0], b=Any[1, 1.0])
+    @test combine(df, AsTable(:) => ByRow(sum) => :res).res isa Vector{Float64}
+    @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :res).res isa Vector{Float64}
+    @test combine(df, AsTable(:) => ByRow(sum) => :res).res ==
+          combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :res).res == [2, 2]
+    df = DataFrame(a = Any[big(1), 1//1], b=Any[big(1), 1//1])
+    @test combine(df, AsTable(:) => ByRow(mean) => :res).res isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res isa Vector{BigFloat}
+    @test combine(df, AsTable(:) => ByRow(mean) => :res).res ==
+          combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res == [1, 1]
+end
+
 end # module
