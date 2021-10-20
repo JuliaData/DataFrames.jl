@@ -77,6 +77,11 @@
   target column names and taking column names specified by `source`
   as an argument.
   ([#2897](https://github.com/JuliaData/DataFrames.jl/pull/2897))
+* When using broadcasting in `source .=> transformation .=> destination`
+  transformation specification minilanguage now `All`, `Cols`, `Between`, and
+  `Not` selectors when used as `source` or `destination` are properly expanded
+  to selected column names within the call data frame scope.
+  ([#2918](https://github.com/JuliaData/DataFrames.jl/pull/2918))
 
 ## Bug fixes
 
