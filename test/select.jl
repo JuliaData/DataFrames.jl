@@ -1723,25 +1723,73 @@ end
 end
 
 @testset "broadcasting column selectors: All, Cols, Between, Not" begin
-    df = DataFrame(transpose(1:10), :auto)
+    df = DataFrame(reshape(1:200, 20, 10), :auto)
+    insertcols!(df, 1, :id => repeat(["a", "b"], 10))
+    dfv = @view df[1:end-1, 1:end-1]
+
     for sel in (All(), Cols(2:8), Between(:x3, :x5), Not(:x1),
-                Cols(), Between(:x5, :x3), Not(:))
-        @test DataFrames.broadcast_pair(df, sel .=> sum) ==
-              (names(df, sel) .=> sum)
-        @test DataFrames.broadcast_pair(df, sel .=> [sum length]) ==
-              (names(df, sel) .=> [sum length])
-        @test DataFrames.broadcast_pair(df, sel .=> sel) ==
-              DataFrames.broadcast_pair(df, names(df, sel) .=> sel) ==
-              DataFrames.broadcast_pair(df, sel .=> names(df, sel)) ==
-              (names(df, sel) .=> names(df, sel))
-        @test DataFrames.broadcast_pair(df, sel .=> sum .=> sel) ==
-              DataFrames.broadcast_pair(df, names(df, sel) .=> sum .=> sel) ==
-              DataFrames.broadcast_pair(df, sel .=> sum .=> names(df, sel)) ==
-              (names(df, sel) .=> sum .=> names(df, sel))
-        @test DataFrames.broadcast_pair(df, sel .=> [sum length] .=> sel) ==
-              DataFrames.broadcast_pair(df, names(df, sel) .=> [sum length] .=> sel) ==
-              DataFrames.broadcast_pair(df, sel .=> [sum length] .=> names(df, sel))
-              (names(df, sel) .=> [sum length] .=> names(df, sel))
+                Cols(), Between(:x5, :x3), Not(:)),
+                tab in (df, dfv),
+                op in (select, select!, transform, transform!, combine)
+
+        @show sel, typeof(tab), op
+
+        @test op(copy(tab), sel .=> first) == op(copy(tab), names(tab, sel) .=> first)
+        @test op(copy(tab), sel .=> [first length]) ==
+              op(copy(tab), names(tab, sel) .=> [first length])
+        @test op(copy(tab), sel .=> sel) ==
+              op(copy(tab), names(tab, sel) .=> sel) ==
+              op(copy(tab), sel .=> names(tab, sel)) ==
+              op(copy(tab), names(tab, sel) .=> names(tab, sel))
+        @test op(copy(tab), sel .=> first .=> sel) ==
+              op(copy(tab), names(tab, sel) .=> first .=> sel) ==
+              op(copy(tab), sel .=> first .=> names(tab, sel)) ==
+              op(copy(tab), names(tab, sel) .=> first .=> names(tab, sel))
+
+        @test op(groupby(copy(tab), :id), sel .=> first) ==
+              op(groupby(copy(tab), :id), names(tab, sel) .=> first)
+        @test op(groupby(copy(tab), :id), sel .=> [first length]) ==
+              op(groupby(copy(tab), :id), names(tab, sel) .=> [first length])
+        @test op(groupby(copy(tab), :id), sel .=> sel) ==
+              op(groupby(copy(tab), :id), names(tab, sel) .=> sel) ==
+              op(groupby(copy(tab), :id), sel .=> names(tab, sel)) ==
+              op(groupby(copy(tab), :id), names(tab, sel) .=> names(tab, sel))
+        @test op(groupby(copy(tab), :id), sel .=> first .=> sel) ==
+              op(groupby(copy(tab), :id), names(tab, sel) .=> first .=> sel) ==
+              op(groupby(copy(tab), :id), sel .=> first .=> names(tab, sel)) ==
+              op(groupby(copy(tab), :id), names(tab, sel) .=> first .=> names(tab, sel))
+
+        res = names(tab, sel) .=> sum
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> sum) == res
+
+        res = names(tab, sel) .=> [sum length]
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> [sum length]) ==
+              res
+
+        res = names(tab, sel) .=> names(tab, sel)
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> sel) ==
+              DataFrames.broadcast_pair(tab, names(tab, sel) .=> sel) ==
+              DataFrames.broadcast_pair(tab, sel .=> names(tab, sel)) ==
+              res
+
+        res = names(tab, sel) .=> sum .=> names(tab, sel)
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> sum .=> sel) ==
+              DataFrames.broadcast_pair(tab, names(tab, sel) .=> sum .=> sel) ==
+              DataFrames.broadcast_pair(tab, sel .=> sum .=> names(tab, sel)) ==
+              res
+
+        # this is an invalid transformation, but we can check if a correct result
+        # is produced in the preprocessing step
+        res = names(tab, sel) .=> [sum length] .=> names(tab, sel)
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> [sum length] .=> sel) ==
+              DataFrames.broadcast_pair(tab, names(tab, sel) .=> [sum length] .=> sel) ==
+              DataFrames.broadcast_pair(tab, sel .=> [sum length] .=> names(tab, sel)) ==
+              res
     end
 end
 

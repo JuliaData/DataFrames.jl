@@ -183,7 +183,8 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Pair))
         if src_broadcast || dst_broadcast
             new_src = src_broadcast ? names(df, src.sel) : src
             new_dst = dst_broadcast ? names(df, dst.sel) : dst
-            return new_src .=> fun .=> new_dst
+            new_p = new_src .=> fun .=> new_dst
+            return isempty(new_p) ? [] : new_p
         else
             return p
         end
@@ -191,15 +192,20 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Pair))
         if src_broadcast || second_broadcast
             new_src = src_broadcast ? names(df, src.sel) : src
             new_second = second_broadcast ? names(df, second.sel) : second
-            return new_src .=> new_second
+            new_p = new_src .=> new_second
+            return isempty(new_p) ? [] : new_p
         else
             return p
         end
     end
 end
 
+# this is needed in broadcasting when one of dimensions has length 0
+broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractMatrix)) =
+    isempty(p) ? [] : p
+
 function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat{<:Pair}))
-    isempty(p) && return p
+    isempty(p) && return []
     need_broadcast = false
 
     src = first.(p)
@@ -262,7 +268,8 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat
     end
 
     if need_broadcast
-        return new_src .=> new_second
+        new_p = new_src .=> new_second
+        return isempty(new_p) ? [] : new_p
     else
         return p
     end
@@ -1554,7 +1561,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
     if copycols
         cs_vec = []
         for v in args
-            if v isa AbstractVector{<:Pair}
+            if v isa AbstractVecOrMat{<:Pair}
                 append!(cs_vec, v)
             else
                 push!(cs_vec, v)
