@@ -85,6 +85,13 @@
 * fix a problem with not specialized `Pair` arguments passed as transformations
   ([#2889](https://github.com/JuliaData/DataFrames.jl/issues/2889))
 
+## Performance improvements
+
+* for selected common transformation specifications like e.g.
+  `AsTable(...) => ByRow(sum)` use a custom implementations that
+  lead to lower compilation latency and faster computation
+  ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869))
+
 # DataFrames.jl v1.2.2 Patch Release Notes
 
 ## Bug fixes
