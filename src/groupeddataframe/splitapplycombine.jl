@@ -702,10 +702,11 @@ combine(@nospecialize(f::Pair), gd::GroupedDataFrame;
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
 combine(gd::GroupedDataFrame,
-        @nospecialize(cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
+        @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                 AbstractVecOrMat{<:Pair}}...);
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, Ref{Any}(cs), keepkeys=keepkeys, ungroup=ungroup,
+    _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(df), x), args)),
+                     keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
 function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
@@ -716,11 +717,11 @@ function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols:
     return select(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
 end
 
-
 select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                                        AbstractVecOrMat{<:Pair}}...);
        copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, Ref{Any}(args), copycols=copycols, keepkeys=keepkeys,
+    _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(df), x), args)),
+                     copycols=copycols, keepkeys=keepkeys,
                      ungroup=ungroup, keeprows=true, renamecols=renamecols)
 
 function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,

@@ -168,9 +168,9 @@ const TRANSFORMATION_COMMON_RULES =
     also holds for `DataFrame` inputs.
     """
 
-broadcast_pair(df::AbstractDataFrame, p::Any) = p
+broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Any)) = p
 
-function broadcast_pair(df::AbstractDataFrame, p::Pair)
+function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Pair))
     src, second = p
     src_broadcast = src isa Union{InvertedIndices.BroadcastedInvertedIndex,
                                   DataAPI.BroadcastedSelector}
@@ -198,7 +198,7 @@ function broadcast_pair(df::AbstractDataFrame, p::Pair)
     end
 end
 
-function broadcast_pair(df::AbstractDataFrame, p::AbstractVecOrMat{<:Pair})
+function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat{<:Pair}))
     isempty(p) && return p
     need_broadcast = false
 
@@ -1087,10 +1087,10 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    7 │     1      2      7      9
    8 │     2      1      8      9
 ```
-
 """
 select(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
-    manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
+    manipulate(df, map(x -> broadcast_pair(df, x), args)...,
+               copycols=copycols, keeprows=true, renamecols=renamecols)
 
 function select(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1446,7 +1446,8 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 ```
 """
 combine(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
-    manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
+    manipulate(df, map(x -> broadcast_pair(df, x), args)...,
+               copycols=true, keeprows=false, renamecols=renamecols)
 
 function combine(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
