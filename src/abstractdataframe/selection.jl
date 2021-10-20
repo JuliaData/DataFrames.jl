@@ -206,13 +206,13 @@ function broadcast_pair(df::AbstractDataFrame, p::AbstractVecOrMat{<:Pair})
     first_src = first(src)
     if first_src isa Union{InvertedIndices.BroadcastedInvertedIndex,
                            DataAPI.BroadcastedSelector}
-        if any (!=(first_src), src)
+        if any(!=(first_src), src)
             throw(ArgumentError("when broadcasting column selector it must " *
                                 "have a constant value"))
         end
         need_broadcast = true
-        new_names = names(df, first_src)
-        if !(length(new_names) == size(first_src, 1) || size(new_names, 1) == 1)
+        new_names = names(df, first_src.sel)
+        if !(length(new_names) == size(p, 1) || size(p, 1) == 1)
             throw(ArgumentError("broadcasted dimension does not match the " *
                                 "number of selected columns"))
         end
@@ -221,17 +221,17 @@ function broadcast_pair(df::AbstractDataFrame, p::AbstractVecOrMat{<:Pair})
         new_src = src
     end
 
-    second = last.(src)
-    first_second = first(src)
+    second = last.(p)
+    first_second = first(second)
     if first_second isa Union{InvertedIndices.BroadcastedInvertedIndex,
                               DataAPI.BroadcastedSelector}
-        if any (!=(first_second), src)
+        if any(!=(first_second), second)
             throw(ArgumentError("when using broadcasted column selector it " *
                                 "must have a constant value"))
         end
         need_broadcast = true
-        new_names = names(df, first_second)
-        if !(length(new_names) == size(first_second, 1) || size(new_names, 1) == 1)
+        new_names = names(df, first_second.sel)
+        if !(length(new_names) == size(p, 1) || size(p, 1) == 1)
             throw(ArgumentError("broadcasted dimension does not match the " *
                                 "number of selected columns"))
         end
@@ -246,8 +246,8 @@ function broadcast_pair(df::AbstractDataFrame, p::AbstractVecOrMat{<:Pair})
                                         "it must have a constant value"))
                 end
                 need_broadcast = true
-                new_names = names(df, dst)
-                if !(length(new_names) == size(first_second, 1) || size(new_names, 1) == 1)
+                new_names = names(df, dst.sel)
+                if !(length(new_names) == size(p, 1) || size(p, 1) == 1)
                     throw(ArgumentError("broadcasted dimension does not match the " *
                                         "number of selected columns"))
                 end

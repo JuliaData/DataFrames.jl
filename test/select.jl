@@ -1722,4 +1722,27 @@ end
     end
 end
 
+@testset "broadcasting column selectors: All, Cols, Between, Not" begin
+    df = DataFrame(transpose(1:10), :auto)
+    for sel in (All(), Cols(2:8), Between(:x3, :x5), Not(:x1),
+                Cols(), Between(:x5, :x3), Not(:))
+        @test DataFrames.broadcast_pair(df, sel .=> sum) ==
+              (names(df, sel) .=> sum)
+        @test DataFrames.broadcast_pair(df, sel .=> [sum length]) ==
+              (names(df, sel) .=> [sum length])
+        @test DataFrames.broadcast_pair(df, sel .=> sel) ==
+              DataFrames.broadcast_pair(df, names(df, sel) .=> sel) ==
+              DataFrames.broadcast_pair(df, sel .=> names(df, sel)) ==
+              (names(df, sel) .=> names(df, sel))
+        @test DataFrames.broadcast_pair(df, sel .=> sum .=> sel) ==
+              DataFrames.broadcast_pair(df, names(df, sel) .=> sum .=> sel) ==
+              DataFrames.broadcast_pair(df, sel .=> sum .=> names(df, sel)) ==
+              (names(df, sel) .=> sum .=> names(df, sel))
+        @test DataFrames.broadcast_pair(df, sel .=> [sum length] .=> sel) ==
+              DataFrames.broadcast_pair(df, names(df, sel) .=> [sum length] .=> sel) ==
+              DataFrames.broadcast_pair(df, sel .=> [sum length] .=> names(df, sel))
+              (names(df, sel) .=> [sum length] .=> names(df, sel))
+    end
+end
+
 end # module
